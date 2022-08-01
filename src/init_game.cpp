@@ -825,11 +825,6 @@ void deinitGame()
 		cpp_Free_CSteamID(currentLobby); //TODO: Remove these bodges.
 		currentLobby = NULL;
 	}
-	if ( lobbyToConnectTo )
-	{
-		cpp_Free_CSteamID(lobbyToConnectTo);
-		lobbyToConnectTo = NULL;
-	}
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		if ( steamIDRemote[c] )

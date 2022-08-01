@@ -438,6 +438,10 @@ private:
 	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 
 	SDL_Rect getRelativeMousePositionImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
+
+	void processField(const SDL_Rect& _size, Field& field, Widget*& destWidget, result_t& result);
+	void processButton(const SDL_Rect& _size, Button& button, Widget*& destWidget, result_t& result);
+	void processSlider(const SDL_Rect& _size, Slider& slider, Widget*& destWidget, result_t& result);
 };
 
 // root frame object

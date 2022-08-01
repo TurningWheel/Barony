@@ -88,6 +88,7 @@ public:
     const char*                 getHandleImageActivated() const { return handleImageActivated.c_str(); }
     const char*                 getHandleImage() const { return handleImage.c_str(); }
     const char*                 getRailImage() const { return railImage.c_str(); }
+	const bool					isOntop() const { return ontop; }
 
     void    setOrientation(orientation_t o) { orientation = o; }
     void    setValue(float _value) { value = _value; }
@@ -104,6 +105,7 @@ public:
     void    setHandleImageActivated(const char* _image) { handleImageActivated = _image; }
     void    setHandleImage(const char* _image) { handleImage = _image; }
     void    setRailImage(const char* _image) { railImage = _image; }
+	void	setOntop(const bool _ontop) { ontop = _ontop; }
 
 private:
     void (*callback)(Slider&) = nullptr;		    //!< native callback for clicking
@@ -124,4 +126,5 @@ private:
     std::string handleImageActivated;               //!< image to use for the handle (when activated)
     std::string handleImage;                        //!< image to use for the handle
     std::string railImage;                          //!< image to use for the rail
+	bool ontop = false;								//!< whether the slider is drawn ontop of others
 };

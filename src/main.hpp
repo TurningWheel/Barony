@@ -838,7 +838,7 @@ extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
  #define getHeightOfFont(A) TTF_FontHeight(A)
 #endif // NINTENDO
 
-void stackTrace();
+std::string stackTrace();
 void stackTraceUnique();
 void finishStackTraceUnique();
 extern bool ENABLE_STACK_TRACES;

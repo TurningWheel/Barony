@@ -20,6 +20,7 @@
 #include "../classdescriptions.hpp"
 #include "../lobbies.hpp"
 #include "../interface/consolecommand.hpp"
+#include "../interface/ui.hpp"
 #include "../eos.hpp"
 #include "../colors.hpp"
 
@@ -107,6 +108,7 @@ namespace MainMenu {
 	static LobbyType currentLobbyType = LobbyType::None;
 	static bool playersInLobby[MAXPLAYERS];
 	static bool playerSlotsLocked[MAXPLAYERS];
+	static void* saved_invite_lobby = nullptr;
 
     bool story_active = false;
     bool isCutsceneActive() {
@@ -380,11 +382,6 @@ namespace MainMenu {
         connectingToLobby = false;
         connectingToLobbyWindow = false;
         joinLobbyWaitingForHostResponse = false;
-        if (lobbyToConnectTo) {
-            // cancel lobby invitation acceptance
-            cpp_Free_CSteamID(lobbyToConnectTo);
-            lobbyToConnectTo = nullptr;
-        }
 #endif
 #ifdef USE_EOS
 	    EOS.bRequestingLobbies = false;
@@ -392,6 +389,64 @@ namespace MainMenu {
 	    EOS.bConnectingToLobbyWindow = false;
 	    EOS.bJoinLobbyWaitingForHostResponse = false;
 #endif
+	}
+
+	static void flushP2PPackets(int msMin, int msMax) {
+	    if (!directConnect) {
+		    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+		        CSteamID newSteamID;
+
+			    // if we got a packet, flush any remaining packets from the queue.
+			    Uint32 startTicks = SDL_GetTicks();
+			    Uint32 checkTicks = startTicks;
+			    while ((checkTicks - startTicks) < msMin) {
+				    SteamAPI_RunCallbacks();
+				    Uint32 packetlen = 0;
+				    if (SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0)) {
+					    packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
+					    Uint32 bytesRead = 0;
+					    char buffer[NET_PACKET_SIZE];
+					    if (SteamNetworking()->ReadP2PPacket(buffer, packetlen, &bytesRead, &newSteamID, 0)) {
+						    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+					    }
+					    buffer[4] = '\0';
+					    if ( (int)buffer[3] < '0'
+						    && (int)buffer[0] == 0
+						    && (int)buffer[1] == 0
+						    && (int)buffer[2] == 0 ) {
+						    printlog("[Steam Lobby]: Clearing P2P packet queue: received: %d", (int)buffer[3]);
+					    } else {
+						    printlog("[Steam Lobby]: Clearing P2P packet queue: received: %s", buffer);
+					    }
+				    }
+				    SDL_Delay(10);
+				    if ((SDL_GetTicks() - startTicks) > msMax) {
+					    break;
+				    }
+			    }
+#endif
+		    }
+		    else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#if defined USE_EOS
+		        EOS_ProductUserId newRemoteProductId = nullptr;
+
+			    // if we got a packet, flush any remaining packets from the queue.
+			    Uint32 startTicks = SDL_GetTicks();
+			    Uint32 checkTicks = startTicks;
+			    while ((checkTicks - startTicks) < msMin) {
+				    EOS_Platform_Tick(EOS.PlatformHandle);
+				    if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
+					    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
+				    }
+				    SDL_Delay(10);
+				    if ((SDL_GetTicks() - startTicks) > msMax) {
+					    break;
+				    }
+			    }
+#endif // USE_EOS
+		    }
+	    }
 	}
 
 /******************************************************************************/
@@ -425,10 +480,10 @@ namespace MainMenu {
 	static void mainQuitToMainMenu(Button&);
 	static void mainQuitToDesktop(Button&);
 
-	static void characterCardGameSettingsMenu(int index);
+	static void characterCardGameFlagsMenu(int index);
 	static void characterCardLobbySettingsMenu(int index);
-	static void characterCardRaceMenu(int index);
-	static void characterCardClassMenu(int index);
+	static void characterCardRaceMenu(int index, bool details, int selection);
+	static void characterCardClassMenu(int index, bool details, int selection);
 
     static void createControllerPrompt(int index, bool show_player_text, void (*after_func)());
 	static void createCharacterCard(int index);
@@ -795,6 +850,9 @@ namespace MainMenu {
 	}
 
 	static Frame* createPrompt(const char* name, bool small = true) {
+	    if (!main_menu_frame) {
+	        return nullptr;
+	    }
 		if (main_menu_frame->findFrame(name)) {
 			return nullptr;
 		}
@@ -844,6 +902,7 @@ namespace MainMenu {
 
 	static Frame* textFieldPrompt(
 		const char* field_text,
+	    const char* tip_text,
 		const char* guide_text,
 		const char* okay_text,
 		const char* cancel_text,
@@ -853,7 +912,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt("text_field_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text_box = frame->addImage(
 			SDL_Rect{(364 - 246) / 2, 32, 246, 36},
@@ -862,10 +923,32 @@ namespace MainMenu {
 			"text_box"
 		);
 
-		constexpr int field_buffer_size = 64;
+		constexpr int field_buffer_size = 128;
+
+		auto tip = frame->addField("tip", field_buffer_size);
+		tip->setSize(SDL_Rect{(364 - 242) / 2, 36, 242, 28});
+		tip->setFont(smallfont_outline);
+		tip->setText(tip_text);
+		tip->setUserData(const_cast<void*>((const void*)tip_text));
+		tip->setHJustify(Field::justify_t::LEFT);
+		tip->setVJustify(Field::justify_t::CENTER);
+		tip->setColor(makeColor(166, 123, 81, 255));
+		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
+		tip->setTickCallback([](Widget& widget){
+	        auto tip = static_cast<Field*>(&widget);
+		    auto parent = static_cast<Frame*>(widget.getParent());
+		    auto field = parent->findField("field");
+		    if (field && (field->isActivated() || field->getText()[0] != '\0')) {
+		        tip->setText("");
+		    } else {
+		        tip->setText((const char*)tip->getUserData());
+		    }
+		    });
 
 		auto field = frame->addField("field", field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
+		field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(guide_text);
@@ -875,8 +958,6 @@ namespace MainMenu {
 		field->setHJustify(Field::justify_t::LEFT);
 		field->setVJustify(Field::justify_t::CENTER);
 		field->setColor(makeColor(166, 123, 81, 255));
-		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
-		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		field->setWidgetSearchParent(field->getParent()->getName());
 		field->setWidgetBack("cancel");
 		field->setWidgetDown("okay");
@@ -936,7 +1017,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt("binary_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -984,15 +1067,56 @@ namespace MainMenu {
 	    closePrompt("binary_prompt");
 	}
 
-	static Frame* monoPrompt(
+	static Frame* cancellablePrompt(
+	    const char* name,
 		const char* window_text,
-		const char* okay_text,
-		void (*okay_callback)(Button&)
+		const char* cancel_text,
+	    void (*tick_callback)(Widget&),
+		void (*cancel_callback)(Button&)
+	) {
+		soundActivate();
+
+	    Frame* frame = createPrompt(name);
+	    if (!frame) {
+	        return nullptr;
+	    }
+
+		auto text = frame->addField("text", 128);
+		text->setSize(SDL_Rect{30, 16, frame->getSize().w - 60, 64});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+		text->setHideSelectors(true);
+		text->setHideGlyphs(true);
+		text->setTickCallback(tick_callback);
+
+		auto cancel = frame->addButton("cancel");
+		cancel->setSize(SDL_Rect{(frame->getActualSize().w - 130) / 2, 82, 130, 52});
+		cancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setCallback(cancel_callback);
+		cancel->setWidgetBack("cancel");
+		cancel->select();
+
+		return frame;
+	}
+
+	static Frame* monoPrompt(
+	    const char* window_text,
+	    const char* okay_text,
+	    void (*okay_callback)(Button&)
 	) {
 		soundActivate();
 
 	    Frame* frame = createPrompt("mono_prompt");
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
@@ -1028,7 +1152,9 @@ namespace MainMenu {
 		soundActivate();
 
 	    Frame* frame = createPrompt(name, small);
-	    assert(frame);
+	    if (!frame) {
+	        return nullptr;
+	    }
 
 		auto text = frame->addField("text", 128);
 		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 34});
@@ -1043,8 +1169,8 @@ namespace MainMenu {
 		return frame;
 	}
 
-	static void closeText(const char* name = "text_prompt") {
-	    closePrompt(name);
+	static void closeText() {
+	    closePrompt("text_prompt");
 	}
 
     void connectionErrorPrompt(const char* str) {
@@ -1069,6 +1195,107 @@ namespace MainMenu {
             }
         );
     }
+
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+    static void openDLCPrompt() {
+        textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
+            [](Button& button){ // okay
+                soundActivate();
+
+                static std::string text;
+
+                auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+                auto field = frame->findField("field"); assert(field);
+                text = field->getText();
+                closeTextField();
+
+                if (text.empty()) {
+                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                    auto play = buttons->findButton("Play Game");
+                    play->select();
+                } else {
+                    static Uint32 window_ticks;
+                    window_ticks = ticks;
+                    textPrompt("dlc_check_window", "", [](Widget& widget){
+                        auto field = static_cast<Field*>(&widget);
+                        auto time = ticks - window_ticks;
+                        if (time % TICKS_PER_SECOND < 10) {
+                            field->setText("Verifying");
+                        }
+                        else if (time % TICKS_PER_SECOND < 20) {
+                            field->setText("Verifying.");
+                        }
+                        else if (time % TICKS_PER_SECOND < 30) {
+                            field->setText("Verifying..");
+                        }
+                        else if (time % TICKS_PER_SECOND < 40) {
+                            field->setText("Verifying...");
+                        }
+                        else {
+                            field->setText("Verifying....");
+                        }
+                        if (time > TICKS_PER_SECOND * 2) {
+                            closePrompt("dlc_check_window");
+		                    std::size_t DLCHash = serialHash(text);
+
+		                    auto prompt = [](const char* text){
+		                        monoPrompt(text, "Okay", [](Button&){
+		                            soundActivate();
+		                            closeMono();
+                                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                                    auto play = buttons->findButton("Play Game");
+                                    play->select();
+		                            });
+		                        };
+
+		                    if (DLCHash == 144425) {
+			                    playSound(402, 92);
+			                    printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+			                    prompt("Myths and Outcasts DLC\nhas been unlocked!");
+			                    enabledDLCPack1 = true;
+
+                                char path[PATH_MAX] = "";
+                                completePath(path, "mythsandoutcasts.key", outputdir);
+
+                                // write the serial file
+                                File* fp = nullptr;
+                                if (fp = FileIO::open(path, "wb")) {
+                                    fp->write(text.c_str(), sizeof(char), text.size());
+                                    FileIO::close(fp);
+                                }
+		                    } else if ( DLCHash == 135398 ) {
+			                    playSound(402, 92);
+			                    printlog("[LICENSE]: Legends and Pariahs DLC license key found.");
+			                    prompt("Legends and Pariahs DLC\nhas been unlocked!");
+			                    enabledDLCPack2 = true;
+
+                                char path[PATH_MAX] = "";
+                                completePath(path, "legendsandpariahs.key", outputdir);
+
+                                // write the serial file
+                                File* fp = nullptr;
+                                if (fp = FileIO::open(path, "wb")) {
+                                    fp->write(text.c_str(), sizeof(char), text.size());
+                                    FileIO::close(fp);
+                                }
+		                    } else {
+		                        soundError();
+			                    printlog("[LICENSE]: DLC license key invalid.");
+			                    prompt("Invalid license key.");
+		                    }
+                        }
+                        });
+                }
+            },
+            [](Button&){ // cancel
+                soundCancel();
+                closeTextField();
+                auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                auto play = buttons->findButton("Play Game");
+                play->select();
+            });
+    }
+#endif
 
 /******************************************************************************/
 
@@ -3026,6 +3253,8 @@ namespace MainMenu {
 
 		auto field = frame.addField((fullname + "_text_field").c_str(), field_buffer_size);
 		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
+		field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		field->setEditable(true);
 		field->setScroll(true);
 		field->setGuide(tip);
@@ -3035,7 +3264,12 @@ namespace MainMenu {
 		field->setHJustify(Field::justify_t::LEFT);
 		field->setVJustify(Field::justify_t::CENTER);
 		field->setCallback(callback);
+		field->setTickCallback([](Widget& widget){
+		    auto field = static_cast<Field*>(&widget);
+		    (*field->getCallback())(*field);
+		    });
 		field->setColor(makeColor(166, 123, 81, 255));
+		field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		field->setWidgetSearchParent(frame.getParent()->getName());
@@ -4436,35 +4670,43 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-		    settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "show_ip_address"});
+		    settingsSelect(*settings_subwindow, {Setting::Type::Field, "port_number"});
 			return;
 		}
 		int y = 0;
 
+#if 0
 		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_ip_address", "Streamer Mode",
 			"If you're a streamer and know what doxxing is, definitely switch this on.",
 			allSettings.show_ip_address_enabled, [](Button& button){soundToggle(); allSettings.show_ip_address_enabled = button.isPressed();});
+#endif
+
+        char port_desc[1024];
+        snprintf(port_desc, sizeof(port_desc), "The port number to use when hosting a LAN lobby. (Default: %d)", DEFAULT_PORT);
 
         char buf[16];
         snprintf(buf, sizeof(buf), "%hu", (Uint16)allSettings.port_number);
 		y += settingsAddSubHeader(*settings_subwindow, y, "lan", "LAN");
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
-		    "The port number to use when hosting a LAN lobby.",
-		    buf, [](Field& field){soundActivate(); allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
+		    port_desc, buf, [](Field& field){allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
+#ifdef STEAMWORKS
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
-		y += settingsAddBooleanWithCustomizeOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
+		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
 		    "Enable crossplay through Epic Online Services",
-		    false, [](Button&){soundWarning();}, [](Button&){soundWarning();});
+		    allSettings.crossplay_enabled, [](Button& button){soundToggle(); allSettings.crossplay_enabled = button.isPressed();});
 
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "show_ip_address"},
-			{Setting::Type::Field, "port_number"},
-			{Setting::Type::BooleanWithCustomize, "crossplay"}});
+			{{Setting::Type::Field, "port_number"},
+			{Setting::Type::Boolean, "crossplay"}});
+#else
+		hookSettings(*settings_subwindow,
+			{{Setting::Type::Field, "port_number"}});
+#endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "show_ip_address"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "show_ip_address"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Field, "port_number"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Field, "port_number"});
 	}
 
 	static void settingsGame(Button& button) {
@@ -5622,6 +5864,8 @@ bind_failed:
 
 /******************************************************************************/
 
+    static Frame* toggleLobbyChatWindow();
+
     struct LobbyChatMessage {
         Uint32 timestamp;
         Uint32 color;
@@ -5638,6 +5882,7 @@ bind_failed:
         const Uint32 seconds = time(NULL) / seconds_in_day;
 
         if (add_to_list) {
+            playSound(238, 64);
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {
                 lobby_chat_messages.pop_front();
@@ -5651,8 +5896,10 @@ bind_failed:
         if (!lobby) {
             return;
         }
+
         auto frame = lobby->findFrame("chat window");
         if (!frame) {
+            frame = toggleLobbyChatWindow();
             return;
         }
 
@@ -5663,7 +5910,7 @@ bind_failed:
         auto subframe_size = subframe->getActualSize();
         int y = subframe_size.h;
 
-        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", true);
+        static ConsoleVariable<bool> timestamp_messages("/chat_timestamp", false);
 
         char buf[1024];
         const Uint32 hour = seconds / 3600;
@@ -5685,8 +5932,9 @@ bind_failed:
         field->setColor(color);
         field->setText(buf);
 
-        (void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
-        field->setTooltip(buf);
+        //char tooltip_buf[32];
+        //(void)snprintf(tooltip_buf, sizeof(tooltip_buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
+        //field->setTooltip(tooltip_buf);
 
         const int new_w = std::max(subframe_size.w, text_w + 8);
 
@@ -5705,13 +5953,13 @@ bind_failed:
         }
     }
 
-    static void toggleLobbyChatWindow() {
+    static Frame* toggleLobbyChatWindow() {
         assert(main_menu_frame);
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
             frame->removeSelf();
-            return;
+            return nullptr;
         }
 
         const SDL_Rect size = lobby->getSize();
@@ -5852,13 +6100,27 @@ bind_failed:
         chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
         chat_buffer->setHJustify(Field::justify_t::LEFT);
         chat_buffer->setVJustify(Field::justify_t::CENTER);
+		chat_buffer->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
+		chat_buffer->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
         chat_buffer->setFont(lobby_chat_font->c_str());
         chat_buffer->setColor(makeColor(201, 162, 100, 255));
         chat_buffer->setEditable(true);
         chat_buffer->setCallback([](Field& field){
-            sendChatMessageOverNet(field.getText());
-            field.setText("");
+            auto text = field.getText();
+            if (text && *text) {
+                sendChatMessageOverNet(text);
+                field.setText("");
+                field.activate();
+            }
             });
+        chat_buffer->setTickCallback([](Widget& widget){
+            auto field = static_cast<Field*>(&widget);
+            if (!field->isActivated()) {
+                field->setText("");
+            }
+            });
+        chat_buffer->setWidgetSearchParent(frame->getName());
+        chat_buffer->setWidgetBack("close");
 
         auto chat_tooltip = frame->addField("tooltip", 128);
         chat_tooltip->setSize(SDL_Rect{4, h - 32, w - 8, 32});
@@ -5904,13 +6166,14 @@ bind_failed:
 			}
 			ready->select();
             });
+        close_button->setWidgetSearchParent(frame->getName());
+        close_button->setWidgetDown("buffer");
+	    close_button->setWidgetBack("close");
+
+        return frame;
     }
 
 	static void disconnectFromLobby() {
-	    if (multiplayer == SINGLE) {
-	        return;
-	    }
-
 	    if (multiplayer == SERVER) {
 		    // send disconnect message to clients
 		    for (int c = 1; c < MAXPLAYERS; c++) {
@@ -6002,12 +6265,16 @@ bind_failed:
 						net_packet->address.port = net_clients[c - 1].port;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
-					char shortname[32] = { 0 };
-					strncpy(shortname, stats[i]->name, 22);
 
 					char buf[1024];
-					snprintf(buf, sizeof(buf), language[1376], shortname);
+					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
 					addLobbyChatMessage(0xffffffff, buf);
+
+				    if (directConnect) {
+		                createWaitingStone(i);
+		            } else {
+		                createInviteButton(i);
+		            }
 					continue;
 				}
 			}
@@ -6034,14 +6301,18 @@ bind_failed:
 			}
 
 			if (hostHasLostP2P) {
-#if defined(STEAMWORKS)
-				auto error_code = connectingToLobbyStatus;
-#elif defined(USE_EOS)
-				auto error_code = EOS.ConnectingToLobbyStatus;
-#else
-                auto error_code = -1; // just so this compiles always
-#endif
-				auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
+			    int error_code = -1;
+			    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    error_code = EOS.ConnectingToLobbyStatus;
+#endif // USE_EOS
+			    }
+			    else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+			        error_code = connectingToLobbyStatus;
+#endif //STEAMWORKS
+			    }
+			    auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
                 disconnectFromLobby();
 	            destroyMainMenu();
 	            createMainMenu(false);
@@ -6124,6 +6395,70 @@ bind_failed:
 		}
 	}
 
+	static void kickPlayer(int index) {
+	    if (multiplayer == SERVER) {
+            strcpy((char*)net_packet->data, "KICK");
+            net_packet->address.host = net_clients[index - 1].host;
+            net_packet->address.port = net_clients[index - 1].port;
+            net_packet->len = 4;
+            sendPacketSafe(net_sock, -1, net_packet, index - 1);
+
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "*** %s has been kicked ***", players[index]->getAccountName());
+			addLobbyChatMessage(0xffffffff, buf);
+
+			client_disconnected[index] = true;
+
+#ifdef STEAMWORKS
+            if (steamIDRemote[index - 1]) {
+                cpp_Free_CSteamID(steamIDRemote[index - 1]);
+			    steamIDRemote[index - 1] = nullptr;
+			}
+#endif
+
+		    // inform other players
+	        for (int c = 1; c < MAXPLAYERS; ++c) {
+	            if (client_disconnected[c]) {
+	                continue;
+	            }
+	            strcpy((char*)net_packet->data, "DISC");
+	            net_packet->data[4] = index;
+	            net_packet->address.host = net_clients[c - 1].host;
+	            net_packet->address.port = net_clients[c - 1].port;
+	            net_packet->len = 5;
+	            sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	        }
+
+		    if (directConnect) {
+                createWaitingStone(index);
+            } else {
+                createInviteButton(index);
+            }
+	        checkReadyStates();
+	    }
+	}
+
+	static void lockSlot(int index, bool locked) {
+	    if (multiplayer == SERVER) {
+	        playerSlotsLocked[index] = locked;
+	        if (locked) {
+	            if (!client_disconnected[index]) {
+	                kickPlayer(index);
+	            }
+	            createLockedStone(index);
+	        } else {
+	            if (client_disconnected[index]) {
+		            if (directConnect) {
+                        createWaitingStone(index);
+                    } else {
+                        createInviteButton(index);
+                    }
+                }
+	        }
+            checkReadyStates();
+	    }
+	}
+
 	static void sendReadyOverNet(int index, bool ready) {
 	    if (multiplayer != SERVER && multiplayer != CLIENT) {
 	        return;
@@ -6181,9 +6516,13 @@ bind_failed:
 	        return;
 	    }
 
+	    char fmt[1024];
+	    int len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    len = std::min((int)sizeof(fmt), len);
+
 		strcpy((char*)net_packet->data, "CMSG");
-		strcat((char*)(net_packet->data), msg);
-		net_packet->len = 4 + strlen(msg) + 1;
+		strcat((char*)(net_packet->data), fmt);
+		net_packet->len = 4 + len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
         // send packet
@@ -6196,7 +6535,7 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
-	        addLobbyChatMessage(0xffffffff, msg);
+	        addLobbyChatMessage(0xffffffff, fmt);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
@@ -6403,7 +6742,7 @@ bind_failed:
 				}
 
 				// process incoming join request
-				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum);
+				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
 
 				// finalize connections for Steamworks / EOS
 				if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
@@ -6454,6 +6793,10 @@ bind_failed:
 				// finally, open a player card!
 				if (playerNum >= 1 && playerNum < MAXPLAYERS) {
 			        createReadyStone(playerNum, false, false);
+
+				    char buf[1024];
+				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+				    addLobbyChatMessage(0xffffffff, buf);
 				}
 
 				continue;
@@ -6517,7 +6860,6 @@ bind_failed:
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
 				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				playSound(238, 64);
 				continue;
 			}
 
@@ -6544,12 +6886,16 @@ bind_failed:
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
 
-				char shortname[32] = { 0 };
-				strncpy(shortname, stats[player]->name, 22);
-
 				char buf[1024];
-				snprintf(buf, sizeof(buf), language[1376], shortname);
+				snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
 				addLobbyChatMessage(0xffffffff, buf);
+
+			    if (directConnect) {
+	                createWaitingStone(player);
+	            } else {
+	                createInviteButton(player);
+	            }
+
 				continue;
 			}
 
@@ -6597,7 +6943,7 @@ bind_failed:
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 					disconnectFromLobby();
-					closeText("connect_prompt");
+					closePrompt("connect_prompt");
 					connectionErrorPrompt(error_str.c_str());
 					connectingToLobbyStatus = EResult::k_EResultOK;
 				}
@@ -6611,7 +6957,7 @@ bind_failed:
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 					disconnectFromLobby();
-					closeText("connect_prompt");
+					closePrompt("connect_prompt");
 					connectionErrorPrompt(error_str.c_str());
 					EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 				}
@@ -6641,7 +6987,7 @@ bind_failed:
 					Uint32 bytesRead = 0;
 					if (!SteamNetworking()->ReadP2PPacket(
 					    net_packet->data, packetlen,
-					    &bytesRead, &newSteamID, 0) || bytesRead != 8 + MAXPLAYERS * (5 + 23)) {
+					    &bytesRead, &newSteamID, 0)) {
 						continue;
 					}
 					net_packet->len = packetlen;
@@ -6689,58 +7035,7 @@ bind_failed:
                     clientnum = 0;
 					printlog("connection attempt denied by server, error code: %d.\n", error);
 					multiplayer = SINGLE;
-					if (!directConnect) {
-						if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-							// if we got a packet, flush any remaining packets from the queue.
-							Uint32 startTicks = SDL_GetTicks();
-							Uint32 checkTicks = startTicks;
-							while ((checkTicks - startTicks) < 2000) {
-								SteamAPI_RunCallbacks();
-								Uint32 packetlen = 0;
-								if (SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0)) {
-									packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
-									Uint32 bytesRead = 0;
-									char buffer[NET_PACKET_SIZE];
-									if (SteamNetworking()->ReadP2PPacket(buffer, packetlen, &bytesRead, &newSteamID, 0)) {
-										checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
-									}
-									buffer[4] = '\0';
-									if ( (int)buffer[3] < '0'
-										&& (int)buffer[0] == 0
-										&& (int)buffer[1] == 0
-										&& (int)buffer[2] == 0 ) {
-										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %d", (int)buffer[3]);
-									} else {
-										printlog("[Steam Lobby]: Clearing P2P packet queue: received: %s", buffer);
-									}
-								}
-								SDL_Delay(10);
-								if ((SDL_GetTicks() - startTicks) > 5000) {
-									// hard break at 3 seconds.
-									break;
-								}
-							}
-#endif
-						} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#if defined USE_EOS
-							// if we got a packet, flush any remaining packets from the queue.
-							Uint32 startTicks = SDL_GetTicks();
-							Uint32 checkTicks = startTicks;
-							while ((checkTicks - startTicks) < 2000) {
-								EOS_Platform_Tick(EOS.PlatformHandle);
-								if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
-									checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
-								}
-								SDL_Delay(10);
-								if ((SDL_GetTicks() - startTicks) > 5000) {
-									// hard break at 3 seconds.
-									break;
-								}
-							}
-#endif // USE_EOS
-						}
-					}
+				    //flushP2PPackets(2000, 5000);
 
 #ifdef STEAMWORKS
 					if (!directConnect) {
@@ -6771,7 +7066,7 @@ bind_failed:
                     }
 
 					// display error message
-                    closeText("connect_prompt");
+                    closePrompt("connect_prompt");
                     connectionErrorPrompt(error_str);
 
                     // reset connection
@@ -6791,18 +7086,21 @@ bind_failed:
 
 					// now set up everybody else
 					for (int c = 0; c < MAXPLAYERS; c++) {
-						client_classes[c] = net_packet->data[8 + c * (5 + 23) + 0]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (5 + 23) + 1]); // sex
-						client_disconnected[c] = net_packet->data[8 + c * (5 + 23) + 2]; // connectedness :p
-						stats[c]->appearance = net_packet->data[8 + c * (5 + 23) + 3]; // appearance
-						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23) + 4]; // player race
-						strcpy(stats[c]->name, (char*)(&net_packet->data[8 + c * (5 + 23) + 5]));  // name
+
+						client_disconnected[c] = net_packet->data[8 + c * (6 + 32) + 0]; // connectedness
+						playerSlotsLocked[c] = net_packet->data[8 + c * (6 + 32) + 1]; // locked state
+						client_classes[c] = net_packet->data[8 + c * (6 + 32) + 2]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (6 + 32) + 3]); // sex
+						stats[c]->appearance = net_packet->data[8 + c * (6 + 32) + 4]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
+						snprintf(stats[c]->name, sizeof(stats[c]->name), "%s", (char*)(net_packet->data + 8 + c * (6 + 32) + 6)); // name
+
 		                stats[c]->clearStats();
 		                initClass(c);
 					}
 
 					// open lobby
-                    closeText("connect_prompt");
+                    closePrompt("connect_prompt");
 					createLobby(LobbyType::LobbyJoined);
 
                     // TODO subscribe to mods!
@@ -6936,17 +7234,31 @@ bind_failed:
 				    stats[player]->playerRace = net_packet->data[8];
 				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
 
-				    char shortname[32] = { 0 };
-				    strncpy(shortname, stats[player]->name, 22);
-
 				    char buf[1024];
-				    snprintf(buf, sizeof(buf), language[1388], shortname);
+				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
 				    addLobbyChatMessage(0xffffffff, buf);
 
 			        if (player != clientnum) {
 			            createReadyStone((int)player, false, false);
 			        }
 				    continue;
+			    }
+
+			    // lock/unlock a player slot
+			    else if (packetId == 'LOCK') {
+			        int player = net_packet->data[4];
+			        bool locked = net_packet->data[5];
+			        playerSlotsLocked[player] = locked;
+
+                    // these functions automatically create locked
+                    // stones instead if the player is now locked
+			        if (directConnect) {
+			            createWaitingStone(player);
+			        } else {
+			            createInviteButton(player);
+			        }
+			        checkReadyStates();
+			        continue;
 			    }
 
 			    // update player attributes
@@ -6962,6 +7274,7 @@ bind_failed:
 		                stats[player]->clearStats();
 		                initClass(player);
 		            }
+		            checkReadyStates();
 			        continue;
 			    }
 
@@ -6990,16 +7303,21 @@ bind_failed:
 		                disconnectFromLobby();
 			            destroyMainMenu();
 			            createMainMenu(false);
-		                connectionErrorPrompt("You have been kicked\nfrom the remote server.");
+			            if (packetId == 'KICK') {
+		                    connectionErrorPrompt("You have been kicked\nfrom the remote server.");
+		                } else {
+		                    connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
+		                }
 				    } else {
 				        char buf[1024];
-				        snprintf(buf, sizeof(buf), language[1120], stats[playerDisconnected]->name);
+				        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
 				        addLobbyChatMessage(0xffffffff, buf);
 					    if (directConnect) {
 			                createWaitingStone(playerDisconnected);
 			            } else {
 			                createInviteButton(playerDisconnected);
 			            }
+				        checkReadyStates();
 				    }
 				    continue;
 			    }
@@ -7007,7 +7325,6 @@ bind_failed:
 			    // got a chat message
 			    else if (packetId == 'CMSG') {
 				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				    playSound(238, 64);
 				    continue;
 			    }
 
@@ -7042,6 +7359,38 @@ bind_failed:
 	        handlePacketsAsClient();
 	    }
         doKeepAlive();
+
+        // push username to lobby
+        if (multiplayer != SINGLE && !directConnect) {
+            if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+			    if (EOS.CurrentLobbyData.currentLobbyIsValid()) {
+			        if (EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0) {
+				        if (EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum)) {
+					        EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
+				        }
+				    }
+			    }
+#endif
+			}
+
+            if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+				if (currentLobby) {
+					const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(
+					    *static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
+					if (memberNumChar) {
+						std::string str = memberNumChar;
+						if (str.empty() || std::to_string(clientnum) != str) {
+							SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby),
+							    "clientnum", std::to_string(clientnum).c_str());
+							printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+						}
+					}
+				}
+#endif
+			}
+		}
 	}
 
 	static void setupNetGameAsServer() {
@@ -7065,10 +7414,10 @@ bind_failed:
 	}
 
 	static void finalizeOnlineLobby() {
-	    closeNetworkInterfaces();
-	    directConnect = false;
 	    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
+	        closeNetworkInterfaces();
+	        directConnect = false;
 		    for ( int c = 0; c < MAXPLAYERS; c++ ) {
 			    if ( steamIDRemote[c] ) {
 				    cpp_Free_CSteamID(steamIDRemote[c]);
@@ -7077,10 +7426,6 @@ bind_failed:
 		    }
 		    ::currentLobbyType = k_ELobbyTypePublic;
 		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-#endif
-	    } else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-		    EOS.createLobby();
 #endif
 	    }
 	    setupNetGameAsServer();
@@ -7203,8 +7548,10 @@ bind_failed:
 		sendPacket(net_sock, -1, net_packet, 0);
     }
 
-	static bool connectToServer(const char* address, LobbyType lobbyType) {
-	    if (!address || address[0] == '\0') {
+	static char last_address[128] = "";
+
+	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType) {
+	    if ((!address || address[0] == '\0') && (!pLobby || lobbyType != LobbyType::LobbyOnline)) {
 	        soundError();
 	        return false;
 	    }
@@ -7213,7 +7560,7 @@ bind_failed:
 	    client_keepalive[0] = ticks;
 
 	    // open wait prompt
-        textPrompt("connect_prompt", "", [](Widget& widget){
+        cancellablePrompt("connect_prompt", "", "Cancel", [](Widget& widget){
             char buf[256];
             int diff = ticks - client_keepalive[0];
             int part = diff % TICKS_PER_SECOND;
@@ -7231,7 +7578,7 @@ bind_failed:
             text->setText(buf);
 
             // here is the connection polling loop for online lobbies
-            // TODO this should be moved to lobbies.cpp (actually it was largely lifted from there - put it back!)
+            // this should be moved to lobbies.cpp (actually it was largely lifted from there - put it back!)
             if (!directConnect) {
 #ifdef STEAMWORKS
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -7255,27 +7602,19 @@ bind_failed:
 
 			                    // record CSteamID of lobby owner (and everybody else)
 			                    // shouldn't this be in steam.cpp?
-			                    int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
 			                    for (int c = 0; c < MAXPLAYERS; ++c) {
 				                    if (steamIDRemote[c]) {
 					                    cpp_Free_CSteamID(steamIDRemote[c]);
 					                    steamIDRemote[c] = NULL;
 				                    }
 			                    }
+			                    const int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(::currentLobby));
 			                    for (int c = 0; c < lobbyMembers; ++c) {
 				                    steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
 			                    }
 			                }
 
 			                sendJoinRequest();
-			            } else {
-		                    resetLobbyJoinFlowState();
-
-		                    // close current window
-		                    auto frame = static_cast<Frame*>(widget.getParent());
-		                    auto dimmer = static_cast<Frame*>(frame->getParent());
-		                    dimmer->removeSelf();
-		                    connectionErrorPrompt("Failed to join lobby.");
 			            }
 			            return;
 		            }
@@ -7308,6 +7647,10 @@ bind_failed:
                 }
 #endif
             }
+            },
+            [](Button&){ // cancel
+            disconnectFromLobby();
+            closePrompt("connect_prompt");
             });
 
         // setup game state
@@ -7326,44 +7669,120 @@ bind_failed:
         // initialize connection
 	    if (lobbyType == LobbyType::LobbyOnline) {
 #ifdef STEAMWORKS
-            const char steam_str[] = "steam:";
-	        if (strncmp(address, steam_str, sizeof(steam_str) - 1) == 0) {
-		        auto lobby = getLobbySteamID(address);
-		        if (lobby) {
-				    connectingToLobby = true;
-				    connectingToLobbyWindow = true;
-		            joinLobbyWaitingForHostResponse = true;
-		            selectedSteamLobby = (int)strtol(address + 6, nullptr, 10);
-	                LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-	                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-			        LobbyHandler.steamValidateAndJoinLobby(*lobby);
-				    return true;
-			    }
+            {
+                CSteamID* lobby = nullptr;
+                if (address) {
+                    const char steam_str[] = "steam:";
+	                if (strncmp(address, steam_str, sizeof(steam_str) - 1) == 0) {
+		                lobby = getLobbySteamID(address);
+	                }
+	                else if ((char)tolower((int)address[0]) == 's' && strlen(address) == 5) {
+		                // save address for next time
+		                snprintf(last_address, sizeof(last_address), "%s", address);
+	                    connectingToLobby = true;
+	                    connectingToLobbyWindow = true;
+                        joinLobbyWaitingForHostResponse = true;
+                        LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                        flushP2PPackets(100, 200);
+                        requestingLobbies = true;
+                        cpp_SteamMatchmaking_RequestLobbyList(address + 1);
+		                return true;
+	                }
+	            }
+	            else if (pLobby) {
+	                lobby = static_cast<CSteamID*>(pLobby);
+	            }
+                if (lobby) {
+		            connectingToLobby = true;
+		            connectingToLobbyWindow = true;
+                    joinLobbyWaitingForHostResponse = true;
+                    //selectedSteamLobby = (int)strtol(address + 6, nullptr, 10);
+                    LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                    LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+
+                    flushP2PPackets(100, 200);
+	                LobbyHandler.steamValidateAndJoinLobby(*lobby);
+		            return true;
+	            }
 	        }
 #endif
 #ifdef USE_EOS
-            const char epic_str[] = "epic:";
-	        if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
-		        auto lobby = getLobbyEpic(address);
-		        if (lobby) {
-	                EOS.bConnectingToLobby = true;
-			        EOS.bConnectingToLobbyWindow = true;
-	                EOS.bJoinLobbyWaitingForHostResponse = true;
+            {
+                EOSFuncs::LobbyData_t* lobby = nullptr;
+                if (address) {
+                    const char epic_str[] = "epic:";
+	                if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
+	                    if (LobbyHandler.crossplayEnabled) {
+		                    lobby = getLobbyEpic(address);
+	                    } else {
+	                        closePrompt("connect_prompt");
+#ifdef STEAMWORKS
+	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
+#else
+	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
+#endif
+	                        multiplayer = SINGLE;
+	                        disconnectFromLobby();
+	                        return false;
+	                    }
+		            }
+		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
+		                // save address for next time
+		                snprintf(last_address, sizeof(last_address), "%s", address);
+	                    if (LobbyHandler.crossplayEnabled) {
+	                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
+	                        EOS.lobbySearchByCode[4] = '\0';
+	                        EOS.LobbySearchResults.useLobbyCode = true;
+                            EOS.bConnectingToLobby = true;
+	                        EOS.bConnectingToLobbyWindow = true;
+                            EOS.bJoinLobbyWaitingForHostResponse = true;
+                            LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                            flushP2PPackets(100, 200);
+	                        EOS.searchLobbies(
+	                            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+		                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+		                        "");
+	                        EOS.LobbySearchResults.useLobbyCode = false;
+		                    return true;
+	                    } else {
+	                        closePrompt("connect_prompt");
+#ifdef STEAMWORKS
+	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
+#else
+	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
+#endif
+	                        multiplayer = SINGLE;
+	                        disconnectFromLobby();
+	                        return false;
+	                    }
+	                }
+		        }
+		        else if (pLobby) {
+		            lobby = static_cast<EOSFuncs::LobbyData_t*>(pLobby);
+		        }
+	            if (lobby) {
+                    EOS.bConnectingToLobby = true;
+		            EOS.bConnectingToLobbyWindow = true;
+                    EOS.bJoinLobbyWaitingForHostResponse = true;
                     LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
                     LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-			        strncpy(EOS.currentLobbyName, lobby->LobbyAttributes.lobbyName.c_str(), 31);
+		            strncpy(EOS.currentLobbyName, lobby->LobbyAttributes.lobbyName.c_str(), 31);
 
-			        // EOS.searchLobbies() nukes the lobby list, so we need to copy this.
-			        std::string lobbyId = lobby->LobbyId.c_str();
-			        EOS.searchLobbies(
-			            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
-				        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
-				        lobbyId.c_str());
-				    return true;
-				}
-	        }
+                    flushP2PPackets(100, 200);
+
+		            // EOS.searchLobbies() nukes the lobby list, so we need to copy this.
+		            std::string lobbyId = lobby->LobbyId.c_str();
+		            EOS.searchLobbies(
+		                EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
+			            EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+			            lobbyId.c_str());
+			        return true;
+			    }
+			}
 #endif
-	        closeText("connect_prompt");
+	        closePrompt("connect_prompt");
 	        connectionErrorPrompt("Failed to connect to lobby.\nInvalid room code.");
 	        multiplayer = SINGLE;
 	        disconnectFromLobby();
@@ -7395,9 +7814,8 @@ bind_failed:
                 port = DEFAULT_PORT;
 		    }
 
-		    // TODO save address for next time
-		    //strcpy(last_ip, connectaddress);
-		    //saveConfig("default.cfg");
+		    // save address for next time
+		    snprintf(last_address, sizeof(last_address), "%s", address);
 
 		    // resolve host's address
 		    printlog("resolving host's address at %s...\n", address);
@@ -7405,7 +7823,7 @@ bind_failed:
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
 			    printlog(buf);
-			    closeText("connect_prompt");
+			    closePrompt("connect_prompt");
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
@@ -7418,7 +7836,7 @@ bind_failed:
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
 			    printlog(buf);
-			    closeText("connect_prompt");
+			    closePrompt("connect_prompt");
 			    connectionErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
@@ -7431,7 +7849,7 @@ bind_failed:
 	    }
 
 	    // connection initiation failed for unknown reason
-	    closeText("connect_prompt");
+	    closePrompt("connect_prompt");
 	    connectionErrorPrompt("Failed to connect to lobby");
 	    multiplayer = SINGLE;
 	    disconnectFromLobby();
@@ -7486,7 +7904,340 @@ bind_failed:
 		"shaman", "hunter"
 	};
 
+	static const char* races[] = {
+	    "Human",
+		"Skeleton",
+		"Vampire",
+		"Succubus",
+		"Goatman",
+		"Automaton",
+		"Incubus",
+		"Goblin",
+		"Insectoid",
+	};
+	static constexpr int num_races = sizeof(races) / sizeof(races[0]);
+
+	static const char* race_descs[] = {
+	    // Human
+	    "\n"
+        "Traits\n"
+        "None\n"
+        "\n"
+        "Resistances\n"
+        "None\n"
+        "\n"
+        "Friendly With\n"
+        "Humans, Automatons",
+
+        // Skeleton
+	    "\n"
+        "Traits\n"
+        "\x1E Does not Hunger or Starve\n"
+        "\x1E HP and MP Regeneration\n"
+        "    reduced by 75%\n"
+        "\x1E Self-Resurrects for 75MP\n"
+        "\x1E Immune to Burning\n"
+        "\x1E Swim speed reduced by 50%\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Ranged\n"
+        "\x1E Axes\n"
+        "\x1E Magic\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Ghouls, Automatons",
+
+        // Vampire
+	    "\n"
+        "Racial Spells\n"
+        "\x1E Bloodletting, Levitation\n"
+        "Traits\n"
+        "\x1E Uses HP when out of MP to\n"
+        "    cast and sustain spells\n"
+        "\x1E Can only sustain hunger\n"
+        "    with Blood Vials\n"
+        "\x1E Kills may drop Blood Vials\n"
+        "\x1E Bloodletting / Assassinate\n"
+        "    kills drop Blood Vials\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Ranged\n"
+        "\x1E Axes\n"
+        "\x1E Magic\n"
+        "Friendly With\n"
+        "\x1E Vampires, Automatons",
+
+        // Succubus
+        "\n"
+        "Racial Spells\n"
+        "\x1E Teleport, Polymorph\n"
+        "Traits\n"
+        "\x1E Cursed equipment can be\n"
+        "    removed; gives bonuses\n"
+        "\x1E Blessed equipment is not\n"
+        "    removable; gives bonuses\n"
+        "\x1E +MP from Strangulation\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Succubi, Incubi,\n"
+        "    Automatons",
+
+        // Goatman
+        "\n"
+        "Traits\n"
+        "\x1E Afflicted with Alcoholism,\n"
+        "    causing Hangovers\n"
+        "\x1E Immune to Drunk dizziness\n"
+        "\x1E +STR +CHR while Drunk\n"
+        "\x1E Can recruit fellow Drunks\n"
+        "\x1E Eats Tins without an Opener\n"
+        "\x1E Immune to Greasy effect\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Goatmen, Automatons",
+
+        // Automaton
+        "\n"
+        "Racial Spells\n"
+        "\x1E Salvage\n"
+        "Traits\n"
+        "\x1E Requires Heat (HT) to\n"
+        "    survive and cast spells\n"
+        "\x1E Regen HT with a hot boiler\n"
+
+        "    fueled by gems and paper\n"
+        "\x1E Can remove cursed items\n"
+        "\x1E Immune to Burning\n"
+        "\x1E +20 to Tinkering Repairs\n"
+        "\x1E Welcomed by Shopkeepers\n"
+        "Resistances\n"
+        "\x1E Ranged\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Automatons, Humans",
+
+        // Incubus
+        "\n"
+        "Racial Spells\n"
+        "\x1E Teleport, Arcane Mark\n"
+        "Traits\n"
+        "\x1E Cursed equipment can be\n"
+        "    removed; gives bonuses\n"
+        "\x1E Blessed equipment is not\n"
+        "    removable; gives bonuses\n"
+        "\x1E +MP from Strangulation\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Magic\n"
+        "\x1E Polearms\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Succubi, Incubi,\n"
+        "    Automatons",
+
+        // Goblin
+        "\n"
+        "Traits\n"
+        "\x1E Worn Equipment has lower\n"
+        "    chance to degrade\n"
+        "\x1E Raising any Melee Weapon\n"
+        "    Skill raises all of them\n"
+        "\x1E Weapon Skills raise slower\n"
+        "\x1E Cannot Memorize new spells\n"
+        "\n"
+        "Resistances\n"
+        "\x1E Swords\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Goblins, Automatons",
+
+        // Insectoid
+        "\n"
+        "Racial Spells\n"
+        "\x1E Flutter, Dash, Spray Acid\n"
+        "Traits\n"
+        "\x1E Requires Energy (EN) to\n"
+        "    survive and cast spells\n"
+        "\x1E Regain EN by consuming\n"
+        "    food and sweet liquids\n"
+        "\x1E Immune to Poison\n"
+        "\x1E Immune to rotten food\n"
+        "Resistances\n"
+        "\x1E Maces\n"
+        "\x1E Unarmed\n"
+        "\n"
+        "Friendly With\n"
+        "\x1E Insectoids, Scarabs\n"
+        "    Scorpions, Automatons\n",
+	};
+
+	static const char* race_descs_right[] = {
+	    // Human
+	    "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "None",
+
+        // Skeleton
+	    "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Maces\n"
+        "\x1E Polearms\n"
+        "\x1E Smite",
+
+        // Vampire
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Maces\n"
+        "\x1E Polearms\n"
+        "\x1E Water\n"
+        "\x1E Smite",
+
+        // Succubus
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Magic\n"
+        "\x1E Polearms\n"
+        "\x1E Smite",
+
+        // Goatman
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Polearms\n"
+        "\x1E Axes\n"
+        "\x1E Ranged\n"
+        "\x1E Magic",
+
+        // Automaton
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Maces\n"
+        "\x1E Magic",
+
+        // Incubus
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Ranged\n"
+        "\x1E Swords\n"
+        "\x1E Smite",
+
+        // Goblin
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Polearms\n"
+        "\x1E Ranged",
+
+        // Insectoid
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "Weaknesses\n"
+        "\x1E Axes\n"
+        "\x1E Polearms\n"
+        "\x1E Ranged",
+	};
+
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+
+    constexpr Uint32 color_dlc0 = makeColorRGB(169, 185, 212);
+    constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
+    constexpr Uint32 color_dlc2 = makeColorRGB(255, 53, 206);
+	constexpr Uint32 color_traits = makeColorRGB(184, 146, 109);
+	constexpr Uint32 color_pro = makeColorRGB(88, 203, 255);
+	constexpr Uint32 color_con = makeColorRGB(255, 56, 56);
+	constexpr Uint32 color_energy = makeColorRGB(21, 255, 0);
+	constexpr Uint32 color_heat = makeColorRGB(241, 129, 78);
 
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
@@ -7500,69 +8251,229 @@ bind_failed:
 		return result;
 	}
 
-	static auto male_button_fn = [](Button& button, int index) {
+	static void update_details_text(Frame& card) {
+	    const int index = card.getOwner();
+        const int race = stats[index]->playerRace;
+
+	    // color title
+	    Uint32 color_race;
+	    if (race >= RACE_SKELETON && race <= RACE_GOATMAN) {
+	        color_race = color_dlc1;
+	    }
+	    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
+	        color_race = color_dlc2;
+	    }
+	    else {
+	        color_race = color_dlc0;
+	    }
+
+	    auto details_title = card.findField("details_title");
+	    if (details_title) {
+	        details_title->clearLinesToColor();
+	        details_title->setText(races[race]);
+            details_title->setColor(color_race);
+	    }
+	    auto details_text = card.findField("details");
+	    if (details_text) {
+	        details_text->clearLinesToColor();
+	        details_text->setText(race_descs[race]);
+
+	    switch (race) {
+	    default: return;
+	    case RACE_HUMAN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(4, color_pro);
+            details_text->addColorToLine(7, color_pro);
+            break;
+	    case RACE_SKELETON:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(9, color_pro);
+            details_text->addColorToLine(15, color_pro);
+            break;
+	    case RACE_VAMPIRE:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(11, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_SUCCUBUS:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(15, color_pro);
+	        break;
+	    case RACE_GOATMAN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_AUTOMATON:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(12, color_pro);
+            details_text->addColorToLine(16, color_pro);
+	        break;
+	    case RACE_INCUBUS:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(15, color_pro);
+	        break;
+	    case RACE_GOBLIN:
+            details_text->addColorToLine(1, color_traits);
+            details_text->addColorToLine(9, color_pro);
+            details_text->addColorToLine(14, color_pro);
+	        break;
+	    case RACE_INSECTOID:
+            details_text->addColorToLine(1, color_pro);
+            details_text->addColorToLine(3, color_traits);
+            details_text->addColorToLine(10, color_pro);
+            details_text->addColorToLine(14, color_pro);
+	        break;
+	    }
+	    }
+	    auto details_text_right = card.findField("details_right");
+	    if (details_text_right) {
+	        details_text_right->clearLinesToColor();
+	        details_text_right->setText(race_descs_right[race]);
+
+            // we expect first word in the right column to always be "Weaknesses"
+            int c;
+            for (c = 0; race_descs_right[race][c] == '\n'; ++c);
+            details_text_right->addColorToLine(c, color_con);
+	    }
+    }
+
+	static void race_button_fn(Button& button, int index) {
+		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+		for (int c = 0; c < num_races; ++c) {
+			auto race = races[c];
+			if (strcmp(button.getName(), race) == 0) {
+				stats[index]->playerRace = c;
+				if (stats[index]->playerRace == RACE_SUCCUBUS) {
+					stats[index]->appearance = 0;
+					stats[index]->sex = FEMALE;
+					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+					auto bottom = card->findFrame("bottom"); assert(bottom);
+					auto female = bottom->findButton("female");
+					auto male = bottom->findButton("male");
+			        female->setColor(makeColor(255, 255, 255, 255));
+			        female->setHighlightColor(makeColor(255, 255, 255, 255));
+			        male->setColor(makeColor(127, 127, 127, 255));
+			        male->setHighlightColor(makeColor(127, 127, 127, 255));
+				}
+				else if (stats[index]->playerRace == RACE_INCUBUS) {
+					stats[index]->appearance = 0;
+					stats[index]->sex = MALE;
+					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+					auto bottom = card->findFrame("bottom"); assert(bottom);
+					auto female = bottom->findButton("female");
+					auto male = bottom->findButton("male");
+			        female->setColor(makeColor(127, 127, 127, 255));
+			        female->setHighlightColor(makeColor(127, 127, 127, 255));
+			        male->setColor(makeColor(255, 255, 255, 255));
+			        male->setHighlightColor(makeColor(255, 255, 255, 255));
+				}
+				else if (stats[index]->playerRace == RACE_HUMAN) {
+					stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+		            auto appearances = frame->findFrame("appearances");
+		            if (appearances) {
+		                appearances->setSelection(stats[index]->appearance);
+		                appearances->scrollToSelection();
+		            }
+				}
+				else {
+					stats[index]->appearance = 0;
+				}
+			} else {
+				auto other_button = frame->findButton(race);
+				if (other_button) {
+				    other_button->setPressed(false);
+				}
+			}
+		}
+		auto disable_abilities = frame->findButton("disable_abilities");
+		if (disable_abilities) {
+			disable_abilities->setPressed(false);
+		}
+		stats[index]->clearStats();
+		initClass(index);
+		sendPlayerOverNet();
+
+		auto card = static_cast<Frame*>(frame->getParent());
+		if (card) {
+		    update_details_text(*card);
+		}
+	}
+
+	static void male_button_fn(Button& button, int index) {
 		button.setColor(makeColor(255, 255, 255, 255));
 		button.setHighlightColor(makeColor(255, 255, 255, 255));
-		auto card = static_cast<Frame*>(button.getParent());
-		auto female = card->findButton("female");
+		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
+		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
+		auto female = bottom->findButton("female");
 		if (female) {
 			female->setColor(makeColor(127, 127, 127, 255));
 			female->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		stats[index]->sex = MALE;
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
-			auto succubus = card->findButton("Succubus");
-			if (succubus) {
-				succubus->setPressed(false);
-			}
-			if (enabledDLCPack2) {
-				stats[index]->playerRace = RACE_INCUBUS;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText("Incubus");
-				}
-				auto incubus = card->findButton("Incubus");
-				if (incubus) {
-					incubus->setPressed(true);
-				}
-				if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
-					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
-						client_classes[index] = CLASS_PUNISHER;
-						auto class_button = card->findButton("class");
-						if (class_button) {
-							class_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
-						}
-					}
-				}
-			} else {
-				stats[index]->playerRace = RACE_HUMAN;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText("Human");
-				}
-				auto human = card->findButton("Human");
-				if (human) {
-					human->setPressed(true);
-				}
-			}
+		    auto subframe = card->findFrame("subframe");
+		    auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
+		    if (succubus) {
+			    succubus->setPressed(false);
+		    }
+		    if (enabledDLCPack2) {
+			    stats[index]->playerRace = RACE_INCUBUS;
+			    auto race = card->findButton("race");
+			    if (race) {
+				    race->setText("Incubus");
+			    }
+			    auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
+			    if (incubus) {
+				    incubus->setPressed(true);
+			    }
+			    if (client_classes[index] == CLASS_MESMER && stats[index]->appearance == 0) {
+				    if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+					    client_classes[index] = CLASS_PUNISHER;
+					    auto class_button = card->findButton("class");
+					    if (class_button) {
+						    class_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Punisher_00.png");
+					    }
+				    }
+			    }
+		    } else {
+			    stats[index]->playerRace = RACE_HUMAN;
+			    auto race = card->findButton("race");
+			    if (race) {
+				    race->setText("Human");
+			    }
+			    auto human = subframe ? subframe->findButton("Human") : nullptr;
+			    if (human) {
+				    human->setPressed(true);
+			    }
+		    }
 		}
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
-	};
+		update_details_text(*card);
+	}
 
-	static auto female_button_fn = [](Button& button, int index) {
+	static void female_button_fn(Button& button, int index) {
 		button.setColor(makeColor(255, 255, 255, 255));
 		button.setHighlightColor(makeColor(255, 255, 255, 255));
-		auto card = static_cast<Frame*>(button.getParent());
-		auto male = card->findButton("male");
+		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
+		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
+		auto male = bottom->findButton("male");
 		if (male) {
 			male->setColor(makeColor(127, 127, 127, 255));
 			male->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		stats[index]->sex = FEMALE;
 		if (stats[index]->playerRace == RACE_INCUBUS) {
-			auto incubus = card->findButton("Incubus");
+		    auto subframe = card->findFrame("subframe");
+			auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
 			if (incubus) {
 				incubus->setPressed(false);
 			}
@@ -7572,7 +8483,7 @@ bind_failed:
 				if (race) {
 					race->setText("Succubus");
 				}
-				auto succubus = card->findButton("Succubus");
+				auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
 				if (succubus) {
 					succubus->setPressed(true);
 				}
@@ -7591,7 +8502,7 @@ bind_failed:
 				if (race) {
 					race->setText("Human");
 				}
-				auto human = card->findButton("Human");
+				auto human = subframe ? subframe->findButton("Human") : nullptr;
 				if (human) {
 					human->setPressed(true);
 				}
@@ -7600,7 +8511,8 @@ bind_failed:
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
-	};
+		update_details_text(*card);
+	}
 
 	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
@@ -7631,7 +8543,7 @@ bind_failed:
 		return card;
 	}
 
-	static void characterCardGameSettingsMenu(int index) {
+	static void characterCardGameFlagsMenu(int index) {
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 664);
@@ -7776,7 +8688,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -7802,6 +8714,441 @@ bind_failed:
 	}
 
 	static void characterCardLobbySettingsMenu(int index) {
+		const bool local = currentLobbyType == LobbyType::LobbyLocal || currentLobbyType == LobbyType::LobbyJoined;
+		const bool online = currentLobbyType == LobbyType::LobbyOnline;
+
+		auto card = initCharacterCard(index, 424);
+		const std::string name = std::string("card") + std::to_string(index);
+
+		static void (*back_fn)(int) = [](int index){
+			createCharacterCard(index);
+			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			auto button = card->findButton("game_settings"); assert(button);
+			button->select();
+		};
+
+		switch (index) {
+		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
+		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
+		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
+		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
+		}
+
+		auto backdrop = card->addImage(
+			card->getActualSize(),
+			0xffffffff,
+			"*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Window00.png",
+			"backdrop"
+		);
+
+		auto header = card->addField("header", 64);
+		header->setSize(SDL_Rect{30, 8, 264, 50});
+		header->setFont(smallfont_outline);
+		header->setText("LOBBY SETTINGS");
+		header->setJustify(Field::justify_t::CENTER);
+
+		auto custom_difficulty = card->addButton("custom_difficulty");
+		custom_difficulty->setColor(makeColor(255, 255, 255, 255));
+		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
+		custom_difficulty->setSize(SDL_Rect{102, 68, 120, 48});
+		custom_difficulty->setBackground("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Customize00A.png");
+		custom_difficulty->setFont(smallfont_outline);
+		custom_difficulty->setText("Game Flags");
+		custom_difficulty->setWidgetSearchParent(name.c_str());
+		custom_difficulty->addWidgetAction("MenuStart", "confirm");
+		custom_difficulty->setWidgetBack("back_button");
+		custom_difficulty->setWidgetUp("hard");
+		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
+		custom_difficulty->setWidgetRight("custom");
+		switch (index) {
+		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(0);}); break;
+		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(1);}); break;
+		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(2);}); break;
+		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(3);}); break;
+		}
+		custom_difficulty->select();
+
+		auto invite_label = card->addField("invite_label", 64);
+		invite_label->setSize(SDL_Rect{82, 146, 122, 26});
+		invite_label->setFont(smallfont_outline);
+		invite_label->setText("Invite Only");
+		invite_label->setJustify(Field::justify_t::CENTER);
+		if (!online) {
+			invite_label->setColor(makeColor(70, 62, 59, 255));
+
+			auto invite = card->addImage(
+				SDL_Rect{204, 146, 26, 26},
+				0xffffffff,
+				"*images/ui/Main Menus/sublist_item-locked.png",
+				"invite"
+			);
+		} else {
+			invite_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto invite = card->addButton("invite");
+			invite->setSize(SDL_Rect{204, 146, 30, 30});
+			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			invite->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			invite->setStyle(Button::style_t::STYLE_RADIO);
+			invite->setBorder(0);
+			invite->setColor(0);
+			invite->setBorderColor(0);
+			invite->setHighlightColor(0);
+			invite->setWidgetSearchParent(name.c_str());
+			invite->addWidgetAction("MenuStart", "confirm");
+			invite->setWidgetBack("back_button");
+			invite->setWidgetUp("custom");
+			invite->setWidgetDown("player_count_2");
+			if (index != 0) {
+				invite->setCallback([](Button&){soundError();});
+			} else {
+			    invite->setCallback([](Button& button){
+			        soundActivate();
+			        auto parent = static_cast<Frame*>(button.getParent());
+			        auto invite = parent->findButton("invite"); assert(invite);
+			        auto friends = parent->findButton("friends"); assert(friends);
+			        auto open = parent->findButton("open"); assert(open);
+			        friends->setPressed(false);
+			        open->setPressed(false);
+			        // TODO set lobby state to invite-only
+			        });
+			}
+		}
+
+		auto friends_label = card->addField("friends_label", 64);
+		friends_label->setSize(SDL_Rect{82, 178, 122, 26});
+		friends_label->setFont(smallfont_outline);
+		friends_label->setText("Friends Only");
+		friends_label->setJustify(Field::justify_t::CENTER);
+		if (!online) {
+			friends_label->setColor(makeColor(70, 62, 59, 255));
+
+			auto friends = card->addImage(
+				SDL_Rect{204, 178, 26, 26},
+				0xffffffff,
+				"*images/ui/Main Menus/sublist_item-locked.png",
+				"friends"
+			);
+		} else {
+			friends_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto friends = card->addButton("friends");
+			friends->setSize(SDL_Rect{202, 176, 30, 30});
+			friends->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			friends->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			friends->setStyle(Button::style_t::STYLE_RADIO);
+			friends->setBorder(0);
+			friends->setColor(0);
+			friends->setBorderColor(0);
+			friends->setHighlightColor(0);
+			friends->setWidgetSearchParent(name.c_str());
+			friends->addWidgetAction("MenuStart", "confirm");
+			friends->setWidgetBack("back_button");
+			friends->setWidgetUp("invite");
+			friends->setWidgetDown("open");
+			if (index != 0) {
+				friends->setCallback([](Button&){soundError();});
+			} else {
+			    friends->setCallback([](Button& button){
+			        soundActivate();
+			        auto parent = static_cast<Frame*>(button.getParent());
+			        auto invite = parent->findButton("invite"); assert(invite);
+			        auto friends = parent->findButton("friends"); assert(friends);
+			        auto open = parent->findButton("open"); assert(open);
+			        invite->setPressed(false);
+			        open->setPressed(false);
+			        // TODO set lobby state to searchable by friends only
+			        });
+			}
+		}
+
+		auto open_label = card->addField("open_label", 64);
+		open_label->setSize(SDL_Rect{82, 210, 122, 26});
+		open_label->setFont(smallfont_outline);
+		open_label->setText("Open Lobby");
+		open_label->setJustify(Field::justify_t::CENTER);
+		if (!online) {
+			open_label->setColor(makeColor(70, 62, 59, 255));
+
+			auto open = card->addImage(
+				SDL_Rect{204, 210, 26, 26},
+				0xffffffff,
+				"*images/ui/Main Menus/sublist_item-locked.png",
+				"open"
+			);
+		} else {
+			open_label->setColor(makeColor(166, 123, 81, 255));
+
+			auto open = card->addButton("open");
+			open->setSize(SDL_Rect{202, 208, 30, 30});
+			open->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			open->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
+			open->setStyle(Button::style_t::STYLE_RADIO);
+			open->setBorder(0);
+			open->setColor(0);
+			open->setBorderColor(0);
+			open->setHighlightColor(0);
+			open->setWidgetSearchParent(name.c_str());
+			open->addWidgetAction("MenuStart", "confirm");
+			open->setWidgetBack("back_button");
+			open->setWidgetUp("friends");
+			open->setWidgetDown("confirm");
+			if (index != 0) {
+				open->setCallback([](Button&){soundError();});
+			} else {
+			    open->setCallback([](Button& button){
+			        soundActivate();
+			        auto parent = static_cast<Frame*>(button.getParent());
+			        auto invite = parent->findButton("invite"); assert(invite);
+			        auto friends = parent->findButton("friends"); assert(friends);
+			        auto open = parent->findButton("open"); assert(open);
+			        invite->setPressed(false);
+			        friends->setPressed(false);
+			        // TODO set lobby state open to all
+			        });
+			}
+		}
+
+		auto player_count_label = card->addField("player_count_label", 64);
+		player_count_label->setSize(SDL_Rect{40, 266, 116, 40});
+		player_count_label->setFont(smallfont_outline);
+		player_count_label->setText("Set Player\nCount");
+		player_count_label->setJustify(Field::justify_t::CENTER);
+
+        for (int c = 0; c < 3; ++c) {
+            const std::string button_name = std::string("player_count_") + std::to_string(c + 2);
+		    auto player_count = card->addButton(button_name.c_str());
+		    player_count->setSize(SDL_Rect{156 + 44 * c, 266, 40, 40});
+		    player_count->setFont(smallfont_outline);
+		    player_count->setText(std::to_string(c + 2).c_str());
+		    player_count->setBorder(0);
+		    player_count->setTextColor(uint32ColorWhite);
+	        player_count->setTextHighlightColor(uint32ColorWhite);
+		    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
+		    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
+		    player_count->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
+		    player_count->setColor(uint32ColorWhite);
+		    player_count->setWidgetSearchParent(name.c_str());
+			player_count->addWidgetAction("MenuStart", "confirm");
+			player_count->setWidgetBack("back_button");
+			player_count->setWidgetUp(online ? "open" : "custom_difficulty");
+		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
+		    player_count->setWidgetRight((std::string("player_count_") + std::to_string(c + 3)).c_str());
+		    player_count->setWidgetDown((std::string("kick_player_") + std::to_string(c + 2)).c_str());
+		    switch (c) {
+		    default: soundError(); break;
+		    case 0:
+		        player_count->setCallback([](Button&){
+		            if (client_disconnected[2] && client_disconnected[3]) {
+	                    lockSlot(1, false);
+	                    lockSlot(2, true);
+	                    lockSlot(3, true);
+		                soundActivate();
+		            } else {
+		                if (!client_disconnected[2] && !client_disconnected[3]) {
+		                    char prompt[1024];
+		                    snprintf(prompt, sizeof(prompt), "This will kick %s\nand %s!",
+		                        players[2]->getAccountName(), players[3]->getAccountName());
+		                    binaryPrompt(prompt, "Okay", "Go Back",
+		                        [](Button&){ // okay
+	                                lockSlot(1, false);
+	                                lockSlot(2, true);
+	                                lockSlot(3, true);
+		                            soundActivate();
+		                            closeBinary();
+		                            },
+		                        [](Button&){ // go back
+	                                soundCancel();
+	                                closeBinary();
+		                            });
+		                }
+		                else if (!client_disconnected[2]) {
+		                    char prompt[1024];
+		                    snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[2]->getAccountName());
+		                    binaryPrompt(prompt, "Okay", "Go Back",
+		                        [](Button&){ // okay
+	                                lockSlot(1, false);
+	                                lockSlot(2, true);
+	                                lockSlot(3, true);
+		                            soundActivate();
+		                            closeBinary();
+		                            },
+		                        [](Button&){ // go back
+	                                soundCancel();
+	                                closeBinary();
+		                            });
+		                }
+		                else if (!client_disconnected[3]) {
+		                    char prompt[1024];
+		                    snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
+		                    binaryPrompt(prompt, "Okay", "Go Back",
+		                        [](Button&){ // okay
+	                                lockSlot(1, false);
+	                                lockSlot(2, true);
+	                                lockSlot(3, true);
+		                            soundActivate();
+		                            closeBinary();
+		                            },
+		                        [](Button&){ // go back
+	                                soundCancel();
+	                                closeBinary();
+		                            });
+		                }
+	                }
+	                });
+	            break;
+		    case 1:
+		        player_count->setCallback([](Button&){
+		            if (client_disconnected[3]) {
+	                    lockSlot(1, false);
+	                    lockSlot(2, false);
+	                    lockSlot(3, true);
+		                soundActivate();
+		            } else {
+		                char prompt[1024];
+		                snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
+		                binaryPrompt(prompt, "Yes", "No",
+		                    [](Button&){ // yes
+                                lockSlot(1, false);
+                                lockSlot(2, false);
+                                lockSlot(3, true);
+	                            soundActivate();
+	                            closeBinary();
+		                        },
+		                    [](Button&){ // no
+	                            soundCancel();
+	                            closeBinary();
+		                        });
+	                }
+	                });
+	            break;
+		    case 2:
+		        player_count->setCallback([](Button&){
+	                lockSlot(1, false);
+	                lockSlot(2, false);
+	                lockSlot(3, false);
+	                soundActivate();
+	                });
+	            break;
+		    }
+        }
+
+		auto kick_player_label = card->addField("kick_player_label", 64);
+		kick_player_label->setSize(SDL_Rect{40, 310, 116, 40});
+		kick_player_label->setFont(smallfont_outline);
+		kick_player_label->setText("Kick Player");
+		kick_player_label->setJustify(Field::justify_t::CENTER);
+
+        for (int c = 0; c < 3; ++c) {
+            const std::string button_name = std::string("kick_player_") + std::to_string(c + 2);
+		    auto kick_player = card->addButton(button_name.c_str());
+		    kick_player->setSize(SDL_Rect{156 + 44 * c, 310, 40, 40});
+		    kick_player->setFont(smallfont_outline);
+		    kick_player->setText(std::to_string(c + 2).c_str());
+		    kick_player->setBorder(0);
+		    kick_player->setTextColor(uint32ColorWhite);
+	        kick_player->setTextHighlightColor(uint32ColorWhite);
+		    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
+		    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
+		    kick_player->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
+		    kick_player->setColor(uint32ColorWhite);
+		    kick_player->setWidgetSearchParent(name.c_str());
+			kick_player->addWidgetAction("MenuStart", "confirm");
+			kick_player->setWidgetBack("back_button");
+		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
+		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
+		    kick_player->setWidgetUp((std::string("player_count_") + std::to_string(c + 2)).c_str());
+		    switch (c) {
+		    default: soundError(); break;
+		    case 0:
+		        kick_player->setCallback([](Button&){
+		            if (client_disconnected[1]) {
+		                soundError();
+		                return;
+		            }
+		            char prompt[1024];
+		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[1]->getAccountName());
+		            binaryPrompt(prompt, "Yes", "No",
+		                [](Button&){ // yes
+	                        soundActivate();
+	                        closeBinary();
+	                        kickPlayer(1);
+		                    },
+		                [](Button&){ // no
+	                        soundCancel();
+	                        closeBinary();
+		                    });
+		            });
+		        break;
+		    case 1:
+		        kick_player->setCallback([](Button&){
+		            if (client_disconnected[2]) {
+		                soundError();
+		                return;
+		            }
+		            char prompt[1024];
+		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[2]->getAccountName());
+		            binaryPrompt(prompt, "Yes", "No",
+		                [](Button&){ // yes
+	                        soundActivate();
+	                        closeBinary();
+	                        kickPlayer(2);
+		                    },
+		                [](Button&){ // no
+		                    soundCancel();
+		                    closeBinary();
+		                    });
+		            });
+		        break;
+		    case 2:
+		        kick_player->setCallback([](Button&){
+		            if (client_disconnected[3]) {
+		                soundError();
+		                return;
+		            }
+		            char prompt[1024];
+		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[3]->getAccountName());
+		            binaryPrompt(prompt, "Yes", "No",
+		                [](Button&){ // yes
+		                    soundActivate();
+		                    closeBinary();
+		                    kickPlayer(3);
+		                    },
+		                [](Button&){ // no
+		                    soundCancel();
+		                    closeBinary();
+		                    });
+		            });
+		        break;
+		    }
+        }
+
+		if (local || loadingsavegame) {
+			player_count_label->setColor(makeColor(70, 62, 59, 255));
+			kick_player_label->setColor(makeColor(70, 62, 59, 255));
+			for (int c = 0; c < 3; ++c) {
+			    auto player_count = card->findButton((std::string("player_count_") + std::to_string(c + 2)).c_str());
+			    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
+			    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
+		        player_count->setDisabled(true);
+			    auto kick_player = card->findButton((std::string("kick_player_") + std::to_string(c + 2)).c_str());
+			    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
+			    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
+		        kick_player->setDisabled(true);
+		    }
+		} else {
+		    player_count_label->setColor(makeColor(166, 123, 81, 255));
+		    kick_player_label->setColor(makeColor(166, 123, 81, 255));
+		}
+	}
+
+	static void characterCardLobbySettingsMenuOLD(int index) {
+	    /*
+	     * NOTE: This is the old lobby settings menu that includes
+	     * Difficulty options. It is disabled for now!
+	     */
+
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 580);
@@ -7921,7 +9268,7 @@ bind_failed:
 			normal->select();
 		}
 
-		// TODO on non-english languages, normal text will need to be used.
+		// NOTE: on non-english languages, normal text will need to be used.
         // here's the code for that, but how to gate it?
 		/*auto hard_label = card->addField("hard_label", 64);
 		hard_label->setSize(SDL_Rect{68, 178, 144, 26});
@@ -7977,10 +9324,10 @@ bind_failed:
 		custom_difficulty->setWidgetDown("invite");
 		custom_difficulty->setWidgetRight("custom");
 		switch (index) {
-		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(0);}); break;
-		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(1);}); break;
-		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(2);}); break;
-		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameSettingsMenu(3);}); break;
+		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(0);}); break;
+		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(1);}); break;
+		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(2);}); break;
+		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(3);}); break;
 		}
 
 		auto custom = card->addButton("custom");
@@ -8033,7 +9380,7 @@ bind_failed:
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
-				achievements->setColor(makeColor(40, 180, 37, 255));
+				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
@@ -8176,8 +9523,10 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardRaceMenu(int index) {
-		auto card = initCharacterCard(index, 488);
+	static void characterCardRaceMenu(int index, bool details, int selection) {
+		auto card = initCharacterCard(index, details ? 664 : 488);
+
+		static int race_selection[MAXPLAYERS];
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -8197,7 +9546,9 @@ bind_failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Window_01.png",
+			details ?
+			    "*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/RaceSelect_ScrollList_Details.png":
+			    "*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/RaceSelect_ScrollList.png",
 			"backdrop"
 		);
 
@@ -8207,104 +9558,168 @@ bind_failed:
 		header->setText("RACE SELECTION");
 		header->setJustify(Field::justify_t::CENTER);
 
-		static const char* dlcRaces1[] = {
-			"Skeleton",
-			"Vampire",
-			"Succubus",
-			"Goatman"
-		};
+		if (details) {
+		    const auto font = smallfont_no_outline;
 
-		static const char* dlcRaces2[] = {
-			"Automaton",
-			"Incubus",
-			"Goblin",
-			"Insectoid"
-		};
+		    auto details_title = card->addField("details_title", 1024);
+		    details_title->setFont(font);
+		    details_title->setSize(SDL_Rect{40, 68, 242, 298});
+		    details_title->setHJustify(Field::justify_t::CENTER);
 
-		static auto race_fn = [](Button& button, int index){
-			Frame* frame = static_cast<Frame*>(button.getParent());
-			std::vector<const char*> allRaces = { "Human" };
-			allRaces.insert(allRaces.end(), std::begin(dlcRaces1), std::end(dlcRaces1));
-			allRaces.insert(allRaces.end(), std::begin(dlcRaces2), std::end(dlcRaces2));
-			for (int c = 0; c < allRaces.size(); ++c) {
-				auto race = allRaces[c];
-				if (strcmp(button.getName(), race) == 0) {
-					stats[index]->playerRace = c;
-					if (stats[index]->playerRace == RACE_SUCCUBUS) {
-						stats[index]->appearance = 0;
-						stats[index]->sex = FEMALE;
-					}
-					else if (stats[index]->playerRace == RACE_INCUBUS) {
-						stats[index]->appearance = 0;
-						stats[index]->sex = MALE;
-					}
-					else if (stats[index]->playerRace == RACE_HUMAN) {
-						stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
-			            auto appearances = frame->findFrame("appearances"); assert(appearances);
-			            appearances->setSelection(stats[index]->appearance);
-			            appearances->scrollToSelection();
-					}
-					else {
-						stats[index]->appearance = 0;
-					}
-				} else {
-					auto other_button = frame->findButton(race);
-					if (other_button) {
-					    other_button->setPressed(false);
-					}
-				}
-			}
-			auto disable_abilities = frame->findButton("disable_abilities");
-			if (disable_abilities) {
-				disable_abilities->setPressed(false);
-			}
-			stats[index]->clearStats();
-			initClass(index);
-			sendPlayerOverNet();
-		};
+		    auto details_text = card->addField("details", 1024);
+		    details_text->setFont(font);
+		    details_text->setSize(SDL_Rect{40, 68, 242, 298});
 
-		auto human = card->addButton("Human");
-		human->setSize(SDL_Rect{54, 80, 30, 30});
-		human->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-		human->setStyle(Button::style_t::STYLE_RADIO);
-		human->setBorder(0);
-		human->setColor(0);
-		human->setBorderColor(0);
-		human->setHighlightColor(0);
-		human->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		human->addWidgetAction("MenuStart", "confirm");
-		human->setWidgetBack("back_button");
-		human->setWidgetRight("appearances");
-		if (enabledDLCPack1) {
-			human->setWidgetDown(dlcRaces1[0]);
-		}
-		else if (enabledDLCPack2) {
-			human->setWidgetDown(dlcRaces2[0]);
-		}
-		else {
-			human->setWidgetDown("disable_abilities");
-		}
-		switch (index) {
-		case 0: human->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-		case 1: human->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-		case 2: human->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-		case 3: human->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-		}
-		if (stats[index]->playerRace == RACE_HUMAN) {
-			human->setPressed(true);
-			human->select();
+		    auto details_text_right = card->addField("details_right", 1024);
+		    details_text_right->setFont(font);
+		    details_text_right->setSize(SDL_Rect{161, 68, 121, 298});
+
+		    update_details_text(*card);
 		}
 
-		auto human_label = card->addField("human_label", 32);
-		human_label->setColor(makeColor(166, 123, 81, 255));
-		human_label->setText("Human");
-		human_label->setFont(smallfont_outline);
-		human_label->setSize(SDL_Rect{86, 78, 66, 36});
-		human_label->setHJustify(Button::justify_t::LEFT);
-		human_label->setVJustify(Button::justify_t::CENTER);
+		auto subframe = card->addFrame("subframe");
+		subframe->setSize(details ?
+		    SDL_Rect{38, 382, 234, 106}:
+		    SDL_Rect{38, 68, 234, 208});
+		subframe->setActualSize(SDL_Rect{0, 0, 234, 36 * num_races});
+		subframe->setBorder(0);
+		subframe->setColor(0);
+		subframe->setTickCallback([](Widget& widget){
+		    auto subframe = static_cast<Frame*>(&widget); assert(subframe);
+		    auto card = static_cast<Frame*>(widget.getParent()); assert(card);
+		    auto gradient = card->findImage("gradient"); assert(gradient);
 
-		auto appearances = card->addFrame("appearances");
-		appearances->setSize(SDL_Rect{152, 78, 122, 36});
+            const auto grad_size = gradient->pos.h / 2;
+            const auto size = subframe->getSize();
+		    const auto asize = subframe->getActualSize();
+		    const float fade = ((asize.h - grad_size) - (asize.y + size.h)) / (float)grad_size;
+		    const float b_fade = std::min(std::max(0.f, fade), 1.f);
+		    gradient->color = makeColor(255, 255, 255, 127 * b_fade);
+		    });
+
+		auto slider = card->addSlider("scroll_slider");
+		slider->setRailSize(details ? SDL_Rect{278, 376, 12, 118} : SDL_Rect{278, 62, 12, 220});
+		slider->setHandleSize(SDL_Rect{0, 0, 20, 28});
+		slider->setHandleImage("*images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
+		slider->setBorder(14);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subframe->getActualSize().h - subframe->getSize().h);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			Frame* subframe = frame->findFrame("subframe"); assert(subframe);
+			auto actualSize = subframe->getActualSize();
+			actualSize.y = slider.getValue();
+			subframe->setActualSize(actualSize);
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			Frame* subframe = frame->findFrame("subframe"); assert(subframe);
+			auto actualSize = subframe->getActualSize();
+			slider->setValue(actualSize.y);
+			});
+		slider->setWidgetSearchParent(card->getName());
+		slider->setWidgetLeft(races[0]);
+	    slider->setWidgetBack("back_button");
+	    slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+	    slider->setHideSelectors(true);
+
+		auto hover_image = subframe->addImage(
+			SDL_Rect{0, 4 + 36 * stats[index]->playerRace, 234, 30},
+			0xffffffff,
+			"*#images/ui/Main Menus/Play/PlayerCreation/RaceSelection/sublist_item-hover.png",
+		    "hover");
+
+		auto gradient = card->addImage(
+		    SDL_Rect{38, details ? 446 : 234, 234, 42},
+		    0xffffffff,
+			"*#images/ui/Main Menus/Play/PlayerCreation/RaceSelection/sublist_gradient.png",
+		    "gradient");
+		gradient->ontop = true;
+
+        for (int c = 0; c < num_races; ++c) {
+		    auto race = subframe->addButton(races[c]);
+		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
+		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setDisabled(true);
+		    }
+		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+		        race->setDisabled(true);
+		    }
+		    else {
+		        race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
+		        race->setDisabled(false);
+		    }
+		    race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
+		    race->setStyle(Button::style_t::STYLE_RADIO);
+		    race->setBorder(0);
+		    race->setColor(0xffffffff);
+		    race->setBorderColor(0);
+		    race->setHighlightColor(0xffffffff);
+		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+		    race->addWidgetAction("MenuStart", "confirm");
+		    race->setWidgetBack("back_button");
+		    if (c == 0) {
+		        race->setWidgetRight("appearances");
+		    }
+		    if (c < num_races - 1) {
+		        race->setWidgetDown(races[c + 1]);
+		    }
+		    /*else {
+		        race->setWidgetDown("disable_abilities");
+		    }*/
+		    if (c > 0) {
+		        race->setWidgetUp(races[c - 1]);
+		    }
+		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		    race->addWidgetAction("MenuPageLeft", "male");
+		    race->addWidgetAction("MenuPageRight", "female");
+		    race->addWidgetAction("MenuAlt1", "disable_abilities");
+		    race->addWidgetAction("MenuAlt2", "show_race_info");
+		    switch (index) {
+		    case 0: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 0);}); break;
+		    case 1: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 1);}); break;
+		    case 2: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 2);}); break;
+		    case 3: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 3);}); break;
+		    }
+		    if (stats[index]->playerRace == c) {
+			    race->setPressed(true);
+		    }
+		    if ((stats[index]->playerRace == c && selection == -1) ||
+		        (selection >= 0 && selection == c)) {
+			    race->select();
+			    race->scrollParent();
+		    }
+		    race->setTickCallback([](Widget& widget){
+		        if (widget.isSelected()) {
+		            auto button = static_cast<Button*>(&widget); assert(button);
+		            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+		            auto hover = subframe->findImage("hover"); assert(hover);
+		            hover->pos.y = button->getSize().y;
+		            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
+		        }
+		        });
+
+		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
+		    if (c >= 1 && c <= 4) {
+		        label->setColor(color_dlc1);
+		    } else if (c >= 5 && c <= 8) {
+		        label->setColor(color_dlc2);
+		    } else {
+		        label->setColor(color_dlc0);
+		    }
+		    label->setText(races[c]);
+		    label->setFont(smallfont_outline);
+		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
+		    label->setHJustify(Field::justify_t::LEFT);
+		    label->setVJustify(Field::justify_t::CENTER);
+		}
+
+		auto appearances = subframe->addFrame("appearances");
+		appearances->setSize(SDL_Rect{102, 0, 122, 36});
 		appearances->setActualSize(SDL_Rect{0, 4, 122, 36});
 		appearances->setFont("fonts/pixel_maz.ttf#32#2");
 		appearances->setBorder(0);
@@ -8317,26 +9732,22 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
 		appearances->setWidgetBack("back_button");
-		appearances->setWidgetLeft("Human");
-		if (enabledDLCPack2) {
-			appearances->setWidgetDown(dlcRaces2[0]);
-		}
-		else if (enabledDLCPack1) {
-			appearances->setWidgetDown(dlcRaces1[0]);
-		}
-		else {
-			appearances->setWidgetDown("disable_abilities");
-		}
+	    appearances->addWidgetAction("MenuPageLeft", "male");
+	    appearances->addWidgetAction("MenuPageRight", "female");
+	    appearances->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearances->addWidgetAction("MenuAlt2", "show_race_info");
+		appearances->setWidgetLeft(races[0]);
+		appearances->setWidgetDown(races[1]);
 		appearances->setTickCallback([](Widget& widget){
 			auto frame = static_cast<Frame*>(&widget);
-			auto card = static_cast<Frame*>(frame->getParent());
+			auto parent = static_cast<Frame*>(frame->getParent());
 			auto backdrop = frame->findImage("background"); assert(backdrop);
 			auto box = frame->findImage("selection_box"); assert(box);
 			box->disabled = !frame->isSelected();
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
-			auto appearance_uparrow = card->findButton("appearance_uparrow");
-			auto appearance_downarrow = card->findButton("appearance_downarrow");
+			auto appearance_uparrow = parent->findButton("appearance_uparrow");
+			auto appearance_downarrow = parent->findButton("appearance_downarrow");
 			if (frame->isActivated()) {
 				appearance_uparrow->setDisabled(false);
 				appearance_uparrow->setInvisible(false);
@@ -8350,6 +9761,11 @@ bind_failed:
 				appearance_downarrow->setDisabled(true);
 				appearance_downarrow->setInvisible(true);
 			}
+	        if (widget.isSelected()) {
+	            auto hover = parent->findImage("hover"); assert(hover);
+	            hover->pos.y = frame->getSize().y + 2;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
+	        }
 			});
 
 		auto appearance_backdrop = appearances->addImage(
@@ -8366,15 +9782,15 @@ bind_failed:
 			"selection_box"
 		);
 		appearance_selected->disabled = true;
-		appearance_selected->ontop = true;
 
-		auto appearance_uparrow = card->addButton("appearance_uparrow");
-		appearance_uparrow->setSize(SDL_Rect{198, 58, 32, 20});
-		appearance_uparrow->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonUp_00.png");
+		auto appearance_uparrow = subframe->addButton("appearance_uparrow");
+		appearance_uparrow->setSize(SDL_Rect{92, 2, 20, 32});
+		appearance_uparrow->setBackground("*images/ui/Main Menus/sublist_item-pickleft.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
 		appearance_uparrow->setInvisible(true);
+		appearance_uparrow->setOntop(true);
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
@@ -8384,14 +9800,30 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+	    appearance_uparrow->setTickCallback([](Widget& widget){
+	        if (widget.isSelected()) {
+	            auto button = static_cast<Button*>(&widget); assert(button);
+	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+	            auto hover = subframe->findImage("hover"); assert(hover);
+	            hover->pos.y = button->getSize().y;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
+	        }
+	        });
+		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
+		appearance_uparrow->setWidgetBack("back_button");
+	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
+	    appearance_uparrow->addWidgetAction("MenuPageRight", "female");
+	    appearance_uparrow->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearance_uparrow->addWidgetAction("MenuAlt2", "show_race_info");
 
-		auto appearance_downarrow = card->addButton("appearance_downarrow");
-		appearance_downarrow->setSize(SDL_Rect{198, 114, 32, 20});
-		appearance_downarrow->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDown_00.png");
+		auto appearance_downarrow = subframe->addButton("appearance_downarrow");
+		appearance_downarrow->setSize(SDL_Rect{214, 2, 20, 32});
+		appearance_downarrow->setBackground("*images/ui/Main Menus/sublist_item-pickright.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
 		appearance_downarrow->setInvisible(true);
+		appearance_downarrow->setOntop(true);
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
@@ -8402,6 +9834,21 @@ bind_failed:
 			appearances->activateSelection();
 			button.select();
 			});
+	    appearance_downarrow->setTickCallback([](Widget& widget){
+	        if (widget.isSelected()) {
+	            auto button = static_cast<Button*>(&widget); assert(button);
+	            auto subframe = static_cast<Frame*>(widget.getParent()); assert(subframe);
+	            auto hover = subframe->findImage("hover"); assert(hover);
+	            hover->pos.y = button->getSize().y;
+	            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
+	        }
+	        });
+		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
+		appearance_downarrow->setWidgetBack("back_button");
+	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
+	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
+	    appearance_downarrow->addWidgetAction("MenuAlt1", "disable_abilities");
+	    appearance_downarrow->addWidgetAction("MenuAlt2", "show_race_info");
 
 		static const char* appearance_names[] = {
 			"Landguard", "Northborn", "Firebrand", "Hardbred",
@@ -8423,7 +9870,7 @@ bind_failed:
 		for (int c = 0; c < num_appearances; ++c) {
 			auto name = appearance_names[c];
 			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
-			entry->color = makeColor(166, 123, 81, 255);
+			entry->color = color_dlc0;
 			entry->text = name;
 			switch (index) {
 			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
@@ -8438,144 +9885,23 @@ bind_failed:
 			}
 		}
 
-		if (enabledDLCPack1) {
-			for (int c = 0; c < 4; ++c) {
-				auto race = card->addButton(dlcRaces1[c]);
-				race->setSize(SDL_Rect{38, 130 + 38 * c, 30, 30});
-				race->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-				race->setStyle(Button::style_t::STYLE_RADIO);
-				race->setBorder(0);
-				race->setColor(0);
-				race->setBorderColor(0);
-				race->setHighlightColor(0);
-				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-				race->addWidgetAction("MenuStart", "confirm");
-				race->setWidgetBack("back_button");
-				if (enabledDLCPack2) {
-					race->setWidgetRight(dlcRaces2[c]);
-				}
-				if (c > 0) {
-					race->setWidgetUp(dlcRaces1[c - 1]);
-				} else {
-					race->setWidgetUp("Human");
-				}
-				if (c < 3) {
-					race->setWidgetDown(dlcRaces1[c + 1]);
-				} else {
-					race->setWidgetDown("disable_abilities");
-				}
-				switch (index) {
-				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-				}
+		auto bottom = card->addFrame("bottom");
+		bottom->setSize(details ?
+		    SDL_Rect{0, 494, 324, 170}:
+		    SDL_Rect{0, 282, 324, 170});
+		bottom->setBorder(0);
+		bottom->setColor(0);
 
-				if (stats[index]->playerRace == RACE_SKELETON + c) {
-					race->setPressed(true);
-					race->select();
-				}
-
-				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(180, 133, 13, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces1[c]);
-			}
-		} else {
-			auto blockers = card->addImage(
-				SDL_Rect{40, 132, 26, 140},
-				0xffffffff,
-				"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Blocker_00.png",
-				"blockers"
-			);
-			for (int c = 0; c < 4; ++c) {
-				auto label = card->addField((std::string(dlcRaces1[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{70, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(70, 62, 59, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces1[c]);
-			}
-		}
-
-		if (enabledDLCPack2) {
-			for (int c = 0; c < 4; ++c) {
-				auto race = card->addButton(dlcRaces2[c]);
-				race->setSize(SDL_Rect{172, 130 + 38 * c, 30, 30});
-				race->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Round_00.png");
-				race->setStyle(Button::style_t::STYLE_RADIO);
-				race->setBorder(0);
-				race->setColor(0);
-				race->setBorderColor(0);
-				race->setHighlightColor(0);
-				race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-				race->addWidgetAction("MenuStart", "confirm");
-				race->setWidgetBack("back_button");
-				if (enabledDLCPack1) {
-					race->setWidgetLeft(dlcRaces1[c]);
-				}
-				if (c > 0) {
-					race->setWidgetUp(dlcRaces2[c - 1]);
-				} else {
-					race->setWidgetUp("appearances");
-				}
-				if (c < 3) {
-					race->setWidgetDown(dlcRaces2[c + 1]);
-				} else {
-					race->setWidgetDown("disable_abilities");
-				}
-				switch (index) {
-				case 0: race->setCallback([](Button& button){soundToggle(); race_fn(button, 0);}); break;
-				case 1: race->setCallback([](Button& button){soundToggle(); race_fn(button, 1);}); break;
-				case 2: race->setCallback([](Button& button){soundToggle(); race_fn(button, 2);}); break;
-				case 3: race->setCallback([](Button& button){soundToggle(); race_fn(button, 3);}); break;
-				}
-
-				if (stats[index]->playerRace == RACE_AUTOMATON + c) {
-					race->setPressed(true);
-					race->select();
-				}
-
-				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(223, 44, 149, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces2[c]);
-			}
-		} else {
-			auto blockers = card->addImage(
-				SDL_Rect{174, 132, 26, 140},
-				0xffffffff,
-				"*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_Blocker_00.png",
-				"blockers"
-			);
-			for (int c = 0; c < 4; ++c) {
-				auto label = card->addField((std::string(dlcRaces2[c]) + "_label").c_str(), 64);
-				label->setSize(SDL_Rect{202, 132 + 38 * c, 104, 26});
-				label->setVJustify(Field::justify_t::CENTER);
-				label->setHJustify(Field::justify_t::LEFT);
-				label->setColor(makeColor(70, 62, 59, 255));
-				label->setFont(smallfont_outline);
-				label->setText(dlcRaces2[c]);
-			}
-		}
-
-		auto disable_abilities_text = card->addField("disable_abilities_text", 256);
-		disable_abilities_text->setSize(SDL_Rect{44, 274, 154, 64});
+		auto disable_abilities_text = bottom->addField("disable_abilities_text", 256);
+		disable_abilities_text->setSize(SDL_Rect{44, 0, 154, 48});
 		disable_abilities_text->setFont(smallfont_outline);
 		disable_abilities_text->setColor(makeColor(166, 123, 81, 255));
 		disable_abilities_text->setText("Disable monster\nrace abilities");
 		disable_abilities_text->setHJustify(Field::justify_t::LEFT);
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
 
-		auto disable_abilities = card->addButton("disable_abilities");
-		disable_abilities->setSize(SDL_Rect{194, 284, 44, 44});
+		auto disable_abilities = bottom->addButton("disable_abilities");
+		disable_abilities->setSize(SDL_Rect{194, 2, 44, 44});
 		disable_abilities->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Checked_00.png");
 		disable_abilities->setColor(0);
 		disable_abilities->setBorderColor(0);
@@ -8586,15 +9912,7 @@ bind_failed:
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		if (enabledDLCPack2) {
-			disable_abilities->setWidgetUp(dlcRaces2[sizeof(dlcRaces2) / sizeof(dlcRaces2[0]) - 1]);
-		}
-		else if (enabledDLCPack1) {
-			disable_abilities->setWidgetUp(dlcRaces1[sizeof(dlcRaces1) / sizeof(dlcRaces1[0]) - 1]);
-		}
-		else {
-			disable_abilities->setWidgetUp("appearances");
-		}
+		disable_abilities->setWidgetUp(races[num_races - 1]);
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->appearance != 0);
 		}
@@ -8610,8 +9928,12 @@ bind_failed:
 		case 2: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 2);}); break;
 		case 3: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 3);}); break;
 		}
+	    disable_abilities->addWidgetAction("MenuPageLeft", "male");
+	    disable_abilities->addWidgetAction("MenuPageRight", "female");
+	    disable_abilities->addWidgetAction("MenuAlt1", "disable_abilities");
+	    disable_abilities->addWidgetAction("MenuAlt2", "show_race_info");
 
-		auto male_button = card->addButton("male");
+		auto male_button = bottom->addButton("male");
 		if (stats[index]->sex == MALE) {
 			male_button->setColor(makeColor(255, 255, 255, 255));
 			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -8620,7 +9942,7 @@ bind_failed:
 			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
-		male_button->setSize(SDL_Rect{44, 344, 58, 52});
+		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
 		male_button->setWidgetBack("back_button");
@@ -8633,8 +9955,12 @@ bind_failed:
 		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
+	    male_button->addWidgetAction("MenuPageLeft", "male");
+	    male_button->addWidgetAction("MenuPageRight", "female");
+	    male_button->addWidgetAction("MenuAlt1", "disable_abilities");
+	    male_button->addWidgetAction("MenuAlt2", "show_race_info");
 
-		auto female_button = card->addButton("female");
+		auto female_button = bottom->addButton("female");
 		if (stats[index]->sex == FEMALE) {
 			female_button->setColor(makeColor(255, 255, 255, 255));
 			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -8643,7 +9969,7 @@ bind_failed:
 			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
-		female_button->setSize(SDL_Rect{106, 344, 58, 52});
+		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
 		female_button->setWidgetBack("back_button");
@@ -8657,20 +9983,47 @@ bind_failed:
 		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
 		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
 		}
+	    female_button->addWidgetAction("MenuPageLeft", "male");
+	    female_button->addWidgetAction("MenuPageRight", "female");
+	    female_button->addWidgetAction("MenuAlt1", "disable_abilities");
+	    female_button->addWidgetAction("MenuAlt2", "show_race_info");
 
-		auto show_race_info = card->addButton("show_race_info");
+		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
-		show_race_info->setText("Show Race\nInfo");
+		if (details) {
+		    show_race_info->setText("Hide Race\nInfo");
+		} else {
+		    show_race_info->setText("Show Race\nInfo");
+		}
 		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
-		show_race_info->setSize(SDL_Rect{168, 344, 110, 52});
+		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
+		if (details) {
+		    switch (index) {
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, race_selection[0]);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, race_selection[1]);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, race_selection[2]);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, race_selection[3]);}); break;
+	        }
+	    } else {
+		    switch (index) {
+		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true, race_selection[0]);}); break;
+		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true, race_selection[1]);}); break;
+		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true, race_selection[2]);}); break;
+		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true, race_selection[3]);}); break;
+	        }
+	    }
+	    show_race_info->addWidgetAction("MenuPageLeft", "male");
+	    show_race_info->addWidgetAction("MenuPageRight", "female");
+	    show_race_info->addWidgetAction("MenuAlt1", "disable_abilities");
+	    show_race_info->addWidgetAction("MenuAlt2", "show_race_info");
 
 		/*auto confirm = card->addButton("confirm");
 		confirm->setFont(bigfont_outline);
@@ -8691,9 +10044,11 @@ bind_failed:
 		}*/
 	}
 
-	static void characterCardClassMenu(int index) {
+	static void characterCardClassMenu(int index, bool details, int selection) {
 		auto reduced_class_list = reducedClassList(index);
-		auto card = initCharacterCard(index, 488);
+		auto card = initCharacterCard(index, details? 664 : 446);
+
+		static int class_selection[MAXPLAYERS];
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -8713,7 +10068,9 @@ bind_failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_01.png",
+			details ?
+			    "*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Details.png":
+			    "*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Window_04.png",
 			"backdrop"
 		);
 
@@ -8730,46 +10087,536 @@ bind_failed:
 		class_name_header->setHJustify(Field::justify_t::CENTER);
 		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
-		auto textbox = card->addImage(
-			SDL_Rect{46, 116, 186, 36},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_SearchBar_00.png",
-			"textbox"
-		);
-
-		static auto class_name_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
-			auto find = classes.find(classes_in_order[i]);
-			if (find != classes.end()) {
-				field.setText(find->second.name);
-			}
-		};
-
-		auto class_name = card->addField("class_name", 64);
-		class_name->setSize(SDL_Rect{48, 120, 182, 28});
-		class_name->setHJustify(Field::justify_t::LEFT);
-		class_name->setVJustify(Field::justify_t::CENTER);
-		class_name->setFont(smallfont_outline);
-		switch (index) {
-		case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
-		case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
-		case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
-		case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
+        if (!details) {
+		    auto textbox = card->addImage(
+			    SDL_Rect{42, 68, 192, 46},
+			    0xffffffff,
+			    "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Box_ClassName_04.png",
+			    "textbox"
+		    );
 		}
-		(*class_name->getTickCallback())(*class_name);
+
+        if (details) {
+            static const char* class_descs[] = {
+                "Barbarian\n"
+                "A skilled combatant. What\n"
+                "they lack in armor they make\n"
+                "up for in strength and\n"
+                "fighting prowess.\n"
+                "Barbarians can quickly\n"
+                "dispatch lesser foes before\n"
+                "taking any hits by using the\n"
+                "right weapon for the job. A\n"
+                "surprise assault is the key\n"
+                "to a swift victory. Staying\n"
+                "light-footed will allow a\n"
+                "Barbarian to avoid damage.",
+
+
+                "Warrior\n"
+                "The trained soldier. They\n"
+                "are heavily armored and\n"
+                "make capable leaders.\n"
+                "Warriors are well equipped\n"
+                "for most fights, assuming\n"
+                "they know when to use each\n"
+                "of their weapons. But hubris\n"
+                "is the downfall of many\n"
+                "Warriors, whether they\n"
+                "waddle too slowly near\n"
+                "traps, or allowing magic to\n"
+                "strike through their armor.",
+
+
+                "Healer\n"
+                "A talented physician. Though\n"
+                "they are poor fighters, they\n"
+                "come stocked with medical\n"
+                "supplies and other healing\n"
+                "abilities.\n"
+                "Compared to other magic\n"
+                "users, the Healer is a more\n"
+                "durable and well-rounded\n"
+                "hero as they grow in\n"
+                "experience. With care, they\n"
+                "may become a very tough\n"
+                "spellcaster.",
+
+
+                "Rogue\n"
+                "The professional hooligan.\n"
+                "Dextrous and skilled thieves,\n"
+                "though lacking in power and\n"
+                "equipment.\n"
+                "Even skilled Rogues succumb\n"
+                "trying to live by the blade.\n"
+                "But their deft hand can pick\n"
+                "ammo from traps, and using\n"
+                "stealth, a patient Rogue\n"
+                "survives by picking off tough\n"
+                "foes from afar, practicing\n"
+                "ambushes against soft foes.",
+
+
+                "Wanderer\n"
+                "The hardened traveler. Low\n"
+                "in armor and combat ability,\n"
+                "but well-equipped for the\n"
+                "dungeon.\n"
+                "A Wanderer's ample food\n"
+                "supply provides a patient\n"
+                "start to their adventure,\n"
+                "allowing them to play it\n"
+                "safe. But their hardy\n"
+                "nature transforms them\n"
+                "into very durable fighters\n"
+                "as their quest labors on.",
+
+
+                "Cleric\n"
+                "Students of the church.\n"
+                "Fairly well equipped and\n"
+                "able in many ways, they are\n"
+                "well-rounded adventurers.\n"
+                "While Clerics start with no\n"
+                "spells, their training has\n"
+                "prepared them to learn\n"
+                "quickly. A wise Cleric will\n"
+                "make use of magic as it\n"
+                "becomes available without\n"
+                "forsaking their martial\n"
+                "training.",
+
+
+                "Merchant\n"
+                "A seasoned trader. They\n"
+                "are skilled in the market\n"
+                "and adept at identifying\n"
+                "foreign artifacts.\n"
+                "While decently equipped for\n"
+                "a fight, Merchant explorers\n"
+                "will survive longer if they\n"
+                "develop skills which keep foes\n"
+                "at a distance, especially\n"
+                "adopting followers and\n"
+                "crafting skills to which they\n"
+                "are naturally inclined.",
+
+
+                "Wizard\n"
+                "The wise magician. Though\n"
+                "frail, they are extremely\n"
+                "well-versed in magic.\n"
+                "Many young adventurers\n"
+                "find early success with\n"
+                "powerful spells. However,\n"
+                "most mighty magic users\n"
+                "cannot cast indefinitely. To\n"
+                "succeed as a Wizard, one\n"
+                "must learn when it is enough\n"
+                "to finish foes off with a stiff\n"
+                "whack from a polearm.",
+
+
+                "Arcanist\n"
+                "A cunning spellcaster. Less\n"
+                "magically adept than the\n"
+                "Wizard, but hardier and\n"
+                "better equipped.\n"
+                "Due to having mundane and\n"
+                "magical ranged attacks at\n"
+                "their disposal, successful\n"
+                "Arcanists rely on mobility to\n"
+                "defeat threats from a\n"
+                "distance. Adding special\n"
+                "ammo or spells will allow the\n"
+                "Arcanist to improve in power.",
+
+
+                "Joker\n"
+                "The wild card. Jokers come\n"
+                "with very little equipment,\n"
+                "but they have a few tricks\n"
+                "up their sleeves,\n"
+                "nonetheless.\n"
+                "Jokers tend to gravitate\n"
+                "toward magical trickery\n"
+                "and commanding followers,\n"
+                "but their chaotic nature\n"
+                "results in a lack of focus.\n"
+                "Best to improvise and stay\n"
+                "flexible.",
+
+
+                "Sexton\n"
+                "A temple officer who serves\n"
+                "unseen, using stealth and\n"
+                "magic to slip their way\n"
+                "through the dungeon with\n"
+                "the aid of a few rare tools.\n"
+                "Sextons are fastidious\n"
+                "planners, and their diverse\n"
+                "talents bring success when\n"
+                "they make time to approach\n"
+                "each problem thoughtfully.\n"
+                "Sextons who panic fail to use\n"
+                "the tools at their disposal.",
+
+
+                "Ninja\n"
+                "A highly specialized assassin.\n"
+                "They ambush foes with\n"
+                "swords or ranged weapons,\n"
+                "using a few other tricks to\n"
+                "get out of bad situations.\n"
+                "Ninjas do well to find backup\n"
+                "blades. Their fragile sword\n"
+                "is sharp, but a break at the\n"
+                "wrong time can be fatal.\n"
+                "To improve their chances, a\n"
+                "Ninja must remain in control\n"
+                "of how a fight begins.",
+
+
+                "Monk\n"
+                "Disciplined and hardy. They\n"
+                "have little in the way of\n"
+                "offensive training and\n"
+                "material goods, but can rely\n"
+                "on their excellent fortitude\n"
+                "and adaptability.\n"
+                "The Monk is exceptional at\n"
+                "blocking attacks, and is very\n"
+                "slow to hunger. Approaching\n"
+                "challenges patiently plays\n"
+                "to the Monk's strengths. Keep\n"
+                "a torch or shield at hand.",
+
+
+                "Conjurer\n"
+                "A frail but adept magic\n"
+                "user, able to conjure allies\n"
+                "with a reliable spell.\n"
+                "Unavailable to any other\n"
+                "class, the Conjure Skeleton\n"
+                "spell provides a persistent\n"
+                "companion, even if it is killed.\n"
+                "The Conjured allies grow in\n"
+                "power, so long as they are\n"
+                "permitted to kill foes and\n"
+                "grow in experience. Nurture\n"
+                "these allies to succeed.",
+
+
+                "Accursed\n"
+                "The Accursed suffer from\n"
+                "bestial hunger, but gain\n"
+                "supernatural magic power\n"
+                "and speed. An arcane\n"
+                "library found deep within\n"
+                "the dungeon may have a\n"
+                "cure.\n"
+                "While afflicted, the Accursed\n"
+                "must move quickly and reap\n"
+                "blood to evade starvation.\n"
+                "Very powerful, but those\n"
+                "lacking expertise will fail.",
+
+
+                "Mesmer\n"
+                "The Mesmer uses the Charm\n"
+                "spell and leadership ability\n"
+                "to enlist powerful allies.\n"
+                "Mesmers may only Charm one\n"
+                "at a time, so they should\n"
+                "be strategic with recruiting.\n"
+                "Charmed allies get stronger\n"
+                "with experience, so nurturing\n"
+                "them can be wise. The Charm\n"
+                "spell is difficult to learn;\n"
+                "Successful Mesmers must\n"
+                "practice other kinds of magic.",
+
+
+                "Brewer\n"
+                "A talented alchemist who is\n"
+                "also comfortable with the\n"
+                "relationships and bar-room\n"
+                "brawls that a good brew will\n"
+                "bring.\n"
+                "Successful Brewers make it\n"
+                "a priority to collect, brew,\n"
+                "and duplicate potions so\n"
+                "they are never short on\n"
+                "supplies. A backpack full of\n"
+                "bottles allows the Brewer to\n"
+                "adapt with short notice.",
+
+
+                "Mechanist\n"
+                "A skilled craftsman, the\n"
+                "Mechanist uses a toolkit to\n"
+                "make and maintain\n"
+                "mechanical weapons, letting\n"
+                "contraptions do the dirty\n"
+                "work.\n"
+                "Successful Mechanists use\n"
+                "foresight to plan ahead and\n"
+                "are prepared with the right\n"
+                "tool for any problem. Those\n"
+                "who try to rely on strength\n"
+                "and speed may struggle.",
+
+
+                "Punisher\n"
+                "The Punisher picks unfair\n"
+                "fights, toying with foes using\n"
+                "dark magic and a whip\n"
+                "before making the execution,\n"
+                "or releasing one's inner\n"
+                "demons to do the job.\n"
+                "Punishers are not durable\n"
+                "and must maintain control\n"
+                "in combat. Staying mobile is\n"
+                "the key to exploiting their\n"
+                "unique whip's longer attack\n"
+                "range.",
+
+
+                "Shaman\n"
+                "The Shaman is a mystic whose\n"
+                "connection to nature spirits\n"
+                "allows them to shapeshift\n"
+                "into bestial forms. Each\n"
+                "form's talents provide\n"
+                "diverse advantages in the\n"
+                "dungeon.\n"
+                "While transformed, Shamans\n"
+                "make different friends, and\n"
+                "can tolerate different food.\n"
+                "Being a beast will influence\n"
+                "how the Shaman grows.",
+
+
+                "Hunter\n"
+                "Equipped to track and bring\n"
+                "down foes from afar, the\n"
+                "Hunter uses special arrows\n"
+                "and a magic boomerang to\n"
+                "ensure they never have to\n"
+                "fight toe-to-toe.\n"
+                "Hunters are frail and\n"
+                "must avoid being backed into\n"
+                "a corner. Staying hidden\n"
+                "and using ammo wisely is the\n"
+                "key to their survival.",
+            };
+            static constexpr int num_class_descs = sizeof(class_descs) / sizeof(class_descs[0]);
+
+		    static auto class_desc_fn = [](Field& field, int index){
+			    const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+			    field.setText(class_descs[i]);
+			    if (i < CLASS_CONJURER) {
+			        field.addColorToLine(0, color_dlc0);
+			    } else if (i < CLASS_MACHINIST) {
+			        field.addColorToLine(0, color_dlc1);
+			    } else {
+			        field.addColorToLine(0, color_dlc2);
+			    }
+		    };
+
+		    auto class_desc = card->addField("class_desc", 1024);
+		    class_desc->setSize(SDL_Rect{42, 68, 240, 218});
+		    class_desc->setFont(smallfont_no_outline);
+		    switch (index) {
+		    case 0: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 0);}); break;
+		    case 1: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 1);}); break;
+		    case 2: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 2);}); break;
+		    case 3: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 3);}); break;
+		    }
+		    (*class_desc->getTickCallback())(*class_desc);
+
+            // stats definitions
+		    const char* class_stats_text[] = {
+		        "STR", "DEX", "CON", "INT", "PER", "CHR"
+		    };
+		    constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+		    constexpr SDL_Rect bottom{44, 306, 236, 68};
+		    constexpr int column = bottom.w / num_class_stats;
+
+            // character attribute ratings
+		    static constexpr Uint32 good = makeColorRGB(0, 191, 255);
+		    static constexpr Uint32 decent = makeColorRGB(0, 191, 255);
+		    static constexpr Uint32 average = makeColorRGB(191, 191, 191);
+		    static constexpr Uint32 poor = makeColorRGB(255, 64, 0);
+		    static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
+		    static constexpr Uint32 class_stat_colors[][num_class_stats] = {
+		        {good, decent, bad, bad, decent, decent},               // barbarian
+		        {good, bad, good, bad, bad, good},                      // warrior
+		        {average, average, decent, good, decent, average},      // healer
+		        {bad, good, bad, bad, good, decent},                    // rogue
+		        {decent, average, decent, average, decent, bad},        // wanderer
+		        {average, bad, decent, decent, average, average},       // cleric
+		        {average, bad, decent, average, decent, good},          // merchant
+		        {bad, average, bad, good, good, decent},                // wizard
+		        {bad, decent, bad, decent, decent, bad},                // arcanist
+		        {average, average, average, average, average, average}, // joker
+		        {good, good, average, good, average, average},          // sexton
+		        {good, good, decent, average, average, bad},            // ninja
+		        {decent, bad, good, average, bad, bad},                 // monk
+		        {bad, bad, decent, good, decent, decent},               // conjurer
+		        {average, average, bad, good, good, average},           // accursed
+		        {average, average, bad, good, decent, good},            // mesmer
+		        {average, average, bad, decent, bad, decent},           // brewer
+		        {bad, decent, bad, average, good, average},             // mechanist
+		        {decent, average, bad, average, decent, decent},        // punisher
+		        {average, average, average, average, average, average}, // shaman
+		        {bad, good, bad, average, good, average},               // hunter
+		    };
+
+		    // difficulty star ratings
+		    static constexpr int difficulty[][2] = {
+		        {3, 1}, // barbarian
+		        {4, 2}, // warrior
+		        {4, 2}, // healer
+		        {2, 2}, // rogue
+		        {4, 1}, // wanderer
+		        {3, 2}, // cleric
+		        {3, 2}, // merchant
+		        {3, 2}, // wizard
+		        {2, 2}, // arcanist
+		        {1, 3}, // joker
+		        {3, 4}, // sexton
+		        {2, 2}, // ninja
+		        {5, 1}, // monk
+		        {3, 3}, // conjurer
+		        {1, 3}, // accursed
+		        {3, 3}, // mesmer
+		        {2, 5}, // brewer
+		        {2, 5}, // mechanist
+		        {2, 4}, // punisher
+		        {2, 4}, // shaman
+		        {2, 2}, // hunter
+		    };
+
+		    for (int c = 0; c < num_class_stats; ++c) {
+		        static auto class_stat_fn = [](Field& field, int index){
+			        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+			        const int s = (int)strtol(field.getName(), nullptr, 10);
+			        field.setColor(class_stat_colors[i][s]);
+		        };
+		        static char buf[16];
+		        snprintf(buf, sizeof(buf), "%d", c);
+		        auto class_stat = card->addField(buf, 16);
+		        class_stat->setSize(SDL_Rect{
+		            bottom.x + column * c, bottom.y, column, bottom.h});
+		        class_stat->setHJustify(Field::justify_t::CENTER);
+		        class_stat->setVJustify(Field::justify_t::TOP);
+		        class_stat->setFont(smallfont_outline);
+		        class_stat->setText(class_stats_text[c]);
+		        switch (index) {
+		        case 0: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 0);}); break;
+		        case 1: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 1);}); break;
+		        case 2: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 2);}); break;
+		        case 3: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 3);}); break;
+		        }
+		        (*class_stat->getTickCallback())(*class_stat);
+		    }
+
+		    // difficulty header
+		    constexpr SDL_Rect difficulty_size{76, 306, 172, 64};
+		    auto difficulty_header = card->addField("difficulty_header", 128);
+		    difficulty_header->setFont(smallfont_outline);
+		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
+		    difficulty_header->setText("Survival\nComplexity");
+		    difficulty_header->setHJustify(Field::justify_t::LEFT);
+		    difficulty_header->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_header->setSize(difficulty_size);
+
+		    // difficulty stars
+		    static constexpr int star_buf_size = 32;
+	        static auto stars_fn = [](Field& field, int index){
+		        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+		        const char* lines[2];
+		        for (int c = 0; c < 2; ++c) {
+		            switch (difficulty[i][c]) {
+		            default:
+		            case 1: lines[c] = "*"; field.addColorToLine(c, c == 0 ? bad : good); break;
+		            case 2: lines[c] = "**"; field.addColorToLine(c, c == 0 ? poor : decent); break;
+		            case 3: lines[c] = "***"; field.addColorToLine(c, c == 0 ? average : average); break;
+		            case 4: lines[c] = "****"; field.addColorToLine(c, c == 0 ? decent : poor); break;
+		            case 5: lines[c] = "*****"; field.addColorToLine(c, c == 0 ? good : bad); break;
+		            }
+		        }
+		        char buf[star_buf_size];
+		        snprintf(buf, sizeof(buf), "%s\n%s", lines[0], lines[1]);
+		        field.setText(buf);
+	        };
+		    auto difficulty_stars = card->addField("difficulty_stars", star_buf_size);
+		    difficulty_stars->setFont(smallfont_outline);
+		    difficulty_stars->setHJustify(Field::justify_t::RIGHT);
+		    difficulty_stars->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_stars->setSize(difficulty_size);
+	        switch (index) {
+	        case 0: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 0);}); break;
+	        case 1: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 1);}); break;
+	        case 2: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 2);}); break;
+	        case 3: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 3);}); break;
+	        }
+	        (*difficulty_stars->getTickCallback())(*difficulty_stars);
+        } else {
+		    static auto class_name_fn = [](Field& field, int index){
+			    const int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			    auto find = classes.find(classes_in_order[i]);
+			    if (find != classes.end()) {
+				    field.setText(find->second.name);
+			    }
+			    if (i - 1 < CLASS_CONJURER) {
+			        field.setColor(color_dlc0);
+			    } else if (i - 1 < CLASS_MACHINIST) {
+			        field.setColor(color_dlc1);
+			    } else {
+			        field.setColor(color_dlc2);
+			    }
+		    };
+
+		    auto class_name = card->addField("class_name", 64);
+		    class_name->setSize(SDL_Rect{42, 68, 192, 46});
+		    class_name->setHJustify(Field::justify_t::CENTER);
+		    class_name->setVJustify(Field::justify_t::CENTER);
+		    class_name->setFont(smallfont_outline);
+		    switch (index) {
+		    case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
+		    case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
+		    case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
+		    case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
+		    }
+		    (*class_name->getTickCallback())(*class_name);
+		}
+
+		const int height = std::max(254, 6 + 54 * (int)(reduced_class_list.size() / 4 + ((reduced_class_list.size() % 4) ? 1 : 0)));
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
-		subframe->setSize(SDL_Rect{34, 160, 226, 258});
-		subframe->setActualSize(SDL_Rect{0, 0, 226, std::max(258, 6 + 54 * (int)(classes.size() / 4 + ((classes.size() % 4) ? 1 : 0)))});
+		if (details) {
+		    subframe->setSize(SDL_Rect{34, 382, 226, 214});
+		} else {
+		    subframe->setSize(SDL_Rect{34, 124, 226, 254});
+		}
+		subframe->setActualSize(SDL_Rect{0, 0, 226, height});
 		subframe->setBorder(0);
 		subframe->setColor(0);
 
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
-			slider->setRailSize(SDL_Rect{260, 160, 30, 266});
+			if (details) {
+			    slider->setRailSize(SDL_Rect{260, 382, 30, 214});
+			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_01.png");
+			} else {
+			    slider->setRailSize(SDL_Rect{260, 118, 30, 266});
+			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
+			}
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
-			slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
 			slider->setHandleImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_SliderB_00.png");
 			slider->setOrientation(Slider::orientation_t::SLIDER_VERTICAL);
 			slider->setBorder(24);
@@ -8797,13 +10644,37 @@ bind_failed:
 		auto class_info = card->addButton("class_info");
 		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
-		class_info->setSize(SDL_Rect{236, 110, 48, 48});
-		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_MagnifyingGlass_00.png");
+		if (details) {
+		    class_info->setSize(SDL_Rect{266, 38, 46, 46});
+		} else {
+		    class_info->setSize(SDL_Rect{238, 68, 46, 46});
+		}
+		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
-		class_info->addWidgetAction("MenuAlt1", "class_info");
+		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
+		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		if (details) {
+		    switch (index) {
+		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, false, class_selection[0]);}); break;
+		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, false, class_selection[1]);}); break;
+		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, false, class_selection[2]);}); break;
+		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, false, class_selection[3]);}); break;
+		    }
+		} else {
+		    switch (index) {
+		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, true, class_selection[0]);}); break;
+		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, true, class_selection[1]);}); break;
+		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, true, class_selection[2]);}); break;
+		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, true, class_selection[3]);}); break;
+		    }
+		}
 
+		const int current_class = std::min(std::max(0, client_classes[index]), num_classes - 1);
+		auto current_class_name = classes_in_order[current_class + 1];
+
+        bool selected_button = false;
 		const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
 		for (int c = reduced_class_list.size() - 1; c >= 0; --c) {
 			auto name = reduced_class_list[c];
@@ -8816,9 +10687,20 @@ bind_failed:
 			case DLC::MythsAndOutcasts: button->setBackground((prefix + "ClassSelect_IconBGMyths_00.png").c_str()); break;
 			case DLC::LegendsAndPariahs: button->setBackground((prefix + "ClassSelect_IconBGLegends_00.png").c_str()); break;
 			}
+			button->setIconColor(0);
 			button->setIcon((prefix + full_class.image).c_str());
 			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			button->setColor(makeColor(255, 255, 255, 255));
+			if (!strcmp(name, current_class_name)) {
+			    button->setColor(makeColor(255, 255, 255, 255));
+			} else {
+			    button->setColor(makeColor(127, 127, 127, 255));
+			}
+			if ((!selection && !strcmp(name, current_class_name)) ||
+			    (selection && c == selection)) {
+			    button->select();
+			    button->scrollParent();
+			    selected_button = true;
+			}
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
@@ -8838,30 +10720,50 @@ bind_failed:
 				button->setWidgetDown(reduced_class_list[reduced_class_list.size() - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
-			button->addWidgetAction("MenuAlt1", "class_info");
+			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
 			static auto button_fn = [](Button& button, int index){
 				soundActivate();
+
+				// figure out which class button we clicked based on name
 				int c = 0;
 				for (; c < num_classes; ++c) {
 					if (strcmp(button.getName(), classes_in_order[c]) == 0) {
 						break;
 					}
 				}
-				if (c >= 1) {
-					--c; // exclude the random "class"
+
+			    // dim all buttons
+			    auto frame = static_cast<Frame*>(button.getParent());
+			    for (auto button : frame->getButtons()) {
+			        button->setColor(makeColor(127, 127, 127, 255));
+			    }
+
+				if (c > 0) {
+				    // when selecting anything but random class...
+					--c; // discount the "random class" option
 					client_classes[index] = c;
+				    button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
 				} else {
+				    // when selecting random class...
 					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
-					for (int c = 0; c < num_classes; ++c) {
+					auto random_class = reduced_class_list[RNG.uniform(1, reduced_class_list.size() - 1)];
+					for (int c = 1; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
-							client_classes[index] = c;
+							client_classes[index] = c - 1;
+
+				            // highlight selected class button
+				            auto frame = static_cast<Frame*>(button.getParent());
+				            auto button = frame->findButton(random_class);
+				            if (button) {
+				                button->setColor(makeColor(255, 255, 255, 255));
+				            }
 							break;
 						}
 					}
 				}
+
 				stats[index]->clearStats();
 				initClass(index);
 				sendPlayerOverNet();
@@ -8873,10 +10775,25 @@ bind_failed:
 			case 2: button->setCallback([](Button& button){button_fn(button, 2);}); break;
 			case 3: button->setCallback([](Button& button){button_fn(button, 3);}); break;
 			}
+
+			button->setTickCallback([](Widget& widget){
+			    auto button = static_cast<Button*>(&widget);
+			    if (button->isSelected()) {
+				    for (int c = 0; c < num_classes; ++c) {
+					    if (strcmp(button->getName(), classes_in_order[c]) == 0) {
+			                class_selection[widget.getOwner()] = c;
+						    break;
+					    }
+				    }
+			    }
+			    });
 		}
 
-		auto first_button = subframe->findButton(reduced_class_list[0]); assert(first_button);
-		first_button->select();
+        if (!selected_button) {
+		    auto first_button = subframe->findButton(reduced_class_list[0]);
+		    assert(first_button);
+		    first_button->select();
+		}
 
 		/*auto confirm = card->addButton("confirm");
 		confirm->setColor(makeColor(255, 255, 255, 255));
@@ -8887,7 +10804,7 @@ bind_failed:
 		confirm->setFont(bigfont_outline);
 		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
-		confirm->addWidgetAction("MenuAlt1", "class_info");
+		confirm->addWidgetAction("MenuAlt2", "class_info");
 		confirm->setWidgetBack("back_button");
 		switch (index) {
 		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
@@ -8899,7 +10816,9 @@ bind_failed:
 
 	static void createCharacterCard(int index) {
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		if (!lobby) {
+		    return;
+		}
 
 		if (multiplayer == CLIENT) {
 			sendSvFlagsOverNet();
@@ -8945,12 +10864,15 @@ bind_failed:
 
 		auto name_field = card->addField("name", 128);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
+		name_field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
 		name_field->setScroll(true);
 		name_field->setGuide((std::string("Enter a name for Player ") + std::to_string(index + 1)).c_str());
 		name_field->setFont(smallfont_outline);
 		name_field->setText(stats[index]->name);
 		name_field->setSize(SDL_Rect{90, 34, 146, 28});
 		name_field->setColor(makeColor(166, 123, 81, 255));
+		name_field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		name_field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
@@ -9005,7 +10927,7 @@ bind_failed:
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
-		randomize_name->setSize(SDL_Rect{244, 26, 40, 44});
+		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
 		randomize_name->setWidgetBack("back_button");
@@ -9014,7 +10936,8 @@ bind_failed:
 		static auto randomize_name_fn = [](Button& button, int index) {
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto name = names[RNG.rand() % names.size()].c_str();
+			auto choice = RNG.uniform(0, names.size() - 1);
+			auto name = names[choice].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
@@ -9046,7 +10969,12 @@ bind_failed:
 		case 3: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
 		}
 
-		auto male_button = card->addButton("male");
+		auto bottom = card->addFrame("bottom");
+		bottom->setSize(SDL_Rect{42, 166, 120, 52});
+		bottom->setBorder(0);
+		bottom->setColor(0);
+
+		auto male_button = bottom->addButton("male");
 		if (stats[index]->sex == MALE) {
 			male_button->setColor(makeColor(255, 255, 255, 255));
 			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -9055,7 +10983,7 @@ bind_failed:
 			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
-		male_button->setSize(SDL_Rect{42, 166, 58, 52});
+		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
 		male_button->setWidgetBack("back_button");
@@ -9069,7 +10997,7 @@ bind_failed:
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
 
-		auto female_button = card->addButton("female");
+		auto female_button = bottom->addButton("female");
 		if (stats[index]->sex == FEMALE) {
 			female_button->setColor(makeColor(255, 255, 255, 255));
 			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -9078,7 +11006,7 @@ bind_failed:
 			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		}
 		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
-		female_button->setSize(SDL_Rect{104, 166, 58, 52});
+		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
 		female_button->setWidgetBack("back_button");
@@ -9121,10 +11049,10 @@ bind_failed:
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
 		switch (index) {
-		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0);}); break;
-		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1);}); break;
-		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2);}); break;
-		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3);}); break;
+		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, -1);}); break;
+		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, -1);}); break;
+		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, -1);}); break;
+		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, -1);}); break;
 		}
 
 		static auto randomize_class_fn = [](Button& button, int index){
@@ -9133,16 +11061,16 @@ bind_failed:
 			auto card = static_cast<Frame*>(button.getParent());
 
 			// select a random sex
-			stats[index]->sex = (sex_t)(RNG.rand() % 2);
+			stats[index]->sex = (sex_t)(RNG.getU8() % 2);
 
 			// select a random race
 			// there are 9 legal races that the player can select from the start.
 			if (enabledDLCPack1 && enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.rand() % NUMPLAYABLERACES;
+			    stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
 			} else if (enabledDLCPack1) {
-			    stats[index]->playerRace = RNG.rand() % 5;
+			    stats[index]->playerRace = RNG.uniform(0, 4);
 			} else if (enabledDLCPack2) {
-			    stats[index]->playerRace = RNG.rand() % 5;
+			    stats[index]->playerRace = RNG.uniform(0, 4);
 			    if (stats[index]->playerRace > 0) {
 			        stats[index]->playerRace += 4;
 			    }
@@ -9169,33 +11097,38 @@ bind_failed:
 			}
 
 			// choose a random appearance
+			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
 			if (stats[index]->playerRace == RACE_HUMAN) {
-				stats[index]->appearance = RNG.rand() % NUMAPPEARANCES;
+				stats[index]->appearance = appearance_choice;
 			} else {
-				stats[index]->appearance = 0; RNG.rand();
+				stats[index]->appearance = 0;
 			}
 
 			// update sex buttons after race selection:
 			// we might have chosen a succubus or incubus
-			auto male_button = card->findButton("male");
-			auto female_button = card->findButton("female");
-			if (male_button && female_button) {
-				if (stats[index]->sex == MALE) {
-					male_button->setColor(makeColor(255, 255, 255, 255));
-					male_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					female_button->setColor(makeColor(127, 127, 127, 255));
-					female_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				} else {
-					female_button->setColor(makeColor(255, 255, 255, 255));
-					female_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					male_button->setColor(makeColor(127, 127, 127, 255));
-					male_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				}
+			auto bottom = card->findFrame("bottom");
+			if (bottom) {
+			    auto male_button = bottom->findButton("male");
+			    auto female_button = bottom->findButton("female");
+			    if (male_button && female_button) {
+				    if (stats[index]->sex == MALE) {
+					    male_button->setColor(makeColor(255, 255, 255, 255));
+					    male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					    female_button->setColor(makeColor(127, 127, 127, 255));
+					    female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				    } else {
+					    female_button->setColor(makeColor(255, 255, 255, 255));
+					    female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+					    male_button->setColor(makeColor(127, 127, 127, 255));
+					    male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+				    }
+			    }
 			}
 
 			// select a random class
-			auto reduced_class_list = reducedClassList(index);
-			auto random_class = reduced_class_list[(RNG.rand() % (reduced_class_list.size() - 1)) + 1];
+			const auto reduced_class_list = reducedClassList(index);
+			const auto class_choice = RNG.uniform(1, reduced_class_list.size() - 1);
+			const auto random_class = reduced_class_list[class_choice];
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
 					client_classes[index] = c - 1;
@@ -9212,7 +11145,7 @@ bind_failed:
 		randomize_class->setColor(makeColor(255, 255, 255, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
-		randomize_class->setSize(SDL_Rect{244, 230, 40, 44});
+		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
 		randomize_class->setWidgetBack("back_button");
@@ -9279,19 +11212,19 @@ bind_failed:
 		switch (index) {
 		case 0:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false, 0);});
 			break;
 		case 1:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false, 0);});
 			break;
 		case 2:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false, 0);});
 			break;
 		case 3:
 			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3);});
+			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false, 0);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);
@@ -9526,9 +11459,12 @@ bind_failed:
 		        no_one_logged_in = false;
 		    }
 		    if (no_one_logged_in) {
-		        if (input.binary("MenuCancel")) {
-		            assert(main_menu_frame);
-		            auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+                assert(main_menu_frame);
+		        if (player == clientnum &&
+		            input.binary("MenuCancel") &&
+		            !inputstr &&
+		            !main_menu_frame->findSelectedWidget(player)) {
+	                auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 		            auto back = lobby->findFrame("back"); assert(back);
 		            auto back_button = back->findButton("back_button"); assert(back_button);
 		            back_button->select();
@@ -9577,7 +11513,7 @@ bind_failed:
 		        start_func(player);
 		        return;
 		    }
-		    if (inputs.getPlayerIDAllowedKeyboard() == player && input.consumeBinaryToggle("KeyboardLogin")) {
+		    if (inputs.getPlayerIDAllowedKeyboard() == player && !inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
 		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
 #ifndef NINTENDO
 		        // release any controller assigned to this player
@@ -9743,9 +11679,13 @@ bind_failed:
 	}
 
 	static void checkReadyStates() {
-	    assert(main_menu_frame);
+	    if (!main_menu_frame) {
+	        return;
+	    }
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+		if (!lobby) {
+		    return;
+		}
 
         bool atLeastOnePlayer = false;
 	    bool allReady = true;
@@ -9771,13 +11711,12 @@ bind_failed:
 			    }
 			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
 				playersInLobby[c] = true;
+			    atLeastOnePlayer = true;
 			} else {
 				playersInLobby[c] = true;
+			    atLeastOnePlayer = true;
 			    allReady = false;
 			}
-		    if (isPlayerSignedIn(c)) {
-		        atLeastOnePlayer = true;
-		    }
 		}
 		if (allReady && atLeastOnePlayer) {
 		    createCountdownTimer();
@@ -9862,7 +11801,11 @@ bind_failed:
 		    } else {
 		        strcpy(shortname, stats[player]->name);
 		    }
-		    field->setText(shortname);
+
+		    char buf[128];
+		    snprintf(buf, sizeof(buf), "%s\n(%s)", shortname, players[player]->getAccountName());
+
+		    field->setText(buf);
 		    });
 
         if (local) {
@@ -9998,7 +11941,7 @@ bind_failed:
 		countdown->setHJustify(Field::justify_t::LEFT);
 		countdown->setVJustify(Field::justify_t::TOP);
 		countdown->setFont(timer_font);
-		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 0, 300, 200});
+		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 64, 300, 200});
 		countdown->setTickCallback([](Widget& widget){
 		    auto countdown = static_cast<Field*>(&widget);
 		    if (ticks >= countdown_end) {
@@ -10068,8 +12011,8 @@ bind_failed:
 		            playerSlotsLocked[c] = false;
 
 			        stats[c]->playerRace = RACE_HUMAN;
-			        stats[c]->sex = static_cast<sex_t>(RNG.rand() % 2);
-			        stats[c]->appearance = RNG.rand() % NUMAPPEARANCES;
+			        stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
+			        stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
 			        stats[c]->clearStats();
 			        client_classes[c] = 0;
 			        initClass(c);
@@ -10077,7 +12020,8 @@ bind_failed:
 			        // random name
 			        auto& names = stats[c]->sex == sex_t::MALE ?
 				        randomPlayerNamesMale : randomPlayerNamesFemale;
-			        auto name = names[RNG.rand() % names.size()].c_str();
+				    const int choice = RNG.uniform(0, names.size() - 1);
+			        auto name = names[choice].c_str();
 			        size_t len = strlen(name);
 			        len = std::min(sizeof(Stat::name) - 1, len);
 			        memcpy(stats[c]->name, name, len);
@@ -10125,7 +12069,7 @@ bind_failed:
 						index * Frame::virtualScreenX / 4,
 						0,
 						Frame::virtualScreenX / 4,
-						Frame::virtualScreenY - card->getSize().h / 2
+						Frame::virtualScreenY * 3 / 4
 						});
 				    auto backdrop = card->findImage("backdrop");
 				    const char* invite_window = "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
@@ -10155,11 +12099,34 @@ bind_failed:
 		banner->setBorder(2);
         {
 		    auto back_button = createBackWidget(banner, [](Button&){
-			    soundCancel();
-			    disconnectFromLobby();
-			    destroyMainMenu();
-			    currentLobbyType = LobbyType::None;
-			    createMainMenu(false);
+		        if (currentLobbyType == LobbyType::LobbyLocal) {
+			        soundCancel();
+			        disconnectFromLobby();
+			        destroyMainMenu();
+			        createMainMenu(false);
+			    } else {
+			        binaryPrompt(
+	                    "Are you sure you want to leave\nthis lobby?",
+	                    "Yes", "No",
+	                    [](Button&){ // yes
+			                soundActivate();
+			                disconnectFromLobby();
+			                destroyMainMenu();
+			                createMainMenu(false);
+	                    },
+	                    [](Button& button){ // no
+			                soundCancel();
+			                closeBinary();
+#ifndef NINTENDO
+                            // release any controller assigned to this player
+                            const int index = button.getOwner();
+                            if (inputs.hasController(index)) {
+                                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
+                                Input::inputs[index].refresh();
+                            }
+#endif
+	                    });
+			    }
 			    });
 		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		        if (currentLobbyType == LobbyType::None) {
@@ -10190,6 +12157,7 @@ bind_failed:
                     image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
 		        }
 		        });
+	        back_button->setWidgetRight("lobby_name");
 
 		    auto back_frame = back_button->getParent();
 		    back_frame->setTickCallback([](Widget& widget){
@@ -10211,6 +12179,57 @@ bind_failed:
 			    button->setDisabled(!allCardsClosed);
 			    });
 
+			// lobby type
+			const char* type_str;
+			switch (type) {
+			default:
+			case LobbyType::LobbyLocal: type_str = "Local Lobby"; break;
+			case LobbyType::LobbyLAN: type_str = "LAN Lobby (Host)"; break;
+			case LobbyType::LobbyOnline: type_str = "Online Lobby (Host)"; break;
+			case LobbyType::LobbyJoined: type_str = directConnect ?
+			    "LAN Lobby (Joined)" : "Online Lobby (Joined)"; break;
+			}
+			auto label = banner->addField("label", 128);
+			label->setHJustify(Field::justify_t::CENTER);
+			label->setVJustify(Field::justify_t::CENTER);
+			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 8, 256, 48});
+		    label->setFont(bigfont_outline);
+		    label->setText(type_str);
+
+            // lobby name
+            if (type != LobbyType::LobbyLocal) {
+		        auto text_box = banner->addImage(
+			        SDL_Rect{96, 16, 246, 36},
+			        0xffffffff,
+			        "*images/ui/Main Menus/TextField_00.png",
+			        "text_box"
+		        );
+
+		        constexpr int field_buffer_size = 64;
+
+		        auto field = banner->addField("lobby_name", field_buffer_size);
+		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
+		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+		        field->setEditable(type != LobbyType::LobbyJoined);
+		        field->setScroll(true);
+		        field->setGuide("Set a public name for this lobby.");
+		        field->setSize(SDL_Rect{98, 20, 242, 28});
+		        field->setFont(smallfont_outline);
+		        field->setHJustify(Field::justify_t::LEFT);
+		        field->setVJustify(Field::justify_t::CENTER);
+		        field->setColor(makeColor(166, 123, 81, 255));
+		        field->setBackgroundColor(makeColor(52, 30, 22, 255));
+		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+		        field->setWidgetSearchParent(field->getParent()->getName());
+		        field->setWidgetBack("back");
+		        field->setWidgetRight("chat");
+		        field->setWidgetLeft("back");
+		        //field->setText(currentLobbyName); // TODO epic lobby name EOS.currentLobbyName
+		    }
+
+            // chat button
             if (type != LobbyType::LobbyLocal) {
 			    auto chat_button = banner->addButton("chat");
 			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
@@ -10220,8 +12239,10 @@ bind_failed:
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
-		            toggleLobbyChatWindow();
+		            (void)toggleLobbyChatWindow();
 		            });
+		        chat_button->setWidgetBack("back");
+		        chat_button->setWidgetLeft("lobby_name");
 		    }
 		}
 
@@ -10668,15 +12689,6 @@ bind_failed:
 	    }
 #endif
 
-        // set state
-#ifdef STEAMWORKS
-	    requestingLobbies = true;
-#endif
-#if defined USE_EOS
-	    EOS.bRequestingLobbies = true;
-#endif
-	    LobbyHandler.selectedLobbyInList = 0;
-
 	    // create new window
 	    textPrompt("lobby_list_request", "Requesting lobby list...",
 	        [](Widget& widget){
@@ -10692,16 +12704,19 @@ bind_failed:
             {
 #endif
                 // lobby list has returned
-                closeText("lobby_list_request");
+                closePrompt("lobby_list_request");
 
 #if defined(STEAMWORKS)
 	            for (Uint32 c = 0; c < numSteamLobbies; ++c) {
+	                auto lobby = (CSteamID*)lobbyIDs[c];
+	                auto pchFlags = SteamMatchmaking()->GetLobbyData(*lobby, "svFlags");
+	                auto flags = (int)strtol(pchFlags, nullptr, 10);
 	                LobbyInfo info;
 	                info.name = lobbyText[c];
 	                info.players = lobbyPlayers[c];
-	                info.ping = 100; // TODO
-	                info.locked = false; // TODO
-	                info.flags = 0; // TODO
+	                info.ping = 50; // TODO
+	                info.locked = false; // this will always be false because steam only reported joinable lobbies
+	                info.flags = (Uint32)flags;
 	                info.address = "steam:" + std::to_string(c);
 	                addLobby(info);
 	            }
@@ -10712,7 +12727,7 @@ bind_failed:
 	                LobbyInfo info;
 	                info.name = lobby.LobbyAttributes.lobbyName;
 	                info.players = MAXPLAYERS - lobby.FreeSlots;
-	                info.ping = 100; // TODO
+	                info.ping = 50; // TODO
 	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
 	                info.flags = lobby.LobbyAttributes.serverFlags;
 	                info.address = "epic:" + std::to_string(c);
@@ -10723,10 +12738,13 @@ bind_failed:
 	        });
 
         // request new lobbies
+	    LobbyHandler.selectedLobbyInList = 0;
 #ifdef STEAMWORKS
-	    cpp_SteamMatchmaking_RequestLobbyList();
+	    requestingLobbies = true;
+	    cpp_SteamMatchmaking_RequestLobbyList(nullptr);
 #endif
 #ifdef USE_EOS
+	    EOS.bRequestingLobbies = true;
 #ifdef STEAMWORKS
 	    if ( EOS.CurrentUserInfo.bUserLoggedIn )
 	    {
@@ -11010,12 +13028,11 @@ bind_failed:
                         addLobby(lobby);
                     }
 		            });
-		        checkbox->setWidgetBack("names");
+		        checkbox->setWidgetBack("filter_settings");
 		        std::string next_name = std::string("filter_checkbox") + std::to_string(index + 1);
 		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
 		        checkbox->setWidgetDown(next_name.c_str());
 		        checkbox->setWidgetUp(prev_name.c_str());
-		        checkbox->setWidgetLeft("names");
 
 		        ++index;
             }
@@ -11178,21 +13195,23 @@ bind_failed:
 		refresh->setCallback(refresh_fn);
 
 		static auto enter_code_fn = [](Button& button){
+		    static const char* guide_ipaddr = "Enter an IP address to connect to.";
+		    static const char* guide_roomcode = "Enter the code to a lobby you wish to connect to.";
 		    static const char* guide;
-		    static const char* ipaddr = "Enter an IP address to connect to.";
-		    static const char* roomcode = "Enter the code to a lobby you wish to connect to.";
-		    guide = strcmp(button.getText(), "Enter IP\nAddress") ? roomcode : ipaddr;
-            textFieldPrompt("", guide, "Connect", "Cancel",
+		    guide = directConnect ? guide_ipaddr : guide_roomcode;
+		    static const char* tip_ipaddr = "Enter IP address...";
+		    static const char* tip_roomcode = "Enter roomcode...";
+		    static const char* tip;
+		    tip = directConnect ? tip_ipaddr : tip_roomcode;
+            textFieldPrompt(last_address, tip, guide, "Connect", "Cancel",
                 [](Button&){ // connect
                     const char* address = closeTextField(); // only valid for one frame
-                    if (guide == ipaddr) {
+                    if (directConnect) {
                         soundActivate();
-                        (void)connectToServer(address, LobbyType::LobbyLAN);
-                    } else if (guide == roomcode) {
-                        soundActivate();
-                        (void)connectToServer(address, LobbyType::LobbyOnline);
+                        (void)connectToServer(address, nullptr, LobbyType::LobbyLAN);
                     } else {
-                        soundError();
+                        soundActivate();
+                        (void)connectToServer(address, nullptr, LobbyType::LobbyOnline);
                     }
                 },
                 [](Button&){ // cancel
@@ -11235,7 +13254,7 @@ bind_failed:
 	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
                 const auto& lobby = lobbies[selectedLobby];
                 if (!lobby.locked) {
-                    if (connectToServer(lobby.address.c_str(),
+                    if (connectToServer(lobby.address.c_str(), nullptr,
                         directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                         // we only want to deselect the button if the
                         // "connecting to server" prompt actually raises
@@ -11314,7 +13333,7 @@ bind_failed:
 		    list->setWidgetBack("back_button");
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetRight("players");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("players");
 		    list->addSyncScrollTarget("pings");
 		    list->select();
@@ -11352,7 +13371,7 @@ bind_failed:
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetRight("pings");
 		    list->setWidgetLeft("names");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("pings");
 		}
@@ -11388,7 +13407,7 @@ bind_failed:
 		    list->setWidgetBack("back_button");
 		    list->setWidgetUp("online_tab");
 		    list->setWidgetLeft("players");
-		    list->setWidgetDown("enter_code");
+		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("players");
 		}
@@ -11484,10 +13503,14 @@ bind_failed:
 		        soundActivate();
             } else {
                 soundCancel();
+                button.select();
             }
 		    });
 
-		auto crossplay_fn = [](Button&){};
+		auto crossplay_fn = [](Button& button){
+		    soundToggle();
+		    LobbyHandler.crossplayEnabled = button.isPressed();
+		    };
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
 		crossplay_label->setJustify(Field::justify_t::CENTER);
@@ -12175,6 +14198,40 @@ bind_failed:
 		    "host_lan_image"
 		);
 
+		auto host_online_fn = [](Button&){
+		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+		        soundActivate();
+	            closeNetworkInterfaces();
+	            directConnect = false;
+		        EOS.createLobby();
+		        textPrompt("host_eos_prompt", "Creating online lobby...",
+		            [](Widget&){
+                    if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
+                        return;
+                    } else {
+                        if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
+		                    createLobby(LobbyType::LobbyOnline);
+                        } else {
+                            closePrompt("host_eos_prompt");
+	                        monoPrompt("Failed to create lobby", "Okay",
+	                            [](Button&){soundCancel(); closeMono();});
+                        }
+                    }
+		            });
+#endif // USE_EOS
+	        }
+		    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+		        soundActivate();
+		        createLobby(LobbyType::LobbyOnline);
+#endif // STEAMWORKS
+		    }
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+            soundError();
+#endif
+		    };
+
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -12196,7 +14253,7 @@ bind_failed:
 		host_online_button->setWidgetUp("host_lan");
 		host_online_button->setWidgetDown("join");
 #if defined(STEAMWORKS) || defined(USE_EOS)
-		host_online_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyOnline);});
+		host_online_button->setCallback(host_online_fn);
 #else
 		host_online_button->setCallback([](Button&){soundError();});
 #endif
@@ -12453,6 +14510,13 @@ bind_failed:
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
                     loadGame(info.player_num);
+                    for (int c = 0; c < MAXPLAYERS; ++c) {
+                        if (info.players_connected[c]) {
+                            playerSlotsLocked[c] = false;
+                        } else {
+                            playerSlotsLocked[c] = true;
+                        }
+                    }
                     multiplayer = SINGLE;
                     createDummyMainMenu();
                     createLobbyBrowser(button);
@@ -12992,17 +15056,17 @@ bind_failed:
 
 		// change "notification" section into subsection banner
 		auto notification = main_menu_frame->findFrame("notification"); assert(notification);
-		auto image = notification->findImage("background"); assert(image);
-		image->path = "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png";
-		image->disabled = false;
+		const int note_y = notification->getSize().y;
+		notification->removeSelf();
+		notification = main_menu_frame->addFrame("notification");
 		notification->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 204 * 2) / 2,
-			notification->getSize().y,
-			204 * 2,
-			43 * 2
-			});
+			(Frame::virtualScreenX - 204 * 2) / 2, note_y, 204 * 2, 43 * 2});
 		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-		image->pos = notification->getActualSize();
+		auto image = notification->addImage(
+		    notification->getActualSize(),
+		    0xffffffff,
+		    "*images/ui/Main Menus/AdventureArchives/UI_AdventureArchives_TitleGraphic00.png",
+		    "background");
 
 		// add banner text to notification
 		auto banner_text = notification->addField("text", 64);
@@ -13013,12 +15077,9 @@ bind_failed:
 		banner_text->setSize(SDL_Rect{19 * 2, 15 * 2, 166 * 2, 12 * 2});
 
 		// disable banners
-		for (int c = 0; c < 2; ++c) {
-			std::string name = std::string("banner") + std::to_string(c + 1);
-			auto banner = main_menu_frame->findFrame(name.c_str());
-			if (banner) {
-			    banner->setDisabled(true);
-			}
+		auto banners = main_menu_frame->findFrame("banners");
+		if (banners) {
+		    banners->setDisabled(true);
 		}
 
 		// delete existing buttons
@@ -13032,7 +15093,7 @@ bind_failed:
 		};
 		Option options[] = {
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
-			{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
+			//{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -13195,7 +15256,9 @@ bind_failed:
 			{"Controls", settingsControls},
 		};
 		if (intro) {
+#ifndef NINTENDO
 		    tabs.push_back({"Online", settingsOnline});
+#endif
 		} else {
 			tabs.push_back({"Game", settingsGame});
 		}
@@ -13616,14 +15679,24 @@ bind_failed:
 	static void mainQuitToDesktop(Button& button) {
 		static const char* quit_messages[][3] {
 			{"You want to leave, eh?\nThen get out and don't come back!", "Fine geez", "Never!"},
+			{"Did the wittle gobwins\nhurt your feewings?", "Yes", "No"},
 			{"Just cancel your plans.\nI'll wait.", "Good luck", "Sure"},
 			{"You couldn't kill the lich anyway.", "You're right", "Oh yeah?"},
+			{"Mad cuz bad!\nGit gud!", "I am anger", "Okay"},
 			{"The gnomes are laughing at you!\nAre you really gonna take that?", "Yeah :(", "No way!"},
 			{"Don't go now! There's a\nboulder trap around the corner!", "Kill me", "Oh thanks"},
 			{"I'll tell your parents\nyou said a bad word.", "Poop", "Please no"},
 			{"Please don't leave!\nThere's more treasure to loot!", "Don't care", "More loot!"},
 			{"Just be glad I can't summon\nthe minotaur in real life.", "Too bad", "Point taken"},
-			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"}
+			{"Off to leave a salty review I see?", "... yeah", "No way!"},
+			{"I'd leave too.\nThis game looks just like Minecraft.", "lol", "Ouch"},
+			{"Okay, I see how it is.\nSee if I'm still here tomorrow.", "Whatever", "I love you!"},
+			{"Don't quit now, you were\ngoing to win the next run.", "Don't lie", "Really?"},
+			{"A wimpy adventurer\nwould quit right now.", "Wimp time", "Am not!"},
+			{"An adventurer is trapped\nand they need your help!", "Who cares", "I'll do it!"},
+			{"A quitter says what?", "What?", "Not today"},
+			{"You won't quit.\nYou're just bluffing.", "Bet", "Ya got me."},
+			{"Say one more thing and\nI'm kicking you out of this game.", "Thing", "..."},
 		};
 		constexpr int num_quit_messages = sizeof(quit_messages) / (sizeof(const char*) * 3);
 
@@ -13633,7 +15706,7 @@ bind_failed:
 			quit_motd = 0;
 		}
 		if (quit_motd < 0) {
-			quit_motd = RNG.rand() % num_quit_messages;
+			quit_motd = RNG.uniform(0, num_quit_messages - 1);
 		}
 
 		binaryPrompt(
@@ -13680,7 +15753,8 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
@@ -13688,8 +15762,13 @@ bind_failed:
 				if (ingame) {
 				    doEndgame();
 				}
-	            playMusic(intromusic[RNG.rand() % (NUMINTROMUSIC - 1)], true, false, false);
+				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+	            playMusic(intromusic[music], true, false, false);
 				createMainMenu(false);
+				if (saved_invite_lobby) {
+				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
+				    saved_invite_lobby = nullptr;
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 				doEndgame();
@@ -13878,31 +15957,47 @@ bind_failed:
                 [](Button&){ // yes
                     soundActivate();
                     closeBinary();
+
+                    assert(main_menu_frame);
+			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
                 },
                 [](Button&){ // no
                     soundCancel();
                     closeBinary();
                     resetResolution();
+
+                    assert(main_menu_frame);
+			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
                 }, false, false); // yellow buttons
 
             // prompt timeout
-            prompt->setTickCallback([](Widget& widget){
-                const int seconds = (resolution_timeout - ticks) / TICKS_PER_SECOND;
-                if ((int)resolution_timeout - (int)ticks > 0) {
-                    auto prompt = static_cast<Frame*>(&widget);
-                    auto text = prompt->findField("text");
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), fmt, seconds + 1);
-                    text->setText(buf);
-                } else {
-                    soundCancel();
-                    closeBinary();
-                    resetResolution();
-                }
-                });
+            if (prompt) {
+                prompt->setTickCallback([](Widget& widget){
+                    const int seconds = (resolution_timeout - ticks) / TICKS_PER_SECOND;
+                    if ((int)resolution_timeout - (int)ticks > 0) {
+                        auto prompt = static_cast<Frame*>(&widget);
+                        auto text = prompt->findField("text");
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), fmt, seconds + 1);
+                        text->setText(buf);
+                    } else {
+                        soundCancel();
+                        closeBinary();
+                        resetResolution();
+                    }
+                    });
+            }
 
             // at the end so that old_video is not overwritten
             resolution_changed = false;
+        }
+
+		if (fadeout && fadealpha >= 255) {
+            handleFadeFinished(ingame);
         }
 
 		if (!main_menu_frame) {
@@ -13920,8 +16015,8 @@ bind_failed:
 
         // just always enable DLC in debug. saves headaches
 #ifndef NDEBUG
-		enabledDLCPack1 = true;
-		enabledDLCPack2 = true;
+		//enabledDLCPack1 = true;
+		//enabledDLCPack2 = true;
 #endif
 
 #ifdef STEAMWORKS
@@ -13949,10 +16044,6 @@ bind_failed:
 				}
 			}
 #endif
-        }
-
-		if (fadeout && fadealpha >= 255) {
-            handleFadeFinished(ingame);
         }
 
         // if no controller is connected, you can always connect one just for the main menu.
@@ -14053,20 +16144,54 @@ bind_failed:
 		    100,
 		    });
 		start->setBorder(0);
-		start->setColor(makeColor(0, 0, 0, 127));
-		start->setHighlightColor(makeColor(0, 0, 0, 127));
+		start->setColor(makeColor(255, 255, 255, 255));
+		start->setHighlightColor(makeColor(255, 255, 255, 255));
+		start->setBackground("images/ui/Main Menus/StartGradient.png");
 		start->setFont(bigfont_outline);
-		start->setText("Press to Start\n ");
-		start->setButtonsOffset(SDL_Rect{0, 16, 0, 0});
+		start->setText("Press to Start");
 		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		start->setButtonsOffset(SDL_Rect{0, 24, 0, 0});
 		start->setHideKeyboardGlyphs(false);
+		//start->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
+		start->setHideSelectors(true);
 		start->addWidgetAction("MenuConfirm", "start");
-		start->select();
 		start->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
 		    soundActivate();
 		    });
+		start->setTickCallback([](Widget& widget){
+		    auto button = static_cast<Button*>(&widget);
+		    auto color = button->getColor();
+            Uint8 r, g, b, a;
+            ::getColor(color, &r, &g, &b, &a);
+            static bool fadingDown = true;
+            if (fadingDown) {
+                if (a == 127) {
+                    fadingDown = false;
+                } else {
+                    --a;
+                }
+            } else {
+                if (a == 255) {
+                    fadingDown = true;
+                } else {
+                    ++a;
+                }
+            }
+            const Uint32 newColor = makeColor(r, g, b, a);
+            button->setColor(newColor);
+            button->setHighlightColor(newColor);
+		    });
+		start->select();
+
+#ifdef STEAMWORKS
+	    if (!cmd_line.empty()) {
+	        printlog(cmd_line.c_str());
+            steam_ConnectToLobby(cmd_line.c_str());
+            cmd_line = "";
+	    }
+#endif // STEAMWORKS
 	}
 
 #ifdef STEAMWORKS
@@ -14134,18 +16259,8 @@ bind_failed:
 
 		if (!ingame) {
 			auto notification = main_menu_frame->addFrame("notification");
-			notification->setSize(SDL_Rect{
-				(Frame::virtualScreenX - 236 * 2) / 2,
-				y,
-				236 * 2,
-				49 * 2
-				});
+			notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-			auto image = notification->addImage(notification->getActualSize(), 0xffffffff,
-				"*images/ui/Main Menus/Main/UI_MainMenu_EXNotification.png", "background");
-#if 1
-            image->disabled = true;
-#endif
 			y += notification->getSize().h;
 			y += 16;
 		}
@@ -14244,7 +16359,11 @@ bind_failed:
 				});
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
-			button->setWidgetDown(options[forward].name);
+			if (ingame || c + 1 < num_options) {
+			    button->setWidgetDown(options[forward].name);
+			} else {
+			    button->setWidgetDown("banner1");
+			}
 			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
@@ -14276,23 +16395,74 @@ bind_failed:
 		);
 
 		if (!ingame) {
-#if 0
-			for (int c = 0; c < 2; ++c) {
+		    const char* banner_images[][2] = {
+		        {
+		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
+		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_high.png",
+		        },
+		        {
+		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_base.png",
+		            "#images/ui/Main Menus/Banners/UI_MainMenu_DiscordLink_high.png",
+		        },
+		    };
+		    if (!enabledDLCPack1 && !enabledDLCPack2) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+		    }
+		    else if (!enabledDLCPack1) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
+		    }
+		    else if (!enabledDLCPack2) {
+		        banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_base.png";
+		        banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_LnPBanner1_high.png";
+		    }
+		    void(*banner_funcs[])(Button&) = {
+		        [](Button&){ // banner #1
+		        if (enabledDLCPack1 && enabledDLCPack2) {
+                    openURLTryWithOverlay("http://www.baronygame.com/");
+                } else {
+#if defined(STEAMWORKS)
+                    openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
+#elif defined(USE_EOS)
+                    openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+#else
+                    openDLCPrompt();
+#endif
+                }
+		        },
+		        [](Button&){ // banner #2
+                openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
+		        },
+		    };
+		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+		    auto banners = main_menu_frame->addFrame("banners");
+		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
+			for (int c = 0; c < num_banners; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
-				auto banner = main_menu_frame->addFrame(name.c_str());
-				banner->setSize(SDL_Rect{
-					(Frame::virtualScreenX - 472) / 2,
-					y,
-					472,
-					76
-					});
-				banner->setActualSize(SDL_Rect{0, 0, banner->getSize().w, banner->getSize().h});
-				std::string background = std::string("*images/ui/Main Menus/Main/UI_MainMenu_EXBanner") + std::to_string(c + 1) + std::string(".png");
-				banner->addImage(banner->getActualSize(), 0xffffffff, background.c_str());
+				auto banner = banners->addButton(name.c_str());
+				banner->setSize(SDL_Rect{0, c * 92, 472, 76});
+				banner->setBackground(banner_images[c][0]);
+				banner->setBackgroundHighlighted(banner_images[c][1]);
+				banner->setCallback(banner_funcs[c]);
+		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
+				//banner->setHideSelectors(true);
+
+				if (c == 0) {
+				    banner->setWidgetUp("Quit");
+				} else {
+				    banner->setWidgetUp((std::string("banner") + std::to_string(c + 0)).c_str());
+				}
+				if (c == num_banners - 1) {
+				    banner->setWidgetDown("Play Game");
+				} else {
+				    banner->setWidgetDown((std::string("banner") + std::to_string(c + 2)).c_str());
+				}
+				banner->setWidgetBack("back_button");
+
 				y += banner->getSize().h;
 				y += 16;
 			}
-#endif
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -14325,9 +16495,7 @@ bind_failed:
 			online_players->setFont(smallfont_outline);
 			online_players->setHJustify(Field::justify_t::RIGHT);
 			online_players->setVJustify(Field::justify_t::TOP);
-			online_players->setSize(SDL_Rect{
-				Frame::virtualScreenX - 200,
-				4, 200, 50});
+			online_players->setSize(SDL_Rect{Frame::virtualScreenX - 200, 4, 200, 50});
 			online_players->setColor(0xffffffff);
 			online_players->setTickCallback([](Widget& widget){
 			    auto online_players = static_cast<Field*>(&widget);
@@ -14375,13 +16543,17 @@ bind_failed:
 	}
 
 	void disconnectedFromServer(const char* text) {
-	    // when a player is disconnected from the server in-game
-	    multiplayer = SINGLE;
-		disconnectFromLobby();
-	    destroyMainMenu();
-		createDummyMainMenu();
-        disconnectPrompt(text);
-	    pauseGame(2, 0);
+	    // when a player is disconnected from the server
+	    if (multiplayer != SINGLE) {
+	        multiplayer = SINGLE;
+		    disconnectFromLobby();
+	        destroyMainMenu();
+		    createDummyMainMenu();
+            disconnectPrompt(text);
+            if (!intro) {
+	            pauseGame(2, 0);
+	        }
+	    }
 	}
 
     void openGameoverWindow(int player, bool tutorial) {
@@ -14542,7 +16714,7 @@ bind_failed:
         }
 
         const char* eulogy;
-        switch (RNG.rand() % 10) {
+        switch (RNG.uniform(0, 9)) {
         default:
         case 0: eulogy = "We hardly knew ye."; break;
         case 1: eulogy = "Rest In Peace."; break;
@@ -14741,8 +16913,36 @@ bind_failed:
         }
     }
 
-	void receivedInvite() {
-	    assert(0 && "Received an invite. Behavior goes here!");
+	void receivedInvite(void* lobby) {
+	    if (intro) {
+	        if (multiplayer) {
+	            disconnectFromLobby();
+	            destroyMainMenu();
+	            createMainMenu(false);
+	        }
+#ifdef STEAMWORKS
+            if (processLobbyInvite(lobby)) { // load any relevant save data
+                connectToServer(nullptr, lobby, LobbyType::LobbyOnline);
+            } else {
+                const auto error = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+                const auto str = LobbyHandler.getLobbyJoinFailedConnectString(error);
+                monoPrompt(str.c_str(), "Okay",
+                [](Button&){
+                soundCancel();
+                closeMono();
+                });
+            }
+#else
+	        connectToServer(nullptr, lobby, LobbyType::LobbyOnline);
+#endif
+	    } else {
+	        saved_invite_lobby = lobby;
+		    disconnectFromLobby();
+	        destroyMainMenu();
+		    createDummyMainMenu();
+	        beginFade(FadeDestination::RootMainMenu);
+	        pauseGame(2, 0);
+	    }
 	}
 
 	bool isPlayerSignedIn(int index) {
@@ -14857,7 +17057,12 @@ bind_failed:
 		    snprintf(text, sizeof(text), "Please reconnect your controller.\n\n\n\n");
         }
 
+        // at this point the prompt should ALWAYS open
+        // because we already handled the case where one exists above.
+
         auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        assert(prompt);
+
         prompt->setOwner(player);
 
         auto header_size = prompt->getActualSize(); header_size.h = 80;

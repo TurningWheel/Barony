@@ -92,13 +92,21 @@ public:
 	//! add a key value pair to the highlighted word map
 	//! @param word the word 'index' in the sentence (first word is 0)
 	//! @param color the color to set the word to
-	void	addWordToHighlight(int word, Uint32 color) { wordsToHighlight[word] = color; }
+	void addWordToHighlight(int word, Uint32 color) { wordsToHighlight[word] = color; }
 
 	//! gets map for highlighted words
-	const std::map<int, Uint32>&	getWordsToHighlight() const { return wordsToHighlight; }
+	const std::map<int, Uint32>& getWordsToHighlight() const { return wordsToHighlight; }
 
 	//! reset the highlighted word map
-	void	clearWordsToHighlight() { wordsToHighlight.clear(); }
+	void clearWordsToHighlight() { wordsToHighlight.clear(); }
+
+	//! add a key value pair to the colored line map
+	//! @param line the line number associated with the color
+	//! @param color the color to set the line to
+	void addColorToLine(int line, Uint32 color) { linesToColor[line] = color; }
+
+	//! reset the line color map
+	void clearLinesToColor() { linesToColor.clear(); }
 
 	static const int TEXT_HIGHLIGHT_WORDS_PER_LINE = 10000;
 
@@ -168,4 +176,5 @@ private:
 	void (*callback)(Field&) = nullptr;					//!< the callback to use after text is entered
 	bool ontop = false;									//!< whether the field is drawn ontop of others
 	std::map<int, Uint32> wordsToHighlight;				//!< word indexes in the field matching the keys in the map will be colored with the mapped value
+	std::map<int, Uint32> linesToColor;                 //!< lines that have a particular color
 };

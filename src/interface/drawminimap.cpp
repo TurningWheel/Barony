@@ -403,67 +403,52 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 		if ( drawMonsterAlly >= 0 || foundplayer >= 0 || entity->sprite == 239)
 		{
-			Uint32 color = makeColor(255, 0, 0, 255);
-
-			if (entity->sprite == 239)
-			{
-			    if (players[player] == nullptr)
-			    {
-			        continue;
-			    }
-			    if ( ticks % 120 - ticks % 60 )
-			    {
-				    if ( !minotaur_timer )
-				    {
-					    playSound(116, 64);
-				    }
-				    minotaur_timer = 1;
-				}
-				else
-				{
-				    minotaur_timer = 0;
-				}
-			}
-
+			Uint32 color;
 			if ( foundplayer >= 0 ) {
-		        switch ( foundplayer )
-		        {
-			        case 0: color = uint32ColorPlayer1; break;
-			        case 1: color = uint32ColorPlayer2; break;
-			        case 2: color = uint32ColorPlayer3; break;
-			        case 3: color = uint32ColorPlayer4; break;
-			        default: color = uint32ColorPlayerX; break;
-		        }
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
 					color = uint32ColorPlayerX; // grey
-				}
+				} else {
+		            switch ( foundplayer ) {
+			            case 0: color = uint32ColorPlayer1; break;
+			            case 1: color = uint32ColorPlayer2; break;
+			            case 2: color = uint32ColorPlayer3; break;
+			            case 3: color = uint32ColorPlayer4; break;
+			            default: color = uint32ColorPlayerX; break;
+		            }
+		        }
 			} else if ( entity->sprite == 239 ) {
+			    if (!players[player] || !players[player]->entity) {
+			        continue;
+			    }
+			    if ( ticks % 120 - ticks % 60 ) {
+				    if ( !minotaur_timer ) {
+					    playSound(116, 64);
+				    }
+				    minotaur_timer = 1;
+				} else {
+				    minotaur_timer = 0;
+				    continue;
+				}
 				color = makeColor(255, 0, 0, 255);
 			} else {
-				switch ( drawMonsterAlly ) {
-					case 0:
-						color = makeColor(32, 127, 32, 255); // green
-						break;
-					case 1:
-						color = makeColor(43, 90, 116, 255); // sky blue
-						break;
-					case 2:
-						color = makeColor(120, 114, 33, 255); // yellow
-						break;
-					case 3:
-						color = makeColor(102, 60, 83, 255); // pink
-						break;
-					default:
-						color = makeColor(96, 96, 96, 255); // grey
-						break;
-				}
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
-					color = makeColor(96, 96, 96, 255); // grey
+					color = uint32ColorPlayerX_Ally; // grey
+				} else {
+				    switch ( drawMonsterAlly ) {
+					    case 0: uint32ColorPlayer1_Ally; break;
+					    case 1: uint32ColorPlayer2_Ally; break;
+					    case 2: uint32ColorPlayer3_Ally; break;
+					    case 3: uint32ColorPlayer4_Ally; break;
+					    default: uint32ColorPlayerX_Ally; break;
+				    }
 				}
 			}
 
+            const real_t zoom = entity->sprite == 239 ?
+                minimapObjectZoom / 50.0:
+                minimapObjectZoom / 100.0;
             const real_t x = ((entity->x / 16.0) - xmin) * unitX + rect.x;
             const real_t y = ((entity->y / 16.0) - ymin) * unitY + rect.y;
             const real_t ang = entity->yaw;
@@ -482,8 +467,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 	        for (int c = 0; c < num_vertices; ++c) {
 	            const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
 	            const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
-	            const real_t sx = vx * unitX * (minimapObjectZoom / 100.0);
-	            const real_t sy = vy * unitY * (minimapObjectZoom / 100.0);
+	            const real_t sx = vx * unitX * zoom;
+	            const real_t sy = vy * unitY * zoom;
 	            glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
 	        }
 	        glEnd();

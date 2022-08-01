@@ -533,19 +533,19 @@ static std::unordered_map<std::string, size_t> unique_traces;
 #include <execinfo.h>
 #endif
 
-void stackTrace() {
+std::string stackTrace() {
 #ifndef NDEBUG
     if (!ENABLE_STACK_TRACES) {
-        return;
+        return "";
     }
 #ifdef LINUX
 
     // perform stack trace
-    constexpr unsigned int STACK_SIZE = 8;
+    constexpr unsigned int STACK_SIZE = 16;
 	void* array[STACK_SIZE];
 	size_t size = backtrace(array, STACK_SIZE);
 	if (size < 4) {
-	    return;
+	    return "";
 	}
 	char** symbols = backtrace_symbols(array, size);
 
@@ -560,7 +560,7 @@ void stackTrace() {
 	// free backtrace table
 	free(symbols);
 
-	printlog("STACK TRACE: %s", trace.c_str());
+    return trace;
 #endif
 #endif
 }
@@ -573,7 +573,7 @@ void stackTraceUnique() {
 #ifdef LINUX
 
     // perform stack trace
-    constexpr unsigned int STACK_SIZE = 8;
+    constexpr unsigned int STACK_SIZE = 16;
 	void* array[STACK_SIZE];
 	size_t size = backtrace(array, STACK_SIZE);
 	if (size < 4) {

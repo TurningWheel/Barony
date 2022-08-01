@@ -127,7 +127,7 @@ void openSteamLobbyWaitWindow(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
-size_t serialHash(std::string input);
+size_t serialHash(const std::string& input);
 extern char serialInputText[64];
 #endif
 

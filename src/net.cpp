@@ -1397,7 +1397,7 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[4])
 {
     printlog("processing lobby join request\n");
 
@@ -1415,7 +1415,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 			// client will enter any player spot
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == true )
+				if ( client_disconnected[c] == true && !lockedSlots[c] )
 				{
 					break;    // no more player slots
 				}
@@ -1425,7 +1425,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		{
 			// client is joining a particular player spot
 			c = net_packet->data[48];
-			if ( !client_disconnected[c] )
+			if ( !client_disconnected[c] || lockedSlots[c] )
 			{
 				c = MAXPLAYERS;  // client wants to fill a space that is already filled
 			}
@@ -1516,18 +1516,20 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult)
 		SDLNet_Write32(c, &net_packet->data[4]);
 		for ( int x = 0; x < MAXPLAYERS; x++ )
 		{
-			net_packet->data[8 + x * (5 + 23) + 0] = client_classes[x]; // class
-			net_packet->data[8 + x * (5 + 23) + 1] = stats[x]->sex; // sex
-			net_packet->data[8 + x * (5 + 23) + 2] = client_disconnected[x]; // connectedness :p
-			net_packet->data[8 + x * (5 + 23) + 3] = (Uint8)stats[x]->appearance; // appearance
-			net_packet->data[8 + x * (5 + 23) + 4] = (Uint8)stats[x]->playerRace; // player race
-			char shortname[32] = "";
-			strncpy(shortname, stats[x]->name, 22);
-			strcpy((char*)(&net_packet->data[8 + x * (5 + 23) + 5]), shortname); // name
+			net_packet->data[8 + x * (6 + 32) + 0] = client_disconnected[x]; // connectedness
+			net_packet->data[8 + x * (6 + 32) + 1] = lockedSlots[x]; // locked state
+			net_packet->data[8 + x * (6 + 32) + 2] = client_classes[x]; // class
+			net_packet->data[8 + x * (6 + 32) + 3] = stats[x]->sex; // sex
+			net_packet->data[8 + x * (6 + 32) + 4] = (Uint8)stats[x]->appearance; // appearance
+			net_packet->data[8 + x * (6 + 32) + 5] = (Uint8)stats[x]->playerRace; // player race
+
+			char shortname[32];
+			snprintf(shortname, sizeof(shortname), "%s", stats[x]->name);
+			memcpy(net_packet->data + 8 + x * (6 + 32) + 6, shortname, sizeof(shortname)); // name
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 8 + MAXPLAYERS * (5 + 23);
+		net_packet->len = 8 + MAXPLAYERS * (6 + 32);
 		if ( directConnect )
 		{
 		    sendPacketSafe(net_sock, -1, net_packet, 0);
