@@ -715,7 +715,7 @@ void Player::SignGUI_t::updateSignGUI()
 	else if ( player.entity )
 	{
 		real_t dist = sqrt(pow(signWorldCoordX - player.entity->x, 2) + pow(signWorldCoordY - player.entity->y, 2));
-		if ( dist > TOUCHRANGE * 1.25 )
+		if ( dist > TOUCHRANGE )
 		{
 			errorOpening = true;
 		}
