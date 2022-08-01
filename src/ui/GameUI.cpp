@@ -15393,7 +15393,7 @@ void createChestGUI(const int player)
 	{
 		auto bgFrame = frame->addFrame("chest base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			makeColor( 255, 255, 255, 255),
@@ -15611,7 +15611,7 @@ void createShopGUI(const int player)
 	{
 		auto bgFrame = frame->addFrame("shop base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
