@@ -1017,7 +1017,7 @@ namespace MainMenu {
 	        return nullptr;
 	    }
 
-		auto text = frame->addField("text", 128);
+		auto text = frame->addField("text", 1024);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
@@ -1079,9 +1079,9 @@ namespace MainMenu {
 	        return nullptr;
 	    }
 
-		auto text = frame->addField("text", 128);
+		auto text = frame->addField("text", 1024);
 		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 96});
-		text->setFont(smallfont_no_outline);
+		text->setFont(smallfont_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
 
@@ -1096,11 +1096,19 @@ namespace MainMenu {
 		};
 		constexpr int num_options = sizeof(options) / sizeof(options[0]);
 
+        int x = 0;
+        const int offx = (frame->getSize().w - 112 - 160 - 112) / 2;
+        const int offy = frame->getSize().h - 96;
         for (int c = 0; c < num_options; ++c) {
             const std::string name = std::string("name") + std::to_string(c + 1);
 		    auto button = frame->addButton(name.c_str());
-		    button->setSize(SDL_Rect{(frame->getSize().w - 112 * num_options) / 2, frame->getSize().h - 64, 108, 52});
-		    button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		    if (c == 1) {
+		        button->setSize(SDL_Rect{offx + x, offy, 156, 52});
+		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack01.png");
+		    } else {
+		        button->setSize(SDL_Rect{offx + x, offy, 108, 52});
+		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		    }
 		    button->setColor(makeColor(255, 255, 255, 255));
 		    button->setHighlightColor(makeColor(255, 255, 255, 255));
 		    button->setTextColor(makeColor(255, 255, 255, 255));
@@ -1118,6 +1126,7 @@ namespace MainMenu {
 		    }
 		    button->setWidgetBack("option3");
 		    button->setCallback(options[c].callback);
+		    x += button->getSize().w + 4;
 		}
 
 		auto selected = frame->findButton("option2");
@@ -1765,24 +1774,18 @@ namespace MainMenu {
 
         // TODO crossplay settings
 #ifdef USE_EOS
-        /*
-	    if ( LobbyHandler.settings_crossplayEnabled )
+	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
-		    if ( !LobbyHandler.crossplayEnabled )
-		    {
-			    LobbyHandler.settings_crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-		    }
+		    crossplay_enabled = false;
+		    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+            EOS.CrossplayAccountManager.handleLogin();
 	    }
-	    else
+	    else if ( !crossplay_enabled && LobbyHandler.crossplayEnabled )
 	    {
-		    if ( LobbyHandler.crossplayEnabled )
-		    {
-			    LobbyHandler.crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.logOut = true;
-		    }
+		    LobbyHandler.crossplayEnabled = false;
+		    EOS.CrossplayAccountManager.logOut = true;
+            EOS.CrossplayAccountManager.handleLogin();
 	    }
-        */
 #endif
 
 	    return result;
@@ -7703,50 +7706,30 @@ bind_failed:
                 if (address) {
                     const char epic_str[] = "epic:";
 	                if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
-	                    if (LobbyHandler.crossplayEnabled) {
-		                    lobby = getLobbyEpic(address);
-	                    } else {
-	                        closePrompt("connect_prompt");
-#ifdef STEAMWORKS
-	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
-#else
-	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
-#endif
-	                        multiplayer = SINGLE;
-	                        disconnectFromLobby();
-	                        return false;
-	                    }
+		                lobby = getLobbyEpic(address);
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
 		                // save address for next time
 		                stringCopyUnsafe(last_address, address, sizeof(last_address));
-	                    if (LobbyHandler.crossplayEnabled) {
-	                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
-	                        EOS.lobbySearchByCode[4] = '\0';
-	                        EOS.LobbySearchResults.useLobbyCode = true;
-                            EOS.bConnectingToLobby = true;
-	                        EOS.bConnectingToLobbyWindow = true;
-                            EOS.bJoinLobbyWaitingForHostResponse = true;
-                            LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-                            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-                            flushP2PPackets(100, 200);
-	                        EOS.searchLobbies(
-	                            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-		                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
-		                        "");
-	                        EOS.LobbySearchResults.useLobbyCode = false;
-		                    return true;
-	                    } else {
-	                        closePrompt("connect_prompt");
+                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
+                        EOS.lobbySearchByCode[4] = '\0';
+                        EOS.LobbySearchResults.useLobbyCode = true;
+                        EOS.bConnectingToLobby = true;
+                        EOS.bConnectingToLobbyWindow = true;
+                        EOS.bJoinLobbyWaitingForHostResponse = true;
+                        LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        flushP2PPackets(100, 200);
+                        EOS.searchLobbies(
+                            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+	                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+	                        "");
+                        EOS.LobbySearchResults.useLobbyCode = false;
 #ifdef STEAMWORKS
-	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
+	                    return LobbyHandler.crossplayEnabled;
 #else
-	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
+                        return true;
 #endif
-	                        multiplayer = SINGLE;
-	                        disconnectFromLobby();
-	                        return false;
-	                    }
 	                }
 		        }
 		        else if (pLobby) {
@@ -13584,7 +13567,18 @@ bind_failed:
 
 		auto crossplay_fn = [](Button& button){
 		    soundToggle();
-		    LobbyHandler.crossplayEnabled = button.isPressed();
+#if defined(USE_EOS) && defined(STEAMWORKS)
+		    if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
+			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+	            EOS.CrossplayAccountManager.handleLogin();
+	        } else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
+			    LobbyHandler.crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.logOut = true;
+	            EOS.CrossplayAccountManager.handleLogin();
+	        }
+#else
+            soundError();
+#endif
 		    };
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
@@ -17221,5 +17215,32 @@ bind_failed:
         prompt->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path.c_str(), "a_button");
 
         soundError();
+    }
+
+    void crossplayPrompt() {
+        const char* prompt =
+            "Enabling Crossplay allows you to join\n"
+            "lobbies hosted via Epic Games.\n"
+            "\n"
+            "By clicking Accept, you agree to share public info\n"
+            "about your Steam profile with Epic Games, Inc.\n"
+            "for the purpose of enabling crossplay.";
+        trinaryPrompt(
+            prompt,
+            "Accept", "View\nPrivacy Policy", "Deny",
+            [](Button&){ // accept
+            soundActivate();
+            closeTrinary();
+            EOS.CrossplayAccountManager.acceptCrossplay();
+            },
+            [](Button&){ // view privacy policy
+            soundActivate();
+            EOS.CrossplayAccountManager.viewPrivacyPolicy();
+            },
+            [](Button&){ // deny
+            soundCancel();
+            closeTrinary();
+            EOS.CrossplayAccountManager.denyCrossplay();
+            });
     }
 }

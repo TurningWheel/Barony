@@ -86,4 +86,5 @@ namespace MainMenu {
 	void disconnectedFromServer(const char* text);                  // called when the player is disconnected from the server, prompts them to end the game
 	void receivedInvite(void*);                                     // called when a player receives an invite to a lobby (EOS or Steam)
 	void setupSplitscreen();                                        // used to resize player game views, for example if a player drops or we change the aspect ratio
+	void crossplayPrompt();                                         // user chose to activate crossplay
 }
