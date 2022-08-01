@@ -897,7 +897,10 @@ void Player::HUD_t::updateUINavigation()
 		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 
 	bShowUINavigation = false;
-	if ( player.gui_mode != GUI_MODE_NONE && player.gui_mode != GUI_MODE_FOLLOWERMENU && player.isLocalPlayer() && !player.shootmode )
+	if ( player.gui_mode != GUI_MODE_NONE 
+		&& player.gui_mode != GUI_MODE_FOLLOWERMENU 
+		&& player.gui_mode != GUI_MODE_SIGN
+		&& player.isLocalPlayer() && !player.shootmode )
 	{
 		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
@@ -4468,7 +4471,7 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
 			{
 				promptText->setDisabled(true);
 			}
@@ -4557,7 +4560,7 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str(), pressed);
 			}
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
 			{
 				glyph->disabled = true;
 			}

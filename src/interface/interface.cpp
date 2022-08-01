@@ -1458,6 +1458,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
+	bool oldShootmode = shootmode;
 	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
@@ -1481,7 +1482,10 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	inventoryUI.closeInventory();
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
-	signGUI.closeSignGUI();
+	if ( signGUI.bSignOpen )
+	{
+		signGUI.closeSignGUI();
+	}
 
 	if ( hud.mapWindow )
 	{
@@ -1501,6 +1505,10 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		inputs.getUIInteraction(playernum)->toggleclick = false;
 		GUI.closeDropdowns();
 		shootmode = true;
+	}
+	else if ( shootmodeAction == DONT_CHANGE_SHOOTMODE )
+	{
+		shootmode = oldShootmode; // just in case any previous actions modified shootmode
 	}
 	if (gameUIFrame[playernum]) {
 	    gameUIFrame[playernum]->deselect();

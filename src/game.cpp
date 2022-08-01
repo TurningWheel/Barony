@@ -6340,7 +6340,6 @@ int main(int argc, char** argv)
 							if ( !players[i]->shootmode )
 							{
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-								players[i]->gui_mode = GUI_MODE_INVENTORY;
 								players[i]->characterSheet.attributespage = 0;
 							}
 							else

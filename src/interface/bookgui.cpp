@@ -559,16 +559,23 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 	}
 
 	player.GUI.previousModule = player.GUI.activeModule;
-
-	players[player.playernum]->openStatusScreen(GUI_MODE_SIGN,
+	player.closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+	player.openStatusScreen(GUI_MODE_SIGN,
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_SIGN_VIEW); // Reset the GUI to the inventory.
 	bSignOpen = true;
 	signName = name;
 	signUID = uid;
+
+	if ( Entity* entity = uidToEntity(uid) )
+	{
+		signWorldCoordX = entity->x;
+		signWorldCoordY = entity->y;
+	}
 }
 
 void Player::SignGUI_t::closeSignGUI()
 {
+	bool wasOpen = bSignOpen;
 #ifdef USE_THEORA_VIDEO
 	VideoManager[player.playernum].stop();
 #endif
@@ -580,8 +587,13 @@ void Player::SignGUI_t::closeSignGUI()
 	{
 		signFrame->setDisabled(true);
 	}
-
-	player.GUI.returnToPreviousActiveModule();
+	signWorldCoordX = 0.0;
+	signWorldCoordY = 0.0;
+	//player.GUI.returnToPreviousActiveModule();
+	if ( wasOpen )
+	{
+		player.closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+	}
 }
 
 void Player::SignGUI_t::createSignGUI()
@@ -633,35 +645,9 @@ void Player::SignGUI_t::createSignGUI()
 	promptBack->setText(language[4053]);
 	promptBack->setColor(makeColor(201, 162, 100, 255));
 
-	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 64),
+	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt back img");
 	promptBackImg->disabled = true;
-
-	//auto promptNextPage = signBackground->addField("prompt next txt", 16);
-	//promptNextPage->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // upper right corner
-	//	0, promptWidth, promptHeight });
-	//promptNextPage->setFont(promptFont.c_str());
-	//promptNextPage->setHJustify(Field::justify_t::RIGHT);
-	//promptNextPage->setVJustify(Field::justify_t::CENTER);
-	//promptNextPage->setText(language[4054]);
-	//promptNextPage->setColor(makeColor(201, 162, 100, 255));
-
-	//auto promptNextPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-	//	"", "prompt next img");
-	//promptNextPageImg->disabled = true;
-
-	//auto promptPrevPage = signBackground->addField("prompt prev txt", 16);
-	//promptPrevPage->setSize(SDL_Rect{ 16, // upper left corner
-	//	0, promptWidth, promptHeight });
-	//promptPrevPage->setFont(promptFont.c_str());
-	//promptPrevPage->setHJustify(Field::justify_t::LEFT);
-	//promptPrevPage->setVJustify(Field::justify_t::CENTER);
-	//promptPrevPage->setText(language[4055]);
-	//promptPrevPage->setColor(makeColor(201, 162, 100, 255));
-
-	//auto promptPrevPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-	//	"", "prompt prev img");
-	//promptPrevPageImg->disabled = true;
 
 	std::string signFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	for ( int i = 1; i <= 10; ++i )
@@ -722,13 +708,20 @@ void Player::SignGUI_t::updateSignGUI()
 		errorOpening = true;
 	}
 
-	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& player.GUI.activeModule != player.GUI.MODULE_SIGN_VIEW )
+	if ( player.GUI.activeModule != player.GUI.MODULE_SIGN_VIEW || player.gui_mode != GUI_MODE_SIGN )
 	{
 		bSignOpen = false;
 	}
+	else if ( player.entity )
+	{
+		real_t dist = sqrt(pow(signWorldCoordX - player.entity->x, 2) + pow(signWorldCoordY - player.entity->y, 2));
+		if ( dist > TOUCHRANGE * 1.25 )
+		{
+			errorOpening = true;
+		}
+	}
 
-	if ( !bSignOpen || errorOpening )
+	if ( !bSignOpen || errorOpening || !player.isLocalPlayerAlive() )
 	{
 		auto innerFrame = signFrame->findFrame("sign frame");
 		SDL_Rect pos = innerFrame->getSize();

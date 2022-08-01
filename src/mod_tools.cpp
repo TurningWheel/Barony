@@ -4484,6 +4484,7 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 }
 
 #ifdef USE_THEORA_VIDEO
+bool VideoManager_t::isInit = false;
 void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha)
 {
 	glBindTexture(GL_TEXTURE_2D, texID);
@@ -4650,9 +4651,17 @@ void VideoManager_t::init()
 
 void VideoManager_t::destroy()
 {
-	destroyClip();
 	theoraplayer::destroy();
 	isInit = false;
+}
+
+void VideoManager_t::deinitManager()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		VideoManager[i].destroyClip();
+	}
+	destroy();
 }
 
 void VideoManager_t::destroyClip()

@@ -3002,10 +3002,8 @@ void clientHandlePacket()
 	// open shop
 	else if (packetId == 'SHOP')
 	{
-		//players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		//players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
+		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_SHOP);
 
 		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		shopkeepertype[clientnum] = net_packet->data[8];
@@ -4497,6 +4495,18 @@ void clientHandlePacket()
 				initClass(clientnum);
 				intro = oldIntro;
 			}
+		}
+		return;
+	}
+
+	// open sign
+	else if ( packetId == 'SIGN' )
+	{
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* sign = uidToEntity(uid) )
+		{
+			char* key = (char*)(&net_packet->data[8]);
+			players[clientnum]->signGUI.openSign(key, uid);
 		}
 		return;
 	}

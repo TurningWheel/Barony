@@ -2928,7 +2928,7 @@ class VideoManager_t
 {
 	theoraplayer::VideoClip* clip = NULL;
 	theoraplayer::OutputMode outputMode = theoraplayer::FORMAT_RGB;
-	bool isInit = false;
+	static bool isInit;
 	bool started = false;
 	GLuint textureId = 0;
 	unsigned int textureFormat = GL_RGB;
@@ -2947,20 +2947,19 @@ class VideoManager_t
 	}
 	void destroyClip();
 	void updateCurrentClip(float timeDelta);
-	void destroy();
+	static void destroy();
 	void draw();
-	void init();
+	static void init();
 	std::string currentfile = "";
 public:
 	VideoManager_t() {};
-	~VideoManager_t() {
-		destroy();
-	};
+	~VideoManager_t() {};
 	void drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha);
 	void update();
 	void loadfile(const char* filename);
 	bool isPlaying(const char* filename) { return currentfile == filename && (clip != nullptr); }
 	void stop() { destroyClip(); }
+	static void deinitManager();
 };
 extern VideoManager_t VideoManager[MAXPLAYERS];
 #endif
