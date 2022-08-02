@@ -8760,7 +8760,7 @@ bind_failed:
 			invite_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto invite = card->addButton("invite");
-			invite->setSize(SDL_Rect{204, 146, 30, 30});
+			invite->setSize(SDL_Rect{202, 144, 30, 30});
 			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			invite->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			invite->setStyle(Button::style_t::STYLE_RADIO);
@@ -8771,8 +8771,8 @@ bind_failed:
 			invite->setWidgetSearchParent(name.c_str());
 			invite->addWidgetAction("MenuStart", "confirm");
 			invite->setWidgetBack("back_button");
-			invite->setWidgetUp("custom");
-			invite->setWidgetDown("player_count_2");
+			invite->setWidgetUp("custom_difficulty");
+			invite->setWidgetDown("friends");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE) {
@@ -8928,7 +8928,7 @@ bind_failed:
 			open->addWidgetAction("MenuStart", "confirm");
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
-			open->setWidgetDown("confirm");
+			open->setWidgetDown("player_count_2");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) {
