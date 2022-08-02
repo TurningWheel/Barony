@@ -1458,6 +1458,7 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 
 void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore whatToClose)
 {
+	bool oldShootmode = shootmode;
 	GenericGUI[playernum].closeGUI();
 	if ( whatToClose != CLOSEGUI_DONT_CLOSE_FOLLOWERGUI )
 	{
@@ -1477,11 +1478,16 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 	}
 	gui_mode = GUI_MODE_NONE;
 	GUI.activateModule(GUI_t::MODULE_NONE);
-
-	inventoryUI.closeInventory();
+	if ( whatToClose != CLOSEGUI_DONT_CLOSE_INVENTORY )
+	{
+		inventoryUI.closeInventory();
+	}
 	skillSheet.closeSkillSheet();
 	bookGUI.closeBookGUI();
-	signGUI.closeSignGUI();
+	if ( signGUI.bSignOpen )
+	{
+		signGUI.closeSignGUI();
+	}
 
 	if ( hud.mapWindow )
 	{
@@ -1501,6 +1507,10 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		inputs.getUIInteraction(playernum)->toggleclick = false;
 		GUI.closeDropdowns();
 		shootmode = true;
+	}
+	else if ( shootmodeAction == DONT_CHANGE_SHOOTMODE )
+	{
+		shootmode = oldShootmode; // just in case any previous actions modified shootmode
 	}
 	if (gameUIFrame[playernum]) {
 	    gameUIFrame[playernum]->deselect();
@@ -1895,7 +1905,7 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bgFrame->setInheritParentFrameOpacity(false);
 	bgFrame->setOpacity(0.0);
 
-	char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+	const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	int panelIndex = 0;
 	for ( auto& entry : panelEntries )
@@ -1997,7 +2007,7 @@ void setFollowerBannerTextFormatted(const int player, Field* field, Uint32 color
 	}
 }
 
-void setFollowerBannerText(const int player, Field* field, char* iconName, char* textKey, Uint32 color)
+void setFollowerBannerText(const int player, Field* field, const char* iconName, const char* textKey, Uint32 color)
 {
 	if ( !field ) { return; }
 	if ( FollowerMenu[player].iconEntries.find(iconName) == FollowerMenu[player].iconEntries.end() )

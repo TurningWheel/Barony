@@ -307,6 +307,7 @@ int initGame()
 		Player::CharacterSheet_t::loadCharacterSheetJSON();
 		StatusEffectQueue_t::loadStatusEffectsJSON();
 		FollowerRadialMenu::loadFollowerJSON();
+		ScriptTextParser.readAllScripts();
 
 		updateLoadingScreen(94);
 
@@ -893,4 +894,8 @@ void deinitGame()
 		delete players[i];
 		players[i] = nullptr;
 	}
+
+#ifdef USE_THEORA_VIDEO
+	VideoManager_t::deinitManager();
+#endif
 }

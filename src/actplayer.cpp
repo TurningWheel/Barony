@@ -4877,7 +4877,11 @@ void actPlayer(Entity* my)
 
 	my->removeLightField();
 
-	if ( PLAYER_TORCH && my->light == NULL )
+	if ( my->flags[BURNING] )
+	{
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), std::max(140, 50 + 15 * PLAYER_TORCH));
+	}
+	else if ( PLAYER_TORCH && my->light == NULL )
 	{
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
 	}

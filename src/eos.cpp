@@ -3158,27 +3158,6 @@ void EOSFuncs::Accounts_t::handleLogin()
 			AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 		}
 	}
-
-	//if ( popupType == POPUP_FULL )
-	//{
-	//	// close this popup.
-	//	buttonCloseSubwindow(nullptr);
-	//	list_FreeAll(&button_l);
-	//	deleteallbuttons = true;
-	//}
-	/*if ( !initPopupWindow && firstTimeSetupCompleted )
-	{
-		popupType = POPUP_TOAST;
-	}*/
-
-	//if ( popupType == POPUP_FULL )
-	//{
-	//	if ( !initPopupWindow )
-	//	{
-	//		createLoginDialogue();
-	//	}
-	//}
-	//drawDialogue();
 }
 
 void EOSFuncs::CrossplayAccounts_t::createNotification()
@@ -3203,8 +3182,6 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 #ifndef STEAMWORKS
 	return;
 #endif // !STEAMWORKS
-
-	drawDialogue();
 
 	if ( logOut )
 	{
@@ -3298,7 +3275,6 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->setIdleSeconds(5);
 			}
 			LobbyHandler.crossplayEnabled = true;
-			LobbyHandler.settings_crossplayEnabled = true;
 		}
 		return;
 	}
@@ -3356,163 +3332,48 @@ void EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure()
 
 void EOSFuncs::CrossplayAccounts_t::resetOnFailure()
 {
-	LobbyHandler.settings_crossplayEnabled = false;
 	LobbyHandler.crossplayEnabled = false;
 	connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
 	connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 	continuanceToken = nullptr;
 }
 
-void buttonAcceptCrossplaySetup(button_t* my)
+void EOSFuncs::CrossplayAccounts_t::acceptCrossplay()
 {
-	EOS.CrossplayAccountManager.acceptedEula = true;
-	EOS.CrossplayAccountManager.closePrompt();
-	if ( EOS.CrossplayAccountManager.continuanceToken )
+	acceptedEula = true;
+	if ( continuanceToken )
 	{
 		EOS_Connect_CreateUserOptions CreateUserOptions;
 		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
-		CreateUserOptions.ContinuanceToken = EOS.CrossplayAccountManager.continuanceToken;
+		CreateUserOptions.ContinuanceToken = continuanceToken;
 
 		EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
 		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, EOSFuncs::OnCreateUserCrossplayCallback);
 
-		EOS.CrossplayAccountManager.continuanceToken = nullptr;
+		continuanceToken = nullptr;
 	}
 	else
 	{
-		EOS.CrossplayAccountManager.resetOnFailure();
+		resetOnFailure();
 	}
-	buttonCloseSubwindow(nullptr);
 	EOSFuncs::logInfo("Crossplay account link has been accepted by user");
 }
 
-void buttonDenyCrossplaySetup(button_t* my)
+void EOSFuncs::CrossplayAccounts_t::denyCrossplay()
 {
-	EOS.CrossplayAccountManager.logOut = true;
-	EOS.CrossplayAccountManager.closePrompt();
-	EOS.CrossplayAccountManager.resetOnFailure();
-	buttonCloseSubwindow(nullptr);
+	logOut = true;
+	resetOnFailure();
 	EOSFuncs::logInfo("Crossplay account link has been denied by user");
 }
 
-void buttonViewPrivacyPolicy(button_t* my)
+void EOSFuncs::CrossplayAccounts_t::viewPrivacyPolicy()
 {
 	openURLTryWithOverlay("http://www.baronygame.com/privacypolicy.html");
 }
 
-void EOSFuncs::CrossplayAccounts_t::drawDialogue()
-{
-	if ( getPromptStatus() == PROMPT_CLOSED )
-	{
-		return;
-	}
-
-	if ( getPromptStatus() == PROMPT_SETUP )
-	{
-		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow, "%s", language[3979]);
-	}
-	else if ( getPromptStatus() == PROMPT_ABOUT )
-	{
-		ttfPrintTextFormattedColor(ttf12, subx1 + 12, suby1 + 8, uint32ColorYellow, "%s", language[3981]);
-	}
-}
-
-void buttonReopenCrossplaySetup(button_t* my)
-{
-	EOS.CrossplayAccountManager.createDialogue();
-}
-
-void buttonAboutCrossplay(button_t* my)
-{
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	EOS.CrossplayAccountManager.openPromptAbout();
-
-	// create new window
-	subwindow = 1;
-	subx1 = xres / 2 - 356;
-	subx2 = xres / 2 + 356;
-	suby1 = yres / 2 - 133;
-	suby2 = yres / 2 + 133;
-	strcpy(subtext, language[3980]);
-
-	button_t* button;
-	// privacy policy button
-	button = newButton();
-	strcpy(button->label, language[3978]);
-	button->sizex = strlen(language[3978]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 48;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonViewPrivacyPolicy;
-
-	// return to previous button
-	button = newButton();
-	strcpy(button->label, language[3982]);
-	button->sizex = strlen(language[3982]) * 12 + 4;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 24;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonReopenCrossplaySetup;
-}
-
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
 {
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	openPromptSetup();
-
-	// create new window
-	subwindow = 1;
-	subx1 = xres / 2 - 326;
-	subx2 = xres / 2 + 326;
-	suby1 = yres / 2 - 116;
-	suby2 = yres / 2 + 116;
-	strcpy(subtext, language[3975]);
-
-	button_t* button;
-	// accept button
-	button = newButton();
-	strcpy(button->label, language[3976]);
-	button->sizex = strlen(language[3976]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 48;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonAcceptCrossplaySetup;
-	
-	// deny button
-	button = newButton();
-	strcpy(button->label, language[3977]);
-	button->sizex = strlen(language[3977]) * 12 + 4;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 24;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonDenyCrossplaySetup;
-
-	// about crossplay button
-	button = newButton();
-	strcpy(button->label, language[3983]);
-	button->sizex = strlen(language[3983]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 48 - 70;
-	button->visible = 1;
-	button->focused = 1;
-	button->action = &buttonAboutCrossplay;
+    MainMenu::crossplayPrompt();
 }
 
 std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
@@ -3740,174 +3601,3 @@ void EOSFuncs::StatGlobal_t::queryGlobalStatUser()
 }
 
 #endif //USE_EOS
-
-
-//void EOSFuncs::Accounts_t::createLoginDialogue()
-//{
-//	if ( initPopupWindow )
-//	{
-//		return;
-//	}
-//	initPopupWindow = true;
-//	popupInitTicks = ticks;
-//	popupCurrentTicks = ticks;
-//
-//	if ( !loginBanner )
-//	{
-//		loginBanner = loadImage("images/system/title.png");
-//	}
-//
-//	// close current window
-//	buttonCloseSubwindow(NULL);
-//	list_FreeAll(&button_l);
-//	deleteallbuttons = true;
-//
-//	// create new window
-//	subwindow = 1;
-//	subx1 = xres / 2 - ((loginBanner->w / 2)+ 16);
-//	subx2 = xres / 2 + ((loginBanner->w / 2) + 16);
-//	suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
-//	suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
-//	strcpy(subtext, "");
-//
-//	// close button
-//	button_t* button;
-//	// retry button
-//	button = newButton();
-//	strcpy(button->label, "Retry login");
-//	button->x = subx1 + 4;
-//	button->y = suby2 - 24;
-//	button->sizex = strlen("Retry login") * 12 + 8;
-//	button->sizey = 20;
-//	button->visible = 1;
-//	button->focused = 1;
-//	button->action = &buttonRetryAuthorisation;
-//
-//	// qtd button
-//	button = newButton();
-//	strcpy(button->label, "Quit to desktop");
-//	button->sizex = strlen("Quit to desktop") * 12 + 4;
-//	button->sizey = 20;
-//	button->x = subx2 - button->sizex - 8;
-//	button->y = suby2 - 24;
-//	button->visible = 1;
-//	button->focused = 1;
-//	button->action = &buttonQuitConfirm;
-//}
-//
-//void EOSFuncs::Accounts_t::drawDialogue()
-//{
-//	Uint32 oldTicks = popupCurrentTicks;
-//	popupCurrentTicks = ticks;
-//
-//	if ( fadeout )
-//	{
-//		return;
-//	}
-//
-//	int centerWindowX = subx1 + (subx2 - subx1) / 2;
-//	if ( loginBanner )
-//	{
-//		SDL_Rect pos;
-//		pos.x = centerWindowX - loginBanner->w / 2;
-//		pos.y = suby1 + 4;
-//		pos.w = loginBanner->w;
-//		pos.h = loginBanner->h;
-//		drawImage(loginBanner, nullptr, &pos);
-//	}
-//
-//	ttfPrintTextFormatted(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 9, language[3936]);
-//
-//	char messageBuffer[512] = "";
-//	strcpy(messageBuffer, language[3937]);
-//	if ( popupCurrentTicks % TICKS_PER_SECOND == 0 && oldTicks != popupCurrentTicks )
-//	{
-//		++loadingTicks;
-//		if ( loadingTicks > 3 )
-//		{
-//			loadingTicks = 0;
-//		}
-//	}
-//	switch ( loadingTicks )
-//	{
-//		case 0:
-//			break;
-//		case 1:
-//			strcat(messageBuffer, ".");
-//			break;
-//		case 2:
-//			strcat(messageBuffer, "..");
-//			break;
-//		case 3:
-//			strcat(messageBuffer, "...");
-//			break;
-//		default:
-//			break;
-//	}
-//
-//	if ( waitingForCallback )
-//	{
-//		ttfPrintTextFormatted(ttf12, centerWindowX - strlen(messageBuffer) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 8, messageBuffer);
-//	}
-//	else
-//	{
-//		if ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Success )
-//		{
-//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//				makeColorRGB(0, 255, 0), language[3941]);
-//		}
-//		else if ( EOS.AccountManager.AccountAuthenticationStatus != EOS_EResult::EOS_NotConfigured )
-//		{
-//			// general error messages
-//			if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_Auth_ExchangeCodeNotFound )
-//			{
-//				if ( !loginCriticalErrorOccurred )
-//				{
-//					list_FreeAll(&button_l);
-//					deleteallbuttons = true;
-//
-//					// qtd button
-//					button_t* button = newButton();
-//					strcpy(button->label, "Quit to desktop");
-//					button->sizex = strlen("Quit to desktop") * 12 + 4;
-//					button->sizey = 20;
-//					button->x = subx1 + ((subx2 - subx1) / 2) - (button->sizex / 2);
-//					button->y = suby2 - 24;
-//					button->visible = 1;
-//					button->focused = 1;
-//					button->action = &buttonQuitConfirm;
-//				}
-//				loginCriticalErrorOccurred = true;
-//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3942]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//					makeColorRGB(255, 128, 0), language[3942]);
-//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3943]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 7,
-//					makeColorRGB(255, 128, 0), language[3943]);
-//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3944]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 5,
-//					makeColorRGB(255, 255, 0), language[3944]);
-//			}
-//			else
-//			{
-//				char errorBuf[512] = "";
-//				snprintf(errorBuf, 512 - 1, language[3941], static_cast<int>(EOS.AccountManager.AccountAuthenticationStatus));
-//				ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3941]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 8,
-//					makeColorRGB(255, 0, 0), errorBuf);
-//			}
-//		}
-//	}
-//
-//	if ( !firstTimeSetupCompleted && EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
-//	{
-//		if ( popupCurrentTicks - popupInitTicks >= TICKS_PER_SECOND * 3 )
-//		{
-//			suby1 = yres / 2 - ((loginBanner->h / 2) + 64);
-//			suby2 = yres / 2 + ((loginBanner->h / 2) + 64);
-//
-//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3938]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 6, 
-//				makeColorRGB(255, 255, 0), language[3938]);
-//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3939]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 5,
-//				makeColorRGB(255, 255, 0), language[3939]);
-//			ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3940]) * TTF12_WIDTH / 2, suby2 + 16 - TTF12_HEIGHT * 4,
-//				makeColorRGB(255, 255, 0), language[3940]);
-//		}
-//	}
-//}

@@ -2861,6 +2861,7 @@ void drawStatusNew(const int player)
 		Item* item = NULL;
 		const auto& inventoryUI = players[player]->inventoryUI;
 		if ( inputs.bPlayerUsingKeyboardControl(player)
+			&& players[player]->gui_mode != GUI_MODE_SIGN
 			&& (shootmode || (!shootmode && !(hotbar_numkey_quick_add && (mouseInsidePlayerHotbar(player) || mouseInsidePlayerInventory(player))))) )
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function

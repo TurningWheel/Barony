@@ -22,7 +22,7 @@
 #include "interface/consolecommand.hpp"
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.8.2"
+static const char VERSION[] = "v3.8.3";
 #define GAME_CODE
 
 class Entity;

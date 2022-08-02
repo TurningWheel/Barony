@@ -692,11 +692,17 @@ void actFloorDecoration(Entity* my)
 								players[i]->signGUI.openSign(key, my->getUID());
 							}
 						}
-						else
+						else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
 						{
-							// TODO multiplayer
+							strcpy((char*)net_packet->data, "SIGN");
+							SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+							strcpy((char*)(&net_packet->data[8]), key.c_str());
+							net_packet->address.host = net_clients[i - 1].host;
+							net_packet->address.port = net_clients[i - 1].port;
+							net_packet->len = 8 + strlen(key.c_str()) + 1;
+							sendPacketSafe(net_sock, -1, net_packet, i - 1);
 						}
-						break;
+						return;
 					}
 				}
 

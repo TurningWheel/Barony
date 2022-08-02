@@ -391,6 +391,7 @@ void Entity::actMonsterLimb(bool processLight)
 
 void Entity::removeMonsterDeathNodes()
 {
+	removeLightField();
 	int i = 0;
 	node_t *nextnode = nullptr;
 	for ( node_t *node = children.first; node != nullptr; node = nextnode )

@@ -559,26 +559,41 @@ void Player::SignGUI_t::openSign(std::string name, Uint32 uid)
 	}
 
 	player.GUI.previousModule = player.GUI.activeModule;
-
-	players[player.playernum]->openStatusScreen(GUI_MODE_SIGN,
+	player.closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+	player.openStatusScreen(GUI_MODE_SIGN,
 		INVENTORY_MODE_ITEM, player.GUI.MODULE_SIGN_VIEW); // Reset the GUI to the inventory.
 	bSignOpen = true;
 	signName = name;
 	signUID = uid;
+
+	if ( Entity* entity = uidToEntity(uid) )
+	{
+		signWorldCoordX = entity->x;
+		signWorldCoordY = entity->y;
+	}
 }
 
 void Player::SignGUI_t::closeSignGUI()
 {
+	bool wasOpen = bSignOpen;
+#ifdef USE_THEORA_VIDEO
+	VideoManager[player.playernum].stop();
+#endif
 	bSignOpen = false;
 	signName = "";
 	signUID = 0;
-
+	signAnimVideo = 0.0;
 	if ( signFrame )
 	{
 		signFrame->setDisabled(true);
 	}
-
-	player.GUI.returnToPreviousActiveModule();
+	signWorldCoordX = 0.0;
+	signWorldCoordY = 0.0;
+	//player.GUI.returnToPreviousActiveModule();
+	if ( wasOpen )
+	{
+		player.closeAllGUIs(CloseGUIShootmode::CLOSEGUI_ENABLE_SHOOTMODE, CloseGUIIgnore::CLOSEGUI_CLOSE_ALL);
+	}
 }
 
 void Player::SignGUI_t::createSignGUI()
@@ -609,6 +624,8 @@ void Player::SignGUI_t::createSignGUI()
 	a = 0;
 	fade->color = makeColor(r, g, b, a);
 
+	Frame* videoFrame = frame->addFrame("video frame");
+
 	Frame* signBackground = frame->addFrame("sign frame");
 	const int width = 366;
 	const int promptHeight = 27;
@@ -628,35 +645,9 @@ void Player::SignGUI_t::createSignGUI()
 	promptBack->setText(language[4053]);
 	promptBack->setColor(makeColor(201, 162, 100, 255));
 
-	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 64),
+	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt back img");
 	promptBackImg->disabled = true;
-
-	//auto promptNextPage = signBackground->addField("prompt next txt", 16);
-	//promptNextPage->setSize(SDL_Rect{ bgImg->pos.x + bgImg->pos.w - promptWidth - 16, // upper right corner
-	//	0, promptWidth, promptHeight });
-	//promptNextPage->setFont(promptFont.c_str());
-	//promptNextPage->setHJustify(Field::justify_t::RIGHT);
-	//promptNextPage->setVJustify(Field::justify_t::CENTER);
-	//promptNextPage->setText(language[4054]);
-	//promptNextPage->setColor(makeColor(201, 162, 100, 255));
-
-	//auto promptNextPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-	//	"", "prompt next img");
-	//promptNextPageImg->disabled = true;
-
-	//auto promptPrevPage = signBackground->addField("prompt prev txt", 16);
-	//promptPrevPage->setSize(SDL_Rect{ 16, // upper left corner
-	//	0, promptWidth, promptHeight });
-	//promptPrevPage->setFont(promptFont.c_str());
-	//promptPrevPage->setHJustify(Field::justify_t::LEFT);
-	//promptPrevPage->setVJustify(Field::justify_t::CENTER);
-	//promptPrevPage->setText(language[4055]);
-	//promptPrevPage->setColor(makeColor(201, 162, 100, 255));
-
-	//auto promptPrevPageImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-	//	"", "prompt prev img");
-	//promptPrevPageImg->disabled = true;
 
 	std::string signFont = "fonts/pixel_maz_multiline.ttf#16#2";
 	for ( int i = 1; i <= 10; ++i )
@@ -682,6 +673,28 @@ void Player::SignGUI_t::createSignGUI()
 			0xFFFFFFFF, "", imgBuf);
 		signImg->disabled = true;
 	}
+
+	videoFrame->setDisabled(true);
+	videoFrame->setSize(SDL_Rect{ 0, 0, signBackground->getSize().w, signBackground->getSize().h });
+	auto videoImg = videoFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "video bg");
+	videoFrame->setInheritParentFrameOpacity(false);
+	auto videoEmbed = videoFrame->addFrame("video");
+	videoEmbed->setSize(SDL_Rect{ 0, 0, 0, 0 });
+#ifdef USE_THEORA_VIDEO
+	videoEmbed->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
+		if ( widget.getOwner() < 0 )
+		{
+			return;
+		}
+		if ( ScriptTextParser.allEntries.find(players[widget.getOwner()]->signGUI.signName)
+			!= ScriptTextParser.allEntries.end() )
+		{
+			auto& signEntry = ScriptTextParser.allEntries[players[widget.getOwner()]->signGUI.signName];
+			const Frame* f = static_cast<const Frame*>(&widget);
+			VideoManager[widget.getOwner()].drawAsFrameCallback(widget, rect, signEntry.signVideoContent.pos, f->getOpacity() / 100.0);
+		}
+	});
+#endif // USE_THEORA_VIDEO
 }
 
 void Player::SignGUI_t::updateSignGUI()
@@ -697,18 +710,21 @@ void Player::SignGUI_t::updateSignGUI()
 		errorOpening = true;
 	}
 
-	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& player.GUI.activeModule != player.GUI.MODULE_SIGN_VIEW )
+	if ( player.GUI.activeModule != player.GUI.MODULE_SIGN_VIEW || player.gui_mode != GUI_MODE_SIGN )
 	{
 		bSignOpen = false;
 	}
-
-	if ( !bSignOpen || errorOpening )
+	else if ( player.entity )
 	{
-		signFrame->setDisabled(true);
-		bSignOpen = false;
-		signName = "";
+		real_t dist = sqrt(pow(signWorldCoordX - player.entity->x, 2) + pow(signWorldCoordY - player.entity->y, 2));
+		if ( dist > TOUCHRANGE )
+		{
+			errorOpening = true;
+		}
+	}
 
+	if ( !bSignOpen || errorOpening || !player.isLocalPlayerAlive() )
+	{
 		auto innerFrame = signFrame->findFrame("sign frame");
 		SDL_Rect pos = innerFrame->getSize();
 		signFadeInAnimationY = 0.0;
@@ -720,6 +736,8 @@ void Player::SignGUI_t::updateSignGUI()
 		getColor(fade->color, &r, &g, &b, &a);
 		a = 0;
 		fade->color = makeColor(r, g, b, a);
+
+		closeSignGUI();
 		return;
 	}
 
@@ -803,6 +821,55 @@ void Player::SignGUI_t::updateSignGUI()
 	}
 
 	auto& signEntry = ScriptTextParser.allEntries[signName];
+
+	auto videoFrame = signFrame->findFrame("video frame");
+	videoFrame->setDisabled(true);
+	if ( signFadeInAnimationY >= 0.99 && signEntry.signVideoContent.path != "" )
+	{
+#ifdef USE_THEORA_VIDEO
+		if ( !VideoManager[player.playernum].isPlaying(signEntry.signVideoContent.path.c_str()) )
+		{
+			VideoManager[player.playernum].loadfile(signEntry.signVideoContent.path.c_str());
+		}
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - signAnimVideo)) / 5.0;
+		signAnimVideo += setpointDiffX;
+		signAnimVideo = std::min(1.0, signAnimVideo);
+		videoFrame->setDisabled(false);
+		videoFrame->setOpacity(signAnimVideo * 100.0);
+		SDL_Rect pos = innerFrame->getSize();
+		pos.x = pos.x + signAnimVideo * pos.w;
+		videoFrame->setSize(pos);
+		auto videoImg = videoFrame->findImage("video bg");
+		videoImg->path = signEntry.signVideoContent.bgPath;
+		if ( auto imgGet = Image::get(videoImg->path.c_str()) )
+		{
+			videoImg->pos.w = imgGet->getWidth();
+			videoImg->pos.h = imgGet->getHeight();
+			videoImg->pos.x = 0;// videoFrame->getSize().w / 2 - videoImg->pos.w / 2;
+			videoImg->pos.y = videoFrame->getSize().h / 2 - videoImg->pos.h / 2;
+		}
+		else
+		{
+			videoImg->pos.w = pos.w;
+			videoImg->pos.h = pos.h;
+			videoImg->pos.y = videoFrame->getSize().h / 2 - videoImg->pos.h / 2;
+		}
+		videoImg->color = makeColor(255, 255, 255, 255 * signAnimVideo);
+
+		Frame* videoEmbed = videoFrame->findFrame("video");
+		const int border = signEntry.signVideoContent.imgBorder;
+		videoEmbed->setSize(SDL_Rect{ videoImg->pos.x + border, videoImg->pos.y + border, 
+			videoImg->pos.w - 2 * border, videoImg->pos.h - 2 * border });
+#else
+		signAnimVideo = 0.0;
+#endif
+	}
+	else
+	{
+		signAnimVideo = 0.0;
+	}
+
 	std::vector<Field*> allFields;
 	std::vector<Frame::image_t*> allImgs;
 	for ( int i = 1; i <= 10; ++i )

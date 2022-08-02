@@ -897,7 +897,10 @@ void Player::HUD_t::updateUINavigation()
 		&& player.bControlEnabled && !gamePaused && !player.usingCommand();
 
 	bShowUINavigation = false;
-	if ( player.gui_mode != GUI_MODE_NONE && player.gui_mode != GUI_MODE_FOLLOWERMENU && player.isLocalPlayer() && !player.shootmode )
+	if ( player.gui_mode != GUI_MODE_NONE 
+		&& player.gui_mode != GUI_MODE_FOLLOWERMENU 
+		&& player.gui_mode != GUI_MODE_SIGN
+		&& player.isLocalPlayer() && !player.shootmode )
 	{
 		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
 		{
@@ -2641,6 +2644,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
+const int StatusEffectQueue_t::kEffectBurning = -5;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -2740,6 +2744,23 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				    deleteEffect(i);
 			    }
 		    }
+		}
+	}
+
+	bool burning = false;
+	if ( players[player] && players[player]->entity && players[player]->entity->flags[BURNING] )
+	{
+		burning = true;
+		if ( effectSet.find(kEffectBurning) == effectSet.end() )
+		{
+			insertEffect(kEffectBurning, -1);
+		}
+	}
+	if ( !burning )
+	{
+		if ( effectSet.find(kEffectBurning) != effectSet.end() )
+		{
+			deleteEffect(kEffectBurning);
 		}
 	}
 
@@ -3105,6 +3126,14 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						frameImg->disabled = true;
 					}
 				}
+			}
+		}
+		else if ( q.effect == kEffectBurning )
+		{
+			q.lowDuration = true;
+			if ( lowDurationFlash )
+			{
+				frameImg->disabled = true;
 			}
 		}
 
@@ -4442,7 +4471,7 @@ void Player::HUD_t::updateActionPrompts()
 				continue;
 			}
 
-			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
+			if ( player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
 			{
 				promptText->setDisabled(true);
 			}
@@ -4531,7 +4560,7 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str(), pressed);
 			}
 			glyph->disabled = prompt->isDisabled();
-			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU )
+			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
 			{
 				glyph->disabled = true;
 			}
@@ -13242,15 +13271,23 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			if ( item->status == BROKEN )
 			{
-				brokenStatusFrame->setDisabled(false);
-				auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
-				if ( isHotbarIcon )
+				if ( players[player]->shopGUI.bOpen 
+					&& isItemSellableToShop(player, item) )
 				{
-					brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+					// don't grey out this item
 				}
 				else
 				{
-					brokenStatusImg->path = "images/system/white.png";
+					brokenStatusFrame->setDisabled(false);
+					auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
+					if ( isHotbarIcon )
+					{
+						brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
+					}
+					else
+					{
+						brokenStatusImg->path = "images/system/white.png";
+					}
 				}
 			}
 		}
@@ -15364,7 +15401,7 @@ void createChestGUI(const int player)
 	{
 		auto bgFrame = frame->addFrame("chest base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			makeColor( 255, 255, 255, 255),
@@ -15582,7 +15619,7 @@ void createShopGUI(const int player)
 	{
 		auto bgFrame = frame->addFrame("shop base");
 		bgFrame->setSize(basePos);
-		bgFrame->setHollow(true);
+		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),

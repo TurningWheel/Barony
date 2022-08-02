@@ -1468,6 +1468,12 @@ void actMonster(Entity* my)
 	bool myReflex;
 	Sint32 previousMonsterState = my->monsterState;
 
+	my->removeLightField();
+	if ( my->flags[BURNING] )
+	{
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 140);
+	}
+
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )

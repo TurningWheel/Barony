@@ -7424,7 +7424,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					playSoundEntity(hit.entity, 28, 64);
 				}
-				playSoundEntity(hit.entity, 140 + local_rng.rand(), 64);
+				playSoundEntity(hit.entity, 140 + local_rng.rand() % 2, 64);
 				messagePlayer(player, MESSAGE_COMBAT, language[678]);
 				if ( hit.entity->skill[0] > 0 )
 				{

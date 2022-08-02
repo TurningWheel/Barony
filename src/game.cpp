@@ -4390,7 +4390,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
-	    MainMenu::soundToggleMenu();
+	    playSound(500, 96);
 		gamePaused = true;
 		bool noOneUsingKeyboard = true;
 		for (int c = 0; c < 4; ++c)
@@ -6338,7 +6338,6 @@ int main(int argc, char** argv)
 							if ( !players[i]->shootmode )
 							{
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-								players[i]->gui_mode = GUI_MODE_INVENTORY;
 								players[i]->characterSheet.attributespage = 0;
 							}
 							else
@@ -6616,6 +6615,13 @@ int main(int argc, char** argv)
 			}
 
 			UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), false);
+
+#ifdef USE_THEORA_VIDEO
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				VideoManager[i].update();
+			}
+#endif
 
 			// update screen
 			GO_SwapBuffers(screen);

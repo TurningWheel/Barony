@@ -92,16 +92,13 @@ public:
 		bool trySetupFromSettingsMenu = false;
 		bool logOut = false;
 		bool autologin = false;
-		PromptTypes promptStatus = PROMPT_CLOSED;
-		PromptTypes getPromptStatus() { return promptStatus; };
-		void openPromptSetup() { promptStatus = PROMPT_SETUP;  }
-		void openPromptAbout() { promptStatus = PROMPT_ABOUT; }
-		void closePrompt() { promptStatus = PROMPT_CLOSED; }
 
 		void handleLogin();
 		void createDialogue();
-		void drawDialogue();
 		void createNotification();
+		void acceptCrossplay();
+		void denyCrossplay();
+		void viewPrivacyPolicy();
 
 		void resetOnFailure();
 		static void retryCrossplaySetupOnFailure();

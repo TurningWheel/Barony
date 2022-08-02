@@ -273,10 +273,6 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
-	void soundToggleMenu() {
-		playSound(500, 96);
-	}
-
 	static inline int getMenuOwner() {
 	    return intro ? clientnum : pause_menu_owner;
 	}
@@ -1021,7 +1017,7 @@ namespace MainMenu {
 	        return nullptr;
 	    }
 
-		auto text = frame->addField("text", 128);
+		auto text = frame->addField("text", 1024);
 		text->setSize(SDL_Rect{30, 28, 304, 46});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
@@ -1065,6 +1061,84 @@ namespace MainMenu {
 
 	static void closeBinary() {
 	    closePrompt("binary_prompt");
+	}
+
+	static Frame* trinaryPrompt(
+		const char* window_text,
+		const char* option1_text,
+		const char* option2_text,
+		const char* option3_text,
+		void (*option1_callback)(Button&),
+		void (*option2_callback)(Button&),
+		void (*option3_callback)(Button&)
+	) {
+		soundActivate();
+
+	    Frame* frame = createPrompt("trinary_prompt", false);
+	    if (!frame) {
+	        return nullptr;
+	    }
+
+		auto text = frame->addField("text", 1024);
+		text->setSize(SDL_Rect{30, 12, frame->getSize().w - 60, frame->getSize().h - 96});
+		text->setFont(smallfont_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		struct Option {
+		    const char* text;
+		    void (*callback)(Button&);
+		};
+		Option options[] = {
+		    {option1_text, option1_callback},
+		    {option2_text, option2_callback},
+		    {option3_text, option3_callback},
+		};
+		constexpr int num_options = sizeof(options) / sizeof(options[0]);
+
+        int x = 0;
+        const int offx = (frame->getSize().w - 112 - 160 - 112) / 2;
+        const int offy = frame->getSize().h - 96;
+        for (int c = 0; c < num_options; ++c) {
+            const std::string name = std::string("name") + std::to_string(c + 1);
+		    auto button = frame->addButton(name.c_str());
+		    if (c == 1) {
+		        button->setSize(SDL_Rect{offx + x, offy, 156, 52});
+		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack01.png");
+		    } else {
+		        button->setSize(SDL_Rect{offx + x, offy, 108, 52});
+		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		    }
+		    button->setColor(makeColor(255, 255, 255, 255));
+		    button->setHighlightColor(makeColor(255, 255, 255, 255));
+		    button->setTextColor(makeColor(255, 255, 255, 255));
+		    button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		    button->setFont(smallfont_outline);
+		    button->setText(options[c].text);
+		    button->setWidgetSearchParent(frame->getName());
+		    if (c < num_options - 1) {
+                const std::string name = std::string("name") + std::to_string(c + 2);
+		        button->setWidgetRight(name.c_str());
+		    }
+		    if (c > 0) {
+                const std::string name = std::string("name") + std::to_string(c);
+		        button->setWidgetLeft(name.c_str());
+		    }
+		    button->setWidgetBack("option3");
+		    button->setCallback(options[c].callback);
+		    x += button->getSize().w + 4;
+		}
+
+		auto selected = frame->findButton("option2");
+		if (selected) {
+		    selected->select();
+		}
+
+		return frame;
+	}
+
+	static void closeTrinary() {
+	    closePrompt("trinary_prompt");
 	}
 
 	static Frame* cancellablePrompt(
@@ -1173,7 +1247,7 @@ namespace MainMenu {
 	    closePrompt("text_prompt");
 	}
 
-    void connectionErrorPrompt(const char* str) {
+    static void connectionErrorPrompt(const char* str) {
         soundError();
         resetLobbyJoinFlowState();
         monoPrompt(str, "Okay",
@@ -1700,24 +1774,18 @@ namespace MainMenu {
 
         // TODO crossplay settings
 #ifdef USE_EOS
-        /*
-	    if ( LobbyHandler.settings_crossplayEnabled )
+	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
-		    if ( !LobbyHandler.crossplayEnabled )
-		    {
-			    LobbyHandler.settings_crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-		    }
+		    crossplay_enabled = false;
+		    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+            EOS.CrossplayAccountManager.handleLogin();
 	    }
-	    else
+	    else if ( !crossplay_enabled && LobbyHandler.crossplayEnabled )
 	    {
-		    if ( LobbyHandler.crossplayEnabled )
-		    {
-			    LobbyHandler.crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.logOut = true;
-		    }
+		    LobbyHandler.crossplayEnabled = false;
+		    EOS.CrossplayAccountManager.logOut = true;
+            EOS.CrossplayAccountManager.handleLogin();
 	    }
-        */
 #endif
 
 	    return result;
@@ -2657,14 +2725,8 @@ namespace MainMenu {
 		sliderRight->ontop = true;
 
 		// banner
-		auto banner = window->addImage(
-			SDL_Rect{14, 4, 950, 50},
-			makeColor(50, 56, 67, 255),
-			"images/system/white.png",
-			"banner_area"
-		);
 		auto banner_text = window->addField("banner_text", 64);
-		banner_text->setSize(banner->pos);
+		banner_text->setSize(SDL_Rect{14, 4, 950, 50});
 		banner_text->setText("AUTOMATIC INVENTORY BEHAVIOR");
 		banner_text->setFont(bigfont_outline);
 		banner_text->setJustify(Field::justify_t::CENTER);
@@ -2684,44 +2746,31 @@ namespace MainMenu {
 		sort_text->setHJustify(Field::justify_t::CENTER);
 
 		// background
-		auto rock_background = window->addImage(
-			SDL_Rect{18, 54, 942, 658},
-			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/Settings_Window_06_BGPattern.png",
-			"rock_background"
-		);
-		rock_background->tiled = true;
-		auto gradient_background = window->addImage(
-			SDL_Rect{18, 54, 942, 658},
-			makeColor(255, 255, 255, 255),
-			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
-			"gradient_background"
-		);
-		auto window_frame = window->addImage(
+		auto background = window->addImage(
 			window->getActualSize(),
 			0xffffffff,
-			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_Window00.png",
-			"window_frame"
+			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_WindowALL01.png",
+			"background"
 		);
-		window_frame->ontop = true;
 
 		// bottom buttons
 		struct Option {
 			const char* name;
+			const char* text;
 			void (*callback)(Button&);
 		};
 		Option options[] = {
-			{"Defaults", inventorySortingDefaults},
-			{"Discard", inventorySortingDiscard},
-			{"Confirm", inventorySortingConfirm},
+			{"Defaults", "Restore\nDefaults", inventorySortingDefaults},
+			{"Discard", "Discard\n& Exit", inventorySortingDiscard},
+			{"Confirm", "Confirm\n& Exit", inventorySortingConfirm},
 		};
 		const int num_options = sizeof(options) / sizeof(options[0]);
 		for (int c = 0; c < num_options; ++c) {
 			auto button = window->addButton(options[c].name);
 			button->setSize(SDL_Rect{412 + (582 - 412) * c, 638, 164, 62});
 			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
-			button->setText(options[c].name);
-			button->setFont(bigfont_outline);
+			button->setText(options[c].text);
+			button->setFont(smallfont_outline);
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			if (c > 0) {
@@ -2759,20 +2808,13 @@ namespace MainMenu {
 		const int num_hotbar_buttons = sizeof(hotbar_callbacks) / sizeof(hotbar_callbacks[0]);
 		for (int c = num_hotbar_buttons - 1; c >= 0; --c) {
 			auto button = window->addButton((std::string("hotbar_button") + std::to_string(c)).c_str());
-			button->setSize(SDL_Rect{62, 88 + c * 50, 48, 48});
-			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
-			button->setIcon("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_X00.png");
+			button->setSize(SDL_Rect{72, 88 + c * 50, 44, 42});
+			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Box01.png");
+			button->setIcon("*#images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Checkmark01.png");
 			button->setStyle(Button::style_t::STYLE_CHECKBOX);
 			button->setCallback(hotbar_callbacks[c]);
+			button->setSelectorOffset(SDL_Rect{0, 6, -4, 4});
 			button->setBorder(0);
-			button->setTickCallback([](Widget& widget){
-				auto button = static_cast<Button*>(&widget);
-				if (button->isSelected()) {
-					button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Selected00.png");
-				} else {
-					button->setBackground("*images/ui/Main Menus/Settings/AutoSort/AutoSort_Populate_Backing00.png");
-				}
-				});
 			if (c > 0) {
 				button->setWidgetUp((std::string("hotbar_button") + std::to_string(c - 1)).c_str());
 			}
@@ -6268,7 +6310,7 @@ bind_failed:
 
 					char buf[1024];
 					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
-					addLobbyChatMessage(0xffffffff, buf);
+					addLobbyChatMessage(uint32ColorYellow, buf);
 
 				    if (directConnect) {
 		                createWaitingStone(i);
@@ -6363,21 +6405,18 @@ bind_failed:
 		    net_packet->data[4] = player;
 
 		    // encode name
-		    size_t name_len = strlen(stats[player]->name);
-		    name_len = std::min(name_len, (size_t)22);
-		    memcpy(net_packet->data + 5, stats[player]->name, name_len);
-		    net_packet->data[5 + name_len] = '\0';
+		    stringCopy((char*)net_packet->data + 5, stats[player]->name, 32, sizeof(Stat::name));
 
 		    // encode class, sex, race, and appearance
-            SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[28]);
-            SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[32]);
+            SDLNet_Write32((Uint32)client_classes[player], &net_packet->data[37]);
+            SDLNet_Write32((Uint32)stats[player]->sex, &net_packet->data[41]);
             Uint32 raceAndAppearance =
                 ((stats[player]->appearance & 0xff) << 8) |
                 (stats[player]->playerRace & 0xff);
-            SDLNet_Write32(raceAndAppearance, &net_packet->data[36]);
+            SDLNet_Write32(raceAndAppearance, &net_packet->data[45]);
 
             // send packet
-            net_packet->len = 40;
+            net_packet->len = 49;
 	        if (multiplayer == SERVER) {
 		        for (int i = 1; i < MAXPLAYERS; i++ ) {
 			        if ( client_disconnected[i] ) {
@@ -6405,7 +6444,7 @@ bind_failed:
 
 			char buf[1024];
 			snprintf(buf, sizeof(buf), "*** %s has been kicked ***", players[index]->getAccountName());
-			addLobbyChatMessage(0xffffffff, buf);
+			addLobbyChatMessage(uint32ColorRed, buf);
 
 			client_disconnected[index] = true;
 
@@ -6516,13 +6555,23 @@ bind_failed:
 	        return;
 	    }
 
-	    char fmt[1024];
-	    int len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    constexpr Uint32 color = uint32ColorWhite;
+
+	    int len;
+	    char fmt[256];
+	    if (directConnect) {
+	        char shortname[32];
+	        stringCopy(shortname, stats[clientnum]->name, sizeof(shortname), sizeof(Stat::name));
+	        len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, msg);
+	    } else {
+	        len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
+	    }
 	    len = std::min((int)sizeof(fmt), len);
 
-		strcpy((char*)net_packet->data, "CMSG");
-		strcat((char*)(net_packet->data), fmt);
-		net_packet->len = 4 + len + 1;
+		memcpy((char*)net_packet->data, "CMSG", 4);
+		SDLNet_Write32(color, &net_packet->data[4]);
+		stringCopyUnsafe((char*)net_packet->data + 8, fmt, sizeof(fmt));
+		net_packet->len = 8 + len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
         // send packet
@@ -6535,39 +6584,11 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
-	        addLobbyChatMessage(0xffffffff, fmt);
+	        addLobbyChatMessage(color, fmt);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
 	        sendPacketSafe(net_sock, -1, net_packet, 0);
-	    }
-	}
-
-	void handleScanPacket() {
-	    if (directConnect) {
-	        char hostname[256] = { '\0' };
-#ifdef LINUX
-	        (void)gethostname(hostname, sizeof(hostname));
-#else
-	        strcpy(hostname, "Barony");
-#endif
-	        Uint32 hostname_len = (Uint32)strlen(hostname);
-	        SDLNet_Write32(hostname_len, &net_packet->data[4]);
-	        for (int c = 0; c < hostname_len; ++c) {
-                net_packet->data[8 + c] = hostname[c];
-	        }
-	        Uint32 offset = 8 + hostname_len;
-	        int numplayers = 0;
-	        for (int c = 0; c < MAXPLAYERS; ++c) {
-	            if (!client_disconnected[c]) {
-	                ++numplayers;
-	            }
-	        }
-	        SDLNet_Write32(numplayers, &net_packet->data[offset]);
-	        net_packet->data[offset + 4] = intro ? 0 : 1;
-	        SDLNet_Write32(svFlags, &net_packet->data[offset + 5]);
-	        net_packet->len = offset + 9;
-	        sendPacket(net_sock, -1, net_packet, 0);
 	    }
 	}
 
@@ -6646,6 +6667,126 @@ bind_failed:
 		}
 	}
 
+	static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
+		// network scan
+		{'SCAN', [](){
+		    handleScanPacket();
+		}},
+
+		// update player attributes
+		{'PLYR', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
+	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
+	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
+	        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
+	        stats[player]->clearStats();
+	        initClass(player);
+		}},
+
+		// update ready status
+		{'REDY', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    Uint8 status = net_packet->data[5];
+		    createReadyStone((int)player, false, status ? true : false);
+		}},
+
+		// got a chat message
+		{'CMSG', [](){
+		    // forward to other players
+			for (int i = 1; i < MAXPLAYERS; i++ ) {
+				if ( client_disconnected[i] ) {
+					continue;
+				}
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+			const Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+			addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
+		}},
+
+			// player disconnected
+		{'DISC', [](){
+		    // TODO verify packet origin
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+            if (player == 0) {
+                // yeah right
+                return;
+            }
+			client_disconnected[player] = true;
+
+#ifdef STEAMWORKS
+            if (steamIDRemote[player - 1]) {
+                cpp_Free_CSteamID(steamIDRemote[player - 1]);
+			    steamIDRemote[player - 1] = nullptr;
+			}
+#endif
+
+		    // forward to other players
+			for (int c = 1; c < MAXPLAYERS; c++) {
+				if (client_disconnected[c]) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
+			addLobbyChatMessage(uint32ColorYellow, buf);
+
+		    if (directConnect) {
+                createWaitingStone(player);
+            } else {
+                createInviteButton(player);
+            }
+		}},
+
+		// client requesting new svFlags
+		{'SVFL', [](){
+			// update svFlags for everyone
+			SDLNet_Write32(svFlags, &net_packet->data[4]);
+			net_packet->len = 8;
+			for (int c = 1; c < MAXPLAYERS; c++) {
+				if (client_disconnected[c]) {
+					continue;
+				}
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}},
+
+		// keepalive
+		{'KPAL', [](){
+			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+			client_keepalive[player] = ticks;
+		}},
+    };
+
 	static void handlePacketsAsServer() {
 #ifdef STEAMWORKS
 		CSteamID newSteamID;
@@ -6701,237 +6842,255 @@ bind_failed:
 			Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 
 			if (packetId == 'JOIN') {
-				int playerNum = MAXPLAYERS;
+			    int playerNum = MAXPLAYERS;
 
-				// when processing connection requests using Steamworks or EOS,
-				// we can reject join requests out of hand if the player with
-				// the associated ID is already connected to this server.
-				if (!directConnect) {
-					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			    // when processing connection requests using Steamworks or EOS,
+			    // we can reject join requests out of hand if the player with
+			    // the associated ID is already connected to this server.
+			    if (!directConnect) {
+				    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-						bool skipJoin = false;
-						for (int c = 1; c < MAXPLAYERS; c++) {
-							if (client_disconnected[c] || !steamIDRemote[c - 1]) {
-								continue;
-							}
-							if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
-								// we've already accepted this player. NEXT!
-								skipJoin = true;
-								break;
-							}
-						}
-						if (skipJoin) {
-							continue;
-						}
+					    bool skipJoin = false;
+					    for (int c = 1; c < MAXPLAYERS; c++) {
+						    if (client_disconnected[c] || !steamIDRemote[c - 1]) {
+							    continue;
+						    }
+						    if (newSteamID.ConvertToUint64() == (static_cast<CSteamID*>(steamIDRemote[c - 1]))->ConvertToUint64()) {
+							    // we've already accepted this player. NEXT!
+							    skipJoin = true;
+							    break;
+						    }
+					    }
+					    if (skipJoin) {
+						    return;
+					    }
 #endif // STEAMWORKS
-					} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-						bool skipJoin = false;
-						EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
-						if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
-							if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
-								// we've already accepted this player. NEXT!
-								skipJoin = true;
-							}
-						}
-						if (skipJoin) {
-							continue;
-						}
+					    bool skipJoin = false;
+					    EOSFuncs::logInfo("newRemoteProductId: %s", EOSFuncs::Helpers_t::productIdToString(newRemoteProductId));
+					    if (newRemoteProductId && EOS.P2PConnectionInfo.isPeerIndexed(newRemoteProductId)) {
+						    if (EOS.P2PConnectionInfo.getIndexFromPeerId(newRemoteProductId) >= 0) {
+							    // we've already accepted this player. NEXT!
+							    skipJoin = true;
+						    }
+					    }
+					    if (skipJoin) {
+						    return;
+					    }
 #endif // USE_EOS
-					}
-				}
+				    }
+			    }
 
-				// process incoming join request
-				NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
+			    // process incoming join request
+			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
 
-				// finalize connections for Steamworks / EOS
-				if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
-					if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			    // finalize connections for Steamworks / EOS
+			    if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
+				    if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-						for (int responses = 0; responses < 5; ++responses) {
-							SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
+					    for (int responses = 0; responses < 5; ++responses) {
+						    SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						    SDL_Delay(5);
+					    }
 #endif // STEAMWORKS
-					} else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+				    } else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
 #ifdef USE_EOS
-						for ( int responses = 0; responses < 5; ++responses ) {
-							EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
-							SDL_Delay(5);
-						}
+					    for ( int responses = 0; responses < 5; ++responses ) {
+						    EOS.SendMessageP2P(newRemoteProductId, net_packet->data, net_packet->len);
+						    SDL_Delay(5);
+					    }
 #endif // USE_EOS
-					}
-				} else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
-					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+				    }
+			    } else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
+				    if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
 #ifdef STEAMWORKS
-						if ( steamIDRemote[playerNum - 1] ) {
-							cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
-						}
-						steamIDRemote[playerNum - 1] = new CSteamID();
-						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-						for ( int responses = 0; responses < 5; ++responses ) {
-							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
+					    if ( steamIDRemote[playerNum - 1] ) {
+						    cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
+					    }
+					    steamIDRemote[playerNum - 1] = new CSteamID();
+					    *static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
+					    for ( int responses = 0; responses < 5; ++responses ) {
+						    SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+						    SDL_Delay(5);
+					    }
 #endif // STEAMWORKS
-					} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #if defined USE_EOS
-						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
-						for (int responses = 0; responses < 5; ++responses) {
-							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
-							SDL_Delay(5);
-						}
+					    EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+					    for (int responses = 0; responses < 5; ++responses) {
+						    EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
+						    SDL_Delay(5);
+					    }
 #endif
-					}
-				}
+				    }
+			    }
 
-				// assume success after this point
-				assert(result == NET_LOBBY_JOIN_DIRECTIP_SUCCESS ||
-				    result == NET_LOBBY_JOIN_P2P_SUCCESS);
+			    // assume success after this point
+			    if (result != NET_LOBBY_JOIN_DIRECTIP_SUCCESS &&
+			        result != NET_LOBBY_JOIN_P2P_SUCCESS) {
+			        printlog("Player failed to join lobby");
+			    }
 
+			    // finally, open a player card!
+			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+		            createReadyStone(playerNum, false, false);
 
-				// finally, open a player card!
-				if (playerNum >= 1 && playerNum < MAXPLAYERS) {
-			        createReadyStone(playerNum, false, false);
-
-				    char buf[1024];
-				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
-				    addLobbyChatMessage(0xffffffff, buf);
-				}
-
-				continue;
+			        char buf[1024];
+			        snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+			        addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+			    }
 			}
 
-			// network scan
-			else if (packetId == 'SCAN') {
-			    handleScanPacket();
-			    continue;
-			}
-
-			// update player attributes
-			else if (packetId == 'PLYR') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-				Uint8 player = net_packet->data[4];
-		        strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		        stats[player]->playerRace = (raceAndAppearance & 0xFF);
-		        stats[player]->clearStats();
-		        initClass(player);
-			    continue;
-			}
-
-			// update ready status
-			else if (packetId == 'REDY') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-			    Uint8 player = net_packet->data[4];
-			    Uint8 status = net_packet->data[5];
-			    createReadyStone((int)player, false, status ? true : false);
-			    continue;
-			}
-
-			// got a chat message
-			else if (packetId == 'CMSG') {
-			    // forward to other players
-				for (int i = 1; i < MAXPLAYERS; i++ ) {
-					if ( client_disconnected[i] ) {
-						continue;
-					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
-				}
-				addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				continue;
-			}
-
-			// player disconnected
-			else if (packetId == 'DISC') {
-			    int player = net_packet->data[4];
-				client_disconnected[player] = true;
-
-#ifdef STEAMWORKS
-                if (steamIDRemote[player - 1]) {
-                    cpp_Free_CSteamID(steamIDRemote[player - 1]);
-				    steamIDRemote[player - 1] = nullptr;
-				}
-#endif
-
-			    // forward to other players
-				for (int c = 1; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c]) {
-						continue;
-					}
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 5;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				}
-
-				char buf[1024];
-				snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[player]->getAccountName());
-				addLobbyChatMessage(0xffffffff, buf);
-
-			    if (directConnect) {
-	                createWaitingStone(player);
-	            } else {
-	                createInviteButton(player);
-	            }
-
-				continue;
-			}
-
-			// client requesting new svFlags
-			else if (packetId == 'SVFL') {
-				// update svFlags for everyone
-				SDLNet_Write32(svFlags, &net_packet->data[4]);
-				net_packet->len = 8;
-				for (int c = 1; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c]) {
-						continue;
-					}
-					net_packet->address.host = net_clients[c - 1].host;
-					net_packet->address.port = net_clients[c - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				}
-				continue;
-			}
-
-			// keepalive
-			else if (packetId == 'KPAL') {
-				client_keepalive[net_packet->data[4]] = ticks;
-				continue;
-			}
-
-            // error
-			else {
-			    printlog("Got a mystery packet: %c%c%c%c",
-			        (char)net_packet->data[0],
-			        (char)net_packet->data[1],
-			        (char)net_packet->data[2],
-			        (char)net_packet->data[3]);
-			    continue;
-			}
+		    auto find = serverPacketHandlers.find(packetId);
+		    if (find == serverPacketHandlers.end()) {
+                // error
+		        printlog("Got a mystery packet: %c%c%c%c",
+		            (char)net_packet->data[0],
+		            (char)net_packet->data[1],
+		            (char)net_packet->data[2],
+		            (char)net_packet->data[3]);
+		    } else {
+		        (*(find->second))(); // handle packet
+		    }
 		}
 	}
+
+	static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
+	    // game start
+	    {'STRT', [](){
+            destroyMainMenu();
+            createDummyMainMenu();
+	        lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+	        uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
+	        local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	        beginFade(FadeDestination::GameStart);
+	        numplayers = MAXPLAYERS;
+	        if (net_packet->data[12] == 0) {
+	            // is this necessary? I don't think so
+		        //loadingsavegame = 0;
+	        }
+	    }},
+
+		// we can get an ENTU packet if the server already started and we missed it somehow
+	    /*{'ENTU', [](){
+            destroyMainMenu();
+            createDummyMainMenu();
+		    beginFade(FadeDestination::GameStart);
+
+		    // NOTE we may not get a unique game key or server flags this way!!
+	    }},*/
+
+	    // new player
+	    {'JOIN', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    client_disconnected[player] = false;
+		    client_classes[player] = net_packet->data[5];
+		    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
+		    stats[player]->appearance = net_packet->data[7];
+		    stats[player]->playerRace = net_packet->data[8];
+		    stringCopy(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
+
+		    char buf[1024];
+		    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
+		    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+
+	        if (player != clientnum) {
+	            createReadyStone((int)player, false, false);
+	        }
+	    }},
+
+	    // lock/unlock a player slot
+	    {'LOCK', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        const bool locked = net_packet->data[5];
+	        playerSlotsLocked[player] = locked;
+
+            // these functions automatically create locked
+            // stones instead if the player is now locked
+	        if (directConnect) {
+	            createWaitingStone(player);
+	        } else {
+	            createInviteButton(player);
+	        }
+	        checkReadyStates();
+	    }},
+
+	    // update player attributes
+	    {'PLYR', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		    if (player != clientnum) {
+                stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
+                client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
+                stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
+                Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
+                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+                stats[player]->playerRace = (raceAndAppearance & 0xFF);
+                stats[player]->clearStats();
+                initClass(player);
+            }
+            checkReadyStates();
+	    }},
+
+	    // update ready status
+	    {'REDY', [](){
+	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+	        Uint8 status = net_packet->data[5];
+	        if (player != clientnum) {
+	            createReadyStone((int)player, false, status ? true : false);
+	        }
+	    }},
+
+		// player disconnect
+	    {'DISC', [](){
+		    const int playerDisconnected = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+			client_disconnected[playerDisconnected] = true;
+		    if (playerDisconnected == clientnum || playerDisconnected == 0) {
+			    // we got dropped
+                multiplayer = SINGLE; // so we don't send DISC packets
+                disconnectFromLobby();
+	            destroyMainMenu();
+	            createMainMenu(false);
+                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
+		    } else {
+		        char buf[1024];
+		        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
+		        addLobbyChatMessage(uint32ColorYellow, buf);
+			    if (directConnect) {
+	                createWaitingStone(playerDisconnected);
+	            } else {
+	                createInviteButton(playerDisconnected);
+	            }
+		        checkReadyStates();
+		    }
+	    }},
+
+	    // kicked
+	    {'KICK', [](){
+            multiplayer = SINGLE; // so we don't send DISC packets
+            disconnectFromLobby();
+            destroyMainMenu();
+            createMainMenu(false);
+            connectionErrorPrompt("You have been kicked\nfrom the remote server.");
+	    }},
+
+	    // got a chat message
+	    {'CMSG', [](){
+	        const Uint32 color = SDLNet_Read32(&net_packet->data[4]);
+		    addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
+	    }},
+
+	    // update svFlags
+	    {'SVFL', [](){
+		    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
+	    }},
+
+	    // keepalive
+	    {'KPAL', [](){
+		    return; // just a keep alive
+	    }},
+	};
 
 	static void handlePacketsAsClient() {
 	    if (receivedclientnum == false) {
@@ -7093,7 +7252,7 @@ bind_failed:
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (6 + 32) + 3]); // sex
 						stats[c]->appearance = net_packet->data[8 + c * (6 + 32) + 4]; // appearance
 						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
-						snprintf(stats[c]->name, sizeof(stats[c]->name), "%s", (char*)(net_packet->data + 8 + c * (6 + 32) + 6)); // name
+						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
 
 		                stats[c]->clearStats();
 		                initClass(c);
@@ -7196,157 +7355,16 @@ bind_failed:
 			    Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
 			    client_keepalive[0] = ticks;
 
-			    // game start
-			    if (packetId == 'STRT') {
-                    destroyMainMenu();
-                    createDummyMainMenu();
-				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				    uniqueGameKey = SDLNet_Read32(&net_packet->data[8]);
-				    local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-				    net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-				    beginFade(FadeDestination::GameStart);
-				    numplayers = MAXPLAYERS;
-				    if (net_packet->data[12] == 0) {
-				        // is this necessary? I don't think so
-					    //loadingsavegame = 0;
-				    }
-				    continue;
-			    }
-
-			    // we can get an ENTU packet if the server already started and we missed it somehow
-			    else if (packetId == 'ENTU') {
-                    destroyMainMenu();
-                    createDummyMainMenu();
-				    beginFade(FadeDestination::GameStart);
-
-				    // NOTE we may not get a unique game key or server flags this way!!
-
-				    continue;
-			    }
-
-			    // new player
-			    else if (packetId == 'JOIN') {
-			        int player = net_packet->data[4];
-				    client_disconnected[player] = false;
-				    client_classes[player] = net_packet->data[5];
-				    stats[player]->sex = static_cast<sex_t>(net_packet->data[6]);
-				    stats[player]->appearance = net_packet->data[7];
-				    stats[player]->playerRace = net_packet->data[8];
-				    strcpy(stats[player]->name, (char*)(&net_packet->data[9]));
-
-				    char buf[1024];
-				    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-				    addLobbyChatMessage(0xffffffff, buf);
-
-			        if (player != clientnum) {
-			            createReadyStone((int)player, false, false);
-			        }
-				    continue;
-			    }
-
-			    // lock/unlock a player slot
-			    else if (packetId == 'LOCK') {
-			        int player = net_packet->data[4];
-			        bool locked = net_packet->data[5];
-			        playerSlotsLocked[player] = locked;
-
-                    // these functions automatically create locked
-                    // stones instead if the player is now locked
-			        if (directConnect) {
-			            createWaitingStone(player);
-			        } else {
-			            createInviteButton(player);
-			        }
-			        checkReadyStates();
-			        continue;
-			    }
-
-			    // update player attributes
-			    else if (packetId == 'PLYR') {
-				    Uint8 player = net_packet->data[4];
-				    if (player != clientnum) {
-		                strcpy(stats[player]->name, (char*)(&net_packet->data[5]));
-		                client_classes[player] = (int)SDLNet_Read32(&net_packet->data[28]);
-		                stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[32]));
-		                Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[36]);
-		                stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
-		                stats[player]->playerRace = (raceAndAppearance & 0xFF);
-		                stats[player]->clearStats();
-		                initClass(player);
-		            }
-		            checkReadyStates();
-			        continue;
-			    }
-
-			    // update ready status
-			    else if (packetId == 'REDY') {
-			        Uint8 player = net_packet->data[4];
-			        Uint8 status = net_packet->data[5];
-			        if (player != clientnum) {
-			            createReadyStone((int)player, false, status ? true : false);
-			        }
-			        continue;
-			    }
-
-			    // player disconnect
-			    else if (packetId == 'DISC' || packetId == 'KICK') {
-				    int playerDisconnected = 0;
-				    if (packetId == 'KICK') {
-					    playerDisconnected = clientnum;
-				    } else {
-					    playerDisconnected = net_packet->data[4];
-					    client_disconnected[playerDisconnected] = true;
-				    }
-				    if (playerDisconnected == clientnum || playerDisconnected == 0) {
-					    // we got kicked!
-		                multiplayer = SINGLE; // so we don't send DISC packets
-		                disconnectFromLobby();
-			            destroyMainMenu();
-			            createMainMenu(false);
-			            if (packetId == 'KICK') {
-		                    connectionErrorPrompt("You have been kicked\nfrom the remote server.");
-		                } else {
-		                    connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
-		                }
-				    } else {
-				        char buf[1024];
-				        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
-				        addLobbyChatMessage(0xffffffff, buf);
-					    if (directConnect) {
-			                createWaitingStone(playerDisconnected);
-			            } else {
-			                createInviteButton(playerDisconnected);
-			            }
-				        checkReadyStates();
-				    }
-				    continue;
-			    }
-
-			    // got a chat message
-			    else if (packetId == 'CMSG') {
-				    addLobbyChatMessage(0xffffffff, (char*)(&net_packet->data[4]));
-				    continue;
-			    }
-
-			    // update svFlags
-			    else if (packetId == 'SVFL') {
-				    lobbyWindowSvFlags = SDLNet_Read32(&net_packet->data[4]);
-				    continue;
-			    }
-
-			    // keepalive
-			    else if (packetId == 'KPAL') {
-				    continue; // just a keep alive
-			    }
-
-                // error
-			    else {
+			    auto find = clientPacketHandlers.find(packetId);
+			    if (find == clientPacketHandlers.end()) {
+                    // error
 			        printlog("Got a mystery packet: %c%c%c%c",
 			            (char)net_packet->data[0],
 			            (char)net_packet->data[1],
 			            (char)net_packet->data[2],
 			            (char)net_packet->data[3]);
-			        continue;
+			    } else {
+			        (*(find->second))(); // handle packet
 			    }
 			}
 		}
@@ -7414,20 +7432,6 @@ bind_failed:
 	}
 
 	static void finalizeOnlineLobby() {
-	    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-	        closeNetworkInterfaces();
-	        directConnect = false;
-		    for ( int c = 0; c < MAXPLAYERS; c++ ) {
-			    if ( steamIDRemote[c] ) {
-				    cpp_Free_CSteamID(steamIDRemote[c]);
-				    steamIDRemote[c] = NULL;
-			    }
-		    }
-		    ::currentLobbyType = k_ELobbyTypePublic;
-		    cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-#endif
-	    }
 	    setupNetGameAsServer();
 		printlog( "online lobby opened successfully.\n");
 	}
@@ -7496,40 +7500,29 @@ bind_failed:
     static void sendJoinRequest() {
 	    printlog("sending join request...\n");
 
-	    // send join request
-	    strcpy((char*)net_packet->data, "JOIN");
-	    if (loadingsavegame)
-	    {
-		    strncpy((char*)net_packet->data + 4, stats[getSaveGameClientnum(false)]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
-		    appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = getSaveGameClientnum(false);
-	    } else {
-		    strncpy((char*)net_packet->data + 4, stats[0]->name, 22);
-		    SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[27]);
-		    SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[31]);
-		    Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
-		    appearanceAndRace |= ((Uint8)stats[0]->playerRace);
-		    SDLNet_Write32(appearanceAndRace, &net_packet->data[35]);
-		    strcpy((char*)net_packet->data + 39, VERSION);
-		    net_packet->data[47] = 0;
-		    net_packet->data[48] = 0;
-	    }
+	    const Uint32 index = loadingsavegame ?
+	        std::min(getSaveGameClientnum(false), MAXPLAYERS - 1) : 0;
+
+	    // construct packet
+	    memcpy(net_packet->data, "JOIN", 4);
+	    stringCopy((char*)net_packet->data + 4, stats[index]->name, 32, sizeof(Stat::name));
+	    SDLNet_Write32((Uint32)client_classes[index], &net_packet->data[36]);
+	    SDLNet_Write32((Uint32)stats[index]->sex, &net_packet->data[40]);
+	    Uint32 appearanceAndRace = ((Uint8)stats[index]->appearance << 8); // store in bits 8 - 15
+	    appearanceAndRace |= (Uint8)stats[index]->playerRace; // store in bits 0 - 7
+	    SDLNet_Write32(appearanceAndRace, &net_packet->data[44]);
+	    stringCopy((char*)net_packet->data + 48, VERSION, 8, sizeof(VERSION));
+	    net_packet->data[56] = index;
 	    if (loadingsavegame) {
 		    // send over the map seed being used
-		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[49]);
+		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[57]);
 	    } else {
-		    SDLNet_Write32(0, &net_packet->data[49]);
+		    SDLNet_Write32(0, &net_packet->data[57]);
 	    }
-	    SDLNet_Write32(loadingsavegame, &net_packet->data[53]); // send unique game key
+	    SDLNet_Write32(loadingsavegame, &net_packet->data[61]); // send unique game key
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
-	    net_packet->len = 57;
+	    net_packet->len = 65;
 
 	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -7678,7 +7671,7 @@ bind_failed:
 	                }
 	                else if ((char)tolower((int)address[0]) == 's' && strlen(address) == 5) {
 		                // save address for next time
-		                snprintf(last_address, sizeof(last_address), "%s", address);
+		                stringCopyUnsafe(last_address, address, sizeof(last_address));
 	                    connectingToLobby = true;
 	                    connectingToLobbyWindow = true;
                         joinLobbyWaitingForHostResponse = true;
@@ -7713,50 +7706,30 @@ bind_failed:
                 if (address) {
                     const char epic_str[] = "epic:";
 	                if (strncmp(address, epic_str, sizeof(epic_str) - 1) == 0) {
-	                    if (LobbyHandler.crossplayEnabled) {
-		                    lobby = getLobbyEpic(address);
-	                    } else {
-	                        closePrompt("connect_prompt");
-#ifdef STEAMWORKS
-	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
-#else
-	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
-#endif
-	                        multiplayer = SINGLE;
-	                        disconnectFromLobby();
-	                        return false;
-	                    }
+		                lobby = getLobbyEpic(address);
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
 		                // save address for next time
-		                snprintf(last_address, sizeof(last_address), "%s", address);
-	                    if (LobbyHandler.crossplayEnabled) {
-	                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
-	                        EOS.lobbySearchByCode[4] = '\0';
-	                        EOS.LobbySearchResults.useLobbyCode = true;
-                            EOS.bConnectingToLobby = true;
-	                        EOS.bConnectingToLobbyWindow = true;
-                            EOS.bJoinLobbyWaitingForHostResponse = true;
-                            LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-                            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-                            flushP2PPackets(100, 200);
-	                        EOS.searchLobbies(
-	                            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-		                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
-		                        "");
-	                        EOS.LobbySearchResults.useLobbyCode = false;
-		                    return true;
-	                    } else {
-	                        closePrompt("connect_prompt");
+		                stringCopyUnsafe(last_address, address, sizeof(last_address));
+                        memcpy(EOS.lobbySearchByCode, address + 1, 4);
+                        EOS.lobbySearchByCode[4] = '\0';
+                        EOS.LobbySearchResults.useLobbyCode = true;
+                        EOS.bConnectingToLobby = true;
+                        EOS.bConnectingToLobbyWindow = true;
+                        EOS.bJoinLobbyWaitingForHostResponse = true;
+                        LobbyHandler.setLobbyJoinType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        flushP2PPackets(100, 200);
+                        EOS.searchLobbies(
+                            EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
+	                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
+	                        "");
+                        EOS.LobbySearchResults.useLobbyCode = false;
 #ifdef STEAMWORKS
-	                        connectionErrorPrompt("Failed to connect to lobby.\nCrossplay not enabled.");
+	                    return LobbyHandler.crossplayEnabled;
 #else
-	                        connectionErrorPrompt("Failed to connect to lobby.\nNot connected to Epic Online.");
+                        return true;
 #endif
-	                        multiplayer = SINGLE;
-	                        disconnectFromLobby();
-	                        return false;
-	                    }
 	                }
 		        }
 		        else if (pLobby) {
@@ -7815,7 +7788,7 @@ bind_failed:
 		    }
 
 		    // save address for next time
-		    snprintf(last_address, sizeof(last_address), "%s", address);
+		    stringCopyUnsafe(last_address, address, sizeof(last_address));
 
 		    // resolve host's address
 		    printlog("resolving host's address at %s...\n", address);
@@ -7831,7 +7804,7 @@ bind_failed:
 		    }
 
 		    // open sockets
-		    printlog("opening TCP and UDP sockets...\n");
+		    printlog("opening UDP socket...\n");
 		    if (!(net_sock = SDLNet_UDP_Open(0))) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
@@ -12093,11 +12066,14 @@ bind_failed:
 		}
 
 		auto banner = lobby->addFrame("banner");
-		banner->setBorderColor(makeColor(11, 12, 15, 255));
-		banner->setColor(makeColor(22, 25, 30, 255));
-		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 64});
-		banner->setBorder(2);
+		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 66});
         {
+            auto background = banner->addImage(
+                SDL_Rect{0, 0, Frame::virtualScreenX, 66},
+                0xffffffff,
+                "*#images/ui/Main Menus/Play/PlayerCreation/Banner.png",
+                "background");
+
 		    auto back_button = createBackWidget(banner, [](Button&){
 		        if (currentLobbyType == LobbyType::LobbyLocal) {
 			        soundCancel();
@@ -12127,7 +12103,8 @@ bind_failed:
 #endif
 	                    });
 			    }
-			    });
+			    },
+			    SDL_Rect{4, 12, 0, 0});
 		    back_button->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		        if (currentLobbyType == LobbyType::None) {
 		            return;
@@ -12159,47 +12136,48 @@ bind_failed:
 		        });
 	        back_button->setWidgetRight("lobby_name");
 
-		    auto back_frame = back_button->getParent();
-		    back_frame->setTickCallback([](Widget& widget){
-			    auto frame = static_cast<Frame*>(&widget); assert(frame);
-			    auto parent = static_cast<Frame*>(frame->getParent()); assert(parent);
-			    auto lobby = static_cast<Frame*>(parent->getParent()); assert(lobby);
-			    bool allCardsClosed = true;
-			    for (int c = 0; c < 4; ++c) {
-			        if (clientnum != c && multiplayer != SINGLE) {
-			            continue;
-			        }
-				    if (isPlayerSignedIn(c)) {
-					    allCardsClosed = false;
-					    break;
-				    }
-			    }
-			    frame->setInvisible(!allCardsClosed);
-			    auto button = frame->findButton("back_button"); assert(button);
-			    button->setDisabled(!allCardsClosed);
-			    });
-
 			// lobby type
 			const char* type_str;
-			switch (type) {
-			default:
-			case LobbyType::LobbyLocal: type_str = "Local Lobby"; break;
-			case LobbyType::LobbyLAN: type_str = "LAN Lobby (Host)"; break;
-			case LobbyType::LobbyOnline: type_str = "Online Lobby (Host)"; break;
-			case LobbyType::LobbyJoined: type_str = directConnect ?
-			    "LAN Lobby (Joined)" : "Online Lobby (Joined)"; break;
+			if (type == LobbyType::LobbyLocal) {
+			    type_str = "Local Lobby";
+			} else {
+			    if (directConnect) {
+                    type_str = "LAN Lobby";
+			    } else {
+			        if (type == LobbyType::LobbyJoined) {
+			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        } else {
+			            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        }
+			    }
 			}
 			auto label = banner->addField("label", 128);
 			label->setHJustify(Field::justify_t::CENTER);
 			label->setVJustify(Field::justify_t::CENTER);
-			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 8, 256, 48});
+			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
 
             // lobby name
             if (type != LobbyType::LobbyLocal) {
 		        auto text_box = banner->addImage(
-			        SDL_Rect{96, 16, 246, 36},
+			        SDL_Rect{96, 8, 246, 36},
 			        0xffffffff,
 			        "*images/ui/Main Menus/TextField_00.png",
 			        "text_box"
@@ -12214,7 +12192,7 @@ bind_failed:
 		        field->setEditable(type != LobbyType::LobbyJoined);
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
-		        field->setSize(SDL_Rect{98, 20, 242, 28});
+		        field->setSize(SDL_Rect{98, 12, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
 		        field->setVJustify(Field::justify_t::CENTER);
@@ -12232,10 +12210,13 @@ bind_failed:
             // chat button
             if (type != LobbyType::LobbyLocal) {
 			    auto chat_button = banner->addButton("chat");
-			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 144, 16, 128, 32});
-			    chat_button->setHighlightColor(makeColor(44, 50, 60, 255));
-		        chat_button->setColor(makeColor(44, 50, 60, 255));
+			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 212, 8, 134, 40});
+			    chat_button->setHighlightColor(0xffffffff);
+		        chat_button->setColor(0xffffffff);
+			    chat_button->setTextHighlightColor(0xffffffff);
+		        chat_button->setTextColor(0xffffffff);
 		        chat_button->setText("Chat");
+		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
@@ -12279,6 +12260,83 @@ bind_failed:
 		            }
 		        }
 		    }
+		}
+
+		// announce lobby in chat window
+		lobby_chat_messages.clear();
+		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
+            if (directConnect) {
+                Uint16 port = ::portnumber;
+                char hostname[256] = { '\0' };
+                (void)gethostname(hostname, sizeof(hostname));
+                hostname[sizeof(hostname) - 1] = '\0';
+                char buf[1024];
+                snprintf(buf, sizeof(buf), "Server hosted at %s:%hu", hostname, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+            } else {
+                if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "s%s", getRoomCode());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Steam. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // STEAMWORKS
+                }
+                else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Epic Online. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // USE_EOS
+                }
+            }
+		}
+		else if (type == LobbyType::LobbyJoined) {
+            if (directConnect) {
+                char buf[1024];
+                Uint16 port = ::portnumber;
+                snprintf(buf, sizeof(buf), "Joined server at %s:%hu", last_address, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+            } else {
+                if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                    char roomkey[16];
+                    auto lobby = static_cast<CSteamID*>(currentLobby);
+                    snprintf(roomkey, sizeof(roomkey), "s%s", SteamMatchmaking()->GetLobbyData(*lobby, "roomkey"));
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Joined lobby via Steam. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // STEAMWORKS
+                }
+                else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                    char roomkey[16];
+                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+                        *ptr = (char)toupper((int)(*ptr));
+                    }
+
+                    char buf[1024];
+                    snprintf(buf, sizeof(buf), "Joined lobby via Epic Online. Roomcode: %s", roomkey);
+                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+#endif // USE_EOS
+                }
+            }
 		}
 	}
 
@@ -13509,7 +13567,18 @@ bind_failed:
 
 		auto crossplay_fn = [](Button& button){
 		    soundToggle();
-		    LobbyHandler.crossplayEnabled = button.isPressed();
+#if defined(USE_EOS) && defined(STEAMWORKS)
+		    if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
+			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+	            EOS.CrossplayAccountManager.handleLogin();
+	        } else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
+			    LobbyHandler.crossplayEnabled = false;
+			    EOS.CrossplayAccountManager.logOut = true;
+	            EOS.CrossplayAccountManager.handleLogin();
+	        }
+#else
+            soundError();
+#endif
 		    };
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
@@ -14199,13 +14268,13 @@ bind_failed:
 		);
 
 		auto host_online_fn = [](Button&){
+	        soundActivate();
+            closeNetworkInterfaces();
+            directConnect = false;
 		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-		        soundActivate();
-	            closeNetworkInterfaces();
-	            directConnect = false;
 		        EOS.createLobby();
-		        textPrompt("host_eos_prompt", "Creating online lobby...",
+		        textPrompt("host_lobby_prompt", "Creating Epic lobby...",
 		            [](Widget&){
                     if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
                         return;
@@ -14213,7 +14282,7 @@ bind_failed:
                         if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
 		                    createLobby(LobbyType::LobbyOnline);
                         } else {
-                            closePrompt("host_eos_prompt");
+                            closePrompt("host_lobby_prompt");
 	                        monoPrompt("Failed to create lobby", "Okay",
 	                            [](Button&){soundCancel(); closeMono();});
                         }
@@ -14223,8 +14292,28 @@ bind_failed:
 	        }
 		    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-		        soundActivate();
-		        createLobby(LobbyType::LobbyOnline);
+		        for ( int c = 0; c < MAXPLAYERS; c++ ) {
+			        if ( steamIDRemote[c] ) {
+				        cpp_Free_CSteamID(steamIDRemote[c]);
+				        steamIDRemote[c] = NULL;
+			        }
+		        }
+		        ::currentLobbyType = k_ELobbyTypePublic;
+		        cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
+		        textPrompt("host_lobby_prompt", "Creating Steam lobby...",
+		            [](Widget&){
+                    if (steamAwaitingLobbyCreation) {
+                        return;
+                    } else {
+                        if (::currentLobby != nullptr) {
+		                    createLobby(LobbyType::LobbyOnline);
+                        } else {
+                            closePrompt("host_lobby_prompt");
+	                        monoPrompt("Failed to create lobby", "Okay",
+	                            [](Button&){soundCancel(); closeMono();});
+                        }
+                    }
+		            });
 #endif // STEAMWORKS
 		    }
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
@@ -15630,13 +15719,8 @@ bind_failed:
 				soundCancel();
 				assert(main_menu_frame);
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				Button* quit_button;
-	            if (strcmp(map.filename, "tutorial_hub.lmp")) {
-				    quit_button = buttons->findButton("Return to Hall of Trials"); assert(quit_button);
-				} else {
-				    quit_button = buttons->findButton("Reset Hall of Trials"); assert(quit_button);
-				}
-				quit_button->select();
+				auto quit = buttons->findButton("Return to Hall of Trials"); assert(quit);
+				quit->select();
 			    closeBinary();
 			});
 	}
@@ -16295,7 +16379,7 @@ bind_failed:
 				        });
 				} else {
 			        options.insert(options.end(), {
-				        {"Reset Hall of Trials", "RESET TRIAL HUB", mainReturnToHallofTrials},
+				        {"Return to Hall of Trials", "RETURN TO TRIAL HUB", mainReturnToHallofTrials},
 				        });
 				}
 			}
@@ -16549,6 +16633,7 @@ bind_failed:
 		    disconnectFromLobby();
 	        destroyMainMenu();
 		    createDummyMainMenu();
+	        inputs.setPlayerIDAllowedKeyboard(clientnum);
             disconnectPrompt(text);
             if (!intro) {
 	            pauseGame(2, 0);
@@ -17130,5 +17215,32 @@ bind_failed:
         prompt->addImage(SDL_Rect{x, y, w, h}, 0xffffffff, path.c_str(), "a_button");
 
         soundError();
+    }
+
+    void crossplayPrompt() {
+        const char* prompt =
+            "Enabling Crossplay allows you to join\n"
+            "lobbies hosted via Epic Games.\n"
+            "\n"
+            "By clicking Accept, you agree to share public info\n"
+            "about your Steam profile with Epic Games, Inc.\n"
+            "for the purpose of enabling crossplay.";
+        trinaryPrompt(
+            prompt,
+            "Accept", "View\nPrivacy Policy", "Deny",
+            [](Button&){ // accept
+            soundActivate();
+            closeTrinary();
+            EOS.CrossplayAccountManager.acceptCrossplay();
+            },
+            [](Button&){ // view privacy policy
+            soundActivate();
+            EOS.CrossplayAccountManager.viewPrivacyPolicy();
+            },
+            [](Button&){ // deny
+            soundCancel();
+            closeTrinary();
+            EOS.CrossplayAccountManager.denyCrossplay();
+            });
     }
 }
