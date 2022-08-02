@@ -3151,10 +3151,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// open shop
 	{'SHOP', [](){
-		//players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_SHOP);
-		//players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM);
-		players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_SHOP);
+		players[clientnum]->closeAllGUIs(DONT_CHANGE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_INVENTORY);
+		players[clientnum]->openStatusScreen(GUI_MODE_SHOP, INVENTORY_MODE_ITEM, Player::GUI_t::MODULE_SHOP);
 
 		shopkeeper[clientnum] = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		shopkeepertype[clientnum] = net_packet->data[8];
@@ -4300,6 +4298,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				initClass(clientnum);
 				intro = oldIntro;
 			}
+		}
+	}},
+
+	// open fullscreen sign
+	{'SIGN', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* sign = uidToEntity(uid) )
+		{
+			char* key = (char*)(&net_packet->data[8]);
+			players[clientnum]->signGUI.openSign(key, uid);
 		}
 	}},
 
