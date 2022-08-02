@@ -11891,7 +11891,7 @@ bind_failed:
 		            newPlayer[player] = false;
 
 		            char buf[1024];
-		            snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+		            snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
 		            sendChatMessageOverNet(uint32ColorBaronyBlue, buf);
 		        }
 		    }
