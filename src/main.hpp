@@ -101,7 +101,8 @@ extern bool autoLimbReload;
 #include <time.h>
 #include <fcntl.h>
 #ifdef WINDOWS
-#include <winsock2.h>
+#include <WinSock2.h>
+#pragma comment(lib, "ws2_32.lib")
 #else
 #include <unistd.h>
 #include <limits.h>
