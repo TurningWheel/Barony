@@ -10751,7 +10751,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		destStats->EXP += xpGain;
 	}
 
-	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root )
+	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root
+		&& this->behavior == &actMonster )
 	{
 		if ( destStats->type == CREATURE_IMP 
 			|| destStats->type == DEMON
