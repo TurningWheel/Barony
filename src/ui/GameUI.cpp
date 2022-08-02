@@ -2434,7 +2434,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 								int type = tagged->getMonsterTypeFromSprite();
 								if ( type != NOTHING )
 								{
-									snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+									snprintf(buf, sizeof(buf), formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
 								}
 								else
 								{
@@ -2443,7 +2443,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 							}
 							else if ( tagged->behavior == &actPlayer )
 							{
-								snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+								snprintf(buf, sizeof(buf), formatString.c_str(), stats[tagged->skill[2]]->name);
 							}
 							std::string formattedName = buf;
 							uppercaseString(formattedName);
@@ -2833,7 +2833,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 										int type = tagged->getMonsterTypeFromSprite();
 										if ( type != NOTHING )
 										{
-											snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+											snprintf(buf, sizeof(buf), formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
 										}
 										else
 										{
@@ -2842,7 +2842,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 									}
 									else if ( tagged->behavior == &actPlayer )
 									{
-										snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+										snprintf(buf, sizeof(buf), formatString.c_str(), stats[tagged->skill[2]]->name);
 									}
 									std::string formattedName = buf;
 									notificationTxt->setText(formattedName.c_str());
@@ -8295,33 +8295,33 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
 					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(), 
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_MELEE_DAMAGE);
 				return true;
@@ -8336,39 +8336,39 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
 					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.equipmentAndEffectBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.proficiencyBonus);
 				return true;
 			case 6:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_unarmed_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_unarmed_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_PLAYER_UNARMED_DAMAGE);
 				return true;
@@ -8381,32 +8381,32 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
 					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_noskill").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_noskill").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_MELEE_DAMAGE);
 				return true;
@@ -8419,39 +8419,39 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
 					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_items_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.equipmentAndEffectBonus);
 				return true;
 			case 6:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_ranged_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_ranged_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_RANGED_DAMAGE);
 				return true;
@@ -8465,43 +8465,43 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, "");
-				snprintf(valueBuf, 128, "");
+				strcpy(titleBuf, "");
+				strcpy(valueBuf, "");
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.proficiencyBonus);
 				return true;
 			case 6:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_fully_charged").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_fully_charged").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					3);
 				return true;
 			case 7:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_THROWN_DAMAGE);
 				return true;
@@ -8514,33 +8514,33 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_average_format").c_str(),
 					(real_t)attackHoverTextInfo.attackMinRange + ((attackHoverTextInfo.attackMaxRange - attackHoverTextInfo.attackMinRange) / 2.0));
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.proficiencyBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_THROWN_DAMAGE);
 				return true;
@@ -8553,33 +8553,33 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_nobonus_format").c_str(),
 					attackHoverTextInfo.totalAttack);
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
+				snprintf(titleBuf, sizeof(titleBuf), Player::CharacterSheet_t::getHoverTextString("attributes_atk_range").c_str(),
 					skillName.c_str(), skillLVL);
-				snprintf(valueBuf, 128,
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_range_format").c_str(),
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_whip").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_whip").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
 				return true;
 			case 4:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.weaponBonus);
 				return true;
 			case 5:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
-				snprintf(valueBuf, 128,
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_melee_weapon_base").c_str());
+				snprintf(valueBuf, sizeof(valueBuf),
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					BASE_MELEE_DAMAGE);
 				return true;
@@ -8592,12 +8592,12 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		switch ( lineNumber )
 		{
 			case 1:
-				snprintf(titleBuf, 128, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
-				snprintf(valueBuf, 128, "-");
+				snprintf(titleBuf, sizeof(titleBuf), "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_avg").c_str());
+				snprintf(valueBuf, sizeof(valueBuf), "-");
 				return true;
 			case 2:
-				snprintf(titleBuf, 128, "");
-				snprintf(valueBuf, 128, "");
+				strcpy(titleBuf, "");
+				strcpy(valueBuf, "");
 				return true;
 			default:
 				return false;
