@@ -680,6 +680,7 @@ void Player::SignGUI_t::createSignGUI()
 	videoFrame->setInheritParentFrameOpacity(false);
 	auto videoEmbed = videoFrame->addFrame("video");
 	videoEmbed->setSize(SDL_Rect{ 0, 0, 0, 0 });
+#ifdef USE_THEORA_VIDEO
 	videoEmbed->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
 		if ( widget.getOwner() < 0 )
 		{
@@ -693,6 +694,7 @@ void Player::SignGUI_t::createSignGUI()
 			VideoManager[widget.getOwner()].drawAsFrameCallback(widget, rect, signEntry.signVideoContent.pos, f->getOpacity() / 100.0);
 		}
 	});
+#endif // USE_THEORA_VIDEO
 }
 
 void Player::SignGUI_t::updateSignGUI()
