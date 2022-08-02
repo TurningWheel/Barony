@@ -8882,13 +8882,13 @@ bind_failed:
 
                     if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-                        EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE;
+                        EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
                         EOS.bFriendsOnly = true;
 #endif // USE_EOS
                     }
                     else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-                        ::currentLobbyType = k_ELobbyTypeFriendsOnly;
+                        ::currentLobbyType = k_ELobbyTypePublic;
                         auto lobby = static_cast<CSteamID*>(::currentLobby);
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
@@ -12671,13 +12671,14 @@ bind_failed:
 #ifdef STEAMWORKS
             auto lobby = getLobbySteamID(info.address.c_str());
             if (lobby) {
-                const int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*lobby);
-                for (int c = 0; c < lobbyMembers; ++c) {
-                    auto member = SteamMatchmaking()->GetLobbyMemberByIndex(*lobby, c);
-                    auto relationship = SteamFriends()->GetFriendRelationship(member);
-                    if (relationship == k_EFriendRelationshipFriend) {
-                        foundFriend = true;
-                        break;
+                const int num_friends = SteamFriends()->GetFriendCount( k_EFriendFlagImmediate );
+                for (int i = 0; i < num_friends; ++i) {
+                    FriendGameInfo_t friendGameInfo;
+                    CSteamID steamIDFriend = SteamFriends()->GetFriendByIndex( i, k_EFriendFlagImmediate );
+                    if (SteamFriends()->GetFriendGamePlayed( steamIDFriend, &friendGameInfo ) && friendGameInfo.m_steamIDLobby.IsValid()) {
+                        if (friendGameInfo.m_steamIDLobby == *lobby) {
+                            foundFriend = true;
+                        }
                     }
                 }
                 auto friends = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
