@@ -108,6 +108,7 @@ namespace MainMenu {
 	static LobbyType currentLobbyType = LobbyType::None;
 	static bool playersInLobby[MAXPLAYERS];
 	static bool playerSlotsLocked[MAXPLAYERS];
+	static bool newPlayer[MAXPLAYERS];
 	static void* saved_invite_lobby = nullptr;
 
     bool story_active = false;
@@ -496,7 +497,7 @@ namespace MainMenu {
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
     static void checkReadyStates();
-    static void sendChatMessageOverNet(const char* msg);
+    static void sendChatMessageOverNet(Uint32 color, const char* msg);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
 	static void handleNetwork();
@@ -6151,7 +6152,7 @@ bind_failed:
         chat_buffer->setCallback([](Field& field){
             auto text = field.getText();
             if (text && *text) {
-                sendChatMessageOverNet(text);
+                sendChatMessageOverNet(0xffffffff, text);
                 field.setText("");
                 field.activate();
             }
@@ -6551,12 +6552,10 @@ bind_failed:
 	    }
 	}
 
-	static void sendChatMessageOverNet(const char* msg) {
+	static void sendChatMessageOverNet(Uint32 color, const char* msg) {
 	    if (multiplayer != SERVER && multiplayer != CLIENT) {
 	        return;
 	    }
-
-	    constexpr Uint32 color = uint32ColorWhite;
 
 	    int len;
 	    char fmt[256];
@@ -6939,10 +6938,6 @@ bind_failed:
 			    // finally, open a player card!
 			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
 		            createReadyStone(playerNum, false, false);
-
-			        char buf[1024];
-			        snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
-			        addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 			    }
 			}
 
@@ -6996,9 +6991,9 @@ bind_failed:
 		    stats[player]->playerRace = net_packet->data[8];
 		    stringCopy(stats[player]->name, (char*)(&net_packet->data[9]), sizeof(Stat::name), 32);
 
-		    char buf[1024];
+		    /*char buf[1024];
 		    snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-		    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+		    addLobbyChatMessage(uint32ColorBaronyBlue, buf);*/
 
 	        if (player != clientnum) {
 	            createReadyStone((int)player, false, false);
@@ -7387,11 +7382,13 @@ bind_failed:
             if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
 			    if (EOS.CurrentLobbyData.currentLobbyIsValid()) {
-			        if (EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0) {
-				        if (EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum)) {
-					        EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
+			        if (multiplayer != CLIENT || clientnum != 0) {
+			            if (EOS.CurrentLobbyData.getClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle()) < 0) {
+				            if (EOS.CurrentLobbyData.assignClientnumMemberAttribute(EOS.CurrentUserInfo.getProductUserIdHandle(), clientnum)) {
+					            EOS.CurrentLobbyData.modifyLobbyMemberAttributeForCurrentUser();
+				            }
 				        }
-				    }
+			        }
 			    }
 #endif
 			}
@@ -7399,15 +7396,17 @@ bind_failed:
             if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 				if (currentLobby) {
-					const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(
-					    *static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
-					if (memberNumChar) {
-						std::string str = memberNumChar;
-						if (str.empty() || std::to_string(clientnum) != str) {
-							SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby),
-							    "clientnum", std::to_string(clientnum).c_str());
-							printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
-						}
+			        if (multiplayer != CLIENT || clientnum != 0) {
+					    const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(
+					        *static_cast<CSteamID*>(currentLobby), SteamUser()->GetSteamID(), "clientnum");
+					    if (memberNumChar) {
+						    std::string str = memberNumChar;
+						    if (str.empty() || std::to_string(clientnum) != str) {
+							    SteamMatchmaking()->SetLobbyMemberData(*static_cast<CSteamID*>(currentLobby),
+							        "clientnum", std::to_string(clientnum).c_str());
+							    printlog("[STEAM Lobbies]: Updating clientnum %d to lobby member data", clientnum);
+						    }
+					    }
 					}
 				}
 #endif
@@ -11327,6 +11326,10 @@ bind_failed:
 	}
 
 	static void createLockedStone(int index) {
+	    if (multiplayer == SERVER) {
+	        newPlayer[index] = true;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -11654,6 +11657,10 @@ bind_failed:
 	        return;
 	    }
 
+	    if (multiplayer == SERVER) {
+	        newPlayer[index] = true;
+	    }
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -11878,6 +11885,17 @@ bind_failed:
 		    char buf[128];
 		    snprintf(buf, sizeof(buf), "%s\n(%s)", shortname, players[player]->getAccountName());
 
+		    // announce new player
+		    if (multiplayer == SERVER) {
+		        if (newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
+		            newPlayer[player] = false;
+
+		            char buf[1024];
+		            snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[playerNum]->getAccountName());
+		            sendChatMessageOverNet(uint32ColorBaronyBlue, buf);
+		        }
+		    }
+
 		    field->setText(buf);
 		    });
 
@@ -12080,6 +12098,9 @@ bind_failed:
 		// reset ALL player stats
         if (!loadingsavegame) {
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
+		        if (multiplayer == SERVER && c != 0) {
+		            newPlayer[c] = true;
+		        }
 		        if (multiplayer != CLIENT || c == clientnum) {
 		            playerSlotsLocked[c] = false;
 
@@ -14706,6 +14727,7 @@ bind_failed:
                 } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
                     multiplayer = SERVER;
                     for (int c = 0; c < MAXPLAYERS; ++c) {
+                        newPlayer[c] = c != 0;
                         if (info.players_connected[c]) {
                             playerSlotsLocked[c] = false;
                         } else {
