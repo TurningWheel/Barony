@@ -62,7 +62,6 @@ public:
 	bool showLobbyFilters = false;
 
 	bool crossplayEnabled = false;
-	bool settings_crossplayEnabled = false;
 
 	LobbyServiceType getHostingType()
 	{

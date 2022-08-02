@@ -1365,6 +1365,7 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesFromGame(HostUpdateLobbyTypes upda
 		LobbyAttributes.serverFlags = svFlags;
 		LobbyAttributes.numServerMods = 0;
 		LobbyAttributes.PermissionLevel = static_cast<Uint32>(EOS.currentPermissionLevel);
+		LobbyAttributes.friendsOnly = EOS.bFriendsOnly;
 		LobbyAttributes.maxplayersCompatible = MAXPLAYERS;
 	}
 	else if ( updateType == LOBBY_UPDATE_DURING_GAME )
@@ -1706,6 +1707,7 @@ void EOSFuncs::createLobby()
 	CreateOptions.LobbyId = nullptr;
 
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	bFriendsOnly = false;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
 	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
@@ -2234,8 +2236,12 @@ std::pair<std::string, std::string> EOSFuncs::LobbyData_t::getAttributePair(Attr
 		case LOBBY_PERMISSION_LEVEL:
 			attributePair.first = "PERMISSIONLEVEL";
 			char permissionLevel[32];
-			snprintf(permissionLevel, 31, "%d", this->LobbyAttributes.PermissionLevel);
+			snprintf(permissionLevel, sizeof(permissionLevel), "%d", this->LobbyAttributes.PermissionLevel);
 			attributePair.second = permissionLevel;
+			break;
+		case FRIENDS_ONLY:
+			attributePair.first = "FRIENDSONLY";
+			attributePair.second = this->LobbyAttributes.friendsOnly ? "true" : "false";
 			break;
 		default:
 			break;
@@ -2285,6 +2291,10 @@ void EOSFuncs::LobbyData_t::setLobbyAttributesAfterReading(EOS_Lobby_AttributeDa
 	else if ( keyName.compare("PERMISSIONLEVEL") == 0 )
 	{
 		this->LobbyAttributes.PermissionLevel = std::stoi(data->Value.AsUtf8);
+	}
+	else if ( keyName.compare("FRIENDSONLY") == 0 )
+	{
+		this->LobbyAttributes.friendsOnly = strcmp(data->Value.AsUtf8, "true") == 0;
 	}
 }
 
@@ -3092,6 +3102,9 @@ void EOSFuncs::Accounts_t::handleLogin()
 #ifdef STEAMWORKS
 	return;
 #endif
+
+    EOS.queryFriends();
+
 	if ( !initPopupWindow && popupType == POPUP_TOAST )
 	{
 		if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )

@@ -6234,6 +6234,7 @@ int main(int argc, char** argv)
 						if (newui)
 						{
 							MainMenu::doMainMenu(!intro);
+							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 						else
 						{

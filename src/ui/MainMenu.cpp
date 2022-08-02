@@ -1100,7 +1100,7 @@ namespace MainMenu {
         const int offx = (frame->getSize().w - 112 - 160 - 112) / 2;
         const int offy = frame->getSize().h - 96;
         for (int c = 0; c < num_options; ++c) {
-            const std::string name = std::string("name") + std::to_string(c + 1);
+            const std::string name = std::string("option") + std::to_string(c + 1);
 		    auto button = frame->addButton(name.c_str());
 		    if (c == 1) {
 		        button->setSize(SDL_Rect{offx + x, offy, 156, 52});
@@ -1117,11 +1117,11 @@ namespace MainMenu {
 		    button->setText(options[c].text);
 		    button->setWidgetSearchParent(frame->getName());
 		    if (c < num_options - 1) {
-                const std::string name = std::string("name") + std::to_string(c + 2);
+                const std::string name = std::string("option") + std::to_string(c + 2);
 		        button->setWidgetRight(name.c_str());
 		    }
 		    if (c > 0) {
-                const std::string name = std::string("name") + std::to_string(c);
+                const std::string name = std::string("option") + std::to_string(c);
 		        button->setWidgetLeft(name.c_str());
 		    }
 		    button->setWidgetBack("option3");
@@ -1721,7 +1721,6 @@ namespace MainMenu {
 
 	inline bool AllSettings::save() {
         gamemods_mountedFilepaths = mods;
-        LobbyHandler.crossplayEnabled = crossplay_enabled;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -1772,19 +1771,16 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-        // TODO crossplay settings
 #ifdef USE_EOS
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
 		    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-            EOS.CrossplayAccountManager.handleLogin();
 	    }
 	    else if ( !crossplay_enabled && LobbyHandler.crossplayEnabled )
 	    {
 		    LobbyHandler.crossplayEnabled = false;
 		    EOS.CrossplayAccountManager.logOut = true;
-            EOS.CrossplayAccountManager.handleLogin();
 	    }
 #endif
 
@@ -6728,7 +6724,6 @@ bind_failed:
 
 			// player disconnected
 		{'DISC', [](){
-		    // TODO verify packet origin
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
             if (player == 0) {
                 // yeah right
@@ -8773,6 +8768,20 @@ bind_failed:
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom");
 			invite->setWidgetDown("player_count_2");
+            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE) {
+                    invite->setPressed(true);
+                }
+#endif // USE_EOS
+            }
+            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                if (::currentLobbyType == k_ELobbyTypeFriendsOnly) {
+                    invite->setPressed(true);
+                }
+#endif // STEAMWORKS
+            }
 			if (index != 0) {
 				invite->setCallback([](Button&){soundError();});
 			} else {
@@ -8784,7 +8793,21 @@ bind_failed:
 			        auto open = parent->findButton("open"); assert(open);
 			        friends->setPressed(false);
 			        open->setPressed(false);
-			        // TODO set lobby state to invite-only
+
+                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                        EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE;
+                        EOS.bFriendsOnly = false;
+#endif // USE_EOS
+                    }
+                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                        ::currentLobbyType = k_ELobbyTypeFriendsOnly;
+                        auto lobby = static_cast<CSteamID*>(::currentLobby);
+                        SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
+                        SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
+#endif // STEAMWORKS
+                    }
 			        });
 			}
 		}
@@ -8820,6 +8843,26 @@ bind_failed:
 			friends->setWidgetBack("back_button");
 			friends->setWidgetUp("invite");
 			friends->setWidgetDown("open");
+            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) {
+                    if (EOS.bFriendsOnly) {
+                        friends->setPressed(true);
+                    }
+                }
+#endif // USE_EOS
+            }
+            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                if (::currentLobbyType == k_ELobbyTypePublic) {
+                    auto lobby = static_cast<CSteamID*>(::currentLobby);
+                    const char* friends_only = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
+                    if (friends_only && stringCmp(friends_only, "true", 4, 4)) {
+                        friends->setPressed(true);
+                    }
+                }
+#endif // STEAMWORKS
+            }
 			if (index != 0) {
 				friends->setCallback([](Button&){soundError();});
 			} else {
@@ -8831,7 +8874,21 @@ bind_failed:
 			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
 			        open->setPressed(false);
-			        // TODO set lobby state to searchable by friends only
+
+                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                        EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE;
+                        EOS.bFriendsOnly = true;
+#endif // USE_EOS
+                    }
+                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                        ::currentLobbyType = k_ELobbyTypeFriendsOnly;
+                        auto lobby = static_cast<CSteamID*>(::currentLobby);
+                        SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
+                        SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
+#endif // STEAMWORKS
+                    }
 			        });
 			}
 		}
@@ -8867,6 +8924,26 @@ bind_failed:
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
 			open->setWidgetDown("confirm");
+            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) {
+                    if (!EOS.bFriendsOnly) {
+                        open->setPressed(true);
+                    }
+                }
+#endif // USE_EOS
+            }
+            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                if (::currentLobbyType == k_ELobbyTypePublic) {
+                    auto lobby = static_cast<CSteamID*>(::currentLobby);
+                    const char* friends = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
+                    if (!friends || stringCmp(friends, "true", 4, 4)) {
+                        open->setPressed(true);
+                    }
+                }
+#endif // STEAMWORKS
+            }
 			if (index != 0) {
 				open->setCallback([](Button&){soundError();});
 			} else {
@@ -8878,7 +8955,21 @@ bind_failed:
 			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
 			        friends->setPressed(false);
-			        // TODO set lobby state open to all
+
+                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                        EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+                        EOS.bFriendsOnly = false;
+#endif // USE_EOS
+                    }
+                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                        ::currentLobbyType = k_ELobbyTypePublic;
+                        auto lobby = static_cast<CSteamID*>(::currentLobby);
+                        SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
+                        SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
+#endif // STEAMWORKS
+                    }
 			        });
 			}
 		}
@@ -12542,6 +12633,57 @@ bind_failed:
             lobbies.back().index = lobbies.size() - 1;
         }
 
+        bool foundFriend = false;
+
+        // this is an epic lobby, check if it's friends-only and filter it
+        if (info.address[0] == 'e') {
+#ifdef USE_EOS
+            auto lobby = getLobbyEpic(info.address.c_str());
+            if (lobby && lobby->LobbyAttributes.friendsOnly) {
+                for (auto& player : lobby->playersInLobby) {
+                    for (auto& _friend : EOS.CurrentUserInfo.Friends) {
+                        if (_friend.EpicAccountId == player.memberEpicAccountId) {
+                            foundFriend = true;
+                            break;
+                        }
+                    }
+                    if (foundFriend) {
+                        break;
+                    }
+                }
+                if (!foundFriend) {
+                    // this is a friends-only lobby, and we don't have any friends in it.
+                    return;
+                }
+            }
+#endif
+        }
+
+        // this is a steam lobby, check if it's friends-only and filter it
+        if (info.address[0] == 's') {
+#ifdef STEAMWORKS
+            auto lobby = getLobbySteamID(info.address.c_str());
+            if (lobby) {
+                auto friends = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
+                if (friends && stringCmp(friends, "true", 4, 4) == 0) {
+                    const int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*lobby);
+                    for (int c = 0; c < lobbyMembers; ++c) {
+                        auto member = SteamMatchmaking()->GetLobbyMemberByIndex(*lobby, c);
+                        auto relationship = SteamFriends()->GetFriendRelationship(member);
+                        if (relationship == k_EFriendRelationshipFriend) {
+                            foundFriend = true;
+                            break;
+                        }
+                    }
+                    if (!foundFriend) {
+                        // this is a friends-only lobby, and we don't have any friends in it.
+                        return;
+                    }
+                }
+            }
+#endif
+        }
+
         if (lobbyFiltersEnabled) {
             if (lobbyFilters[0] == Filter::ON && !info.locked) {
                 // this lobby is locked and we don't want to show those
@@ -12553,15 +12695,13 @@ bind_failed:
                 printlog("skipping lobby '%s' (lobby is not locked)\n", info.name.c_str());
                 return;
             }
-            if (lobbyFilters[1] == Filter::ON) {
-                // TODO friends-only filter
+            if (lobbyFilters[1] == Filter::ON && !foundFriend) {
                 printlog("skipping lobby '%s' (has no friends)\n", info.name.c_str());
-                //return;
+                return;
             }
-            if (lobbyFilters[1] == Filter::OFF) {
-                // TODO friends-only filter
+            if (lobbyFilters[1] == Filter::OFF && foundFriend) {
                 printlog("skipping lobby '%s' (has friends)\n", info.name.c_str());
-                //return;
+                return;
             }
             if (lobbyFilters[2] == Filter::ON && (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING))) {
                 // lobbies with cheats or +1 life do not count for
@@ -13566,15 +13706,13 @@ bind_failed:
 		    });
 
 		auto crossplay_fn = [](Button& button){
-		    soundToggle();
 #if defined(USE_EOS) && defined(STEAMWORKS)
+		    soundToggle();
 		    if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
 			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-	            EOS.CrossplayAccountManager.handleLogin();
 	        } else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
 			    LobbyHandler.crossplayEnabled = false;
 			    EOS.CrossplayAccountManager.logOut = true;
-	            EOS.CrossplayAccountManager.handleLogin();
 	        }
 #else
             soundError();
@@ -17218,6 +17356,7 @@ bind_failed:
     }
 
     void crossplayPrompt() {
+#ifdef USE_EOS
         const char* prompt =
             "Enabling Crossplay allows you to join\n"
             "lobbies hosted via Epic Games.\n"
@@ -17241,6 +17380,25 @@ bind_failed:
             soundCancel();
             closeTrinary();
             EOS.CrossplayAccountManager.denyCrossplay();
+
+            // turn off button
+            auto settings_subwindow = gui->findFrame("settings_subwindow");
+            if (settings_subwindow) {
+                auto button = settings_subwindow->findButton("setting_crossplay_button");
+                if (button) {
+                    button->setPressed(false);
+                }
+            }
+
+            // turn off button
+            auto lobby_browser_window = gui->findFrame("lobby_browser_window");
+            if (lobby_browser_window) {
+                auto button = lobby_browser_window->findButton("crossplay");
+                if (button) {
+                    button->setPressed(false);
+                }
+            }
             });
+#endif
     }
 }
