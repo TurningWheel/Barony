@@ -5346,8 +5346,8 @@ bind_failed:
             button->addWidgetAction("MenuPageLeftAlt", "category_left");
             button->addWidgetAction("MenuPageRightAlt", "category_right");
             button->setWidgetRight("conduct");
-            button->setWidgetUp(prev);
-            button->setWidgetDown(next);
+            button->setWidgetUp(prev ? prev : "");
+            button->setWidgetDown(next ? next : "");
             button->setSize(SDL_Rect{0, y, 278, 36});
             button->setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png");
             button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
@@ -5398,6 +5398,32 @@ bind_failed:
         static DownloadedScores downloadedScores;
         static int scores_loaded;
         scores_loaded = 0;
+
+        static auto set_links = [](){
+            assert(main_menu_frame);
+            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+            auto list = window->findFrame("list"); assert(list);
+		    auto category_right = window->findButton("category_right"); assert(category_right);
+		    auto category_left = window->findButton("category_left"); assert(category_left);
+		    auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
+            auto slider = window->findSlider("scroll_slider"); assert(slider);
+            auto subframe = window->findFrame("subframe"); assert(subframe);
+            auto conduct = subframe->findFrame("conduct"); assert(conduct);
+		    if (list->getButtons().empty()) {
+		        category_right->setWidgetUp("");
+		        category_left->setWidgetUp("");
+		        delete_entry->setWidgetUp("");
+		        slider->setWidgetRight("");
+		        conduct->setWidgetLeft("");
+		    } else {
+		        auto name = list->getButtons()[0]->getName();
+		        category_right->setWidgetUp(name);
+		        category_left->setWidgetUp(name);
+		        delete_entry->setWidgetUp(name);
+		        slider->setWidgetRight(name);
+		        conduct->setWidgetLeft(name);
+		    }
+            };
 
         static auto repopulate_list = [](BoardType type){
             downloadedScores.deleteAll();
@@ -5463,26 +5489,7 @@ bind_failed:
 #endif
             }
 
-		    auto category_right = window->findButton("category_right"); assert(category_right);
-		    auto category_left = window->findButton("category_left"); assert(category_left);
-		    auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
-            auto slider = window->findSlider("scroll_slider"); assert(slider);
-            auto subframe = window->findFrame("subframe"); assert(subframe);
-            auto conduct = subframe->findFrame("conduct"); assert(conduct);
-		    if (list->getButtons().empty()) {
-		        category_right->setWidgetUp("");
-		        category_left->setWidgetUp("");
-		        delete_entry->setWidgetUp("");
-		        slider->setWidgetRight("");
-		        conduct->setWidgetLeft("");
-		    } else {
-		        auto name = list->getButtons()[0]->getName();
-		        category_right->setWidgetUp(name);
-		        category_left->setWidgetUp(name);
-		        delete_entry->setWidgetUp(name);
-		        slider->setWidgetRight(name);
-		        conduct->setWidgetLeft(name);
-		    }
+            set_links();
             };
 
         auto disableIfNotOnline = [](Widget& widget){
@@ -5614,20 +5621,18 @@ bind_failed:
                         auto score = scoreConstructor();
                         downloadedScores.scores.push_back(score);
                         auto name = g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str();
-                        add_score(score, name, "", "", index);
-                    }
-                    loadScore(selectedScore);
-                    auto list = window->findFrame("list"); assert(list);
-                    for (int index = 0; index < list->getButtons().size(); ++index) {
+
+                        const char* prev_name = nullptr;
                         if (index > 0) {
-                            list->getButtons()[index]->setWidgetUp(
-                                list->getButtons()[index - 1]->getName());
+                            prev_name = g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str();
                         }
-                        if (index < list->getButtons().size() - 1) {
-                            list->getButtons()[index]->setWidgetDown(
-                                list->getButtons()[index + 1]->getName());
+                        const char* next_name = nullptr;
+                        if (index < num_scores - 1) {
+                            next_name = g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str();
                         }
+                        add_score(score, name, prev_name, next_name, index);
                     }
+                    set_links();
                 }
             }
             });
@@ -12639,7 +12644,7 @@ bind_failed:
         if (info.address[0] == 'e') {
 #ifdef USE_EOS
             auto lobby = getLobbyEpic(info.address.c_str());
-            if (lobby && lobby->LobbyAttributes.friendsOnly) {
+            if (lobby) {
                 for (auto& player : lobby->playersInLobby) {
                     for (auto& _friend : EOS.CurrentUserInfo.Friends) {
                         if (_friend.EpicAccountId == player.memberEpicAccountId) {
@@ -12651,9 +12656,11 @@ bind_failed:
                         break;
                     }
                 }
-                if (!foundFriend) {
-                    // this is a friends-only lobby, and we don't have any friends in it.
-                    return;
+                if (lobby->LobbyAttributes.friendsOnly) {
+                    if (!foundFriend) {
+                        // this is a friends-only lobby, and we don't have any friends in it.
+                        return;
+                    }
                 }
             }
 #endif
@@ -12664,17 +12671,17 @@ bind_failed:
 #ifdef STEAMWORKS
             auto lobby = getLobbySteamID(info.address.c_str());
             if (lobby) {
+                const int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*lobby);
+                for (int c = 0; c < lobbyMembers; ++c) {
+                    auto member = SteamMatchmaking()->GetLobbyMemberByIndex(*lobby, c);
+                    auto relationship = SteamFriends()->GetFriendRelationship(member);
+                    if (relationship == k_EFriendRelationshipFriend) {
+                        foundFriend = true;
+                        break;
+                    }
+                }
                 auto friends = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
                 if (friends && stringCmp(friends, "true", 4, 4) == 0) {
-                    const int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*lobby);
-                    for (int c = 0; c < lobbyMembers; ++c) {
-                        auto member = SteamMatchmaking()->GetLobbyMemberByIndex(*lobby, c);
-                        auto relationship = SteamFriends()->GetFriendRelationship(member);
-                        if (relationship == k_EFriendRelationshipFriend) {
-                            foundFriend = true;
-                            break;
-                        }
-                    }
                     if (!foundFriend) {
                         // this is a friends-only lobby, and we don't have any friends in it.
                         return;
@@ -13811,7 +13818,7 @@ bind_failed:
 
 		auto subwindow = window->addFrame("subwindow");
 		subwindow->setSize(SDL_Rect{22, 142, 1118, 476});
-		subwindow->setActualSize(SDL_Rect{0, 0, 1164, 774});
+		subwindow->setActualSize(SDL_Rect{0, 0, 1118, 774});
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
 
