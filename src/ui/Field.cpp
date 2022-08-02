@@ -286,7 +286,6 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 
 		if (src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0) {
-			++currentLine;
 			continue;
 		}
 
