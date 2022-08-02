@@ -12098,10 +12098,10 @@ bind_failed:
 		// reset ALL player stats
         if (!loadingsavegame) {
 		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (multiplayer == SERVER && c != 0) {
+		        if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
 		            newPlayer[c] = true;
 		        }
-		        if (multiplayer != CLIENT || c == clientnum) {
+		        if (type != LobbyType::LobbyJoined || c == clientnum) {
 		            playerSlotsLocked[c] = false;
 
 			        stats[c]->playerRace = RACE_HUMAN;
@@ -12123,7 +12123,7 @@ bind_failed:
 			    }
 			}
 		}
-        if (multiplayer == CLIENT) {
+        if (type == LobbyType::LobbyJoined) {
             sendPlayerOverNet();
         }
 
