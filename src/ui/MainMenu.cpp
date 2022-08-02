@@ -6662,6 +6662,10 @@ bind_failed:
 					{
 						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
 					}
+					else if ( EOS.CurrentLobbyData.LobbyAttributes.friendsOnly != EOS.bFriendsOnly )
+					{
+						EOS.CurrentLobbyData.updateLobbyForHost(EOSFuncs::LobbyData_t::HostUpdateLobbyTypes::LOBBY_UPDATE_MAIN_MENU);
+					}
 				}
 			}
 #endif
