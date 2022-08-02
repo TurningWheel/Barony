@@ -377,9 +377,10 @@ public:
 			GAME_JOIN_KEY,
 			LOBBY_PERMISSION_LEVEL,
 			FRIENDS_ONLY,
-			GAME_MAXPLAYERS
+			GAME_MAXPLAYERS,
+			ATTRIBUTE_TYPE_SIZE
 		};
-		const int kNumAttributes = 10;
+		const int kNumAttributes = ATTRIBUTE_TYPE_SIZE;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;
