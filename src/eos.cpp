@@ -117,6 +117,9 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		{
 			EOS.loadAchievementData();
 		}
+
+	    // cache friend data
+        EOS.queryFriends();
 	}
 	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
 	{
@@ -212,6 +215,9 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 		{
 			EOS.loadAchievementData();
 		}
+
+	    // cache friend data
+        EOS.queryFriends();
 	}
 	else
 	{
@@ -3102,8 +3108,6 @@ void EOSFuncs::Accounts_t::handleLogin()
 #ifdef STEAMWORKS
 	return;
 #endif
-
-    EOS.queryFriends();
 
 	if ( !initPopupWindow && popupType == POPUP_TOAST )
 	{
