@@ -497,7 +497,7 @@ namespace MainMenu {
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
     static void checkReadyStates();
-    static void sendChatMessageOverNet(Uint32 color, const char* msg);
+    static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
 	static void handleNetwork();
@@ -6152,7 +6152,18 @@ bind_failed:
         chat_buffer->setCallback([](Field& field){
             auto text = field.getText();
             if (text && *text) {
-                sendChatMessageOverNet(0xffffffff, text);
+                int len;
+                char buf[1024];
+	            if (directConnect) {
+	                char shortname[32];
+	                stringCopy(shortname, stats[clientnum]->name, sizeof(shortname), sizeof(Stat::name));
+	                len = snprintf(buf, sizeof(buf), "%s: %s", shortname, text);
+	            } else {
+	                len = snprintf(buf, sizeof(buf), "%s: %s", players[clientnum]->getAccountName(), text);
+	            }
+	            if (len > 0) {
+                    sendChatMessageOverNet(0xffffffff, buf, len);
+                }
                 field.setText("");
                 field.activate();
             }
@@ -6552,25 +6563,14 @@ bind_failed:
 	    }
 	}
 
-	static void sendChatMessageOverNet(Uint32 color, const char* msg) {
+	static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len) {
 	    if (multiplayer != SERVER && multiplayer != CLIENT) {
 	        return;
 	    }
 
-	    int len;
-	    char fmt[256];
-	    if (directConnect) {
-	        char shortname[32];
-	        stringCopy(shortname, stats[clientnum]->name, sizeof(shortname), sizeof(Stat::name));
-	        len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, msg);
-	    } else {
-	        len = snprintf(fmt, sizeof(fmt), "%s: %s", players[clientnum]->getAccountName(), msg);
-	    }
-	    len = std::min((int)sizeof(fmt), len);
-
 		memcpy((char*)net_packet->data, "CMSG", 4);
 		SDLNet_Write32(color, &net_packet->data[4]);
-		stringCopyUnsafe((char*)net_packet->data + 8, fmt, sizeof(fmt));
+		stringCopy((char*)net_packet->data + 8, msg, 256, len);
 		net_packet->len = 8 + len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
@@ -6584,7 +6584,7 @@ bind_failed:
 		        net_packet->address.port = net_clients[i - 1].port;
 		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	        }
-	        addLobbyChatMessage(color, fmt);
+	        addLobbyChatMessage(color, msg);
 	    } else if (multiplayer == CLIENT) {
 	        net_packet->address.host = net_server.host;
 	        net_packet->address.port = net_server.port;
@@ -11887,12 +11887,14 @@ bind_failed:
 
 		    // announce new player
 		    if (multiplayer == SERVER) {
-		        if (newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
+		        if (!client_disconnected[player] && newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
 		            newPlayer[player] = false;
 
 		            char buf[1024];
-		            snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-		            sendChatMessageOverNet(uint32ColorBaronyBlue, buf);
+		            int len = snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
+		            if (len > 0) {
+		                sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
+		            }
 		        }
 		    }
 
