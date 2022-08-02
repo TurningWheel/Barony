@@ -8765,9 +8765,9 @@ bind_failed:
 			invite->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			invite->setStyle(Button::style_t::STYLE_RADIO);
 			invite->setBorder(0);
-			invite->setColor(0);
 			invite->setBorderColor(0);
-			invite->setHighlightColor(0);
+			invite->setColor(0xffffffff);
+			invite->setHighlightColor(0xffffffff);
 			invite->setWidgetSearchParent(name.c_str());
 			invite->addWidgetAction("MenuStart", "confirm");
 			invite->setWidgetBack("back_button");
@@ -8840,9 +8840,9 @@ bind_failed:
 			friends->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			friends->setStyle(Button::style_t::STYLE_RADIO);
 			friends->setBorder(0);
-			friends->setColor(0);
 			friends->setBorderColor(0);
-			friends->setHighlightColor(0);
+			friends->setColor(0xffffffff);
+			friends->setHighlightColor(0xffffffff);
 			friends->setWidgetSearchParent(name.c_str());
 			friends->addWidgetAction("MenuStart", "confirm");
 			friends->setWidgetBack("back_button");
@@ -8862,7 +8862,7 @@ bind_failed:
                 if (::currentLobbyType == k_ELobbyTypePublic) {
                     auto lobby = static_cast<CSteamID*>(::currentLobby);
                     const char* friends_only = SteamMatchmaking()->GetLobbyData(*lobby, "friends_only");
-                    if (friends_only && stringCmp(friends_only, "true", 4, 4)) {
+                    if (friends_only && stringCmp(friends_only, "true", 4, 4) == 0) {
                         friends->setPressed(true);
                     }
                 }
@@ -8921,9 +8921,9 @@ bind_failed:
 			open->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			open->setStyle(Button::style_t::STYLE_RADIO);
 			open->setBorder(0);
-			open->setColor(0);
 			open->setBorderColor(0);
-			open->setHighlightColor(0);
+			open->setColor(0xffffffff);
+			open->setHighlightColor(0xffffffff);
 			open->setWidgetSearchParent(name.c_str());
 			open->addWidgetAction("MenuStart", "confirm");
 			open->setWidgetBack("back_button");
