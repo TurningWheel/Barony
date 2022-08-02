@@ -53,7 +53,9 @@ extern bool connectingToLobby, connectingToLobbyWindow;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;
 extern int connectingToLobbyStatus;
+extern bool steamAwaitingLobbyCreation;
 #endif
+const char* getRoomCode();
 
 
 

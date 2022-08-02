@@ -62,9 +62,9 @@ namespace MainMenu {
 		HallOfTrials,
 	};
 
-    bool isPlayerSignedIn(int index);
-    bool isCutsceneActive();
-	void beginFade(FadeDestination);
+    bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot
+    bool isCutsceneActive();            // checks whether we are playing a cutscene
+	void beginFade(FadeDestination);    // begins a fade transition to a specific destination
 
 	bool settingsApply();	// write settings to global variables (true if video mode changed)
 	void settingsMount();	// read settings from global variables
@@ -79,17 +79,12 @@ namespace MainMenu {
 	void createDummyMainMenu();             // creates a main menu devoid of widgets
 	void closeMainMenu();                   // closes the menu and unpauses the game
 
-	// sounds:
-
-	void soundToggleMenu();
-
 	// special events:
 
-    void controllerDisconnected(int player);
-    void openGameoverWindow(int player, bool tutorial = false);
-    void connectionErrorPrompt(const char* str);
-	void disconnectedFromServer(const char* text);
-	void receivedInvite(void*);
-	void handleScanPacket();
-	void setupSplitscreen(); // resizes player game views
+    void controllerDisconnected(int player);                        // controller disconnect prompt, eg if a player unplugs a controller
+    void openGameoverWindow(int player, bool tutorial = false);     // opens gameover window, used when player dies
+	void disconnectedFromServer(const char* text);                  // called when the player is disconnected from the server, prompts them to end the game
+	void receivedInvite(void*);                                     // called when a player receives an invite to a lobby (EOS or Steam)
+	void setupSplitscreen();                                        // used to resize player game views, for example if a player drops or we change the aspect ratio
+	void crossplayPrompt();                                         // user chose to activate crossplay
 }

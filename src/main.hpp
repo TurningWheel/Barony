@@ -17,7 +17,35 @@ typedef float real_t;
 typedef double real_t;
 #endif
 
-#include <algorithm> //For min and max, because the #define breaks everything in c++.
+#include <stddef.h>
+#include <algorithm>
+
+template<typename T>
+constexpr const T& clamp( const T& v, const T& lo, const T& hi ) {
+    return std::min(std::max(lo, v), hi);
+}
+
+// the following functions are safe variants of C's string library.
+// they include the buffer length of each input as secondary parameters to
+// prevent buffer overruns.
+// they also ALWAYS append null when modifying a string, within the space
+// provided.
+// logically, if a function reaches the end of a string buffer as indicated
+// by the given size, the behavior is identical to the case where it meets
+// a null-terminator.
+// in other words, input strings do not have to be null-terminated if their
+// associated size argument matches exactly the amount of data you wish to use.
+// otherwise the functions will stop at the first null-terminator found,
+// matching the behavior of the original C library.
+
+char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size);
+char* stringCopyUnsafe(char* dest, const char* src, size_t dest_size);
+char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size);
+int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+size_t stringLen(const char* str, size_t size);
+const char* stringStr(const char* str1, const char* str2, size_t str1_size, size_t str2_size);
+char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size);
+
 #include <iostream>
 #include <list>
 #include <string>
@@ -72,7 +100,9 @@ extern bool autoLimbReload;
 #include <math.h>
 #include <time.h>
 #include <fcntl.h>
-#ifndef WINDOWS
+#ifdef WINDOWS
+#include <winsock2.h>
+#else
 #include <unistd.h>
 #include <limits.h>
 #endif

@@ -1905,7 +1905,7 @@ void FollowerRadialMenu::createFollowerMenuGUI()
 	bgFrame->setInheritParentFrameOpacity(false);
 	bgFrame->setOpacity(0.0);
 
-	char* font = "fonts/pixel_maz_multiline.ttf#16#2";
+	const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	int panelIndex = 0;
 	for ( auto& entry : panelEntries )
@@ -2007,7 +2007,7 @@ void setFollowerBannerTextFormatted(const int player, Field* field, Uint32 color
 	}
 }
 
-void setFollowerBannerText(const int player, Field* field, char* iconName, char* textKey, Uint32 color)
+void setFollowerBannerText(const int player, Field* field, const char* iconName, const char* textKey, Uint32 color)
 {
 	if ( !field ) { return; }
 	if ( FollowerMenu[player].iconEntries.find(iconName) == FollowerMenu[player].iconEntries.end() )
