@@ -714,7 +714,6 @@ void createUINavigation(const int player)
 		magicButton->setColor(makeColor(255, 255, 255, 191));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Magic button clicked", button.getOwner());
 			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
 			{
 				// prevent 1 frame flickering of hud.cursor after click
@@ -750,7 +749,6 @@ void createUINavigation(const int player)
 		statusButton->setColor(makeColor(255, 255, 255, 191));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Status button clicked", button.getOwner());
 			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
@@ -783,7 +781,6 @@ void createUINavigation(const int player)
 		itemsButton->setColor(makeColor(255, 255, 255, 191));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Item button clicked", button.getOwner());
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
 			{
@@ -816,7 +813,6 @@ void createUINavigation(const int player)
 		skillsButton->setColor(makeColor(255, 255, 255, 191));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 			players[button.getOwner()]->skillSheet.openSkillSheet();
 		});
 
@@ -6030,7 +6026,6 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setColor(makeColor(255, 255, 255, 191));
 			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			skillsButton->setCallback([](Button& button) {
-				messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Skills button clicked", button.getOwner());
 				players[button.getOwner()]->skillSheet.openSkillSheet();
 			});
 			skillsButton->setTickCallback(charsheet_deselect_fn);
@@ -15143,17 +15138,12 @@ void createPlayerSpellList(const int player)
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
 
-		auto bgHeader = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 22 },
-			makeColor(255, 255, 255, 255),
-			"*#images/ui/Inventory/HUD_Magic_TopHeader.png", "spell header img");
-		//bg->disabled = false;
-
 		auto slider = bgFrame->addSlider("spell slider");
 		slider->setBorder(16);
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ basePos.w - 26, 8, 20, 234 };
+		SDL_Rect sliderPos{ basePos.w - 26, 50, 20, 192 };
 		slider->setRailSize(sliderPos);
 		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -15167,24 +15157,34 @@ void createPlayerSpellList(const int player)
 		slider->setHideSelectors(true);
 		slider->setMenuConfirmControlType(0);
 
+		auto sliderCapTop = bgFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y, 16, 16 },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/Sliders/HUD_Magic_Slider_SettingTop_01.png", "spell slider top");
+		sliderCapTop->ontop = true;
+		auto sliderCapBot = bgFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y + sliderPos.h - 16, 16, 16 },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/Sliders/HUD_Magic_Slider_SettingBot_01.png", "spell slider bot");
+		sliderCapBot->ontop = true;
+
 		const char* font = "fonts/pixel_maz.ttf#32#2";
 		auto titleText = bgFrame->addField("title txt", 64);
 		titleText->setFont(font);
 		titleText->setText("SPELLS");
 		titleText->setHJustify(Field::justify_t::CENTER);
 		titleText->setVJustify(Field::justify_t::TOP);
-		titleText->setSize(SDL_Rect{ 56, 62, 96, 24 });
+		titleText->setSize(SDL_Rect{ 56, 12, 96, 24 });
 		titleText->setColor(makeColor(236, 175, 28, 255));
 
 		auto closeBtn = bgFrame->addButton("close spell button");
 		SDL_Rect closeBtnPos;
-		closeBtnPos.x = 154;
-		closeBtnPos.y = 60;
+		closeBtnPos.x = 180;
+		closeBtnPos.y = 6;
 		closeBtnPos.w = 26;
 		closeBtnPos.h = 26;
 		closeBtn->setSize(closeBtnPos);
 		closeBtn->setColor(makeColor(255, 255, 255, 255));
 		closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		closeBtn->setText("X");
 		closeBtn->setFont(font);
 		closeBtn->setHideGlyphs(true);
@@ -15194,21 +15194,35 @@ void createPlayerSpellList(const int player)
 		closeBtn->setBackground("*#images/ui/Inventory/chests/Button_X_00.png");
 		closeBtn->setBackgroundHighlighted("*#images/ui/Inventory/chests/Button_XHigh_00.png");
 		closeBtn->setBackgroundActivated("*#images/ui/Inventory/chests/Button_XPress_00.png");
-
 		closeBtn->setCallback([](Button& button) {
-			messagePlayer(button.getOwner(), MESSAGE_DEBUG, "%d: Close spell button clicked", button.getOwner());
 			if ( players[button.getOwner()]->inventory_mode == INVENTORY_MODE_SPELL )
 			{
 				players[button.getOwner()]->inventoryUI.cycleInventoryTab();
 			}
 			players[button.getOwner()]->inventoryUI.spellPanel.closeSpellPanel();
 		});
+		closeBtn->setTickCallback([](Widget& widget) {
+			if ( widget.isSelected() )
+			{
+				if ( !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			}
+		});
 
-		/*auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+		auto skillBg = bgFrame->addImage(SDL_Rect{ 6, 6, 32, 32 },
 			makeColor(255, 255, 255, 255),
-			"*#images/ui/Glyphs/Button_Xbox_DarkB_00.png", "close spell glyph");
-		closeGlyph->pos.x = 154 + 10;
-		closeGlyph->pos.y = 60 + 26;*/
+			"*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png", "spell skill bg");
+
+		auto skillIcon = bgFrame->addImage(SDL_Rect{ skillBg->pos.x + 4, skillBg->pos.y + 4, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "spell skill icon");
+
+		auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "close spell glyph");
+		closeGlyph->disabled = true;
 	}
 }
 
@@ -16152,7 +16166,9 @@ void createPlayerInventory(const int player)
 
 		auto bgFrame = frame->findFrame("inventory base");
 		auto flourishFrame = frame->addFrame("inventory base flourish");
-		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (122 / 2), 202 - 22 + 6, 122, 22 });
+		const int flourishW = 126;
+		const int flourishH = 26;
+		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (flourishW / 2), 202 - flourishH + 6, flourishW, flourishH });
 		auto flourishImg = flourishFrame->addImage(SDL_Rect{ 0, 0, flourishFrame->getSize().w, flourishFrame->getSize().h },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_Flourish_00.png", "inventory flourish img");
@@ -23615,11 +23631,29 @@ int Player::Inventory_t::SpellPanel_t::getNumSpellsToDisplayVertical() const
 	}
 	else
 	{
-		return kNumSpellsToDisplayVertical - 2;
+		return kNumSpellsToDisplayVertical;
 	}
 }
 
-int Player::Inventory_t::SpellPanel_t::heightOffsetWhenNotCompact = 50;
+void buttonSpellUpdateSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SPELLS);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SPELLS )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+int Player::Inventory_t::SpellPanel_t::heightOffsetWhenNotCompact = 0;
 void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 {
 	Frame* spellFrame = player.inventoryUI.spellFrame;
@@ -23682,7 +23716,6 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	auto slider = baseFrame->findSlider("spell slider");
 	auto spellSlotsFrame = spellFrame->findFrame("spell slots");
 	auto baseBackgroundImg = baseFrame->findImage("spell base img");
-	auto baseHeaderImg = baseFrame->findImage("spell header img");
 	// handle height changing..
 	{
 		int frameHeight = kSpellListHeight;
@@ -23694,7 +23727,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		spellFramePos.h = frameHeight + totalFrameHeightChange;
 		spellFrame->setSize(spellFramePos);
 		baseBackgroundImg->pos.y = totalFrameHeightChange;
-		baseHeaderImg->pos.y = baseBackgroundImg->pos.y - baseHeaderImg->pos.h + 8;
+
 		SDL_Rect spellBasePos = baseFrame->getSize();
 		spellBasePos.h = spellFramePos.h;
 		baseFrame->setSize(spellBasePos);
@@ -23719,11 +23752,19 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		gridImg->pos.h = (spellSlotsFramePos.h) * numGrids;
 
 		SDL_Rect sliderPos = slider->getRailSize();
-		sliderPos.y = 8 + heightChange + totalFrameHeightChange;
-		sliderPos.h = 234 - heightChange;
+		sliderPos.y = 50 + heightChange + totalFrameHeightChange;
+		sliderPos.h = 192 - heightChange;
 		slider->setRailSize(sliderPos);
+
+		auto sliderCapTop = baseFrame->findImage("spell slider top");
+		auto sliderCapBot = baseFrame->findImage("spell slider bot");
+		sliderCapTop->pos.y = sliderPos.y;
+		sliderCapBot->pos.y = sliderPos.y + sliderPos.h - sliderCapBot->pos.h;
 	}
 
+	auto skillBg = baseFrame->findImage("spell skill bg");
+	skillBg->pos.x = 14;
+	skillBg->pos.y = 6;
 
 	int lowestItemY = getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
@@ -23746,6 +23787,72 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 	}
 
 	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
+
+	bool usingGamepad = inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	// close btn
+	auto closeBtn = baseFrame->findButton("close spell button");
+	auto closeGlyph = baseFrame->findImage("close spell glyph");
+	closeBtn->setDisabled(true);
+	SDL_Rect closeBtnPos = closeBtn->getSize();
+	closeBtnPos.x = 166;
+	closeBtnPos.y = 8;
+	closeBtn->setSize(closeBtnPos);
+	closeGlyph->disabled = true;
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		closeBtn->setDisabled(!isInteractable);
+		if ( isInteractable )
+		{
+			buttonSpellUpdateSelectorOnHighlight(player.playernum, closeBtn);
+		}
+	}
+	else if ( closeBtn->isSelected() )
+	{
+		closeBtn->deselect();
+	}
+	if ( closeBtn->isDisabled() && usingGamepad )
+	{
+		SDL_Rect closeBtnPos = closeBtn->getSize();
+		closeBtnPos.x -= 10;
+		closeBtn->setSize(closeBtnPos);
+
+		closeGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+		if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+		{
+			closeGlyph->pos.w = imgGet->getWidth();
+			closeGlyph->pos.h = imgGet->getHeight();
+			closeGlyph->disabled = false;
+		}
+		closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w;
+		if ( closeGlyph->pos.x % 2 == 1 )
+		{
+			++closeGlyph->pos.x;
+		}
+		closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h / 2 - closeGlyph->pos.w / 2;
+		if ( closeGlyph->pos.y % 2 == 1 )
+		{
+			++closeGlyph->pos.y;
+		}
+	}
+
+	auto skillIcon = baseFrame->findImage("spell skill icon");
+	skillIcon->pos.x = skillBg->pos.x + 4;
+	skillIcon->pos.y = skillBg->pos.y + 4;
+	for ( auto& skillEntry : Player::SkillSheet_t::skillSheetData.skillEntries )
+	{
+		if ( skillEntry.skillId == PRO_MAGIC )
+		{
+			if ( skillCapstoneUnlocked(player.playernum, PRO_MAGIC) )
+			{
+				skillIcon->path = skillEntry.skillIconPathLegend.c_str();
+			}
+			else
+			{
+				skillIcon->path = skillEntry.skillIconPath.c_str();
+			}
+			break;
+		}
+	}
 
 	if ( bOpen && isInteractable )
 	{

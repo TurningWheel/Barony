@@ -835,7 +835,7 @@ public:
 			bool bOpen = false;
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
-			const int kNumSpellsToDisplayVertical = 6;
+			const int kNumSpellsToDisplayVertical = 5;
 			int getNumSpellsToDisplayVertical() const;
 			void openSpellPanel();
 			void closeSpellPanel();
