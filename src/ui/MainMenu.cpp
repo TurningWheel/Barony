@@ -5933,6 +5933,9 @@ bind_failed:
         "fonts/PixelMaz_monospace.ttf#32#2");
 
     static void addLobbyChatMessage(Uint32 color, const char* msg, bool add_to_list = true) {
+        if (!msg || !msg[0]) {
+            return;
+        }
         constexpr Uint32 seconds_in_day = 86400;
         const Uint32 seconds = time(NULL) / seconds_in_day;
 
@@ -12439,78 +12442,41 @@ bind_failed:
 		// announce lobby in chat window
 		lobby_chat_messages.clear();
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
+            char buf[1024] = "";
             if (directConnect) {
-                Uint16 port = ::portnumber;
+                const Uint16 port = ::portnumber;
                 char hostname[256] = { '\0' };
                 (void)gethostname(hostname, sizeof(hostname));
                 hostname[sizeof(hostname) - 1] = '\0';
-                char buf[1024];
                 snprintf(buf, sizeof(buf), "Server hosted at %s:%hu", hostname, port);
-                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
             } else {
                 if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-                    char roomkey[16];
-                    snprintf(roomkey, sizeof(roomkey), "s%s", getRoomCode());
-                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
-                        *ptr = (char)toupper((int)(*ptr));
-                    }
-
-                    char buf[1024];
-                    snprintf(buf, sizeof(buf), "Lobby hosted via Steam. Roomcode: %s", roomkey);
-                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
-#endif // STEAMWORKS
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Steam. Roomcode: %s",
+                        LobbyHandler.getCurrentRoomKey().c_str());
                 }
                 else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-                    char roomkey[16];
-                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
-                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
-                        *ptr = (char)toupper((int)(*ptr));
-                    }
-
-                    char buf[1024];
-                    snprintf(buf, sizeof(buf), "Lobby hosted via Epic Online. Roomcode: %s", roomkey);
-                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
-#endif // USE_EOS
+                    snprintf(buf, sizeof(buf), "Lobby hosted via Epic Online. Roomcode: %s",
+                        LobbyHandler.getCurrentRoomKey().c_str());
                 }
             }
+            addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}
 		else if (type == LobbyType::LobbyJoined) {
+            char buf[1024];
             if (directConnect) {
-                char buf[1024];
-                Uint16 port = ::portnumber;
+                const Uint16 port = ::portnumber;
                 snprintf(buf, sizeof(buf), "Joined server at %s:%hu", last_address, port);
-                addLobbyChatMessage(uint32ColorBaronyBlue, buf);
             } else {
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-                    char roomkey[16];
-                    auto lobby = static_cast<CSteamID*>(currentLobby);
-                    snprintf(roomkey, sizeof(roomkey), "s%s", SteamMatchmaking()->GetLobbyData(*lobby, "roomkey"));
-                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
-                        *ptr = (char)toupper((int)(*ptr));
-                    }
-
-                    char buf[1024];
-                    snprintf(buf, sizeof(buf), "Joined lobby via Steam. Roomcode: %s", roomkey);
-                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
-#endif // STEAMWORKS
+                    snprintf(buf, sizeof(buf), "Joined lobby via Steam. Roomcode: %s",
+                        LobbyHandler.getCurrentRoomKey().c_str());
                 }
                 else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-                    char roomkey[16];
-                    snprintf(roomkey, sizeof(roomkey), "e%s", EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
-                    for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
-                        *ptr = (char)toupper((int)(*ptr));
-                    }
-
-                    char buf[1024];
-                    snprintf(buf, sizeof(buf), "Joined lobby via Epic Online. Roomcode: %s", roomkey);
-                    addLobbyChatMessage(uint32ColorBaronyBlue, buf);
-#endif // USE_EOS
+                    snprintf(buf, sizeof(buf), "Joined lobby via Epic Online. Roomcode: %s",
+                        LobbyHandler.getCurrentRoomKey().c_str());
                 }
             }
+            addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}
 	}
 

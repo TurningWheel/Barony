@@ -28,6 +28,37 @@ See LICENSE for details.
 
 LobbyHandler_t LobbyHandler;
 
+std::string LobbyHandler_t::getCurrentRoomKey() const
+{
+    if (multiplayer != CLIENT && multiplayer != SERVER) {
+        return "";
+    }
+    const LobbyServiceType type = multiplayer == SERVER ?
+        getHostingType() : getJoiningType();
+    if (type == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+        char roomkey[16];
+        snprintf(roomkey, sizeof(roomkey), "s%s", getRoomCode());
+        for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+            *ptr = (char)toupper((int)(*ptr));
+        }
+        return std::string(roomkey);
+#endif // STEAMWORKS
+    }
+    else if (type == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+        char roomkey[16];
+        snprintf(roomkey, sizeof(roomkey), "e%s",
+            EOS.CurrentLobbyData.LobbyAttributes.gameJoinKey.c_str());
+        for (auto ptr = roomkey; *ptr != '\0'; ++ptr) {
+            *ptr = (char)toupper((int)(*ptr));
+        }
+        return std::string(roomkey);
+#endif // USE_EOS
+    }
+    return "";
+}
+
 std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 {
 	char buf[1024] = "";
