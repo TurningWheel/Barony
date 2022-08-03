@@ -5118,7 +5118,16 @@ bind_failed:
 		time_and_score->setHJustify(Field::justify_t::RIGHT);
 		time_and_score->setVJustify(Field::justify_t::CENTER);
 
-        static auto updateStats = [](score_t* score){
+        enum BoardType {
+            LOCAL,
+            LAN,
+            FRIENDS,
+            WORLD
+        };
+        static BoardType boardType;
+        boardType = BoardType::LOCAL;
+
+        static auto updateStats = [](const Button& button, score_t* score){
             if (!score) {
                 return;
             }
@@ -5134,7 +5143,15 @@ bind_failed:
             auto& victory = victories[score->victory];
 
             char victory_text[1024];
-            snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
+                snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
+            } else {
+#ifdef STEAMWORKS
+                const int index = (int)strtol(button.getName() + 3, nullptr, 10) - 1;
+                snprintf(victory_text, sizeof(victory_text), victory.text,
+                    g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str());
+#endif
+            }
 
             victory_plate_text->setText(victory_text);
             victory_plate_text->setTextColor(victory.textColor);
@@ -5151,6 +5168,7 @@ bind_failed:
 		    auto conduct = subframe->findFrame("conduct");
 		    assert(conduct);
 		    conduct->clearEntries();
+		    conduct->setWidgetLeft(button.getName());
 		    conduct->setActualSize(SDL_Rect{0, 0, 272, 102});
 		    auto conduct_header = conduct->addEntry("header", true);
 		    conduct_header->text = " Voluntary Challenges:";
@@ -5286,14 +5304,6 @@ bind_failed:
             time_and_score->setText(buf);
             };
 
-        enum BoardType {
-            LOCAL,
-            LAN,
-            FRIENDS,
-            WORLD
-        };
-        static BoardType boardType;
-        boardType = BoardType::LOCAL;
         static const char* categories[] = {
 	        "None",
 	        "Fastest Time\nNormal", "Highest Score\nNormal",
@@ -5367,14 +5377,14 @@ bind_failed:
                 }
                 auto score = (score_t*)button.getUserData();
                 selectedScore = score;
-                updateStats(score);
+                updateStats(button, score);
                 loadScore(score);
                 });
 
             if (index == 0) {
                 button->select();
                 selectedScore = score;
-                updateStats(score);
+                updateStats(*button, score);
                 loadScore(score);
             }
 
@@ -5622,16 +5632,17 @@ bind_failed:
                         auto score = scoreConstructor();
                         downloadedScores.scores.push_back(score);
                         auto name = g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str();
-
-                        const char* prev_name = nullptr;
+                        char prev_buf[128] = "";
                         if (index > 0) {
-                            prev_name = g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str();
+                            snprintf(prev_buf, sizeof(prev_buf), fmt, index,
+                                g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str());
                         }
-                        const char* next_name = nullptr;
+                        char next_buf[128] = "";
                         if (index < num_scores - 1) {
-                            next_name = g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str();
+                            snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
+                                g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str());
                         }
-                        add_score(score, name, prev_name, next_name, index);
+                        add_score(score, name, prev_buf, next_buf, index);
                     }
                     set_links();
                 }
@@ -15416,10 +15427,15 @@ bind_failed:
 	    soundActivate();
         button.deselect();
 	    static auto return_to_main_menu = [](){
-            assert(main_menu_frame);
-	        auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-	        auto button = buttons->findButton("Assign Controllers"); assert(button);
-	        button->select();
+            if (main_menu_frame) {
+	            auto buttons = main_menu_frame->findFrame("buttons");
+	            if (buttons) {
+	                auto button = buttons->findButton("Assign Controllers");
+	                if (button) {
+	                    button->select();
+	                }
+	            }
+	        }
 	    };
 	    if (splitscreen) {
 	        static std::vector<int> players;

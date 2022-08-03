@@ -75,16 +75,16 @@ public:
     void    setOwner(Sint32 _owner) { owner = _owner; }
     void	setTickCallback(void (*const fn)(Widget&)) { tickCallback = fn; }
     void	setDrawCallback(void (*const fn)(const Widget&, const SDL_Rect)) { drawCallback = fn; }
-    void    setWidgetRight(const char* s) { widgetMovements.emplace("MenuRight", s); widgetMovements.emplace("AltMenuRight", s); }
-    void    setWidgetDown(const char* s) { widgetMovements.emplace("MenuDown", s); widgetMovements.emplace("AltMenuDown", s); }
-    void    setWidgetLeft(const char* s) { widgetMovements.emplace("MenuLeft", s); widgetMovements.emplace("AltMenuLeft", s); }
-    void    setWidgetUp(const char* s) { widgetMovements.emplace("MenuUp", s); widgetMovements.emplace("AltMenuUp", s); }
-    void    setWidgetPageLeft(const char* s) { widgetActions.emplace("MenuPageLeft", s); }
-    void    setWidgetPageRight(const char* s) { widgetActions.emplace("MenuPageRight", s); }
-    void    setWidgetBack(const char* s) { widgetActions.emplace("MenuCancel", s); }
+    void    setWidgetRight(const char* s) { widgetMovements["MenuRight"] = s; widgetMovements["AltMenuRight"] = s; }
+    void    setWidgetDown(const char* s) { widgetMovements["MenuDown"] = s; widgetMovements["AltMenuDown"] = s; }
+    void    setWidgetLeft(const char* s) { widgetMovements["MenuLeft"] = s; widgetMovements["AltMenuLeft"] = s; }
+    void    setWidgetUp(const char* s) { widgetMovements["MenuUp"] = s; widgetMovements["AltMenuUp"] = s; }
+    void    setWidgetPageLeft(const char* s) { widgetActions["MenuPageLeft"] = s; }
+    void    setWidgetPageRight(const char* s) { widgetActions["MenuPageRight"] = s; }
+    void    setWidgetBack(const char* s) { widgetActions["MenuCancel"] = s; }
     void    setWidgetSearchParent(const char* s) { widgetSearchParent = s; }
-    void    addWidgetAction(const char* binding, const char* action) { widgetActions.emplace(binding, action); }
-    void    addWidgetMovement(const char* binding, const char* action) { widgetMovements.emplace(binding, action); }
+    void    addWidgetAction(const char* binding, const char* action) { widgetActions[binding] = action; }
+    void    addWidgetMovement(const char* binding, const char* action) { widgetMovements[binding] = action; }
     void    setUserData(void* p) { userData = p; }
     void    setButtonsOffset(SDL_Rect r) { buttonsOffset = r; }
     void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }

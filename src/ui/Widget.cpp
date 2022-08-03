@@ -109,6 +109,7 @@ Widget* Widget::handleInput() {
 				if (input.consumeBinaryToggle(move.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
+					printlog("%s: %p", move.second.c_str(), (void*)result);
 					if (result && !result->disabled && !result->invisible) {
 						auto in = input.input(move.first.c_str());
 #ifndef EDITOR
