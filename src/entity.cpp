@@ -825,9 +825,12 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				if ( stats[player]->shield )
 				{
-					if ( stats[player]->shield->type == TOOL_TORCH || stats[player]->shield->type == TOOL_CRYSTALSHARD
-						|| stats[player]->shield->type == TOOL_LANTERN )
+					if ( stats[player]->shield->type == TOOL_TORCH || stats[player]->shield->type == TOOL_LANTERN )
 					{
+					}
+					else if ( stats[player]->shield->type == TOOL_CRYSTALSHARD )
+					{
+						light -= 45;
 					}
 					else
 					{
