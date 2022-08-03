@@ -12309,7 +12309,7 @@ bind_failed:
 		    label->setText(type_str);
 
             // lobby name
-            if (type != LobbyType::LobbyLocal) {
+            if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN) {
 		        auto text_box = banner->addImage(
 			        SDL_Rect{96, 8, 246, 36},
 			        0xffffffff,
@@ -12338,7 +12338,47 @@ bind_failed:
 		        field->setWidgetBack("back");
 		        field->setWidgetRight("chat");
 		        field->setWidgetLeft("back");
-		        //field->setText(currentLobbyName); // TODO epic lobby name EOS.currentLobbyName
+		        if (type != LobbyType::LobbyJoined) {
+                    field->setCallback([](Field& field){
+                        if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                            stringCopy(EOS.currentLobbyName, field.getText(),
+                                sizeof(EOS.currentLobbyName), field.getTextLen());
+#endif // USE_EOS
+                        }
+                        else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                            stringCopy(currentLobbyName, field.getText(),
+                                sizeof(currentLobbyName), field.getTextLen());
+#endif // STEAMWORKS
+                        }
+	                    });
+                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+                        field->setText(EOS.currentLobbyName);
+#endif // USE_EOS
+                    }
+                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+                        field->setText(currentLobbyName);
+#endif // STEAMWORKS
+                    }
+                }
+                field->setTickCallback([](Widget& widget){
+                    auto field = static_cast<Field*>(&widget);
+	                if (multiplayer == CLIENT) {
+	                    if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+	                        field->setText(EOS.currentLobbyName);
+#endif // USE_EOS
+	                    }
+	                    else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+	                        field->setText(currentLobbyName);
+#endif // STEAMWORKS
+	                    }
+		            }
+		            });
 		    }
 
             // chat button
@@ -15318,7 +15358,7 @@ bind_failed:
 	}
 
 	static void mainPlayModdedGame(Button& button) {
-		// TODO add a mod selection menu or something here
+	    // WIP
 		soundActivate();
 		createPlayWindow();
 	}
