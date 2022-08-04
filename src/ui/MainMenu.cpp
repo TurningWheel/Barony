@@ -5927,6 +5927,7 @@ bind_failed:
         std::string msg;
     };
 
+    static Uint32 new_lobby_chat_message_alert = 0;
     static const constexpr int lobby_chat_max_messages = 200;
     static std::list<LobbyChatMessage> lobby_chat_messages;
     static ConsoleVariable<std::string> lobby_chat_font("/chat_font",
@@ -5941,6 +5942,7 @@ bind_failed:
 
         if (add_to_list) {
             playSound(238, 64);
+            new_lobby_chat_message_alert = ticks;
             lobby_chat_messages.emplace_back(LobbyChatMessage{seconds, color, msg});
             if (lobby_chat_messages.size() > lobby_chat_max_messages) {
                 lobby_chat_messages.pop_front();
@@ -5957,8 +5959,13 @@ bind_failed:
 
         auto frame = lobby->findFrame("chat window");
         if (!frame) {
-            frame = toggleLobbyChatWindow();
+            //frame = toggleLobbyChatWindow();
             return;
+        }
+
+        if (add_to_list) {
+            // window is already open, so cancel the visual notification
+            new_lobby_chat_message_alert = 0;
         }
 
         const int w = frame->getSize().w;
@@ -6019,6 +6026,8 @@ bind_failed:
             frame->removeSelf();
             return nullptr;
         }
+
+        new_lobby_chat_message_alert = 0;
 
         const SDL_Rect size = lobby->getSize();
         const int w = 848;
@@ -7446,40 +7455,6 @@ bind_failed:
 	    if (loadingsavegame) {
 		    loadGame(clientnum);
 	    }
-	}
-
-	static void finalizeOnlineLobby() {
-	    setupNetGameAsServer();
-		printlog( "online lobby opened successfully.\n");
-	}
-
-	static bool finalizeLANLobby() {
-	    closeNetworkInterfaces();
-	    directConnect = true;
-
-	    Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
-
-	    // resolve local host's address
-	    int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
-	    assert(resolve != -1);
-
-	    // open sockets
-	    if (!(net_sock = SDLNet_UDP_Open(port))) {
-		    char buf[1024];
-		    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
-		    printlog(buf);
-		    multiplayer = SINGLE;
-		    disconnectFromLobby();
-			destroyMainMenu();
-			currentLobbyType = LobbyType::None;
-			createMainMenu(false);
-		    connectionErrorPrompt(buf);
-		    return false;
-	    }
-
-	    setupNetGameAsServer();
-		printlog( "LAN server started successfully.\n");
-		return true;
 	}
 
 #ifdef STEAMWORKS
@@ -12273,48 +12248,10 @@ bind_failed:
 		        });
 	        back_button->setWidgetRight("lobby_name");
 
-			// lobby type
-			const char* type_str;
-			if (type == LobbyType::LobbyLocal) {
-			    type_str = "Local Lobby";
-			} else {
-			    if (directConnect) {
-                    type_str = "LAN Lobby";
-			    } else {
-			        if (type == LobbyType::LobbyJoined) {
-			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-			                type_str = "Online Lobby (Epic)";
-			            }
-			            else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-			                type_str = "Online Lobby (Steam)";
-			            }
-			            else {
-			                type_str = "Online Lobby";
-			            }
-			        } else {
-			            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-			                type_str = "Online Lobby (Epic)";
-			            }
-			            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-			                type_str = "Online Lobby (Steam)";
-			            }
-			            else {
-			                type_str = "Online Lobby";
-			            }
-			        }
-			    }
-			}
-			auto label = banner->addField("label", 128);
-			label->setHJustify(Field::justify_t::CENTER);
-			label->setVJustify(Field::justify_t::CENTER);
-			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
-		    label->setFont(bigfont_outline);
-		    label->setText(type_str);
-
             // lobby name
             if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN) {
 		        auto text_box = banner->addImage(
-			        SDL_Rect{96, 8, 246, 36},
+			        SDL_Rect{160, 10, 246, 36},
 			        0xffffffff,
 			        "*images/ui/Main Menus/TextField_00.png",
 			        "text_box"
@@ -12329,7 +12266,7 @@ bind_failed:
 		        field->setEditable(type != LobbyType::LobbyJoined);
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
-		        field->setSize(SDL_Rect{98, 12, 242, 28});
+		        field->setSize(SDL_Rect{162, 14, 242, 28});
 		        field->setFont(smallfont_outline);
 		        field->setHJustify(Field::justify_t::LEFT);
 		        field->setVJustify(Field::justify_t::CENTER);
@@ -12339,8 +12276,7 @@ bind_failed:
 		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		        field->setWidgetSearchParent(field->getParent()->getName());
 		        field->setWidgetBack("back");
-		        field->setWidgetRight("chat");
-		        field->setWidgetLeft("back");
+		        field->setWidgetRight("privacy");
 		        if (type != LobbyType::LobbyJoined) {
                     field->setCallback([](Field& field){
                         if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -12384,8 +12320,126 @@ bind_failed:
 		            });
 		    }
 
-            // chat button
-            if (type != LobbyType::LobbyLocal) {
+			// lobby type
+			const char* type_str;
+			if (type == LobbyType::LobbyLocal) {
+			    type_str = "Local Lobby";
+			} else {
+			    if (directConnect) {
+                    type_str = "LAN Lobby";
+			    } else {
+			        if (type == LobbyType::LobbyJoined) {
+			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        } else {
+			            if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+			                type_str = "Online Lobby (Epic)";
+			            }
+			            else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			                type_str = "Online Lobby (Steam)";
+			            }
+			            else {
+			                type_str = "Online Lobby";
+			            }
+			        }
+			    }
+			}
+			auto label = banner->addField("label", 128);
+			label->setHJustify(Field::justify_t::CENTER);
+			label->setVJustify(Field::justify_t::CENTER);
+			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
+		    label->setFont(bigfont_outline);
+		    label->setText(type_str);
+
+			if (type != LobbyType::LobbyLocal) {
+		        static bool hidden_roomcode;
+		        static auto hide_roomcode = [](Field& roomcode, Button& button, bool hide){
+		            hidden_roomcode = hide;
+	                if (hide) {
+	                    button.setIcon("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Eye01.png");
+	                } else {
+	                    button.setIcon("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/Eye01.png");
+	                }
+		            const char privacy_char = 'x';
+	                if (directConnect) {
+                        const Uint16 port = ::portnumber;
+                        char hostname[256] = { '\0' };
+                        (void)gethostname(hostname, sizeof(hostname));
+                        hostname[sizeof(hostname) - 1] = '\0';
+	                    if (hide) {
+                            char buf[1024];
+                            snprintf(buf, sizeof(buf), "%hu", port);
+                            size_t len1 = stringLen(hostname, sizeof(hostname));
+                            size_t len2 = stringLen(buf, sizeof(buf));
+                            char* ptr = buf;
+                            for (size_t c = 0; c < len1; ++c, ++ptr) {
+                                *ptr = privacy_char;
+                            }
+                            *ptr = ':'; ++ptr;
+                            for (size_t c = 0; c < len2; ++c, ++ptr) {
+                                *ptr = privacy_char;
+                            }
+                            *ptr = '\0'; ++ptr;
+                            roomcode.setText(buf);
+                        } else {
+                            char buf[1024];
+                            snprintf(buf, sizeof(buf), "%s:%hu", hostname, port);
+                            roomcode.setText(buf);
+                        }
+	                } else {
+		                if (hide) {
+		                    size_t c;
+		                    char buf[8];
+                            for (c = 0; c < 5; ++c) {
+                                buf[c] = privacy_char;
+                            }
+                            buf[c] = '\0';
+	                        roomcode.setText(buf);
+	                    } else {
+	                        roomcode.setText(LobbyHandler.getCurrentRoomKey().c_str());
+	                    }
+	                }
+		            };
+
+		        // roomcode
+			    auto roomcode = banner->addField("roomcode", 128);
+			    roomcode->setHJustify(Field::justify_t::RIGHT);
+			    roomcode->setVJustify(Field::justify_t::CENTER);
+			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 260, 0, 256, 48});
+		        roomcode->setFont(bigfont_outline);
+
+		        // privacy button
+		        auto privacy = banner->addButton("privacy");
+		        privacy->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44, 8, 40, 40});
+		        privacy->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
+		        privacy->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
+		        privacy->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
+	            privacy->setColor(0xffffffff);
+	            privacy->setHighlightColor(0xffffffff);
+		        privacy->setTextHighlightColor(0xffffffff);
+	            privacy->setTextColor(0xffffffff);
+	            privacy->setFont(smallfont_outline);
+	            privacy->setWidgetBack("back");
+	            privacy->setWidgetLeft("lobby_name");
+	            privacy->setWidgetRight("chat");
+		        privacy->setCallback([](Button& button){
+		            soundToggle();
+		            auto banner = static_cast<Frame*>(button.getParent()); assert(banner);
+		            auto roomcode = banner->findField("roomcode"); assert(roomcode);
+		            hide_roomcode(*roomcode, button, !hidden_roomcode);
+		            });
+
+		        // set default privacy
+		        hide_roomcode(*roomcode, *privacy, true);
+
+                // chat button
 			    auto chat_button = banner->addButton("chat");
 			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 212, 8, 134, 40});
 			    chat_button->setHighlightColor(0xffffffff);
@@ -12400,7 +12454,23 @@ bind_failed:
 		            (void)toggleLobbyChatWindow();
 		            });
 		        chat_button->setWidgetBack("back");
-		        chat_button->setWidgetLeft("lobby_name");
+		        chat_button->setWidgetLeft("privacy");
+		        chat_button->setTickCallback([](Widget& widget){
+		            auto button = static_cast<Button*>(&widget);
+		            if (new_lobby_chat_message_alert) {
+		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % TICKS_PER_SECOND;
+		                if (time < TICKS_PER_SECOND / 2) {
+			                button->setTextHighlightColor(uint32ColorBaronyBlue);
+		                    button->setTextColor(uint32ColorBaronyBlue);
+		                } else {
+			                button->setTextHighlightColor(uint32ColorWhite);
+		                    button->setTextColor(uint32ColorWhite);
+		                }
+		            } else {
+			            button->setTextHighlightColor(uint32ColorWhite);
+		                button->setTextColor(uint32ColorWhite);
+		            }
+		            });
 		    }
 		}
 
@@ -12414,13 +12484,13 @@ bind_failed:
 			createWaitingStone(1);
 			createWaitingStone(2);
 			createWaitingStone(3);
-			finalizeLANLobby();
+			setupNetGameAsServer();
 		} else if (type == LobbyType::LobbyOnline) {
 			createStartButton(0);
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
-			finalizeOnlineLobby();
+			setupNetGameAsServer();
 		} else if (type == LobbyType::LobbyJoined) {
 		    for (int c = 0; c < 4; ++c) {
 		        if (clientnum == c) {
@@ -12441,42 +12511,30 @@ bind_failed:
 
 		// announce lobby in chat window
 		lobby_chat_messages.clear();
+		//toggleLobbyChatWindow();
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
-            char buf[1024] = "";
             if (directConnect) {
-                const Uint16 port = ::portnumber;
-                char hostname[256] = { '\0' };
-                (void)gethostname(hostname, sizeof(hostname));
-                hostname[sizeof(hostname) - 1] = '\0';
-                snprintf(buf, sizeof(buf), "Server hosted at %s:%hu", hostname, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, "Server hosted on LAN successfully.");
             } else {
                 if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-                    snprintf(buf, sizeof(buf), "Lobby hosted via Steam. Roomcode: %s",
-                        LobbyHandler.getCurrentRoomKey().c_str());
+                    addLobbyChatMessage(uint32ColorBaronyBlue, "Lobby successfully hosted via Steam.");
                 }
                 else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-                    snprintf(buf, sizeof(buf), "Lobby hosted via Epic Online. Roomcode: %s",
-                        LobbyHandler.getCurrentRoomKey().c_str());
+                    addLobbyChatMessage(uint32ColorBaronyBlue, "Lobby successfully hosted via Epic Online.");
                 }
             }
-            addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}
 		else if (type == LobbyType::LobbyJoined) {
-            char buf[1024];
             if (directConnect) {
-                const Uint16 port = ::portnumber;
-                snprintf(buf, sizeof(buf), "Joined server at %s:%hu", last_address, port);
+                addLobbyChatMessage(uint32ColorBaronyBlue, "Joined LAN server successfully.");
             } else {
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-                    snprintf(buf, sizeof(buf), "Joined lobby via Steam. Roomcode: %s",
-                        LobbyHandler.getCurrentRoomKey().c_str());
+                    addLobbyChatMessage(uint32ColorBaronyBlue, "Joined lobby successfully via Steam.");
                 }
                 else if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-                    snprintf(buf, sizeof(buf), "Joined lobby via Epic Online. Roomcode: %s",
-                        LobbyHandler.getCurrentRoomKey().c_str());
+                    addLobbyChatMessage(uint32ColorBaronyBlue, "Joined lobby successfully via Epic Online.");
                 }
             }
-            addLobbyChatMessage(uint32ColorBaronyBlue, buf);
 		}
 	}
 
@@ -14437,6 +14495,29 @@ bind_failed:
 		    "local_image"
 		);
 
+		auto host_lan_fn = [](Button&){
+		    soundActivate();
+		    closeNetworkInterfaces();
+	        directConnect = true;
+
+	        Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+
+	        // resolve local host's address
+	        int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+	        assert(resolve != -1);
+
+	        // open sockets
+	        if (!(net_sock = SDLNet_UDP_Open(port))) {
+	            char buf[1024];
+	            snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+                monoPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
+                return;
+	        }
+
+	        // create lobby
+	        createLobby(LobbyType::LobbyLAN);
+		    };
+
 		auto host_lan_button = window->addButton("host_lan");
 		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
 		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -14448,7 +14529,7 @@ bind_failed:
 		host_lan_button->setWidgetBack("back_button");
 		host_lan_button->setWidgetUp("local");
 		host_lan_button->setWidgetDown("host_online");
-		host_lan_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLAN);});
+		host_lan_button->setCallback(host_lan_fn);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 170, 126, 50},
@@ -14473,7 +14554,7 @@ bind_failed:
 		                    createLobby(LobbyType::LobbyOnline);
                         } else {
                             closePrompt("host_lobby_prompt");
-	                        monoPrompt("Failed to create lobby", "Okay",
+	                        monoPrompt("Failed to host Epic lobby.", "Okay",
 	                            [](Button&){soundCancel(); closeMono();});
                         }
                     }
@@ -14499,7 +14580,7 @@ bind_failed:
 		                    createLobby(LobbyType::LobbyOnline);
                         } else {
                             closePrompt("host_lobby_prompt");
-	                        monoPrompt("Failed to create lobby", "Okay",
+	                        monoPrompt("Failed to host Steam lobby.", "Okay",
 	                            [](Button&){soundCancel(); closeMono();});
                         }
                     }
