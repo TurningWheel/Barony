@@ -9185,21 +9185,29 @@ bind_failed:
 		    }
         }
 
+        // can't lock slots in local games or saved games
 		if (local || loadingsavegame) {
 			player_count_label->setColor(makeColor(70, 62, 59, 255));
-			kick_player_label->setColor(makeColor(70, 62, 59, 255));
 			for (int c = 0; c < 3; ++c) {
 			    auto player_count = card->findButton((std::string("player_count_") + std::to_string(c + 2)).c_str());
 			    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
 			    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
 		        player_count->setDisabled(true);
+		    }
+		} else {
+		    player_count_label->setColor(makeColor(166, 123, 81, 255));
+		}
+
+        // can't kick players in local games
+		if (local) {
+			kick_player_label->setColor(makeColor(70, 62, 59, 255));
+			for (int c = 0; c < 3; ++c) {
 			    auto kick_player = card->findButton((std::string("kick_player_") + std::to_string(c + 2)).c_str());
 			    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
 			    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
 		        kick_player->setDisabled(true);
 		    }
 		} else {
-		    player_count_label->setColor(makeColor(166, 123, 81, 255));
 		    kick_player_label->setColor(makeColor(166, 123, 81, 255));
 		}
 	}
