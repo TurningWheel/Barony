@@ -12458,8 +12458,8 @@ bind_failed:
 		        chat_button->setTickCallback([](Widget& widget){
 		            auto button = static_cast<Button*>(&widget);
 		            if (new_lobby_chat_message_alert) {
-		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % TICKS_PER_SECOND;
-		                if (time < TICKS_PER_SECOND / 2) {
+		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % 20;
+		                if (time < 10) {
 			                button->setTextHighlightColor(uint32ColorBaronyBlue);
 		                    button->setTextColor(uint32ColorBaronyBlue);
 		                } else {
@@ -12510,6 +12510,7 @@ bind_failed:
 		}
 
 		// announce lobby in chat window
+		new_lobby_chat_message_alert = 0;
 		lobby_chat_messages.clear();
 		//toggleLobbyChatWindow();
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
