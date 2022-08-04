@@ -51,10 +51,205 @@ enum Monster : int
 	SENTRYBOT,
 	SPELLBOT,
 	GYROBOT,
-	DUMMYBOT
+	DUMMYBOT,
+	MAX_MONSTER
 };
-const int NUMMONSTERS = 37;
+const int NUMMONSTERS = MAX_MONSTER;
 extern int kills[NUMMONSTERS];
+
+static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
+    // NOTHING
+    {
+        0,
+    },
+
+    // HUMAN
+    {
+        113, 114, 115, 116, 117,
+        125, 126, 127, 128, 129,
+        332, 333,
+        341, 342, 343, 344, 345, 346,
+        354, 355, 356, 357, 358, 359,
+        367, 368, 369, 370, 371, 372,
+        380, 381, 382, 383, 384, 385,
+    },
+
+    // RAT
+    {
+        131, 265,
+        814,
+        1063, 1064, 1065, 1066, 1067,
+        1068, 1069,
+        1070, 1071, 1072, 1073, 1074,
+    },
+
+    // GOBLIN
+    {
+        180, 694, 752,
+    },
+
+    // SLIME
+    {
+        189, 210
+    },
+
+    // TROLL
+    {
+        204, 817,
+    },
+
+    // OCTOPUS
+    {
+    },
+
+    // SPIDER
+    {
+        267, 997, 823, 1001,
+    },
+
+    // GHOUL
+    {
+        246,
+    },
+
+    // SKELETON
+    {
+        229, 686,
+    },
+
+    // SCORPION
+    {
+        196, 266,
+    },
+
+    // CREATURE_IMP
+    {
+        289, 827
+    },
+
+    // CRAB
+    {
+    },
+
+    // GNOME
+    {
+        295,
+    },
+
+    // DEMON
+    {
+        258,
+    },
+
+    // SUCCUBUS
+    {
+        190, 710,
+    },
+
+    // MIMIC
+    {
+    },
+
+    // LICH
+    {
+        274,
+    },
+
+    // MINOTAUR
+    {
+        239,
+    },
+
+    // DEVIL
+    {
+        304,
+    },
+
+    // SHOPKEEPER
+    {
+        217,
+    },
+
+    // KOBOLD
+    {
+        421,
+    },
+
+    // SCARAB
+    {
+        429, 430,
+    },
+
+    // CRYSTALGOLEM
+    {
+        475,
+    },
+
+    // INCUBUS
+    {
+        445, 702,
+    },
+
+    // VAMPIRE
+    {
+        437, 718, 756,
+    },
+
+    // SHADOW
+    {
+        481,
+    },
+
+    // COCKATRICE
+    {
+        413,
+    },
+
+    // INSECTOID
+    {
+        455, 726, 760,
+    },
+
+    // GOATMAN
+    {
+        463, 734, 768,
+    },
+
+    // AUTOMATON
+    {
+        467, 742, 770,
+    },
+
+    // LICH_ICE
+    {
+        650,
+    },
+
+    // LICH_FIRE
+    {
+        646,
+    },
+
+    // SENTRYBOT
+    {
+        872,
+    },
+
+    // SPELLBOT
+    {
+        885,
+    },
+
+    // GYROBOT
+    {
+        886,
+    },
+
+    // DUMMYBOT
+    {
+        889,
+    },
+};
 
 static char monstertypename[][15] =
 {

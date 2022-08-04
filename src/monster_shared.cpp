@@ -16,6 +16,8 @@
 #include "entity.hpp"
 #include "prng.hpp"
 
+#include <cassert>
+
 void Entity::initMonster(int mySprite)
 {
 	sprite = mySprite;
@@ -169,147 +171,23 @@ void Entity::initMonster(int mySprite)
 	return;
 }
 
-int Entity::getMonsterTypeFromSprite()
+Monster Entity::getMonsterTypeFromSprite()
 {
-	int mySprite = this->sprite;
-
-	if ( (mySprite >= 113 && mySprite < 118) ||
-		(mySprite >= 125 && mySprite < 130) ||
-		(mySprite >= 332 && mySprite < 334) ||
-		(mySprite >= 341 && mySprite < 347) ||
-		(mySprite >= 354 && mySprite < 360) ||
-		(mySprite >= 367 && mySprite < 373) ||
-		(mySprite >= 380 && mySprite < 386) )   // human heads
-	{
-		return HUMAN;
-	}
-	else if ( mySprite == 131 || mySprite == 265 || mySprite == 814 )     // rat
-	{
-		return RAT;
-	}
-	else if ( mySprite == 180 || mySprite == 694 || mySprite == 752 )     // goblin head
-	{
-		return GOBLIN;
-	}
-	else if ( mySprite == 196 || mySprite == 266 )     // scorpion body
-	{
-		return SCORPION;
-	}
-	else if ( mySprite == 190 || mySprite == 710 )     // succubus head
-	{
-		return SUCCUBUS;
-	}
-	else if ( mySprite == 204 || mySprite == 817 )     // troll head
-	{
-		return TROLL;
-	}
-	else if ( mySprite == 217 )     // shopkeeper head
-	{
-		return SHOPKEEPER;
-	}
-	else if ( mySprite == 229 || mySprite == 686 )     // skeleton head
-	{
-		return SKELETON;
-	}
-	else if ( mySprite == 239 )     // minotaur waist
-	{
-		return MINOTAUR;
-	}
-	else if ( mySprite == 246 )     // ghoul head
-	{
-		return GHOUL;
-	}
-	else if ( mySprite == 258 )     // demon head
-	{
-		return DEMON;
-	}
-	else if ( mySprite == 267 || mySprite == 997 || mySprite == 823 || mySprite == 1001 )     // spider body
-	{
-		return SPIDER;
-	}
-	else if ( mySprite == 274 )     // lich body
-	{
-		return LICH;
-	}
-	else if ( mySprite == 289 || mySprite == 827 )     // imp head
-	{
-		return CREATURE_IMP;
-	}
-	else if ( mySprite == 295 )     // gnome head
-	{
-		return GNOME;
-	}
-	else if ( mySprite == 304 )     // devil torso
-	{
-		return DEVIL;
-	}
-	else if ( mySprite == 475 )     // crystal golem head
-	{
-		return CRYSTALGOLEM;
-	}
-	else if ( mySprite == 413 )     // cockatrice head
-	{
-		return COCKATRICE;
-	}
-	else if ( mySprite == 467 || mySprite == 742 || mySprite == 770 )     // automaton head
-	{
-		return AUTOMATON;
-	}
-	else if ( mySprite == 429 || mySprite == 430 )     // scarab
-	{
-		return SCARAB;
-	}
-	else if ( mySprite == 421 )     // kobold head
-	{
-		return KOBOLD;
-	}
-	else if ( mySprite == 481 )     // shadow head
-	{
-		return SHADOW;
-	}
-	else if ( mySprite == 437 || mySprite == 718 || mySprite == 756 )     // vampire head
-	{
-		return VAMPIRE;
-	}
-	else if ( mySprite == 445 || mySprite == 702 )     // incubus head
-	{
-		return INCUBUS;
-	}
-	else if ( mySprite == 455 || mySprite == 726 || mySprite == 760 )     // insectoid head
-	{
-		return INSECTOID;
-	}
-	else if ( mySprite == 463 || mySprite == 734 || mySprite == 768 )     // goatman head
-	{
-		return GOATMAN;
-	}
-	else if ( mySprite == 646 )     // lich body
-	{
-		return LICH_FIRE;
-	}
-	else if ( mySprite == 650 )     // lich body
-	{
-		return LICH_ICE;
-	}
-	else if ( mySprite == 189 || mySprite == 210 )
-	{
-		return SLIME;
-	}
-	else if ( mySprite == 872 )     // sentrybot
-	{
-		return SENTRYBOT;
-	}
-	else if ( mySprite == 885 )
-	{
-		return SPELLBOT;
-	}
-	else if ( mySprite == 886 )
-	{
-		return GYROBOT;
-	}
-	else if ( mySprite == 889 )
-	{
-		return DUMMYBOT;
+	Sint32 mySprite = this->sprite;
+	static std::unordered_map<Sint32, Monster> spriteToMonster;
+	if (spriteToMonster.empty()) {
+	    for (int c = 0; c < NUMMONSTERS; ++c) {
+	        const auto monster = static_cast<Monster>(c);
+	        for (auto sprite : monsterSprites[c]) {
+	            const auto result = spriteToMonster.emplace(sprite, monster);
+	            assert(result.second == true && "spriteToMonster conflict!");
+	        }
+	    }
+	} else {
+	    auto find = spriteToMonster.find(mySprite);
+	    if (find != spriteToMonster.end()) {
+	        return find->second;
+	    }
 	}
 	return NOTHING;
 }
