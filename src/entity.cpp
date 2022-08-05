@@ -12843,15 +12843,17 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
-			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
-			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-			|| myStats->type == HUMAN || myStats->type == GOBLIN
-			|| myStats->type == GHOUL || myStats->type == SKELETON
-			|| myStats->type == GNOME || myStats->type == DEMON
-			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
-			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR
-			|| myStats->type == SHADOW )
+	    const auto type = myStats->type;
+		if (type == KOBOLD || type == AUTOMATON ||
+			type == GOATMAN || type == INSECTOID ||
+			type == INCUBUS || type == VAMPIRE ||
+			type == HUMAN || type == GOBLIN ||
+			type == GHOUL || type == SKELETON ||
+			type == GNOME || type == DEMON ||
+			type == CREATURE_IMP || type == SUCCUBUS ||
+			type == SHOPKEEPER || type == MINOTAUR ||
+			type == SHADOW || type == RAT ||
+			type == SLIME)
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}

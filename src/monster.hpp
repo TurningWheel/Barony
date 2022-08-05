@@ -76,11 +76,11 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // RAT
     {
-        131, 265,
-        814,
-        1063, 1064, 1065, 1066, 1067,
-        1068, 1069,
-        1070, 1071, 1072, 1073, 1074,
+        131, 265,                       // normal rat walk cycle
+        814,                            // player rat head
+        1063, 1064, 1065, 1066, 1067,   // normal rat attack frames
+        1068, 1069,                     // algernon walk cycle
+        1070, 1071, 1072, 1073, 1074,   // algernon attack frames
     },
 
     // GOBLIN
@@ -90,7 +90,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // SLIME
     {
-        189, 210
+        189, 1108, 1109, 1110, 1111, 1112, // blue
+        210, 1113, 1114, 1115, 1116, 1117, // green
     },
 
     // TROLL

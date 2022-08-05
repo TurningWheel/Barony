@@ -1588,7 +1588,12 @@ Entity* receiveEntity(Entity* entity)
 	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
 	entity->new_x = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
 	entity->new_y = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
-	entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+	if (newentity || entity->behavior != &actMonster) {
+	    // for certain monsters, we don't want to use these bytes,
+	    // because voxel-animated creatures (like rats and slimes)
+	    // need to move vertically for their animation.
+	    entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+	}
 	entity->sizex = (Sint8)net_packet->data[16];
 	entity->sizey = (Sint8)net_packet->data[17];
 	entity->scalex = ((Uint8)net_packet->data[18]) / 128.f;

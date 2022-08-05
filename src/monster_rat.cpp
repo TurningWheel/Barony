@@ -53,6 +53,8 @@ void initRat(Entity* my, Stat* myStats)
 			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				&& myStats->leader_uid == 0 )
 			{
+			    my->z -= 0.5; // algernon is slightly larger than an ordinary rat.
+	            my->sprite = 1068; // algernon's unique model
 				strcpy(myStats->name, "Algernon");
 				myStats->HP = 60;
 				myStats->MAXHP = 60;
@@ -126,20 +128,75 @@ void initRat(Entity* my, Stat* myStats)
 
 void ratAnimate(Entity* my, double dist)
 {
-	//TODO: Invisibility check.
+    if (my->ticks == my->getUID() % TICKS_PER_SECOND) {
+        if (multiplayer == SERVER) {
+            // in case we are algernon, update the sprite for clients
+            serverUpdateEntitySprite(my);
+        }
+    }
 
-	// move legs
-	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME != MONSTER_ATTACK) )
-	{
-		MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( my->sprite == 131 )
-		{
-			my->sprite = 265;
-		}
-		else
-		{
-			my->sprite = 131;
-		}
+	// walk cycle
+	if (dist >= 0.1 && !MONSTER_ATTACK) {
+	    if (my->ticks % 10 == 0)
+	    {
+	        // normal rat walk cycle
+		    if ( my->sprite == 131 ) {
+			    my->sprite = 265;
+		    } else if (my->sprite == 265) {
+			    my->sprite = 131;
+		    }
+
+		    // algernon walk cycle
+		    if ( my->sprite == 1068 ) {
+			    my->sprite = 1069;
+		    } else if (my->sprite == 1069) {
+			    my->sprite = 1068;
+		    }
+	    }
+	}
+
+    // attack cycle
+	if (MONSTER_ATTACK) {
+	    const int frame = TICKS_PER_SECOND / 10;
+	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
+	        const bool algernon = my->sprite > 1000;
+	        my->sprite = algernon ? 1070 : 1063;
+	        my->z = 4.5;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 1) { // frame 2
+	        ++my->sprite;
+	        my->z = 3.5;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 3
+	        ++my->sprite;
+	        my->z = 2.5;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 4
+	        ++my->sprite;
+	        my->z = 2;
+	        const Sint32 temp = MONSTER_ATTACKTIME;
+	        my->attack(1, 0, nullptr); // munch
+	        MONSTER_ATTACKTIME = temp;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 6) { // frame 5
+	        ++my->sprite;
+	        my->z = 3;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 7) { // end
+	        const bool algernon = my->sprite == 1074;
+	        if (algernon) {
+	            my->sprite = 1068;
+	            my->z = 5.5;
+	        } else {
+	            my->sprite = 131;
+	            my->z = 6;
+	        }
+	        MONSTER_ATTACK = 0;
+	    }
+	    else {
+		    ++MONSTER_ATTACKTIME;
+            my->new_z = my->z;
+        }
 	}
 }
 
