@@ -1583,15 +1583,19 @@ Entity* receiveEntity(Entity* entity)
 	{
 		entity->sprite = (int)SDLNet_Read16(&net_packet->data[8]);
 	}
+
+    // for certain monsters, we don't want to use certain bytes,
+    // because voxel-animated creatures (like rats and slimes)
+    // need to move vertically for their animation.
+	const auto monsterType = entity->getMonsterTypeFromSprite();
+	const bool excludeForAnimation = !newentity && entity->behavior == &actMonster && (monsterType == RAT || monsterType == SLIME);
+
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
 	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
 	entity->new_x = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
 	entity->new_y = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
-	if (newentity || entity->behavior != &actMonster) {
-	    // for certain monsters, we don't want to use these bytes,
-	    // because voxel-animated creatures (like rats and slimes)
-	    // need to move vertically for their animation.
+	if (!excludeForAnimation) {
 	    entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
 	}
 	entity->sizex = (Sint8)net_packet->data[16];
@@ -1613,7 +1617,9 @@ Entity* receiveEntity(Entity* entity)
 	}
 	entity->focalx = ((char)net_packet->data[27]) / 8.0;
 	entity->focaly = ((char)net_packet->data[28]) / 8.0;
-	entity->focalz = ((char)net_packet->data[29]) / 8.0;
+	if (!excludeForAnimation) {
+	    entity->focalz = ((char)net_packet->data[29]) / 8.0;
+	}
 	for (c = 0; c < 16; ++c)
 	{
 		if ( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) )

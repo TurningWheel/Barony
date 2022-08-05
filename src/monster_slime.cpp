@@ -29,11 +29,11 @@ void initSlime(Entity* my, Stat* myStats)
 	{
 		if ( myStats->LVL == 7 )
 		{
-			my->sprite = 189;    // blue slime model
+			my->sprite = 1108; // blue slime model
 		}
 		else
 		{
-			my->sprite = 210;    // green slime model
+			my->sprite = 1113; // green slime model
 		}
 		MONSTER_SPOTSND = 68;
 		MONSTER_SPOTVAR = 1;
@@ -92,31 +92,79 @@ void initSlime(Entity* my, Stat* myStats)
 
 void slimeAnimate(Entity* my, double dist)
 {
-	if (my->skill[24])
-	{
-		my->scalez += .05 * dist;
-		my->scalex -= .05 * dist;
-		my->scaley -= .05 * dist;
-		if ( my->scalez >= 1.25 )
-		{
-			my->scalez = 1.25;
-			my->scalex = .75;
-			my->scaley = .75;
-			my->skill[24] = 0;
-		}
-	}
-	else
-	{
-		my->scalez -= .05 * dist;
-		my->scalex += .05 * dist;
-		my->scaley += .05 * dist;
-		if ( my->scalez <= .75 )
-		{
-			my->scalez = .75;
-			my->scalex = 1.25;
-			my->scaley = 1.25;
-			my->skill[24] = 1;
-		}
+    const bool green = my->sprite == 210 || my->sprite >= 1113;
+    const int frame = TICKS_PER_SECOND / 10;
+
+    // idle & walk cycle
+    if (!MONSTER_ATTACK) {
+        auto& slimeStand = my->skill[24];
+        auto& slimeBob = my->fskill[24];
+        const real_t squishRate = dist < 0.1 ? 1.5 : 3.0;
+        const real_t squishFactor = dist < 0.1 ? 0.05 : 0.3;
+        const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+        slimeBob = fmod(slimeBob + inc, PI * 2);
+        my->scalex = 1.0 - sin(slimeBob) * squishFactor;
+        my->scaley = 1.0 - sin(slimeBob) * squishFactor;
+        my->scalez = 1.0 + sin(slimeBob) * squishFactor;
+        if (dist < 0.1) {
+	        if (slimeStand < frame) {
+	            my->sprite = green ? 1113 : 1108;
+	            my->focalz = -.5;
+	            ++slimeStand;
+	        } else {
+	            my->sprite = green ? 1114 : 1109;
+	            my->focalz = -1.5;
+	        }
+        } else {
+	        if (slimeStand > 0) {
+	            my->sprite = green ? 1113 : 1108;
+	            my->focalz = -.5;
+	            --slimeStand;
+	        } else {
+	            my->sprite = green ? 210 : 189;
+	            my->focalz = 0.0;
+	        }
+        }
+    }
+
+    // attack cycle
+	if (MONSTER_ATTACK) {
+	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
+	        const bool green = my->sprite == 210 || my->sprite >= 1113;
+	        my->sprite = green ? 1113 : 1108;
+	        my->scalex = 1.0;
+	        my->scaley = 1.0;
+	        my->scalez = 1.0;
+	        my->focalz = -.5;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 2
+	        ++my->sprite;
+	        my->focalz = -1.5;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 3
+	        ++my->sprite;
+	        my->focalz = -3.0;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 5) { // frame 4
+	        ++my->sprite;
+	        my->focalz = -2.5;
+	        const Sint32 temp = MONSTER_ATTACKTIME;
+	        my->attack(1, 0, nullptr); // slop
+	        MONSTER_ATTACKTIME = temp;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 7) { // frame 5
+	        ++my->sprite;
+	        my->focalz = -2.0;
+	    }
+	    if (MONSTER_ATTACKTIME == frame * 8) { // end
+            my->sprite = green ? 210 : 189;
+            my->focalz = 0.0;
+	        MONSTER_ATTACK = 0;
+	        MONSTER_ATTACKTIME = 0;
+	    }
+	    else {
+		    ++MONSTER_ATTACKTIME;
+        }
 	}
 }
 

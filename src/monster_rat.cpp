@@ -192,6 +192,7 @@ void ratAnimate(Entity* my, double dist)
 	            my->z = 6;
 	        }
 	        MONSTER_ATTACK = 0;
+	        MONSTER_ATTACKTIME = 0;
 	    }
 	    else {
 		    ++MONSTER_ATTACKTIME;
