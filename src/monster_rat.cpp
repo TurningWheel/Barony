@@ -26,9 +26,10 @@ void initRat(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
+	my->initMonster(131);
+
 	if ( multiplayer != CLIENT )
 	{
-	    my->initMonster(131);
 		MONSTER_SPOTSND = 29;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = 29;

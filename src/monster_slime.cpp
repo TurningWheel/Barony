@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "prng.hpp"
+#include "interface/consolecommand.hpp"
 
 void initSlime(Entity* my, Stat* myStats)
 {
@@ -26,10 +27,16 @@ void initSlime(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
+    auto& slimeStand = my->skill[24];
+    auto& slimeBob = my->fskill[24];
+    slimeStand = 0;
+    slimeBob = 0.0;
+
+	const bool blue = myStats->LVL == 7;
+	my->initMonster(blue ? 1108 : 1113);
+
 	if ( multiplayer != CLIENT )
 	{
-		const bool blue = myStats->LVL == 7;
-		my->sprite = blue ? 1108 : 1113;
 		MONSTER_SPOTSND = 68;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
@@ -148,7 +155,7 @@ void slimeAnimate(Entity* my, double dist)
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 7) { // frame 5
 	        my->sprite = green ? 1117 : 1112;
-	        my->focalz = -2.0;
+	        my->focalz = 0.0;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 8) { // end
             my->sprite = green ? 210 : 189;

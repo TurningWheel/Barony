@@ -31,7 +31,8 @@ void initSpider(Entity* my, Stat* myStats)
 	my->flags[INVISIBLE] = false;
 	my->z = 4.5;
 
-	my->sprite = arachnophobia_filter ? 997 : 267;
+    my->initMonster(arachnophobia_filter ? 997 : 267);
+
 	if ( multiplayer != CLIENT )
 	{
 	    if (arachnophobia_filter)

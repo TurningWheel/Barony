@@ -27,9 +27,10 @@ void initScorpion(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
+	my->initMonster(196);
+
 	if ( multiplayer != CLIENT )
 	{
-	    my->initMonster(196);
 		MONSTER_SPOTSND = 101;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;

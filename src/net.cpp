@@ -1574,6 +1574,7 @@ Entity* receiveEntity(Entity* entity)
 	//Yes, it is necessary. I don't think I like this solution though, will try something else.
 	*/
 
+    Sint32 oldSprite = 0;
 	if ( entity == nullptr )
 	{
 		newentity = true;
@@ -1581,6 +1582,7 @@ Entity* receiveEntity(Entity* entity)
 	}
 	else
 	{
+	    oldSprite = entity->sprite;
 		entity->sprite = (int)SDLNet_Read16(&net_packet->data[8]);
 	}
 
@@ -1588,7 +1590,15 @@ Entity* receiveEntity(Entity* entity)
     // because voxel-animated creatures (like rats and slimes)
     // need to move vertically for their animation.
 	const auto monsterType = entity->getMonsterTypeFromSprite();
-	const bool excludeForAnimation = !newentity && entity->behavior == &actMonster && (monsterType == RAT || monsterType == SLIME);
+	const bool excludeForAnimation =
+	    !newentity &&
+	    entity->behavior == &actMonster &&
+	    (monsterType == RAT || monsterType == SLIME) &&
+	    entity->skill[8]; // MONSTER_ATTACK
+
+	if (excludeForAnimation) {
+	    entity->sprite = oldSprite;
+	}
 
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
@@ -1600,9 +1610,11 @@ Entity* receiveEntity(Entity* entity)
 	}
 	entity->sizex = (Sint8)net_packet->data[16];
 	entity->sizey = (Sint8)net_packet->data[17];
-	entity->scalex = ((Uint8)net_packet->data[18]) / 128.f;
-	entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
-	entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
+	if (newentity || monsterType != SLIME) {
+	    entity->scalex = ((Uint8)net_packet->data[18]) / 128.f;
+	    entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
+	    entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
+	}
 	entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
 	entity->new_pitch = ((Sint16)SDLNet_Read16(&net_packet->data[23])) / 256.0;
 	entity->new_roll = ((Sint16)SDLNet_Read16(&net_packet->data[25])) / 256.0;

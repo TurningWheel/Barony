@@ -32,7 +32,7 @@ void initLich(Entity* my, Stat* myStats)
 
 	my->z = -2;
 	my->yaw = PI;
-	my->sprite = 274;
+	my->initMonster(274);
 	my->skill[29] = 120;
 
 	if ( multiplayer != CLIENT )

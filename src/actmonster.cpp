@@ -1307,19 +1307,20 @@ void actMonster(Entity* my)
 			case HUMAN: humanMoveBodyparts(my, nullptr, dist); break;
 			case RAT: ratAnimate(my, dist); break;
 			case GOBLIN: goblinMoveBodyparts(my, nullptr, dist); break;
-			case SCORPION: scorpionAnimate(my, dist); break;
-			case SUCCUBUS: succubusMoveBodyparts(my, nullptr, dist); break;
+			case SLIME: slimeAnimate(my, dist); break;
 			case TROLL: trollMoveBodyparts(my, nullptr, dist); break;
-			case SHOPKEEPER: shopkeeperMoveBodyparts(my, nullptr, dist); break;
-			case SKELETON: skeletonMoveBodyparts(my, nullptr, dist); break;
-			case MINOTAUR: minotaurMoveBodyparts(my, nullptr, dist); actMinotaurCeilingBuster(my); break;
-			case GHOUL: ghoulMoveBodyparts(my, nullptr, dist); break;
-			case DEMON: demonMoveBodyparts(my, nullptr, dist); actDemonCeilingBuster(my); break;
 			case SPIDER: spiderMoveBodyparts(my, nullptr, dist); break;
-			case LICH: lichAnimate(my, dist); break;
+			case GHOUL: ghoulMoveBodyparts(my, nullptr, dist); break;
+			case SKELETON: skeletonMoveBodyparts(my, nullptr, dist); break;
+			case SCORPION: scorpionAnimate(my, dist); break;
 			case CREATURE_IMP: impMoveBodyparts(my, nullptr, dist); break;
 			case GNOME: gnomeMoveBodyparts(my, nullptr, dist); break;
+			case DEMON: demonMoveBodyparts(my, nullptr, dist); actDemonCeilingBuster(my); break;
+			case SUCCUBUS: succubusMoveBodyparts(my, nullptr, dist); break;
+			case LICH: lichAnimate(my, dist); break;
+			case MINOTAUR: minotaurMoveBodyparts(my, nullptr, dist); actMinotaurCeilingBuster(my); break;
 			case DEVIL: devilMoveBodyparts(my, nullptr, dist); break;
+			case SHOPKEEPER: shopkeeperMoveBodyparts(my, nullptr, dist); break;
 			case KOBOLD: koboldMoveBodyparts(my, nullptr, dist); break;
 			case SCARAB: scarabAnimate(my, nullptr, dist); break;
 			case CRYSTALGOLEM: crystalgolemMoveBodyparts(my, nullptr, dist); break;
@@ -1330,8 +1331,8 @@ void actMonster(Entity* my)
 			case INSECTOID: insectoidMoveBodyparts(my, nullptr, dist); break;
 			case GOATMAN: goatmanMoveBodyparts(my, nullptr, dist); break;
 			case AUTOMATON: automatonMoveBodyparts(my, nullptr, dist); break;
-			case LICH_FIRE: lichFireAnimate(my, nullptr, dist); break;
 			case LICH_ICE: lichIceAnimate(my, nullptr, dist); break;
+			case LICH_FIRE: lichFireAnimate(my, nullptr, dist); break;
 			case SENTRYBOT: sentryBotAnimate(my, nullptr, dist); break;
 			case GYROBOT: gyroBotAnimate(my, nullptr, dist); break;
 			case DUMMYBOT: dummyBotAnimate(my, nullptr, dist); break;
@@ -7007,135 +7008,41 @@ timeToGoAgain:
 	myStats = my->getStats();
 	if ( myStats != NULL )
 	{
-		if ( myStats->type == HUMAN )
-		{
-			humanMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == RAT )
-		{
-			ratAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == GOBLIN )
-		{
-			goblinMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SLIME )
-		{
-			slimeAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SCORPION )
-		{
-			scorpionAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SUCCUBUS )
-		{
-			succubusMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == TROLL )
-		{
-			trollMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SHOPKEEPER )
-		{
-			shopkeeperMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SKELETON )
-		{
-			skeletonMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == MINOTAUR )
-		{
-			minotaurMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-			actMinotaurCeilingBuster(my);
-		}
-		else if ( myStats->type == GHOUL )
-		{
-			ghoulMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == DEMON )
-		{
-			demonMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-			actDemonCeilingBuster(my);
-		}
-		else if ( myStats->type == SPIDER )
-		{
-			spiderMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == LICH )
-		{
-			lichAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == CREATURE_IMP )
-		{
-			impMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == GNOME )
-		{
-			gnomeMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == DEVIL )
-		{
-			devilMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == COCKATRICE )
-		{
-			cockatriceMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == AUTOMATON )
-		{
-			automatonMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == CRYSTALGOLEM )
-		{
-			crystalgolemMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SCARAB )
-		{
-			scarabAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == KOBOLD )
-		{
-			koboldMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SHADOW )
-		{
-			shadowMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == GOATMAN )
-		{
-			goatmanMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == INSECTOID )
-		{
-			insectoidMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == INCUBUS )
-		{
-			incubusMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == VAMPIRE )
-		{
-			vampireMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == LICH_FIRE )
-		{
-			lichFireAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == LICH_ICE )
-		{
-			lichIceAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
-		{
-			sentryBotAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == GYROBOT )
-		{
-			gyroBotAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-		}
-		else if ( myStats->type == DUMMYBOT )
-		{
-			dummyBotAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+	    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
+		switch (my->getMonsterTypeFromSprite()) {
+		case HUMAN: humanMoveBodyparts(my, myStats, dist); break;
+		case RAT: ratAnimate(my, dist); break;
+		case GOBLIN: goblinMoveBodyparts(my, myStats, dist); break;
+		case SLIME: slimeAnimate(my, dist); break;
+		case TROLL: trollMoveBodyparts(my, myStats, dist); break;
+		case SPIDER: spiderMoveBodyparts(my, myStats, dist); break;
+		case GHOUL: ghoulMoveBodyparts(my, myStats, dist); break;
+		case SKELETON: skeletonMoveBodyparts(my, myStats, dist); break;
+		case SCORPION: scorpionAnimate(my, dist); break;
+		case CREATURE_IMP: impMoveBodyparts(my, myStats, dist); break;
+		case GNOME: gnomeMoveBodyparts(my, myStats, dist); break;
+		case DEMON: demonMoveBodyparts(my, myStats, dist); actDemonCeilingBuster(my); break;
+		case SUCCUBUS: succubusMoveBodyparts(my, myStats, dist); break;
+		case LICH: lichAnimate(my, dist); break;
+		case MINOTAUR: minotaurMoveBodyparts(my, myStats, dist); actMinotaurCeilingBuster(my); break;
+		case DEVIL: devilMoveBodyparts(my, myStats, dist); break;
+		case SHOPKEEPER: shopkeeperMoveBodyparts(my, myStats, dist); break;
+		case KOBOLD: koboldMoveBodyparts(my, myStats, dist); break;
+		case SCARAB: scarabAnimate(my, myStats, dist); break;
+		case CRYSTALGOLEM: crystalgolemMoveBodyparts(my, myStats, dist); break;
+		case INCUBUS: incubusMoveBodyparts(my, myStats, dist); break;
+		case VAMPIRE: vampireMoveBodyparts(my, myStats, dist); break;
+		case SHADOW: shadowMoveBodyparts(my, myStats, dist); break;
+		case COCKATRICE: cockatriceMoveBodyparts(my, myStats, dist); break;
+		case INSECTOID: insectoidMoveBodyparts(my, myStats, dist); break;
+		case GOATMAN: goatmanMoveBodyparts(my, myStats, dist); break;
+		case AUTOMATON: automatonMoveBodyparts(my, myStats, dist); break;
+		case LICH_ICE: lichIceAnimate(my, myStats, dist); break;
+		case LICH_FIRE: lichFireAnimate(my, myStats, dist); break;
+		case SENTRYBOT: sentryBotAnimate(my, myStats, dist); break;
+		case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
+		case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
+		default: break;
 		}
 	}
 }

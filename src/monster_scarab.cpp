@@ -30,9 +30,10 @@ void initScarab(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
+	my->initMonster(429);
+
 	if ( multiplayer != CLIENT )
 	{
-	    my->initMonster(429);
 		MONSTER_SPOTSND = 310;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 306;

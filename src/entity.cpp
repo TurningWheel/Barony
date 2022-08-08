@@ -6132,7 +6132,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					// be sure to update the clients with the new wind-up pose.
 					serverUpdateEntitySkill(this, 8);
-					serverUpdateEntitySkill(this, 9);
+					if (myStats->type != SLIME && myStats->type != RAT) {
+					    serverUpdateEntitySkill(this, 9);
+					}
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
@@ -6156,7 +6158,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					// be sure to update the clients with the new wind-up pose.
 					serverUpdateEntitySkill(this, 8);
-					serverUpdateEntitySkill(this, 9);
+					if (myStats->type != SLIME && myStats->type != RAT) {
+					    serverUpdateEntitySkill(this, 9);
+					}
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
@@ -6239,7 +6243,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				serverUpdateEntitySkill(this, 9);
+				if (myStats->type != SLIME && myStats->type != RAT) {
+				    serverUpdateEntitySkill(this, 9);
+				}
 			}
 		}
 
