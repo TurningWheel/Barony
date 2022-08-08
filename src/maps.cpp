@@ -3383,119 +3383,119 @@ void assignActions(map_t* map)
 				Monster monsterType = SKELETON;
 				bool monsterIsFixedSprite = true;
 
-				if ( entity->sprite == 27 )   // human.png
+				if ( entity->sprite == 27 )
 				{
 					monsterType = HUMAN;
 				}
-				else if ( entity->sprite == 30 )     // troll.png
+				else if ( entity->sprite == 30 )
 				{
 					monsterType = TROLL;
 				}
-				else if ( entity->sprite == 35 )     // shop.png
+				else if ( entity->sprite == 35 )
 				{
 					monsterType = SHOPKEEPER;
 				}
-				else if ( entity->sprite == 36 )     // goblin.png
+				else if ( entity->sprite == 36 )
 				{
 					monsterType = GOBLIN;
 				}
-				else if ( entity->sprite == 48 )     // spider.png
+				else if ( entity->sprite == 48 )
 				{
 					monsterType = SPIDER;
 				}
-				else if ( entity->sprite == 62 )     // herx.png
+				else if ( entity->sprite == 62 )
 				{
 					monsterType = LICH;
 				}
-				else if ( entity->sprite == 70 )     // gnome.png
+				else if ( entity->sprite == 70 )
 				{
 					monsterType = GNOME;
 				}
-				else if ( entity->sprite == 71 )     // devil.png
+				else if ( entity->sprite == 71 )
 				{
 					monsterType = DEVIL;
 				}
-				else if ( entity->sprite == 83 )     // devil.png
+				else if ( entity->sprite == 83 )
 				{
 					monsterType = SKELETON;
 				}
-				else if ( entity->sprite == 84 )     // devil.png
+				else if ( entity->sprite == 84 )
 				{
 					monsterType = KOBOLD;
 				}
-				else if ( entity->sprite == 85 )     // devil.png
+				else if ( entity->sprite == 85 )
 				{
 					monsterType = SCARAB;
 				}
-				else if ( entity->sprite == 86 )     // devil.png
+				else if ( entity->sprite == 86 )
 				{
 					monsterType = CRYSTALGOLEM;
 				}
-				else if ( entity->sprite == 87 )     // devil.png
+				else if ( entity->sprite == 87 )
 				{
 					monsterType = INCUBUS;
 				}
-				else if ( entity->sprite == 88 )     // devil.png
+				else if ( entity->sprite == 88 )
 				{
 					monsterType = VAMPIRE;
 				}
-				else if ( entity->sprite == 89 )     // devil.png
+				else if ( entity->sprite == 89 )
 				{
 					monsterType = SHADOW;
 				}
-				else if ( entity->sprite == 90 )     // devil.png
+				else if ( entity->sprite == 90 )
 				{
 					monsterType = COCKATRICE;
 				}
-				else if ( entity->sprite == 91 )     // devil.png
+				else if ( entity->sprite == 91 )
 				{
 					monsterType = INSECTOID;
 				}
-				else if ( entity->sprite == 92 )     // devil.png
+				else if ( entity->sprite == 92 )
 				{
 					monsterType = GOATMAN;
 				}
-				else if ( entity->sprite == 93 )     // devil.png
+				else if ( entity->sprite == 93 )
 				{
 					monsterType = AUTOMATON;
 				}
-				else if ( entity->sprite == 94 )     // devil.png
+				else if ( entity->sprite == 94 )
 				{
 					monsterType = LICH_ICE;
 				}
-				else if ( entity->sprite == 95 )     // devil.png
+				else if ( entity->sprite == 95 )
 				{
 					monsterType = LICH_FIRE;
 				}
-				else if ( entity->sprite == 81 )     // devil.png
+				else if ( entity->sprite == 81 )
 				{
 					monsterType = RAT;
 				}
-				else if ( entity->sprite == 75 )     // devil.png
+				else if ( entity->sprite == 75 )
 				{
 					monsterType = DEMON;
 				}
-				else if ( entity->sprite == 76 )     // devil.png
+				else if ( entity->sprite == 76 )
 				{
 					monsterType = CREATURE_IMP;
 				}
-				else if ( entity->sprite == 77 )     // devil.png
+				else if ( entity->sprite == 77 )
 				{
 					monsterType = MINOTAUR;
 				}
-				else if ( entity->sprite == 78 )     // devil.png
+				else if ( entity->sprite == 78 )
 				{
 					monsterType = SCORPION;
 				}
-				else if ( entity->sprite == 79 )     // devil.png
+				else if ( entity->sprite == 79 )
 				{
 					monsterType = SLIME;
 				}
-				else if ( entity->sprite == 80 )     // devil.png
+				else if ( entity->sprite == 80 )
 				{
 					monsterType = SUCCUBUS;
 				}
-				else if ( entity->sprite == 82 )     // devil.png
+				else if ( entity->sprite == 82 )
 				{
 					monsterType = GHOUL;
 				}
@@ -3595,268 +3595,6 @@ void assignActions(map_t* map)
 						}
 					}
 				}
-
-				switch ( monsterType )
-				{
-					case RAT:
-						entity->focalx = limbs[RAT][0][0]; // 0
-						entity->focaly = limbs[RAT][0][1]; // 0
-						entity->focalz = limbs[RAT][0][2]; // 0
-						break;
-					case SCORPION:
-						entity->focalx = limbs[SCORPION][0][0]; // 0
-						entity->focaly = limbs[SCORPION][0][1]; // 0
-						entity->focalz = limbs[SCORPION][0][2]; // 0
-						break;
-					case HUMAN:
-						entity->z = -1;
-						entity->focalx = limbs[HUMAN][0][0]; // 0
-						entity->focaly = limbs[HUMAN][0][1]; // 0
-						entity->focalz = limbs[HUMAN][0][2]; // -1.5
-						break;
-					case GOBLIN:
-						entity->z = 0;
-						entity->focalx = limbs[GOBLIN][0][0]; // 0
-						entity->focaly = limbs[GOBLIN][0][1]; // 0
-						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
-						break;
-					case SLIME:
-						if ( multiplayer != CLIENT )
-						{
-							myStats->LVL = 7;
-						}
-						break;
-					case SUCCUBUS:
-						entity->z = -1;
-						entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-						entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-						entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
-						break;
-					case TROLL:
-						entity->z = -1.5;
-						entity->focalx = limbs[TROLL][0][0]; // 1
-						entity->focaly = limbs[TROLL][0][1]; // 0
-						entity->focalz = limbs[TROLL][0][2]; // -2
-						break;
-					case SHOPKEEPER:
-						entity->z = -1;
-						entity->focalx = limbs[SHOPKEEPER][0][0]; // 0
-						entity->focaly = limbs[SHOPKEEPER][0][1]; // 0
-						entity->focalz = limbs[SHOPKEEPER][0][2]; // -1.5
-						break;
-					case SKELETON:
-						entity->z = -.5;
-						entity->focalx = limbs[SKELETON][0][0]; // 0
-						entity->focaly = limbs[SKELETON][0][1]; // 0
-						entity->focalz = limbs[SKELETON][0][2]; // -1.5
-						break;
-					case MINOTAUR:
-						entity->z = -6;
-						entity->focalx = limbs[MINOTAUR][0][0]; // 0
-						entity->focaly = limbs[MINOTAUR][0][1]; // 0
-						entity->focalz = limbs[MINOTAUR][0][2]; // 0
-						break;
-					case GHOUL:
-						entity->z = -.25;
-						entity->focalx = limbs[GHOUL][0][0]; // 0
-						entity->focaly = limbs[GHOUL][0][1]; // 0
-						entity->focalz = limbs[GHOUL][0][2]; // -1.5
-						break;
-					case DEMON:
-						entity->z = -8.5;
-						entity->focalx = limbs[DEMON][0][0]; // -1
-						entity->focaly = limbs[DEMON][0][1]; // 0
-						entity->focalz = limbs[DEMON][0][2]; // -1.25
-						break;
-					case SPIDER:
-						entity->z = 4.5;
-						if (arachnophobia_filter)
-						{
-						    entity->focalx = limbs[CRAB][0][0];
-						    entity->focaly = limbs[CRAB][0][1];
-						    entity->focalz = limbs[CRAB][0][2];
-						}
-						else
-						{
-						    entity->focalx = limbs[SPIDER][0][0]; // -3
-						    entity->focaly = limbs[SPIDER][0][1]; // 0
-						    entity->focalz = limbs[SPIDER][0][2]; // -1
-						}
-						break;
-					case LICH:
-						entity->focalx = limbs[LICH][0][0]; // -0.75
-						entity->focaly = limbs[LICH][0][1]; // 0
-						entity->focalz = limbs[LICH][0][2]; // 0
-						entity->z = -2;
-						entity->yaw = PI;
-						entity->sprite = 274;
-						entity->skill[29] = 120;
-						break;
-					case CREATURE_IMP:
-						entity->z = -4.5;
-						entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
-						entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
-						entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
-						break;
-					case GNOME:
-						entity->z = 2.25;
-						entity->focalx = limbs[GNOME][0][0]; // 0
-						entity->focaly = limbs[GNOME][0][1]; // 0
-						entity->focalz = limbs[GNOME][0][2]; // -2
-						break;
-					case DEVIL:
-						entity->focalx = limbs[DEVIL][0][0]; // 0
-						entity->focaly = limbs[DEVIL][0][1]; // 0
-						entity->focalz = limbs[DEVIL][0][2]; // 0
-						entity->z = -4;
-						entity->sizex = 20;
-						entity->sizey = 20;
-						entity->yaw = PI;
-						break;
-					case KOBOLD:
-						entity->z = 2.25;
-						entity->focalx = limbs[KOBOLD][0][0]; // 0
-						entity->focaly = limbs[KOBOLD][0][1]; // 0
-						entity->focalz = limbs[KOBOLD][0][2]; // -2
-						break;
-					case SCARAB:
-						entity->focalx = limbs[SCARAB][0][0]; // 0
-						entity->focaly = limbs[SCARAB][0][1]; // 0
-						entity->focalz = limbs[SCARAB][0][2]; // 0
-						if ( !strncmp(map->name, "The Labyrinth", 13) )
-						{
-							if ( myStats )
-							{
-								myStats->DEX -= 4;
-								myStats->LVL = 10;
-							}
-						}
-						break;
-					case CRYSTALGOLEM:
-						entity->z = -1.5;
-						entity->focalx = limbs[CRYSTALGOLEM][0][0]; // 1
-						entity->focaly = limbs[CRYSTALGOLEM][0][1]; // 0
-						entity->focalz = limbs[CRYSTALGOLEM][0][2]; // -2
-						break;
-					case INCUBUS:
-						entity->z = -1;
-						entity->focalx = limbs[INCUBUS][0][0]; // 0
-						entity->focaly = limbs[INCUBUS][0][1]; // 0
-						entity->focalz = limbs[INCUBUS][0][2]; // -1.5
-						break;
-					case VAMPIRE:
-						entity->z = -1;
-						entity->focalx = limbs[VAMPIRE][0][0]; // 0
-						entity->focaly = limbs[VAMPIRE][0][1]; // 0
-						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
-						if ( !strncmp(map->name, "The Ruins", 9) )
-						{
-							if ( myStats )
-							{
-								strcpy(myStats->name, "young vampire");
-							}
-						}
-						break;
-					case SHADOW:
-						entity->z = -1;
-						entity->focalx = limbs[SHADOW][0][0]; // 0
-						entity->focaly = limbs[SHADOW][0][1]; // 0
-						entity->focalz = limbs[SHADOW][0][2]; // -1.75
-						if ( !strncmp(map->name, "Underworld", 10) && currentlevel <= 7 && entity->monsterStoreType == 0 )
-						{
-							entity->monsterStoreType = 2;
-						}
-						break;
-					case COCKATRICE:
-						entity->z = -4.5;
-						entity->focalx = limbs[COCKATRICE][0][0]; // 0
-						entity->focaly = limbs[COCKATRICE][0][1]; // 0
-						entity->focalz = limbs[COCKATRICE][0][2]; // -1.75
-						break;
-					case INSECTOID:
-						entity->z = 0;
-						entity->focalx = limbs[INSECTOID][0][0]; // 0
-						entity->focaly = limbs[INSECTOID][0][1]; // 0
-						entity->focalz = limbs[INSECTOID][0][2]; // -1.75
-						if ( !strncmp(map->name, "The Labyrinth", 13) )
-						{
-							if ( myStats )
-							{
-								strcpy(myStats->name, "lesser insectoid");
-							}
-						}
-						break;
-					case GOATMAN:
-						entity->z = 0;
-						entity->focalx = limbs[GOATMAN][0][0]; // 0
-						entity->focaly = limbs[GOATMAN][0][1]; // 0
-						entity->focalz = limbs[GOATMAN][0][2]; // -1.75
-						if ( strstr(map->name, "Hell") )
-						{
-							if ( myStats )
-							{
-								strcpy(myStats->name, "lesser goatman");
-							}
-						}
-						break;
-					case AUTOMATON:
-						entity->z = -.5;
-						entity->focalx = limbs[AUTOMATON][0][0]; // 0
-						entity->focaly = limbs[AUTOMATON][0][1]; // 0
-						entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
-						if ( entity->monsterStoreType == 1 )
-						{
-							if ( myStats )
-							{
-								strcpy(myStats->name, "damaged automaton");
-							}
-						}
-						break;
-					case LICH_ICE:
-						entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
-						entity->focaly = limbs[LICH_ICE][0][1]; // 0
-						entity->focalz = limbs[LICH_ICE][0][2]; // 0
-						entity->z = -2;
-						entity->yaw = PI;
-						entity->sprite = 650;
-						entity->skill[29] = 120;
-						break;
-					case LICH_FIRE:
-						entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
-						entity->focaly = limbs[LICH_FIRE][0][1]; // 0
-						entity->focalz = limbs[LICH_FIRE][0][2]; // 0
-						entity->z = -1.2;
-						entity->yaw = PI;
-						entity->sprite = 646;
-						entity->skill[29] = 120;
-						break;
-					case SENTRYBOT:
-						entity->z = 0;
-						entity->focalx = limbs[SENTRYBOT][0][0]; // 0
-						entity->focaly = limbs[SENTRYBOT][0][1]; // 0
-						entity->focalz = limbs[SENTRYBOT][0][2]; // -1.75
-						break;
-					case SPELLBOT:
-						entity->z = 0;
-						entity->focalx = limbs[SENTRYBOT][0][0];
-						entity->focaly = limbs[SENTRYBOT][0][1];
-						entity->focalz = limbs[SENTRYBOT][0][2];
-						break;
-					case GYROBOT:
-						entity->z = 5;
-						entity->focalx = limbs[GYROBOT][0][0];
-						entity->focaly = limbs[GYROBOT][0][1];
-						entity->focalz = limbs[GYROBOT][0][2];
-						break;
-					case DUMMYBOT:
-						entity->z = 0;
-						entity->focalx = limbs[DUMMYBOT][0][0];
-						entity->focaly = limbs[DUMMYBOT][0][1];
-						entity->focalz = limbs[DUMMYBOT][0][2];
-						break;
-					default:
-						break;
-				}
 				if ( multiplayer != CLIENT )
 				{
 					myStats->type = monsterType;
@@ -3870,6 +3608,12 @@ void assignActions(map_t* map)
 						entity_uids--;
 					}
 				}
+				if (multiplayer == CLIENT) {
+		            //Give dummy stats.
+		            entity->clientStats = new Stat(monsterType + 1000);
+	                entity->clientStats->type = monsterType;
+				}
+	            initActMonster(entity);
 				break;
 			}
 			// ladder:

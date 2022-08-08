@@ -23,6 +23,7 @@
 
 void initScarab(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	int c;
 	node_t* node;
 
@@ -38,7 +39,7 @@ void initScarab(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = 306;
 		MONSTER_IDLEVAR = 2;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{
@@ -54,7 +55,7 @@ void initScarab(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+			if ( map_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				&& myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Xyggi");
@@ -122,16 +123,16 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.rand() % 2 || playerCount > 1 )
+					if ( map_rng.rand() % 2 || playerCount > 1 )
 					{
-						if ( local_rng.rand() % 3 > 0 )
+						if ( map_rng.rand() % 3 > 0 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + map_rng.rand() % 4), 0, 1, map_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
 							ItemType gem = GEM_GLASS;
-							switch( local_rng.rand() % 7 )
+							switch( map_rng.rand() % 7 )
 							{
 								case 0:
 									gem = GEM_OPAL;
@@ -155,11 +156,11 @@ void initScarab(Entity* my, Stat* myStats)
 									gem = GEM_GLASS;
 									break;
 							}
-							newItem(gem, static_cast<Status>(DECREPIT + local_rng.rand()%2), (local_rng.rand()%4 == 0), 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(gem, static_cast<Status>(DECREPIT + map_rng.rand()%2), (map_rng.rand()%4 == 0), 1, map_rng.rand(), false, &myStats->inventory);
 						}
 						if ( playerCount > 2 )
 						{
-							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + local_rng.rand() % 4), 0, 1 + local_rng.rand() % 2, local_rng.rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + map_rng.rand() % 4), 0, 1 + map_rng.rand() % 2, map_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -524,7 +525,7 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 308 + local_rng.rand() % 2, 64); //TODO: Scarab death sound effect.
+	playSoundEntity(my, 308 + map_rng.rand() % 2, 64); //TODO: Scarab death sound effect.
 
 	my->removeMonsterDeathNodes();
 

@@ -1783,16 +1783,19 @@ Stat* Entity::getStats() const
 {
 	if ( this->behavior == &actMonster ) // monsters
 	{
-		if ( multiplayer == CLIENT && clientStats )
+		if ( multiplayer == CLIENT )
 		{
 			return clientStats;
 		}
-		if ( this->children.first != nullptr )
+		else
 		{
-			if ( this->children.first->next != nullptr )
-			{
-				return (Stat*)this->children.first->next->element;
-			}
+		    if ( this->children.first != nullptr )
+		    {
+			    if ( this->children.first->next != nullptr )
+			    {
+				    return (Stat*)this->children.first->next->element;
+			    }
+		    }
 		}
 	}
 	else if ( this->behavior == &actPlayer ) // players
@@ -1803,7 +1806,6 @@ Stat* Entity::getStats() const
 	{
 		return stats[this->skill[2]];
 	}
-
 	return nullptr;
 }
 

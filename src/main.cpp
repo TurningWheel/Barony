@@ -208,7 +208,7 @@ Uint32 ticks = 0;
 bool stop = false;
 char datadir[PATH_MAX];
 char outputdir[PATH_MAX];
-SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
+SDL_bool EnableMouseCapture = SDL_FALSE; // disable if mouse capture causes problem debugging in Linux
 bool enableDebugKeys = false; // if true, certain special keys can be used for debugging
 
 // language stuff

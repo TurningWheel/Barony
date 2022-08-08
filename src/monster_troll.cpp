@@ -23,6 +23,7 @@
 
 void initTroll(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	int c;
 	node_t* node;
 
@@ -35,7 +36,7 @@ void initTroll(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{
@@ -51,7 +52,7 @@ void initTroll(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+			if ( map_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				|| myStats->leader_uid != 0 )
 			{
 			}
@@ -78,10 +79,10 @@ void initTroll(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( local_rng.rand() % 4 == 0 )
+			if ( map_rng.rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + local_rng.rand() % 3600;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + map_rng.rand() % 3600;
 			}
 
 			// generates equipment and weapons if available from editor
@@ -107,13 +108,13 @@ void initTroll(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.rand() % 3 == 0 )
+					if ( map_rng.rand() % 3 == 0 )
 					{
-						int i = 1 + local_rng.rand() % 3;
+						int i = 1 + map_rng.rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							Category cat = static_cast<Category>(local_rng.rand() % (NUMCATEGORIES - 1));
-							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(map_rng.rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + map_rng.rand() % 4), -1 + map_rng.rand() % 3, 1, map_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;

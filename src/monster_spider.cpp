@@ -26,6 +26,7 @@ void initSpider(Entity* my, Stat* myStats)
 {
 	int c;
 
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
@@ -47,7 +48,7 @@ void initSpider(Entity* my, Stat* myStats)
 		    MONSTER_IDLEVAR = 4;
 	    }
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{
@@ -63,7 +64,7 @@ void initSpider(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+			if ( map_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				&& myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Shelob");
@@ -77,9 +78,9 @@ void initSpider(Entity* my, Stat* myStats)
 				myStats->PER = 10;
 				myStats->CHR = 10;
 				myStats->LVL = 15;
-				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, local_rng.rand(), false, &myStats->inventory);
+				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, map_rng.rand(), false, &myStats->inventory);
 				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, local_rng.rand(), false, &myStats->inventory);
+				newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, map_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 2;
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -268,11 +269,11 @@ void spiderDie(Entity* my)
 
     if (arachnophobia_filter)
     {
-	    playSoundEntity(my, 509 + local_rng.rand() % 2, 128);
+	    playSoundEntity(my, 509 + map_rng.rand() % 2, 128);
     }
     else
     {
-	    playSoundEntity(my, 236 + local_rng.rand() % 2, 128);
+	    playSoundEntity(my, 236 + map_rng.rand() % 2, 128);
     }
 	list_RemoveNode(my->mynode);
 	return;

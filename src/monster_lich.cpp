@@ -26,6 +26,7 @@ void initLich(Entity* my, Stat* myStats)
 {
 	int c;
 
+	my->flags[BURNABLE] = false;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
@@ -37,7 +38,7 @@ void initLich(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{

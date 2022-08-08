@@ -28,6 +28,7 @@ std::unordered_map<Uint32, int> gyroBotDetectedUids;
 
 void initSentryBot(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
 	node_t* node;
 
 	my->initMonster(my->sprite);
@@ -39,7 +40,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != nullptr )
 		{
@@ -266,6 +267,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 
 void initGyroBot(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
 	node_t* node;
 	gyroBotDetectedUids.clear();
 
@@ -410,19 +412,19 @@ void sentryBotDie(Entity* my)
 		{
 			dropBrokenShell = false;
 		}
-		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && local_rng.rand() % 100 < 90 )
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && map_rng.rand() % 100 < 90 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == SERVICABLE && local_rng.rand() % 100 < 80 )
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && map_rng.rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == WORN && local_rng.rand() % 100 < 70 )
+		else if ( myStats->monsterTinkeringStatus == WORN && map_rng.rand() % 100 < 70 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == DECREPIT && local_rng.rand() % 100 < 60 )
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && map_rng.rand() % 100 < 60 )
 		{
 			dropBrokenShell = true;
 		}*/
@@ -436,7 +438,7 @@ void sentryBotDie(Entity* my)
 				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
 			}
 		}
-		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
+		playSoundEntity(my, 451 + map_rng.rand() % 2, 128);
 	}
 
 	my->removeMonsterDeathNodes();
@@ -476,7 +478,7 @@ void sentryBotDie(Entity* my)
 		}
 	}
 
-	// playSoundEntity(my, 298 + local_rng.rand() % 4, 128);
+	// playSoundEntity(my, 298 + map_rng.rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -535,7 +537,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		my->z = limbs[race][11][2];
 	}
 
-	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && local_rng.rand() % 5 > 0 )
+	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && map_rng.rand() % 5 > 0 )
 	{
 		playSoundEntityLocal(my, 259, 8);
 	}
@@ -1186,7 +1188,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( foundGoodSound >= 1 )
 			{
-				playSoundEntity(my, 444 + local_rng.rand() % 5, 128);
+				playSoundEntity(my, 444 + map_rng.rand() % 5, 128);
 			}
 			else if ( foundBadSound >= 1 )
 			{
@@ -1473,7 +1475,7 @@ void gyroBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
-		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
+		playSoundEntity(my, 451 + map_rng.rand() % 2, 128);
 		playSoundEntity(my, 450, 128);
 		int c;
 		for ( c = 0; c < 4; c++ )
@@ -1509,6 +1511,7 @@ void gyroBotDie(Entity* my)
 
 void initDummyBot(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
 	node_t* node;
 
 	my->initMonster(889);
@@ -1710,19 +1713,19 @@ void dummyBotDie(Entity* my)
 		{
 			dropBrokenShell = false;
 		}
-		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && local_rng.rand() % 100 < 80 )
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && map_rng.rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == SERVICABLE && local_rng.rand() % 100 < 60 )
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && map_rng.rand() % 100 < 60 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == WORN && local_rng.rand() % 100 < 40 )
+		else if ( myStats->monsterTinkeringStatus == WORN && map_rng.rand() % 100 < 40 )
 		{
 			dropBrokenShell = true;
 		}
-		else if ( myStats->monsterTinkeringStatus == DECREPIT && local_rng.rand() % 100 < 20 )
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && map_rng.rand() % 100 < 20 )
 		{
 			dropBrokenShell = true;
 		}*/
@@ -1741,7 +1744,7 @@ void dummyBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
-		playSoundEntity(my, 451 + local_rng.rand() % 2, 128);
+		playSoundEntity(my, 451 + map_rng.rand() % 2, 128);
 		int c;
 		for ( c = 0; c < 5; c++ )
 		{
@@ -2050,7 +2053,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->flags[INVISIBLE] )
 					{
-						playSoundEntityLocal(my, 44 + local_rng.rand() % 3, 92);
+						playSoundEntityLocal(my, 44 + map_rng.rand() % 3, 92);
 					}
 					entity->flags[INVISIBLE] = false;
 				}

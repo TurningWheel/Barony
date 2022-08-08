@@ -23,6 +23,7 @@
 
 void initGhoul(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	int c;
 	node_t* node;
 
@@ -35,7 +36,7 @@ void initGhoul(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = 146;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != nullptr )
 		{
@@ -66,7 +67,7 @@ void initGhoul(Entity* my, Stat* myStats)
 						myStats->LVL = 15;
 					}
 					myStats->PER = 10;
-					if ( local_rng.rand() % 2 == 0 )
+					if ( map_rng.rand() % 2 == 0 )
 					{
 						myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 						myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
@@ -82,7 +83,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+			if ( map_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				|| myStats->leader_uid != 0 )
 			{
 				if ( !strncmp(map.name, "Bram's Castle", 13) )
@@ -112,7 +113,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->LVL = 15;
 				myStats->DEX = 2;
 				myStats->STR = 13;
-				newItem(GEM_GARNET, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
+				newItem(GEM_GARNET, EXCELLENT, 0, 1, map_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 1;
 			}
 
@@ -140,19 +141,19 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( local_rng.rand() % 20 == 0 )
+					if ( map_rng.rand() % 20 == 0 )
 					{
-						newItem(POTION_WATER, SERVICABLE, 2, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(POTION_WATER, SERVICABLE, 2, 1, map_rng.rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( local_rng.rand() % 10 == 0 )
+					if ( map_rng.rand() % 10 == 0 )
 					{
-						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, map_rng.rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( local_rng.rand() % 4 == 0 )
+					if ( map_rng.rand() % 4 == 0 )
 					{
-						newItem(FOOD_MEAT, DECREPIT, -1, 1, local_rng.rand(), false, &myStats->inventory);
+						newItem(FOOD_MEAT, DECREPIT, -1, 1, map_rng.rand(), false, &myStats->inventory);
 					}
 					break;
 				default:

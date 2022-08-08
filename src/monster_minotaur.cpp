@@ -25,6 +25,7 @@
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	node_t* node;
 
 	my->initMonster(239);
@@ -36,7 +37,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = 110;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{
@@ -101,7 +102,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					switch ( local_rng.rand() % 4 )
+					switch ( map_rng.rand() % 4 )
 					{
 						case 0:
 							gemtype = GEM_RUBY;
@@ -116,7 +117,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 							gemtype = GEM_DIAMOND;
 							break;
 					}
-					newItem(gemtype, EXCELLENT, 0, 1, local_rng.rand(), true, &myStats->inventory);
+					newItem(gemtype, EXCELLENT, 0, 1, map_rng.rand(), true, &myStats->inventory);
 					break;
 				default:
 					break;
@@ -620,7 +621,7 @@ void actMinotaurTrap(Entity* my)
 					int c;
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+						playSoundPlayer( c, 107 + map_rng.rand() % 3, 128 );
 						Uint32 color = makeColorRGB(255, 128, 0);
 						messagePlayerColor(c, MESSAGE_HINT, color, language[1113]);
 					}
@@ -639,7 +640,7 @@ void actMinotaurTimer(Entity* my)
 	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
 			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
 		)
-		&& local_rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
+		&& map_rng.rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -695,7 +696,7 @@ void actMinotaurTimer(Entity* my)
 			int c;
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+				playSoundPlayer( c, 107 + map_rng.rand() % 3, 128 );
 				Uint32 color = makeColorRGB(255, 128, 0);
 				messagePlayerColor(c, MESSAGE_HINT, color, language[1115]);
 			}
@@ -709,7 +710,7 @@ void actMinotaurTimer(Entity* my)
 		{
 			if ( currentlevel < 25 )
 			{
-				playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+				playSoundPlayer(c, 120 + map_rng.rand() % 3, 128);
 				Uint32 color = makeColorRGB(255, 0, 255);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[1116]);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[73]);
@@ -741,15 +742,15 @@ void actMinotaurCeilingBuster(Entity* my)
 		for ( c = 0; c < 2; c++ )
 		{
 			Entity* entity = newEntity(171, 1, map.entities, nullptr); //Particle entity.
-			entity->x = my->x - 8 + local_rng.rand() % 17;
-			entity->y = my->y - 8 + local_rng.rand() % 17;
-			entity->z = 10 + local_rng.rand() % 3;
+			entity->x = my->x - 8 + map_rng.rand() % 17;
+			entity->y = my->y - 8 + map_rng.rand() % 17;
+			entity->z = 10 + map_rng.rand() % 3;
 			entity->scalex = 0.7;
 			entity->scaley = 0.7;
 			entity->scalez = 0.7;
 			entity->sizex = 1;
 			entity->sizey = 1;
-			entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
+			entity->yaw = (map_rng.rand() % 360) * PI / 180.f;
 			entity->flags[PASSABLE] = true;
 			entity->flags[BRIGHT] = true;
 			entity->flags[NOUPDATE] = true;
@@ -800,7 +801,7 @@ void actMinotaurCeilingBuster(Entity* my)
 					}
 
 					// spawn several rock particles (NOT items)
-					int c, i = 6 + local_rng.rand() % 4;
+					int c, i = 6 + map_rng.rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
 						Entity *entity = nullptr;
@@ -814,19 +815,19 @@ void actMinotaurCeilingBuster(Entity* my)
 						}
 						if ( entity )
 						{
-							entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
-							entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
+							entity->x = ((int)(my->x / 16)) * 16 + map_rng.rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + map_rng.rand() % 16;
 							entity->z = -8;
 							entity->flags[PASSABLE] = true;
 							entity->flags[INVISIBLE] = false;
 							entity->flags[NOUPDATE] = true;
 							entity->flags[UPDATENEEDED] = false;
 							entity->sprite = items[GEM_ROCK].index;
-							entity->yaw = local_rng.rand() % 360 * PI / 180;
-							entity->pitch = local_rng.rand() % 360 * PI / 180;
-							entity->roll = local_rng.rand() % 360 * PI / 180;
-							entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
-							entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+							entity->yaw = map_rng.rand() % 360 * PI / 180;
+							entity->pitch = map_rng.rand() % 360 * PI / 180;
+							entity->roll = map_rng.rand() % 360 * PI / 180;
+							entity->vel_x = (map_rng.rand() % 20 - 10) / 10.0;
+							entity->vel_y = (map_rng.rand() % 20 - 10) / 10.0;
 							entity->vel_z = -.25;
 							entity->fskill[3] = 0.03;
 						}
@@ -846,7 +847,7 @@ void actMinotaurCeilingBuster(Entity* my)
 							if ( entity->behavior == &actDoorFrame )
 							{
 								// spawn several rock items
-								int c, i = 8 + local_rng.rand() % 4;
+								int c, i = 8 + map_rng.rand() % 4;
 								for ( c = 0; c < i; c++ )
 								{
 									Entity *entity = nullptr;
@@ -860,19 +861,19 @@ void actMinotaurCeilingBuster(Entity* my)
 									}
 									if ( entity )
 									{
-										entity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
-										entity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
+										entity->x = ((int)(my->x / 16)) * 16 + map_rng.rand() % 16;
+										entity->y = ((int)(my->y / 16)) * 16 + map_rng.rand() % 16;
 										entity->z = -8;
 										entity->flags[PASSABLE] = true;
 										entity->flags[INVISIBLE] = false;
 										entity->flags[NOUPDATE] = true;
 										entity->flags[UPDATENEEDED] = false;
 										entity->sprite = items[GEM_ROCK].index;
-										entity->yaw = local_rng.rand() % 360 * PI / 180;
-										entity->pitch = local_rng.rand() % 360 * PI / 180;
-										entity->roll = local_rng.rand() % 360 * PI / 180;
-										entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
-										entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+										entity->yaw = map_rng.rand() % 360 * PI / 180;
+										entity->pitch = map_rng.rand() % 360 * PI / 180;
+										entity->roll = map_rng.rand() % 360 * PI / 180;
+										entity->vel_x = (map_rng.rand() % 20 - 10) / 10.0;
+										entity->vel_y = (map_rng.rand() % 20 - 10) / 10.0;
 										entity->vel_z = -.25;
 										entity->fskill[3] = 0.03;
 									}
@@ -900,7 +901,7 @@ void actMinotaurCeilingBuster(Entity* my)
 									)
 							{
 								// spawn several rock items
-								int c, i = local_rng.rand() % 4;
+								int c, i = map_rng.rand() % 4;
 								for ( c = 0; c < i; ++c )
 								{
 									//Entity* childEntity = spawnGib(my);
@@ -915,19 +916,19 @@ void actMinotaurCeilingBuster(Entity* my)
 									}
 									if ( entity )
 									{
-										childEntity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
-										childEntity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
+										childEntity->x = ((int)(my->x / 16)) * 16 + map_rng.rand() % 16;
+										childEntity->y = ((int)(my->y / 16)) * 16 + map_rng.rand() % 16;
 										childEntity->z = -8;
 										childEntity->flags[PASSABLE] = true;
 										childEntity->flags[INVISIBLE] = false;
 										childEntity->flags[NOUPDATE] = true;
 										childEntity->flags[UPDATENEEDED] = false;
 										childEntity->sprite = items[GEM_ROCK].index;
-										childEntity->yaw = local_rng.rand() % 360 * PI / 180;
-										childEntity->pitch = local_rng.rand() % 360 * PI / 180;
-										childEntity->roll = local_rng.rand() % 360 * PI / 180;
-										childEntity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
-										childEntity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+										childEntity->yaw = map_rng.rand() % 360 * PI / 180;
+										childEntity->pitch = map_rng.rand() % 360 * PI / 180;
+										childEntity->roll = map_rng.rand() % 360 * PI / 180;
+										childEntity->vel_x = (map_rng.rand() % 20 - 10) / 10.0;
+										childEntity->vel_y = (map_rng.rand() % 20 - 10) / 10.0;
 										childEntity->vel_z = -.25;
 										childEntity->fskill[3] = 0.03;
 									}

@@ -22,6 +22,7 @@
 
 void initRat(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	my->sprite = 131; // rat model
 
 	my->flags[UPDATENEEDED] = true;
@@ -34,7 +35,7 @@ void initRat(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = 29;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != NULL )
 		{
@@ -50,7 +51,7 @@ void initRat(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
+			if ( map_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 				&& myStats->leader_uid == 0 )
 			{
 			    my->z -= 0.5; // algernon is slightly larger than an ordinary rat.
@@ -66,7 +67,7 @@ void initRat(Entity* my, Stat* myStats)
 				myStats->PER = -2;
 				myStats->CHR = 5;
 				myStats->LVL = 10;
-				newItem(GEM_EMERALD, static_cast<Status>(1 + local_rng.rand() % 4), 0, 1, local_rng.rand(), true, &myStats->inventory);
+				newItem(GEM_EMERALD, static_cast<Status>(1 + map_rng.rand() % 4), 0, 1, map_rng.rand(), true, &myStats->inventory);
 				customItemsToGenerate = customItemsToGenerate - 1;
 				int c;
 				for ( c = 0; c < 6; c++ )
@@ -107,15 +108,15 @@ void initRat(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( local_rng.rand() % 4 )
+					if ( map_rng.rand() % 4 )
 					{
-						if ( local_rng.rand() % 2 )
+						if ( map_rng.rand() % 2 )
 						{
-							newItem(FOOD_MEAT, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(FOOD_MEAT, EXCELLENT, 0, 1, map_rng.rand(), false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(FOOD_CHEESE, DECREPIT, 0, 1, local_rng.rand(), false, &myStats->inventory);
+							newItem(FOOD_CHEESE, DECREPIT, 0, 1, map_rng.rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -128,13 +129,6 @@ void initRat(Entity* my, Stat* myStats)
 
 void ratAnimate(Entity* my, double dist)
 {
-    if (my->ticks == my->getUID() % TICKS_PER_SECOND) {
-        if (multiplayer == SERVER) {
-            // in case we are algernon, update the sprite for clients
-            serverUpdateEntitySprite(my);
-        }
-    }
-
 	// walk cycle
 	if (dist >= 0.1 && !MONSTER_ATTACK) {
 	    if (my->ticks % 10 == 0)

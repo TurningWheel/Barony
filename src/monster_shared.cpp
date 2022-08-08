@@ -27,7 +27,7 @@ void Entity::initMonster(int mySprite)
 	flags[BLOCKSIGHT] = true;
 	flags[INVISIBLE] = false;
 
-	int monsterType = this->getMonsterTypeFromSprite();
+	Monster monsterType = this->getMonsterTypeFromSprite();
 
 	switch ( monsterType )
 	{

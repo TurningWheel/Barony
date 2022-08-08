@@ -23,6 +23,7 @@
 
 void initImp(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
 	node_t* node;
 
 	my->initMonster(289);
@@ -34,7 +35,7 @@ void initImp(Entity* my, Stat* myStats)
 		MONSTER_IDLESND = 201;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( !MONSTER_INIT )
 	{
 		if ( myStats != nullptr )
 		{

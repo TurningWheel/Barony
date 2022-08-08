@@ -1001,3 +1001,5 @@ static const int GYRO_START_FLYING = 4;
 
 //--Dummybot--
 static const int DUMMYBOT_RETURN_FORM = 1;
+
+void initActMonster(Entity* my);

@@ -1579,16 +1579,20 @@ Entity* receiveEntity(Entity* entity)
 		newentity = true;
 		entity = newEntity((int)SDLNet_Read16(&net_packet->data[8]), 0, map.entities, nullptr);
 	}
-	else
-	{
-		entity->sprite = (int)SDLNet_Read16(&net_packet->data[8]);
-	}
 
     // for certain monsters, we don't want to use certain bytes,
     // because voxel-animated creatures (like rats and slimes)
     // need to move vertically for their animation.
-	const auto monsterType = entity->getMonsterTypeFromSprite();
-	const bool excludeForAnimation = !newentity && entity->behavior == &actMonster && (monsterType == RAT || monsterType == SLIME);
+	const auto monsterType = newentity ? NOTHING : entity->getMonsterTypeFromSprite();
+	const bool excludeForAnimation =
+	    !newentity && entity->behavior == &actMonster &&
+	    entity->skill[8] && // MONSTER_ATTACK
+	    (monsterType == RAT || monsterType == SLIME);
+
+	if (!newentity && !excludeForAnimation)
+	{
+		entity->sprite = (int)SDLNet_Read16(&net_packet->data[8]);
+	}
 
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
@@ -1773,9 +1777,14 @@ void clientActions(Entity* entity)
 		{
 			switch ( c )
 			{
-				case -4:
+				case -4: {
 					entity->behavior = &actMonster;
+					Monster creature = entity->getMonsterTypeFromSprite();
+					entity->clientStats = new Stat(creature + 1000);
+	                entity->clientStats->type = creature;
+					initActMonster(entity);
 					break;
+				}
 				case -5:
 					entity->behavior = &actItem;
 					break;
