@@ -27,8 +27,9 @@ void initKobold(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	//Sprite 421 = Kobold head model
-	my->initMonster(421);
+	my->flags[BURNABLE] = true;
+	my->initMonster(421); //Sprite 421 = Kobold head model
+	my->z = 2.25;
 
 	if ( multiplayer != CLIENT )
 	{

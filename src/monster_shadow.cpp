@@ -32,7 +32,9 @@ void initShadow(Entity* my, Stat* myStats)
 		my->monsterShadowDontChangeName = 1; //User set a name.
 	}
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(481);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -45,6 +47,10 @@ void initShadow(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			if ( !strncmp(map.name, "Underworld", 10) && currentlevel <= 7 && my->monsterStoreType == 0 )
+			{
+				my->monsterStoreType = 2;
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -55,6 +61,11 @@ void initShadow(Entity* my, Stat* myStats)
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 
 			// boss variants
 			if ( my->monsterStoreType == 1 && !my->flags[USERFLAG2] )
@@ -72,7 +83,7 @@ void initShadow(Entity* my, Stat* myStats)
 				amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.

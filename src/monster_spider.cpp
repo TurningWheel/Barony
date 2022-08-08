@@ -26,8 +26,10 @@ void initSpider(Entity* my, Stat* myStats)
 {
 	int c;
 
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
+	my->z = 4.5;
 
 	my->sprite = arachnophobia_filter ? 997 : 267;
 	if ( multiplayer != CLIENT )
@@ -63,8 +65,11 @@ void initSpider(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Shelob");
 				myStats->HP = 150;

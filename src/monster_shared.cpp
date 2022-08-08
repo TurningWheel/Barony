@@ -15,19 +15,43 @@
 #include "player.hpp"
 #include "entity.hpp"
 #include "prng.hpp"
+#include "monster.hpp"
 
 #include <cassert>
 
+ConsoleVariable<bool> cvar_summonBosses("/summonbosses", false, "Always summon bosses");
+
 void Entity::initMonster(int mySprite)
 {
-	sprite = mySprite;
+    if (multiplayer != CLIENT) {
+	    sprite = mySprite;
+	}
 
 	//Common flags.
 	flags[UPDATENEEDED] = true;
 	flags[BLOCKSIGHT] = true;
 	flags[INVISIBLE] = false;
 
-	int monsterType = this->getMonsterTypeFromSprite();
+	Monster monsterType = this->getMonsterTypeFromSprite();
+
+    if (monsterType != SPIDER) {
+	    focalx = limbs[monsterType][0][0];
+	    focaly = limbs[monsterType][0][1];
+	    focalz = limbs[monsterType][0][2];
+	} else {
+		if (arachnophobia_filter)
+		{
+		    focalx = limbs[CRAB][0][0];
+		    focaly = limbs[CRAB][0][1];
+		    focalz = limbs[CRAB][0][2];
+		}
+		else
+		{
+		    focalx = limbs[SPIDER][0][0];
+		    focaly = limbs[SPIDER][0][1];
+		    focalz = limbs[SPIDER][0][2];
+		}
+	}
 
 	switch ( monsterType )
 	{

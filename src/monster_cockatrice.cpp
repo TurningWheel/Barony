@@ -26,7 +26,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(413);
+	my->z = -4.5;
 
 	if ( multiplayer != CLIENT )
 	{

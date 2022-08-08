@@ -22,19 +22,14 @@
 
 void initSlime(Entity* my, Stat* myStats)
 {
+    my->flags[BURNABLE] = false;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->LVL == 7 )
-		{
-			my->sprite = 1108; // blue slime model
-		}
-		else
-		{
-			my->sprite = 1113; // green slime model
-		}
+		const bool blue = myStats->LVL == 7;
+		my->sprite = blue ? 1108 : 1113;
 		MONSTER_SPOTSND = 68;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
@@ -130,7 +125,6 @@ void slimeAnimate(Entity* my, double dist)
     // attack cycle
 	if (MONSTER_ATTACK) {
 	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
-	        const bool green = my->sprite == 210 || my->sprite >= 1113;
 	        my->sprite = green ? 1113 : 1108;
 	        my->scalex = 1.0;
 	        my->scaley = 1.0;
@@ -138,22 +132,22 @@ void slimeAnimate(Entity* my, double dist)
 	        my->focalz = -.5;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 2
-	        ++my->sprite;
+	        my->sprite = green ? 1114 : 1109;
 	        my->focalz = -1.5;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 3
-	        ++my->sprite;
+	        my->sprite = green ? 1115 : 1110;
 	        my->focalz = -3.0;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 5) { // frame 4
-	        ++my->sprite;
+	        my->sprite = green ? 1116 : 1111;
 	        my->focalz = -2.5;
 	        const Sint32 temp = MONSTER_ATTACKTIME;
 	        my->attack(1, 0, nullptr); // slop
 	        MONSTER_ATTACKTIME = temp;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 7) { // frame 5
-	        ++my->sprite;
+	        my->sprite = green ? 1117 : 1112;
 	        my->focalz = -2.0;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 8) { // end

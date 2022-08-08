@@ -26,8 +26,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	 //Sprite 467 = Automaton head model
-	my->initMonster(467);
+	my->flags[BURNABLE] = false;
+	my->initMonster(467); //Sprite 467 = Automaton head model
+	my->z = -.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,6 +41,10 @@ void initAutomaton(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+			if ( my->monsterStoreType == 1 )
+			{
+				strcpy(myStats->name, "damaged automaton");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;

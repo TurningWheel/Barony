@@ -28,8 +28,9 @@ void initVampire(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	//Sprite 437 = Vampire head model
-	my->initMonster(437);
+    my->flags[BURNABLE] = true;
+	my->initMonster(437); //Sprite 437 = Vampire head model
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -42,6 +43,10 @@ void initVampire(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if ( !strncmp(map.name, "The Ruins", 9) )
+		    {
+				strcpy(myStats->name, "young vampire");
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;

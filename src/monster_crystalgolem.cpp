@@ -26,7 +26,9 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(475);
+	my->z = -1.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -51,26 +53,6 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
-			{
-				/*strcpy(myStats->name, "Thumpus the Troll");
-				for ( c = 0; c < 3; c++ )
-				{
-					Entity* entity = summonMonster(GNOME, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
-				}
-				myStats->HP *= 2;
-				myStats->MAXHP *= 2;
-				myStats->OLDHP = myStats->HP;
-				myStats->GOLD += 300;
-				myStats->LVL += 10;*/
-			}
 
 			// random effects
 			if ( local_rng.rand() % 8 == 0 )

@@ -27,15 +27,14 @@ const int NUM_GOATMAN_THROWN_WEAPONS = 2;
 const int NUM_GOATMAN_BOSS_GHARBAD_POTIONS = 3;
 const int NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS = 3;
 
-const int BOSS_GHARBAD = 1;
-
 void initGoatman(Entity* my, Stat* myStats)
 {
 	node_t* node;
-	int boss = 0;
+	bool spawnedBoss = false;
 
-	//Sprite 463 = Goatman head model
-	my->initMonster(463);
+	my->flags[BURNABLE] = true;
+	my->initMonster(463); //Sprite 463 = Goatman head model
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -49,6 +48,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			if ( strstr(map.name, "Hell") )
+			{
+				strcpy(myStats->name, "lesser goatman");
+			}
 			bool minion = false;
 			if ( !myStats->leader_uid )
 			{
@@ -87,8 +90,11 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Gharbad");
 				myStats->STR += 10;
@@ -97,7 +103,7 @@ void initGoatman(Entity* my, Stat* myStats)
 				myStats->HP = myStats->MAXHP;
 				myStats->OLDHP = myStats->MAXHP;
 				myStats->CHR = -1;
-				boss = BOSS_GHARBAD;
+				spawnedBoss = true;
 				//TODO: Boss stats
 
 				//Spawn in potions.
@@ -150,7 +156,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			my->setHardcoreStats(*myStats);
 
 			bool isShaman = false;
-			if ( local_rng.rand() % 2 && boss == 0 && !minion )
+			if ( local_rng.rand() % 2 && !spawnedBoss && !minion )
 			{
 				isShaman = true;
 				if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && local_rng.rand() % 2 == 0 )
@@ -218,7 +224,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			//Give weapons.
-			if ( !boss )
+			if ( !spawnedBoss )
 			{
 				if ( !isShaman && local_rng.rand() % 3 > 0 )
 				{

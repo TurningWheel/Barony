@@ -27,7 +27,9 @@ void initMinotaur(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(239);
+	my->z = -6;
 
 	if ( multiplayer != CLIENT )
 	{

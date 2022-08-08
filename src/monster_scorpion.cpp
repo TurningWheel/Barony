@@ -23,12 +23,13 @@
 
 void initScorpion(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 196;
 	if ( multiplayer != CLIENT )
 	{
+	    my->initMonster(196);
 		MONSTER_SPOTSND = 101;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
@@ -50,8 +51,11 @@ void initScorpion(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Skrabblag");
 				myStats->HP = 100;

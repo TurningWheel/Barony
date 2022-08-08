@@ -30,7 +30,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(my->sprite);
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -269,6 +271,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	node_t* node;
 	gyroBotDetectedUids.clear();
 
+    my->z = 5;
 	my->initMonster(886);
 
 	if ( multiplayer != CLIENT )
@@ -1511,6 +1514,7 @@ void initDummyBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->z = 0;
 	my->initMonster(889);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )

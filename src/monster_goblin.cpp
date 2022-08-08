@@ -25,8 +25,11 @@ void initGoblin(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
+
 	//Sprite 180 = Goblin head model.
 	my->initMonster(180);
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -51,10 +54,11 @@ void initGoblin(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				myStats->HP = 120;
 				myStats->MAXHP = 120;

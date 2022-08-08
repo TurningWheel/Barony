@@ -22,13 +22,13 @@
 
 void initRat(Entity* my, Stat* myStats)
 {
-	my->sprite = 131; // rat model
-
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
+	    my->initMonster(131);
 		MONSTER_SPOTSND = 29;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = 29;
@@ -50,8 +50,11 @@ void initRat(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 			    my->z -= 0.5; // algernon is slightly larger than an ordinary rat.
 	            my->sprite = 1068; // algernon's unique model
@@ -158,32 +161,31 @@ void ratAnimate(Entity* my, double dist)
     // attack cycle
 	if (MONSTER_ATTACK) {
 	    const int frame = TICKS_PER_SECOND / 10;
+	    const bool algernon = my->sprite >= 1068;
 	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
-	        const bool algernon = my->sprite > 1000;
 	        my->sprite = algernon ? 1070 : 1063;
 	        my->z = 4.5;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 1) { // frame 2
-	        ++my->sprite;
+	        my->sprite = algernon ? 1071 : 1064;
 	        my->z = 3.5;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 3
-	        ++my->sprite;
+	        my->sprite = algernon ? 1072 : 1065;
 	        my->z = 2.5;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 4
-	        ++my->sprite;
+	        my->sprite = algernon ? 1073 : 1066;
 	        my->z = 2;
 	        const Sint32 temp = MONSTER_ATTACKTIME;
 	        my->attack(1, 0, nullptr); // munch
 	        MONSTER_ATTACKTIME = temp;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 6) { // frame 5
-	        ++my->sprite;
+	        my->sprite = algernon ? 1074 : 1067;
 	        my->z = 3;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 7) { // end
-	        const bool algernon = my->sprite == 1074;
 	        if (algernon) {
 	            my->sprite = 1068;
 	            my->z = 5.5;

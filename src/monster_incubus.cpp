@@ -26,8 +26,9 @@ void initIncubus(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	//Sprite 445 = incubus head sprite
-	my->initMonster(445);
+	my->flags[BURNABLE] = true;
+	my->initMonster(445); //Sprite 445 = incubus head sprite
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -161,23 +162,6 @@ void initIncubus(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-				{
-
-				}
-				else
-				{
-					/*myStats->DEX = 10;
-					strcpy(myStats->name, "Lilith");
-					for ( c = 0; c < 2; c++ )
-					{
-						Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
-						if ( entity )
-						{
-							entity->parent = my->getUID();
-						}
-					}*/
-				}
 
 				// random effects
 

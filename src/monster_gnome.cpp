@@ -27,8 +27,9 @@ void initGnome(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	//Sprite 295 = Gnome head model
-	my->initMonster(295);
+	my->flags[BURNABLE] = true;
+	my->initMonster(295); //Sprite 295 = Gnome head model
+	my->z = 2.25;
 
 	if ( multiplayer != CLIENT )
 	{

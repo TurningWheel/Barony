@@ -26,13 +26,13 @@ void initScarab(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 429; // scarab model
-
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
+	    my->initMonster(429);
 		MONSTER_SPOTSND = 310;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 306;
@@ -42,6 +42,11 @@ void initScarab(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+		    if ( !strncmp(map.name, "The Labyrinth", 13) )
+		    {
+				myStats->DEX -= 4;
+			    myStats->LVL = 10;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -54,8 +59,11 @@ void initScarab(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Xyggi");
 				myStats->HP = 70;

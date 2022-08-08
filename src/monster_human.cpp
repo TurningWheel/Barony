@@ -26,7 +26,9 @@ void initHuman(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(113);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{

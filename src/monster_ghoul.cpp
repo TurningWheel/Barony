@@ -26,7 +26,9 @@ void initGhoul(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(246);
+	my->z = -.25;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -82,16 +84,11 @@ void initGhoul(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				|| myStats->leader_uid != 0 )
-			{
-				if ( !strncmp(map.name, "Bram's Castle", 13) )
-				{
-					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
-					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
-				}
-			}
-			else if ( !lesserMonster )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Coral Grimes");
 				for ( c = 0; c < 3; c++ )
@@ -114,6 +111,14 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->STR = 13;
 				newItem(GEM_GARNET, EXCELLENT, 0, 1, local_rng.rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 1;
+			}
+			else
+			{
+				if ( !strncmp(map.name, "Bram's Castle", 13) )
+				{
+					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+				}
 			}
 
 			// random effects

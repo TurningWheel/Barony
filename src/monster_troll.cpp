@@ -26,7 +26,9 @@ void initTroll(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(204);
+	my->z = -1.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -51,11 +53,12 @@ void initTroll(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				|| myStats->leader_uid != 0 )
-			{
-			}
-			else
+		    const bool boss =
+		        local_rng.rand() % 50 == 0 &&
+		        !my->flags[USERFLAG2] &&
+		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] &&
+		        myStats->leader_uid == 0;
+		    if ( boss || *cvar_summonBosses )
 			{
 				strcpy(myStats->name, "Thumpus the Troll");
 				for ( c = 0; c < 3; c++ )

@@ -27,8 +27,11 @@ void initSkeleton(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
+
 	//Sprite 229 = Skeleton head model
 	my->initMonster(229);
+	my->z = -0.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -225,7 +228,21 @@ void initSkeleton(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( local_rng.rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			    const bool boss =
+			        local_rng.rand() % 50 == 0 &&
+			        !my->flags[USERFLAG2] &&
+			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			    {
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					strcpy(myStats->name, "Funny Bones");
+					myStats->STR += 6;
+					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+			    }
+				else
 				{
 					// not boss if a follower, or name has already been set to something other than blank.
 					if ( strncmp(map.name, "Underworld", 10) )
@@ -258,16 +275,6 @@ void initSkeleton(Entity* my, Stat* myStats)
 							}
 						}
 					}
-				}
-				else
-				{
-					myStats->HP = 100;
-					myStats->MAXHP = 100;
-					strcpy(myStats->name, "Funny Bones");
-					myStats->STR += 6;
-					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
-					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 
 				// random effects

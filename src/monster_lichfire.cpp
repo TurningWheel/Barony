@@ -30,10 +30,16 @@ static const int LICH_WEAPON = 5;
 
 void initLichFire(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
+
 	my->initMonster(646);
+	my->z = -1.2;
+	my->yaw = PI;
+	my->sprite = 646;
 
 	if ( multiplayer != CLIENT )
 	{
+	    my->monsterLichBattleState = LICH_BATTLE_IMMOBILE;
 		MONSTER_SPOTSND = 372;
 		MONSTER_SPOTVAR = 4;
 		MONSTER_IDLESND = -1;

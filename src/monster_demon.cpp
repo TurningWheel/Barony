@@ -26,7 +26,9 @@ void initDemon(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(258);
+	my->z = -8.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -51,11 +53,11 @@ void initDemon(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				|| myStats->leader_uid != 0 )
-			{
-			}
-			else
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 				strcpy(myStats->name, "Deu De'Breau");
 				myStats->LVL = 30;

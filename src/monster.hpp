@@ -13,6 +13,11 @@
 
 #include "stat.hpp"
 
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_summonBosses;
+#endif
+
 enum Monster : int
 {
 	NOTHING,

@@ -274,324 +274,95 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 	{
 		if ( entityInsideSomething(entity) )
 		{
-			do
+			entity->x = x;
+			entity->y = y - 16;
+			if (!entityInsideSomething(entity))
 			{
-				entity->x = x;
-				entity->y = y - 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // north
-				}
-				entity->x = x;
-				entity->y = y + 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // south
-				}
-				entity->x = x - 16;
-				entity->y = y;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // west
-				}
-				entity->x = x + 16;
-				entity->y = y;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // east
-				}
-				entity->x = x + 16;
-				entity->y = y - 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // northeast
-				}
-				entity->x = x + 16;
-				entity->y = y + 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // southeast
-				}
-				entity->x = x - 16;
-				entity->y = y - 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // northwest
-				}
-				entity->x = x - 16;
-				entity->y = y + 16;
-				if (!entityInsideSomething(entity))
-				{
-					break;    // southwest
-				}
-
-				// we can't have monsters in walls...
-				list_RemoveNode(entity->mynode);
-				entity = nullptr;
-				break;
+				goto end;    // north
 			}
-			while ( 1 );
+			entity->x = x;
+			entity->y = y + 16;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // south
+			}
+			entity->x = x - 16;
+			entity->y = y;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // west
+			}
+			entity->x = x + 16;
+			entity->y = y;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // east
+			}
+			entity->x = x + 16;
+			entity->y = y - 16;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // northeast
+			}
+			entity->x = x + 16;
+			entity->y = y + 16;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // southeast
+			}
+			entity->x = x - 16;
+			entity->y = y - 16;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // northwest
+			}
+			entity->x = x - 16;
+			entity->y = y + 16;
+			if (!entityInsideSomething(entity))
+			{
+				goto end;    // southwest
+			}
+
+			// we can't have monsters in walls...
+			list_RemoveNode(entity->mynode);
+			return nullptr;
 		}
 	}
 
-	if ( entity )
+end:
+
+	if ( creature == SLIME )
 	{
-		switch ( creature )
+		if ( multiplayer != CLIENT )
 		{
-			case RAT:
-				entity->focalx = limbs[RAT][0][0]; // 0
-				entity->focaly = limbs[RAT][0][1]; // 0
-				entity->focalz = limbs[RAT][0][2]; // 0
-				break;
-			case SCORPION:
-				entity->focalx = limbs[SCORPION][0][0]; // 0
-				entity->focaly = limbs[SCORPION][0][1]; // 0
-				entity->focalz = limbs[SCORPION][0][2]; // 0
-				break;
-			case HUMAN:
-				entity->z = -1;
-				entity->focalx = limbs[HUMAN][0][0]; // 0
-				entity->focaly = limbs[HUMAN][0][1]; // 0
-				entity->focalz = limbs[HUMAN][0][2]; // -1.5
-				break;
-			case GOBLIN:
-				entity->z = 0;
-				entity->focalx = limbs[GOBLIN][0][0]; // 0
-				entity->focaly = limbs[GOBLIN][0][1]; // 0
-				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
-				break;
-			case SLIME:
-				if ( multiplayer != CLIENT )
-				{
-					myStats->LVL = 7;
-				}
-				break;
-			case SUCCUBUS:
-				entity->z = -1;
-				entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-				entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-				entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
-				break;
-			case TROLL:
-				entity->z = -1.5;
-				entity->focalx = limbs[TROLL][0][0]; // 1
-				entity->focaly = limbs[TROLL][0][1]; // 0
-				entity->focalz = limbs[TROLL][0][2]; // -2
-				break;
-			case SHOPKEEPER:
-				entity->z = -1;
-				entity->focalx = limbs[SHOPKEEPER][0][0]; // 0
-				entity->focaly = limbs[SHOPKEEPER][0][1]; // 0
-				entity->focalz = limbs[SHOPKEEPER][0][2]; // -1.5
-				break;
-			case SKELETON:
-				entity->z = -.5;
-				entity->focalx = limbs[SKELETON][0][0]; // 0
-				entity->focaly = limbs[SKELETON][0][1]; // 0
-				entity->focalz = limbs[SKELETON][0][2]; // -1.5
-				break;
-			case MINOTAUR:
-				entity->z = -6;
-				entity->focalx = limbs[MINOTAUR][0][0]; // 0
-				entity->focaly = limbs[MINOTAUR][0][1]; // 0
-				entity->focalz = limbs[MINOTAUR][0][2]; // 0
-				break;
-			case GHOUL:
-				entity->z = -.25;
-				entity->focalx = limbs[GHOUL][0][0]; // 0
-				entity->focaly = limbs[GHOUL][0][1]; // 0
-				entity->focalz = limbs[GHOUL][0][2]; // -1.5
-				break;
-			case DEMON:
-				entity->z = -8.5;
-				entity->focalx = limbs[DEMON][0][0]; // -1
-				entity->focaly = limbs[DEMON][0][1]; // 0
-				entity->focalz = limbs[DEMON][0][2]; // -1.25
-				break;
-			case SPIDER:
-				entity->z = 4.5;
-				if (arachnophobia_filter)
-				{
-				    entity->focalx = limbs[CRAB][0][0];
-				    entity->focaly = limbs[CRAB][0][1];
-				    entity->focalz = limbs[CRAB][0][2];
-				}
-				else
-				{
-				    entity->focalx = limbs[SPIDER][0][0]; // -3
-				    entity->focaly = limbs[SPIDER][0][1]; // 0
-				    entity->focalz = limbs[SPIDER][0][2]; // -1
-				}
-				break;
-			case LICH:
-				entity->focalx = limbs[LICH][0][0]; // -0.75
-				entity->focaly = limbs[LICH][0][1]; // 0
-				entity->focalz = limbs[LICH][0][2]; // 0
-				entity->z = -2;
-				entity->yaw = PI;
-				entity->sprite = 274;
-				entity->skill[29] = 120;
-				break;
-			case CREATURE_IMP:
-				entity->z = -4.5;
-				entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
-				entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
-				entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
-				break;
-			case GNOME:
-				entity->z = 2.25;
-				entity->focalx = limbs[GNOME][0][0]; // 0
-				entity->focaly = limbs[GNOME][0][1]; // 0
-				entity->focalz = limbs[GNOME][0][2]; // -2
-				break;
-			case DEVIL:
-				entity->focalx = limbs[DEVIL][0][0]; // 0
-				entity->focaly = limbs[DEVIL][0][1]; // 0
-				entity->focalz = limbs[DEVIL][0][2]; // 0
-				entity->z = -4;
-				entity->sizex = 20;
-				entity->sizey = 20;
-				entity->yaw = PI;
-				break;
-			case KOBOLD:
-				entity->z = 2.25;
-				entity->focalx = limbs[KOBOLD][0][0]; // 0
-				entity->focaly = limbs[KOBOLD][0][1]; // 0
-				entity->focalz = limbs[KOBOLD][0][2]; // -2
-				break;
-			case SCARAB:
-				entity->focalx = limbs[SCARAB][0][0]; // 0
-				entity->focaly = limbs[SCARAB][0][1]; // 0
-				entity->focalz = limbs[SCARAB][0][2]; // 0
-				break;
-			case CRYSTALGOLEM:
-				entity->z = -1.5;
-				entity->focalx = limbs[CRYSTALGOLEM][0][0]; // 1
-				entity->focaly = limbs[CRYSTALGOLEM][0][1]; // 0
-				entity->focalz = limbs[CRYSTALGOLEM][0][2]; // -2
-				break;
-			case INCUBUS:
-				entity->z = -1;
-				entity->focalx = limbs[INCUBUS][0][0]; // 0
-				entity->focaly = limbs[INCUBUS][0][1]; // 0
-				entity->focalz = limbs[INCUBUS][0][2]; // -1.5
-				break;
-			case VAMPIRE:
-				entity->z = -1;
-				entity->focalx = limbs[HUMAN][0][0]; // 0
-				entity->focaly = limbs[HUMAN][0][1]; // 0
-				entity->focalz = limbs[HUMAN][0][2]; // -1.5
-				break;
-			case SHADOW:
-				entity->z = -1;
-				entity->focalx = limbs[SHADOW][0][0]; // 0
-				entity->focaly = limbs[SHADOW][0][1]; // 0
-				entity->focalz = limbs[SHADOW][0][2]; // -1.75
-				break;
-			case COCKATRICE:
-				entity->z = -4.5;
-				entity->focalx = limbs[COCKATRICE][0][0]; // 0
-				entity->focaly = limbs[COCKATRICE][0][1]; // 0
-				entity->focalz = limbs[COCKATRICE][0][2]; // -1.75
-				break;
-			case INSECTOID:
-				entity->z = 0;
-				entity->focalx = limbs[INSECTOID][0][0]; // 0
-				entity->focaly = limbs[INSECTOID][0][1]; // 0
-				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
-				if ( multiplayer != CLIENT )
-				{
-					if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
-					{
-						strcpy(myStats->name, "lesser insectoid");
-					}
-				}
-				break;
-			case GOATMAN:
-				entity->z = 0;
-				entity->focalx = limbs[GOATMAN][0][0]; // 0
-				entity->focaly = limbs[GOATMAN][0][1]; // 0
-				entity->focalz = limbs[GOATMAN][0][2]; // -1.75
-				break;
-			case AUTOMATON:
-				entity->z = -.5;
-				entity->focalx = limbs[AUTOMATON][0][0]; // 0
-				entity->focaly = limbs[AUTOMATON][0][1]; // 0
-				entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
-				break;
-			case LICH_ICE:
-				entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
-				entity->focaly = limbs[LICH_ICE][0][1]; // 0
-				entity->focalz = limbs[LICH_ICE][0][2]; // 0
-				entity->z = -1.2;
-				entity->yaw = PI;
-				entity->sprite = 650;
-				break;
-			case LICH_FIRE:
-				entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
-				entity->focaly = limbs[LICH_FIRE][0][1]; // 0
-				entity->focalz = limbs[LICH_FIRE][0][2]; // 0
-				entity->z = -1.2;
-				entity->yaw = PI;
-				entity->sprite = 646;
-				break;
-			case SENTRYBOT:
-				entity->z = 0;
-				entity->focalx = limbs[SENTRYBOT][0][0];
-				entity->focaly = limbs[SENTRYBOT][0][1];
-				entity->focalz = limbs[SENTRYBOT][0][2];
-				break;
-			case SPELLBOT:
-				entity->z = 0;
-				entity->focalx = limbs[SPELLBOT][0][0];
-				entity->focaly = limbs[SPELLBOT][0][1];
-				entity->focalz = limbs[SPELLBOT][0][2];
-				break;
-			case GYROBOT:
-				entity->z = 5;
-				entity->focalx = limbs[GYROBOT][0][0];
-				entity->focaly = limbs[GYROBOT][0][1];
-				entity->focalz = limbs[GYROBOT][0][2];
-				break;
-			case DUMMYBOT:
-				entity->z = 0;
-				entity->focalx = limbs[DUMMYBOT][0][0];
-				entity->focaly = limbs[DUMMYBOT][0][1];
-				entity->focalz = limbs[DUMMYBOT][0][2];
-				break;
-			default:
-				//Spawn a potato.
-				list_RemoveNode(entity->mynode);
-				return nullptr;
-				break;
+			myStats->LVL = 7;
 		}
-		if ( entity )
-		{
-			nummonsters++;
-		}
-		if ( multiplayer == SERVER )
-		{
-			strcpy((char*)net_packet->data, "SUMM");
-			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
-			SDLNet_Write32((Uint32)entity->x, &net_packet->data[8]);
-			SDLNet_Write32((Uint32)entity->y, &net_packet->data[12]);
-			SDLNet_Write32(entity->getUID(), &net_packet->data[16]);
-			net_packet->len = 20;
-
-			for ( int c = 1; c < MAXPLAYERS; c++ )
-			{
-				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
-				{
-					continue;
-				}
-				net_packet->address.host = net_clients[c - 1].host;
-				net_packet->address.port = net_clients[c - 1].port;
-				sendPacketSafe(net_sock, -1, net_packet, c - 1);
-			}
-		}
-		return entity;
 	}
-	return nullptr;
+
+	nummonsters++;
+
+	if ( multiplayer == SERVER )
+	{
+		strcpy((char*)net_packet->data, "SUMM");
+		SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)entity->x, &net_packet->data[8]);
+		SDLNet_Write32((Uint32)entity->y, &net_packet->data[12]);
+		SDLNet_Write32(entity->getUID(), &net_packet->data[16]);
+		net_packet->len = 20;
+
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	return entity;
 }
 
 void summonManyMonster(Monster creature)
@@ -1478,7 +1249,7 @@ void actMonster(Entity* my)
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
 	{
-		if ( !MONSTER_INIT )
+		if ( !MONSTER_INIT && my->getMonsterTypeFromSprite() != NOTHING && checkSpriteType(my->sprite) != 1 )
 		{
 			MONSTER_INIT = 1;
 
@@ -1529,91 +1300,60 @@ void actMonster(Entity* my)
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
-		else
+		else if (MONSTER_INIT)
 		{
-			my->flags[BURNABLE] = true;
+		    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
 			switch (my->getMonsterTypeFromSprite()) {
-			case HUMAN: humanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case RAT: ratAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case GOBLIN: goblinMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SCORPION: scorpionAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SUCCUBUS: succubusMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case TROLL: trollMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SHOPKEEPER: shopkeeperMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SKELETON:
-			    my->flags[BURNABLE] = false;
-				skeletonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case MINOTAUR:
-				minotaurMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				actMinotaurCeilingBuster(my);
-				break;
-			case GHOUL: ghoulMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case DEMON:
-				my->flags[BURNABLE] = false;
-				demonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				actDemonCeilingBuster(my);
-				break;
-			case SPIDER: spiderMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case LICH:
-				my->flags[BURNABLE] = false;
-				lichAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case CREATURE_IMP:
-				my->flags[BURNABLE] = false;
-				impMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case GNOME: gnomeMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case DEVIL:
-				my->flags[BURNABLE] = false;
-				devilMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case KOBOLD: koboldMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SCARAB: scarabAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case CRYSTALGOLEM: crystalgolemMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case INCUBUS: incubusMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case VAMPIRE: vampireMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case SHADOW: shadowMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case COCKATRICE: cockatriceMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case INSECTOID: insectoidMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case GOATMAN: goatmanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case AUTOMATON: automatonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			case LICH_FIRE:
-			    my->flags[BURNABLE] = false;
-			    lichFireAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-			    break;
-			case LICH_ICE:
-			    my->flags[BURNABLE] = false;
-			    lichIceAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-			    break;
-			case SENTRYBOT:
-			    my->flags[BURNABLE] = false;
-				sentryBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case GYROBOT:
-				my->flags[BURNABLE] = false;
-				gyroBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
-				break;
-			case DUMMYBOT: dummyBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY)); break;
-			default: my->flags[BURNABLE] = false; break;
+			case HUMAN: humanMoveBodyparts(my, nullptr, dist); break;
+			case RAT: ratAnimate(my, dist); break;
+			case GOBLIN: goblinMoveBodyparts(my, nullptr, dist); break;
+			case SCORPION: scorpionAnimate(my, dist); break;
+			case SUCCUBUS: succubusMoveBodyparts(my, nullptr, dist); break;
+			case TROLL: trollMoveBodyparts(my, nullptr, dist); break;
+			case SHOPKEEPER: shopkeeperMoveBodyparts(my, nullptr, dist); break;
+			case SKELETON: skeletonMoveBodyparts(my, nullptr, dist); break;
+			case MINOTAUR: minotaurMoveBodyparts(my, nullptr, dist); actMinotaurCeilingBuster(my); break;
+			case GHOUL: ghoulMoveBodyparts(my, nullptr, dist); break;
+			case DEMON: demonMoveBodyparts(my, nullptr, dist); actDemonCeilingBuster(my); break;
+			case SPIDER: spiderMoveBodyparts(my, nullptr, dist); break;
+			case LICH: lichAnimate(my, dist); break;
+			case CREATURE_IMP: impMoveBodyparts(my, nullptr, dist); break;
+			case GNOME: gnomeMoveBodyparts(my, nullptr, dist); break;
+			case DEVIL: devilMoveBodyparts(my, nullptr, dist); break;
+			case KOBOLD: koboldMoveBodyparts(my, nullptr, dist); break;
+			case SCARAB: scarabAnimate(my, nullptr, dist); break;
+			case CRYSTALGOLEM: crystalgolemMoveBodyparts(my, nullptr, dist); break;
+			case INCUBUS: incubusMoveBodyparts(my, nullptr, dist); break;
+			case VAMPIRE: vampireMoveBodyparts(my, nullptr, dist); break;
+			case SHADOW: shadowMoveBodyparts(my, nullptr, dist); break;
+			case COCKATRICE: cockatriceMoveBodyparts(my, nullptr, dist); break;
+			case INSECTOID: insectoidMoveBodyparts(my, nullptr, dist); break;
+			case GOATMAN: goatmanMoveBodyparts(my, nullptr, dist); break;
+			case AUTOMATON: automatonMoveBodyparts(my, nullptr, dist); break;
+			case LICH_FIRE: lichFireAnimate(my, nullptr, dist); break;
+			case LICH_ICE: lichIceAnimate(my, nullptr, dist); break;
+			case SENTRYBOT: sentryBotAnimate(my, nullptr, dist); break;
+			case GYROBOT: gyroBotAnimate(my, nullptr, dist); break;
+			case DUMMYBOT: dummyBotAnimate(my, nullptr, dist); break;
+			default: break;
 			}
 
 			if ( !intro )
 			{
 				my->handleEffectsClient();
 			}
+		}
 
-			// request entity update (check if I've been deleted)
-			if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
-			{
-				strcpy((char*)net_packet->data, "ENTE");
-				net_packet->data[4] = clientnum;
-				SDLNet_Write32(my->getUID(), &net_packet->data[5]);
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 9;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-			}
+		// request entity update (check if I've been deleted)
+		if ( my->ticks % TICKS_PER_SECOND == my->getUID() % TICKS_PER_SECOND )
+		{
+			strcpy((char*)net_packet->data, "ENTE");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(my->getUID(), &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		return;
 	}
@@ -1641,130 +1381,48 @@ void actMonster(Entity* my)
 		if (myStats)
 		{
 			myStats->monster_sound = NULL;
-			my->flags[BURNABLE] = true;
 			switch ( myStats->type )
 			{
-				case HUMAN:
-					initHuman(my, myStats);
-					break;
-				case RAT:
-					initRat(my, myStats);
-					break;
-				case GOBLIN:
-					initGoblin(my, myStats);
-					break;
-				case SLIME:
-					my->flags[BURNABLE] = false;
-					initSlime(my, myStats);
-					break;
-				case SCORPION:
-					initScorpion(my, myStats);
-					break;
-				case SUCCUBUS:
-					initSuccubus(my, myStats);
-					break;
-				case TROLL:
-					initTroll(my, myStats);
-					break;
-				case SHOPKEEPER:
-					initShopkeeper(my, myStats);
-					break;
-				case SKELETON:
-					my->flags[BURNABLE] = false;
-					initSkeleton(my, myStats);
-					break;
-				case MINOTAUR:
-					initMinotaur(my, myStats);
-					break;
-				case GHOUL:
-					initGhoul(my, myStats);
-					break;
-				case DEMON:
-					my->flags[BURNABLE] = false;
-					initDemon(my, myStats);
-					break;
-				case SPIDER:
-					initSpider(my, myStats);
-					break;
-				case LICH:
-					my->flags[BURNABLE] = false;
-					initLich(my, myStats);
-					break;
-				case CREATURE_IMP:
-					my->flags[BURNABLE] = false;
-					initImp(my, myStats);
-					break;
-				case GNOME:
-					initGnome(my, myStats);
-					break;
+				case HUMAN: initHuman(my, myStats); break;
+				case RAT: initRat(my, myStats); break;
+				case GOBLIN: initGoblin(my, myStats); break;
+				case SLIME: initSlime(my, myStats); break;
+				case SCORPION: initScorpion(my, myStats); break;
+				case SUCCUBUS: initSuccubus(my, myStats); break;
+				case TROLL: initTroll(my, myStats); break;
+				case SHOPKEEPER: initShopkeeper(my, myStats); break;
+				case SKELETON: initSkeleton(my, myStats); break;
+				case MINOTAUR: initMinotaur(my, myStats); break;
+				case GHOUL: initGhoul(my, myStats); break;
+				case DEMON: initDemon(my, myStats); break;
+				case SPIDER: initSpider(my, myStats); break;
+				case LICH: initLich(my, myStats); break;
+				case CREATURE_IMP: initImp(my, myStats); break;
+				case GNOME: break;
 				case DEVIL:
-					my->flags[BURNABLE] = false;
 					devilstate = 0;
 					devilacted = 0;
 					devilroar = 0;
 					devilsummonedtimes = 0;
 					initDevil(my, myStats);
 					break;
-				case KOBOLD:
-					initKobold (my, myStats);
-					break;
-				case SCARAB:
-					initScarab (my, myStats);
-					break;
-				case CRYSTALGOLEM:
-					initCrystalgolem (my, myStats);
-					break;
-				case INCUBUS:
-					initIncubus (my, myStats);
-					break;
-				case VAMPIRE:
-					initVampire (my, myStats);
-					break;
-				case SHADOW:
-					initShadow (my, myStats);
-					break;
-				case COCKATRICE:
-					initCockatrice (my, myStats);
-					break;
-				case INSECTOID:
-					initInsectoid (my, myStats);
-					break;
-				case GOATMAN:
-					initGoatman (my, myStats);
-					break;
-				case AUTOMATON:
-					my->flags[BURNABLE] = false;
-					initAutomaton (my, myStats);
-					break;
-				case LICH_ICE:
-					my->flags[BURNABLE] = false;
-					initLichIce (my, myStats);
-					my->monsterLichBattleState = LICH_BATTLE_IMMOBILE;
-					break;
-				case LICH_FIRE:
-					my->flags[BURNABLE] = false;
-					initLichFire (my, myStats);
-					my->monsterLichBattleState = LICH_BATTLE_IMMOBILE;
-					break;
-				case SENTRYBOT:
-					my->sprite = 872;
-					my->flags[BURNABLE] = false;
-					initSentryBot(my, myStats);
-					break;
-				case SPELLBOT:
-					my->sprite = 885;
-					my->flags[BURNABLE] = false;
-					initSentryBot(my, myStats);
-					break;
-				case GYROBOT:
-					my->flags[BURNABLE] = false;
-					initGyroBot(my, myStats);
-					break;
-				case DUMMYBOT:
-					initDummyBot(my, myStats);
-					break;
-				default:
-					break; //This should never be reached.
+				case KOBOLD: initKobold (my, myStats); break;
+				case SCARAB: initScarab (my, myStats); break;
+				case CRYSTALGOLEM: initCrystalgolem (my, myStats); break;
+				case INCUBUS: initIncubus (my, myStats); break;
+				case VAMPIRE: initVampire (my, myStats); break;
+				case SHADOW: initShadow (my, myStats); break;
+				case COCKATRICE: initCockatrice (my, myStats); break;
+				case INSECTOID: initInsectoid (my, myStats); break;
+				case GOATMAN: initGoatman (my, myStats); break;
+				case AUTOMATON: initAutomaton (my, myStats); break;
+				case LICH_ICE: initLichIce (my, myStats); break;
+				case LICH_FIRE: initLichFire (my, myStats); break;
+				case SENTRYBOT: my->sprite = 872; initSentryBot(my, myStats); break;
+				case SPELLBOT: my->sprite = 885; initSentryBot(my, myStats); break;
+				case GYROBOT: initGyroBot(my, myStats); break;
+				case DUMMYBOT: initDummyBot(my, myStats); break;
+				default: break; //This should never be reached.
 			}
 		}
 

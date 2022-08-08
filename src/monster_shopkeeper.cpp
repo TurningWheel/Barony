@@ -29,7 +29,9 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(217);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{

@@ -26,8 +26,9 @@ void initInsectoid(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
- 	//Sprite 455 = Insectoid head model
-	my->initMonster(455);
+	my->flags[BURNABLE] = true;
+	my->initMonster(455); //Sprite 455 = Insectoid head model
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,6 +41,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+			{
+				strcpy(myStats->name, "lesser insectoid");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -71,28 +76,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
-			{
-				/*myStats->HP = 120;
-				myStats->MAXHP = 120;
-				myStats->OLDHP = myStats->HP;
-				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, local_rng.rand(), true, nullptr);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + local_rng.rand() % 3, 1, 0, false, nullptr);
-
-				int c;
-				for ( c = 0; c < 3; c++ )
-				{
-					Entity* entity = summonMonster(GOBLIN, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
-				}*/
-			}
 
 			// random effects
 			if ( local_rng.rand() % 8 == 0 )
