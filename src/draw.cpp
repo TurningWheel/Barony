@@ -1607,8 +1607,16 @@ void drawEntities3D(view_t* camera, int mode)
 			else if ( entity->behavior == &actDamageGib )
 			{
 				char buf[16];
-				snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
-				glDrawSpriteFromImage(camera, entity, buf, mode);
+				if ( entity->skill[0] < 0 )
+				{
+					snprintf(buf, sizeof(buf), "+%d", -entity->skill[0]);
+					glDrawSpriteFromImage(camera, entity, buf, mode);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
+					glDrawSpriteFromImage(camera, entity, buf, mode);
+				}
 			}
 			else
 			{

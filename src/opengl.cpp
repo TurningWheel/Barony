@@ -1691,8 +1691,13 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
+	Uint32 color = makeColor(255, 255, 255, 255);
+	if ( entity->behavior == &actDamageGib && text[0] == '+' )
+	{
+		color = hudColors.characterSheetGreen;
+	}
 	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
-		makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
+		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
 	// setup projection
