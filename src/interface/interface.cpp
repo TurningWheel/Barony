@@ -10698,7 +10698,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	details->animator.setpoint = details->enemy_hp;
 	details->animator.foregroundValue = details->animator.setpoint;
 	details->animator.animateTicks = ticks;
-	details->animator.damageTaken = std::max(-1, oldHP - HP);
+	details->animator.damageTaken = std::max(-details->enemy_maxhp, oldHP - HP); // IDK if this needs a lower limit for healing
 
 	Entity* entity = uidToEntity(uid);
 	spawnDamageGib(entity, details->animator.damageTaken);
@@ -11461,6 +11461,24 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		tinkerKitTitle->setSize(textPos);
 		textPos.y += 20;
 		tinkerKitStatus->setSize(textPos);
+
+		auto skillIcon = baseFrame->findImage("tinker skill img");
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( skill.skillId == PRO_LOCKPICKING )
+			{
+				if ( skillCapstoneUnlocked(playernum, skill.skillId) )
+				{
+					skillIcon->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					skillIcon->path = skill.skillIconPath;
+				}
+				skillIcon->disabled = false;
+				break;
+			}
+		}
 	}
 
 	// drawer title
@@ -12273,8 +12291,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	auto filterNavRightArrow = baseFrame->findImage("filter nav right arrow");
 	filterNavRightArrow->disabled = true;
 
-	static ConsoleVariable<int> cvar_tinkNavGlyphY("/tinker_glyph_nav_y", 30);
 	static ConsoleVariable<int> cvar_tinkNavGlyphX("/tinker_glyph_nav_x", 8);
+	static ConsoleVariable<int> cvar_tinkNavGlyphY("/tinker_glyph_nav_y", 30);
 
 	if ( usingGamepad )
 	{
@@ -12708,6 +12726,11 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
 			"*images/ui/Tinkering/Tinker_Construct_Base_00.png", "tinker base img");
+
+		auto skillIcon = bgFrame->addImage(SDL_Rect{ 270, 36, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "tinker skill img");
+		skillIcon->disabled = true;
 
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto tinkerKitTitle = bgFrame->addField("tinker kit title", 128);
@@ -17382,9 +17405,9 @@ void GenericGUIMenu::FeatherGUI_t::closeFeatherMenu()
 }
 
 const int featherBaseWidth = 334;
-const int featherBaseHeight = 304;
+const int featherBaseHeight = 358;
 const int featherDrawerWidth = 210;
-int GenericGUIMenu::FeatherGUI_t::heightOffsetWhenNotCompact = 200;
+int GenericGUIMenu::FeatherGUI_t::heightOffsetWhenNotCompact = 150;
 
 void onFeatherChangeTabAction(const int playernum, bool changingToNewTab)
 {
@@ -17631,7 +17654,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
 		const int widthDifference = animDrawer * (drawerFramePos.w - 2/* - 8*/);
 		drawerFramePos.x = 0;
-		drawerFramePos.y = 6;
+		drawerFramePos.y = 6 + 48;
 		drawerFrame->setSize(drawerFramePos);
 
 		featherFramePos.x -= widthDifference;
@@ -17726,10 +17749,28 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			featherStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 17, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 67, baseFrame->getSize().w, 24 };
 		featherTitle->setSize(textPos);
 		textPos.y += 20;
 		featherStatus->setSize(textPos);
+
+		auto skillIcon = baseFrame->findImage("feather skill img");
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( skill.skillId == PRO_MAGIC )
+			{
+				if ( skillCapstoneUnlocked(playernum, skill.skillId) )
+				{
+					skillIcon->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					skillIcon->path = skill.skillIconPath;
+				}
+				skillIcon->disabled = false;
+				break;
+			}
+		}
 	}
 
 	bool itemActionOK = itemActionType == FEATHER_ACTION_OK 
@@ -17825,17 +17866,42 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3718]);
+
+		Uint32 inactiveColor = hudColors.characterSheetDarker1Neutral;
+		Uint32 activeColor = hudColors.characterSheetOffWhiteText;
+		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
+
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Feather/Feather_Tab_Inscribe_Unselected_01.png");
+		Field* filterTxt = baseFrame->findField("filter inscribe txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3718]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 50, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 38, 314, 98, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterLeftSideX = btnPos.x;
 			filterStartY = btnPos.y;
 		}
 		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Feather/Feather_Tab_Inscribe_Selected_01.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -17853,16 +17919,36 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		{
 			filterBtn->deselect();
 		}
-		filterBtn->setColor(makeColor(255, 255, 255, 0));
-		filterBtn->setText(language[3719]);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("images/ui/Feather/Feather_Tab_Repair_Unselected_01.png");
+		filterTxt = baseFrame->findField("filter repair txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(language[3719]);
+		filterTxt->setColor(inactiveColor);
+		if ( false && filterBtn->isHighlighted() )
 		{
-			SDL_Rect btnPos{ 214, 264, 70, 26 };
+			filterTxt->setColor(highlightColor);
+		}
+		else if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE )
+		{
+			filterTxt->setColor(activeColor);
+		}
+		{
+			SDL_Rect btnPos{ 198, 314, 90, 36 };
 			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += 5;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
 			filterRightSideX = btnPos.x + btnPos.w;
 		}
 		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE )
 		{
-			filterBtn->setColor(makeColor(255, 255, 255, 32));
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("images/ui/Feather/Feather_Tab_Repair_Selected_01.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y += 2;
+			filterTxt->setSize(txtPos);
 		}
 		filterBtn->setHighlightColor(filterBtn->getColor());
 
@@ -17932,13 +18018,13 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 26, 197, baseFrame->getSize().w - (26 * 2), 24 };
+	SDL_Rect actionPromptTxtPos{ 26, 251, baseFrame->getSize().w - (26 * 2), 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
 	tooltipPos.w = 298;
 	tooltipPos.h = baseFrame->getSize().h - 100;
-	tooltipPos.y = 88;
+	tooltipPos.y = 138;
 	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
 	itemDisplayTooltip->setSize(tooltipPos);
 
@@ -17948,7 +18034,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	auto costLabel = itemDisplayTooltip->findField("item cost label");
 	{
 		costBg->pos.x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
-		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h;
+		costBg->pos.y = displayItemTextImg->pos.y + displayItemTextImg->pos.h + 4;
 		SDL_Rect minChargePos{ costBg->pos.x + 28, costBg->pos.y + 9, 66, 24 };
 		SDL_Rect maxChargePos{ costBg->pos.x + 84, costBg->pos.y + 9, 50, 24 };
 		minChargeText->setSize(minChargePos);
@@ -18284,8 +18370,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
 	actionPromptCoverLeftImg->pos.x = 0;
 	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
-	actionPromptCoverLeftImg->pos.y = 60;
-	actionPromptCoverRightImg->pos.y = 60;
+	actionPromptCoverLeftImg->pos.y = 110;
+	actionPromptCoverRightImg->pos.y = 110;
 
 	{
 		actionPromptUnselectedTxt->setDisabled(false);
@@ -18307,7 +18393,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 
 		{
-			SDL_Rect pos{ 26, 63, baseFrame->getSize().w - 52, 24 };
+			SDL_Rect pos{ 26, 113, baseFrame->getSize().w - 52, 24 };
 			if ( animPromptMoveLeft )
 			{
 				pos.x -= actionPromptUnselectedTxt->getSize().w * animPrompt;
@@ -18376,6 +18462,13 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	filterNavLeft->disabled = true;
 	auto filterNavRight = baseFrame->findImage("filter nav right");
 	filterNavRight->disabled = true;
+	auto filterNavLeftArrow = baseFrame->findImage("filter nav left arrow");
+	filterNavLeftArrow->disabled = true;
+	auto filterNavRightArrow = baseFrame->findImage("filter nav right arrow");
+	filterNavRightArrow->disabled = true;
+
+	static ConsoleVariable<int> cvar_featherNavGlyphX("/feather_glyph_nav_x", 8);
+	static ConsoleVariable<int> cvar_featherNavGlyphY("/feather_glyph_nav_y", 30);
 
 	if ( usingGamepad )
 	{
@@ -18385,8 +18478,15 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			filterNavLeft->pos.w = imgGet->getWidth();
 			filterNavLeft->pos.h = imgGet->getHeight();
 			filterNavLeft->disabled = false;
-			filterNavLeft->pos.x = filterLeftSideX - filterNavLeft->pos.w - 6;
-			filterNavLeft->pos.y = filterStartY + 10;
+
+			filterNavLeftArrow->disabled = false;
+			filterNavLeftArrow->pos.x = 6;
+			filterNavLeftArrow->pos.y = filterStartY - 6;
+
+			filterNavLeft->pos.x = filterNavLeftArrow->pos.x - 10 + *cvar_featherNavGlyphX;
+			filterNavLeft->pos.y = filterNavLeftArrow->pos.y + filterNavLeftArrow->pos.h - 2;
+			filterNavLeft->pos.y -= filterNavLeft->pos.h;
+			filterNavLeft->pos.y -= *cvar_featherNavGlyphY;
 		}
 		filterNavRight->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
 		if ( auto imgGet = Image::get(filterNavRight->path.c_str()) )
@@ -18394,8 +18494,16 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			filterNavRight->pos.w = imgGet->getWidth();
 			filterNavRight->pos.h = imgGet->getHeight();
 			filterNavRight->disabled = false;
-			filterNavRight->pos.x = filterRightSideX + 6;
-			filterNavRight->pos.y = filterStartY + 10;
+
+			filterNavRightArrow->disabled = false;
+			filterNavRightArrow->pos.x = filterRightSideX + 2;
+			filterNavRightArrow->pos.y = filterStartY - 6;
+
+			filterNavRight->pos.x = filterNavRightArrow->pos.x + filterNavRightArrow->pos.w + 10;
+			filterNavRight->pos.x -= filterNavRight->pos.w + *cvar_featherNavGlyphX;
+			filterNavRight->pos.y = filterNavRightArrow->pos.y + filterNavRightArrow->pos.h - 2;
+			filterNavRight->pos.y -= filterNavRight->pos.h;
+			filterNavRight->pos.y -= *cvar_featherNavGlyphY;
 		}
 	}
 
@@ -18877,12 +18985,20 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		//slider->setCallback(callback);
 		slider->setColor(makeColor(255, 255, 255, 255));
 		slider->setHighlightColor(makeColor(255, 255, 255, 255));
-		slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+		slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Blue_01.png");
 		slider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
 		slider->setHideGlyphs(true);
 		slider->setHideKeyboardGlyphs(true);
 		slider->setHideSelectors(true);
 		slider->setMenuConfirmControlType(0);
+
+		auto sliderCapTop = drawerFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y, 16, 16 },
+			0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingTop_01.png", "feather slider top");
+		sliderCapTop->ontop = true;
+
+		auto sliderCapBot = drawerFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y + sliderPos.h - 16, 16, 16 },
+			0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingBot_01.png", "feather slider bot");
+		sliderCapBot->ontop = true;
 
 		{
 
@@ -18892,11 +19008,11 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			sortTxt->setText("");
 			sortTxt->setHJustify(Field::justify_t::RIGHT);
 			sortTxt->setVJustify(Field::justify_t::TOP);
-			sortTxt->setSize(SDL_Rect{ 0, drawerPos.h - 33, 76, 24 });
+			sortTxt->setSize(SDL_Rect{ 0, drawerPos.h - 33, 70, 24 });
 			sortTxt->setColor(hudColors.characterSheetNeutral);
 
 			auto sortBtn = drawerFrame->addButton("sort btn");
-			SDL_Rect sortBtnPos{ drawerPos.w - 26 - 104, drawerPos.h - 36, 104, 26 };
+			SDL_Rect sortBtnPos{ drawerPos.w - 26 - 108, drawerPos.h - 40, 112, 34 };
 			sortBtn->setSize(sortBtnPos);
 			sortBtn->setColor(makeColor(255, 255, 255, 255));
 			sortBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -18969,6 +19085,11 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			makeColor(255, 255, 255, 255),
 			"*images/ui/Feather/Feather_Base_00.png", "feather base img");
 
+		auto skillIcon = bgFrame->addImage(SDL_Rect{270, 76, 24, 24},
+			makeColor(255, 255, 255, 255),
+			"", "feather skill img");
+		skillIcon->disabled = true;
+
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto featherTitle = bgFrame->addField("feather title", 128);
 		featherTitle->setFont(headerFont);
@@ -18989,11 +19110,11 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 
 		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto itemDisplayTooltip = bgFrame->addFrame("feather display tooltip");
-		itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 298, 108 });
+		itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 298, 110 });
 		itemDisplayTooltip->setHollow(true);
 		itemDisplayTooltip->setInheritParentFrameOpacity(false);
 		{
-			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 108 },
+			auto tooltipBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 298, 110 },
 				0xFFFFFFFF, "*images/ui/Feather/Feather_Tooltip_00.png", "tooltip img");
 
 			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
@@ -19125,7 +19246,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			Button* filterBtn = bgFrame->addButton("filter inscribe btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Inscribe");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			filterBtn->setHideGlyphs(true);
@@ -19141,10 +19262,20 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
+			Field* filterTxt = bgFrame->addField("filter inscribe txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Inscribe");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
 			filterBtn = bgFrame->addButton("filter repair btn");
 			filterBtn->setColor(makeColor(255, 255, 255, 0));
 			filterBtn->setHighlightColor(makeColor(255, 255, 255, 0));
-			filterBtn->setText("Repair");
+			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			filterBtn->setHideGlyphs(true);
@@ -19159,6 +19290,23 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = false;
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
+
+			filterTxt = bgFrame->addField("filter repair txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText("Repair");
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(hudColors.characterSheetLightNeutral);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
+			auto filterNavLeftArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Feather/Feather_Button_ArrowL_01.png", "filter nav left arrow");
+			filterNavLeftArrow->disabled = true;
+			auto filterNavRightArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
+				0xFFFFFFFF, "images/ui/Feather/Feather_Button_ArrowR_01.png", "filter nav right arrow");
+			filterNavRightArrow->disabled = true;
 
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 				0xFFFFFFFF, "", "filter nav left");
