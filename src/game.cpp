@@ -6409,8 +6409,10 @@ int main(int argc, char** argv)
 						{
 							entity->lerp_ox = entity->x;
 							entity->lerp_oy = entity->y;
-							entity->x = entity->lerpRenderState.x.position * 16.0;
-							entity->y = entity->lerpRenderState.y.position * 16.0;
+							if (entity->ticks > 4) { // prevent entities popping from 0, 0
+							    entity->x = entity->lerpRenderState.x.position * 16.0;
+							    entity->y = entity->lerpRenderState.y.position * 16.0;
+							}
 						}
 					}
 				}

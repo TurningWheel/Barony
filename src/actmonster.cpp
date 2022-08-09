@@ -362,6 +362,9 @@ end:
 		}
 	}
 
+    // make a puff
+	auto poof = spawnPoof(entity->x, entity->y, 0);
+
 	return entity;
 }
 
@@ -1399,7 +1402,7 @@ void actMonster(Entity* my)
 				case SPIDER: initSpider(my, myStats); break;
 				case LICH: initLich(my, myStats); break;
 				case CREATURE_IMP: initImp(my, myStats); break;
-				case GNOME: break;
+				case GNOME: initGnome(my, myStats); break;
 				case DEVIL:
 					devilstate = 0;
 					devilacted = 0;
