@@ -1272,6 +1272,7 @@ void actMonster(Entity* my)
 			case HUMAN: initHuman(my, nullptr); break;
 			case RAT: initRat(my, nullptr); break;
 			case GOBLIN: initGoblin(my, nullptr); break;
+			case SLIME: initSlime(my, nullptr); break;
 			case SCORPION: initScorpion(my, nullptr); break;
 			case SUCCUBUS: initSuccubus(my, nullptr); break;
 			case TROLL: initTroll(my, nullptr); break;
@@ -1298,6 +1299,7 @@ void actMonster(Entity* my)
 			case LICH_FIRE: initLichFire(my, nullptr); break;
 			case LICH_ICE: initLichIce(my, nullptr); break;
 			case SENTRYBOT: initSentryBot(my, nullptr); break;
+			case SPELLBOT: initSentryBot(my, nullptr); break;
 			case GYROBOT: initGyroBot(my, nullptr); break;
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
@@ -1337,6 +1339,7 @@ void actMonster(Entity* my)
 			case LICH_ICE: lichIceAnimate(my, nullptr, dist); break;
 			case LICH_FIRE: lichFireAnimate(my, nullptr, dist); break;
 			case SENTRYBOT: sentryBotAnimate(my, nullptr, dist); break;
+			case SPELLBOT: sentryBotAnimate(my, nullptr, dist); break;
 			case GYROBOT: gyroBotAnimate(my, nullptr, dist); break;
 			case DUMMYBOT: dummyBotAnimate(my, nullptr, dist); break;
 			default: break;
@@ -7043,6 +7046,7 @@ timeToGoAgain:
 		case LICH_ICE: lichIceAnimate(my, myStats, dist); break;
 		case LICH_FIRE: lichFireAnimate(my, myStats, dist); break;
 		case SENTRYBOT: sentryBotAnimate(my, myStats, dist); break;
+		case SPELLBOT: sentryBotAnimate(my, myStats, dist); break;
 		case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 		case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 		default: break;

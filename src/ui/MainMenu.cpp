@@ -17201,7 +17201,7 @@ bind_failed:
 				    soundActivate();
 				    destroyMainMenu();
 				    createDummyMainMenu();
-				    tutorial_map_destination = "tutorial_hub";
+				    tutorial_map_destination = "tutorial1";
 				    beginFade(MainMenu::FadeDestination::HallOfTrials);
                     });
             } else {

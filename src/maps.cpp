@@ -3371,6 +3371,7 @@ void assignActions(map_t* map)
 				entity->yaw = (map_rng.rand() % 360) * PI / 180.0;
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED] = true;
+				entity->flags[INVISIBLE] = true;
 				entity->skill[5] = -1;
 				Stat* myStats = NULL;
 				if ( multiplayer != CLIENT )
