@@ -291,17 +291,21 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 
 	if ( entity->bNeedsRenderPositionInit )
 	{
-		entity->bNeedsRenderPositionInit = false;
+		// wait for entity to position itself in the world by setting useful x/y vlues (monster limbs etc)
+		if ( abs(entity->x) > 0.01 || abs(entity->y) > 0.01 ) 
+		{
+			entity->bNeedsRenderPositionInit = false;
 
-		entity->lerpCurrentState.x.position = entity->x / 16.0;
-		entity->lerpCurrentState.y.position = entity->y / 16.0;
-		entity->lerpCurrentState.z.position = entity->z;
-		entity->lerpCurrentState.pitch.position = entity->pitch;
-		entity->lerpCurrentState.yaw.position = entity->yaw;
-		entity->lerpCurrentState.roll.position = entity->roll;
-		entity->lerpCurrentState.resetMovement();
-		entity->lerpPreviousState = entity->lerpCurrentState;
-		entity->lerpRenderState = entity->lerpCurrentState;
+			entity->lerpCurrentState.x.position = entity->x / 16.0;
+			entity->lerpCurrentState.y.position = entity->y / 16.0;
+			entity->lerpCurrentState.z.position = entity->z;
+			entity->lerpCurrentState.pitch.position = entity->pitch;
+			entity->lerpCurrentState.yaw.position = entity->yaw;
+			entity->lerpCurrentState.roll.position = entity->roll;
+			entity->lerpCurrentState.resetMovement();
+			entity->lerpPreviousState = entity->lerpCurrentState;
+			entity->lerpRenderState = entity->lerpCurrentState;
+		}
 		return;
 	}
 
