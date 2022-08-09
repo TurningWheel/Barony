@@ -27,6 +27,10 @@
 #include <cassert>
 #include <functional>
 
+// quick restart:
+ConsoleVariable<bool> cvar_fastRestart("/fastrestart", true,
+    "if true, game restarts 1 second after last player death");
+
 namespace MainMenu {
     int pause_menu_owner = 0;
 	bool cursor_delete_mode = false;
@@ -17009,6 +17013,13 @@ bind_failed:
                 if (size.y >= height) {
                     size.y = height;
                     playSound(511, 48); // death knell
+                    if (*cvar_fastRestart) {
+                        auto restart = window->findButton("restart");
+                        if (restart) {
+                            restart->select();
+                            restart->activate();
+                        }
+                    }
                 }
                 window->setSize(size);
             }
@@ -17192,10 +17203,13 @@ bind_failed:
             quit->setTextHighlightColor(makeColor(170, 134, 102, 255));
             if (tutorial) {
                 quit->setCallback([](Button& button){
+                    if (fadeout) {
+                        return;
+                    }
                     soundCancel();
-                    auto window = static_cast<Frame*>(button.getParent());
-                    auto frame = static_cast<Frame*>(window->getParent());
-                    frame->removeSelf();
+                    //auto window = static_cast<Frame*>(button.getParent());
+                    //auto frame = static_cast<Frame*>(window->getParent());
+                    //frame->removeSelf();
 
 				    pauseGame(2, 0);
 				    soundActivate();
@@ -17206,10 +17220,13 @@ bind_failed:
                     });
             } else {
                 quit->setCallback([](Button& button){
+                    if (fadeout) {
+                        return;
+                    }
                     soundCancel();
-                    auto window = static_cast<Frame*>(button.getParent());
-                    auto frame = static_cast<Frame*>(window->getParent());
-                    frame->removeSelf();
+                    //auto window = static_cast<Frame*>(button.getParent());
+                    //auto frame = static_cast<Frame*>(window->getParent());
+                    //frame->removeSelf();
 
 	                savethisgame = false;
 				    pauseGame(2, 0);
@@ -17230,10 +17247,13 @@ bind_failed:
             restart->setTextColor(makeColor(170, 134, 102, 255));
             restart->setTextHighlightColor(makeColor(170, 134, 102, 255));
             restart->setCallback([](Button& button){
+                if (fadeout) {
+                    return;
+                }
                 soundActivate();
-                auto window = static_cast<Frame*>(button.getParent());
-                auto frame = static_cast<Frame*>(window->getParent());
-                frame->removeSelf();
+                //auto window = static_cast<Frame*>(button.getParent());
+                //auto frame = static_cast<Frame*>(window->getParent());
+                //frame->removeSelf();
 
 				pauseGame(2, 0);
 				destroyMainMenu();

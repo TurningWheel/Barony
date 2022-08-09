@@ -70,7 +70,7 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	Uint32 deathcamGameoverPromptTicks = TICKS_PER_SECOND * 6;
+	Uint32 deathcamGameoverPromptTicks = *cvar_fastRestart ? TICKS_PER_SECOND : TICKS_PER_SECOND * 6;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
