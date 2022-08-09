@@ -28,7 +28,7 @@
 #include <functional>
 
 // quick restart:
-ConsoleVariable<bool> cvar_fastRestart("/fastrestart", true,
+ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false,
     "if true, game restarts 1 second after last player death");
 
 namespace MainMenu {
@@ -226,6 +226,7 @@ namespace MainMenu {
 	struct AllSettings {
 	    std::vector<std::pair<std::string, std::string>> mods;
 	    bool crossplay_enabled;
+	    bool fast_restart;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
@@ -1726,6 +1727,7 @@ namespace MainMenu {
 
 	inline bool AllSettings::save() {
         gamemods_mountedFilepaths = mods;
+		*cvar_fastRestart = fast_restart;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -1796,6 +1798,7 @@ namespace MainMenu {
 		AllSettings settings;
 		settings.mods = gamemods_mountedFilepaths;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
+		settings.fast_restart = *cvar_fastRestart;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
@@ -1849,6 +1852,7 @@ namespace MainMenu {
 		AllSettings settings;
 		settings.mods = gamemods_mountedFilepaths;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
+		settings.fast_restart = false;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.use_on_release_enabled = true;
@@ -1899,10 +1903,17 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 1;
+	    int version = 2;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
+		if (file->isReading()) {
+		    if (version >= 2) {
+		        file->property("fast_restart", fast_restart);
+		    }
+		} else {
+		    file->property("fast_restart", fast_restart);
+		}
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
@@ -1918,7 +1929,7 @@ namespace MainMenu {
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
 		if (file->isReading()) {
-		    if (version == 1) {
+		    if (version >= 1) {
 		        file->property("video", video);
 		        file->property("vertical_split_enabled", vertical_split_enabled);
 		    } else {
@@ -4364,10 +4375,15 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "fast_restart"});
 			return;
 		}
 		int y = 0;
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Options");
+		y += settingsAddBooleanOption(*settings_subwindow, y, "fast_restart", "Instant Restart on Gameover",
+			"Automatically restarts the game quickly after dying.",
+			allSettings.fast_restart, [](Button& button){soundToggle(); allSettings.fast_restart = button.isPressed();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "inventory", "Inventory Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "add_items_to_hotbar", "Add Items to Hotbar",
@@ -4399,7 +4415,8 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "add_items_to_hotbar"},
+			{{Setting::Type::Boolean, "fast_restart"},
+			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Boolean, "use_on_release"},
 			{Setting::Type::Customize, "minimap_settings"},
@@ -4408,7 +4425,8 @@ bind_failed:
 			{Setting::Type::Boolean, "show_hud"}});
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "add_items_to_hotbar"},
+			{{Setting::Type::Boolean, "fast_restart"},
+			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
@@ -4416,8 +4434,8 @@ bind_failed:
 			{Setting::Type::Boolean, "show_hud"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "add_items_to_hotbar"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "add_items_to_hotbar"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "fast_restart"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "fast_restart"});
 	}
 
 	static void settingsVideo(Button& button) {
