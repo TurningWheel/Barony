@@ -20217,7 +20217,8 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool tempHideHotbar = false;
-	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
+	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET) 
+		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideHotbar = true;
 	}
@@ -20811,6 +20812,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	skillSheetEntryFrames[player.playernum].skillsFrame = skillBackground;
 	const int width = 684;
 	const int height = 404;
+	skillBackground->setInheritParentFrameOpacity(false);
 	skillBackground->setSize(SDL_Rect{ frame->getSize().x, frame->getSize().y, width, height });
 	/*auto bgImg = skillBackground->addImage(SDL_Rect{ 0, 0, width, height }, 0xFFFFFFFF,
 		"*#images/ui/SkillSheet/UI_Skills_Window_02.png", "skills img");*/
@@ -22573,7 +22575,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	sheetSize.x = skillFrame->getSize().w / 2 - sheetSize.w / 2;
 
 	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - skillsFadeInAnimationY)) / 5.0;
+	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - skillsFadeInAnimationY)) / 3.0;
 	skillsFadeInAnimationY += setpointDiffX;
 	skillsFadeInAnimationY = std::min(1.0, skillsFadeInAnimationY);
 
@@ -22586,6 +22588,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	int baseY = (skillFrame->getSize().h / 2 - sheetSize.h / 2);
 	sheetSize.y = -sheetSize.h + skillsFadeInAnimationY * (baseY + sheetSize.h);
+	innerFrame->setOpacity(pow(skillsFadeInAnimationY, 2) * 100.0);
 	innerFrame->setSize(sheetSize);
 
 	auto slider = skillDescriptionFrame->findSlider("skill slider");
