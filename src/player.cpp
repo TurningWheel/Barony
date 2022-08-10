@@ -1463,6 +1463,54 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				if ( !checkDestinationOnly )
 				{
+					if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.bUseCompactGUIHeight() )
+					{
+						// code to bounce to the paper doll/inventory based on visual position
+						//if ( player.inventoryUI.getSelectedSlotY() <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5
+						//	&& player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+						//{
+						//	player.inventoryUI.selectSlot(player.inventoryUI.DEFAULT_INVENTORY_SIZEX - 1, player.inventoryUI.DEFAULT_INVENTORY_SIZEY - 1);
+						//}
+						//else if ( player.inventoryUI.getSelectedSlotY() >= 0 && player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+						//{
+						//	std::pair<int, int> goodSpot{ 10000, -10000 }; // dummy coordinates
+						//	if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+						//	{
+						//		goodSpot.first = -10000;
+						//	}
+						//	for ( auto& slot : player.paperDoll.dollSlots )
+						//	{
+						//		if ( slot.item != 0 )
+						//		{
+						//			int coordX = 0;
+						//			int coordY = 0;
+						//			player.paperDoll.getCoordinatesFromSlotType(slot.slotType, coordX, coordY);
+						//			if ( coordY > goodSpot.second )
+						//			{
+						//				if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_RIGHT
+						//					&& coordX <= goodSpot.first )
+						//				{
+						//					goodSpot.first = coordX;
+						//					goodSpot.second = coordY;
+						//				}
+						//				else if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT
+						//					&& coordX >= goodSpot.second )
+						//				{
+						//					goodSpot.first = coordX;
+						//					goodSpot.second = coordY;
+						//				}
+						//			}
+						//		}
+						//	}
+						//	if ( goodSpot.first >= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT
+						//		&& goodSpot.first <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT
+						//		&& goodSpot.second >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1
+						//		&& goodSpot.second <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5 )
+						//	{
+						//		player.inventoryUI.selectSlot(goodSpot.first, goodSpot.second);
+						//	}
+						//}
+					}
 					activateModule(MODULE_INVENTORY);
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
@@ -1707,6 +1755,54 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				{
 					if ( !checkDestinationOnly )
 					{
+						// code to bounce to the paper doll/inventory based on visual position
+						//if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.bUseCompactGUIHeight() )
+						//{
+						//	if ( player.inventoryUI.getSelectedSlotY() <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5
+						//		&& player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+						//	{
+						//		player.inventoryUI.selectSlot(0, player.inventoryUI.DEFAULT_INVENTORY_SIZEY - 1);
+						//	}
+						//	else if ( player.inventoryUI.getSelectedSlotY() >= 0 && player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+						//	{
+						//		std::pair<int, int> goodSpot{10000, -10000}; // dummy coordinates
+						//		if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+						//		{
+						//			goodSpot.first = -10000;
+						//		}
+						//		for ( auto& slot : player.paperDoll.dollSlots )
+						//		{
+						//			if ( slot.item != 0 )
+						//			{
+						//				int coordX = 0;
+						//				int coordY = 0;
+						//				player.paperDoll.getCoordinatesFromSlotType(slot.slotType, coordX, coordY);
+						//				if ( coordY > goodSpot.second )
+						//				{
+						//					if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_RIGHT
+						//						&& coordX <= goodSpot.first )
+						//					{
+						//						goodSpot.first = coordX;
+						//						goodSpot.second = coordY;
+						//					}
+						//					else if ( player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT
+						//						&& coordX >= goodSpot.second )
+						//					{
+						//						goodSpot.first = coordX;
+						//						goodSpot.second = coordY;
+						//					}
+						//				}
+						//			}
+						//		}
+						//		if ( goodSpot.first >= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_LEFT
+						//			&& goodSpot.first <= Player::Inventory_t::PaperDollColumns::DOLL_COLUMN_RIGHT
+						//			&& goodSpot.second >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1
+						//			&& goodSpot.second <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5 )
+						//		{
+						//			player.inventoryUI.selectSlot(goodSpot.first, goodSpot.second);
+						//		}
+						//	}
+						//}
 						activateModule(MODULE_INVENTORY);
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
@@ -2056,11 +2152,12 @@ bool Player::GUI_t::handleInventoryMovement()
 				}
 				else
 				{
-					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					// enable this to move from an item on the hotbar to it's inventory slot
+					/*itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
 					if ( itemToSnapTo && itemCategory(itemToSnapTo) == SPELL_CAT )
 					{
 						itemToSnapTo = nullptr;
-					}
+					}*/
 				}
 				if ( itemToSnapTo )
 				{
@@ -2073,9 +2170,7 @@ bool Player::GUI_t::handleInventoryMovement()
 					}
 					else
 					{
-						select_inventory_slot(player,
-							itemToSnapTo->x,
-							itemToSnapTo->y, 0, 0);
+						players[player]->inventoryUI.selectSlot(itemToSnapTo->x, itemToSnapTo->y);
 					}
 				}
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
@@ -2207,11 +2302,12 @@ bool Player::GUI_t::handleInventoryMovement()
 				}
 				else
 				{
-					itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
+					// enable this to move from an item on the hotbar to it's inventory slot
+					/*itemToSnapTo = uidToItem(hotbar_t.slots()[hotbar_t.current_hotbar].item);
 					if ( itemToSnapTo && itemCategory(itemToSnapTo) == SPELL_CAT )
 					{
 						itemToSnapTo = nullptr;
-					}
+					}*/
 				}
 				if ( itemToSnapTo )
 				{
@@ -2224,9 +2320,7 @@ bool Player::GUI_t::handleInventoryMovement()
 					}
 					else
 					{
-						select_inventory_slot(player,
-							itemToSnapTo->x,
-							itemToSnapTo->y, 0, 0);
+						players[player]->inventoryUI.selectSlot(itemToSnapTo->x, itemToSnapTo->y);
 					}
 				}
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
