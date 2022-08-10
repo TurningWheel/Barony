@@ -3778,6 +3778,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 				bannerGlyphModifier->disabled = bannerGlyph->disabled || !modifierActiveForOption;
 			}
 
+			if ( !bannerGlyph->disabled )
+			{
+				animInvalidAction = 0.0;
+			}
+
 			bannerImgCenter->pos.w = txtPos.w + 16 
 				+ (bannerGlyph->disabled ? 0 : ((bannerGlyph->pos.w + 8) / 2))
 				+ (bannerGlyphModifier->disabled ? 0 : (bannerGlyphModifier->pos.w + 2));
@@ -11587,7 +11592,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
 
 		filterBtn->setColor(makeColor(255, 255, 255, 255));
-		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
+		filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Center_00.png");
 		Field* filterTxt = baseFrame->findField("filter salvage txt");
 		filterTxt->setDisabled(false);
 		filterTxt->setText(language[3645]);
@@ -11611,7 +11616,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_SALVAGEABLE )
 		{
 			filterBtn->setColor(makeColor(255, 255, 255, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_CenterHigh_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_CenterHigh_00.png");
 			SDL_Rect txtPos = filterTxt->getSize();
 			txtPos.y += 2;
 			filterTxt->setSize(txtPos);
@@ -11633,7 +11638,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterBtn->deselect();
 		}
 		filterBtn->setColor(makeColor(255, 255, 255, 255));
-		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
+		filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Left_00.png");
 		filterTxt = baseFrame->findField("filter craft txt");
 		filterTxt->setDisabled(false);
 		filterTxt->setText(language[3644]);
@@ -11660,7 +11665,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE )
 		{
 			filterBtn->setColor(makeColor(255, 255, 255, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_LeftHigh_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_LeftHigh_00.png");
 			SDL_Rect txtPos = filterTxt->getSize();
 			txtPos.y += 2;
 			filterTxt->setSize(txtPos);
@@ -11682,7 +11687,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterBtn->deselect();
 		}
 		filterBtn->setColor(makeColor(255, 255, 255, 255));
-		filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
+		filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Right_00.png");
 		filterTxt = baseFrame->findField("filter repair txt");
 		filterTxt->setDisabled(false);
 		filterTxt->setText(language[3646]);
@@ -11707,7 +11712,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		if ( parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_REPAIRABLE )
 		{
 			filterBtn->setColor(makeColor(255, 255, 255, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_RightHigh_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_RightHigh_00.png");
 			SDL_Rect txtPos = filterTxt->getSize();
 			txtPos.y += 2;
 			filterTxt->setSize(txtPos);
@@ -11776,7 +11781,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 0, 211, baseFrame->getSize().w - 18 - 8, 24 };
+	static ConsoleVariable<int> cvar_tinkerPromptY("/tinker_action_prompt_y", -2);
+	SDL_Rect actionPromptTxtPos{ 0, 211 + *cvar_tinkerPromptY, baseFrame->getSize().w - 18 - 8, 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
@@ -12710,8 +12716,6 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 					{
 						++slotCoordsIt;
 					}
-					/*slotFrame->addImage(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize }, 0xFFFFFFFF,
-						"images/system/white.png", "tmp");*/
 					slotFrame->setDisabled(true);
 				}
 			}
@@ -12888,7 +12892,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Center_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Center_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -12925,7 +12929,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Left_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Left_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -12955,7 +12959,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			filterBtn->setText("");
 			filterBtn->setFont(itemFont);
 			filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
-			filterBtn->setBackground("images/ui/Tinkering/Tinker_Filter_Right_00.png");
+			filterBtn->setBackground("*#images/ui/Tinkering/Tinker_Filter_Right_00.png");
 			filterBtn->setHideGlyphs(true);
 			filterBtn->setHideKeyboardGlyphs(true);
 			filterBtn->setHideSelectors(true);
@@ -12980,10 +12984,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			filterTxt->setOntop(true);
 
 			auto filterNavLeftArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowL_00.png", "filter nav left arrow");
+				0xFFFFFFFF, "*#images/ui/Tinkering/Tinker_Button_ArrowL_00.png", "filter nav left arrow");
 			filterNavLeftArrow->disabled = true;
 			auto filterNavRightArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
-				0xFFFFFFFF, "images/ui/Tinkering/Tinker_Button_ArrowR_00.png", "filter nav right arrow");
+				0xFFFFFFFF, "*#images/ui/Tinkering/Tinker_Button_ArrowR_00.png", "filter nav right arrow");
 			filterNavRightArrow->disabled = true;
 
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
@@ -13829,15 +13833,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		baseFrame->setSize(baseFramePos);
 	}
 	alchFrame->setSize(alchFramePos);
-	/*if ( !alchFrame->findImage("tmp") )
-	{
-		alchFrame->addImage(SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h }, 0xFFFFFFFF,
-			"images/system/white.png", "tmp");
-	}
-	else
-	{
-		alchFrame->findImage("tmp")->pos = SDL_Rect{ 0, 0, alchFramePos.w, alchFramePos.h };
-	}*/
 
 	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
 	{
@@ -13884,7 +13879,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		keystatus[SDL_SCANCODE_J] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_H] && enableDebugKeys )
+	/*if ( keystatus[SDL_SCANCODE_H] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_H] = 0;
 		if ( keystatus[SDL_SCANCODE_LSHIFT] )
@@ -13905,7 +13900,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		{
 			consoleCommand("/gimmepotions 5");
 		}
-	}
+	}*/
 
 	if ( bOpen )
 	{
@@ -14188,11 +14183,11 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		return; // I can't see!
 	}
 
-	if ( keystatus[SDL_SCANCODE_B] && enableDebugKeys )
+	/*if ( keystatus[SDL_SCANCODE_B] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_B] = 0;
 		notifications.push_back(std::make_pair(ticks, AlchNotification_t("Wow a title!", "This is a body", "items/images/Alembic.png")));
-	}
+	}*/
 	auto notificationFrame = alchFrame->findFrame("notification");
 	notificationFrame->setDisabled(true);
 	if ( !notifications.empty() )
@@ -17130,7 +17125,7 @@ void GenericGUIMenu::FeatherGUI_t::changeSortingType(GenericGUIMenu::FeatherGUI_
 void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 {
 	scrolls.clear();
-	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
+	/*if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
 	{
 		keystatus[SDL_SCANCODE_J] = 0;
 		if ( keystatus[SDL_SCANCODE_LCTRL] )
@@ -17153,7 +17148,7 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 		{
 			changeSortingType(SORT_SCROLL_DEFAULT);
 		}
-	}
+	}*/
 	for ( node_t* node = parentGUI.scribingTotalItems.first; node; node = node->next )
 	{
 		if ( node->list == &stats[parentGUI.getPlayer()]->inventory )
@@ -17218,7 +17213,7 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 		{
 			auto titleTxt = frame->findField("title");
 			titleTxt->setText(scroll.first.c_str());
-			titleTxt->setColor(hudColors.characterSheetNeutral);
+			titleTxt->setColor(hudColors.characterSheetLightNeutral);
 			auto result = FEATHER_ACTION_NONE;
 			if ( scrollItem && scroll.second.second )
 			{
@@ -17286,15 +17281,23 @@ void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 				bodyTxt->setColor(hudColors.characterSheetFaintText);
 			}
 			auto bg = frame->findImage("bg");
-			bg->path = "images/ui/Feather/Feather_ListUnselected_00.png";
-			if ( scrollItem && isInteractable && highlightedSlot == index )
+			switch ( index % 5 )
+			{
+				case 0: bg->path = "*#images/ui/Feather/Feather_ListUnselected_00.png"; break;
+				case 1: bg->path = "*#images/ui/Feather/Feather_ListUnselected_01.png"; break;
+				case 2: bg->path = "*#images/ui/Feather/Feather_ListUnselected_02.png"; break;
+				case 3: bg->path = "*#images/ui/Feather/Feather_ListUnselected_03.png"; break;
+				case 4: bg->path = "*#images/ui/Feather/Feather_ListUnselected_04.png"; break;
+				default: bg->path = "*#images/ui/Feather/Feather_ListUnselected_00.png"; break;
+			}
+			/*if ( scrollItem && isInteractable && highlightedSlot == index )
 			{
 				if ( getSelectedFeatherSlotX() == scrollItem->x
 					&& getSelectedFeatherSlotY() == scrollItem->y )
 				{
-					bg->path = "images/ui/Feather/Feather_ListSelected_00.png";
+					bg->path = "*#images/ui/Feather/Feather_ListSelected_00.png";
 				}
-			}
+			}*/
 		}
 		++index;
 	}
@@ -17623,6 +17626,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 	}
 
+	int heightOffsetCompact = 0;
 	if ( !player->bUseCompactGUIHeight() )
 	{
 		featherFramePos.y = heightOffsetWhenNotCompact;
@@ -17630,6 +17634,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	else
 	{
 		featherFramePos.y = 0;
+		heightOffsetCompact = -40;
 	}
 
 	if ( !featherGUIHasBeenCreated() )
@@ -17649,12 +17654,22 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	baseFramePos.w = featherBaseWidth;
 	baseFrame->setSize(baseFramePos);
 
+	auto baseBg = baseFrame->findImage("feather base img");
+	baseBg->pos.y = heightOffsetCompact;
+
 	{
 		drawerFrame->setDisabled(!bFeatherDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
 		const int widthDifference = animDrawer * (drawerFramePos.w - 2/* - 8*/);
 		drawerFramePos.x = 0;
-		drawerFramePos.y = 6 + 48;
+		if ( !player->bUseCompactGUIHeight() )
+		{
+			drawerFramePos.y = 54;
+		}
+		else
+		{
+			drawerFramePos.y = 14;
+		}
 		drawerFrame->setSize(drawerFramePos);
 
 		featherFramePos.x -= widthDifference;
@@ -17749,12 +17764,13 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			featherStatus->setText("");
 		}
 
-		SDL_Rect textPos{ 0, 67, baseFrame->getSize().w, 24 };
+		SDL_Rect textPos{ 0, 67 + heightOffsetCompact, baseFrame->getSize().w, 24 };
 		featherTitle->setSize(textPos);
 		textPos.y += 20;
 		featherStatus->setSize(textPos);
 
 		auto skillIcon = baseFrame->findImage("feather skill img");
+		skillIcon->pos.y = 76 + heightOffsetCompact;
 		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 		{
 			if ( skill.skillId == PRO_MAGIC )
@@ -17813,8 +17829,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		currentChargeLabel->setDisabled(false);
 
 		auto currentChargeBg = baseFrame->findImage("current charge img");
-		currentChargeBg->pos.x = baseFrame->getSize().w - 18 - currentChargeBg->pos.w;
-		currentChargeBg->pos.y = baseFrame->getSize().h - 48 - 38;
+		currentChargeBg->pos.x = baseFrame->getSize().w - 32 - currentChargeBg->pos.w;
+		currentChargeBg->pos.y = baseFrame->getSize().h - 48 - 38 + heightOffsetCompact;
 
 		SDL_Rect currentChargeTextPos{ currentChargeBg->pos.x, currentChargeBg->pos.y + 9, 112, 24 };
 		currentChargeText->setSize(currentChargeTextPos);
@@ -17827,12 +17843,12 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 		updateFeatherCharge(currentChargeText, changeChargeText, currentCharge);
 
-		SDL_Rect heldScrapTxtPos = currentChargeLabel->getSize();
-		heldScrapTxtPos.w = currentChargeBg->pos.x - 4;
-		heldScrapTxtPos.x = 0;
-		heldScrapTxtPos.y = currentChargeTextPos.y;
-		heldScrapTxtPos.h = 24;
-		currentChargeLabel->setSize(heldScrapTxtPos);
+		SDL_Rect currentChargeTxtPos = currentChargeLabel->getSize();
+		currentChargeTxtPos.w = currentChargeBg->pos.x + 4;
+		currentChargeTxtPos.x = 0;
+		currentChargeTxtPos.y = currentChargeTextPos.y;
+		currentChargeTxtPos.h = 24;
+		currentChargeLabel->setSize(currentChargeTxtPos);
 		currentChargeLabel->setText(language[4192]);
 		if ( invalidActionType == INVALID_ACTION_NO_CHARGE )
 		{
@@ -17872,7 +17888,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
 
 		filterBtn->setColor(makeColor(255, 255, 255, 255));
-		filterBtn->setBackground("images/ui/Feather/Feather_Tab_Inscribe_Unselected_01.png");
+		filterBtn->setBackground("*#images/ui/Feather/Feather_Tab_Inscribe_Unselected_01.png");
 		Field* filterTxt = baseFrame->findField("filter inscribe txt");
 		filterTxt->setDisabled(false);
 		filterTxt->setText(language[3718]);
@@ -17886,7 +17902,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			filterTxt->setColor(activeColor);
 		}
 		{
-			SDL_Rect btnPos{ 38, 314, 98, 36 };
+			SDL_Rect btnPos{ 38, 314 + heightOffsetCompact, 98, 36 };
 			filterBtn->setSize(btnPos);
 			SDL_Rect txtPos = btnPos;
 			txtPos.y += 5;
@@ -17898,7 +17914,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE )
 		{
 			filterBtn->setColor(makeColor(255, 255, 255, 255));
-			filterBtn->setBackground("images/ui/Feather/Feather_Tab_Inscribe_Selected_01.png");
+			filterBtn->setBackground("*#images/ui/Feather/Feather_Tab_Inscribe_Selected_01.png");
 			SDL_Rect txtPos = filterTxt->getSize();
 			txtPos.y += 2;
 			filterTxt->setSize(txtPos);
@@ -17920,7 +17936,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			filterBtn->deselect();
 		}
 		filterBtn->setColor(makeColor(255, 255, 255, 255));
-		filterBtn->setBackground("images/ui/Feather/Feather_Tab_Repair_Unselected_01.png");
+		filterBtn->setBackground("*#images/ui/Feather/Feather_Tab_Repair_Unselected_01.png");
 		filterTxt = baseFrame->findField("filter repair txt");
 		filterTxt->setDisabled(false);
 		filterTxt->setText(language[3719]);
@@ -17934,7 +17950,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			filterTxt->setColor(activeColor);
 		}
 		{
-			SDL_Rect btnPos{ 198, 314, 90, 36 };
+			SDL_Rect btnPos{ 198, 314 + heightOffsetCompact, 90, 36 };
 			filterBtn->setSize(btnPos);
 			SDL_Rect txtPos = btnPos;
 			txtPos.y += 5;
@@ -17945,7 +17961,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		if ( parentGUI.scribingFilter == GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE )
 		{
 			filterBtn->setColor(makeColor(255, 255, 255, 255));
-			filterBtn->setBackground("images/ui/Feather/Feather_Tab_Repair_Selected_01.png");
+			filterBtn->setBackground("*#images/ui/Feather/Feather_Tab_Repair_Selected_01.png");
 			SDL_Rect txtPos = filterTxt->getSize();
 			txtPos.y += 2;
 			filterTxt->setSize(txtPos);
@@ -17954,6 +17970,9 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 		// close btn
 		auto closeBtn = baseFrame->findButton("close feather button");
+		SDL_Rect closeBtnPos = closeBtn->getSize();
+		closeBtnPos.y = 54 + heightOffsetCompact;
+		closeBtn->setSize(closeBtnPos);
 		auto closeGlyph = baseFrame->findImage("close feather glyph");
 		closeBtn->setDisabled(true);
 		closeBtn->setInvisible(false);
@@ -18018,13 +18037,14 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
 	displayItemNamePos.h = 50;
 	displayItemName->setSize(displayItemNamePos);
-	SDL_Rect actionPromptTxtPos{ 26, 251, baseFrame->getSize().w - (26 * 2), 24 };
+	static ConsoleVariable<int> cvar_featherPromptY("/feather_action_prompt_y", -2);
+	SDL_Rect actionPromptTxtPos{ 26, 251 + *cvar_featherPromptY + heightOffsetCompact, baseFrame->getSize().w - (26 * 2), 24 };
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
 	tooltipPos.w = 298;
 	tooltipPos.h = baseFrame->getSize().h - 100;
-	tooltipPos.y = 138;
+	tooltipPos.y = 138 + heightOffsetCompact;
 	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
 	itemDisplayTooltip->setSize(tooltipPos);
 
@@ -18370,8 +18390,8 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
 	actionPromptCoverLeftImg->pos.x = 0;
 	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
-	actionPromptCoverLeftImg->pos.y = 110;
-	actionPromptCoverRightImg->pos.y = 110;
+	actionPromptCoverLeftImg->pos.y = 110 + heightOffsetCompact;
+	actionPromptCoverRightImg->pos.y = 110 + heightOffsetCompact;
 
 	{
 		actionPromptUnselectedTxt->setDisabled(false);
@@ -18393,7 +18413,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 
 		{
-			SDL_Rect pos{ 26, 113, baseFrame->getSize().w - 52, 24 };
+			SDL_Rect pos{ 26, 113 + heightOffsetCompact, baseFrame->getSize().w - 52, 24 };
 			if ( animPromptMoveLeft )
 			{
 				pos.x -= actionPromptUnselectedTxt->getSize().w * animPrompt;
@@ -18722,7 +18742,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				sortGlyph->pos.h = imgGet->getHeight();
 				sortGlyph->disabled = false;
 			}
-			sortGlyph->pos.x = sortBtn->getSize().x + sortBtn->getSize().w + 2;
+			sortGlyph->pos.x = sortBtn->getSize().x + sortBtn->getSize().w - 4;
 			if ( sortGlyph->pos.x % 2 == 1 )
 			{
 				++sortGlyph->pos.x;
@@ -18966,7 +18986,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 					body->setColor(hudColors.characterSheetFaintText);
 
 					auto bg = listEntry->addImage(listEntry->getSize(), 0xFFFFFFFF,
-						"images/ui/Feather/Feather_ListUnselected_00.png", "bg");
+						"*#images/ui/Feather/Feather_ListUnselected_00.png", "bg");
 					bg->pos.x = 0;
 					bg->pos.y = 0;
 				}
@@ -19043,7 +19063,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			sortBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeBtn = drawerFrame->addButton("close drawer button");
-			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 26, 2, 26, 26 };
+			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 28, 4, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -19167,7 +19187,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 
 		{
 			auto closeBtn = bgFrame->addButton("close feather button");
-			SDL_Rect closeBtnPos{ basePos.w - 0 - 26, 0, 26, 26 };
+			SDL_Rect closeBtnPos{ basePos.w - 0 - 30, 54, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -19302,10 +19322,10 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			filterTxt->setOntop(true);
 
 			auto filterNavLeftArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
-				0xFFFFFFFF, "images/ui/Feather/Feather_Button_ArrowL_01.png", "filter nav left arrow");
+				0xFFFFFFFF, "*#images/ui/Feather/Feather_Button_ArrowL_01.png", "filter nav left arrow");
 			filterNavLeftArrow->disabled = true;
 			auto filterNavRightArrow = bgFrame->addImage(SDL_Rect{ 0, 0, 30, 44 },
-				0xFFFFFFFF, "images/ui/Feather/Feather_Button_ArrowR_01.png", "filter nav right arrow");
+				0xFFFFFFFF, "*#images/ui/Feather/Feather_Button_ArrowR_01.png", "filter nav right arrow");
 			filterNavRightArrow->disabled = true;
 
 			auto filterNavLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
