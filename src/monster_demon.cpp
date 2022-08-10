@@ -59,7 +59,9 @@ void initDemon(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1008;
 				strcpy(myStats->name, "Deu De'Breau");
+				myStats->sex = MALE;
 				myStats->LVL = 30;
 				for ( c = 0; c < 3; c++ )
 				{
@@ -113,7 +115,7 @@ void initDemon(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(264, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1008 ? 1014 : 264, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -132,7 +134,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(263, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1013 : 263, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -151,7 +153,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(262, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1011 : 262, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -170,7 +172,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(261, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1012 : 261, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -189,7 +191,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(260, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1010 : 260, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -208,7 +210,7 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// jaw
-	entity = newEntity(259, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1008 ? 1009 : 259, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -234,11 +236,19 @@ void actDemonLimb(Entity* my)
 
 void demonDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
-		Entity* gib = spawnGib(my);
-		serverSpawnGibForClient(gib);
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+		    //entity->z = local_rng.uniform(8, entity->z);
+			if ( c < 7 )
+			{
+                entity->skill[5] = 1; // poof
+				entity->sprite = my->sprite == 1008 ? (1008 + c) : (258 + c);
+			}
+			serverSpawnGibForClient(entity);
+		}
 	}
 
 	my->spawnBlood();

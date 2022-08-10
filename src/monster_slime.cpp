@@ -172,7 +172,7 @@ void slimeAnimate(Entity* my, double dist)
 void slimeDie(Entity* my)
 {
 	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

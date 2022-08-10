@@ -42,6 +42,10 @@ void initGoblin(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1039;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -60,6 +64,8 @@ void initGoblin(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1035;
+			    myStats->sex = MALE;
 				myStats->HP = 120;
 				myStats->MAXHP = 120;
 				myStats->OLDHP = myStats->HP;
@@ -76,6 +82,10 @@ void initGoblin(Entity* my, Stat* myStats)
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+						if ( Stat* followerStats = entity->getStats() )
+						{
+							followerStats->leader_uid = entity->parent;
+						}
 					}
 				}
 			}
@@ -260,7 +270,9 @@ void initGoblin(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(183, 1, map.entities, nullptr); //Limb entity.
+	const int torso_sprite = my->sprite == 1035 ? 1038 :
+	    (my->sprite == 1039 ? 1042 : 183);
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -282,7 +294,9 @@ void initGoblin(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(182, 1, map.entities, nullptr); //Limb entity.
+	const int rleg_sprite = my->sprite == 1035 ? 1037 :
+	    (my->sprite == 1039 ? 1041 : 182);
+	entity = newEntity(rleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -301,7 +315,9 @@ void initGoblin(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(181, 1, map.entities, nullptr); //Limb entity.
+	const int lleg_sprite = my->sprite == 1035 ? 1036 :
+	    (my->sprite == 1039 ? 1040 : 181);
+	entity = newEntity(lleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -320,7 +336,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(178, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1035 ? 1033 : 178, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -339,7 +355,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(176, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1035 ? 1031 : 176, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -469,8 +485,11 @@ void actGoblinLimb(Entity* my)
 
 void goblinDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->skill[5] = 1; // poof
+	gib->sprite = my->sprite;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -638,7 +657,9 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 183;
+	                    const int torso_sprite = my->sprite == 1035 ? 1038 :
+	                        (my->sprite == 1039 ? 1042 : 183);
+						entity->sprite = torso_sprite;
 					}
 					else
 					{
@@ -666,7 +687,9 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 182;
+	                    const int rleg_sprite = my->sprite == 1035 ? 1037 :
+	                        (my->sprite == 1039 ? 1041 : 182);
+						entity->sprite = rleg_sprite;
 					}
 					else
 					{
@@ -694,7 +717,9 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 181;
+	                    const int lleg_sprite = my->sprite == 1035 ? 1036 :
+	                        (my->sprite == 1039 ? 1040 : 181);
+						entity->sprite = lleg_sprite;
 					}
 					else
 					{
@@ -729,7 +754,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOBLIN][4][0]; // 0
 						entity->focaly = limbs[GOBLIN][4][1]; // 0
 						entity->focalz = limbs[GOBLIN][4][2]; // 2
-						entity->sprite = 178;
+						entity->sprite = my->sprite == 1035 ? 1033 : 178;
 					}
 					else
 					{
@@ -737,7 +762,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOBLIN][4][0] + 0.75;
 						entity->focaly = limbs[GOBLIN][4][1];
 						entity->focalz = limbs[GOBLIN][4][2] - 0.75;
-						entity->sprite = 179;
+						entity->sprite = my->sprite == 1035 ? 1034 : 179;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_RIGHTARM);
@@ -757,14 +782,14 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOBLIN][5][0]; // 0
 						entity->focaly = limbs[GOBLIN][5][1]; // 0
 						entity->focalz = limbs[GOBLIN][5][2]; // 2
-						entity->sprite = 176;
+						entity->sprite = my->sprite == 1035 ? 1031 : 176;
 					}
 					else
 					{
 						entity->focalx = limbs[GOBLIN][5][0] + 0.75;
 						entity->focaly = limbs[GOBLIN][5][1];
 						entity->focalz = limbs[GOBLIN][5][2] - 0.75;
-						entity->sprite = 177;
+						entity->sprite = my->sprite == 1035 ? 1032 : 177;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_LEFTARM);

@@ -436,8 +436,11 @@ void actVampireLimb(Entity* my)
 
 void vampireDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+    gib->skill[5] = 1;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

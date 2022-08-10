@@ -815,8 +815,11 @@ void actHumanLimb(Entity* my)
 
 void humanDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->skill[5] = 1; // poof
+	gib->sprite = my->sprite;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

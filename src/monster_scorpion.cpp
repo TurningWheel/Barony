@@ -137,8 +137,11 @@ void initScorpion(Entity* my, Stat* myStats)
 
 void scorpionDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

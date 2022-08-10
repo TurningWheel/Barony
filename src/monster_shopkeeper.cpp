@@ -1016,9 +1016,13 @@ void actShopkeeperLimb(Entity* my)
 void shopkeeperDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    gib->sprite = 217 + c;
+		    gib->skill[5] = 1; // poof
+		}
 		serverSpawnGibForClient(gib);
 	}
 

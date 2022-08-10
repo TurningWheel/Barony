@@ -90,7 +90,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // GOBLIN
     {
-        180, 694, 752,
+        180, 694, 752, 1035, 1039,
     },
 
     // SLIME
@@ -101,7 +101,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // TROLL
     {
-        204, 817,
+        204,    // normal troll
+        817,    // player troll
+        1132,   // thumpus
     },
 
     // OCTOPUS
@@ -110,22 +112,31 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // SPIDER
     {
-        267, 997, 823, 1001,
+        267,    // normal spider body
+        997,    // normal crab body
+        823,    // player spider body
+        1001,   // player crab body
+        1118,   // shelob body
     },
 
     // GHOUL
     {
         246,
+        1017, // coral grimes
     },
 
     // SKELETON
     {
-        229, 686,
+        229,        // normal
+        686,        // player
+        1103,       // mouldy (female)
+        1107,       // funny bones
     },
 
     // SCORPION
     {
-        196, 266,
+        196, 266,           // normal body and tail
+        1080, 1081, 1082    // skrabblag body1, body2, tail
     },
 
     // CREATURE_IMP
@@ -144,12 +155,15 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // DEMON
     {
-        258,
+        258,    // normal demon
+        1008,   // deu-debreau
     },
 
     // SUCCUBUS
     {
-        190, 710,
+        190,        // normal succubus
+        710,        // player succubus
+        1126,       // lilith
     },
 
     // MIMIC
@@ -183,7 +197,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // SCARAB
     {
-        429, 430,
+        429, 430,   // scarab bodies
+        1075,       // scarab attack
+        1078, 1079  // xyggi 1, xyggi 2
     },
 
     // CRYSTALGOLEM
@@ -198,12 +214,18 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // VAMPIRE
     {
-        437, 718, 756,
+        437,    // normal
+        718,    // player male
+        756,    // player female
+        1136,   // bram
+        1137,   // female
     },
 
     // SHADOW
     {
-        481,
+        481,    // normal shadow head
+        1087,   // artemisia head
+        1095,   // baratheon head
     },
 
     // COCKATRICE
@@ -213,17 +235,17 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // INSECTOID
     {
-        455, 726, 760,
+        455, 726, 760, 1057,
     },
 
     // GOATMAN
     {
-        463, 734, 768,
+        463, 734, 768, 1029,
     },
 
     // AUTOMATON
     {
-        467, 742, 770,
+        467, 742, 770, 1007,
     },
 
     // LICH_ICE

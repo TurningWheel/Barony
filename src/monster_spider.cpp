@@ -72,7 +72,13 @@ void initSpider(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-				strcpy(myStats->name, "Shelob");
+			    if (!arachnophobia_filter) {
+				    strcpy(myStats->name, "Shelob");
+			        my->sprite = 1118;
+			    } else {
+				    strcpy(myStats->name, "Bubbles");
+			    }
+				myStats->sex = FEMALE;
 				myStats->HP = 150;
 				myStats->MAXHP = 150;
 				myStats->OLDHP = myStats->HP;
@@ -138,7 +144,7 @@ void initSpider(Entity* my, Stat* myStats)
 	int model;
 
 	// right pedipalp
-	model = arachnophobia_filter ? 998 : 268;
+	model = arachnophobia_filter ? 998 : (my->sprite == 1118 ? 1119 : 268);
 	Entity* entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -167,7 +173,7 @@ void initSpider(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left pedipalp
-	model = arachnophobia_filter ? 998 : 268;
+	model = arachnophobia_filter ? 998 : (my->sprite == 1118 ? 1119 : 268);
 	entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -199,7 +205,7 @@ void initSpider(Entity* my, Stat* myStats)
 	for ( c = 0; c < 8; c++ )
 	{
 		// "thigh"
-	    model = arachnophobia_filter ? 999 : 269;
+	    model = arachnophobia_filter ? 999 : (my->sprite == 1118 ? 1121 : 269);
 		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
@@ -229,7 +235,7 @@ void initSpider(Entity* my, Stat* myStats)
 	    my->bodyparts.push_back(entity);
 
 		// "shin"
-	    model = arachnophobia_filter ? 1000 : 270;
+	    model = arachnophobia_filter ? 1000 : (my->sprite == 1118 ? 1120 : 270);
 		entity = newEntity(model, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
@@ -261,10 +267,20 @@ void initSpider(Entity* my, Stat* myStats)
 
 void spiderDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 4; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		serverSpawnGibForClient(gib);
+	}
+	for ( int c = 0; c < 8; c++ )
+	{
+		Entity* gib = spawnGib(my);
+		gib->sprite = my->sprite == 1118 ? 1121 : 269;
+		gib->skill[5] = 1; // poof
 		serverSpawnGibForClient(gib);
 	}
 

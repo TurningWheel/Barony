@@ -234,6 +234,8 @@ void initSkeleton(Entity* my, Stat* myStats)
 			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			    {
+			        my->sprite = 1107;
+			        myStats->sex = MALE;
 					myStats->HP = 100;
 					myStats->MAXHP = 100;
 					strcpy(myStats->name, "Funny Bones");
@@ -666,6 +668,7 @@ void skeletonDie(Entity* my)
 	for ( c = 0; c < 6; c++ )
 	{
 		Entity* entity = spawnGib(my);
+        entity->skill[5] = 1; // poof
 		if ( entity )
 		{
 			switch ( c )

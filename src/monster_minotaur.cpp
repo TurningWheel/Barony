@@ -249,9 +249,13 @@ void actMinotaurLimb(Entity* my)
 void minotaurDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 20; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 7) {
+            gib->skill[5] = 1; // poof
+		    gib->sprite = 237 + c;
+		}
 		serverSpawnGibForClient(gib);
 	}
 

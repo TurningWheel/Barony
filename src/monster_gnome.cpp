@@ -354,12 +354,15 @@ void actGnomeLimb(Entity* my)
 
 void gnomeDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 6; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+		    if (c < 6) {
+		        entity->sprite = 295 + c;
+		        entity->skill[5] = 1; // poof
+		    }
 			serverSpawnGibForClient(entity);
 		}
 	}

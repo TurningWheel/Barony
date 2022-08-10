@@ -451,6 +451,7 @@ void sentryBotDie(Entity* my)
 			Entity* entity = spawnGib(my);
 			if ( entity )
 			{
+			    entity->skill[5] = 1; // poof
 				switch ( c )
 				{
 					case 0:
@@ -1752,6 +1753,7 @@ void dummyBotDie(Entity* my)
 			Entity* entity = spawnGib(my);
 			if ( entity )
 			{
+			    entity->skill[5] = 1; // poof
 				switch ( c )
 				{
 					case 0:

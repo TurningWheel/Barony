@@ -363,7 +363,15 @@ end:
 	}
 
     // make a puff
-	auto poof = spawnPoof(entity->x, entity->y, 0);
+    if (creature != GYROBOT) {
+	    auto poof = spawnPoof(entity->x, entity->y, 0);
+	    if (creature == MINOTAUR) {
+	        // extra big poof
+	        poof->scalex = 2.0;
+	        poof->scaley = 2.0;
+	        poof->scalez = 2.0;
+	    }
+	}
 
 	return entity;
 }
@@ -3426,7 +3434,7 @@ void actMonster(Entity* my)
 					int c, playerToChase = -1;
 					for (c = 0; c < MAXPLAYERS; c++)
 					{
-						if (players[c] && players[c]->entity)
+						if (players[c] && players[c]->entity && my->checkEnemy(players[c]->entity))
 						{
 							list_t* playerPath = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
 								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity);
@@ -7060,6 +7068,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
 	int charge = 1;
+
+	if (myStats->type == MINOTAUR) {
+	    if (checkFriend(target)) {
+	        // I don't know why this happens,
+	        // I shouldn't have to know why this happens,
+	        // but it does, so this fixes it.
+	        return;
+	    }
+	}
 
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
 	chooseWeapon(target, dist);

@@ -422,7 +422,7 @@ Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
 	entity->z = z;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
+	//entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -430,7 +430,7 @@ Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
 	SPRITE_DESTROY = 1;
 	SPRITE_FRAMES = 7;
 	SPRITE_ANIMSPEED = 2;
-	SPRITE_LIT = 4;
+	SPRITE_LIT = 0;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;

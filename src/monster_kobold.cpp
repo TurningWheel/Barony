@@ -471,13 +471,14 @@ void actKoboldLimb(Entity* my)
 void koboldDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 6; ++c )
+	for ( c = 0; c < 12; ++c )
 	{
-		Entity* entity = spawnGib(my);
-		if ( entity )
-		{
-			serverSpawnGibForClient(entity);
+		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    gib->sprite = 421 + 6;
+		    gib->skill[5] = 1; // poof
 		}
+		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();

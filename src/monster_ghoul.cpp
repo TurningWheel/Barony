@@ -90,6 +90,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1017;
 				strcpy(myStats->name, "Coral Grimes");
 				for ( c = 0; c < 3; c++ )
 				{
@@ -103,6 +104,7 @@ void initGhoul(Entity* my, Stat* myStats)
 						}
 					}
 				}
+				myStats->sex = MALE;
 				myStats->HP *= 3;
 				myStats->MAXHP *= 3;
 				myStats->OLDHP = myStats->HP;
@@ -167,7 +169,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(247, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1017 ? 1020 : 247, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -186,7 +188,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(251, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1019 : 251, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -205,7 +207,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(250, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1018 : 250, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -224,7 +226,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(249, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1016 : 249, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -243,7 +245,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(248, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1017 ? 1015 : 248, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -269,15 +271,15 @@ void actGhoulLimb(Entity* my)
 
 void ghoulDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 10; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
 			if ( c < 6 )
 			{
-				entity->sprite = 246 + c;
+                entity->skill[5] = 1; // poof
+				entity->sprite = my->sprite == 1017 ? (1015 + c) : (246 + c);
 			}
 			serverSpawnGibForClient(entity);
 		}

@@ -48,6 +48,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1029;
+		    }
 			if ( strstr(map.name, "Hell") )
 			{
 				strcpy(myStats->name, "lesser goatman");
@@ -96,7 +100,9 @@ void initGoatman(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1025;
 				strcpy(myStats->name, "Gharbad");
+				myStats->sex = MALE;
 				myStats->STR += 10;
 				myStats->DEX += 2;
 				myStats->MAXHP += 75;
@@ -500,7 +506,9 @@ void initGoatman(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(466, 1, map.entities, nullptr); //Limb entity.
+	const int torso_sprite = my->sprite == 1025 ? 1028 :
+	    (my->sprite == 1029 ? 1030 : 466);
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -522,7 +530,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(465, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1027 : 465, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -541,7 +549,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(464, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1026 : 464, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -560,7 +568,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(461, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1023 : 461, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -579,7 +587,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(459, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1021 : 459, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -709,8 +717,11 @@ void actGoatmanLimb(Entity* my)
 
 void goatmanDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->skill[5] = 1; // poof
+	gib->sprite = my->sprite;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -931,7 +942,9 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 466;
+						entity->sprite =
+						    my->sprite == 1025 ? 1028 :
+						    (my->sprite == 1029 ? 1030 : 466);
 					}
 					else
 					{
@@ -959,7 +972,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 465;
+						entity->sprite = my->sprite == 1025 ? 1027 : 465;
 					}
 					else
 					{
@@ -987,7 +1000,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 464;
+						entity->sprite = my->sprite == 1025 ? 1026 : 464;
 					}
 					else
 					{
@@ -1022,7 +1035,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][4][0]; // 0
 						entity->focaly = limbs[GOATMAN][4][1]; // 0
 						entity->focalz = limbs[GOATMAN][4][2]; // 2
-						entity->sprite = 461;
+						entity->sprite = my->sprite == 1025 ? 1023 : 461;
 					}
 					else
 					{
@@ -1030,7 +1043,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][4][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][4][1];
 						entity->focalz = limbs[GOATMAN][4][2] - 0.75;
-						entity->sprite = 462;
+						entity->sprite = my->sprite == 1025 ? 1024 : 462;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOATMAN, LIMB_HUMANOID_RIGHTARM);
@@ -1050,14 +1063,14 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][5][0]; // 0
 						entity->focaly = limbs[GOATMAN][5][1]; // 0
 						entity->focalz = limbs[GOATMAN][5][2]; // 2
-						entity->sprite = 459;
+						entity->sprite = my->sprite == 1025 ? 1021 : 459;
 					}
 					else
 					{
 						entity->focalx = limbs[GOATMAN][5][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][5][1];
 						entity->focalz = limbs[GOATMAN][5][2] - 0.75;
-						entity->sprite = 460;
+						entity->sprite = my->sprite == 1025 ? 1022 : 460;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOATMAN, LIMB_HUMANOID_LEFTARM);

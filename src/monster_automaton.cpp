@@ -41,6 +41,10 @@ void initAutomaton(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+	        if (myStats->sex == FEMALE)
+	        {
+	            my->sprite = 1007;
+	        }
 			if ( my->monsterStoreType == 1 )
 			{
 				strcpy(myStats->name, "damaged automaton");
@@ -512,10 +516,11 @@ void automatonDie(Entity* my)
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+		    entity->skill[5] = 1; // poof
 			switch ( c )
 			{
 				case 0:
-					entity->sprite = 467;
+					entity->sprite = my->sprite;
 					break;
 				case 1:
 					entity->sprite = 468;
