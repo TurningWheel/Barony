@@ -177,6 +177,7 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return nullptr;
 	}
 
+	channel->setVolume(vol / 128.f);
 	channel->set3DAttributes(&position, nullptr);
 	//FMOD_Channel_SetChannelGroup(channel, sound_group); //TODO: Already done in fmod_system->playSound()?
 	channel->setPaused(false);

@@ -254,7 +254,7 @@ void impDie(Entity* my)
 	        gib->skill[5] = 1; // poof
 	    }
 	    else if (c >= 6 && c < 8) {
-	        gib->sprite = 309 + c;
+	        gib->sprite = 309 + (c - 6);
 	        gib->skill[5] = 1; // poof
 	    }
 		serverSpawnGibForClient(gib);

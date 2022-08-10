@@ -38,7 +38,7 @@
 
 void poof(Entity* my) {
     if (GIB_POOF) {
-        playSoundEntity(my, 512, 4);
+        playSoundEntityLocal(my, 512, 128);
         for (int c = 0; c < 3; ++c) {
             const int x = my->x + local_rng.uniform(-4, 4);
             const int y = my->y + local_rng.uniform(-4, 4);
