@@ -16396,7 +16396,14 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 
 	if ( my && bonusManaring >= 2 && ::ticks % TICKS_PER_SECOND == 0 )
 	{
-		steamAchievementEntity(my, "BARONY_ACH_ARCANE_LINK");
+		bool oldRegen = myStats.EFFECTS[EFF_MP_REGEN];
+		myStats.EFFECTS[EFF_MP_REGEN] = false;
+		int bonusManaringNoRegen = Entity::getManaringFromEquipment(my, myStats, true) + Entity::getManaringFromEffects(my, myStats);
+		if ( bonusManaringNoRegen >= 2 )
+		{
+			steamAchievementEntity(my, "BARONY_ACH_ARCANE_LINK");
+		}
+		myStats.EFFECTS[EFF_MP_REGEN] = oldRegen;
 	}
 
 	if ( manaring > 3 )
@@ -16557,7 +16564,14 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 
 	if ( my && bonusHealring >= 2.0 && ::ticks % TICKS_PER_SECOND == 0 )
 	{
-		steamAchievementEntity(my, "BARONY_ACH_TROLLS_BLOOD");
+		bool oldRegen = myStats.EFFECTS[EFF_HP_REGEN];
+		myStats.EFFECTS[EFF_HP_REGEN] = false;
+		int bonusHealringNoRegen = Entity::getHealringFromEquipment(my, myStats, isPlayer) + Entity::getHealringFromEffects(my, myStats);
+		if ( bonusHealringNoRegen >= 2 )
+		{
+			steamAchievementEntity(my, "BARONY_ACH_TROLLS_BLOOD");
+		}
+		myStats.EFFECTS[EFF_HP_REGEN] = oldRegen;
 	}
 	
 	if ( healring > 3 )
