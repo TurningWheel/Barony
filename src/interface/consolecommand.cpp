@@ -1354,6 +1354,12 @@ namespace ConsoleCommands {
 			}
 		}
 
+		if ( !PHYSFS_getRealDir("models/models.txt") )
+		{
+			printlog("error: could not find file: %s", "models/models.txt");
+			return;
+		}
+
 		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 		File *fp = openDataFile(modelsDirectory.c_str(), "rb");

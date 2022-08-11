@@ -103,6 +103,12 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 	Uint32 c;
 	char name[128];
 
+	if ( !PHYSFS_getRealDir("sound/sounds.txt") )
+	{
+		printlog("error: could not find file: %s", "sound/sounds.txt");
+		return 10;
+	}
+
 	// load sound effects
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");

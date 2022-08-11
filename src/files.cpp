@@ -636,6 +636,11 @@ voxel_t* loadVoxel(char* filename)
 	{
 		//bool has_ext = strstr(filename, ".vox") == NULL;
 		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
+		if ( !PHYSFS_getRealDir(filename) )
+		{
+			printlog("error: could not find file: %s", filename);
+			return nullptr;
+		}
 		std::string filenamePath = PHYSFS_getRealDir(filename);
 		filenamePath.append(PHYSFS_getDirSeparator()).append(filename);
 
@@ -1921,6 +1926,11 @@ std::string physfsFormatMapName(char const * const levelfilename)
 
 bool physfsSearchModelsToUpdate()
 {
+	if ( !PHYSFS_getRealDir("models/models.txt") )
+	{
+		printlog("error: could not find file: %s", "models/models.txt");
+		return false;
+	}
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
@@ -1945,6 +1955,11 @@ bool physfsSearchModelsToUpdate()
 
 bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 {
+	if ( !PHYSFS_getRealDir("models/models.txt") )
+	{
+		printlog("error: could not find file: %s", "models/models.txt");
+		return false;
+	}
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	char modelName[PATH_MAX];
 	int startnum = 0;
@@ -1967,6 +1982,11 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			}
 		}
 
+		if ( !PHYSFS_getRealDir(modelName) )
+		{
+			printlog("error: could not find file: %s", modelName);
+			continue;
+		}
 		std::string modelPath = PHYSFS_getRealDir(modelName);
 		if ( modelHasBeenModified || modelPath.compare("./") != 0 )
 		{
@@ -2074,6 +2094,11 @@ bool physfsSearchSoundsToUpdate()
 	{
 		return false;
 	}
+	if ( !PHYSFS_getRealDir("sound/sounds.txt") )
+	{
+		printlog("error: could not find file: %s", "sound/sounds.txt");
+		return false;
+	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	if ( soundsDirectory.compare("./") != 0 )
 	{
@@ -2104,6 +2129,11 @@ void physfsReloadSounds(bool reloadAll)
 {
 	if ( no_sound )
 	{
+		return;
+	}
+	if ( !PHYSFS_getRealDir("sound/sounds.txt") )
+	{
+		printlog("error: could not find file: %s", "sound/sounds.txt");
 		return;
 	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
@@ -2171,6 +2201,11 @@ void physfsReloadSounds(bool reloadAll)
 
 bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 {
+	if ( !PHYSFS_getRealDir("images/sprites.txt") )
+	{
+		printlog("error: could not find file: %s", "images/sprites.txt");
+		return false;
+	}
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
@@ -2204,6 +2239,11 @@ bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 
 void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed here?
 {
+	if ( !PHYSFS_getRealDir("images/sprites.txt") )
+	{
+		printlog("error: could not find file: %s", "images/sprites.txt");
+		return;
+	}
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
@@ -2257,6 +2297,11 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 
 bool physfsSearchTilesToUpdate()
 {
+	if ( !PHYSFS_getRealDir("images/tiles.txt") )
+	{
+		printlog("error: could not find file: %s", "images/tiles.txt");
+		return false;
+	}
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	File* fp = openDataFile(tilesDirectory.c_str(), "rb");
@@ -2282,6 +2327,11 @@ bool physfsSearchTilesToUpdate()
 
 void physfsReloadTiles(bool reloadAll)
 {
+	if ( !PHYSFS_getRealDir("images/tiles.txt") )
+	{
+		printlog("error: could not find file: %s", "images/tiles.txt");
+		return;
+	}
 	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
 	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
 	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
@@ -2547,6 +2597,11 @@ void physfsReloadItemSprites(bool reloadAll)
 
 bool physfsSearchItemsTxtToUpdate()
 {
+	if ( !PHYSFS_getRealDir("items/items.txt") )
+	{
+		printlog("error: could not find file: %s", "items/items.txt");
+		return false;
+	}
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
 	if ( itemsTxtDirectory.compare("./") != 0 )
 	{
@@ -2558,6 +2613,11 @@ bool physfsSearchItemsTxtToUpdate()
 
 bool physfsSearchItemsGlobalTxtToUpdate()
 {
+	if ( !PHYSFS_getRealDir("items/items_global.txt") )
+	{
+		printlog("error: could not find file: %s", "items/items_global.txt");
+		return false;
+	}
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
 	if ( itemsTxtDirectory.compare("./") != 0 )
 	{
@@ -2569,6 +2629,11 @@ bool physfsSearchItemsGlobalTxtToUpdate()
 
 void physfsReloadItemsTxt()
 {
+	if ( !PHYSFS_getRealDir("items/items.txt") )
+	{
+		printlog("error: could not find file: %s", "items/items.txt");
+		return;
+	}
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
 	File* fp = openDataFile(itemsTxtDirectory.c_str(), "rb");
@@ -2812,6 +2877,11 @@ void physfsReloadSystemImages()
 			if ( *(line.first) ) // SDL_Surface* pointer exists
 			{
 				// load a new image, getting the VFS system location.
+				if ( !PHYSFS_getRealDir(line.second.c_str()) )
+				{
+					printlog("error: could not find file: %s", line.second.c_str());
+					continue;
+				}
 				std::string filepath = PHYSFS_getRealDir(line.second.c_str());
 				filepath.append(PHYSFS_getDirSeparator()).append(line.second);
 
