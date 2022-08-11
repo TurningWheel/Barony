@@ -230,22 +230,24 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
     auto entity = summonMonsterNoSmoke(creature, x, y, forceLocation);
 
     // make a puff
-    if (creature == MINOTAUR) {
-        // extra big poof
-        auto poof = spawnPoof(entity->x, entity->y, -8);
-        poof->scalex = 2.0;
-        poof->scaley = 2.0;
-        poof->scalez = 2.0;
-    }
-    else if (creature == GYROBOT) {
-        // small poof
-        auto poof = spawnPoof(entity->x, entity->y, 4);
-        poof->scalex = 0.5;
-        poof->scaley = 0.5;
-        poof->scalez = 0.5;
-    }
-    else {
-        auto poof = spawnPoof(entity->x, entity->y, 0);
+    if (entity) {
+        if (creature == MINOTAUR) {
+            // extra big poof
+            auto poof = spawnPoof(entity->x, entity->y, -8);
+            poof->scalex = 2.0;
+            poof->scaley = 2.0;
+            poof->scalez = 2.0;
+        }
+        else if (creature == GYROBOT) {
+            // small poof
+            auto poof = spawnPoof(entity->x, entity->y, 4);
+            poof->scalex = 0.5;
+            poof->scaley = 0.5;
+            poof->scalez = 0.5;
+        }
+        else {
+            auto poof = spawnPoof(entity->x, entity->y, 0);
+        }
     }
 
     return entity;

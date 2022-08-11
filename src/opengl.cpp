@@ -1860,7 +1860,7 @@ static real_t getLightAt(const int x, const int y)
 
 -------------------------------------------------------------------------------*/
 
-#define TRANSPARENT_TILE 450
+#define TRANSPARENT_TILE 246
 
 void glDrawWorld(view_t* camera, int mode)
 {
