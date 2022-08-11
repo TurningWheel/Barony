@@ -1694,7 +1694,9 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	Uint32 color = makeColor(255, 255, 255, 255);
 	if ( entity->behavior == &actDamageGib && text[0] == '+' )
 	{
+#ifndef EDITOR
 		color = hudColors.characterSheetGreen;
+#endif // !EDITOR
 	}
 	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
 		color, makeColor(0, 0, 0, 255));
