@@ -668,9 +668,9 @@ void skeletonDie(Entity* my)
 	for ( c = 0; c < 6; c++ )
 	{
 		Entity* entity = spawnGib(my);
-        entity->skill[5] = 1; // poof
 		if ( entity )
 		{
+            entity->skill[5] = 1; // poof
 			switch ( c )
 			{
 				case 0:

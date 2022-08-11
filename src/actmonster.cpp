@@ -227,6 +227,32 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 {
+    auto entity = summonMonsterNoSmoke(creature, x, y, forceLocation);
+
+    // make a puff
+    if (creature == MINOTAUR) {
+        // extra big poof
+        auto poof = spawnPoof(entity->x, entity->y, -8);
+        poof->scalex = 2.0;
+        poof->scaley = 2.0;
+        poof->scalez = 2.0;
+    }
+    else if (creature == GYROBOT) {
+        // small poof
+        auto poof = spawnPoof(entity->x, entity->y, 4);
+        poof->scalex = 0.5;
+        poof->scaley = 0.5;
+        poof->scalez = 0.5;
+    }
+    else {
+        auto poof = spawnPoof(entity->x, entity->y, 0);
+    }
+
+    return entity;
+}
+
+Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocation)
+{
 	Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
 	//Set the monster's variables.
 	entity->sizex = 4;
@@ -360,17 +386,6 @@ end:
 			net_packet->address.port = net_clients[c - 1].port;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
-	}
-
-    // make a puff
-    if (creature != GYROBOT) {
-	    auto poof = spawnPoof(entity->x, entity->y, 0);
-	    if (creature == MINOTAUR) {
-	        // extra big poof
-	        poof->scalex = 2.0;
-	        poof->scaley = 2.0;
-	        poof->scalez = 2.0;
-	    }
 	}
 
 	return entity;
@@ -3023,6 +3038,12 @@ void actMonster(Entity* my)
 				if ( my->z < -.25 )
 				{
 					my->z = -.25;
+				}
+				if (my->ticks % 2 == 0) {
+				    const int x = my->x + local_rng.uniform(-3, 3);
+				    const int y = my->y + local_rng.uniform(-3, 3);
+				    auto poof = spawnPoof(x, y, 6);
+				    poof->scalex = poof->scaley = poof->scalez = 0.33;
 				}
 				ghoulMoveBodyparts(my, myStats, 0);
 				return;

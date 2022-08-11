@@ -28,7 +28,10 @@ void initGhoul(Entity* my, Stat* myStats)
 
 	my->flags[BURNABLE] = true;
 	my->initMonster(246);
-	my->z = -.25;
+	if (my->z < 10) {
+	    // this if check allows ghouls to rise out of gravestones.
+	    my->z = -.25;
+	}
 
 	if ( multiplayer != CLIENT )
 	{

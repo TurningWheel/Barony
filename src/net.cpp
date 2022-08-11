@@ -1661,6 +1661,13 @@ void clientActions(Entity* entity)
 	// this code assigns behaviors based on the sprite (model) number
 	switch ( entity->sprite )
 	{
+	    case 1163:
+	    case 1164:
+	    case 1165:
+	    case 1166:
+	    case 1167:
+	    case 1168:
+	    case 1169:
 		case 1:
 			entity->behavior = &actDoorFrame;
 			break;

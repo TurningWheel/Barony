@@ -127,7 +127,7 @@ void actFountain(Entity* my)
 		entity = spawnGib(my);
 		entity->flags[INVISIBLE] = false;
 		entity->y -= 2;
-		entity->z -= 8;
+		entity->z = my->z - 8;
 		entity->flags[SPRITE] = false;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;

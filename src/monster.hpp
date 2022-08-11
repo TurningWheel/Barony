@@ -393,7 +393,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//SHOPKEEPER,
 	1,	//KOBOLD,
 	2,	//SCARAB,
-	0,	//CRYSTALGOLem,
+	0,	//CRYSTALGOLEM,
 	1,	//INCUBUS,
 	1,	//VAMPIRE,
 	4,	//SHADOW,
@@ -650,6 +650,7 @@ static const int MONSTER_ALLY_DEXTERITY_SPEED_CAP = 15;
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
+Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
 bool monsterMoveAside(Entity* my, Entity* entity);
 

@@ -231,8 +231,9 @@ void actCrystalgolemLimb(Entity* my)
 
 void crystalgolemDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 12; c++ )
+	my->removeMonsterDeathNodes();
+
+	for ( int c = 0; c < 6; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		if (c < 6) {
@@ -243,8 +244,6 @@ void crystalgolemDie(Entity* my)
 	}
 
 	playSoundEntity(my, 269 + local_rng.rand() % 4, 128);
-
-	my->removeMonsterDeathNodes();
 
 	list_RemoveNode(my->mynode);
 	return;

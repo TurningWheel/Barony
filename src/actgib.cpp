@@ -225,12 +225,14 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 					gibsprite = 211;
 					break;
 				case 3:
-					if ( parentent->sprite == 210 )
+					if ( parentent->sprite == 210 || parentent->sprite >= 1113 )
 					{
+					    // green blood
 						gibsprite = 211;
 					}
 					else
 					{
+					    // blue blood
 						gibsprite = 215;
 					}
 					break;

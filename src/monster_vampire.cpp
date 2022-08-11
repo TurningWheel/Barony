@@ -43,6 +43,10 @@ void initVampire(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1137;
+		    }
 		    if ( !strncmp(map.name, "The Ruins", 9) )
 		    {
 				strcpy(myStats->name, "young vampire");
@@ -98,6 +102,8 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
 			{
+			    my->sprite = 1137; // bram's head
+			    myStats->sex = MALE;
 				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 				my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
@@ -421,12 +427,6 @@ void initVampire(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
-
-	if ( multiplayer == CLIENT )
-	{
-		my->sprite = 437; // vampire head model
-		return;
-	}
 }
 
 void actVampireLimb(Entity* my)

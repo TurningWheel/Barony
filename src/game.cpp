@@ -5106,7 +5106,7 @@ void ingameHud()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					SDL_SetRelativeMouseMode(EnableMouseCapture);
+				    SDL_SetRelativeMouseMode(EnableMouseCapture);
 				}
 			}
 

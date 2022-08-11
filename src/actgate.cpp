@@ -179,7 +179,7 @@ void Entity::actGate()
 			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
+				if ( entity == this || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame )
 				{
 					continue;
 				}

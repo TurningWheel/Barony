@@ -128,7 +128,7 @@ void actHeadstone(Entity* my)
 			HEADSTONE_FIRED = 1;
 
 			// make a ghoul
-			Entity* monster = summonMonster(GHOUL, my->x, my->y);
+			Entity* monster = summonMonsterNoSmoke(GHOUL, my->x, my->y, false);
 			if ( monster )
 			{
 				monster->z = 13;

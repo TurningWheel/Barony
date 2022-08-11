@@ -32,6 +32,43 @@
 int startfloor = 0;
 BaronyRNG map_rng;
 
+Sint32 doorFrameSprite() {
+    if (stringStr(map.name, "Caves", sizeof(map_t::name), 5)) {
+        return 1163;
+    }
+    if (stringStr(map.name, "Citadel", sizeof(map_t::name), 7)) {
+        return 1164;
+    }
+    if (stringStr(map.name, "Sanctum", sizeof(map_t::name), 7)) {
+        return 1164;
+    }
+    if (stringStr(map.name, "Hell", sizeof(map_t::name), 4)) {
+        return 1165;
+    }
+    if (stringStr(map.name, "Minotaur", sizeof(map_t::name), 8)) {
+        return 1166;
+    }
+    if (stringStr(map.name, "Labyrinth", sizeof(map_t::name), 9)) {
+        return 1166;
+    }
+    if (stringStr(map.name, "Mystic Library", sizeof(map_t::name), 14)) {
+        return 1167;
+    }
+    if (stringStr(map.name, "Ruins", sizeof(map_t::name), 5)) {
+        return 1167;
+    }
+    if (stringStr(map.name, "Swamp", sizeof(map_t::name), 5)) {
+        return 1168;
+    }
+    if (stringStr(map.name, "Bram", sizeof(map_t::name), 4)) {
+        return 1169;
+    }
+    if (stringStr(map.name, "Underworld", sizeof(map_t::name), 5)) {
+        return 1169;
+    }
+    return 1; // default door frame
+}
+
 /*-------------------------------------------------------------------------------
 
 	monsterCurve
@@ -2235,7 +2272,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
-					if ( entity2->sprite == 1 )
+					if ( entity2->behavior == &actDoorFrame )
 					{
 						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
@@ -2828,7 +2865,7 @@ void assignActions(map_t* map)
 			{
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
@@ -2847,7 +2884,7 @@ void assignActions(map_t* map)
 				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
 				childEntity->doorDisableOpening = entity->doorDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -2858,7 +2895,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -2876,7 +2913,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->yaw -= PI / 2.0;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
@@ -2896,7 +2933,7 @@ void assignActions(map_t* map)
 				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
 				childEntity->doorDisableOpening = entity->doorDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -2908,7 +2945,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -3672,7 +3709,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->yaw -= PI / 2.0;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
@@ -3694,7 +3731,7 @@ void assignActions(map_t* map)
 				// copy editor options from frame to gate itself.
 				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -3705,7 +3742,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -3720,7 +3757,7 @@ void assignActions(map_t* map)
 			case 20:
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
@@ -3740,7 +3777,7 @@ void assignActions(map_t* map)
 				// copy editor options from frame to gate itself.
 				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -3751,7 +3788,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -4720,7 +4757,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->yaw -= PI / 2.0;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
@@ -4742,7 +4779,7 @@ void assignActions(map_t* map)
 				// copy editor options from frame to gate itself.
 				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr);
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -4753,7 +4790,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr);
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -4768,7 +4805,7 @@ void assignActions(map_t* map)
 			case 114:
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 1;
+				entity->sprite = doorFrameSprite();
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
@@ -4788,7 +4825,7 @@ void assignActions(map_t* map)
 				// copy editor options from frame to gate itself.
 				childEntity->gateDisableOpening = entity->gateDisableOpening;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr);
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -4799,7 +4836,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities, nullptr);
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;

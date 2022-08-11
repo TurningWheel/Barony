@@ -171,21 +171,22 @@ void slimeAnimate(Entity* my, double dist)
 
 void slimeDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 10; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 
-	if ( my->sprite == 210 )
-	{
-		my->spawnBlood(212);
-	}
-	else
-	{
-		my->spawnBlood(214);
-	}
+    if ( my->sprite == 210 || my->sprite >= 1113 )
+    {
+        // green blood
+	    my->spawnBlood(212);
+    }
+    else
+    {
+        // blue blood
+	    my->spawnBlood(214);
+    }
 
 	playSoundEntity(my, 69, 64);
 
