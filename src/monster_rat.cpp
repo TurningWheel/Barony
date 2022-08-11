@@ -159,32 +159,54 @@ void ratAnimate(Entity* my, double dist)
 	    }
 	}
 
+	static ConsoleVariable<bool> cvar_useFocalZ("/rat_anim_use_focal_z", false);
+
     // attack cycle
 	if (MONSTER_ATTACK) {
 	    const int frame = TICKS_PER_SECOND / 10;
 	    const bool algernon = my->sprite >= 1068;
 	    if (MONSTER_ATTACKTIME == frame * 0) { // frame 1
 	        my->sprite = algernon ? 1070 : 1063;
-	        my->z = 4.5;
+	        if (*cvar_useFocalZ) {
+	            my->focalz = -1.5;
+	        } else {
+	            my->z = 4.5;
+	        }
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 1) { // frame 2
 	        my->sprite = algernon ? 1071 : 1064;
-	        my->z = 3.5;
+	        if (*cvar_useFocalZ) {
+	            my->focalz = -2.5;
+	        } else {
+	            my->z = 3.5;
+	        }
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 2) { // frame 3
 	        my->sprite = algernon ? 1072 : 1065;
-	        my->z = 2.5;
+	        if (*cvar_useFocalZ) {
+	            my->focalz = -3.5;
+	        } else {
+	            my->z = 2.5;
+	        }
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 4) { // frame 4
 	        my->sprite = algernon ? 1073 : 1066;
-	        my->z = 2;
+	        if (*cvar_useFocalZ) {
+	            my->focalz = -4;
+	        } else {
+	            my->z = 2;
+	        }
 	        const Sint32 temp = MONSTER_ATTACKTIME;
 	        my->attack(1, 0, nullptr); // munch
 	        MONSTER_ATTACKTIME = temp;
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 6) { // frame 5
 	        my->sprite = algernon ? 1074 : 1067;
-	        my->z = 3;
+	        if (*cvar_useFocalZ) {
+	            my->focalz = -3;
+	        } else {
+	            my->z = 3;
+	        }
 	    }
 	    if (MONSTER_ATTACKTIME == frame * 7) { // end
 	        if (algernon) {
@@ -194,12 +216,13 @@ void ratAnimate(Entity* my, double dist)
 	            my->sprite = 131;
 	            my->z = 6;
 	        }
+            my->focalz = 0;
 	        MONSTER_ATTACK = 0;
 	        MONSTER_ATTACKTIME = 0;
 	    }
 	    else {
 		    ++MONSTER_ATTACKTIME;
-            my->new_z = my->z;
+		    my->new_z = my->z;
         }
 	}
 }
