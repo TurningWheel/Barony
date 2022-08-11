@@ -4194,15 +4194,14 @@ void handleEvents(void)
 #endif
 					}
 
-				    if (!loading)
+				    if (!loading && initialized)
 				    {
-					    if (initialized)
-					    {
-						    gameLogic();
-						}
-
-                        // increment game tick counter
+						gameLogic();
                         ++ticks;
+					}
+					else
+					{
+					    ++loadingticks;
 					}
 
 					mousexrel = 0;
@@ -4339,10 +4338,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 
 	event.type = SDL_USEREVENT;
 	event.user = userevent;
-	if (!loading)
-	{
-		SDL_PushEvent(&event);    // so the game doesn't overload itself while loading
-	}
+	SDL_PushEvent(&event);
 	return (interval);
 }
 

@@ -2483,6 +2483,7 @@ void GO_SwapBuffers(SDL_Window* screen)
 	dirty = 1;
 
 #ifndef PANDORA
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	SDL_GL_SwapWindow(screen);
 #else
 	bool bBlit = !(xres==800 && yres==480);

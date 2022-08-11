@@ -1949,6 +1949,98 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 -------------------------------------------------------------------------------*/
 
+void reloadModels(int start, int end) {
+    start = clamp(start, 0, (int)nummodels - 1);
+    end = clamp(end, 0, (int)nummodels);
+
+    if (start >= end) {
+        return;
+    }
+
+	//messagePlayer(clientnum, language[2354]);
+	messagePlayer(clientnum, MESSAGE_MISC, language[2355], start, end);
+
+    loading = true;
+    createLevelLoadScreen(5);
+    doLoadingScreen();
+
+    std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+    modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+    File *fp = openDataFile(modelsDirectory.c_str(), "rb");
+    for ( int c = 0; !fp->eof(); c++ )
+    {
+        char name[128];
+	    fp->gets2(name, sizeof(name));
+	    if ( c >= start && c < end )
+	    {
+		    if ( polymodels[c].vbo )
+		    {
+			    SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+		    }
+		    if ( polymodels[c].colors )
+		    {
+			    SDL_glDeleteBuffers(1, &polymodels[c].colors);
+		    }
+		    if ( polymodels[c].va )
+		    {
+			    SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+		    }
+		    if ( polymodels[c].colors_shifted )
+		    {
+			    SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+		    }
+		    if ( polymodels[c].grayscale_colors )
+		    {
+			    SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+		    }
+		    if ( polymodels[c].grayscale_colors_shifted )
+		    {
+			    SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+		    }
+	    }
+    }
+
+    std::atomic_bool loading_done {false};
+    auto loading_task = std::async(std::launch::async, [&loading_done, start, end](){
+	    std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	    modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	    File *fp = openDataFile(modelsDirectory.c_str(), "rb");
+	    for ( int c = 0; !fp->eof(); c++ )
+	    {
+	        char name[128];
+		    fp->gets2(name, sizeof(name));
+		    if ( c >= start && c < end )
+		    {
+			    if ( models[c] != NULL )
+			    {
+				    if ( models[c]->data )
+				    {
+					    free(models[c]->data);
+				    }
+				    free(models[c]);
+				    if ( polymodels[c].faces )
+				    {
+					    free(polymodels[c].faces);
+				    }
+			        models[c] = loadVoxel(name);
+			    }
+		    }
+	    }
+	    FileIO::close(fp);
+	    generatePolyModels(start, end, true);
+	    loading_done = true;
+	    return 0;
+	});
+    while (!loading_done)
+    {
+        doLoadingScreen();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+	generateVBOs(start, end);
+    destroyLoadingScreen();
+    loading = false;
+}
+
 void generateVBOs(int start, int end)
 {
 	const int count = end - start;
@@ -2039,8 +2131,8 @@ void generateVBOs(int start, int end)
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
         const int current = c - start;
-		updateLoadingScreen(80 + (10 * current) / count);
-		doLoadingScreen();
+	    updateLoadingScreen(80 + (10 * current) / count);
+	    doLoadingScreen();
 	}
 }
 

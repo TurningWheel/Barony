@@ -58,12 +58,14 @@ void initGoblin(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
+			bool potatoking = false;
 			const bool boss =
 			    local_rng.rand() % 50 == 0 &&
 			    !my->flags[USERFLAG2] &&
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    potatoking = true;
 			    my->sprite = 1035;
 			    myStats->sex = MALE;
 				myStats->HP = 120;
@@ -125,146 +127,148 @@ void initGoblin(Entity* my, Stat* myStats)
 					break;
 			}
 
+			if (!potatoking) {
 
-			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( local_rng.rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 3:
-					case 4:
-					case 5:
-						myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
-						myStats->weapon = newItem(IRON_MACE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 8:
-						myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-				}
-			}
+			    //give weapon
+			    if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			    {
+				    switch ( local_rng.rand() % 10 )
+				    {
+					    case 0:
+					    case 1:
+					    case 2:
+						    myStats->weapon = newItem(SHORTBOW, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 3:
+					    case 4:
+					    case 5:
+						    myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 6:
+					    case 7:
+						    myStats->weapon = newItem(IRON_MACE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 8:
+						    myStats->weapon = newItem(IRON_AXE, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 9:
+						    myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+				    }
+			    }
 
-			if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
-			{
-				myStats->CHR = -3; // don't retreat
-			}
+			    if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+			    {
+				    myStats->CHR = -3; // don't retreat
+			    }
 
-			//give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
-				{
-					my->monsterGenerateQuiverItem(myStats);
-				}
-				else
-				{
-					// give shield
-					switch ( local_rng.rand() % 10 )
-					{
-						case 0:
-						case 1:
-							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-							break;
-						case 2:
-						case 3:
-						case 4:
-							break;
-						case 5:
-						case 6:
-							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-							break;
-						case 7:
-						case 8:
-							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-							break;
-						case 9:
-							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-							break;
-					}
-				}
-			}
+			    //give shield
+			    if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			    {
+				    if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+				    {
+					    my->monsterGenerateQuiverItem(myStats);
+				    }
+				    else
+				    {
+					    // give shield
+					    switch ( local_rng.rand() % 10 )
+					    {
+						    case 0:
+						    case 1:
+							    myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    break;
+						    case 2:
+						    case 3:
+						    case 4:
+							    break;
+						    case 5:
+						    case 6:
+							    myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    break;
+						    case 7:
+						    case 8:
+							    myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    break;
+						    case 9:
+							    myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+							    break;
+					    }
+				    }
+			    }
 
-			// give cloak
-			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-			{
-				switch ( local_rng.rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-					case 8:
-						myStats->cloak = newItem(CLOAK, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, local_rng.rand(), false, nullptr);
-						break;
-				}
-			}
+			    // give cloak
+			    if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			    {
+				    switch ( local_rng.rand() % 10 )
+				    {
+					    case 0:
+					    case 1:
+					    case 2:
+					    case 3:
+					    case 4:
+					    case 5:
+						    break;
+					    case 6:
+					    case 7:
+					    case 8:
+						    myStats->cloak = newItem(CLOAK, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 9:
+						    myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, local_rng.rand(), false, nullptr);
+						    break;
+				    }
+			    }
 
-			// give helmet
-			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( local_rng.rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						break;
-					case 3:
-					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-				}
-			}
+			    // give helmet
+			    if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			    {
+				    switch ( local_rng.rand() % 10 )
+				    {
+					    case 0:
+					    case 1:
+					    case 2:
+						    break;
+					    case 3:
+					    case 4:
+						    myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 5:
+						    myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 6:
+					    case 7:
+						    myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 8:
+					    case 9:
+						    myStats->helmet = newItem(IRON_HELM, WORN, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+				    }
+			    }
 
-			// give armor
-			if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
-			{
-				switch ( local_rng.rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-					case 8:
-					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
-						break;
-				}
+			    // give armor
+			    if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			    {
+				    switch ( local_rng.rand() % 10 )
+				    {
+					    case 0:
+					    case 1:
+					    case 2:
+					    case 3:
+					    case 4:
+						    break;
+					    case 5:
+					    case 6:
+					    case 7:
+						    myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+					    case 8:
+					    case 9:
+						    myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+						    break;
+				    }
+			    }
 			}
 		}
 	}

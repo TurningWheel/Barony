@@ -129,6 +129,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     {
         229,        // normal
         686,        // player
+        1049,       // player (mouldy, female)
         1103,       // mouldy (female)
         1107,       // funny bones
     },
@@ -240,7 +241,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // GOATMAN
     {
-        463, 734, 768, 1029,
+        463, 734, 768, 1025, 1029,
     },
 
     // AUTOMATON

@@ -18107,6 +18107,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
 			{
 				if ( limb->sprite != 689 && limb->sprite != 691
+				    && limb->sprite != 1046 && limb->sprite != 1048
 					&& limb->sprite != 233 && limb->sprite != 234
 					&& limb->sprite != 745 && limb->sprite != 747
 					&& limb->sprite != 471 && limb->sprite != 472 )
@@ -18129,6 +18130,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			else if ( limbType == LIMB_HUMANOID_LEFTARM )
 			{
 				if ( limb->sprite != 688 && limb->sprite != 690
+				    && limb->sprite != 1045 && limb->sprite != 1047
 					&& limb->sprite != 231 && limb->sprite != 232
 					&& limb->sprite != 744 && limb->sprite != 746
 					&& limb->sprite != 469 && limb->sprite != 470 )

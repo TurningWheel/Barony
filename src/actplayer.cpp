@@ -4894,7 +4894,7 @@ void actPlayer(Entity* my)
 		{
 			if ( playerRace == SKELETON )
 			{
-				my->sprite = 686;
+				my->sprite = stats[PLAYER_NUM]->sex == FEMALE ? 1049 : 686;
 			}
 			else if ( playerRace == RAT )
 			{
@@ -7630,6 +7630,7 @@ bool Entity::isPlayerHeadSprite()
 		case 823:
 		case 827:
 		case 1001:
+		case 1049:
 			return true;
 			break;
 		default:
@@ -7730,7 +7731,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 687;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1052 : 687;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7814,7 +7815,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 693;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1051 : 693;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7891,7 +7892,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 692;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1050 : 692;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7968,7 +7969,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 689;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1046 : 689;
 					break;
 				case GOBLIN:
 					this->sprite = 697;
@@ -8031,7 +8032,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 688;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1045 : 688;
 					break;
 				case GOBLIN:
 					this->sprite = 696;
