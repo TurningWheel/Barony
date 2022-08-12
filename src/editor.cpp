@@ -890,6 +890,8 @@ void handleEvents(void)
 
 -------------------------------------------------------------------------------*/
 
+#include "ui/LoadingScreen.hpp"
+
 Uint32 timerCallback(Uint32 interval, void* param)
 {
 	SDL_Event event;
@@ -904,6 +906,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 	event.user = userevent;
 
 	ticks++;
+	loadingticks++;
 	SDL_PushEvent(&event);
 	return (interval);
 }
