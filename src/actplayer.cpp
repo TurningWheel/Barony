@@ -4898,7 +4898,10 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == RAT )
 			{
-				my->sprite = 814;
+				my->sprite = PLAYER_ATTACK ?
+				    (PLAYER_ATTACKTIME < 5 ? 1043 :
+				    (PLAYER_ATTACKTIME < 10 ? 1044 : 814)) :
+				    814;
 			}
 			else if ( playerRace == TROLL )
 			{
@@ -7630,6 +7633,8 @@ bool Entity::isPlayerHeadSprite()
 		case 823:
 		case 827:
 		case 1001:
+		case 1043:
+		case 1044:
 		case 1049:
 			return true;
 			break;
@@ -8106,7 +8111,11 @@ void playerAnimateRat(Entity* my)
 	{
 		if ( bodypart == 0 )
 		{
-			my->focalx = -2;
+		    // this is the head
+			my->focalx = 3;
+			my->scalex = 1.02;
+			my->scaley = 1.02;
+			my->scalez = 1.02;
 			continue;
 		}
 		Entity* entity = (Entity*)node->element;
@@ -8115,11 +8124,12 @@ void playerAnimateRat(Entity* my)
 		entity->z = my->z;
 		if ( bodypart == 1 )
 		{
+		    // this is the body
 			if ( entity->sprite != 815 && entity->sprite != 816 )
 			{
 				entity->sprite = 815;
 			}
-			entity->focalx = -2;
+			entity->focalx = -4;
 			if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
 			{
 				if ( (ticks % 10 == 0) )

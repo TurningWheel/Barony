@@ -83,6 +83,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     {
         131, 265,                       // normal rat walk cycle
         814,                            // player rat head
+        1043,                           // player rat head attack 1
+        1044,                           // player rat head attack 2
         1063, 1064, 1065, 1066, 1067,   // normal rat attack frames
         1068, 1069,                     // algernon walk cycle
         1070, 1071, 1072, 1073, 1074,   // algernon attack frames

@@ -61,7 +61,7 @@ void initTroll(Entity* my, Stat* myStats)
 		    if ( boss || *cvar_summonBosses )
 			{
 			    my->sprite = 1132;
-			    myStats->sex = FEMALE;
+			    myStats->sex = MALE;
 				strcpy(myStats->name, "Thumpus the Troll");
 				for ( c = 0; c < 3; c++ )
 				{

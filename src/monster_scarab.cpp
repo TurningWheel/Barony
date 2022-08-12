@@ -66,7 +66,9 @@ void initScarab(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1078;
 				strcpy(myStats->name, "Xyggi");
+				myStats->sex = FEMALE;
 				myStats->HP = 70;
 				myStats->MAXHP = 70;
 				myStats->OLDHP = myStats->HP;
@@ -179,7 +181,7 @@ void initScarab(Entity* my, Stat* myStats)
 	}
 
 	// right wing
-	Entity* entity = newEntity(483, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1078 ? 1077 : 483, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -198,7 +200,7 @@ void initScarab(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(484, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1078 ? 1076 : 484, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -269,19 +271,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	// move legs
-	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME == 0 && MONSTER_ATTACK == 1) )
-	{
-		//MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( my->sprite == 429 )
-		{
-			my->sprite = 430;
-		}
-		else
-		{
-			my->sprite = 429;
-		}
-	}
+	bool xyggi = false;
 
 	// move wings
 	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
@@ -304,6 +294,9 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( bodypart == 2 )
 			{
+			    if (entity->sprite == 1077) {
+			        xyggi = true;
+			    }
 				if ( MONSTER_ATTACK == 1 )
 				{
 					if ( MONSTER_ATTACKTIME == 0 )
@@ -504,6 +497,24 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
+		}
+	}
+
+	// move body
+	if (MONSTER_ATTACKTIME == 0 && MONSTER_ATTACK == 1)
+	{
+	    my->sprite = 1075;
+	}
+	else if ( ticks % 10 == 0 && dist > 0.1 )
+	{
+		//MONSTER_ATTACKTIME = MONSTER_ATTACK;
+		if ( xyggi )
+		{
+			my->sprite = 1078 ? 1079 : 1078;
+		}
+		else
+		{
+			my->sprite = 429 ? 430 : 429;
 		}
 	}
 
