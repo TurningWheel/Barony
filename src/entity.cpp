@@ -7415,6 +7415,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case FURNITURE_PODIUM:
 							updateEnemyBar(this, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 							break;
+						case FURNITURE_POWDERKEG:
+							updateEnemyBar(this, hit.entity, language[4202], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
 						default:
 							break;
 					}

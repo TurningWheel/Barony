@@ -193,6 +193,34 @@ void Entity::actFurniture()
 	}
 	else
 	{
+	    if (sprite == 1140) {
+	        // lit powderkeg!
+            auto spark = spawnGib(this);
+            spark->flags[INVISIBLE] = false;
+            spark->flags[SPRITE] = true;
+            spark->flags[NOUPDATE] = true;
+            spark->flags[UPDATENEEDED] = false;
+            spark->flags[BRIGHT] = true;
+            spark->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+            spark->scaley = 0.25f;
+            spark->scalez = 0.25f;
+            spark->z = 0;
+            spark->sprite = 16;
+            spark->yaw = (local_rng.rand() % 360) * PI / 180.0;
+            spark->pitch = (local_rng.rand() % 360) * PI / 180.0;
+            spark->roll = (local_rng.rand() % 360) * PI / 180.0;
+            spark->vel_x = local_rng.uniform(-10,10) * .02;
+            spark->vel_y = local_rng.uniform(-10,10) * .02;
+            spark->vel_z = local_rng.uniform(1,10) * -.05;
+            spark->fskill[3] = 0.01;
+            spark->skill[4] = TICKS_PER_SECOND / 2;
+
+            if (light == nullptr) {
+	            flags[BRIGHT] = true;
+                light = lightSphereShadow(x / 16, y / 16, 3, 128);
+            }
+	    }
+
 		if ( multiplayer != CLIENT )
 		{
 			// burning
@@ -209,42 +237,76 @@ void Entity::actFurniture()
 			// furniture mortality :p
 			if ( furnitureHealth <= 0 )
 			{
-				int c;
-				for ( c = 0; c < 5; c++ )
-				{
-					Entity* entity = spawnGib(this);
-					entity->flags[INVISIBLE] = false;
-					entity->sprite = 187; // Splinter.vox
-					entity->x = floor(x / 16) * 16 + 8;
-					entity->y = floor(y / 16) * 16 + 8;
-					entity->y += -3 + local_rng.rand() % 6;
-					entity->x += -3 + local_rng.rand() % 6;
-					entity->z = -5 + local_rng.rand() % 10;
-					entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
-					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-					entity->vel_x = (local_rng.rand() % 10 - 5) / 10.0;
-					entity->vel_y = (local_rng.rand() % 10 - 5) / 10.0;
-					entity->vel_z = -.5;
-					entity->fskill[3] = 0.04;
-					serverSpawnGibForClient(entity);
+			    if (furnitureType == FURNITURE_POWDERKEG) {
+			        if (sprite != 1140) {
+			            sprite = 1140;
+			        }
+
+			        --furnitureHealth;
+
+			        if ( furnitureHealth < -TICKS_PER_SECOND / 2 ) {
+			            spawnExplosion(x, y, z);
+					    for (auto node = map.creatures->first; node; node = node->next) {
+						    auto entity = (Entity*)node->element;
+						    if (entity->behavior == &actMonster || entity->behavior == &actPlayer) {
+						        auto stats = entity->getStats();
+						        if (stats) {
+						            const real_t max_dmg = 100;
+						            const real_t max_dmg_dist = 48; // a tile is 16 units in x/y
+						            const real_t diffx = entity->x - x;
+						            const real_t diffy = entity->y - y;
+						            const real_t dist = diffx * diffx + diffy * diffy;
+						            const real_t ratio = dist / (max_dmg_dist * max_dmg_dist);
+						            if (ratio >= 1.0) {
+						                // out of range
+						                continue;
+						            }
+						            else {
+						                const real_t dmg = max_dmg - max_dmg * ratio;
+						                //entity->
+						            }
+						        }
+						    }
+					    }
+					    removeLightField();
+				        list_RemoveNode(mynode);
+					}
+			    } else {
+				    for ( int c = 0; c < 5; c++ )
+				    {
+					    Entity* entity = spawnGib(this);
+					    entity->flags[INVISIBLE] = false;
+					    entity->sprite = 187; // Splinter.vox
+					    entity->x = floor(x / 16) * 16 + 8;
+					    entity->y = floor(y / 16) * 16 + 8;
+					    entity->y += -3 + local_rng.rand() % 6;
+					    entity->x += -3 + local_rng.rand() % 6;
+					    entity->z = -5 + local_rng.rand() % 10;
+					    entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+					    entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					    entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+					    entity->vel_x = (local_rng.rand() % 10 - 5) / 10.0;
+					    entity->vel_y = (local_rng.rand() % 10 - 5) / 10.0;
+					    entity->vel_z = -.5;
+					    entity->fskill[3] = 0.04;
+					    serverSpawnGibForClient(entity);
+				    }
+				    playSoundEntity(this, 176, 128);
+				    Entity* entity = uidToEntity(parent);
+				    if ( entity != NULL )
+				    {
+					    entity->itemNotMoving = 0; // drop the item that was on the table
+					    entity->itemNotMovingClient = 0; // clear the client item gravity flag
+					    serverUpdateEntitySkill(entity, 18); //update both the above flags.
+					    serverUpdateEntitySkill(entity, 19);
+				    }
+				    list_RemoveNode(mynode);
 				}
-				playSoundEntity(this, 176, 128);
-				Entity* entity = uidToEntity(parent);
-				if ( entity != NULL )
-				{
-					entity->itemNotMoving = 0; // drop the item that was on the table
-					entity->itemNotMovingClient = 0; // clear the client item gravity flag
-					serverUpdateEntitySkill(entity, 18); //update both the above flags.
-					serverUpdateEntitySkill(entity, 19);
-				}
-				list_RemoveNode(mynode);
-				return;
+			    return;
 			}
 
 			// using
-			int i;
-			for (i = 0; i < MAXPLAYERS; i++)
+			for (int i = 0; i < MAXPLAYERS; i++)
 			{
 				if ( selectedEntity[i] == this || client_selected[i] == this )
 				{
@@ -275,7 +337,6 @@ void Entity::actFurniture()
 								messagePlayer(i, MESSAGE_INTERACTION, language[2496]);
 								break;
 							default:
-								messagePlayer(i, MESSAGE_INTERACTION, language[477]);
 								break;
 						}
 					}

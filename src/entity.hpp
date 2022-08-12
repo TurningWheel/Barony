@@ -1063,6 +1063,7 @@ static const int FURNITURE_CHAIR = 1;
 static const int FURNITURE_BED = 2;
 static const int FURNITURE_BUNKBED = 3;
 static const int FURNITURE_PODIUM = 4;
+static const int FURNITURE_POWDERKEG = 5;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];

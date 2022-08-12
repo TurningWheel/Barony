@@ -6170,5 +6170,6 @@ Combination!#
 4199 Blueprints#
 4200 Command %s to...#
 4201 (All) #
+4202 powder keg#
 
 4249 end#

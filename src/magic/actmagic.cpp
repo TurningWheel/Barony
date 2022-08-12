@@ -1226,6 +1226,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
+						                case FURNITURE_POWDERKEG:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[4202]);
+							                updateEnemyBar(parent, hit.entity, language[4202], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							                break;
 										default:
 											break;
 									}
@@ -1366,6 +1370,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
+						                case FURNITURE_POWDERKEG:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[4202]);
+							                updateEnemyBar(parent, hit.entity, language[4202], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							                break;
 										default:
 											break;
 									}
@@ -1606,6 +1614,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
+						                case FURNITURE_POWDERKEG:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[4202]);
+							                updateEnemyBar(parent, hit.entity, language[4202], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							                break;
 										default:
 											break;
 									}
@@ -2049,6 +2061,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
 											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
+						                case FURNITURE_POWDERKEG:
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[4202]);
+							                updateEnemyBar(parent, hit.entity, language[4202], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							                break;
 										default:
 											break;
 									}

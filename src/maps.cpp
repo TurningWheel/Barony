@@ -2400,7 +2400,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					// decorations
 					if ( (map_rng.rand() % 4 == 0 || currentlevel <= 10 && !customTrapsForMapInUse) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.rand() % 7 )
+						switch ( map_rng.rand() % 8 )
 						{
 							case 0:
 								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
@@ -2427,6 +2427,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair.
 								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Chair
+							case 7:
+								entity = newEntity(51, 1, map.entities, nullptr); //Powderkeg.
+								setSpriteAttributes(entity, nullptr, nullptr);
+								break; //Powderkeg
 						}
 					}
 					else
@@ -2575,7 +2579,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					// decorations
 					if ( (map_rng.rand() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.rand() % 7 )
+						switch ( map_rng.rand() % 8 )
 						{
 							case 0:
 								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
@@ -2602,6 +2606,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
 								setSpriteAttributes(entity, nullptr, nullptr);
 								break; //Chair
+							case 7:
+								entity = newEntity(51, 1, map.entities, nullptr); //Powderkeg.
+								setSpriteAttributes(entity, nullptr, nullptr);
+								break; //Powderkeg
 						}
 					}
 					else
@@ -5501,6 +5509,26 @@ void assignActions(map_t* map)
 				entity->behavior = &actStatue;
 				entity->sprite = 995;
 				entity->yaw = entity->statueDir * PI / 2;
+				break;
+			// explosive barrel
+			case 51:
+				entity->furnitureType = FURNITURE_POWDERKEG;
+				entity->sizex = 3;
+				entity->sizey = 3;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 4;
+				entity->sprite = 1139;
+				entity->behavior = &actFurniture;
+				entity->flags[BURNABLE] = true;
+				if ( entity->furnitureDir == -1 && !entity->yaw )
+				{
+					entity->yaw = (map_rng.rand() % 360) * (PI / 180.f);
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
 				break;
 			default:
 				break;
