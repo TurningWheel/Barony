@@ -2758,7 +2758,9 @@ public:
 	Uint32 editingPlayerUid = 0;
 	real_t statueEditorHeightOffset = 0.0;
 	bool drawGreyscale = false;
-	void readStatueFromFile(int index);
+	void readStatueFromFile(int index, std::string filename);
+	void refreshAllStatues();
+	void resetStatueEditor();
 	static Uint32 statueId;
 	std::string exportFileName = "";
 	int exportRotations = 0;

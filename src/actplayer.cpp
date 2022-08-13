@@ -1558,31 +1558,37 @@ void doStatueEditor(int player)
 			if ( keystatus[SDL_SCANCODE_O] )
 			{
 				keystatus[SDL_SCANCODE_O] = 0;
+				Input::inputs[player].refresh();
 				limb->pitch += PI / 32;
 			}
 			if ( keystatus[SDL_SCANCODE_P] )
 			{
 				keystatus[SDL_SCANCODE_P] = 0;
+				Input::inputs[player].refresh();
 				limb->pitch -= PI / 32;
 			}
 			if ( keystatus[SDL_SCANCODE_K] )
 			{
 				keystatus[SDL_SCANCODE_K] = 0;
+				Input::inputs[player].refresh();
 				limb->roll += PI / 32;
 			}
 			if ( keystatus[SDL_SCANCODE_L] )
 			{
 				keystatus[SDL_SCANCODE_L] = 0;
+				Input::inputs[player].refresh();
 				limb->roll -= PI / 32;
 			}
 			if ( keystatus[SDL_SCANCODE_COMMA] )
 			{
 				keystatus[SDL_SCANCODE_COMMA] = 0;
+				Input::inputs[player].refresh();
 				limb->yaw += PI / 32;
 			}
 			if ( keystatus[SDL_SCANCODE_PERIOD] )
 			{
 				keystatus[SDL_SCANCODE_PERIOD] = 0;
+				Input::inputs[player].refresh();
 				limb->yaw -= PI / 32;
 			}
 		}
@@ -1594,11 +1600,13 @@ void doStatueEditor(int player)
 			if ( keystatus[SDL_SCANCODE_LEFTBRACKET] )
 			{
 				keystatus[SDL_SCANCODE_LEFTBRACKET] = 0;
+				Input::inputs[player].refresh();
 				StatueManager.statueEditorHeightOffset -= .25;
 			}
 			if ( keystatus[SDL_SCANCODE_RIGHTBRACKET] )
 			{
 				keystatus[SDL_SCANCODE_RIGHTBRACKET] = 0;
+				Input::inputs[player].refresh();
 				StatueManager.statueEditorHeightOffset += .25;
 			}
 
@@ -1646,6 +1654,7 @@ void doStatueEditor(int player)
 
 			if ( keystatus[SDL_SCANCODE_1] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_1] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1673,6 +1682,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_2] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_2] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1700,6 +1710,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_3] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_3] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1727,6 +1738,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_4] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_4] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1754,6 +1766,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_5] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_5] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1781,6 +1794,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_6] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_6] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1808,6 +1822,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_7] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_7] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{
@@ -1835,6 +1850,7 @@ void doStatueEditor(int player)
 			}
 			if ( keystatus[SDL_SCANCODE_8] )
 			{
+				Input::inputs[player].refresh();
 				keystatus[SDL_SCANCODE_8] = 0;
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
 				{

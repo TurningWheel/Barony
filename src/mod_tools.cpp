@@ -3503,9 +3503,47 @@ int StatueManager_t::processStatueExport()
 	return 1;
 }
 
-void StatueManager_t::readStatueFromFile(int index)
+void StatueManager_t::resetStatueEditor()
+{
+	if ( editingPlayerUid != 0 )
+	{
+		client_disconnected[1] = true;
+	}
+	editingPlayerUid = 0;
+	StatueManager.activeEditing = false;
+}
+
+void StatueManager_t::refreshAllStatues()
+{
+#ifndef EDITOR
+	node_t* nextnode = nullptr;
+	for ( node_t* node = map.entities->first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		auto entity = (Entity*)node->element;
+		if ( entity->behavior == &actStatue )
+		{
+			entity->statueInit = 0;
+			node_t* nextnode2 = nullptr;
+			for ( node_t* node2 = entity->children.first; node2; node2 = nextnode2 )
+			{
+				nextnode2 = node2->next;
+				auto entity2 = (Entity*)node2->element;
+				list_RemoveNode(entity2->mynode);
+				list_RemoveNode(node2);
+			}
+		}
+	}
+#endif // !EDITOR
+}
+
+void StatueManager_t::readStatueFromFile(int index, std::string filename)
 {
 	std::string fileName = "/data/statues/statue" + std::to_string(index) + ".json";
+	if ( filename != "" )
+	{
+		fileName = filename;
+	}
 	if ( PHYSFS_getRealDir(fileName.c_str()) )
 	{
 		std::string inputPath = PHYSFS_getRealDir(fileName.c_str());
