@@ -1367,6 +1367,8 @@ public:
 		Frame* minotaurFrame = nullptr;
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
+		Frame* allyFollowerFrame = nullptr;
+		Frame* allyPlayerFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
@@ -1457,6 +1459,19 @@ public:
 		Bar_t HPBar;
 		Bar_t MPBar;
 		Bar_t enemyBar;
+		struct FollowerBar_t
+		{
+			Bar_t hpBar;
+			Bar_t mpBar;
+			real_t animx = 0.0;
+			real_t animy = 0.0;
+			bool expired = false;
+			Uint32 expiredTicks = 0;
+			real_t animFade = 0.0;
+			bool bInit = false;
+		};
+		std::vector<std::pair<Uint32, FollowerBar_t>> followerBars;
+		std::vector<std::pair<Uint32, FollowerBar_t>> playerBars;
 
 		enum CompactLayoutModes : int {
 			COMPACT_LAYOUT_INVENTORY,

@@ -5608,6 +5608,8 @@ void Player::clearGUIPointers()
 	hud.gameTimerFrame = nullptr;
 	hud.allyStatusFrame = nullptr;
 	hud.minotaurFrame = nullptr;
+	hud.allyFollowerFrame = nullptr;
+	hud.allyPlayerFrame = nullptr;
 	hud.mapWindow = nullptr;
 	hud.logWindow = nullptr;
 	hud.enemyBarFrame = nullptr;

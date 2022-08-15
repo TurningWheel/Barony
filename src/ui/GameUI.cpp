@@ -391,6 +391,1089 @@ void createHPMPBars(const int player)
 	}
 }
 
+void createAllyFollowerFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+
+	auto frame = hud_t.hudFrame->addFrame("follower status");
+	hud_t.allyFollowerFrame = frame;
+	frame->setHollow(true);
+	frame->setSize(SDL_Rect{ 0, 0, 210, 0 });
+	frame->setDisabled(true);
+}
+
+void createAllyPlayerFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+
+	auto frame = hud_t.hudFrame->addFrame("player status");
+	hud_t.allyPlayerFrame = frame;
+	frame->setHollow(true);
+	frame->setSize(SDL_Rect{ 0, 0, 210, 0 });
+	frame->setDisabled(true);
+}
+
+const int allyPlayerEntryHeight = 40;
+Frame* createAllyPlayerEntry(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	Frame* baseFrame = hud_t.allyPlayerFrame;
+
+	auto entry = baseFrame->addFrame("entry");
+	entry->setSize(SDL_Rect{ 0, 0, 210, allyPlayerEntryHeight });
+	entry->setHollow(true);
+	entry->setInheritParentFrameOpacity(false);
+
+	Frame* portrait = nullptr;
+	{
+		portrait = entry->addFrame("portrait");
+		portrait->setSize(SDL_Rect{ 0, 0, 36, 36 });
+		portrait->addImage(SDL_Rect{ 0, 0, 32, 32 }, 0xFFFFFFFF, "*#images/ui/HUD/allies/HUD_HPBar_HeadDefaultM_00.png", "portrait img");
+	}
+
+	std::string font = "fonts/pixel_maz.ttf#32#2";
+	{
+		Field* name = entry->addField("name", 128);
+		name->setFont(font.c_str());
+		name->setHJustify(Field::justify_t::LEFT);
+		name->setVJustify(Field::justify_t::TOP);
+		name->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 0, entry->getSize().w, 24 });
+		name->setText("GiGGles");
+		name->setColor(hudColors.characterSheetLightNeutral);
+		name->setOntop(true);
+	}
+	{
+		Field* level = entry->addField("level", 32);
+		level->setFont("fonts/pixel_maz.ttf#32");
+		level->setHJustify(Field::justify_t::RIGHT);
+		level->setVJustify(Field::justify_t::TOP);
+		level->setSize(SDL_Rect{ 0, 14, entry->getSize().w - 16, 24 });
+		level->setText("");
+		level->setColor(hudColors.characterSheetLightNeutral);
+		level->setOntop(true);
+	}
+	{
+		Field* hp = entry->addField("hp", 32);
+		hp->setFont(font.c_str());
+		hp->setHJustify(Field::justify_t::RIGHT);
+		hp->setVJustify(Field::justify_t::TOP);
+		hp->setSize(SDL_Rect{ 0, 0, entry->getSize().w - 16, 24 });
+		hp->setText("");
+		hp->setColor(makeColor(255, 255, 255, 255));
+		hp->setOntop(true);
+	}
+
+	const int hpHeight = 16;
+	{
+		Frame* hpFrame = entry->addFrame("hp");
+		hpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 16, 210 - (portrait->getSize().x + portrait->getSize().w - 4), hpHeight });
+		SDL_Rect hpFramePos = hpFrame->getSize();
+		hpFrame->setHollow(true);
+
+		auto mid = hpFrame->addImage(SDL_Rect{ 6, 2, 40, 12 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Mid_00.png", "hp img mid");
+		auto endCap = hpFrame->addImage(SDL_Rect{ mid->pos.x + mid->pos.w, 0, 6, 16 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_End_00.png", "hp img endcap");
+
+		auto progressBase = hpFrame->addImage(SDL_Rect{ 6, 4, 4, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_00.png", "hp img progress base");
+		auto progressMid = hpFrame->addImage(SDL_Rect{ 6, 4, 2, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_00.png", "hp img progress");
+		auto progressEndCap = hpFrame->addImage(SDL_Rect{ 0, 4, 4, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_00.png", "hp img progress endcap");
+
+		auto progressEndcapDamaged = hpFrame->addImage(SDL_Rect{ 6, 4, 18, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_Damaged.png", "hp img progress damaged");
+		progressEndcapDamaged->disabled = true;
+
+		auto progressEndCapFlash = hpFrame->addImage(SDL_Rect{
+			0, 4, 18, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_00.png", "hp img progress endcap flash");
+		progressEndCapFlash->disabled = true;
+
+		auto base = hpFrame->addImage(SDL_Rect{ 0, 0, 6, 16 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Base_00.png", "hp img base");
+
+	}
+
+	const int mpHeight = 6;
+	{
+		Frame* mpFrame = entry->addFrame("mp");
+		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 32, 210 - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
+		SDL_Rect mpFramePos = mpFrame->getSize();
+		mpFrame->setHollow(true);
+
+		auto mid = mpFrame->addImage(SDL_Rect{ 4, 0, 40, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Mid_00.png", "mp img mid");
+		auto endCap = mpFrame->addImage(SDL_Rect{ mid->pos.x + mid->pos.w, 0, 4, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_End_00.png", "mp img endcap");
+		auto base = mpFrame->addImage(SDL_Rect{ 0, 0, 4, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Base_00.png", "mp img base");
+
+		auto progressBase = mpFrame->addImage(SDL_Rect{ 2, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_00.png", "mp img progress base");
+		auto progressMid = mpFrame->addImage(SDL_Rect{ 6, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png", "mp img progress");
+		auto progressEndCap = mpFrame->addImage(SDL_Rect{ 0, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_00.png", "mp img progress endcap");
+
+		auto progressEndcapDamaged = mpFrame->addImage(SDL_Rect{ 0, 0, 8, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_Damaged.png", "mp img progress damaged");
+		progressEndcapDamaged->disabled = true;
+
+		auto progressEndCapFlash = mpFrame->addImage(SDL_Rect{
+			0, 0, 8, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_00.png", "mp img progress endcap flash");
+		progressEndCapFlash->disabled = true;
+	}
+	return entry;
+}
+
+const int allyFollowerEntryHeight = 40;
+Frame* createAllyFollowerEntry(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	Frame* baseFrame = hud_t.allyFollowerFrame;
+
+	auto entry = baseFrame->addFrame("entry");
+	entry->setSize(SDL_Rect{ 0, 0, 210, allyFollowerEntryHeight });
+	entry->setHollow(true);
+	entry->setInheritParentFrameOpacity(false);
+	
+	Frame* portrait = nullptr;
+	{
+		portrait = entry->addFrame("portrait");
+		portrait->setSize(SDL_Rect{ 0, 0, 36, 36 });
+		portrait->addImage(SDL_Rect{ 0, 0, 32, 32 }, 0xFFFFFFFF, "*#images/ui/HUD/allies/HUD_HPBar_HeadDefaultM_00.png", "portrait img");
+	}
+
+	std::string font = "fonts/pixel_maz.ttf#32#2";
+	{
+		Field* name = entry->addField("name", 128);
+		name->setFont(font.c_str());
+		name->setHJustify(Field::justify_t::LEFT);
+		name->setVJustify(Field::justify_t::TOP);
+		name->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 0, entry->getSize().w, 24 });
+		name->setText("");
+		name->setColor(hudColors.characterSheetLightNeutral);
+		name->setOntop(true);
+	}
+	{
+		Field* level = entry->addField("level", 32);
+		level->setFont("fonts/pixel_maz.ttf#32");
+		level->setHJustify(Field::justify_t::RIGHT);
+		level->setVJustify(Field::justify_t::TOP);
+		level->setSize(SDL_Rect{ 0, 14, entry->getSize().w - 16, 24 });
+		level->setText("");
+		level->setColor(hudColors.characterSheetLightNeutral);
+		level->setOntop(true);
+	}
+	{
+		Field* hp = entry->addField("hp", 32);
+		hp->setFont(font.c_str());
+		hp->setHJustify(Field::justify_t::RIGHT);
+		hp->setVJustify(Field::justify_t::TOP);
+		hp->setSize(SDL_Rect{ 0, 0, entry->getSize().w - 16, 24 });
+		hp->setText("");
+		hp->setColor(makeColor(255, 255, 255, 255));
+		hp->setOntop(true);
+	}
+
+	const int hpHeight = 16;
+	{
+		Frame* hpFrame = entry->addFrame("hp");
+		hpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 16, 210 - (portrait->getSize().x + portrait->getSize().w - 4), hpHeight });
+		SDL_Rect hpFramePos = hpFrame->getSize();
+		hpFrame->setHollow(true);
+
+		auto mid = hpFrame->addImage(SDL_Rect{ 6, 2, 40, 12 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Mid_00.png", "hp img mid");
+		auto endCap = hpFrame->addImage(SDL_Rect{ mid->pos.x + mid->pos.w, 0, 6, 16 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_End_00.png", "hp img endcap");
+
+		auto progressBase = hpFrame->addImage(SDL_Rect{ 6, 4, 4, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_00.png", "hp img progress base");
+		auto progressMid = hpFrame->addImage(SDL_Rect{ 6, 4, 2, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_00.png", "hp img progress");
+		auto progressEndCap = hpFrame->addImage(SDL_Rect{ 0, 4, 4, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_00.png", "hp img progress endcap");
+
+		auto progressEndcapDamaged = hpFrame->addImage(SDL_Rect{ 6, 4, 18, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_Damaged.png", "hp img progress damaged");
+		progressEndcapDamaged->disabled = true;
+
+		auto progressEndCapFlash = hpFrame->addImage(SDL_Rect{
+			0, 4, 18, 8 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_HPBar_Fill_End_00.png", "hp img progress endcap flash");
+		progressEndCapFlash->disabled = true;
+
+		auto base = hpFrame->addImage(SDL_Rect{ 0, 0, 6, 16 }, 0xFFFFFFFF, 
+			"*#images/ui/HUD/allies/HUD_HPBar_Base_00.png", "hp img base");
+
+	}
+
+	const int mpHeight = 6;
+	{
+		Frame* mpFrame = entry->addFrame("mp");
+		mpFrame->setSize(SDL_Rect{ portrait->getSize().x + portrait->getSize().w - 4, 30, 210 - (portrait->getSize().x + portrait->getSize().w - 4), mpHeight });
+		SDL_Rect mpFramePos = mpFrame->getSize();
+		mpFrame->setHollow(true);
+
+		auto mid = mpFrame->addImage(SDL_Rect{ 2, 0, 40, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Mid_00.png", "mp img mid");
+		auto endCap = mpFrame->addImage(SDL_Rect{ mid->pos.x + mid->pos.w, 0, 4, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_End_00.png", "mp img endcap");
+
+		auto progressBase = mpFrame->addImage(SDL_Rect{ 2, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_00.png", "mp img progress base");
+		auto progressMid = mpFrame->addImage(SDL_Rect{ 2, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png", "mp img progress");
+		auto progressEndCap = mpFrame->addImage(SDL_Rect{ 0, 0, 4, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_00.png", "mp img progress endcap");
+
+		auto progressEndcapDamaged = mpFrame->addImage(SDL_Rect{ 0, 0, 8, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_Damaged.png", "mp img progress damaged");
+		progressEndcapDamaged->disabled = true;
+
+		auto progressEndCapFlash = mpFrame->addImage(SDL_Rect{
+			0, 0, 8, 4 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Fill_End_00.png", "mp img progress endcap flash");
+		progressEndCapFlash->disabled = true;
+
+		auto base = mpFrame->addImage(SDL_Rect{ 0, 0, 4, 6 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_MPBar_Base_00.png", "mp img base");
+	}
+	return entry;
+}
+
+int allyHPWidth = 120;
+std::vector<int> HPs{ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160 };
+std::vector<int> MPs{ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160 };
+std::vector<int> MAXMPs{ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160 };
+void updateAllyFollowerFrame(const int player)
+{
+	if ( !players[player]->hud.allyFollowerFrame )
+	{
+		return;
+	}
+
+	auto& hud_t = players[player]->hud;
+	Frame* baseFrame = hud_t.allyFollowerFrame;
+
+	if ( !players[player]->isLocalPlayer() )
+	{
+		baseFrame->setDisabled(true);
+		return;
+	}
+
+	baseFrame->setDisabled(false);
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = hud_t.hudFrame->getSize().w - baseFramePos.w;
+	baseFramePos.y = 20;
+
+	if ( keystatus[SDL_SCANCODE_H] )
+	{
+		keystatus[SDL_SCANCODE_H] = 0;
+		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		{
+			allyHPWidth += 4;
+		}
+		else if ( keystatus[SDL_SCANCODE_LCTRL] )
+		{
+			allyHPWidth -= 4;
+		}
+		else
+		{
+			hud_t.followerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
+		}
+	}
+
+	if ( keystatus[SDL_SCANCODE_J] )
+	{
+		keystatus[SDL_SCANCODE_J] = 0;
+		if ( hud_t.followerBars.size() > 0 )
+		{
+			auto it = hud_t.followerBars.begin() + local_rng.rand() % hud_t.followerBars.size();
+			it->second.expired = true;
+		}
+	}
+
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( achievementObserver.playerUids[i] != 0 )
+		{
+			Uint32 uid = achievementObserver.playerUids[i];
+			auto it = std::find_if(hud_t.followerBars.begin(), hud_t.followerBars.end(),
+				[&uid](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
+			{
+				return bar.first == uid && !bar.second.expired;
+			});
+			if ( it == hud_t.followerBars.end() )
+			{
+				hud_t.followerBars.push_back(std::make_pair(uid, Player::HUD_t::FollowerBar_t()));
+			}
+		}
+	}
+
+	for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Entity* follower = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			follower = uidToEntity(*((Uint32*)node->element));
+		}
+		if ( follower )
+		{
+			Uint32 uid = follower->getUID();
+			auto it = std::find_if(hud_t.followerBars.begin(), hud_t.followerBars.end(),
+				[&uid](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
+			{ 
+				return bar.first == uid && !bar.second.expired;
+			});
+			if ( it == hud_t.followerBars.end() )
+			{
+				hud_t.followerBars.push_back(std::make_pair(uid, Player::HUD_t::FollowerBar_t()));
+			}
+		}
+	}
+
+	int activeBars = 0;
+	for ( auto it = hud_t.followerBars.begin(); it != hud_t.followerBars.end(); )
+	{
+		if ( it->second.expired && it->second.animy >= 0.999 )
+		{
+			it = hud_t.followerBars.erase(it);
+		}
+		else
+		{
+			++activeBars;
+			++it;
+		}
+	}
+
+	bool shortBars = false;
+	if ( keystatus[SDL_SCANCODE_G] )
+	{
+		shortBars = true;
+	}
+
+	int currentY = 0;
+
+	std::vector<Frame*> followerFrames;
+	int barIndex = -1;
+	for ( auto f : baseFrame->getFrames() )
+	{
+		++barIndex;
+		if ( strcmp(f->getName(), "entry") || f->isToBeDeleted() )
+		{
+			continue;
+		}
+
+		if ( barIndex >= activeBars )
+		{
+			f->removeSelf();
+			continue;
+		}
+		followerFrames.push_back(f);
+	}
+
+	while ( followerFrames.size() < activeBars )
+	{
+		followerFrames.push_back(createAllyFollowerEntry(player));
+	}
+
+	barIndex = -1;
+	std::vector<int> MAXHPs{ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160 };
+	for ( auto& pair : hud_t.followerBars )
+	{
+		++barIndex;
+		auto& followerBar = pair.second;
+		auto& HPBar = followerBar.hpBar;
+		auto& MPBar = followerBar.mpBar;
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - followerBar.animx)) / 2.0;
+		followerBar.animx += setpointDiffX;
+		followerBar.animx = std::min(1.0, followerBar.animx);
+
+		Frame* entryFrame = followerFrames[barIndex];
+
+		SDL_Rect pos = entryFrame->getSize();
+		pos.x = pos.w - followerBar.animx * pos.w;
+		pos.y = currentY;
+		pos.h = allyFollowerEntryHeight;
+		entryFrame->setOpacity(baseFrame->getOpacity());
+		if ( followerBar.expired )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFade)) / 2.0;
+			followerBar.animFade += setpointDiffFade;
+			followerBar.animFade = std::min(1.0, followerBar.animFade);
+			entryFrame->setOpacity((1.0 - followerBar.animFade) * 100.0);
+
+			if ( followerBar.animFade >= 0.9999 )
+			{
+				real_t setpointDiffY = fpsScale * std::max(.01, (1.0 - followerBar.animy)) / 2.0;
+				followerBar.animy += setpointDiffY;
+				followerBar.animy = std::min(1.0, followerBar.animy);
+			}
+			pos.h *= (1.0 - followerBar.animy);
+		}
+		currentY += pos.h;
+		entryFrame->setSize(pos);
+
+		auto hpFrame = entryFrame->findFrame("hp");
+		auto hpMid = hpFrame->findImage("hp img mid");
+		auto hpEndcap = hpFrame->findImage("hp img endcap");
+		auto hpProgressBase = hpFrame->findImage("hp img progress base");
+		auto hpProgress = hpFrame->findImage("hp img progress");
+		auto hpProgressEndcap = hpFrame->findImage("hp img progress endcap");
+
+		auto mpFrame = entryFrame->findFrame("mp");
+		auto mpMid = mpFrame->findImage("mp img mid");
+		auto mpEndcap = mpFrame->findImage("mp img endcap");
+		auto mpProgressBase = mpFrame->findImage("mp img progress base");
+		auto mpProgress = mpFrame->findImage("mp img progress");
+		auto mpProgressEndcap = mpFrame->findImage("mp img progress endcap");
+
+		const int hpCompactMaxWidthAmount = 160;
+		const int hpMaxWidthAmount = 160;
+		const real_t hpCompactWidthIncreasePercentOnInterval = 2.0;
+		const real_t hpWidthIncreasePercentOnInterval = 2.5;
+		const int hpCompactIntervalToIncreaseWidth = 5;
+		const int hpIntervalToIncreaseWidth = 5;
+		const int hpCompactBasePercentSize = 44;
+		const int hpBasePercentSize = 30;
+
+		const real_t hpCompactIntervalStartValue = 20;
+		const real_t hpIntervalStartValue = 20;
+
+		const int mpCompactMaxWidthAmount = 140;
+		const int mpMaxWidthAmount = 140;
+		const real_t mpCompactWidthIncreasePercentOnInterval = 2.0;
+		const real_t mpWidthIncreasePercentOnInterval = 2.5;
+		const int mpCompactIntervalToIncreaseWidth = 5;
+		const int mpIntervalToIncreaseWidth = 5;
+		const int mpCompactBasePercentSize = 44;
+		const int mpBasePercentSize = 30;
+
+		const real_t mpCompactIntervalStartValue = 20;
+		const real_t mpIntervalStartValue = 20;
+
+		int MAXHP = MAXHPs[std::min((size_t)barIndex, MAXHPs.size() - 1)];
+		int MAXMP = MAXMPs[std::min((size_t)barIndex, MAXMPs.size() - 1)];
+		if ( keystatus[SDL_SCANCODE_0] )
+		{
+			keystatus[SDL_SCANCODE_0] = 0;
+			HPs[std::min((size_t)barIndex, HPs.size() - 1)] -= 1;
+			MPs[std::min((size_t)barIndex, MPs.size() - 1)] -= 1;
+			MAXHPs[std::min((size_t)barIndex, MAXHPs.size() - 1)] -= 1;
+			//MAXMPs[std::min((size_t)barIndex, MAXMPs.size() - 1)] -= 1;
+			MAXHP = MAXHPs[std::min((size_t)barIndex, MAXHPs.size() - 1)];
+			//MAXMP = MAXMPs[std::min((size_t)barIndex, MAXMPs.size() - 1)];
+		}
+		if ( keystatus[SDL_SCANCODE_9] )
+		{
+			keystatus[SDL_SCANCODE_9] = 0;
+			HPs[std::min((size_t)barIndex, HPs.size() - 1)] += 1;
+			MPs[std::min((size_t)barIndex, MPs.size() - 1)] += 1;
+			MAXHPs[std::min((size_t)barIndex, MAXHPs.size() - 1)] += 1;
+			//MAXMPs[std::min((size_t)barIndex, MAXMPs.size() - 1)] += 1;
+			MAXHP = MAXHPs[std::min((size_t)barIndex, MAXHPs.size() - 1)];
+			//MAXMP = MAXMPs[std::min((size_t)barIndex, MAXMPs.size() - 1)];
+		}
+		int HP = HPs[std::min((size_t)barIndex, HPs.size() - 1)];
+		int MP = MPs[std::min((size_t)barIndex, MPs.size() - 1)];
+		Uint32 uid = pair.first;
+		Entity* follower = uidToEntity(uid);
+		/*if ( !follower )
+		{
+			followerBar.expired = true;
+		}*/
+		Stat* followerStats = follower ? follower->getStats() : nullptr;
+
+		Field* nameField = entryFrame->findField("name");
+		if ( followerStats )
+		{
+			HP = followerStats->HP;
+			MAXHP = followerStats->MAXHP;
+
+			MP = followerStats->MP;
+			MAXMP = followerStats->MAXMP;
+
+			char buf[32];
+			snprintf(buf, sizeof(buf), "Lv%d", followerStats->LVL);
+			auto levelField = entryFrame->findField("level");
+			levelField->setText(buf);
+
+			std::string followerName = "";
+			const size_t maxNameLen = 14;
+			if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+			{
+				if ( strlen(followerStats->name) > maxNameLen )
+				{
+					if ( followerStats->type == SKELETON )
+					{
+						if ( !strcmp(followerStats->name, "skeleton sentinel") )
+						{
+							followerName = "sentinel";
+						}
+						else if ( !strcmp(followerStats->name, "skeleton knight") )
+						{
+							followerName = "knight";
+						}
+						else
+						{
+							followerName = followerStats->name;
+							followerName = followerName.substr(0, maxNameLen - 2);
+							followerName += "..";
+						}
+					}
+					else
+					{
+						followerName = followerStats->name;
+						followerName = followerName.substr(0, maxNameLen - 2);
+						followerName += "..";
+					}
+				}
+				else
+				{
+					followerName = followerStats->name;
+				}
+			}
+			else
+			{
+				if ( getMonsterLocalizedName(followerStats->type).size() > maxNameLen )
+				{
+					followerName = getMonsterLocalizedName(followerStats->type);
+					followerName = followerName.substr(0, maxNameLen - 2);
+					followerName += "..";
+				}
+				else
+				{
+					followerName = getMonsterLocalizedName(followerStats->type);
+				}
+			}
+			capitalizeString(followerName);
+			nameField->setText(followerName.c_str());
+		}
+		else if ( uid != 0 )
+		{
+			HP = 0;
+		}
+
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%d/%d", HP, MAXHP);
+		auto hpField = entryFrame->findField("hp");
+		hpField->setText(buf);
+
+		{ // HP
+			int backgroundWidth = allyHPWidth - 6;
+			real_t progressWidth = allyHPWidth - 8;
+
+			// handle bar size changing
+			{
+				real_t multiplier = 1.0;
+				const Sint32 maxHPWidth = (shortBars ? hpCompactMaxWidthAmount : hpMaxWidthAmount);
+				if ( MAXHP < maxHPWidth )
+				{
+					// start at 30%, increase 2.5% every 5 HP past 20 MAXHP
+					multiplier = (shortBars ? hpCompactBasePercentSize : hpBasePercentSize) / 100.0;
+					real_t widthIntervalPercent = (shortBars ? hpCompactWidthIncreasePercentOnInterval : hpWidthIncreasePercentOnInterval) / 100.0;
+					int intervalThreshold = (shortBars ? hpCompactIntervalToIncreaseWidth : hpIntervalToIncreaseWidth);
+					int baseIntervalStart = (shortBars ? hpCompactIntervalStartValue : hpIntervalStartValue);
+					multiplier += (widthIntervalPercent * ((std::max(0, MAXHP - baseIntervalStart) / intervalThreshold)));
+				}
+
+				int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+				progressWidth -= diff; // scale the progress bars
+				hpMid->pos.w = backgroundWidth - diff; // move the background bar by x pixels as above
+				hpEndcap->pos.x = hpMid->pos.x + hpMid->pos.w; // move the background endcap by x pixels as above
+			}
+
+			HPBar.animatePreviousSetpoint = HPBar.animateSetpoint;
+			real_t& hpForegroundValue = HPBar.animateValue;
+			real_t& hpFadedValue = HPBar.animateValue2;
+
+			HPBar.animateSetpoint = HP;
+			if ( HPBar.animateSetpoint < HPBar.animatePreviousSetpoint ) // insta-change as losing health
+			{
+				hpForegroundValue = HPBar.animateSetpoint;
+				HPBar.animateTicks = ticks;
+
+				// flash for taking damage
+				HPBar.flashTicks = ticks;
+				HPBar.flashAnimState = -1;
+				HPBar.flashType = Player::HUD_t::FLASH_ON_DAMAGE;
+			}
+
+			if ( HPBar.maxValue > MAXHP )
+			{
+				hpFadedValue = HPBar.animateSetpoint; // resetting game etc, stop fade animation sticking out of frame
+			}
+
+			HPBar.maxValue = MAXHP;
+			if ( !followerBar.bInit )
+			{
+				hpForegroundValue = HPBar.animateSetpoint;
+			}
+			if ( hpForegroundValue < HPBar.animateSetpoint ) // gaining HP, animate
+			{
+				// flash for gaining HP, provided not already flashing
+				/*if ( HPBar.flashAnimState == -1 || (HPBar.flashAnimState >= 0 && HPBar.flashType != FLASH_ON_DAMAGE) )
+				{
+				HPBar.flashTicks = ticks;
+				HPBar.flashAnimState = -1;
+				HPBar.flashType = FLASH_ON_RECOVERY;
+				}*/
+
+				real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+				hpForegroundValue = std::min(static_cast<real_t>(HPBar.animateSetpoint), hpForegroundValue);
+
+				if ( abs(HPBar.animateSetpoint) - abs(hpForegroundValue) <= 1.0 )
+				{
+					hpForegroundValue = HPBar.animateSetpoint;
+				}
+
+				/*	int increment = 3;
+				double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));*/
+				//real_t diff = std::max(.1, (HPBar.animateSetpoint * 10 - hpForegroundValue) / (maxValue / 5)); // 0.1-5 value
+				//if ( HPBar.animateSetpoint * 10 >= maxValue )
+				//{
+				//	diff = 5;
+				//}
+				//scaledIncrement *= 0.2 * pow(diff, 2) + .5;
+
+				//hpForegroundValue = std::min(HPBar.animateSetpoint * 10.0, hpForegroundValue + scaledIncrement);
+				//messagePlayer(0, "%.2f | %.2f", hpForegroundValue);
+			}
+			else if ( hpForegroundValue > HPBar.animateSetpoint ) // losing HP, snap to value
+			{
+				hpForegroundValue = HPBar.animateSetpoint;
+			}
+
+			if ( hpFadedValue < HPBar.animateSetpoint )
+			{
+				hpFadedValue = hpForegroundValue;
+				HPBar.animateTicks = ticks;
+			}
+			else if ( hpFadedValue > HPBar.animateSetpoint )
+			{
+				if ( ticks - HPBar.animateTicks > 30 /*|| stats[player.playernum]->HP <= 0*/ ) // fall after x ticks
+				{
+					real_t setpointDiff = std::max(0.01, hpFadedValue - HPBar.animateSetpoint);
+					real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+					hpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+					hpFadedValue = std::max(static_cast<real_t>(HPBar.animateSetpoint), hpFadedValue);
+				}
+			}
+			else
+			{
+				HPBar.animateTicks = ticks;
+			}
+
+			real_t foregroundPercent = hpForegroundValue / HPBar.maxValue;
+			hpProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* foregroundPercent));
+			hpProgressEndcap->pos.x = hpProgress->pos.x + hpProgress->pos.w;
+
+			auto hpProgressEndcapDamaged = hpFrame->findImage("hp img progress damaged");
+			hpProgressEndcapDamaged->disabled = true;
+			hpProgressEndcapDamaged->pos.x = hpProgressEndcap->pos.x + (hpProgressEndcap->pos.w - hpProgressEndcapDamaged->pos.w);
+			if ( hpForegroundValue < HPBar.maxValue ) // damaged
+			{
+				hpProgressEndcapDamaged->disabled = false;
+			}
+
+			real_t fadePercent = hpFadedValue / HPBar.maxValue;
+			if ( HP <= 0 )
+			{
+				// hide all the progress elements when dead, as endcap/base don't shrink
+				// hpProgress width 0px defaults to original size, so hide that too
+				hpProgress->disabled = true;
+				hpProgressEndcap->disabled = true;
+				hpProgressBase->disabled = true;
+				hpProgressEndcapDamaged->disabled = true;
+			}
+			else
+			{
+				hpProgress->disabled = false;
+				hpProgressEndcap->disabled = false;
+				hpProgressBase->disabled = false;
+			}
+
+			auto hpProgressEndCapFlash = hpFrame->findImage("hp img progress endcap flash");
+			hpProgressEndCapFlash->disabled = true;
+			const int framesPerAnimation = HPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE ? 1 : 2;
+			const int numAnimationFrames = HPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE ? 20 : 2;
+			if ( HPBar.flashTicks > 0 )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, HPBarFlashTicks, HPBarFlashAnimState);
+				if ( HPBar.flashAnimState > numAnimationFrames || hpProgress->disabled )
+				{
+					HPBar.flashTicks = 0;
+					HPBar.flashType = Player::HUD_t::FLASH_ON_DAMAGE;
+					HPBar.flashAnimState = -1;
+					hpProgressEndCapFlash->disabled = true;
+				}
+				else
+				{
+					hpProgressEndCapFlash->disabled = hpProgressEndcap->disabled;
+					if ( ticks == HPBar.flashTicks )
+					{
+						HPBar.flashAnimState = 1;
+						HPBar.flashProcessedOnTick = ticks;
+					}
+					else if ( (HPBar.flashProcessedOnTick != ticks)
+						&& (ticks > HPBar.flashTicks)
+						&& (ticks - HPBar.flashTicks) % framesPerAnimation == 0 )
+					{
+						++HPBar.flashAnimState;
+						HPBar.flashProcessedOnTick = ticks;
+					}
+
+					if ( HPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE )
+					{
+						if ( HPBar.flashAnimState <= 6 )
+						{
+							hpProgressEndCapFlash->color = 0xFFFFFFFF;
+						}
+
+						if ( HPBar.flashAnimState == 0 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_00.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F00.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_00.png";
+						}
+						else if ( HPBar.flashAnimState >= 1 && HPBar.flashAnimState <= 2 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_01.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F01.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_01.png";
+						}
+						else if ( HPBar.flashAnimState == 3 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_02.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F02.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_02.png";
+						}
+						else if ( HPBar.flashAnimState >= 4 && HPBar.flashAnimState <= 5 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_01.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F01.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_01.png";
+						}
+						else if ( HPBar.flashAnimState == 6 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_03.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F03.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_03.png";
+						}
+						else
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_00.png";
+							hpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_F00.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_00.png";
+							Uint8 r, g, b, a;
+							getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
+							int decrement = 20;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							decrement *= fpsScale;
+							a = std::max(0, (int)a - decrement);
+							hpProgressEndCapFlash->color = makeColor(r, g, b, a);
+						}
+					}
+					else
+					{
+						hpProgressEndCapFlash->color = 0xFFFFFFFF;
+						hpProgressEndCapFlash->disabled = true;
+						if ( HPBar.flashAnimState == 1 )
+						{
+							hpProgress->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_03.png";
+							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_03.png";
+							hpProgressEndcap->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_End_03.png";
+						}
+					}
+				}
+			}
+			else
+			{
+				HPBar.flashAnimState = -1;
+				hpProgressEndCapFlash->disabled = true;
+			}
+			if ( !hpProgressEndcap->disabled )
+			{
+				hpProgressEndCapFlash->pos.x = hpProgressEndcap->pos.x - (hpProgressEndCapFlash->pos.w - hpProgressEndcap->pos.w);
+			}
+		}
+
+		{ // MP
+			int backgroundWidth = allyHPWidth - 2;
+			real_t progressWidth = allyHPWidth - 4;
+			// handle bar size changing
+			{
+				real_t multiplier = 1.0;
+				const Sint32 maxMPWidth = (shortBars ? mpCompactMaxWidthAmount : mpMaxWidthAmount);
+				if ( MAXMP < maxMPWidth )
+				{
+					// start at 30%, increase 2.5% every 5 MP past 20 MAXMP
+					multiplier = (shortBars ? mpCompactBasePercentSize : mpBasePercentSize) / 100.0;
+					real_t widthIntervalPercent = (shortBars ? mpCompactWidthIncreasePercentOnInterval : mpWidthIncreasePercentOnInterval) / 100.0;
+					int intervalThreshold = (shortBars ? mpCompactIntervalToIncreaseWidth : mpIntervalToIncreaseWidth);
+					int baseIntervalStart = (shortBars ? mpCompactIntervalStartValue : mpIntervalStartValue);
+					multiplier += (widthIntervalPercent * ((std::max(0, MAXMP - baseIntervalStart) / intervalThreshold)));
+				}
+
+				int diff = static_cast<int>(std::max(0.0, progressWidth - progressWidth * multiplier)); // how many pixels the progress bar shrinks
+				progressWidth -= diff; // scale the progress bars
+				mpMid->pos.w = backgroundWidth - diff; // move the background bar by x pixels as above
+				mpEndcap->pos.x = mpMid->pos.x + mpMid->pos.w; // move the background endcap by x pixels as above
+			}
+
+			MPBar.animatePreviousSetpoint = MPBar.animateSetpoint;
+			real_t& mpForegroundValue = MPBar.animateValue;
+			real_t& mpFadedValue = MPBar.animateValue2;
+
+			MPBar.animateSetpoint = MP;
+			if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
+			{
+				mpForegroundValue = MPBar.animateSetpoint;
+				MPBar.animateTicks = ticks;
+
+				// flash for taking damage
+				MPBar.flashTicks = ticks;
+				MPBar.flashProcessedOnTick = 0;
+				MPBar.flashAnimState = -1;
+				MPBar.flashType = Player::HUD_t::FLASH_ON_DAMAGE;
+			}
+
+			if ( MPBar.maxValue > MAXMP )
+			{
+				mpFadedValue = MPBar.animateSetpoint; // resetting game etc, stop fade animation sticking out of frame
+			}
+
+			MPBar.maxValue = MAXMP;
+			if ( !followerBar.bInit )
+			{
+				mpForegroundValue = MPBar.animateSetpoint;
+			}
+			if ( mpForegroundValue < MPBar.animateSetpoint ) // gaining MP, animate
+			{
+				// flash for gaining MP, provided not already flashing
+				/*if ( MPBar.flashAnimState == -1 || (MPBar.flashAnimState >= 0 && MPBar.flashType != FLASH_ON_DAMAGE) )
+				{
+				MPBar.flashTicks = ticks;
+				MPBar.flashAnimState = -1;
+				MPBar.flashType = FLASH_ON_RECOVERY;
+				}*/
+
+				real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+				mpForegroundValue = std::min(static_cast<real_t>(MPBar.animateSetpoint), mpForegroundValue);
+
+				/*if ( abs(MPBar.animateSetpoint) - abs(mpForegroundValue) <= 1.0 )
+				{
+				mpForegroundValue = MPBar.animateSetpoint;
+				}*/
+			}
+			else if ( mpForegroundValue > MPBar.animateSetpoint ) // losing MP, snap to value
+			{
+				mpForegroundValue = MPBar.animateSetpoint;
+			}
+
+			if ( mpFadedValue < MPBar.animateSetpoint )
+			{
+				mpFadedValue = mpForegroundValue;
+				MPBar.animateTicks = ticks;
+			}
+			else if ( mpFadedValue > MPBar.animateSetpoint )
+			{
+				if ( ticks - MPBar.animateTicks > 30 /*|| stats[player.playernum]->MP <= 0*/ ) // fall after x ticks
+				{
+					real_t setpointDiff = std::max(0.1, mpFadedValue - MPBar.animateSetpoint);
+					real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+					mpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
+					mpFadedValue = std::max(static_cast<real_t>(MPBar.animateSetpoint), mpFadedValue);
+				}
+			}
+			else
+			{
+				MPBar.animateTicks = ticks;
+			}
+
+			real_t foregroundPercent = mpForegroundValue / MPBar.maxValue;
+			mpProgress->pos.w = std::max(1, static_cast<int>((progressWidth)* foregroundPercent));
+			mpProgressEndcap->pos.x = mpProgress->pos.x + mpProgress->pos.w;
+
+			auto mpProgressEndcapDamaged = mpFrame->findImage("mp img progress damaged");
+			mpProgressEndcapDamaged->disabled = true;
+			mpProgressEndcapDamaged->pos.x = mpProgressEndcap->pos.x + (mpProgressEndcap->pos.w - mpProgressEndcapDamaged->pos.w);
+			if ( mpForegroundValue < MPBar.maxValue ) // damaged
+			{
+				mpProgressEndcapDamaged->disabled = false;
+			}
+
+			real_t fadePercent = mpFadedValue / MPBar.maxValue;
+			if ( MP <= 0 )
+			{
+				// hide all the progress elements when dead, as endcap/base don't shrink
+				// mpProgress width 0px defaults to original size, so hide that too
+				mpProgress->disabled = true;
+				mpProgressEndcap->disabled = true;
+				mpProgressBase->disabled = true;
+				mpProgressEndcapDamaged->disabled = true;
+			}
+			else
+			{
+				mpProgress->disabled = false;
+				mpProgressEndcap->disabled = false;
+				mpProgressBase->disabled = false;
+			}
+
+			auto mpProgressEndCapFlash = mpFrame->findImage("mp img progress endcap flash");
+			mpProgressEndCapFlash->disabled = true;
+			const int framesPerAnimation = MPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE ? 1 : 2;
+			const int numAnimationFrames = MPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE ? 30 : 2;
+			if ( MPBar.flashTicks > 0 )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, MPBarFlashTicks, MPBarFlashAnimState);
+				if ( MPBar.flashAnimState > numAnimationFrames || mpProgress->disabled )
+				{
+					MPBar.flashTicks = 0;
+					MPBar.flashType = Player::HUD_t::FLASH_ON_DAMAGE;
+					MPBar.flashAnimState = -1;
+					mpProgressEndCapFlash->disabled = true;
+				}
+				else
+				{
+					mpProgressEndCapFlash->disabled = mpProgressEndcap->disabled;
+					bool processedOnTick = MPBar.flashProcessedOnTick == ticks;
+					if ( ticks == MPBar.flashTicks )
+					{
+						MPBar.flashAnimState = 1;
+						MPBar.flashProcessedOnTick = ticks;
+					}
+					else if ( (!processedOnTick)
+						&& (ticks > MPBar.flashTicks)
+						&& (ticks - MPBar.flashTicks) % framesPerAnimation == 0 )
+					{
+						++MPBar.flashAnimState;
+						MPBar.flashProcessedOnTick = ticks;
+					}
+
+					if ( MPBar.flashType == Player::HUD_t::FLASH_ON_DAMAGE )
+					{
+						if ( MPBar.flashAnimState <= 16 && MPBar.flashAnimState >= 10 )
+						{
+							mpProgressEndCapFlash->color = 0xFFFFFFFF;
+						}
+						else if ( MPBar.flashAnimState == 0 )
+						{
+							mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+						}
+
+						if ( MPBar.flashAnimState <= 9 )
+						{
+							if ( MPBar.flashAnimState == 7 )
+							{
+								// we need the MP bar to flash long enough for long spellcast times
+								// can adjust how many animStates we skip here to play with timing,
+								// without changing other state machine code
+								MPBar.flashAnimState = 9; // 1, 2 skip a few..
+							}
+							Uint8 r, g, b, a;
+							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+							int increment = 10;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							increment *= fpsScale;
+							a = std::min(255, (int)a + increment);
+							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F00.png";
+
+							if ( MPBar.flashAnimState % 2 == 0
+								&& !processedOnTick )
+							{
+								mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F00.png";
+							}
+						}
+						else if ( MPBar.flashAnimState <= 10 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F00.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_00.png";
+						}
+						else if ( MPBar.flashAnimState >= 11 && MPBar.flashAnimState <= 12 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_01.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F01.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_01.png";
+						}
+						else if ( MPBar.flashAnimState == 13 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_02.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F02.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_02.png";
+						}
+						else if ( MPBar.flashAnimState >= 14 && MPBar.flashAnimState <= 15 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_01.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F01.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_01.png";
+						}
+						else if ( MPBar.flashAnimState == 16 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_03.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F03.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_03.png";
+						}
+						else
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png";
+							mpProgressEndCapFlash->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_F00.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_00.png";
+							Uint8 r, g, b, a;
+							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
+							int decrement = 20;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							decrement *= fpsScale;
+							a = std::max(0, (int)a - decrement);
+							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
+						}
+					}
+					else
+					{
+						mpProgressEndCapFlash->color = 0xFFFFFFFF;
+						mpProgressEndCapFlash->disabled = true;
+						if ( MPBar.flashAnimState == 1 )
+						{
+							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_03.png";
+							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_03.png";
+							mpProgressEndcap->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_End_03.png";
+						}
+					}
+				}
+			}
+			else
+			{
+				MPBar.flashAnimState = -1;
+				mpProgressEndCapFlash->disabled = true;
+			}
+			if ( !mpProgressEndcap->disabled )
+			{
+				mpProgressEndCapFlash->pos.x = mpProgressEndcap->pos.x - (mpProgressEndCapFlash->pos.w - mpProgressEndcap->pos.w);
+			}
+		}
+		followerBar.bInit = true;
+	}
+
+	baseFramePos.h = currentY;
+	baseFrame->setSize(baseFramePos);
+}
+
 void createEnemyBar(const int player, Frame*& frame)
 {
 	auto& hud_t = players[player]->hud;
@@ -4776,8 +5859,17 @@ void Player::HUD_t::processHUD()
 	{
 		createStatusEffectQueue(player.playernum);
 	}
+	if ( !allyFollowerFrame )
+	{
+		createAllyFollowerFrame(player.playernum);
+	}
+	if ( !allyPlayerFrame )
+	{
+		//createAllyPlayerFrame(player.playernum);
+	}
 
 	updateGameTimer();
+	updateAllyFollowerFrame(player.playernum);
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
@@ -20217,7 +21309,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool tempHideHotbar = false;
-	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET) 
+	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)) 
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideHotbar = true;
