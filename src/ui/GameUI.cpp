@@ -70,8 +70,52 @@ real_t hpmpbarWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interva
 int hpmpbarCompactMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
 int hpmpbarCompactIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
 int hpmpbarCompactIntervalStartValue = 20; // hp / mp of this value is the smallest interval
-int hpmpbarCompactBasePercentSize = 30; // smallest width at low hp/mp value
-real_t hpmpbarCompactWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interval
+int hpmpbarCompactBasePercentSize = 44; // smallest width at low hp/mp value
+real_t hpmpbarCompactWidthIncreasePercentOnInterval = 2.0; // % to grow bar per interval
+
+static struct AllyStatusBarSettings_t
+{
+	struct HPBar_t
+	{
+		int barMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+		int barIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+		int barIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+		int barBasePercentSize = 30; // smallest width at low hp/mp value
+		real_t barWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interval
+		int barCompactMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+		int barCompactIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+		int barCompactIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+		int barCompactBasePercentSize = 44; // smallest width at low hp/mp value
+		real_t barCompactWidthIncreasePercentOnInterval = 2.0; // % to grow bar per interval
+	};
+	struct MPBar_t
+	{
+		int barMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+		int barIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+		int barIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+		int barBasePercentSize = 30; // smallest width at low hp/mp value
+		real_t barWidthIncreasePercentOnInterval = 2.5; // % to grow bar per interval
+		int barCompactMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
+		int barCompactIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
+		int barCompactIntervalStartValue = 20; // hp / mp of this value is the smallest interval
+		int barCompactBasePercentSize = 44; // smallest width at low hp/mp value
+		real_t barCompactWidthIncreasePercentOnInterval = 2.0; // % to grow bar per interval
+	};
+	static struct FollowerBars_t
+	{
+		static HPBar_t hpBar;
+		static MPBar_t mpBar;
+	};
+	static struct PlayerBars_t
+	{
+		static HPBar_t hpBar;
+		static MPBar_t mpBar;
+	};
+};
+AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::FollowerBars_t::hpBar;
+AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::FollowerBars_t::mpBar;
+AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::PlayerBars_t::hpBar;
+AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::PlayerBars_t::mpBar;
 
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
@@ -15805,6 +15849,260 @@ void loadHUDSettingsJSON()
 					if ( d["hpmpbar"].HasMember("hpmpbar_compact_width_increase_percent_on_interval") )
 					{
 						hpmpbarCompactWidthIncreasePercentOnInterval = 
+							d["hpmpbar"]["hpmpbar_compact_width_increase_percent_on_interval"].GetDouble();
+					}
+				}
+				if ( d.HasMember("allybars") )
+				{
+					for ( auto ally_itr = d["allybars"].MemberBegin(); ally_itr != d["allybars"].MemberEnd(); ++ally_itr )
+					{
+						std::string type = ally_itr->name.GetString();
+						if ( type == "followers" )
+						{
+							if ( ally_itr->value.HasMember("hp") )
+							{
+								for ( auto val_itr = ally_itr->value["hp"].MemberBegin();
+									val_itr != ally_itr->value["hp"].MemberEnd(); ++val_itr )
+								{
+									std::string key = val_itr->name.GetString();
+									auto& bar = AllyStatusBarSettings_t::FollowerBars_t::hpBar;
+									if ( key == "bar_max_amount_threshold" )
+									{
+										bar.barMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_to_increase_width" )
+									{
+										bar.barIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_start_value" )
+									{
+										bar.barIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_width_increase_percent_on_interval" )
+									{
+										bar.barWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_base_percent" )
+									{
+										bar.barBasePercentSize = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_max_amount_threshold" )
+									{
+										bar.barCompactMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_to_increase_width" )
+									{
+										bar.barCompactIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_start_value" )
+									{
+										bar.barCompactIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_width_increase_percent_on_interval" )
+									{
+										bar.barCompactWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_compact_base_percent" )
+									{
+										bar.barCompactBasePercentSize = val_itr->value.GetInt();
+									}
+								}
+							}
+							if ( ally_itr->value.HasMember("mp") )
+							{
+								for ( auto val_itr = ally_itr->value["mp"].MemberBegin();
+									val_itr != ally_itr->value["mp"].MemberEnd(); ++val_itr )
+								{
+									std::string key = val_itr->name.GetString();
+									auto& bar = AllyStatusBarSettings_t::FollowerBars_t::mpBar;
+									if ( key == "bar_max_amount_threshold" )
+									{
+										bar.barMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_to_increase_width" )
+									{
+										bar.barIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_start_value" )
+									{
+										bar.barIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_width_increase_percent_on_interval" )
+									{
+										bar.barWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_base_percent" )
+									{
+										bar.barBasePercentSize = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_max_amount_threshold" )
+									{
+										bar.barCompactMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_to_increase_width" )
+									{
+										bar.barCompactIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_start_value" )
+									{
+										bar.barCompactIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_width_increase_percent_on_interval" )
+									{
+										bar.barCompactWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_compact_base_percent" )
+									{
+										bar.barCompactBasePercentSize = val_itr->value.GetInt();
+									}
+								}
+							}
+						}
+						else if ( type == "players" )
+						{
+							if ( ally_itr->value.HasMember("hp") )
+							{
+								for ( auto val_itr = ally_itr->value["hp"].MemberBegin();
+									val_itr != ally_itr->value["hp"].MemberEnd(); ++val_itr )
+								{
+									std::string key = val_itr->name.GetString();
+									auto& bar = AllyStatusBarSettings_t::PlayerBars_t::hpBar;
+									if ( key == "bar_max_amount_threshold" )
+									{
+										bar.barMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_to_increase_width" )
+									{
+										bar.barIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_start_value" )
+									{
+										bar.barIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_width_increase_percent_on_interval" )
+									{
+										bar.barWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_base_percent" )
+									{
+										bar.barBasePercentSize = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_max_amount_threshold" )
+									{
+										bar.barCompactMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_to_increase_width" )
+									{
+										bar.barCompactIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_start_value" )
+									{
+										bar.barCompactIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_width_increase_percent_on_interval" )
+									{
+										bar.barCompactWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_compact_base_percent" )
+									{
+										bar.barCompactBasePercentSize = val_itr->value.GetInt();
+									}
+								}
+							}
+							if ( ally_itr->value.HasMember("mp") )
+							{
+								for ( auto val_itr = ally_itr->value["mp"].MemberBegin();
+									val_itr != ally_itr->value["mp"].MemberEnd(); ++val_itr )
+								{
+									std::string key = val_itr->name.GetString();
+									auto& bar = AllyStatusBarSettings_t::PlayerBars_t::mpBar;
+									if ( key == "bar_max_amount_threshold" )
+									{
+										bar.barMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_to_increase_width" )
+									{
+										bar.barIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_interval_start_value" )
+									{
+										bar.barIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_width_increase_percent_on_interval" )
+									{
+										bar.barWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_base_percent" )
+									{
+										bar.barBasePercentSize = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_max_amount_threshold" )
+									{
+										bar.barCompactMaxWidthAmount = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_to_increase_width" )
+									{
+										bar.barCompactIntervalToIncreaseWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_interval_start_value" )
+									{
+										bar.barCompactIntervalStartValue = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_compact_width_increase_percent_on_interval" )
+									{
+										bar.barCompactWidthIncreasePercentOnInterval = val_itr->value.GetDouble();
+									}
+									else if ( key == "bar_compact_base_percent" )
+									{
+										bar.barCompactBasePercentSize = val_itr->value.GetInt();
+									}
+								}
+							}
+						}
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_max_amount_threshold") )
+					{
+						hpmpbarMaxWidthAmount = d["hpmpbar"]["hpmpbar_max_amount_threshold"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_interval_to_increase_width") )
+					{
+						hpmpbarIntervalToIncreaseWidth
+							= d["hpmpbar"]["hpmpbar_interval_to_increase_width"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_base_percent") )
+					{
+						hpmpbarBasePercentSize = d["hpmpbar"]["hpmpbar_base_percent"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_interval_start_value") )
+					{
+						hpmpbarIntervalStartValue = d["hpmpbar"]["hpmpbar_interval_start_value"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_width_increase_percent_on_interval") )
+					{
+						hpmpbarWidthIncreasePercentOnInterval =
+							d["hpmpbar"]["hpmpbar_width_increase_percent_on_interval"].GetDouble();
+					}
+
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_max_amount_threshold") )
+					{
+						hpmpbarCompactMaxWidthAmount = d["hpmpbar"]["hpmpbar_compact_max_amount_threshold"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_interval_to_increase_width") )
+					{
+						hpmpbarCompactIntervalToIncreaseWidth =
+							d["hpmpbar"]["hpmpbar_compact_interval_to_increase_width"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_base_percent") )
+					{
+						hpmpbarCompactBasePercentSize = d["hpmpbar"]["hpmpbar_compact_base_percent"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_interval_start_value") )
+					{
+						hpmpbarCompactIntervalStartValue = d["hpmpbar"]["hpmpbar_compact_interval_start_value"].GetInt();
+					}
+					if ( d["hpmpbar"].HasMember("hpmpbar_compact_width_increase_percent_on_interval") )
+					{
+						hpmpbarCompactWidthIncreasePercentOnInterval =
 							d["hpmpbar"]["hpmpbar_compact_width_increase_percent_on_interval"].GetDouble();
 					}
 				}
