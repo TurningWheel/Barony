@@ -748,6 +748,7 @@ std::string stackTrace() {
     return trace;
 #endif
 #endif
+	return "";
 }
 
 void stackTraceUnique() {

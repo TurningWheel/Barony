@@ -1958,7 +1958,9 @@ void reloadModels(int start, int end) {
     }
 
 	//messagePlayer(clientnum, language[2354]);
+#ifndef EDITOR
 	messagePlayer(clientnum, MESSAGE_MISC, language[2355], start, end);
+#endif
 
     loading = true;
     createLevelLoadScreen(5);
