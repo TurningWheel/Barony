@@ -25,7 +25,9 @@ void initImp(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(289);
+	my->z = -4.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -244,9 +246,17 @@ void actImpLimb(Entity* my)
 void impDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 6) {
+	        gib->sprite = 289 + c;
+	        gib->skill[5] = 1; // poof
+	    }
+	    else if (c >= 6 && c < 8) {
+	        gib->sprite = 309 + (c - 6);
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 

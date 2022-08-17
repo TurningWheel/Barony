@@ -227,7 +227,7 @@ void actDoor(Entity* my)
 				for ( node = currentList->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
-					if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  )
+					if ( entity == my || entity->flags[PASSABLE] || entity->behavior == &actDoorFrame )
 					{
 						continue;
 					}
@@ -284,7 +284,7 @@ void actDoorFrame(Entity* my)
 	// intended to make it easier
 	// to determine whether an entity
 	// is part of a door frame
-	if ( my->sprite == 1 && my->flags[INVISIBLE] == false )
+	if ( my->flags[INVISIBLE] == false )
 	{
 		my->flags[PASSABLE] = true; // the actual frame should ALWAYS be passable
 	}

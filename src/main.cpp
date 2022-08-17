@@ -198,6 +198,15 @@ char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size
     return nullptr;
 }
 
+#ifdef EDITOR
+struct cvar_thingy {
+    bool data = false;
+} cvar_enableDebugKeys;
+#else
+#include "interface/consolecommand.hpp"
+static ConsoleVariable<bool> cvar_enableDebugKeys("/enabledebugkeys", false, "if true, certain special keys can be used for debugging");
+#endif
+
 // main definitions
 Sint32 display_id = 0;
 Sint32 xres = 1280;
@@ -209,7 +218,7 @@ bool stop = false;
 char datadir[PATH_MAX];
 char outputdir[PATH_MAX];
 SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes problem debugging in Linux
-bool enableDebugKeys = false; // if true, certain special keys can be used for debugging
+bool& enableDebugKeys = cvar_enableDebugKeys.data;
 
 // language stuff
 char languageCode[32] = { 0 };

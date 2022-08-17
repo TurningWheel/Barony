@@ -1860,7 +1860,7 @@ static real_t getLightAt(const int x, const int y)
 
 -------------------------------------------------------------------------------*/
 
-#define TRANSPARENT_TILE 450
+#define TRANSPARENT_TILE 246
 
 void glDrawWorld(view_t* camera, int mode)
 {
@@ -2483,6 +2483,7 @@ void GO_SwapBuffers(SDL_Window* screen)
 	dirty = 1;
 
 #ifndef PANDORA
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	SDL_GL_SwapWindow(screen);
 #else
 	bool bBlit = !(xres==800 && yres==480);

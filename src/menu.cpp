@@ -4930,7 +4930,7 @@ void handleMainMenu(bool mode)
 			}
 #ifdef USE_EOS
 			current_y += 16;
-			ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[%c] %s", LobbyHandler.settings_crossplayEnabled ? 'x' : ' ', language[3948]);
+			//ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[%c] %s", LobbyHandler.settings_crossplayEnabled ? 'x' : ' ', language[3948]);
 #endif
 #endif // STEAMWORKS
 
@@ -5127,7 +5127,7 @@ void handleMainMenu(bool mode)
 					if ( inputs.bMouseLeft(clientnum) )
 					{
 						inputs.mouseClearLeft(clientnum);
-						LobbyHandler.settings_crossplayEnabled = !LobbyHandler.settings_crossplayEnabled;
+						//LobbyHandler.settings_crossplayEnabled = !LobbyHandler.settings_crossplayEnabled;
 					}
 				}
 #endif

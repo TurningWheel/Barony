@@ -28,8 +28,9 @@ void initVampire(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	//Sprite 437 = Vampire head model
-	my->initMonster(437);
+    my->flags[BURNABLE] = true;
+	my->initMonster(437); //Sprite 437 = Vampire head model
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -42,6 +43,14 @@ void initVampire(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1137;
+		    }
+		    if ( !strncmp(map.name, "The Ruins", 9) )
+		    {
+				strcpy(myStats->name, "young vampire");
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -93,6 +102,8 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
 			{
+			    my->sprite = 1137; // bram's head
+			    myStats->sex = MALE;
 				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 				my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
@@ -416,12 +427,6 @@ void initVampire(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
-
-	if ( multiplayer == CLIENT )
-	{
-		my->sprite = 437; // vampire head model
-		return;
-	}
 }
 
 void actVampireLimb(Entity* my)
@@ -431,8 +436,11 @@ void actVampireLimb(Entity* my)
 
 void vampireDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+    gib->skill[5] = 1;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

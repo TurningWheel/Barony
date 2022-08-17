@@ -112,6 +112,7 @@ public:
 
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
 	const char*					getText() const { return text; }
+	const size_t                getTextLen() const { return textlen; }
 	const char*					getFont() const { return font.c_str(); }
 	const Uint32				getColor() const { return color; }
 	const Uint32				getTextColor() const { return textColor; }

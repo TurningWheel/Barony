@@ -632,16 +632,20 @@ voxel_t* loadVoxel(char* filename)
 	File* file;
 	voxel_t* model;
 
-	if (filename != NULL)
+	if (filename != nullptr)
 	{
 		//bool has_ext = strstr(filename, ".vox") == NULL;
 		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
-		std::string filenamePath = PHYSFS_getRealDir(filename);
+		const char* path = PHYSFS_getRealDir(filename);
+		if (!path) {
+		    return nullptr;
+		}
+		std::string filenamePath = path;
 		filenamePath.append(PHYSFS_getDirSeparator()).append(filename);
 
-		if ((file = openDataFile(filenamePath.c_str(), "rb")) == NULL)
+		if ((file = openDataFile(filenamePath.c_str(), "rb")) == nullptr)
 		{
-			return NULL;
+			return nullptr;
 		}
 		model = (voxel_t*) malloc(sizeof(voxel_t));
 		model->sizex = 0;
@@ -667,7 +671,7 @@ voxel_t* loadVoxel(char* filename)
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 

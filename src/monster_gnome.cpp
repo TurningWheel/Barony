@@ -27,8 +27,9 @@ void initGnome(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	//Sprite 295 = Gnome head model
-	my->initMonster(295);
+	my->flags[BURNABLE] = true;
+	my->initMonster(295); //Sprite 295 = Gnome head model
+	my->z = 2.25;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -353,12 +354,15 @@ void actGnomeLimb(Entity* my)
 
 void gnomeDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 6; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+		    if (c < 6) {
+		        entity->sprite = 295 + c;
+		        entity->skill[5] = 1; // poof
+		    }
 			serverSpawnGibForClient(entity);
 		}
 	}

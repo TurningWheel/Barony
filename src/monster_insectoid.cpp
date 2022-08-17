@@ -26,8 +26,9 @@ void initInsectoid(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
- 	//Sprite 455 = Insectoid head model
-	my->initMonster(455);
+	my->flags[BURNABLE] = true;
+	my->initMonster(455); //Sprite 455 = Insectoid head model
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,6 +41,13 @@ void initInsectoid(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE) {
+		        my->sprite = 1057;
+		    }
+			if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+			{
+				strcpy(myStats->name, "lesser insectoid");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -71,28 +79,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-			{
-			}
-			else
-			{
-				/*myStats->HP = 120;
-				myStats->MAXHP = 120;
-				myStats->OLDHP = myStats->HP;
-				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, local_rng.rand(), true, nullptr);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + local_rng.rand() % 3, 1, 0, false, nullptr);
-
-				int c;
-				for ( c = 0; c < 3; c++ )
-				{
-					Entity* entity = summonMonster(GOBLIN, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
-				}*/
-			}
 
 			// random effects
 			if ( local_rng.rand() % 8 == 0 )
@@ -458,7 +444,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(458, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1057 ? 1060 : 458, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -480,7 +466,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(457, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1059 : 457, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -499,7 +485,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(456, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1058 : 456, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -518,7 +504,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(453, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1055 : 453, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -537,7 +523,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(451, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1057 ? 1053 : 451, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -705,8 +691,11 @@ void actInsectoidLimb(Entity* my)
 
 void insectoidDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -1017,7 +1006,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 458;
+						entity->sprite = my->sprite == 1057 ? 1060 : 458;
 					}
 					else
 					{
@@ -1042,7 +1031,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( multiplayer == CLIENT )
 				{
-					if ( entity->sprite != 468 )
+					if ( entity->sprite != 458 && entity->sprite != 1060 )
 					{
 						entity->scalex = 0.9;
 						// shrink the width of the breastplate
@@ -1062,7 +1051,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 457;
+						entity->sprite = my->sprite == 1057 ? 1059 : 457;
 					}
 					else
 					{
@@ -1090,7 +1079,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 456;
+						entity->sprite = my->sprite == 1057 ? 1058 : 456;
 					}
 					else
 					{
@@ -1125,7 +1114,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][4][0]; // 0
 						entity->focaly = limbs[INSECTOID][4][1]; // 0
 						entity->focalz = limbs[INSECTOID][4][2]; // 2
-						entity->sprite = 453;
+						entity->sprite = my->sprite == 1057 ? 1055 : 453;
 					}
 					else
 					{
@@ -1133,7 +1122,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][4][0] + 0.75;
 						entity->focaly = limbs[INSECTOID][4][1];
 						entity->focalz = limbs[INSECTOID][4][2] - 0.75;
-						entity->sprite = 454;
+						entity->sprite = my->sprite == 1057 ? 1056 : 454;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_RIGHTARM);
@@ -1153,14 +1142,14 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INSECTOID][5][0]; // 0
 						entity->focaly = limbs[INSECTOID][5][1]; // 0
 						entity->focalz = limbs[INSECTOID][5][2]; // 2
-						entity->sprite = 451;
+						entity->sprite = my->sprite == 1057 ? 1053 : 451;
 					}
 					else
 					{
 						entity->focalx = limbs[INSECTOID][5][0] + 0.75;
 						entity->focaly = limbs[INSECTOID][5][1];
 						entity->focalz = limbs[INSECTOID][5][2] - 0.75;
-						entity->sprite = 452;
+						entity->sprite = my->sprite == 1057 ? 1054 : 452;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_LEFTARM);
@@ -1452,6 +1441,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[INSECTOID][10][2]; // .25
 				}
 				break;
+			// Left wing:
 			case 12:
 			{
 				additionalLimb = entity;
@@ -1461,8 +1451,8 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->flags[INVISIBLE] = true;
 				
 				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-				entity->sprite = 750;
-				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				entity->sprite = my->sprite == 1057 ? 1061 : 750;
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 && torso->sprite != 1060 )
 				{
 					// wearing armor, offset more.
 					entity->x -= 2.25 * cos(my->yaw);
@@ -1523,18 +1513,19 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw += entity->fskill[0];
 				break;
 			}
+			// Right wing:
 			case 13:
 				entity->focalx = limbs[INSECTOID][12][0];
 				entity->focaly = limbs[INSECTOID][12][1];
 				entity->focalz = limbs[INSECTOID][12][2];
 				entity->flags[INVISIBLE] = true;
 				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-				entity->sprite = 751;
+				entity->sprite = my->sprite == 1057 ? 1062 : 751;
 				if ( additionalLimb ) // follow the yaw of the previous limb.
 				{
 					entity->yaw -= additionalLimb->fskill[0];
 				}
-				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 && torso->sprite != 1060 )
 				{
 					// wearing armor, offset more.
 					entity->x -= 2.25 * cos(my->yaw);

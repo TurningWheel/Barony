@@ -22,6 +22,9 @@ See LICENSE for details.
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "interface/consolecommand.hpp"
+
+static ConsoleVariable<bool> cvar_spawnArtemisia("/spawn_artemisia", false);
 
 void initShadow(Entity* my, Stat* myStats)
 {
@@ -32,7 +35,9 @@ void initShadow(Entity* my, Stat* myStats)
 		my->monsterShadowDontChangeName = 1; //User set a name.
 	}
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(481);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -45,6 +50,10 @@ void initShadow(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			if ( !strncmp(map.name, "Underworld", 10) && currentlevel <= 7 && my->monsterStoreType == 0 )
+			{
+				my->monsterStoreType = 2;
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -56,9 +65,15 @@ void initShadow(Entity* my, Stat* myStats)
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+
 			// boss variants
-			if ( my->monsterStoreType == 1 && !my->flags[USERFLAG2] )
+			if ( *cvar_spawnArtemisia || (my->monsterStoreType == 1 && !my->flags[USERFLAG2]) )
 			{
+			    my->sprite = 1087;
 				strcpy(myStats->name, "Artemisia");
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
@@ -72,9 +87,11 @@ void initShadow(Entity* my, Stat* myStats)
 				amount = 10 + local_rng.rand() % 11;
 				newItem(type, SERVICABLE, 0, amount, ITEM_GENERATED_QUIVER_APPEARANCE, true, &myStats->inventory);
 			}
-			else if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1095;
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
+				myStats->sex = MALE;
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
@@ -122,7 +139,9 @@ void initShadow(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(482, 1, map.entities, nullptr); //Limb entity.
+	const int torso_sprite = my->sprite == 1087 ? 1090 :
+	    (my->sprite == 1095 ? 1098 : 482);
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -144,7 +163,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(436, 1, map.entities, nullptr); //Limb entity.
+	const int rleg_sprite = my->sprite == 1087 ? 1089 :
+	    (my->sprite == 1095 ? 1097 : 436);
+	entity = newEntity(rleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -163,7 +184,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(435, 1, map.entities, nullptr); //Limb entity.
+	const int lleg_sprite = my->sprite == 1087 ? 1088 :
+	    (my->sprite == 1095 ? 1096 : 435);
+	entity = newEntity(lleg_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -182,7 +205,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(433, 1, map.entities, nullptr); //Limb entity.
+	const int rarm_sprite = my->sprite == 1087 ? 1085 :
+	    (my->sprite == 1095 ? 1093 : 433);
+	entity = newEntity(rarm_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -201,7 +226,9 @@ void initShadow(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(431, 1, map.entities, nullptr); //Limb entity.
+	const int larm_sprite = my->sprite == 1087 ? 1083 :
+	    (my->sprite == 1095 ? 1091 : 431);
+	entity = newEntity(larm_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -832,7 +859,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == NULL )
 					{
-						entity->sprite = 482;
+						entity->sprite = my->sprite == 1087 ? 1090 :
+						    (my->sprite == 1095 ? 1098 : 482);
 					}
 					else
 					{
@@ -858,7 +886,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
-				entity->sprite = 436;
+				entity->sprite = my->sprite == 1087 ? 1089 :
+				    (my->sprite == 1095 ? 1097 : 436);
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -870,7 +899,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
-				entity->sprite = 435;
+				entity->sprite = my->sprite == 1087 ? 1088 :
+				    (my->sprite == 1095 ? 1096 : 435);
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -893,7 +923,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][4][0] - 0.25; // 0
 						entity->focaly = limbs[SHADOW][4][1] - 0.25; // 0
 						entity->focalz = limbs[SHADOW][4][2]; // 2
-						entity->sprite = 433;
+						entity->sprite = my->sprite == 1087 ? 1085 :
+						    (my->sprite == 1095 ? 1093 : 433);
 					}
 					else
 					{
@@ -901,7 +932,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][4][0];
 						entity->focaly = limbs[SHADOW][4][1];
 						entity->focalz = limbs[SHADOW][4][2];
-						entity->sprite = 434;
+						entity->sprite = my->sprite == 1087 ? 1086 :
+						    (my->sprite == 1095 ? 1094 : 434);
 					}
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -928,7 +960,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][5][0] - 0.25; // 0
 						entity->focaly = limbs[SHADOW][5][1] + 0.25; // 0
 						entity->focalz = limbs[SHADOW][5][2]; // 2
-						entity->sprite = 431;
+						entity->sprite = my->sprite == 1087 ? 1083 :
+						    (my->sprite == 1095 ? 1091 : 431);
 					}
 					else
 					{
@@ -936,7 +969,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SHADOW][5][0];
 						entity->focaly = limbs[SHADOW][5][1];
 						entity->focalz = limbs[SHADOW][5][2];
-						entity->sprite = 432;
+						entity->sprite = my->sprite == 1087 ? 1084 :
+						    (my->sprite == 1095 ? 1092 : 432);
 						if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;

@@ -17,6 +17,7 @@ static std::mutex loading_mutex;
 static framebuffer loading_fb;
 constexpr Uint32 loading_bar_color_empty  = makeColor(255, 76, 49, 127);
 constexpr Uint32 loading_bar_color_filled = makeColor(255, 76, 49, 255);
+Uint32 loadingticks = 0;
 
 static void baseCreateLoadingScreen(real_t progress, const char* background_image) {
 	std::lock_guard<std::mutex> lock(loading_mutex);
@@ -138,9 +139,9 @@ void doLoadingScreen() {
 		return;
 	}
 
-	Uint32 oldTicks = ticks;
+	const Uint32 oldTicks = loadingticks;
 	handleEvents();
-	if (oldTicks != ticks) {
+	if (oldTicks != loadingticks) {
 		// find spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget"); assert(spinning_widget);
 

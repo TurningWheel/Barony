@@ -194,7 +194,7 @@ extern bool autoLimbReload;
 
 extern FILE* logfile;
 extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
-extern bool enableDebugKeys; // if true, certain special keys can be used for debugging
+extern bool& enableDebugKeys; // if true, certain special keys can be used for debugging
 
 class Item;
 //enum Item;

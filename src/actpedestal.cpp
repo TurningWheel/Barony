@@ -252,7 +252,7 @@ void Entity::actPedestalBase()
 		{
 			Entity* entity = (Entity*)node2->element;
 			if ( entity == this || entity->flags[PASSABLE]
-				|| entity->sprite == 1 || entity == orbEntity )
+				|| entity->behavior == &actDoorFrame || entity == orbEntity )
 			{
 				continue;
 			}

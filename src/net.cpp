@@ -1574,6 +1574,7 @@ Entity* receiveEntity(Entity* entity)
 	//Yes, it is necessary. I don't think I like this solution though, will try something else.
 	*/
 
+    Sint32 oldSprite = 0;
 	if ( entity == nullptr )
 	{
 		newentity = true;
@@ -1581,19 +1582,39 @@ Entity* receiveEntity(Entity* entity)
 	}
 	else
 	{
+	    oldSprite = entity->sprite;
 		entity->sprite = (int)SDLNet_Read16(&net_packet->data[8]);
 	}
+
+    // for certain monsters, we don't want to use certain bytes,
+    // because voxel-animated creatures (like rats and slimes)
+    // need to move vertically for their animation.
+	const auto monsterType = entity->getMonsterTypeFromSprite();
+	const bool excludeForAnimation =
+	    !newentity &&
+	    entity->behavior == &actMonster &&
+	    (monsterType == RAT || monsterType == SLIME || monsterType == SCARAB) &&
+	    entity->skill[8]; // MONSTER_ATTACK
+
+	if (excludeForAnimation) {
+	    entity->sprite = oldSprite;
+	}
+
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
 	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
 	entity->new_x = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
 	entity->new_y = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
-	entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+	if (!excludeForAnimation && (newentity || monsterType != SCARAB)) {
+	    entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+	}
 	entity->sizex = (Sint8)net_packet->data[16];
 	entity->sizey = (Sint8)net_packet->data[17];
-	entity->scalex = ((Uint8)net_packet->data[18]) / 128.f;
-	entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
-	entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
+	if (newentity || monsterType != SLIME) {
+	    entity->scalex = ((Uint8)net_packet->data[18]) / 128.f;
+	    entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
+	    entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
+	}
 	entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
 	entity->new_pitch = ((Sint16)SDLNet_Read16(&net_packet->data[23])) / 256.0;
 	entity->new_roll = ((Sint16)SDLNet_Read16(&net_packet->data[25])) / 256.0;
@@ -1608,7 +1629,9 @@ Entity* receiveEntity(Entity* entity)
 	}
 	entity->focalx = ((char)net_packet->data[27]) / 8.0;
 	entity->focaly = ((char)net_packet->data[28]) / 8.0;
-	entity->focalz = ((char)net_packet->data[29]) / 8.0;
+	if (!excludeForAnimation) {
+	    entity->focalz = ((char)net_packet->data[29]) / 8.0;
+	}
 	for (c = 0; c < 16; ++c)
 	{
 		if ( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) )
@@ -1638,6 +1661,13 @@ void clientActions(Entity* entity)
 	// this code assigns behaviors based on the sprite (model) number
 	switch ( entity->sprite )
 	{
+	    case 1163:
+	    case 1164:
+	    case 1165:
+	    case 1166:
+	    case 1167:
+	    case 1168:
+	    case 1169:
 		case 1:
 			entity->behavior = &actDoorFrame;
 			break;

@@ -716,7 +716,7 @@ public:
 	void initMonster(int mySprite);
 
 	//--monster type from sprite
-	int getMonsterTypeFromSprite();
+	Monster getMonsterTypeFromSprite();
 	//--monster limb offsets
 	void setHelmetLimbOffset(Entity* helm);
 	void setHumanoidLimbOffset(Entity* limb, Monster race, int limbType);

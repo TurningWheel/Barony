@@ -13,6 +13,11 @@
 
 #include "stat.hpp"
 
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_summonBosses;
+#endif
+
 enum Monster : int
 {
 	NOTHING,
@@ -51,10 +56,231 @@ enum Monster : int
 	SENTRYBOT,
 	SPELLBOT,
 	GYROBOT,
-	DUMMYBOT
+	DUMMYBOT,
+	MAX_MONSTER
 };
-const int NUMMONSTERS = 37;
+const int NUMMONSTERS = MAX_MONSTER;
 extern int kills[NUMMONSTERS];
+
+static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
+    // NOTHING
+    {
+        0,
+    },
+
+    // HUMAN
+    {
+        113, 114, 115, 116, 117,
+        125, 126, 127, 128, 129,
+        332, 333,
+        341, 342, 343, 344, 345, 346,
+        354, 355, 356, 357, 358, 359,
+        367, 368, 369, 370, 371, 372,
+        380, 381, 382, 383, 384, 385,
+    },
+
+    // RAT
+    {
+        131, 265,                       // normal rat walk cycle
+        814,                            // player rat head
+        1043,                           // player rat head attack 1
+        1044,                           // player rat head attack 2
+        1063, 1064, 1065, 1066, 1067,   // normal rat attack frames
+        1068, 1069,                     // algernon walk cycle
+        1070, 1071, 1072, 1073, 1074,   // algernon attack frames
+    },
+
+    // GOBLIN
+    {
+        180, 694, 752, 1035, 1039,
+    },
+
+    // SLIME
+    {
+        189, 1108, 1109, 1110, 1111, 1112, // blue
+        210, 1113, 1114, 1115, 1116, 1117, // green
+    },
+
+    // TROLL
+    {
+        204,    // normal troll
+        817,    // player troll
+        1132,   // thumpus
+    },
+
+    // OCTOPUS
+    {
+    },
+
+    // SPIDER
+    {
+        267,    // normal spider body
+        997,    // normal crab body
+        823,    // player spider body
+        1001,   // player crab body
+        1118,   // shelob body
+    },
+
+    // GHOUL
+    {
+        246,
+        1017, // coral grimes
+    },
+
+    // SKELETON
+    {
+        229,        // normal
+        686,        // player
+        1049,       // player (mouldy, female)
+        1103,       // mouldy (female)
+        1107,       // funny bones
+    },
+
+    // SCORPION
+    {
+        196, 266,           // normal body and tail
+        1080, 1081, 1082    // skrabblag body1, body2, tail
+    },
+
+    // CREATURE_IMP
+    {
+        289, 827
+    },
+
+    // CRAB
+    {
+    },
+
+    // GNOME
+    {
+        295,
+    },
+
+    // DEMON
+    {
+        258,    // normal demon
+        1008,   // deu-debreau
+    },
+
+    // SUCCUBUS
+    {
+        190,        // normal succubus
+        710,        // player succubus
+        1126,       // lilith
+    },
+
+    // MIMIC
+    {
+    },
+
+    // LICH
+    {
+        274,
+    },
+
+    // MINOTAUR
+    {
+        239,
+    },
+
+    // DEVIL
+    {
+        304,
+    },
+
+    // SHOPKEEPER
+    {
+        217,
+    },
+
+    // KOBOLD
+    {
+        421,
+    },
+
+    // SCARAB
+    {
+        429, 430,   // scarab bodies
+        1075,       // scarab attack
+        1078, 1079  // xyggi 1, xyggi 2
+    },
+
+    // CRYSTALGOLEM
+    {
+        475,
+    },
+
+    // INCUBUS
+    {
+        445, 702,
+    },
+
+    // VAMPIRE
+    {
+        437,    // normal
+        718,    // player male
+        756,    // player female
+        1136,   // bram
+        1137,   // female
+    },
+
+    // SHADOW
+    {
+        481,    // normal shadow head
+        1087,   // artemisia head
+        1095,   // baratheon head
+    },
+
+    // COCKATRICE
+    {
+        413,
+    },
+
+    // INSECTOID
+    {
+        455, 726, 760, 1057,
+    },
+
+    // GOATMAN
+    {
+        463, 734, 768, 1025, 1029,
+    },
+
+    // AUTOMATON
+    {
+        467, 742, 770, 1007,
+    },
+
+    // LICH_ICE
+    {
+        650,
+    },
+
+    // LICH_FIRE
+    {
+        646,
+    },
+
+    // SENTRYBOT
+    {
+        872,
+    },
+
+    // SPELLBOT
+    {
+        885,
+    },
+
+    // GYROBOT
+    {
+        886,
+    },
+
+    // DUMMYBOT
+    {
+        889,
+    },
+};
 
 static char monstertypename[][15] =
 {
@@ -170,7 +396,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//SHOPKEEPER,
 	1,	//KOBOLD,
 	2,	//SCARAB,
-	0,	//CRYSTALGOLem,
+	0,	//CRYSTALGOLEM,
 	1,	//INCUBUS,
 	1,	//VAMPIRE,
 	4,	//SHADOW,
@@ -427,6 +653,7 @@ static const int MONSTER_ALLY_DEXTERITY_SPEED_CAP = 15;
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
+Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
 bool monsterMoveAside(Entity* my, Entity* entity);
 

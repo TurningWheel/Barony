@@ -6126,13 +6126,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_SPECIAL_WINDUP3 )
 			{
+				// calls animation, but doesn't actually attack
+				// this branch executes for most monsters
 				monsterAttack = pose;
-				monsterAttackTime = 0;
+				if (myStats->type != SCARAB) {
+				    monsterAttackTime = 0;
+				}
 				if ( multiplayer == SERVER )
 				{
 					// be sure to update the clients with the new wind-up pose.
 					serverUpdateEntitySkill(this, 8);
-					serverUpdateEntitySkill(this, 9);
+					if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB) {
+					    serverUpdateEntitySkill(this, 9);
+					}
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
@@ -6150,6 +6156,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			)
 			{
 				// calls animation, but doesn't actually attack
+				// this branch executes in special cases for certain monsters
 				monsterAttack = pose;
 				monsterAttackTime = 0;
 				if ( multiplayer == SERVER )
@@ -6239,7 +6246,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				serverUpdateEntitySkill(this, 9);
+				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB) {
+				    serverUpdateEntitySkill(this, 9);
+				}
 			}
 		}
 
@@ -12843,15 +12852,17 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
-			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
-			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-			|| myStats->type == HUMAN || myStats->type == GOBLIN
-			|| myStats->type == GHOUL || myStats->type == SKELETON
-			|| myStats->type == GNOME || myStats->type == DEMON
-			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
-			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR
-			|| myStats->type == SHADOW )
+	    const auto type = myStats->type;
+		if (type == KOBOLD || type == AUTOMATON ||
+			type == GOATMAN || type == INSECTOID ||
+			type == INCUBUS || type == VAMPIRE ||
+			type == HUMAN || type == GOBLIN ||
+			type == GHOUL || type == SKELETON ||
+			type == GNOME || type == DEMON ||
+			type == CREATURE_IMP || type == SUCCUBUS ||
+			type == SHOPKEEPER || type == MINOTAUR ||
+			type == SHADOW || type == RAT ||
+			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -18099,6 +18110,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
 			{
 				if ( limb->sprite != 689 && limb->sprite != 691
+				    && limb->sprite != 1046 && limb->sprite != 1048
 					&& limb->sprite != 233 && limb->sprite != 234
 					&& limb->sprite != 745 && limb->sprite != 747
 					&& limb->sprite != 471 && limb->sprite != 472 )
@@ -18121,6 +18133,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			else if ( limbType == LIMB_HUMANOID_LEFTARM )
 			{
 				if ( limb->sprite != 688 && limb->sprite != 690
+				    && limb->sprite != 1045 && limb->sprite != 1047
 					&& limb->sprite != 231 && limb->sprite != 232
 					&& limb->sprite != 744 && limb->sprite != 746
 					&& limb->sprite != 469 && limb->sprite != 470 )

@@ -26,10 +26,14 @@ void initScarab(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 429; // scarab model
-
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
+
+	my->initMonster(429);
+
+    auto& scarabFly = my->fskill[24];
+    scarabFly = 0.0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -42,6 +46,11 @@ void initScarab(Entity* my, Stat* myStats)
 	{
 		if ( myStats != NULL )
 		{
+		    if ( !strncmp(map.name, "The Labyrinth", 13) )
+		    {
+				myStats->DEX -= 4;
+			    myStats->LVL = 10;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -54,10 +63,16 @@ void initScarab(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->z = 3.25;
+			    my->sprite = 1078;
 				strcpy(myStats->name, "Xyggi");
+				myStats->sex = FEMALE;
 				myStats->HP = 70;
 				myStats->MAXHP = 70;
 				myStats->OLDHP = myStats->HP;
@@ -170,7 +185,7 @@ void initScarab(Entity* my, Stat* myStats)
 	}
 
 	// right wing
-	Entity* entity = newEntity(483, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1078 ? 1077 : 483, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -189,7 +204,7 @@ void initScarab(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left wing
-	entity = newEntity(484, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1078 ? 1076 : 484, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -260,19 +275,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	// move legs
-	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME == 0 && MONSTER_ATTACK == 1) )
-	{
-		//MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( my->sprite == 429 )
-		{
-			my->sprite = 430;
-		}
-		else
-		{
-			my->sprite = 429;
-		}
-	}
+	const bool xyggi = (my->sprite == 1078 || my->sprite == 1079);
 
 	// move wings
 	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
@@ -498,13 +501,52 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( MONSTER_ATTACK != 0 )
+    auto& scarabFly = my->fskill[24];
+
+	// move body
+	if (xyggi)
 	{
-		MONSTER_ATTACKTIME++;
-	}
-	else
-	{
-		MONSTER_ATTACKTIME = 0;
+	    if ( (ticks % 10 == 0 && dist > 0.1) )
+	    {
+		    my->sprite = my->sprite == 1078 ? 1079 : 1078;
+		}
+	} else {
+        if (MONSTER_ATTACK)
+        {
+	        MONSTER_ATTACKTIME++;
+        }
+	    if (MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1)
+	    {
+	        if (scarabFly < PI / 2.0) {
+	            scarabFly += (PI / TICKS_PER_SECOND) * 2.0;
+	            if (scarabFly >= PI / 2.0) {
+	                scarabFly = PI / 2.0;
+	                my->attack(1, 0, nullptr); // munch
+	            }
+	        }
+	        my->sprite = 1075;
+		    my->focalz = -1;
+	    }
+	    else
+	    {
+            if (scarabFly > 0.0) {
+                scarabFly -= PI / TICKS_PER_SECOND;
+                if (scarabFly <= 0.0) {
+                    scarabFly = 0.0;
+	                my->sprite = 429;
+	                my->focalz = limbs[SCARAB][0][2];
+	                MONSTER_ATTACK = 0;
+	                MONSTER_ATTACKTIME = 0;
+                }
+            }
+            if (my->sprite == 429 || my->sprite == 430) {
+                if (ticks % 10 == 0 && dist > 0.1)
+                {
+	                my->sprite = my->sprite == 429 ? 430 : 429;
+	            }
+	        }
+	    }
+        my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
 	}
 }
 
@@ -515,8 +557,11 @@ void actScarabLimb(Entity* my)
 
 void scarabDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 2; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 2; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);

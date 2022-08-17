@@ -28,7 +28,12 @@ void initDevil(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
 	my->initMonster(304);
+	my->z = -4;
+	my->sizex = 20;
+	my->sizey = 20;
+	my->yaw = PI;
 
 	if ( multiplayer != CLIENT )
 	{

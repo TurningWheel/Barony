@@ -26,8 +26,9 @@ void initIncubus(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	//Sprite 445 = incubus head sprite
-	my->initMonster(445);
+	my->flags[BURNABLE] = true;
+	my->initMonster(445); //Sprite 445 = incubus head sprite
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -161,23 +162,6 @@ void initIncubus(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
-				{
-
-				}
-				else
-				{
-					/*myStats->DEX = 10;
-					strcpy(myStats->name, "Lilith");
-					for ( c = 0; c < 2; c++ )
-					{
-						Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
-						if ( entity )
-						{
-							entity->parent = my->getUID();
-						}
-					}*/
-				}
 
 				// random effects
 
@@ -525,8 +509,6 @@ void actIncubusLimb(Entity* my)
 
 void incubusDie(Entity* my)
 {
-	int c;
-
 	Stat* myStats = my->getStats();
 	if ( myStats && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
@@ -541,9 +523,13 @@ void incubusDie(Entity* my)
 		return;
 	}
 
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+		if (c < 6) {
+		    gib->sprite = 445 + c;
+		    gib->skill[5] = 1; // poof
+		}
 		serverSpawnGibForClient(gib);
 	}
 

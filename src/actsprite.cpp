@@ -336,10 +336,9 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 
 Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 {
-	int c, i;
 	if ( multiplayer == SERVER )
 	{
-		for ( c = 1; c < MAXPLAYERS; c++ )
+		for ( int c = 1; c < MAXPLAYERS; c++ )
 		{
 			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
 			{
@@ -386,7 +385,7 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	SPRITE_LIT = 4;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
-	for ( i = 0; i < 10; ++i )
+	for ( int i = 0; i < 10; ++i )
 	{
 		entity = newEntity(16, 1, map.entities, nullptr); //Sprite entity.
 		entity->behavior = &actFlame;
@@ -412,6 +411,32 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	}
 	entity->setUID(-3);
 	return explosion;
+}
+
+Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
+{
+	// poof
+	auto entity = newEntity(170, 1, map.entities, nullptr);
+	entity->x = x;
+	entity->y = y;
+	entity->z = z;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	//entity->flags[BRIGHT] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->behavior = &actSprite;
+	Entity* my = entity;
+	SPRITE_DESTROY = 1;
+	SPRITE_FRAMES = 7;
+	SPRITE_ANIMSPEED = 2;
+	SPRITE_LIT = 0;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+	return entity;
 }
 
 void actSleepZ(Entity* my)
