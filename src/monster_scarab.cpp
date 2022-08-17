@@ -32,6 +32,9 @@ void initScarab(Entity* my, Stat* myStats)
 
 	my->initMonster(429);
 
+    auto& scarabFly = my->fskill[24];
+    scarabFly = 0.0;
+
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 310;
@@ -66,6 +69,7 @@ void initScarab(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->z = 3.25;
 			    my->sprite = 1078;
 				strcpy(myStats->name, "Xyggi");
 				myStats->sex = FEMALE;
@@ -271,7 +275,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	bool xyggi = false;
+	const bool xyggi = (my->sprite == 1078 || my->sprite == 1079);
 
 	// move wings
 	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
@@ -294,9 +298,6 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( bodypart == 2 )
 			{
-			    if (entity->sprite == 1077) {
-			        xyggi = true;
-			    }
 				if ( MONSTER_ATTACK == 1 )
 				{
 					if ( MONSTER_ATTACKTIME == 0 )
@@ -500,31 +501,52 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	// move body
-	if (MONSTER_ATTACKTIME == 0 && MONSTER_ATTACK == 1)
-	{
-	    my->sprite = 1075;
-	}
-	else if ( ticks % 10 == 0 && dist > 0.1 )
-	{
-		//MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( xyggi )
-		{
-			my->sprite = 1078 ? 1079 : 1078;
-		}
-		else
-		{
-			my->sprite = 429 ? 430 : 429;
-		}
-	}
+    auto& scarabFly = my->fskill[24];
 
-	if ( MONSTER_ATTACK != 0 )
+	// move body
+	if (xyggi)
 	{
-		MONSTER_ATTACKTIME++;
-	}
-	else
-	{
-		MONSTER_ATTACKTIME = 0;
+	    if ( (ticks % 10 == 0 && dist > 0.1) )
+	    {
+		    my->sprite = my->sprite == 1078 ? 1079 : 1078;
+		}
+	} else {
+        if (MONSTER_ATTACK)
+        {
+	        MONSTER_ATTACKTIME++;
+        }
+	    if (MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1)
+	    {
+	        if (scarabFly < PI / 2.0) {
+	            scarabFly += (PI / TICKS_PER_SECOND) * 2.0;
+	            if (scarabFly >= PI / 2.0) {
+	                scarabFly = PI / 2.0;
+	                my->attack(1, 0, nullptr); // munch
+	            }
+	        }
+	        my->sprite = 1075;
+		    my->focalz = -1;
+	    }
+	    else
+	    {
+            if (scarabFly > 0.0) {
+                scarabFly -= PI / TICKS_PER_SECOND;
+                if (scarabFly <= 0.0) {
+                    scarabFly = 0.0;
+	                my->sprite = 429;
+	                my->focalz = limbs[SCARAB][0][2];
+	                MONSTER_ATTACK = 0;
+	                MONSTER_ATTACKTIME = 0;
+                }
+            }
+            if (my->sprite == 429 || my->sprite == 430) {
+                if (ticks % 10 == 0 && dist > 0.1)
+                {
+	                my->sprite = my->sprite == 429 ? 430 : 429;
+	            }
+	        }
+	    }
+        my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
 	}
 }
 

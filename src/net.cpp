@@ -1593,7 +1593,7 @@ Entity* receiveEntity(Entity* entity)
 	const bool excludeForAnimation =
 	    !newentity &&
 	    entity->behavior == &actMonster &&
-	    (monsterType == RAT || monsterType == SLIME) &&
+	    (monsterType == RAT || monsterType == SLIME || monsterType == SCARAB) &&
 	    entity->skill[8]; // MONSTER_ATTACK
 
 	if (excludeForAnimation) {
@@ -1605,7 +1605,7 @@ Entity* receiveEntity(Entity* entity)
 	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
 	entity->new_x = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
 	entity->new_y = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
-	if (!excludeForAnimation) {
+	if (!excludeForAnimation && (newentity || monsterType != SCARAB)) {
 	    entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
 	}
 	entity->sizex = (Sint8)net_packet->data[16];

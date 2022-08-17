@@ -6126,13 +6126,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_SPECIAL_WINDUP3 )
 			{
+				// calls animation, but doesn't actually attack
+				// this branch executes for most monsters
 				monsterAttack = pose;
-				monsterAttackTime = 0;
+				if (myStats->type != SCARAB) {
+				    monsterAttackTime = 0;
+				}
 				if ( multiplayer == SERVER )
 				{
 					// be sure to update the clients with the new wind-up pose.
 					serverUpdateEntitySkill(this, 8);
-					if (myStats->type != SLIME && myStats->type != RAT) {
+					if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB) {
 					    serverUpdateEntitySkill(this, 9);
 					}
 				}
@@ -6152,15 +6156,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 			)
 			{
 				// calls animation, but doesn't actually attack
+				// this branch executes in special cases for certain monsters
 				monsterAttack = pose;
 				monsterAttackTime = 0;
 				if ( multiplayer == SERVER )
 				{
 					// be sure to update the clients with the new wind-up pose.
 					serverUpdateEntitySkill(this, 8);
-					if (myStats->type != SLIME && myStats->type != RAT) {
-					    serverUpdateEntitySkill(this, 9);
-					}
+					serverUpdateEntitySkill(this, 9);
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
@@ -6243,7 +6246,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				if (myStats->type != SLIME && myStats->type != RAT) {
+				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB) {
 				    serverUpdateEntitySkill(this, 9);
 				}
 			}
@@ -12859,7 +12862,7 @@ int Entity::getAttackPose() const
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
 			type == SHADOW || type == RAT ||
-			type == SLIME)
+			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
