@@ -4012,4 +4012,26 @@ namespace ConsoleCommands {
 		ScriptTextParser.writeWorldSignsToFile();
 		messagePlayer(clientnum, MESSAGE_MISC, "dumped data/scripts/scripts.json");
 	});
+
+	static ConsoleCommand ccmd_addfollower("/addfollower", "adds a follower to party", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		if ( players[clientnum]->entity )
+		{
+			if ( Entity* monster = summonMonster(HUMAN, players[clientnum]->entity->x, players[clientnum]->entity->y) )
+			{
+				forceFollower(*players[clientnum]->entity, *monster);
+			}
+		}
+	});
 }
