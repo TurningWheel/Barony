@@ -262,23 +262,11 @@ int initGame()
 				node->size = sizeof(string_t);
 				string->node = node;
 
-				x = 0;
-				bool fileend = false;
-				while ( (string->data[x] = fp->getc()) != '\n' )
-				{
-					if ( fp->eof() )
-					{
-						fileend = true;
-						break;
-					}
-					x++;
-				}
-				if ( x == 0 || fileend )
-				{
+				auto result = fp->gets2(string->data, 64);
+				if (result == nullptr || string->data[0] == '\0') {
 					list_RemoveNode(node);
 					break;
 				}
-				string->data[x] = 0;
 			}
 		}
 		FileIO::close(fp);

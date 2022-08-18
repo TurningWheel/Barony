@@ -73,6 +73,7 @@ public:
 	// @return buf if successfully read a string, otherwise nullptr
 	char* gets(char* buf, int size)
 	{
+		char* result = buf;
 	    if (!buf) {
 		    return nullptr;
 	    }
@@ -89,12 +90,12 @@ public:
 				if (c == 0) {
 					return nullptr;
 				} else {
-					return buf;
+					return result;
 				}
 			}
 		}
-		*(buf + 1) = '\0';
-		return buf;
+		*(buf) = '\0';
+		return result;
 	}
 
 	// read an integer from the stream
