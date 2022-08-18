@@ -1468,8 +1468,24 @@ public:
 			bool expired = false;
 			Uint32 expiredTicks = 0;
 			real_t animFade = 0.0;
+			real_t animFadeScroll = 0.0;
 			bool bInit = false;
+			std::string name = "";
+			int level = 0;
+			bool selected = false;
 		};
+		struct FollowerDisplay_t
+		{
+			static int kNumEntriesToShow;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			int currentScrollRow = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = false;
+			bool bCompact = false;
+		};
+		FollowerDisplay_t followerDisplay;
 		std::vector<std::pair<Uint32, FollowerBar_t>> followerBars;
 		std::vector<std::pair<Uint32, FollowerBar_t>> playerBars;
 
