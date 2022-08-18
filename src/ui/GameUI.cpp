@@ -1536,7 +1536,9 @@ void updateAllyFollowerFrame(const int player)
 	auto& hud_t = players[player]->hud;
 	Frame* baseFrame = hud_t.allyFollowerFrame;
 
-	if ( !players[player]->isLocalPlayer() )
+	static ConsoleVariable<bool> cvar_followerbars("/followerbars", false);
+
+	if ( !players[player]->isLocalPlayer() || !(*cvar_followerbars) )
 	{
 		baseFrame->setDisabled(true);
 		return;
@@ -1811,7 +1813,9 @@ void updateAllyPlayerFrame(const int player)
 	auto& hud_t = players[player]->hud;
 	Frame* baseFrame = hud_t.allyPlayerFrame;
 
-	if ( !players[player]->isLocalPlayer() )
+	static ConsoleVariable<bool> cvar_playerbars("/playerbars", false);
+
+	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) )
 	{
 		baseFrame->setDisabled(true);
 		return;
