@@ -1228,6 +1228,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\engine\audio\music_pc.hpp" />
     <ClInclude Include="..\..\src\engine\audio\sound.hpp" />
     <ClInclude Include="..\..\src\engine\filepc.hpp" />
+    <ClInclude Include="..\..\src\init.hpp" />
     <ClInclude Include="..\..\src\input.hpp" />
     <ClInclude Include="..\..\src\interface\consolecommand.hpp" />
     <ClInclude Include="..\..\src\interface\ui.hpp" />
