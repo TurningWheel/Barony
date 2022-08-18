@@ -31,10 +31,15 @@ static const int LICH_WEAPON = 5;
 
 void initLichIce(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = false;
 	my->initMonster(650);
+	my->z = -1.2;
+	my->yaw = PI;
+	my->sprite = 650;
 
 	if ( multiplayer != CLIENT )
 	{
+	    my->monsterLichBattleState = LICH_BATTLE_IMMOBILE;
 		MONSTER_SPOTSND = 377;
 		MONSTER_SPOTVAR = 4;
 		MONSTER_IDLESND = -1;

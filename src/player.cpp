@@ -5659,13 +5659,14 @@ void Player::clearGUIPointers()
 }
 
 const char* Player::getAccountName() const {
+    const char* unknown = "...";
     if (directConnect) {
 	    switch (playernum) {
 	    case 0: return "Player 1";
 	    case 1: return "Player 2";
 	    case 2: return "Player 3";
 	    case 3: return "Player 4";
-	    default: return "Player X";
+	    default: return unknown;
 	    }
     } else {
 		if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -5708,5 +5709,5 @@ const char* Player::getAccountName() const {
 #endif
 		}
 	}
-    return "Unknown";
+    return unknown;
 }

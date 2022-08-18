@@ -6,6 +6,11 @@
 #include "../json.hpp"
 #include "../ui/Frame.hpp"
 
+#ifndef EDITOR
+#include "../interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_fastRestart;
+#endif
+
 namespace MainMenu {
     extern int pause_menu_owner; // which player is driving the pause menu
 	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)

@@ -53,7 +53,7 @@ void actSink(Entity* my)
 		Entity* entity = spawnGib(my);
 		entity->flags[INVISIBLE] = false;
 		entity->x += .5;
-		entity->z -= 3;
+		entity->z = my->z - 3;
 		entity->flags[SPRITE] = false;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
@@ -182,8 +182,6 @@ void actSink(Entity* my)
 								messagePlayerColor(i, MESSAGE_HINT, color, language[582]);
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
-								monster->sprite = 210;
-								monster->flags[INVISIBLE] = false;
 							}
 							break;
 						}

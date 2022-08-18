@@ -4199,15 +4199,14 @@ void handleEvents(void)
 #endif
 					}
 
-				    if (!loading)
+				    if (!loading && initialized)
 				    {
-					    if (initialized)
-					    {
-						    gameLogic();
-						}
-
-                        // increment game tick counter
+						gameLogic();
                         ++ticks;
+					}
+					else
+					{
+					    ++loadingticks;
 					}
 
 					mousexrel = 0;
@@ -4344,10 +4343,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 
 	event.type = SDL_USEREVENT;
 	event.user = userevent;
-	if (!loading)
-	{
-		SDL_PushEvent(&event);    // so the game doesn't overload itself while loading
-	}
+	SDL_PushEvent(&event);
 	return (interval);
 }
 
@@ -5111,7 +5107,7 @@ void ingameHud()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					SDL_SetRelativeMouseMode(EnableMouseCapture);
+				    SDL_SetRelativeMouseMode(EnableMouseCapture);
 				}
 			}
 
@@ -6239,6 +6235,7 @@ int main(int argc, char** argv)
 						if (newui)
 						{
 							MainMenu::doMainMenu(!intro);
+							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 						}
 						else
 						{

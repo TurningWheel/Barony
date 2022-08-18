@@ -26,7 +26,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(413);
+	my->z = -4.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -290,9 +292,13 @@ void actCockatriceLimb(Entity* my)
 void cockatriceDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 12; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 8) {
+	        gib->sprite = 413 + c;
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 

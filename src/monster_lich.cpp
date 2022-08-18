@@ -26,10 +26,15 @@ void initLich(Entity* my, Stat* myStats)
 {
 	int c;
 
+	my->flags[BURNABLE] = false;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 274;
+	my->z = -2;
+	my->yaw = PI;
+	my->initMonster(274);
+	my->skill[29] = 120;
+
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 120;

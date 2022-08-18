@@ -26,7 +26,9 @@ void initSuccubus(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = true;
 	my->initMonster(190);
+	my->z = -1;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -51,13 +53,15 @@ void initSuccubus(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 || my->flags[USERFLAG2] || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				|| myStats->leader_uid != 0 )
+		    const bool boss =
+		        local_rng.rand() % 50 == 0 &&
+		        !my->flags[USERFLAG2] &&
+		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+		    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-
-			}
-			else
-			{
+			    my->focalz = -3;
+			    my->focalx = 1;
+			    my->sprite = 1126;
 				myStats->DEX = 10;
 				strcpy(myStats->name, "Lilith");
 				for ( c = 0; c < 2; c++ )
@@ -117,7 +121,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(191, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1126 ? 1129 : 191, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -136,7 +140,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(195, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1128 : 195, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -155,7 +159,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(194, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1127 : 194, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -174,7 +178,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(193, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1124 : 193, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -193,7 +197,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(192, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1126 ? 1122 : 192, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -324,16 +328,23 @@ void actSuccubusLimb(Entity* my)
 
 void succubusDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	for ( int c = 0; c < 10; c++ )
 	{
 		Entity* gib = spawnGib(my);
+	    if (c < 6) {
+	        if (my->sprite == 1126) {
+	            gib->sprite = 1124 + c;
+	        } else {
+	            gib->sprite = 190 + c;
+	        }
+	        gib->skill[5] = 1; // poof
+	    }
 		serverSpawnGibForClient(gib);
 	}
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 71, 128);
+	playSoundEntity(my, 71, 256);
 
 	my->removeMonsterDeathNodes();
 
@@ -500,7 +511,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 195;
+						entity->sprite = my->sprite == 1126 ? 1128 : 195;
 					}
 					else
 					{
@@ -528,7 +539,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 194;
+						entity->sprite = my->sprite == 1126 ? 1127 : 194;
 					}
 					else
 					{
@@ -563,7 +574,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][4][0] - 0.25; // 0
 						entity->focaly = limbs[SUCCUBUS][4][1] - 0.25; // 0
 						entity->focalz = limbs[SUCCUBUS][4][2]; // 2
-						entity->sprite = 193;
+						entity->sprite = my->sprite == 1126 ? 1124 : 193;
 						if ( my->monsterAttack == 0 )
 						{
 							entity->roll = -PI / 16;
@@ -575,7 +586,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][4][0];
 						entity->focaly = limbs[SUCCUBUS][4][1];
 						entity->focalz = limbs[SUCCUBUS][4][2];
-						entity->sprite = 623;
+						entity->sprite = my->sprite == 1126 ? 1125 : 623;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SUCCUBUS, LIMB_HUMANOID_RIGHTARM);
@@ -596,7 +607,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][5][0] - 0.25; // 0
 						entity->focaly = limbs[SUCCUBUS][5][1] + 0.25; // 0
 						entity->focalz = limbs[SUCCUBUS][5][2]; // 2
-						entity->sprite = 192;
+						entity->sprite = my->sprite == 1126 ? 1122 : 192;
 						entity->roll = PI / 16;
 					}
 					else
@@ -605,7 +616,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SUCCUBUS][5][0];
 						entity->focaly = limbs[SUCCUBUS][5][1];
 						entity->focalz = limbs[SUCCUBUS][5][2];
-						entity->sprite = 622;
+						entity->sprite = my->sprite == 1126 ? 1123 : 622;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SUCCUBUS, LIMB_HUMANOID_LEFTARM);

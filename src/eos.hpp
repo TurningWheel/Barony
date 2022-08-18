@@ -115,6 +115,7 @@ public:
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	bool bFriendsOnly = false; // if true the current lobby can only be found by friends
 	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
@@ -318,14 +319,15 @@ public:
 			public:
 				std::string lobbyName = "";
 				std::string gameVersion = "";
+				std::string gameJoinKey = "";
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
 				Uint32 numServerMods = 0;
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
-				std::string gameJoinKey = "";
-				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
 				Uint32 maxplayersCompatible = MAXPLAYERS;
+				Uint32 PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
+				bool friendsOnly = false;
 				void ClearData()
 				{
 					lobbyName = "";
@@ -338,6 +340,7 @@ public:
 					gameCurrentLevel = -1;
 					maxplayersCompatible = MAXPLAYERS;
 					PermissionLevel = static_cast<Uint32>(EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED);
+					friendsOnly = false;
 				}
 		} LobbyAttributes;
 		enum HostUpdateLobbyTypes : int
@@ -373,9 +376,11 @@ public:
 			GAME_CURRENT_LEVEL,
 			GAME_JOIN_KEY,
 			LOBBY_PERMISSION_LEVEL,
-			GAME_MAXPLAYERS
+			FRIENDS_ONLY,
+			GAME_MAXPLAYERS,
+			ATTRIBUTE_TYPE_SIZE
 		};
-		const int kNumAttributes = 10;
+		const int kNumAttributes = ATTRIBUTE_TYPE_SIZE;
 		std::pair<std::string, std::string> getAttributePair(AttributeTypes type);
 
 	} CurrentLobbyData;

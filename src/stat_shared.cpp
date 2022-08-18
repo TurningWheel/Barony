@@ -617,7 +617,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 88:
 		case (1000 + VAMPIRE):
 			stats->type = VAMPIRE;
-			stats->sex = MALE;
+			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->appearance = local_rng.rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
@@ -1052,7 +1052,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		//case 37:
 		case (1000 + MINOTAUR):
 			stats->type = MINOTAUR;
-			stats->sex = MALE;
+			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;

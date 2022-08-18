@@ -70,7 +70,7 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	Uint32 deathcamGameoverPromptTicks = TICKS_PER_SECOND * 6;
+	Uint32 deathcamGameoverPromptTicks = *cvar_fastRestart ? TICKS_PER_SECOND : TICKS_PER_SECOND * 6;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -4910,11 +4910,14 @@ void actPlayer(Entity* my)
 		{
 			if ( playerRace == SKELETON )
 			{
-				my->sprite = 686;
+				my->sprite = stats[PLAYER_NUM]->sex == FEMALE ? 1049 : 686;
 			}
 			else if ( playerRace == RAT )
 			{
-				my->sprite = 814;
+				my->sprite = PLAYER_ATTACK ?
+				    (PLAYER_ATTACKTIME < 5 ? 1043 :
+				    (PLAYER_ATTACKTIME < 10 ? 1044 : 814)) :
+				    814;
 			}
 			else if ( playerRace == TROLL )
 			{
@@ -7646,6 +7649,9 @@ bool Entity::isPlayerHeadSprite()
 		case 823:
 		case 827:
 		case 1001:
+		case 1043:
+		case 1044:
+		case 1049:
 			return true;
 			break;
 		default:
@@ -7746,7 +7752,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 687;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1052 : 687;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7830,7 +7836,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 693;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1051 : 693;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7907,7 +7913,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 692;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1050 : 692;
 					break;
 				case GOBLIN:
 					if ( stats[playernum]->sex == FEMALE )
@@ -7984,7 +7990,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 689;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1046 : 689;
 					break;
 				case GOBLIN:
 					this->sprite = 697;
@@ -8047,7 +8053,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			switch ( playerRace )
 			{
 				case SKELETON:
-					this->sprite = 688;
+					this->sprite = stats[playernum]->sex == FEMALE ? 1045 : 688;
 					break;
 				case GOBLIN:
 					this->sprite = 696;
@@ -8121,7 +8127,11 @@ void playerAnimateRat(Entity* my)
 	{
 		if ( bodypart == 0 )
 		{
-			my->focalx = -2;
+		    // this is the head
+			my->focalx = 3;
+			my->scalex = 1.02;
+			my->scaley = 1.02;
+			my->scalez = 1.02;
 			continue;
 		}
 		Entity* entity = (Entity*)node->element;
@@ -8130,11 +8140,12 @@ void playerAnimateRat(Entity* my)
 		entity->z = my->z;
 		if ( bodypart == 1 )
 		{
+		    // this is the body
 			if ( entity->sprite != 815 && entity->sprite != 816 )
 			{
 				entity->sprite = 815;
 			}
-			entity->focalx = -2;
+			entity->focalx = -4;
 			if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
 			{
 				if ( (ticks % 10 == 0) )

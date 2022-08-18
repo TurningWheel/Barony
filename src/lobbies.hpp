@@ -11,6 +11,8 @@ See LICENSE for details.
 
 #pragma once
 
+#include <string>
+
 class LobbyHandler_t
 {
 	const int kNumSearchResults = 200;
@@ -62,17 +64,18 @@ public:
 	bool showLobbyFilters = false;
 
 	bool crossplayEnabled = false;
-	bool settings_crossplayEnabled = false;
 
-	LobbyServiceType getHostingType()
+	std::string getCurrentRoomKey() const;
+
+	LobbyServiceType getHostingType() const
 	{
 		return hostingType;
 	}
-	LobbyServiceType getJoiningType()
+	LobbyServiceType getJoiningType() const
 	{
 		return joiningType;
 	}
-	LobbyServiceType getP2PType()
+	LobbyServiceType getP2PType() const
 	{
 		return P2PType;
 	}

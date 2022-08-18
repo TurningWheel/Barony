@@ -1324,11 +1324,11 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		}
 
 		bool exactLocation = true;
-		Entity* summon = summonMonster(monsterType, thrown->x, thrown->y, true);
+		Entity* summon = summonMonsterNoSmoke(monsterType, thrown->x, thrown->y, true);
 		if ( !summon )
 		{
 			exactLocation = false;
-			summon = summonMonster(monsterType, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
+			summon = summonMonsterNoSmoke(monsterType, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
 		}
 		if ( summon )
 		{

@@ -27,15 +27,14 @@ const int NUM_GOATMAN_THROWN_WEAPONS = 2;
 const int NUM_GOATMAN_BOSS_GHARBAD_POTIONS = 3;
 const int NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS = 3;
 
-const int BOSS_GHARBAD = 1;
-
 void initGoatman(Entity* my, Stat* myStats)
 {
 	node_t* node;
-	int boss = 0;
+	bool spawnedBoss = false;
 
-	//Sprite 463 = Goatman head model
-	my->initMonster(463);
+	my->flags[BURNABLE] = true;
+	my->initMonster(463); //Sprite 463 = Goatman head model
+	my->z = 0;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -49,6 +48,14 @@ void initGoatman(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1029;
+		    }
+			if ( strstr(map.name, "Hell") )
+			{
+				strcpy(myStats->name, "lesser goatman");
+			}
 			bool minion = false;
 			if ( !myStats->leader_uid )
 			{
@@ -87,17 +94,22 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1025;
 				strcpy(myStats->name, "Gharbad");
+				myStats->sex = MALE;
 				myStats->STR += 10;
 				myStats->DEX += 2;
 				myStats->MAXHP += 75;
 				myStats->HP = myStats->MAXHP;
 				myStats->OLDHP = myStats->MAXHP;
 				myStats->CHR = -1;
-				boss = BOSS_GHARBAD;
+				spawnedBoss = true;
 				//TODO: Boss stats
 
 				//Spawn in potions.
@@ -150,7 +162,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			my->setHardcoreStats(*myStats);
 
 			bool isShaman = false;
-			if ( local_rng.rand() % 2 && boss == 0 && !minion )
+			if ( local_rng.rand() % 2 && !spawnedBoss && !minion )
 			{
 				isShaman = true;
 				if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && local_rng.rand() % 2 == 0 )
@@ -218,7 +230,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 
 			//Give weapons.
-			if ( !boss )
+			if ( !spawnedBoss )
 			{
 				if ( !isShaman && local_rng.rand() % 3 > 0 )
 				{
@@ -494,7 +506,9 @@ void initGoatman(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(466, 1, map.entities, nullptr); //Limb entity.
+	const int torso_sprite = my->sprite == 1025 ? 1028 :
+	    (my->sprite == 1029 ? 1030 : 466);
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -516,7 +530,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(465, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1027 : 465, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -535,7 +549,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(464, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1026 : 464, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -554,7 +568,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(461, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1023 : 461, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -573,7 +587,7 @@ void initGoatman(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(459, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 1025 ? 1021 : 459, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -703,8 +717,11 @@ void actGoatmanLimb(Entity* my)
 
 void goatmanDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->skill[5] = 1; // poof
+	gib->sprite = my->sprite;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -925,7 +942,9 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 466;
+						entity->sprite =
+						    my->sprite == 1025 ? 1028 :
+						    (my->sprite == 1029 ? 1030 : 466);
 					}
 					else
 					{
@@ -953,7 +972,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 465;
+						entity->sprite = my->sprite == 1025 ? 1027 : 465;
 					}
 					else
 					{
@@ -981,7 +1000,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 464;
+						entity->sprite = my->sprite == 1025 ? 1026 : 464;
 					}
 					else
 					{
@@ -1016,7 +1035,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][4][0]; // 0
 						entity->focaly = limbs[GOATMAN][4][1]; // 0
 						entity->focalz = limbs[GOATMAN][4][2]; // 2
-						entity->sprite = 461;
+						entity->sprite = my->sprite == 1025 ? 1023 : 461;
 					}
 					else
 					{
@@ -1024,7 +1043,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][4][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][4][1];
 						entity->focalz = limbs[GOATMAN][4][2] - 0.75;
-						entity->sprite = 462;
+						entity->sprite = my->sprite == 1025 ? 1024 : 462;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOATMAN, LIMB_HUMANOID_RIGHTARM);
@@ -1044,14 +1063,14 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[GOATMAN][5][0]; // 0
 						entity->focaly = limbs[GOATMAN][5][1]; // 0
 						entity->focalz = limbs[GOATMAN][5][2]; // 2
-						entity->sprite = 459;
+						entity->sprite = my->sprite == 1025 ? 1021 : 459;
 					}
 					else
 					{
 						entity->focalx = limbs[GOATMAN][5][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][5][1];
 						entity->focalz = limbs[GOATMAN][5][2] - 0.75;
-						entity->sprite = 460;
+						entity->sprite = my->sprite == 1025 ? 1022 : 460;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, GOATMAN, LIMB_HUMANOID_LEFTARM);

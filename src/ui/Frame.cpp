@@ -1348,7 +1348,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	if (toBeDeleted) {
 		result.removed = true;
 	} else {
-		++ticks;
+		++this->ticks;
 		if (destWidget) {
 			destWidget->select();
 		}

@@ -23,10 +23,12 @@
 
 void initScorpion(Entity* my, Stat* myStats)
 {
+	my->flags[BURNABLE] = true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	my->sprite = 196;
+	my->initMonster(196);
+
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 101;
@@ -50,10 +52,15 @@ void initScorpion(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( local_rng.rand() % 50 == 0 && !my->flags[USERFLAG2] && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
-				&& myStats->leader_uid == 0 )
+			const bool boss =
+			    local_rng.rand() % 50 == 0 &&
+			    !my->flags[USERFLAG2] &&
+			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+			    my->sprite = 1080;
 				strcpy(myStats->name, "Skrabblag");
+				myStats->sex = FEMALE;
 				myStats->HP = 100;
 				myStats->MAXHP = 100;
 				myStats->OLDHP = myStats->HP;
@@ -112,7 +119,7 @@ void initScorpion(Entity* my, Stat* myStats)
 	}
 
 	// tail
-	Entity* entity = newEntity(197, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 1080 ? 1082 : 197, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -132,8 +139,11 @@ void initScorpion(Entity* my, Stat* myStats)
 
 void scorpionDie(Entity* my)
 {
-	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	Entity* gib = spawnGib(my);
+	gib->sprite = my->sprite;
+	gib->skill[5] = 1; // poof
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -234,18 +244,7 @@ void scorpionAnimate(Entity* my, double dist)
 		}
 	}
 
-	// move legs
-	if ( ticks % 10 == 0 && dist > 0.1 )
-	{
-		if ( my->sprite == 196 )
-		{
-			my->sprite = 266;
-		}
-		else
-		{
-			my->sprite = 196;
-		}
-	}
+	bool skrabblag = false;
 
 	// move tail
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
@@ -259,6 +258,9 @@ void scorpionAnimate(Entity* my, double dist)
 		entity->y = my->y - 4 * sin(my->yaw);
 		entity->z = my->z;
 		entity->yaw = my->yaw;
+		if (entity->sprite == 1082) {
+		    skrabblag = true;
+		}
 		if ( !MONSTER_ATTACK )
 		{
 			entity->pitch = 0;
@@ -284,6 +286,19 @@ void scorpionAnimate(Entity* my, double dist)
 					MONSTER_ATTACK = 0;
 				}
 			}
+		}
+	}
+
+	// move legs
+	if ( ticks % 10 == 0 && dist > 0.1 )
+	{
+		if ( skrabblag )
+		{
+			my->sprite = my->sprite == 1080 ? 1081 : 1080;
+		}
+		else
+		{
+			my->sprite = my->sprite == 196 ? 266 : 196;
 		}
 	}
 }

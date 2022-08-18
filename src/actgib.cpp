@@ -34,12 +34,29 @@
 #define GIB_GRAVITY my->fskill[3]
 #define GIB_LIFESPAN my->skill[4]
 #define GIB_PLAYER my->skill[11]
+#define GIB_POOF my->skill[5]
+
+void poof(Entity* my) {
+    if (GIB_POOF) {
+        playSoundEntityLocal(my, 512, 128);
+        for (int c = 0; c < 3; ++c) {
+            const int x = my->x + local_rng.uniform(-4, 4);
+            const int y = my->y + local_rng.uniform(-4, 4);
+            const int z = my->z + local_rng.uniform(-4, -1);
+            auto poof = spawnPoof(x, y, z);
+            poof->scalex = 0.3;
+            poof->scaley = 0.3;
+            poof->scalez = 0.3;
+        }
+    }
+}
 
 void actGib(Entity* my)
 {
 	// don't update gibs that have no velocity
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
+	    poof(my);
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -47,6 +64,7 @@ void actGib(Entity* my)
 	// remove gibs that have exceeded their life span
 	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
 	{
+	    poof(my);
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -100,6 +118,7 @@ void actGib(Entity* my)
 	// gibs disappear after falling to a certain point
 	if ( my->z > 128 )
 	{
+	    poof(my);
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -206,12 +225,14 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 					gibsprite = 211;
 					break;
 				case 3:
-					if ( parentent->sprite == 210 )
+					if ( parentent->sprite == 210 || parentent->sprite >= 1113 )
 					{
+					    // green blood
 						gibsprite = 211;
 					}
 					else
 					{
+					    // blue blood
 						gibsprite = 215;
 					}
 					break;
@@ -240,7 +261,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
-	entity->z = parentent->z;
+	entity->z = local_rng.uniform(8, parentent->z - 4);
 	entity->parent = parentent->getUID();
 	entity->sizex = 2;
 	entity->sizey = 2;

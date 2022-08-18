@@ -27,8 +27,11 @@ void initSkeleton(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
+	my->flags[BURNABLE] = false;
+
 	//Sprite 229 = Skeleton head model
 	my->initMonster(229);
+	my->z = -0.5;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -41,6 +44,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+		    if ( myStats->sex == FEMALE )
+		    {
+		        my->sprite = 1103;
+		    }
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -57,7 +64,6 @@ void initSkeleton(Entity* my, Stat* myStats)
 					secondarySummon = false;
 				}
 				my->skeletonSummonSetEquipment(myStats, rank);
-				myStats->sex = MALE;
 				myStats->GOLD = 0;
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 64);
 
@@ -225,7 +231,23 @@ void initSkeleton(Entity* my, Stat* myStats)
 				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 				// boss variants
-				if ( local_rng.rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, "") || myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] )
+			    const bool boss =
+			        local_rng.rand() % 50 == 0 &&
+			        !my->flags[USERFLAG2] &&
+			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
+			    {
+			        my->sprite = 1107;
+			        myStats->sex = MALE;
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					strcpy(myStats->name, "Funny Bones");
+					myStats->STR += 6;
+					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+			    }
+				else
 				{
 					// not boss if a follower, or name has already been set to something other than blank.
 					if ( strncmp(map.name, "Underworld", 10) )
@@ -258,16 +280,6 @@ void initSkeleton(Entity* my, Stat* myStats)
 							}
 						}
 					}
-				}
-				else
-				{
-					myStats->HP = 100;
-					myStats->MAXHP = 100;
-					strcpy(myStats->name, "Funny Bones");
-					myStats->STR += 6;
-					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
-					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);
-					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 
 				// random effects
@@ -661,26 +673,52 @@ void skeletonDie(Entity* my)
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
-			switch ( c )
-			{
-				case 0:
-					entity->sprite = 229;
-					break;
-				case 1:
-					entity->sprite = 230;
-					break;
-				case 2:
-					entity->sprite = 231;
-					break;
-				case 3:
-					entity->sprite = 233;
-					break;
-				case 4:
-					entity->sprite = 235;
-					break;
-				case 5:
-					entity->sprite = 236;
-					break;
+            entity->skill[5] = 1; // poof
+            if (my->sprite == 1103) {
+			    switch ( c )
+			    {
+				    case 0:
+					    entity->sprite = 1099;
+					    break;
+				    case 1:
+					    entity->sprite = 1101;
+					    break;
+				    case 2:
+					    entity->sprite = 1103;
+					    break;
+				    case 3:
+					    entity->sprite = 1104;
+					    break;
+				    case 4:
+					    entity->sprite = 1105;
+					    break;
+				    case 5:
+					    entity->sprite = 1106;
+					    break;
+			    }
+            }
+            else {
+			    switch ( c )
+			    {
+				    case 0:
+					    entity->sprite = 229;
+					    break;
+				    case 1:
+					    entity->sprite = 230;
+					    break;
+				    case 2:
+					    entity->sprite = 231;
+					    break;
+				    case 3:
+					    entity->sprite = 233;
+					    break;
+				    case 4:
+					    entity->sprite = 235;
+					    break;
+				    case 5:
+					    entity->sprite = 236;
+					    break;
+			    }
 			}
 			serverSpawnGibForClient(entity);
 		}
@@ -837,7 +875,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == nullptr )
 					{
-						entity->sprite = 230;
+						entity->sprite = my->sprite == 1103 ? 1106 : 230;
 					}
 					else
 					{
@@ -865,7 +903,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 236;
+						entity->sprite = my->sprite == 1103 ? 1105 : 236;
 					}
 					else
 					{
@@ -893,7 +931,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 235;
+						entity->sprite = my->sprite == 1103 ? 1104 : 235;
 					}
 					else
 					{
@@ -922,7 +960,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						entity->sprite = 233;
+						entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -950,7 +988,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[7] == 0 )
 					{
-						if ( entity->sprite == 233 )
+						if ( entity->sprite == 233 || entity->sprite == 1101 )
 						{
 							// these are the default arms.
 							// chances are they may be wrong if sent by the server, 
@@ -964,7 +1002,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->skill[7] == 0 )
 					{
 						// we set this ourselves until proper initialisation.
-						entity->sprite = 233;
+						entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -982,7 +1020,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0]; // 0
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2]; // 2
-						//entity->sprite = 233;
+						//entity->sprite = my->sprite == 1103 ? 1101 : 233;
 					}
 					else
 					{
@@ -990,9 +1028,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
-						if ( entity->sprite == 233 )
+						if ( entity->sprite == 233 || entity->sprite == 1101 )
 						{
-							entity->sprite = 234;
+							entity->sprite = my->sprite == 1103 ? 1102 : 234;
 						}
 						else
 						{
@@ -1011,7 +1049,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->gloves == nullptr )
 					{
-						entity->sprite = 231;
+						entity->sprite = my->sprite == 1103 ? 1099 : 231;
 					}
 					else
 					{
@@ -1039,7 +1077,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[7] == 0 )
 					{
-						if ( entity->sprite == 231 )
+						if ( entity->sprite == 231 || entity->sprite == 1099 )
 						{
 							// these are the default arms.
 							// chances are they may be wrong if sent by the server, 
@@ -1053,7 +1091,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( entity->skill[7] == 0 )
 					{
 						// we set this ourselves until proper initialisation.
-						entity->sprite = 231;
+						entity->sprite = my->sprite == 1103 ? 1099 : 231;
 					}
 					else
 					{
@@ -1069,7 +1107,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( shield->flags[INVISIBLE] )
 					{
 						// if shield invisible, relax arm.
-						//entity->sprite = 231;
+						//entity->sprite = my->sprite == 1103 ? 1099 : 231;
 						entity->focalx = limbs[SKELETON][5][0]; // 0
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2]; // 2
@@ -1080,9 +1118,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
-						if ( entity->sprite == 231 )
+						if ( entity->sprite == 231 || entity->sprite == 1099 )
 						{
-							entity->sprite = 232;
+							entity->sprite = my->sprite == 1103 ? 1100 : 232;
 						}
 						else
 						{
