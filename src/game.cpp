@@ -2036,6 +2036,7 @@ void gameLogic(void)
 							FollowerMenu[i].closeFollowerMenuGUI(true);
 						}
 						enemyHPDamageBarHandler[i].HPBars.clear();
+						players[i]->hud.followerBars.clear();
 					}
 
 					achievementObserver.updateData();

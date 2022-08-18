@@ -1954,6 +1954,7 @@ static void changeLevel() {
 		minimapPings[i].clear(); // clear minimap pings
 		enemyHPDamageBarHandler[i].HPBars.clear();
 	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+		players[i]->hud.followerBars.clear();
 	}
 
 	// clear follower menu entities.

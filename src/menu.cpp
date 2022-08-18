@@ -9523,6 +9523,8 @@ void doNewGame(bool makeHighscore) {
 	    client_keepalive[i] = ticks; // this way nobody times out when we reset ticks!
 		players[i]->init();
 		players[i]->hud.reset();
+		players[i]->hud.followerBars.clear();
+		players[i]->hud.playerBars.clear();
 		deinitShapeshiftHotbar(i);
 		for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 		{
@@ -10514,6 +10516,8 @@ void doEndgame() {
 		players[i]->inventoryUI.appraisal.timer = 0;
 		players[i]->inventoryUI.appraisal.current_item = 0;
 		players[i]->hud.reset();
+		players[i]->hud.followerBars.clear();
+		players[i]->hud.playerBars.clear();
 		deinitShapeshiftHotbar(i);
 		for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 		{
