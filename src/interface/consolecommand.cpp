@@ -32,6 +32,7 @@
 #include "../collision.hpp"
 #include "../player.hpp"
 #include "../ui/GameUI.hpp"
+#include "../ui/LoadingScreen.hpp"
 #include "../classdescriptions.hpp"
 
 bool spamming = false;
@@ -1333,85 +1334,9 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_loadmodels("/loadmodels", "", []CCMD{
-		char name2[128];
-		char buf[16] = "";
-		int startIndex = 0;
-		int endIndex = nummodels;
-		int i = 0;
-        if (argc < 2) {
-            return;
-        }
-		auto firstArg = argv[1];
-		auto secondArg = argv[2];
-		startIndex = atoi(firstArg);
-
-		if ( startIndex != 0 )
-		{
-			endIndex = atoi(secondArg);
-			if ( endIndex > nummodels || endIndex < startIndex )
-			{
-				endIndex = nummodels;
-			}
-		}
-
-		if ( !PHYSFS_getRealDir("models/models.txt") )
-		{
-			printlog("error: could not find file: %s", "models/models.txt");
-			return;
-		}
-
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-		File *fp = openDataFile(modelsDirectory.c_str(), "rb");
-		for ( int c = 0; !fp->eof(); c++ )
-		{
-			fp->gets2(name2, sizeof(name2));
-			if ( c >= startIndex && c < endIndex )
-			{
-				if ( models[c] != NULL )
-				{
-					if ( models[c]->data )
-					{
-						free(models[c]->data);
-					}
-					free(models[c]);
-					if ( polymodels[c].faces )
-					{
-						free(polymodels[c].faces);
-					}
-					if ( polymodels[c].vbo )
-					{
-						SDL_glDeleteBuffers(1, &polymodels[c].vbo);
-					}
-					if ( polymodels[c].colors )
-					{
-						SDL_glDeleteBuffers(1, &polymodels[c].colors);
-					}
-					if ( polymodels[c].va )
-					{
-						SDL_glDeleteVertexArrays(1, &polymodels[c].va);
-					}
-					if ( polymodels[c].colors_shifted )
-					{
-						SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
-					}
-					if ( polymodels[c].grayscale_colors )
-					{
-						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
-					}
-					if ( polymodels[c].grayscale_colors_shifted )
-					{
-						SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-					}
-				}
-				models[c] = loadVoxel(name2);
-			}
-		}
-		FileIO::close(fp);
-		//messagePlayer(clientnum, language[2354]);
-		messagePlayer(clientnum, MESSAGE_MISC, language[2355], startIndex, endIndex);
-		generatePolyModels(startIndex, endIndex, true);
-		generateVBOs(startIndex, endIndex);
+		const int startIndex = argc >= 2 ? atoi(argv[1]) : 0;
+		const int endIndex = argc >= 3 ? atoi(argv[2]) : nummodels;
+		reloadModels(startIndex, endIndex);
 		});
 
 	static ConsoleCommand ccmd_killmonsters("/killmonsters", "kill all monsters (cheat)", []CCMD{
