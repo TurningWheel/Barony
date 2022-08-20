@@ -3955,7 +3955,10 @@ namespace ConsoleCommands {
 		{
 			if ( Entity* monster = summonMonster(HUMAN, players[clientnum]->entity->x, players[clientnum]->entity->y) )
 			{
-				forceFollower(*players[clientnum]->entity, *monster);
+				if ( forceFollower(*players[clientnum]->entity, *monster) )
+				{
+					monster->monsterAllyIndex = clientnum;
+				}
 			}
 		}
 	});
