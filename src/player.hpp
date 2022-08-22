@@ -1368,6 +1368,7 @@ public:
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
+		Frame* allyFollowerTitleFrame = nullptr;
 		Frame* allyPlayerFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
@@ -1473,15 +1474,25 @@ public:
 			std::string name = "";
 			int level = 0;
 			bool selected = false;
+			bool dummy = false;
 		};
 		struct FollowerDisplay_t
 		{
-			static int kNumEntriesToShow;
+			static bool infiniteScrolling;
+			static int getNumEntriesToShow(const int playernum);
+			bool getCompactMode(const int playernum);
+			static int numFiniteBars;
+			static int numInfiniteFullsizeBars;
+			static int numInfiniteCompactBars;
+			static int numInfiniteSplitscreenFullsizeBars;
+			static int numInfiniteSplitscreenCompactBars;
 			real_t scrollPercent = 0.0;
 			real_t scrollInertia = 0.0;
 			int scrollSetpoint = 0;
 			int currentScrollRow = 0;
 			real_t scrollAnimateX = 0.0;
+			Uint32 lastUidSelected = 0;
+			real_t animSelected = 0.0;
 			bool isInteractable = false;
 			bool bCompact = false;
 		};
