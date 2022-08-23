@@ -2272,7 +2272,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
-					if ( entity2->behavior == &actDoorFrame )
+					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point, and door frame not picked. so use default sprite 1
 					{
 						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
