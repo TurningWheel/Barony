@@ -872,6 +872,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 	int currentY = 0;
 	int baseFrameHeight = 0;
+	int selectorX = 0;
 	bool madeSelection = false;
 	bool updateTitleFrame = false;
 	bool doneTitleFrame = false;
@@ -1001,25 +1002,62 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 				{
 					if ( infiniteScrolling && barIndex < followerDisplay.scrollSetpoint )
 					{
+						//followerBar.animFadeScroll = 1.0;
 						// not visible
 						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-						real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScroll)) / 1.0;
-						followerBar.animFadeScroll += setpointDiffFade;
-						followerBar.animFadeScroll = std::min(1.0, followerBar.animFadeScroll);
+						if ( !followerBar.dummy )
+						{
+							real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScroll)) / 10.0;
+							followerBar.animFadeScroll += setpointDiffFade;
+							followerBar.animFadeScroll = std::min(1.0, followerBar.animFadeScroll);
+						}
+
 					}
 					else
 					{
 						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-						real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScroll) / 1.0;
-						followerBar.animFadeScroll -= setpointDiffFade;
-						followerBar.animFadeScroll = std::max(0.0, followerBar.animFadeScroll);
+						if ( !followerBar.dummy )
+						{
+							real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScroll) / 10.0;
+							followerBar.animFadeScroll -= setpointDiffFade;
+							followerBar.animFadeScroll = std::max(0.0, followerBar.animFadeScroll);
+						}
+
+					}
+
+					if ( infiniteScrolling && barIndex < followerDisplay.scrollSetpoint - 1 )
+					{
+						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						if ( !followerBar.dummy )
+						{
+							real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScrollDummy) / 10.0;
+							followerBar.animFadeScrollDummy -= setpointDiffFade;
+							followerBar.animFadeScrollDummy = std::max(0.0, followerBar.animFadeScrollDummy);
+						}
+					}
+					else
+					{
+						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						if ( !followerBar.dummy )
+						{
+							real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScrollDummy)) / 10.0;
+							followerBar.animFadeScrollDummy += setpointDiffFade;
+							followerBar.animFadeScrollDummy = std::min(1.0, followerBar.animFadeScrollDummy);
+						}
 					}
 				}
 			}
 
 			if ( !updateTitleFrame )
 			{
-				entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScroll));
+				if ( followerBar.dummy )
+				{
+					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScrollDummy));
+				}
+				else
+				{
+					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScroll));
+				}
 			}
 		}
 
@@ -1208,6 +1246,15 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			nameField->setHJustify(Field::justify_t::RIGHT);
 
 			levelField->setSize(SDL_Rect{ 0, nameField->getSize().y, entryFrame->getSize().w - 16, levelField->getSize().h });
+
+			if ( !followerDisplay.infiniteScrolling )
+			{
+				if ( auto textGet = nameField->getTextObject() )
+				{
+					int x = nameField->getSize().x + nameField->getSize().w - textGet->getWidth();
+					selectorX = selectorX != 0 ? std::min(selectorX, x) : x;
+				}
+			}
 		}
 		else
 		{
@@ -1225,6 +1272,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			nameField->setHJustify(Field::justify_t::LEFT);
 
 			levelField->setSize(SDL_Rect{ 0, 14, entryFrame->getSize().w - 16, levelField->getSize().h });
+
+			if ( !followerDisplay.infiniteScrolling )
+			{
+				selectorX = selectorX != 0 ? std::min(selectorX, portrait->getSize().x) : portrait->getSize().x;
+			}
 		}
 
 		if ( updateTitleFrame )
@@ -1235,6 +1287,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			bgImg->pos.h = entryFrame->getSize().h;
 			bgImg->pos.y = 0;
 			bgImg->pos.x = entryFrame->getSize().w - bgImg->pos.w;
+
+			selectorX = bgImg->pos.x;
 		}
 
 		{ // HP
@@ -1453,13 +1507,10 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 							hpProgressBase->path = "*#images/ui/HUD/allies/HUD_HPBar_Fill_Base_00.png";
 							Uint8 r, g, b, a;
 							getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
-							if ( doAnimation )
-							{
-								int decrement = 20;
-								real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-								decrement *= fpsScale;
-								a = std::max(0, (int)a - decrement);
-							}
+							int decrement = 20;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							decrement *= fpsScale;
+							a = std::max(0, (int)a - decrement);
 							hpProgressEndCapFlash->color = makeColor(r, g, b, a);
 						}
 					}
@@ -1682,13 +1733,10 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 							}
 							Uint8 r, g, b, a;
 							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
-							if ( doAnimation )
-							{
-								int increment = 10;
-								real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-								increment *= fpsScale;
-								a = std::min(255, (int)a + increment);
-							}
+							int increment = 10;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							increment *= fpsScale;
+							a = std::min(255, (int)a + increment);
 							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
 
 							mpProgress->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Mid_00.png";
@@ -1737,13 +1785,10 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 							mpProgressBase->path = "*#images/ui/HUD/allies/HUD_MPBar_Fill_Base_00.png";
 							Uint8 r, g, b, a;
 							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
-							if ( doAnimation )
-							{
-								int decrement = 20;
-								real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-								decrement *= fpsScale;
-								a = std::max(0, (int)a - decrement);
-							}
+							int decrement = 20;
+							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							decrement *= fpsScale;
+							a = std::max(0, (int)a - decrement);
 							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
 						}
 					}
@@ -1779,7 +1824,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			if ( selector )
 			{
 				selector->disabled = false;
-				selector->pos.x = entryFrame->getSize().x + 4;
+				selector->pos.x = entryFrame->getSize().x + selectorX - 8 - selector->pos.w;
 				selector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - selector->pos.w / 2;
 			}
 		}
@@ -1788,7 +1833,9 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			if ( titleSelector )
 			{
 				titleSelector->disabled = false;
-				titleSelector->pos.x = entryFrame->getSize().x + 4;
+				titleSelector->pos.x = entryFrame->getSize().x + selectorX - 8 - titleSelector->pos.w;
+				const int selectorAnimW = 4;
+				titleSelector->pos.x += -selectorAnimW + selectorAnimW * (cos(followerDisplay.animSelected * 2 * PI));
 				titleSelector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - titleSelector->pos.w / 2;
 			}
 		}
@@ -2015,6 +2062,7 @@ void updateAllyFollowerFrame(const int player)
 		if ( followerDisplay.lastUidSelected != recentFollowerUID )
 		{
 			followerDisplay.animSelected = 1.0;
+			followerDisplay.scrollTicks = ticks;
 		}
 		followerDisplay.lastUidSelected = recentFollowerUID;
 	}
@@ -2076,7 +2124,8 @@ void updateAllyFollowerFrame(const int player)
 				{
 					hud_t.followerBars.push_back(hud_t.followerBars[vecIndex]);
 					hud_t.followerBars[hud_t.followerBars.size() - 1].second.dummy = true;
-					hud_t.followerBars[hud_t.followerBars.size() - 1].second.animFadeScroll = 0.0;
+					//messagePlayer(0, MESSAGE_DEBUG, "%.2f", hud_t.followerBars[hud_t.followerBars.size() - 1].second.animFadeScrollDummy);
+					//hud_t.followerBars[hud_t.followerBars.size() - 1].second.animFadeScroll = 0.0;
 					++activeBars;
 				}
 				++vecIndex;
@@ -2087,6 +2136,13 @@ void updateAllyFollowerFrame(const int player)
 	followerDisplay.bCompact = followerDisplay.getCompactMode(player);
 
 	updateAllyBarFrame(player, baseFrame, activeBars, false);
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 10.0;
+		followerDisplay.animSelected -= setpointDiffX;
+		followerDisplay.animSelected = std::max(0.0, followerDisplay.animSelected);
+	}
 
 	const int kNumEntriesToShow = Player::HUD_t::FollowerDisplay_t::getNumEntriesToShow(player);
 
@@ -2161,7 +2217,16 @@ void updateAllyFollowerFrame(const int player)
 					followerDisplay.scrollAnimateX = followerDisplay.scrollSetpoint - 1;
 					for ( auto& pair : hud_t.followerBars )
 					{
-						pair.second.animFadeScroll = 0.0;
+						pair.second.animFadeScroll = pair.second.animFadeScrollDummy;
+						//pair.second.animFadeScrollDummy = 0.0;
+					}
+
+					for ( int i = 0; i < realActiveBars; ++i )
+					{
+						if ( i + realActiveBars < baseFrame->getFrames().size() )
+						{
+							baseFrame->getFrames()[i]->setOpacity(baseFrame->getFrames()[i + realActiveBars]->getOpacity());
+						}
 					}
 
 					for ( auto f : baseFrame->getFrames() )
@@ -2175,10 +2240,6 @@ void updateAllyFollowerFrame(const int player)
 						{
 							f->removeSelf();
 						}
-						else
-						{
-							f->setOpacity(100.0);
-						}
 					}
 				}
 			}
@@ -2186,16 +2247,31 @@ void updateAllyFollowerFrame(const int player)
 			followerDisplay.isInteractable = false;
 			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
 			real_t setpointDiff = 0.0;
+			const real_t scrollSpeed = 3.0;
 			if ( followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX > 0.0 )
 			{
-				setpointDiff = fpsScale * std::max(.03, (followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX)) / 3.0;
+				real_t mult = 8.0;
+				if ( ticks - followerDisplay.scrollTicks < TICKS_PER_SECOND )
+				{
+					mult *= (ticks - followerDisplay.scrollTicks) / (real_t)(TICKS_PER_SECOND);
+				}
+				mult = fmin(mult, 1.0);
+
+				setpointDiff = mult * fpsScale * std::max(.03, (followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX)) / scrollSpeed;
 			}
 			else
 			{
-				setpointDiff = fpsScale * std::min(-.03, (followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX)) / 3.0;
+				real_t mult = 8.0;
+				if ( ticks - followerDisplay.scrollTicks < TICKS_PER_SECOND )
+				{
+					mult *= (ticks - followerDisplay.scrollTicks) / (real_t)(TICKS_PER_SECOND);
+				}
+				mult = fmin(mult, 1.0);
+
+				setpointDiff = mult * fpsScale * std::min(-.03, (followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX)) / scrollSpeed;
 			}
 			followerDisplay.scrollAnimateX += setpointDiff;
-			if ( setpointDiff > 0.0 )
+			if ( setpointDiff >= 0.0 )
 			{
 				followerDisplay.scrollAnimateX = std::min((real_t)followerDisplay.scrollSetpoint, followerDisplay.scrollAnimateX);
 			}

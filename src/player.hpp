@@ -1470,6 +1470,7 @@ public:
 			Uint32 expiredTicks = 0;
 			real_t animFade = 0.0;
 			real_t animFadeScroll = 0.0;
+			real_t animFadeScrollDummy = 0.0;
 			bool bInit = false;
 			std::string name = "";
 			int level = 0;
@@ -1493,6 +1494,7 @@ public:
 			real_t scrollAnimateX = 0.0;
 			Uint32 lastUidSelected = 0;
 			real_t animSelected = 0.0;
+			Uint32 scrollTicks = 0;
 			bool isInteractable = false;
 			bool bCompact = false;
 		};
