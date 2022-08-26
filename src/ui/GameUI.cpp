@@ -618,8 +618,29 @@ Frame* createAllyFollowerEntry(const int player, Frame* baseFrame)
 
 	if ( baseFrame == players[player]->hud.allyFollowerTitleFrame )
 	{
-		auto bgImg = entry->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 255), "*images/ui/HUD/allies/HUD_Ally_TitleBG_00.png", "bg img");
+		auto bgImg = entry->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 255), "*images/ui/HUD/allies/HUD_Ally_TitleBG_Left_00.png", "bg img left");
 		bgImg->disabled = true;
+		if ( auto imgGet = Image::get(bgImg->path.c_str()) )
+		{
+			bgImg->pos.w = imgGet->getWidth();
+			bgImg->pos.h = imgGet->getHeight();
+		}
+
+		bgImg = entry->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 255), "*images/ui/HUD/allies/HUD_Ally_TitleBG_Mid_00.png", "bg img mid");
+		bgImg->disabled = true;
+		if ( auto imgGet = Image::get(bgImg->path.c_str()) )
+		{
+			bgImg->pos.w = imgGet->getWidth();
+			bgImg->pos.h = imgGet->getHeight();
+		}
+
+		bgImg = entry->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 255), "*images/ui/HUD/allies/HUD_Ally_TitleBG_Right_00.png", "bg img right");
+		bgImg->disabled = true;
+		if ( auto imgGet = Image::get(bgImg->path.c_str()) )
+		{
+			bgImg->pos.w = imgGet->getWidth();
+			bgImg->pos.h = imgGet->getHeight();
+		}
 	}
 	
 	Frame* portrait = nullptr;
@@ -1150,6 +1171,15 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 		if ( followerStats && ((!bPlayerBars && follower) || bPlayerBars) )
 		{
 			followerBar.level = followerStats->LVL;
+			if ( follower )
+			{
+				followerBar.monsterType = follower->getMonsterTypeFromSprite();
+				followerBar.model = follower->sprite;
+			}
+			else
+			{
+				followerBar.monsterType = followerStats->type;
+			}
 
 			HP = followerStats->HP;
 			MAXHP = followerStats->MAXHP;
@@ -1267,6 +1297,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			hpField->setDisabled(false);
 
 			portrait->setSize(SDL_Rect{ hpFramePos.x + 4 - portrait->getSize().w, 0, portrait->getSize().w, portrait->getSize().h });
+			auto portraitImg = portrait->findImage("portrait img");
+			portraitImg->path = monsterData.getAllyIconFromSprite(followerBar.model, followerBar.monsterType);
 
 			nameField->setSize(SDL_Rect{ hpFramePos.x, 0, entryFrame->getSize().w - hpFramePos.x, nameField->getSize().h });
 			nameField->setHJustify(Field::justify_t::LEFT);
@@ -1281,14 +1313,24 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 		if ( updateTitleFrame )
 		{
-			auto bgImg = entryFrame->findImage("bg img");
-			bgImg->disabled = false;
-			bgImg->pos.w = entryFrame->getSize().w - portrait->getSize().x;
-			bgImg->pos.h = entryFrame->getSize().h;
-			bgImg->pos.y = 0;
-			bgImg->pos.x = entryFrame->getSize().w - bgImg->pos.w;
+			auto bgImgLeft = entryFrame->findImage("bg img left");
+			bgImgLeft->disabled = false;
+			auto bgImgMid = entryFrame->findImage("bg img mid");
+			bgImgMid->disabled = false;
+			auto bgImgRight = entryFrame->findImage("bg img right");
+			bgImgRight->disabled = false;
 
-			selectorX = bgImg->pos.x;
+			const int totalWidth = entryFrame->getSize().w - portrait->getSize().x;
+			bgImgMid->pos.w = totalWidth - bgImgLeft->pos.w - bgImgRight->pos.w;
+			/*bgImg->pos.h = entryFrame->getSize().h;*/
+			bgImgLeft->pos.y = 0;
+			bgImgMid->pos.y = 0;
+			bgImgRight->pos.y = 0;
+			bgImgLeft->pos.x = entryFrame->getSize().w - totalWidth - 8;
+			bgImgMid->pos.x = bgImgLeft->pos.x + bgImgLeft->pos.w;
+			bgImgRight->pos.x = bgImgMid->pos.x + bgImgMid->pos.w;
+
+			selectorX = bgImgLeft->pos.x;
 		}
 
 		{ // HP
