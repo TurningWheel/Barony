@@ -4775,3 +4775,169 @@ void VideoManager_t::update()
 	time = t;
 }
 #endif
+
+void MonsterData_t::loadMonsterDataJSON()
+{
+	if ( PHYSFS_getRealDir("/data/monster_data.json") )
+	{
+		std::string inputPath = PHYSFS_getRealDir("/data/monster_data.json");
+		inputPath.append("/data/monster_data.json");
+
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
+		char buf[65536];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
+
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("monsters") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
+
+		monsterDataEntries.clear();
+
+		const std::string baseIconPath = d["base_path"].GetString();
+
+		for ( auto itr = d["monsters"].MemberBegin(); itr != d["monsters"].MemberEnd(); ++itr )
+		{
+			std::string monsterTypeName = itr->name.GetString();
+			int monsterType = NOTHING;
+			for ( int i = 0; i < NUMMONSTERS; ++i )
+			{
+				if ( monsterTypeName == monstertypename[i] )
+				{
+					monsterType = i;
+					break;
+				}
+			}
+
+			monsterDataEntries[monsterType] = MonsterDataEntry_t(monsterType);
+			auto& entry = monsterDataEntries[monsterType];
+
+			for ( auto entry_itr = itr->value.MemberBegin(); entry_itr != itr->value.MemberEnd(); ++entry_itr )
+			{
+				std::string key = entry_itr->name.GetString();
+				if ( key == "specialNPCs" )
+				{
+					for ( auto special_itr = entry_itr->value.MemberBegin(); special_itr != entry_itr->value.MemberEnd(); ++special_itr )
+					{
+						bool foundIcon = false;
+						std::string iconPath = "";
+						if ( special_itr->value.HasMember("icon") )
+						{
+							iconPath = special_itr->value["icon"].GetString();
+							if ( iconPath.size() > 0 )
+							{
+								foundIcon = true;
+								iconPath = baseIconPath + iconPath;
+							}
+						}
+						if ( special_itr->value.HasMember("models") )
+						{
+							std::vector<int> models;
+							if ( special_itr->value["models"].IsArray() )
+							{
+								for ( auto array_itr = special_itr->value["models"].Begin(); array_itr != special_itr->value["models"].End(); ++array_itr )
+								{
+									models.push_back(array_itr->GetInt());
+								}
+							}
+							else if ( special_itr->value["models"].IsInt() )
+							{
+								models.push_back(special_itr->value["models"].GetInt());
+							}
+
+							entry.specialNPCs[special_itr->name.GetString()] = MonsterDataEntry_t::SpecialNPCEntry_t();
+							auto& specialNPC = entry.specialNPCs[special_itr->name.GetString()];
+							specialNPC.internalName = special_itr->name.GetString();
+							specialNPC.name = special_itr->value["localized_name"].GetString();
+
+							for ( auto m : models )
+							{
+								entry.modelIndexes.insert(m);
+								if ( foundIcon )
+								{
+									entry.iconSpritesAndPaths[m] = iconPath;
+								}
+								specialNPC.modelIndexes.insert(m);
+							}
+						}
+					}
+				}
+				else
+				{
+					bool isPlayerSprite = (key.find("player") != std::string::npos) || monsterType == HUMAN;
+
+					if ( entry_itr->value.HasMember("icon") )
+					{
+						std::string iconPath = entry_itr->value["icon"].GetString();
+						if ( iconPath.size() > 0 )
+						{
+							iconPath = baseIconPath + iconPath;
+						}
+						if ( key == "default" )
+						{
+							entry.defaultIconPath = iconPath;
+						}
+						if ( entry_itr->value.HasMember("models") )
+						{
+							std::vector<int> models;
+							if ( entry_itr->value["models"].IsArray() )
+							{
+								for ( auto array_itr = entry_itr->value["models"].Begin(); array_itr != entry_itr->value["models"].End(); ++array_itr )
+								{
+									models.push_back(array_itr->GetInt());
+								}
+							}
+							else if ( entry_itr->value["models"].IsInt() )
+							{
+								models.push_back(entry_itr->value["models"].GetInt());
+							}
+
+							for ( auto m : models )
+							{
+								if ( isPlayerSprite )
+								{
+									entry.playerModelIndexes.insert(m);
+								}
+								entry.modelIndexes.insert(m);
+								entry.iconSpritesAndPaths[m] = iconPath;
+							}
+						}
+					}
+				}
+			}
+		}
+		// validate data
+		for ( int i = 0; i < NUMMONSTERS; ++i )
+		{
+			for ( auto sprite : monsterSprites[i] )
+			{
+				if ( monsterDataEntries[i].modelIndexes.find(sprite) == monsterDataEntries[i].modelIndexes.end() )
+				{
+					printlog("[JSON]: Error: Could not find monster %s model index: %d", monstertypename[i], sprite);
+				}
+				if ( Entity::isPlayerHeadSprite(sprite) )
+				{
+					if ( monsterData.monsterDataEntries[i].playerModelIndexes.find(sprite) == monsterDataEntries[i].playerModelIndexes.end() )
+					{
+						printlog("[JSON]: Error: Could not find player %s model index: %d", monstertypename[i], sprite);
+					}
+				}
+			}
+		}
+
+		printlog("[JSON]: Successfully read json file %s, processed %d monsters", inputPath.c_str(), monsterDataEntries.size());
+		return;
+	}
+	printlog("[JSON]: Error: Could not locate json file %s", "/data/monster_data.json");
+}

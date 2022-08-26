@@ -1474,6 +1474,8 @@ public:
 			bool bInit = false;
 			std::string name = "";
 			int level = 0;
+			int model = 0;
+			int monsterType = 0;
 			bool selected = false;
 			bool dummy = false;
 		};

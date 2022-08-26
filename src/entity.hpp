@@ -716,7 +716,8 @@ public:
 	void initMonster(int mySprite);
 
 	//--monster type from sprite
-	Monster getMonsterTypeFromSprite();
+	Monster getMonsterTypeFromSprite() const;
+	static Monster getMonsterTypeFromSprite(const int sprite);
 	//--monster limb offsets
 	void setHelmetLimbOffset(Entity* helm);
 	void setHumanoidLimbOffset(Entity* limb, Monster race, int limbType);
@@ -917,7 +918,8 @@ public:
 	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot = false); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
 	static int getMagicResistance(Stat* myStats); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
-	bool isPlayerHeadSprite(); // determines if model of entity is a human head.
+	bool isPlayerHeadSprite() const; // determines if model of entity is a human head.
+	static bool isPlayerHeadSprite(const int sprite);
 	void setDefaultPlayerModel(int playernum, Monster playerRace, int limbType); // sets correct base color/model of limbs for player characters.
 	Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.

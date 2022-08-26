@@ -64,7 +64,7 @@ void initHuman(Entity* my, Stat* myStats)
 			// generate special loadout
 			if ( my->monsterSpecialTimer == 0 )
 			{
-				if ( local_rng.rand() % 25 == 0 && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] 
+				if ( (*cvar_summonBosses || local_rng.rand() % 25 == 0) && !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS]
 					&& strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0
 					&& myStats->leader_uid == 0 )
 				{

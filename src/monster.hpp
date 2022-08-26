@@ -119,6 +119,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         823,    // player spider body
         1001,   // player crab body
         1118,   // shelob body
+		1180,	// bubbles body
     },
 
     // GHOUL
@@ -1032,3 +1033,32 @@ static const int GYRO_START_FLYING = 4;
 
 //--Dummybot--
 static const int DUMMYBOT_RETURN_FORM = 1;
+
+struct MonsterData_t
+{
+	struct MonsterDataEntry_t
+	{
+		int monsterType = NOTHING;
+		std::string defaultIconPath;
+		std::map<int, std::string> iconSpritesAndPaths;
+		std::set<int> modelIndexes;
+		std::set<int> playerModelIndexes;
+		struct SpecialNPCEntry_t
+		{
+			std::string internalName = "";
+			std::string name = "";
+			std::set<int> modelIndexes;
+		};
+		std::map<std::string, SpecialNPCEntry_t> specialNPCs;
+		MonsterDataEntry_t(int type)
+		{
+			monsterType = type;
+		};
+		MonsterDataEntry_t() = default;
+	};
+	static std::string iconDefaultString;
+	static std::map<int, MonsterDataEntry_t> monsterDataEntries;
+	static std::string& getAllyIconFromSprite(int sprite, int type = -1);
+	static void loadMonsterDataJSON();
+};
+extern MonsterData_t monsterData;

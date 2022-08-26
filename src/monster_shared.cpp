@@ -195,23 +195,30 @@ void Entity::initMonster(int mySprite)
 	return;
 }
 
-Monster Entity::getMonsterTypeFromSprite()
+Monster Entity::getMonsterTypeFromSprite() const
 {
 	Sint32 mySprite = this->sprite;
+	return Entity::getMonsterTypeFromSprite(mySprite);
+}
+
+Monster Entity::getMonsterTypeFromSprite(const int sprite)
+{
+	Sint32 mySprite = sprite;
 	static std::unordered_map<Sint32, Monster> spriteToMonster;
-	if (spriteToMonster.empty()) {
-	    for (int c = 0; c < NUMMONSTERS; ++c) {
-	        const auto monster = static_cast<Monster>(c);
-	        for (auto sprite : monsterSprites[c]) {
-	            const auto result = spriteToMonster.emplace(sprite, monster);
-	            assert(result.second == true && "spriteToMonster conflict!");
-	        }
-	    }
-	} else {
-	    auto find = spriteToMonster.find(mySprite);
-	    if (find != spriteToMonster.end()) {
-	        return find->second;
-	    }
+	if ( spriteToMonster.empty() ) {
+		for ( int c = 0; c < NUMMONSTERS; ++c ) {
+			const auto monster = static_cast<Monster>(c);
+			for ( auto sprite : monsterSprites[c] ) {
+				const auto result = spriteToMonster.emplace(sprite, monster);
+				assert(result.second == true && "spriteToMonster conflict!");
+			}
+		}
+	}
+	else {
+		auto find = spriteToMonster.find(mySprite);
+		if ( find != spriteToMonster.end() ) {
+			return find->second;
+		}
 	}
 	return NOTHING;
 }
@@ -338,4 +345,23 @@ void Entity::spawnBlood(int bloodSprite)
 			}
 		}
 	}
+}
+
+
+MonsterData_t monsterData;
+std::map<int, MonsterData_t::MonsterDataEntry_t> MonsterData_t::monsterDataEntries;
+std::string MonsterData_t::iconDefaultString = "";
+std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return iconDefaultString;
+	}
+
+	return monsterDataEntries[type].iconSpritesAndPaths[sprite];
 }

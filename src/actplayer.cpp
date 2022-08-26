@@ -7591,7 +7591,7 @@ void Entity::playerLevelEntrySpeechSecond()
 	}
 }
 
-bool Entity::isPlayerHeadSprite()
+bool Entity::isPlayerHeadSprite(const int sprite)
 {
 	switch ( sprite )
 	{
@@ -7658,6 +7658,11 @@ bool Entity::isPlayerHeadSprite()
 			break;
 	}
 	return false;
+}
+
+bool Entity::isPlayerHeadSprite() const
+{
+	return Entity::isPlayerHeadSprite(sprite);
 }
 
 Monster Entity::getMonsterFromPlayerRace(int playerRace)
