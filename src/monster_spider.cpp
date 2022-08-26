@@ -77,6 +77,7 @@ void initSpider(Entity* my, Stat* myStats)
 			        my->sprite = 1118;
 			    } else {
 				    strcpy(myStats->name, "Bubbles");
+					my->sprite = 1180;
 			    }
 				myStats->sex = FEMALE;
 				myStats->HP = 150;
