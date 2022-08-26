@@ -3787,6 +3787,11 @@ namespace ConsoleCommands {
 		StatueManager.refreshAllStatues();
 	});
 
+	static ConsoleCommand ccmd_importandrefreshstatues("/importandrefreshstatues", "", []CCMD{
+		consoleCommand("/importallstatues");
+		StatueManager.refreshAllStatues();
+	});
+
 	static ConsoleCommand ccmd_resetstatueeditor("/resetstatueeditor", "", []CCMD{
 		StatueManager.resetStatueEditor();
 	});
@@ -3961,5 +3966,9 @@ namespace ConsoleCommands {
 				}
 			}
 		}
+	});
+
+	static ConsoleCommand ccmd_loadmonsterdata("/loadmonsterdata", "", []CCMD{
+		MonsterData_t::loadMonsterDataJSON();
 	});
 }
