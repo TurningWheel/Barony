@@ -314,7 +314,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == LICH_ICE 
 		|| hitstats->type == LICH_FIRE 
 		|| hitstats->type == SHADOW
-		|| (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
+		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
 	{
@@ -1343,7 +1343,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			/************** END CHANCE CALCULATION ***********/
 
 			// special cases:
-			if ( (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
+			if ( (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 				|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 				)
 			{

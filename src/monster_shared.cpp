@@ -396,3 +396,8 @@ std::string MonsterData_t::getSpecialNPCName(Stat& myStats)
 	}
 	return "";
 }
+
+bool MonsterData_t::nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey)
+{
+	return monsterDataEntries[myStats.type].specialNPCs[npcKey].name == myStats.name;
+}

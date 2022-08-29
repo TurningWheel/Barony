@@ -100,7 +100,7 @@ void initVampire(Entity* my, Stat* myStats)
 					}
 				}
 			}
-			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
+			else if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
 			{
 				myStats->setAttribute("special_npc", "bram kindly");
 				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);

@@ -11102,11 +11102,11 @@ bool Entity::checkEnemy(Entity* your)
 		}
 		return true;
 	}
-	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
 	{
 		return true;
 	}
-	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*yourStats, "bram kindly") )
 	{
 		return true;
 	}
@@ -11506,11 +11506,11 @@ bool Entity::checkFriend(Entity* your)
 		}
 		return false;
 	}
-	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
 	{
 		return false;
 	}
-	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*yourStats, "bram kindly") )
 	{
 		return false;
 	}
@@ -15947,7 +15947,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
-	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || !strncmp(myStats.name, "Bram Kindly", 11)) )
+	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || MonsterData_t::nameMatchesSpecialNPCName(myStats, "bram kindly")) )
 	{
 		return false;
 	}
@@ -18799,7 +18799,7 @@ bool Entity::isBossMonster()
 			|| myStats->type == LICH_FIRE
 			|| myStats->type == LICH_ICE
 			|| myStats->type == DEVIL
-			|| (myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11))
+			|| (myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly"))
 			|| (myStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 			)
 		{

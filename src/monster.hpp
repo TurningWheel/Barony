@@ -1062,6 +1062,7 @@ struct MonsterData_t
 	static std::string& getAllyIconFromSprite(int sprite, int type = -1);
 	static int getSpecialNPCBaseModel(Stat& myStats);
 	static std::string getSpecialNPCName(Stat& myStats);
+	static bool nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey);
 	static void loadMonsterDataJSON();
 };
 extern MonsterData_t monsterData;

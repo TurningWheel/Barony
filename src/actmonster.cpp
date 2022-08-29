@@ -613,7 +613,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			}
 			else if ( stats[monsterclicked]->type == VAMPIRE )
 			{
-				if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
+				if ( race == VAMPIRE && !MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
 				{
 					canAlly = true;
 				}
@@ -768,7 +768,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					}
 					else if ( stats[monsterclicked]->type == VAMPIRE )
 					{
-						if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
+						if ( race == VAMPIRE && !MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
 						{
 							canAlly = true;
 						}

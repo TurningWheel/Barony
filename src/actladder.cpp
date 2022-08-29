@@ -231,7 +231,7 @@ void actPortal(Entity* my)
 				&& !entity->monsterAllyGetPlayerLeader() )
 			{
 				Stat* stats = entity->getStats();
-				if ( stats && !strncmp(stats->name, "Bram Kindly", 11) )
+				if ( stats && MonsterData_t::nameMatchesSpecialNPCName(*stats, "bram kindly") )
 				{
 					bossAlive = true;
 				}
