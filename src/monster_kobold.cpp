@@ -1037,6 +1037,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 				my->setHelmetLimbOffset(entity);
+				// override above function to 1.1x scales
+				entity->scalex = 1.1;
+				entity->scaley = 1.1;
+				entity->scalez = 1.1;
 				break;
 		}
 	}

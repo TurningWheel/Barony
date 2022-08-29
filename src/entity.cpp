@@ -17316,7 +17316,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.75;
 				helm->focalz = limbs[monster][9][2] + 2.5;
-				if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				if ( monster == GOBLIN && (this->sprite == 752 || this->sprite == 1039) ) // special female offset.
 				{
 					if ( helm->sprite == (items[HAT_HOOD].index + 3) )
 					{
@@ -17418,7 +17418,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 4.5;
 				helm->focalz = limbs[monster][9][2] + 2.5;
-				if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				if ( monster == GOBLIN && (this->sprite == 752 || this->sprite == 1039) ) // special female offset.
 				{
 					helm->focaly -= 0.25;
 				}
@@ -17473,7 +17473,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][10][0] + 0.7;
 				helm->focaly = limbs[monster][10][1] + 0;
 				helm->focalz = limbs[monster][10][2] - 2.25;
-				//if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				//if ( monster == GOBLIN && (this->sprite == 752 || this->sprite == 1039) ) // special female offset.
 				//{
 				//	helm->focaly -= 0.25;
 				//}
@@ -17485,7 +17485,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	}
 	else
 	{
-		if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+		if ( monster == GOBLIN && (this->sprite == 752 || this->sprite == 1039) ) // special female offset.
 		{
 			helm->focalz = limbs[monster][9][2] - 0.25; // all non-hat helms
 		}
