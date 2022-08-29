@@ -4776,6 +4776,7 @@ void VideoManager_t::update()
 }
 #endif
 
+#ifndef EDITOR
 void MonsterData_t::loadMonsterDataJSON()
 {
 	if ( PHYSFS_getRealDir("/data/monster_data.json") )
@@ -4948,3 +4949,4 @@ void MonsterData_t::loadMonsterDataJSON()
 	}
 	printlog("[JSON]: Error: Could not locate json file %s", "/data/monster_data.json");
 }
+#endif

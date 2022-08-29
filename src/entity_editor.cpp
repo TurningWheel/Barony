@@ -499,7 +499,13 @@ int playerEntityMatchesUid(Uint32 uid)
 	return -1;
 }
 
-bool Entity::isPlayerHeadSprite()
+bool Entity::isPlayerHeadSprite() const
+{
+	// dummy function
+	return false;
+}
+
+bool Entity::isPlayerHeadSprite(int sprite)
 {
 	// dummy function
 	return false;
