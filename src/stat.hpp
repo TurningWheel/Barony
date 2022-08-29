@@ -292,7 +292,7 @@ public:
 	void* monster_sound;
 #endif
 	int monster_idlevar;
-
+	std::map<std::string, std::string> attributes;
 	list_t magic_effects; //Makes things like the invisibility spell work.
 	Stat(Sint32 sprite);
 	~Stat();
@@ -313,6 +313,18 @@ public:
 	};
 	int getPassiveShieldBonus(bool checkShield) const;
 	int getActiveShieldBonus(bool checkShield) const;
+	std::string getAttribute(std::string key) const
+	{ 
+		if ( attributes.find(key) != attributes.end() )
+		{
+			return attributes.at(key);
+		}
+		else
+		{
+			return "";
+		}
+	}
+	void setAttribute(std::string key, std::string value);
 };
 extern Stat* stats[MAXPLAYERS];
 

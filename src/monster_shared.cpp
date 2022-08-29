@@ -25,6 +25,17 @@ void Entity::initMonster(int mySprite)
 {
     if (multiplayer != CLIENT) {
 	    sprite = mySprite;
+		if ( Stat* myStats = this->getStats() )
+		{
+			if ( myStats->type != NOTHING )
+			{
+				int specialNPCModel = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+				if ( specialNPCModel != 0 )
+				{
+					sprite = specialNPCModel;
+				}
+			}
+		}
 	}
 
 	//Common flags.
@@ -364,4 +375,24 @@ std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
 	}
 
 	return monsterDataEntries[type].iconSpritesAndPaths[sprite];
+}
+
+int MonsterData_t::getSpecialNPCBaseModel(Stat& myStats)
+{
+	std::string npcValue = myStats.getAttribute("special_npc");
+	if ( npcValue != "" )
+	{
+		return monsterDataEntries[myStats.type].specialNPCs[npcValue].baseModel;
+	}
+	return 0;
+}
+
+std::string MonsterData_t::getSpecialNPCName(Stat& myStats)
+{
+	std::string npcValue = myStats.getAttribute("special_npc");
+	if ( npcValue != "" )
+	{
+		return monsterDataEntries[myStats.type].specialNPCs[npcValue].name;
+	}
+	return "";
 }

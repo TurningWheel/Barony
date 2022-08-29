@@ -1048,6 +1048,7 @@ struct MonsterData_t
 			std::string internalName = "";
 			std::string name = "";
 			std::set<int> modelIndexes;
+			int baseModel = 0;
 		};
 		std::map<std::string, SpecialNPCEntry_t> specialNPCs;
 		MonsterDataEntry_t(int type)
@@ -1059,6 +1060,8 @@ struct MonsterData_t
 	static std::string iconDefaultString;
 	static std::map<int, MonsterDataEntry_t> monsterDataEntries;
 	static std::string& getAllyIconFromSprite(int sprite, int type = -1);
+	static int getSpecialNPCBaseModel(Stat& myStats);
+	static std::string getSpecialNPCName(Stat& myStats);
 	static void loadMonsterDataJSON();
 };
 extern MonsterData_t monsterData;

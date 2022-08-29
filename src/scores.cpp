@@ -1886,6 +1886,14 @@ int saveGame(int saveIndex)
 						fp->write(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
 					}
 
+					Uint32 numAttributes = followerStats->attributes.size();
+					fp->write(&numAttributes, sizeof(Uint32), 1);
+					for ( auto& attribute : followerStats->attributes )
+					{
+						fp->write(attribute.first.c_str(), sizeof(char), 32);
+						fp->write(attribute.second.c_str(), sizeof(char), 32);
+					}
+
 					// record follower inventory
 					Uint32 invSize = list_Size(&followerStats->inventory);
 					fp->write(&invSize, sizeof(Uint32), 1);
@@ -2969,6 +2977,22 @@ list_t* loadGameFollowers(int saveIndex)
 				for ( int j = 0; j < 32; ++j )
 				{
 					fp->read(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
+				}
+			}
+			if ( versionNumber >= 384 )
+			{
+				Uint32 numAttributes = 0;
+				fp->read(&numAttributes, sizeof(Uint32), 1);
+				while ( numAttributes > 0 )
+				{
+					char key[32];
+					memset(key, 0, sizeof(key));
+					char value[32];
+					memset(value, 0, sizeof(value));
+					fp->read(&key, sizeof(char), 32);
+					fp->read(&value, sizeof(char), 32);
+					followerStats->attributes.emplace(std::make_pair(key, value));
+					--numAttributes;
 				}
 			}
 

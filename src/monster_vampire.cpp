@@ -102,7 +102,8 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
 			{
-			    my->sprite = 1137; // bram's head
+				myStats->setAttribute("special_npc", "bram kindly");
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    myStats->sex = MALE;
 				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;

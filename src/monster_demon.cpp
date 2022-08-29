@@ -59,8 +59,9 @@ void initDemon(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->sprite = 1008;
-				strcpy(myStats->name, "Deu De'Breau");
+				myStats->setAttribute("special_npc", "deudebreau");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = MALE;
 				myStats->LVL = 30;
 				for ( c = 0; c < 3; c++ )

@@ -57,9 +57,9 @@ void initRat(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->z -= 0.5; // algernon is slightly larger than an ordinary rat.
-	            my->sprite = 1068; // algernon's unique model
-				strcpy(myStats->name, "Algernon");
+				myStats->setAttribute("special_npc", "algernon");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+	            my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->HP = 60;
 				myStats->MAXHP = 60;
 				myStats->OLDHP = myStats->HP;
@@ -126,6 +126,13 @@ void initRat(Entity* my, Stat* myStats)
 				default:
 					break;
 			}
+		}
+	}
+	if ( multiplayer != CLIENT && myStats )
+	{
+		if ( myStats->getAttribute("special_npc") == "algernon" )
+		{
+			my->z -= 0.5; // algernon is slightly larger than an ordinary rat.
 		}
 	}
 }

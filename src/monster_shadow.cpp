@@ -73,8 +73,9 @@ void initShadow(Entity* my, Stat* myStats)
 			// boss variants
 			if ( *cvar_spawnArtemisia || (my->monsterStoreType == 1 && !my->flags[USERFLAG2]) )
 			{
-			    my->sprite = 1087;
-				strcpy(myStats->name, "Artemisia");
+				myStats->setAttribute("special_npc", "artemisia");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
 				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, local_rng.rand(), false, nullptr);
@@ -89,8 +90,9 @@ void initShadow(Entity* my, Stat* myStats)
 			}
 			else if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->sprite = 1095;
-				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
+				myStats->setAttribute("special_npc", "baratheon"); //Long live the king, who commands his grue army.
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = MALE;
 				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;

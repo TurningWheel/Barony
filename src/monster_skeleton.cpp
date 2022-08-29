@@ -237,11 +237,12 @@ void initSkeleton(Entity* my, Stat* myStats)
 			        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			    {
-			        my->sprite = 1107;
+					myStats->setAttribute("special_npc", "funny bones");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			        myStats->sex = MALE;
 					myStats->HP = 100;
 					myStats->MAXHP = 100;
-					strcpy(myStats->name, "Funny Bones");
 					myStats->STR += 6;
 					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);

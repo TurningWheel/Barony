@@ -60,9 +60,10 @@ void initTroll(Entity* my, Stat* myStats)
 		        myStats->leader_uid == 0;
 		    if ( boss || *cvar_summonBosses )
 			{
-			    my->sprite = 1132;
+				myStats->setAttribute("special_npc", "thumpus");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    myStats->sex = MALE;
-				strcpy(myStats->name, "Thumpus the Troll");
 				for ( c = 0; c < 3; c++ )
 				{
 					Entity* entity = summonMonster(GNOME, my->x, my->y);

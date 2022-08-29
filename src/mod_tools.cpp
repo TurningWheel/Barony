@@ -4855,11 +4855,18 @@ void MonsterData_t::loadMonsterDataJSON()
 							{
 								models.push_back(special_itr->value["models"].GetInt());
 							}
+							assert(models.size() > 0);
+							int baseModel = models[0];
+							if ( special_itr->value.HasMember("base_model") )
+							{
+								baseModel = special_itr->value["base_model"].GetInt();
+							}
 
 							entry.specialNPCs[special_itr->name.GetString()] = MonsterDataEntry_t::SpecialNPCEntry_t();
 							auto& specialNPC = entry.specialNPCs[special_itr->name.GetString()];
 							specialNPC.internalName = special_itr->name.GetString();
 							specialNPC.name = special_itr->value["localized_name"].GetString();
+							specialNPC.baseModel = baseModel;
 
 							for ( auto m : models )
 							{

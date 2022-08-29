@@ -81,7 +81,8 @@ void initHuman(Entity* my, Stat* myStats)
 					{
 						case 0:
 							// red riding hood
-							strcpy(myStats->name, "Red Riding Hood");
+							myStats->setAttribute("special_npc", "red riding hood");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 2;
 							myStats->sex = FEMALE;
 							myStats->LVL = 1;
@@ -102,7 +103,8 @@ void initHuman(Entity* my, Stat* myStats)
 						case 1:
 						{
 							// king arthur
-							strcpy(myStats->name, "King Arthur");
+							myStats->setAttribute("special_npc", "king arthur");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 0;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
@@ -127,7 +129,8 @@ void initHuman(Entity* my, Stat* myStats)
 						}
 						case 2:
 							// merlin
-							strcpy(myStats->name, "Merlin");
+							myStats->setAttribute("special_npc", "merlin");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 5;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
@@ -149,7 +152,8 @@ void initHuman(Entity* my, Stat* myStats)
 							break;
 						case 3:
 							// robin hood
-							strcpy(myStats->name, "Robin Hood");
+							myStats->setAttribute("special_npc", "robin hood");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 1;
 							myStats->sex = MALE;
 							myStats->LVL = 5;
@@ -170,7 +174,8 @@ void initHuman(Entity* my, Stat* myStats)
 							break;
 						case 4:
 							// conan
-							strcpy(myStats->name, "Conan the Barbarian");
+							myStats->setAttribute("special_npc", "conan the barbarian");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 7;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
@@ -190,7 +195,8 @@ void initHuman(Entity* my, Stat* myStats)
 							break;
 						case 5:
 							// othello
-							strcpy(myStats->name, "Othello");
+							myStats->setAttribute("special_npc", "othello");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 14;
 							myStats->sex = MALE;
 							myStats->LVL = 10;
@@ -212,7 +218,8 @@ void initHuman(Entity* my, Stat* myStats)
 						case 6:
 						{
 							// anansi
-							strcpy(myStats->name, "Anansi");
+							myStats->setAttribute("special_npc", "anansi");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 15;
 							myStats->sex = MALE;
 							myStats->LVL = 20;
@@ -247,7 +254,8 @@ void initHuman(Entity* my, Stat* myStats)
 						}
 						case 7:
 							// oya
-							strcpy(myStats->name, "Oya");
+							myStats->setAttribute("special_npc", "oya");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 13;
 							myStats->sex = FEMALE;
 							myStats->LVL = 20;
@@ -267,7 +275,8 @@ void initHuman(Entity* my, Stat* myStats)
 						case 8:
 						{
 							// vishpala
-							strcpy(myStats->name, "Vishpala");
+							myStats->setAttribute("special_npc", "vishpala");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 17;
 							myStats->sex = FEMALE;
 							myStats->LVL = 10;
@@ -291,7 +300,8 @@ void initHuman(Entity* my, Stat* myStats)
 						}
 						case 9:
 							// kali
-							strcpy(myStats->name, "Kali");
+							myStats->setAttribute("special_npc", "kali");
+							strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 							myStats->appearance = 15;
 							myStats->sex = FEMALE;
 							myStats->LVL = 20;
@@ -318,7 +328,8 @@ void initHuman(Entity* my, Stat* myStats)
 			{
 				specialMonsterVariant = 1;
 				// zap brigadier
-				strcpy(myStats->name, "ZAP Brigadier");
+				myStats->setAttribute("special_npc", "zap brigadier");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 				myStats->appearance = 1;
 				myStats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 				myStats->LVL = 10;

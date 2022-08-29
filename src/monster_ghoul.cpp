@@ -93,8 +93,9 @@ void initGhoul(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->sprite = 1017;
-				strcpy(myStats->name, "Coral Grimes");
+				myStats->setAttribute("special_npc", "coral grimes");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				for ( c = 0; c < 3; c++ )
 				{
 					Entity* entity = summonMonster(GHOUL, my->x, my->y);

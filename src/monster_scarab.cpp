@@ -69,9 +69,9 @@ void initScarab(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->z = 3.25;
-			    my->sprite = 1078;
-				strcpy(myStats->name, "Xyggi");
+				myStats->setAttribute("special_npc", "xyggi");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = FEMALE;
 				myStats->HP = 70;
 				myStats->MAXHP = 70;
@@ -181,6 +181,14 @@ void initScarab(Entity* my, Stat* myStats)
 				default:
 					break;
 			}
+		}
+	}
+
+	if ( multiplayer != CLIENT && myStats )
+	{
+		if ( myStats->getAttribute("special_npc") == "xyggi" )
+		{
+			my->z = 3.25;
 		}
 	}
 

@@ -59,11 +59,12 @@ void initSuccubus(Entity* my, Stat* myStats)
 		        !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 		    if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
+				myStats->setAttribute("special_npc", "lilith");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    my->focalz = -3;
 			    my->focalx = 1;
-			    my->sprite = 1126;
 				myStats->DEX = 10;
-				strcpy(myStats->name, "Lilith");
 				for ( c = 0; c < 2; c++ )
 				{
 					Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);

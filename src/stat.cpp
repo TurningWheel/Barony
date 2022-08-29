@@ -647,7 +647,7 @@ Stat* Stat::copyStats()
 	newStat->monster_idlevar = this->monster_idlevar;
 	newStat->magic_effects.first = NULL;
 	newStat->magic_effects.last = NULL;
-
+	newStat->attributes = this->attributes;
 	return newStat;
 }
 

@@ -73,11 +73,13 @@ void initSpider(Entity* my, Stat* myStats)
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 			    if (!arachnophobia_filter) {
-				    strcpy(myStats->name, "Shelob");
-			        my->sprite = 1118;
+					myStats->setAttribute("special_npc", "shelob");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    } else {
-				    strcpy(myStats->name, "Bubbles");
-					my->sprite = 1180;
+					myStats->setAttribute("special_npc", "bubbles");
+					strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    }
 				myStats->sex = FEMALE;
 				myStats->HP = 150;
@@ -280,7 +282,14 @@ void spiderDie(Entity* my)
 	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
-		gib->sprite = my->sprite == 1118 ? 1121 : 269;
+		if ( my->sprite == 997 || my->sprite == 1180 ) // crabs
+		{
+			gib->sprite = 999;
+		}
+		else
+		{
+			gib->sprite = my->sprite == 1118 ? 1121 : 269;
+		}
 		gib->skill[5] = 1; // poof
 		serverSpawnGibForClient(gib);
 	}

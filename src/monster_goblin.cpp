@@ -66,12 +66,13 @@ void initGoblin(Entity* my, Stat* myStats)
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
 			    potatoking = true;
-			    my->sprite = 1035;
+				myStats->setAttribute("special_npc", "potato king");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    myStats->sex = MALE;
 				myStats->HP = 120;
 				myStats->MAXHP = 120;
 				myStats->OLDHP = myStats->HP;
-				strcpy(myStats->name, "The Potato King");
 				myStats->STR += 6;
 				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 				myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, local_rng.rand(), true, nullptr);

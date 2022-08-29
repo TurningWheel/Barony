@@ -1316,3 +1316,8 @@ bool isMonsterStatsDefault(Stat& myStats)
 
 	return false;
 }
+
+void Stat::setAttribute(std::string key, std::string value)
+{
+	attributes[key] = value;
+}

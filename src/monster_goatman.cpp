@@ -100,8 +100,9 @@ void initGoatman(Entity* my, Stat* myStats)
 			    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
 			if ( (boss || *cvar_summonBosses) && myStats->leader_uid == 0 )
 			{
-			    my->sprite = 1025;
-				strcpy(myStats->name, "Gharbad");
+				myStats->setAttribute("special_npc", "gharbad");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 				myStats->sex = MALE;
 				myStats->STR += 10;
 				myStats->DEX += 2;
