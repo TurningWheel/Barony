@@ -3085,7 +3085,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		free(item);
 		if ( players[clientnum] && players[clientnum]->entity )
 		{
-			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
+			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && pickedUp->ownerUid == players[clientnum]->entity->getUID() )
 			{
 				useItem(pickedUp, clientnum);
 
