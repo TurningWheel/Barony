@@ -4867,10 +4867,8 @@ void ingameHud()
 					worldUIBlocksFollowerCycle = false;
 				}
 			}
-			if ( !worldUIBlocksFollowerCycle && players[player]->shootmode )
+			if ( (!worldUIBlocksFollowerCycle && players[player]->shootmode) || FollowerMenu[player].followerMenuIsOpen() )
 			{
-				//(players[player]->shootmode && !worldUIBlocksFollowerCycle) || FollowerMenu[player].followerMenuIsOpen())) ) -- todo needed?
-
 				// can select next follower in inventory or shootmode
 				FollowerMenu[player].selectNextFollower();
 				players[player]->characterSheet.proficienciesPage = 1;
