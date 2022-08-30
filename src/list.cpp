@@ -56,7 +56,25 @@ void list_RemoveNode(node_t* node)
 	}
 	if (node->list && node->list == map.entities)
 	{
-		map.entities_map.erase(((Entity*)node->element)->getUID());
+		Entity* entity = ((Entity*)node->element);
+		map.entities_map.erase(entity->getUID());
+#ifndef EDITOR
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( FollowerMenu[i].recentEntity == entity )
+			{
+				FollowerMenu[i].recentEntity = nullptr;
+			}
+			if ( FollowerMenu[i].followerToCommand == entity )
+			{
+				FollowerMenu[i].followerToCommand = nullptr;
+			}
+			if ( FollowerMenu[i].entityToInteractWith == entity )
+			{
+				FollowerMenu[i].entityToInteractWith = nullptr;
+			}
+		}
+#endif // !EDITOR
 	}
 
 #ifndef EDITOR

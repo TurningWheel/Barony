@@ -9321,7 +9321,7 @@ bool Entity::isInteractWithMonster()
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( !players[i]->isLocalPlayer() )
+		if ( !players[i]->isLocalPlayer() && client_disconnected[i] )
 		{
 			continue;
 		}

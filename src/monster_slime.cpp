@@ -32,7 +32,7 @@ void initSlime(Entity* my, Stat* myStats)
     slimeStand = 0;
     slimeBob = 0.0;
 
-	const bool blue = myStats->LVL == 7;
+	const bool blue = myStats && myStats->LVL == 7;
 	my->initMonster(blue ? 1108 : 1113);
 
 	if ( multiplayer != CLIENT )
