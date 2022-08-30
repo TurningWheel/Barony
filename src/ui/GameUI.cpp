@@ -1114,7 +1114,7 @@ void Player::HUD_t::updateUINavigation()
 					leftTriggerTxt->setHJustify(Field::justify_t::RIGHT);
 				}
 
-				SDL_Rect imgPos;
+				SDL_Rect imgPos{0,0,0,0};
 				if ( auto imgGet = Image::get(leftTriggerGlyph->path.c_str()) )
 				{
 					imgPos.w = imgGet->getWidth();
@@ -1168,7 +1168,7 @@ void Player::HUD_t::updateUINavigation()
 					rightTriggerTxt->setHJustify(Field::justify_t::RIGHT);
 				}
 
-				SDL_Rect imgPos;
+				SDL_Rect imgPos{0,0,0,0};
 				if ( auto imgGet = Image::get(rightTriggerGlyph->path.c_str()) )
 				{
 					imgPos.w = imgGet->getWidth();
@@ -1217,7 +1217,7 @@ void Player::HUD_t::updateUINavigation()
 					}
 					textPos.y = std::max(lowestRightY, rightTriggerTxt->getSize().y + rightTriggerTxt->getSize().h);
 
-					SDL_Rect imgPos;
+					SDL_Rect imgPos{0,0,0,0};
 					if ( auto imgGet = Image::get(additionalGlyph->path.c_str()) )
 					{
 						imgPos.w = imgGet->getWidth();
@@ -1291,7 +1291,7 @@ void Player::HUD_t::updateUINavigation()
 			textPos.w = leftBumperTxt->getTextObject()->getWidth();
 			textPos.h = Font::get(leftBumperTxt->getFont())->height() + 8;
 
-			SDL_Rect imgPos;
+			SDL_Rect imgPos{0,0,0,0};
 			if ( auto imgGet = Image::get(leftBumperGlyph->path.c_str()) )
 			{
 				imgPos.w = imgGet->getWidth();
@@ -1314,7 +1314,7 @@ void Player::HUD_t::updateUINavigation()
 			textPos.w = rightBumperTxt->getTextObject()->getWidth();
 			textPos.h = Font::get(rightBumperTxt->getFont())->height() + 8;
 
-			SDL_Rect imgPos;
+			SDL_Rect imgPos{0,0,0,0};
 			if ( auto imgGet = Image::get(rightBumperGlyph->path.c_str()) )
 			{
 				imgPos.w = imgGet->getWidth();

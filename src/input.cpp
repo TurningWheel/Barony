@@ -365,6 +365,11 @@ const char* Input::getControllerGlyph() {
 
 std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 {
+#ifndef EDITOR
+	if (*cvar_hideGlyphs) {
+		return "";
+	}
+#endif
     std::string in = input;
 	std::string rootPath = "images/ui/Glyphs/";
 #ifdef NINTENDO
@@ -771,6 +776,11 @@ std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) con
 
 std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed) const
 {
+#ifndef EDITOR
+	if (*cvar_hideGlyphs) {
+		return "";
+	}
+#endif
 	std::string rootPath = "images/ui/Glyphs/";
 	if ( binding.type == binding_t::bindtype_t::CONTROLLER_BUTTON )
 	{

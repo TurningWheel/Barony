@@ -195,3 +195,8 @@ protected:
         const std::vector<const Widget*>& selectedWidgets,
         const std::vector<const Widget*>& searchParents) const;
 };
+
+#ifndef EDITOR
+#include "../interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_hideGlyphs;
+#endif
