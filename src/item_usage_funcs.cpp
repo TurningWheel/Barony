@@ -3660,11 +3660,17 @@ void item_ScrollSummon(Item* item, int player)
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
-					strcpy((char*)(&net_packet->data[8]), monsterStats->name);
-					net_packet->data[8 + strlen(monsterStats->name)] = 0;
+					std::string name = monsterStats->name;
+					if ( name != "" && name == MonsterData_t::getSpecialNPCName(*monsterStats) )
+					{
+						name = monsterStats->getAttribute("special_npc");
+						name.insert(0, "$");
+					}
+					strcpy((char*)(&net_packet->data[8]), name.c_str());
+					net_packet->data[8 + strlen(name.c_str())] = 0;
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 8 + strlen(monsterStats->name) + 1;
+					net_packet->len = 8 + strlen(name.c_str()) + 1;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);

@@ -4405,7 +4405,8 @@ void actParticleSapCenter(Entity* my)
 							magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
 
 							monster->monsterAllySummonRank = magicLevel;
-							strcpy(monsterStats->name, "skeleton knight");
+							monsterStats->setAttribute("special_npc", "skeleton knight");
+							strcpy(monsterStats->name, MonsterData_t::getSpecialNPCName(*monsterStats).c_str());
 							forceFollower(*caster, *monster);
 
 							monster->setEffect(EFF_STUNNED, true, 20, false);
@@ -4461,7 +4462,8 @@ void actParticleSapCenter(Entity* my)
 									monster->yaw = my->yaw - PI;
 									if ( monsterStats )
 									{
-										strcpy(monsterStats->name, "skeleton sentinel");
+										monsterStats->setAttribute("special_npc", "skeleton sentinel");
+										strcpy(monsterStats->name, MonsterData_t::getSpecialNPCName(*monsterStats).c_str());
 										magicLevel = 1;
 										if ( stats[caster->skill[2]] )
 										{

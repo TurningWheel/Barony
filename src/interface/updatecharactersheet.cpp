@@ -1553,11 +1553,11 @@ void drawPartySheet(const int player)
 							{
 								if ( followerStats->type == SKELETON )
 								{
-									if ( !strcmp(followerStats->name, "skeleton sentinel") )
+									if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton sentinel") )
 									{
 										strncpy(name, "sentinel", 8);
 									}
-									else if ( !strcmp(followerStats->name, "skeleton knight") )
+									else if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton knight") )
 									{
 										strncpy(name, "knight", 6);
 									}

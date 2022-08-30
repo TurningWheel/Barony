@@ -59,7 +59,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 			{
 				int rank = std::min(my->monsterAllySummonRank, 7);
 				bool secondarySummon = true;
-				if ( !strcmp(myStats->name, "skeleton knight") )
+				if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
 				{
 					secondarySummon = false;
 				}
@@ -1446,7 +1446,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 {
-	if ( !strcmp(myStats->name, "skeleton knight") )
+	if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
 	{
 		switch ( rank )
 		{
@@ -1684,7 +1684,7 @@ void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
 				break;
 		}
 	}
-	else if ( !strcmp(myStats->name, "skeleton sentinel") )
+	else if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton sentinel") )
 	{
 		switch ( rank )
 		{

@@ -4863,18 +4863,33 @@ void MonsterData_t::loadMonsterDataJSON()
 								baseModel = special_itr->value["base_model"].GetInt();
 							}
 
+							bool noOverrideIcon = false; // special case, handling monsters with unique icons but no unique sprites
+							if ( special_itr->value.HasMember("no_override_icon") )
+							{
+								noOverrideIcon = special_itr->value["no_override_icon"].GetBool();
+							}
 							entry.specialNPCs[special_itr->name.GetString()] = MonsterDataEntry_t::SpecialNPCEntry_t();
 							auto& specialNPC = entry.specialNPCs[special_itr->name.GetString()];
 							specialNPC.internalName = special_itr->name.GetString();
 							specialNPC.name = special_itr->value["localized_name"].GetString();
 							specialNPC.baseModel = baseModel;
-
+							if ( special_itr->value.HasMember("localized_short_name") )
+							{
+								specialNPC.shortname = special_itr->value["localized_short_name"].GetString();
+							}
+							if ( foundIcon && noOverrideIcon )
+							{
+								specialNPC.uniqueIcon = iconPath;
+							}
 							for ( auto m : models )
 							{
 								entry.modelIndexes.insert(m);
 								if ( foundIcon )
 								{
-									entry.iconSpritesAndPaths[m] = iconPath;
+									if ( !noOverrideIcon )
+									{
+										entry.iconSpritesAndPaths[m] = iconPath;
+									}
 								}
 								specialNPC.modelIndexes.insert(m);
 							}
@@ -4895,6 +4910,10 @@ void MonsterData_t::loadMonsterDataJSON()
 						if ( key == "default" )
 						{
 							entry.defaultIconPath = iconPath;
+							if ( entry_itr->value.HasMember("localized_short_name") )
+							{
+								entry.defaultShortDisplayName = entry_itr->value["localized_short_name"].GetString();
+							}
 						}
 						if ( entry_itr->value.HasMember("models") )
 						{

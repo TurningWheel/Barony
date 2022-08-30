@@ -3698,7 +3698,30 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			if ( monster->clientStats )
 			{
-				strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+				if ( (char)net_packet->data[8] == '$' )
+				{
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+					strcpy(buf, (char*)&net_packet->data[9]);
+					bool found = false;
+					for ( int type = 0; type < NUMMONSTERS; ++type )
+					{
+						if ( MonsterData_t::monsterDataEntries[type].specialNPCs.find(buf) != MonsterData_t::monsterDataEntries[type].specialNPCs.end() )
+						{
+							strcpy(monster->clientStats->name, MonsterData_t::monsterDataEntries[type].specialNPCs[buf].name.c_str());
+							found = true;
+							break;
+						}
+					}
+					if ( !found )
+					{
+						strcpy(monster->clientStats->name, buf);
+					}
+				}
+				else
+				{
+					strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+				}
 			}
 			if ( !FollowerMenu[clientnum].recentEntity )
 			{

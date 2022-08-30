@@ -2790,11 +2790,11 @@ void Entity::handleEffects(Stat* myStats)
 		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
 		{
 			bool secondSummon = false;
-			if ( !strcmp(myStats->name, "skeleton knight") )
+			if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
 			{
 				this->playerStatIncrease(CLASS_WARRIOR, increasestat); // warrior weighting
 			}
-			else if ( !strcmp(myStats->name, "skeleton sentinel") )
+			else if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton sentinel") )
 			{
 				secondSummon = true;
 				this->playerStatIncrease(CLASS_ROGUE, increasestat); // rogue weighting

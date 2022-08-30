@@ -1039,21 +1039,26 @@ struct MonsterData_t
 	struct MonsterDataEntry_t
 	{
 		int monsterType = NOTHING;
-		std::string defaultIconPath;
+		std::string defaultIconPath = "";
 		std::map<int, std::string> iconSpritesAndPaths;
 		std::set<int> modelIndexes;
 		std::set<int> playerModelIndexes;
+		std::string defaultShortDisplayName = "";
 		struct SpecialNPCEntry_t
 		{
 			std::string internalName = "";
 			std::string name = "";
+			std::string shortname = "";
 			std::set<int> modelIndexes;
 			int baseModel = 0;
+			std::string uniqueIcon = "";
 		};
 		std::map<std::string, SpecialNPCEntry_t> specialNPCs;
 		MonsterDataEntry_t(int type)
 		{
 			monsterType = type;
+			defaultShortDisplayName = "";
+			defaultIconPath = "";
 		};
 		MonsterDataEntry_t() = default;
 	};

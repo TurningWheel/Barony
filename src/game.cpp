@@ -2241,11 +2241,11 @@ void gameLogic(void)
 									{
 										monster->monsterAllyClass = monsterStats->allyClass;
 										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
-										if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
+										if ( stats[c]->playerSummonPERCHR != 0 && MonsterData_t::nameMatchesSpecialNPCName(*monsterStats, "skeleton knight") )
 										{
 											monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
 										}
-										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
+										else if ( stats[c]->playerSummon2PERCHR != 0 && MonsterData_t::nameMatchesSpecialNPCName(*monsterStats, "skeleton sentinel") )
 										{
 											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
 										}
@@ -2269,11 +2269,17 @@ void gameLogic(void)
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
-										strcpy((char*)(&net_packet->data[8]), monsterStats->name);
-										net_packet->data[8 + strlen(monsterStats->name)] = 0;
+										std::string name = monsterStats->name;
+										if ( name != "" && name == MonsterData_t::getSpecialNPCName(*monsterStats) )
+										{
+											name = monsterStats->getAttribute("special_npc");
+											name.insert(0, "$");
+										}
+										strcpy((char*)(&net_packet->data[8]), name.c_str());
+										net_packet->data[8 + strlen(name.c_str())] = 0;
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
-										net_packet->len = 8 + strlen(monsterStats->name) + 1;
+										net_packet->len = 8 + strlen(name.c_str()) + 1;
 										sendPacketSafe(net_sock, -1, net_packet, c - 1);
 
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);

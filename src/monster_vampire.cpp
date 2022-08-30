@@ -100,9 +100,10 @@ void initVampire(Entity* my, Stat* myStats)
 					}
 				}
 			}
-			else if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
+			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
 			{
 				myStats->setAttribute("special_npc", "bram kindly");
+				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
 			    myStats->sex = MALE;
 				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
