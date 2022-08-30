@@ -2886,6 +2886,67 @@ void Player::WorldUI_t::reset()
 	uidForActiveTooltip = 0;
 }
 
+bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
+{
+	if ( multiplayer != CLIENT )
+	{
+		if ( !entity.checkEnemy(players[player]->entity) )
+		{
+			return false;
+		}
+	}
+	if ( entity.monsterAllyGetPlayerLeader() == players[player]->entity )
+	{
+		return false; // this is my follower
+	}
+
+	Monster playerRace = stats[player]->type;
+	Monster targetEntityType = entity.getMonsterTypeFromSprite();
+	if ( targetEntityType != NOTHING )
+	{
+		std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
+		if ( skillCapstoneUnlocked(player, PRO_LEADERSHIP) )
+		{
+			allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableLegendary;
+		}
+		if ( allyTable->find(playerRace) != allyTable->end() )
+		{
+			if ( !(*allyTable)[playerRace].empty() )
+			{
+				for ( auto& ally : (*allyTable)[playerRace] )
+				{
+					if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+					if ( ally == targetEntityType )
+					{
+						return false;
+					}
+				}
+			}
+		}
+		// unique recruits
+		{
+			auto* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableSpecialRecruitment;
+			if ( allyTable->find(playerRace) != allyTable->end() )
+			{
+				if ( !(*allyTable)[playerRace].empty() )
+				{
+					for ( auto& allyPair : (*allyTable)[playerRace] )
+					{
+						auto& ally = allyPair.first;
+						if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+						if ( ally == targetEntityType )
+						{
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 {
 	if ( !players[player.playernum]->isLocalPlayerAlive() )
@@ -2908,7 +2969,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	else if ( parent 
 		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
 			|| (parent->behavior == &actFloorDecoration && parent->sprite == 991 /* sign */)
-			|| (parent->behavior == &actMonster && !parent->checkEnemy(player.entity))
+			|| (parent->behavior == &actMonster && (monsterIsFriendlyForTooltip(player.playernum, *parent)))
 			|| (parent->monsterAllyGetPlayerLeader()
 				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity)) )
 	{
@@ -3008,7 +3069,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 			if ( followerSelectInteract )
 			{
-				if ( parent->behavior == &actMonster && parent->checkEnemy(player.entity) )
+				if ( parent->behavior == &actMonster 
+					&& ((multiplayer != CLIENT && parent->checkEnemy(player.entity)) 
+						|| (multiplayer == CLIENT 
+							&& !parent->monsterAllyGetPlayerLeader() && !monsterally[parent->getMonsterTypeFromSprite()][stats[player.playernum]->type])) )
 				{
 					// monsters have wider interact angle for aim assist
 					interactAngle = (PI / 6);
@@ -3537,11 +3601,18 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	}
 	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
-		|| entity.behavior == &actBoulder || (entity.behavior == &actMonster && !entity.checkEnemy(players[player]->entity) )
-		|| entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
+		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
 		|| entity.behavior == &actPowerCrystal )
 	{
 		return false;
+	}
+	else if ( entity.behavior == &actMonster )
+	{
+		bool result = monsterIsFriendlyForTooltip(player, entity);
+		if ( !result )
+		{
+			return false;
+		}
 	}
 
 	return true;
