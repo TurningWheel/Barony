@@ -3968,6 +3968,86 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_addfollower2("/addfollowers", "adds many followers to party", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int setToChoose = atoi(argv[1]);
+
+		if ( players[clientnum]->entity )
+		{
+			std::vector<Monster> set1 = {
+				HUMAN,
+				RAT,
+				GOBLIN,
+				SLIME,
+				TROLL,
+				SPIDER,
+				GHOUL,
+				SKELETON
+			};
+			std::vector<Monster> set2 = {
+				SCORPION,
+				CREATURE_IMP,
+				GNOME,
+				DEMON,
+				SUCCUBUS,
+				KOBOLD,
+				SCARAB,
+				CRYSTALGOLEM
+			};
+			std::vector<Monster> set3 = {
+				INCUBUS,
+				VAMPIRE,
+				SHADOW,
+				COCKATRICE,
+				INSECTOID,
+				GOATMAN,
+				AUTOMATON
+			};
+			std::vector<Monster>* set = nullptr;
+			if ( setToChoose == 1 )
+			{
+				set = &set1;
+			}
+			else if ( setToChoose == 2 )
+			{
+				set = &set2;
+			}
+			else if ( setToChoose == 3 )
+			{
+				set = &set3;
+			}
+			else
+			{
+				return;
+			}
+			for ( auto type : *set )
+			{
+				if ( Entity* monster = summonMonster(type, players[clientnum]->entity->x, players[clientnum]->entity->y) )
+				{
+					if ( forceFollower(*players[clientnum]->entity, *monster) )
+					{
+						monster->monsterAllyIndex = clientnum;
+					}
+				}
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_loadmonsterdata("/loadmonsterdata", "", []CCMD{
 		MonsterData_t::loadMonsterDataJSON();
 	});
