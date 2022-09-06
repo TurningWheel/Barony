@@ -4500,28 +4500,35 @@ void actPlayer(Entity* my)
 							// we're selecting a point for the ally to move to.
 							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
 							{
-								real_t startx = players[PLAYER_NUM]->entity->x;
-								real_t starty = players[PLAYER_NUM]->entity->y;
-								real_t startz = -4;
-								real_t pitch = players[PLAYER_NUM]->entity->pitch;
-								if ( pitch < 0 )
+								real_t startx = cameras[PLAYER_NUM].x * 16.0;
+								real_t starty = cameras[PLAYER_NUM].y * 16.0;
+								static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
+								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_followerStartZ;
+								real_t pitch = cameras[PLAYER_NUM].vang;
+								if ( pitch < 0 || pitch > PI )
 								{
 									pitch = 0;
 								}
+
+								static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
+								static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 								// draw line from the players height and direction until we hit the ground.
 								real_t previousx = startx;
 								real_t previousy = starty;
 								int index = 0;
-								for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
+								const real_t yaw = cameras[PLAYER_NUM].ang;
+								for ( ; startz < *cvar_followerStartZLimit; startz += abs((*cvar_followerMoveTo) * tan(pitch)) )
 								{
-									startx += 0.1 * cos(players[PLAYER_NUM]->entity->yaw);
-									starty += 0.1 * sin(players[PLAYER_NUM]->entity->yaw);
-									index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+									startx += 0.1 * cos(yaw);
+									starty += 0.1 * sin(yaw);
+									const int index_x = static_cast<int>(startx) >> 4;
+									const int index_y = static_cast<int>(starty) >> 4;
+									index = (index_y)* MAPLAYERS + (index_x)* MAPLAYERS * map.height;
 									if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
 									{
 										// store the last known good coordinate
-										previousx = startx;
-										previousy = starty;
+										previousx = startx;// + 16 * cos(yaw);
+										previousy = starty;// + 16 * sin(yaw);
 									}
 									if ( map.tiles[OBSTACLELAYER + index] )
 									{
@@ -4623,12 +4630,14 @@ void actPlayer(Entity* my)
 							|| showNPCCommandsInputStr == input.binding("CycleWorldTooltipPrev")) )
 					{
 						input.consumeBinaryToggle("Show NPC Commands");
+						players[PLAYER_NUM]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
 					}
 					if ( lastNPCCommandOnGamepad &&
 						(lastNPCCommandInputStr == input.binding("CycleWorldTooltipNext")
 							|| lastNPCCommandInputStr == input.binding("CycleWorldTooltipPrev")) )
 					{
 						input.consumeBinaryToggle("Command NPC");
+						players[PLAYER_NUM]->hud.followerDisplay.bCommandNPCDisabled = true;
 					}
 				}
 
