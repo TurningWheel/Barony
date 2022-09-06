@@ -225,11 +225,10 @@ Monster Entity::getMonsterTypeFromSprite(const int sprite)
 			}
 		}
 	}
-	else {
-		auto find = spriteToMonster.find(mySprite);
-		if ( find != spriteToMonster.end() ) {
-			return find->second;
-		}
+
+	auto find = spriteToMonster.find(mySprite);
+	if ( find != spriteToMonster.end() ) {
+		return find->second;
 	}
 	return NOTHING;
 }
