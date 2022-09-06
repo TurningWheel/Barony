@@ -79,6 +79,7 @@ static struct AllyStatusBarSettings_t
 	{
 		int barPixelWidth = 120; // pixel width of bar
 		int barCompactPixelWidth = 120; // pixel width of bar
+		int barSplitscreenPixelWidthOffset = 0; // amount to shrink bars in compact width mode
 		int barMaxWidthAmount = 160; // hp / mp value that makes the bar 100% size
 		int barIntervalToIncreaseWidth = 5; // hp / mp grows every x max hp/mp value
 		int barIntervalStartValue = 20; // hp / mp of this value is the smallest interval
@@ -109,6 +110,10 @@ static struct AllyStatusBarSettings_t
 	{
 		int entryHeight = 40;
 		int entryCompactHeight = 40;
+		int maxNameLengthFullsize = 10;
+		int maxNameLengthCompact = 10;
+		int maxNameLengthSplitscreenFullsize = 10;
+		int maxNameLengthSplitscreenCompact = 10;
 	};
 	static struct FollowerBars_t
 	{
@@ -457,10 +462,58 @@ void createAllyFollowerFrame(const int player)
 	frame->setHollow(true);
 	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
 	frame->setDisabled(true);
+	frame->setScrollBarsEnabled(false);
+	frame->setAllowScrollBinds(false);
 
-	auto selector = frame->addImage(SDL_Rect{ 0, 0, 8, 8 }, 0xFFFFFFFF, "images/system/white.png", "selector");
+	auto selector = frame->addImage(SDL_Rect{ 0, 0, 8, 8 }, 0xFFFFFFFF, "*#images/ui/HUD/allies/HUD_Ally_Arrow_00.png", "selector");
 	selector->disabled = true;
 	selector->ontop = true;
+
+	auto glyphFrame = hud_t.hudFrame->addFrame("follower glyphs");
+	hud_t.allyFollowerGlyphFrame = glyphFrame;
+	glyphFrame->setHollow(true);
+	glyphFrame->setSize(SDL_Rect{ 0, 0, 300, 0 });
+	glyphFrame->setDisabled(true);
+	{
+		std::string font = "fonts/pixel_maz.ttf#32#2";
+		/*auto commandText = glyphFrame->addField("command prompt txt", 32);
+		commandText->setFont(font.c_str());
+		commandText->setHJustify(Field::justify_t::LEFT);
+		commandText->setVJustify(Field::justify_t::TOP);
+		commandText->setSize(SDL_Rect{ 0, 0, glyphFrame->getSize().w, 24 });
+		commandText->setText(language[4202]);
+		commandText->setColor(hudColors.characterSheetLightNeutral);
+		commandText->setOntop(true);
+		commandText->setDisabled(true);*/
+
+		auto glyphCommand = glyphFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph command");
+		glyphCommand->disabled = true;
+		glyphCommand->ontop = true;
+
+		auto imgCommand = glyphFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_Ally_Circle_00.png", "img command");
+		imgCommand->disabled = true;
+		imgCommand->ontop = true;
+
+		/*auto repeatText = glyphFrame->addField("repeat prompt txt", 32);
+		repeatText->setFont(font.c_str());
+		repeatText->setHJustify(Field::justify_t::LEFT);
+		repeatText->setVJustify(Field::justify_t::TOP);
+		repeatText->setSize(SDL_Rect{ 0, 0, frame->getSize().w, 24 });
+		repeatText->setText(language[4203]);
+		repeatText->setColor(hudColors.characterSheetLightNeutral);
+		repeatText->setOntop(true);
+		repeatText->setDisabled(true);*/
+
+		auto glyphRepeat = glyphFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph repeat");
+		glyphRepeat->disabled = true;
+		glyphRepeat->ontop = true;
+
+		auto imgRepeat = glyphFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"*#images/ui/HUD/allies/HUD_Ally_Repeat_00.png", "img repeat");
+		imgRepeat->disabled = true;
+		imgRepeat->ontop = true;
+	}
 }
 
 void createAllyFollowerTitleFrame(const int player)
@@ -473,9 +526,13 @@ void createAllyFollowerTitleFrame(const int player)
 	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
 	frame->setDisabled(true);
 
-	auto selector = frame->addImage(SDL_Rect{ 0, 0, 8, 8 }, 0xFFFFFFFF, "images/system/white.png", "selector");
+	auto selector = frame->addImage(SDL_Rect{ 0, 0, 8, 8 }, 0xFFFFFFFF, "*#images/ui/HUD/allies/HUD_Ally_Arrow_00.png", "selector");
 	selector->disabled = true;
 	selector->ontop = true;
+
+	auto glyphSelector = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph selector");
+	glyphSelector->disabled = true;
+	glyphSelector->ontop = true;
 }
 
 void createAllyPlayerFrame(const int player)
@@ -487,6 +544,8 @@ void createAllyPlayerFrame(const int player)
 	frame->setHollow(true);
 	frame->setSize(SDL_Rect{ 0, 0, 210, 0 });
 	frame->setDisabled(true);
+	frame->setScrollBarsEnabled(false);
+	frame->setAllowScrollBinds(false);
 }
 
 Frame* createAllyPlayerEntry(const int player)
@@ -829,7 +888,7 @@ Frame* getAllyBarTitleFrameEntry(const int player)
 	return entry;
 }
 
-void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, const bool bPlayerBars)
+void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int realActiveBars, const bool bPlayerBars)
 {
 	Frame::image_t* selector = baseFrame->findImage("selector");
 	if ( selector )
@@ -840,6 +899,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 	if ( titleSelector )
 	{
 		titleSelector->disabled = true;
+	}
+	Frame::image_t* titleSelectorGlyph = !bPlayerBars ? players[player]->hud.allyFollowerTitleFrame->findImage("glyph selector") : nullptr;
+	if ( titleSelectorGlyph )
+	{
+		titleSelectorGlyph->disabled = true;
 	}
 
 	std::vector<Frame*> allyFrames;
@@ -892,12 +956,15 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 	const int kNumEntriesToShow = Player::HUD_t::FollowerDisplay_t::getNumEntriesToShow(player);
 
 	int currentY = 0;
+	int entryHeightForGlyphs = 0;
 	int baseFrameHeight = 0;
 	int selectorX = 0;
 	bool madeSelection = false;
 	bool updateTitleFrame = false;
 	bool doneTitleFrame = false;
 	barIndex = -1;
+	bool halfWidthBars = (splitscreen && players[player]->bUseCompactGUIWidth()) || (enableDebugKeys && keystatus[SDL_SCANCODE_G]);
+
 	for ( auto it = (bPlayerBars ? hud_t.playerBars.begin() : hud_t.followerBars.begin()); 
 		it != (bPlayerBars ? hud_t.playerBars.end() : hud_t.followerBars.end()); )
 	{
@@ -936,9 +1003,13 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 		SDL_Rect pos = entryFrame->getSize();
 		pos.x = pos.w - followerBar.animx * pos.w;
+		if ( halfWidthBars && !bPlayerBars )
+		{
+			pos.x += 8;
+		}
 		if ( updateTitleFrame )
 		{
-			pos.y = 0;
+			pos.y = hud_t.allyFollowerTitleFrame->getSize().h - AllyStatusBarSettings_t::FollowerBars_t::entrySettings.entryHeight * 2;
 		}
 		else
 		{
@@ -965,6 +1036,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			{
 				pos.h = AllyStatusBarSettings_t::FollowerBars_t::entrySettings.entryHeight;
 			}
+			entryHeightForGlyphs = pos.h;
 		}
 		if ( bPlayerBars )
 		{
@@ -1021,7 +1093,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 				}
 				else
 				{
-					if ( infiniteScrolling && barIndex < followerDisplay.scrollSetpoint )
+					if ( infiniteScrolling 
+						&& (barIndex < followerDisplay.scrollSetpoint
+							// below statement fades real bars if the list is truncated because of JSON config.
+							// if list not truncated, then no real bar should show up until scroll resets to 0
+							|| barIndex >= followerDisplay.scrollSetpoint + kNumEntriesToShow - 1) )
 					{
 						//followerBar.animFadeScroll = 1.0;
 						// not visible
@@ -1046,7 +1122,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 					}
 
-					if ( infiniteScrolling && barIndex < followerDisplay.scrollSetpoint - 1 )
+					if ( infiniteScrolling 
+						&& (barIndex < followerDisplay.scrollSetpoint - 1
+							// below statement stops dummy bars fading in if the list is truncated because of JSON config.
+							// otherwise fade in as the real bar is less than the current scroll
+							&& !(barIndex + realActiveBars >= followerDisplay.scrollSetpoint + kNumEntriesToShow - 1)) )
 					{
 						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 						if ( !followerBar.dummy )
@@ -1071,13 +1151,15 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 			if ( !updateTitleFrame )
 			{
+				bool fadeWhenMenuOpen = FollowerMenu[player].followerMenuIsOpen() && halfWidthBars;
+				real_t dim = .5;
 				if ( followerBar.dummy )
 				{
-					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScrollDummy));
+					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScrollDummy) * (fadeWhenMenuOpen ? dim : 1.0));
 				}
 				else
 				{
-					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScroll));
+					entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFadeScroll) * (fadeWhenMenuOpen ? dim : 1.0));
 				}
 			}
 		}
@@ -1167,6 +1249,13 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 		int HP = HPBar.animateSetpoint;
 		int MAXMP = MPBar.maxValue;
 		int MP = MPBar.animateSetpoint;
+		std::string customPortraitPath = "";
+		Field* nameField = entryFrame->findField("name");
+		bool updateName = false;
+		if ( followerBar.name == "" || followerDisplay.bHalfWidthBars != halfWidthBars || updateTitleFrame )
+		{
+			updateName = true;
+		}
 
 		if ( followerStats && ((!bPlayerBars && follower) || bPlayerBars) )
 		{
@@ -1181,39 +1270,111 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 				followerBar.monsterType = followerStats->type;
 			}
 
+			if ( HP != followerStats->HP || MAXHP != followerStats->MAXHP )
+			{
+				updateName = true;
+			}
 			HP = followerStats->HP;
 			MAXHP = followerStats->MAXHP;
 
 			MP = followerStats->MP;
 			MAXMP = followerStats->MAXMP;
+		}
+		else
+		{
+			if ( !bPlayerBars )
+			{
+				HP = 0;
+			}
+		}
 
+		if ( updateName && (followerStats && ((!bPlayerBars && follower) || bPlayerBars)) )
+		{
 			std::string followerName = "";
-			const size_t maxNameLen = 14;
-			if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+			size_t maxNameLen = 0;
+			if ( bPlayerBars )
+			{
+				maxNameLen = AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthFullsize;
+			}
+			else
+			{
+				if ( !halfWidthBars )
+				{
+					if ( !shortBars )
+					{
+						maxNameLen = AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthFullsize;
+					}
+					else
+					{
+						maxNameLen = AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthCompact;
+					}
+				}
+				else
+				{
+					if ( !shortBars )
+					{
+						maxNameLen = AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthSplitscreenFullsize;
+					}
+					else
+					{
+						maxNameLen = AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthSplitscreenCompact;
+					}
+				}
+				if ( !shortBars )
+				{
+					if ( MAXHP >= 100 || HP >= 100 )
+					{
+						maxNameLen -= 1;
+					}
+					if ( MAXHP >= 100 && HP >= 100 )
+					{
+						maxNameLen -= 1;
+					}
+					if ( MAXHP >= 200 && HP >= 200 )
+					{
+						maxNameLen -= 1;
+					}
+				}
+			}
+
+			if ( bPlayerBars )
+			{
+				followerName = followerStats->name;
+				if ( followerName.size() > maxNameLen )
+				{
+					followerName = followerName.substr(0, maxNameLen - 1);
+					followerName += "..";
+				}
+			}
+			else if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
 			{
 				if ( strlen(followerStats->name) > maxNameLen )
 				{
 					if ( followerStats->type == SKELETON )
 					{
-						if ( !strcmp(followerStats->name, "skeleton sentinel") )
+						if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton sentinel") )
 						{
-							followerName = "sentinel";
+							followerName = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton sentinel"].shortname;
+							customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton sentinel"].uniqueIcon;
 						}
-						else if ( !strcmp(followerStats->name, "skeleton knight") )
+						else if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton knight") )
 						{
-							followerName = "knight";
+							followerName = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton knight"].shortname;
+							customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton knight"].uniqueIcon;
 						}
 						else
 						{
 							followerName = followerStats->name;
-							followerName = followerName.substr(0, maxNameLen - 2);
-							followerName += "..";
 						}
 					}
 					else
 					{
 						followerName = followerStats->name;
-						followerName = followerName.substr(0, maxNameLen - 2);
+					}
+
+					if ( followerName.size() > maxNameLen )
+					{
+						followerName = followerName.substr(0, maxNameLen - 1);
 						followerName += "..";
 					}
 				}
@@ -1224,30 +1385,23 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			}
 			else
 			{
-				if ( getMonsterLocalizedName(followerStats->type).size() > maxNameLen )
+				followerName = getMonsterLocalizedName(followerStats->type);
+				if ( followerName.size() > maxNameLen )
 				{
-					followerName = getMonsterLocalizedName(followerStats->type);
-					followerName = followerName.substr(0, maxNameLen - 2);
-					followerName += "..";
-				}
-				else
-				{
-					followerName = getMonsterLocalizedName(followerStats->type);
+					if ( MonsterData_t::monsterDataEntries[followerStats->type].defaultShortDisplayName != "" )
+					{
+						followerName = MonsterData_t::monsterDataEntries[followerStats->type].defaultShortDisplayName;
+					}
+					if ( followerName.size() > maxNameLen )
+					{
+						followerName = followerName.substr(0, maxNameLen - 1);
+						followerName += "..";
+					}
 				}
 			}
 			capitalizeString(followerName);
 			followerBar.name = followerName;
 		}
-		else
-		{
-			if ( !bPlayerBars )
-			{
-				HP = 0;
-			}
-		}
-
-		Field* nameField = entryFrame->findField("name");
-		nameField->setText(followerBar.name.c_str());
 
 		char levelbuf[32];
 		snprintf(levelbuf, sizeof(levelbuf), "Lv%d", followerBar.level);
@@ -1259,7 +1413,13 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 		auto hpField = entryFrame->findField("hp");
 		hpField->setText(buf);
 
-		const int hpWidth = (shortBars ? hpBarSettings.barCompactPixelWidth : hpBarSettings.barPixelWidth);
+		nameField->setText(followerBar.name.c_str());
+
+		int hpWidth = (shortBars ? hpBarSettings.barCompactPixelWidth : hpBarSettings.barPixelWidth);
+		if ( halfWidthBars )
+		{
+			hpWidth += hpBarSettings.barSplitscreenPixelWidthOffset;
+		}
 
 		Frame* portrait = entryFrame->findFrame("portrait");
 		if ( shortBars )
@@ -1298,7 +1458,14 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 
 			portrait->setSize(SDL_Rect{ hpFramePos.x + 4 - portrait->getSize().w, 0, portrait->getSize().w, portrait->getSize().h });
 			auto portraitImg = portrait->findImage("portrait img");
-			portraitImg->path = monsterData.getAllyIconFromSprite(followerBar.model, followerBar.monsterType);
+			if ( customPortraitPath != "" )
+			{
+				portraitImg->path = customPortraitPath;
+			}
+			else
+			{
+				portraitImg->path = monsterData.getAllyIconFromSprite(followerBar.model, followerBar.monsterType);
+			}
 
 			nameField->setSize(SDL_Rect{ hpFramePos.x, 0, entryFrame->getSize().w - hpFramePos.x, nameField->getSize().h });
 			nameField->setHJustify(Field::justify_t::LEFT);
@@ -1866,8 +2033,13 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			if ( selector )
 			{
 				selector->disabled = false;
+				if ( auto imgGet = Image::get(selector->path.c_str()) )
+				{
+					selector->pos.w = imgGet->getWidth();
+					selector->pos.h = imgGet->getHeight();
+				}
 				selector->pos.x = entryFrame->getSize().x + selectorX - 8 - selector->pos.w;
-				selector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - selector->pos.w / 2;
+				selector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - selector->pos.h / 2;
 			}
 		}
 		else if ( followerBar.selected && titleFrame && updateTitleFrame )
@@ -1875,10 +2047,45 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 			if ( titleSelector )
 			{
 				titleSelector->disabled = false;
-				titleSelector->pos.x = entryFrame->getSize().x + selectorX - 8 - titleSelector->pos.w;
+				if ( auto imgGet = Image::get(titleSelector->path.c_str()) )
+				{
+					titleSelector->pos.w = imgGet->getWidth();
+					titleSelector->pos.h = imgGet->getHeight();
+				}
+				titleSelector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - titleSelector->pos.h / 2;
+				titleSelector->pos.x = entryFrame->getSize().x + selectorX - titleSelector->pos.w;
 				const int selectorAnimW = 4;
-				titleSelector->pos.x += -selectorAnimW + selectorAnimW * (cos(followerDisplay.animSelected * 2 * PI));
-				titleSelector->pos.y = entryFrame->getSize().y + entryFrame->getSize().h / 2 - titleSelector->pos.w / 2;
+				if ( titleSelectorGlyph )
+				{
+					if ( halfWidthBars || (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen())
+						|| followerDisplay.bCycleNextDisabled || list_Size(&stats[player]->FOLLOWERS) <= 1 )
+					{
+						titleSelectorGlyph->disabled = true;
+					}
+					else
+					{
+						titleSelectorGlyph->path = Input::inputs[player].getGlyphPathForBinding("Cycle NPCs");
+						if ( auto imgGet = Image::get(titleSelectorGlyph->path.c_str()) )
+						{
+							titleSelectorGlyph->disabled = false;
+							titleSelectorGlyph->pos.w = imgGet->getWidth();
+							titleSelectorGlyph->pos.h = imgGet->getHeight();
+							titleSelectorGlyph->pos.x = titleSelector->pos.x - 2 * selectorAnimW - titleSelectorGlyph->pos.w;
+							titleSelectorGlyph->pos.y = titleSelector->pos.y + titleSelector->pos.h / 2 - titleSelectorGlyph->pos.h / 2;
+
+							static ConsoleVariable<int> followerMenuOpenGlyphX("/followermenu_open_glyph_x", 6);
+							static ConsoleVariable<int> followerMenuOpenGlyphY("/followermenu_open_glyph_y", 0);
+							titleSelectorGlyph->pos.x += *followerMenuOpenGlyphX;
+							titleSelectorGlyph->pos.y += *followerMenuOpenGlyphY;
+							if ( titleSelectorGlyph->pos.y % 2 == 1 )
+							{
+								--titleSelectorGlyph->pos.y;
+							}
+						}
+					}
+				}
+
+				titleSelector->pos.x += 4 - selectorAnimW * (cos(followerDisplay.animSelected * 2 * PI));
 			}
 		}
 
@@ -1894,6 +2101,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 		}
 	}
 
+	followerDisplay.bHalfWidthBars = halfWidthBars;
+
 	SDL_Rect baseFramePos = baseFrame->getSize();
 	baseFramePos.h = baseFrameHeight;
 	baseFrame->setSize(baseFramePos);
@@ -1901,7 +2110,74 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, cons
 		baseFrame->getActualSize().x,
 		baseFrame->getActualSize().y,
 		baseFrame->getActualSize().w ,
-		infiniteScrolling ? baseFramePos.h * 3 : currentY });
+		infiniteScrolling ? baseFramePos.h * 10 : currentY });
+
+
+	if ( !bPlayerBars && titleFrame && hud_t.allyFollowerGlyphFrame && !hud_t.allyFollowerGlyphFrame->isDisabled() )
+	{
+		static ConsoleVariable<int> followerMenuCommandGlyphX("/followermenu_cmd_glyph_x", -116);
+		static ConsoleVariable<int> followerMenuCommandGlyphY("/followermenu_cmd_glyph_y", 0);
+		static ConsoleVariable<int> followerMenuRepeatGlyphX("/followermenu_repeat_glyph_x", 0);
+		static ConsoleVariable<int> followerMenuRepeatGlyphY("/followermenu_repeat_glyph_y", 0);
+
+		auto glyphFrame = hud_t.allyFollowerGlyphFrame;
+		SDL_Rect glyphFramePos{ baseFrame->getSize().x, titleFrame->getSize().y, 150, 80 };
+		glyphFramePos.x += *followerMenuCommandGlyphX;
+		glyphFramePos.y += *followerMenuCommandGlyphY;
+		glyphFrame->setSize(glyphFramePos);
+
+		auto commandGlyph = glyphFrame->findImage("glyph command");
+		auto commandImg = glyphFrame->findImage("img command");
+		//auto commandText = glyphFrame->findField("command prompt txt");
+
+		auto repeatGlyph = glyphFrame->findImage("glyph repeat");
+		auto repeatImg = glyphFrame->findImage("img repeat");
+		//auto repeatCmdText = glyphFrame->findField("repeat prompt txt");
+
+		if ( auto imgGet = Image::get(commandImg->path.c_str()) )
+		{
+			commandImg->disabled = false;
+			commandImg->pos.w = imgGet->getWidth();
+			commandImg->pos.h = imgGet->getHeight();
+			commandImg->pos.x = glyphFramePos.w - commandImg->pos.w;
+			commandImg->pos.y = 0;
+		}
+		commandGlyph->path = Input::inputs[player].getGlyphPathForBinding("Show NPC Commands");
+		if ( auto imgGet = Image::get(commandGlyph->path.c_str()) )
+		{
+			commandGlyph->disabled = commandImg->disabled || followerDisplay.bOpenFollowerMenuDisabled;
+			commandGlyph->pos.w = imgGet->getWidth();
+			commandGlyph->pos.h = imgGet->getHeight();
+			commandGlyph->pos.x = commandImg->pos.x - commandGlyph->pos.w;
+			commandGlyph->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - commandGlyph->pos.h / 2;
+		}
+
+		if ( FollowerMenu[player].optionPrevious == -1 )
+		{
+			repeatImg->disabled = true;
+			repeatGlyph->disabled = true;
+		}
+		else
+		{
+			if ( auto imgGet = Image::get(repeatImg->path.c_str()) )
+			{
+				repeatImg->disabled = false;
+				repeatImg->pos.w = imgGet->getWidth();
+				repeatImg->pos.h = imgGet->getHeight();
+				repeatImg->pos.x = commandGlyph->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				repeatImg->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - repeatImg->pos.h / 2 + *followerMenuRepeatGlyphY;
+			}
+			repeatGlyph->path = Input::inputs[player].getGlyphPathForBinding("Command NPC");
+			if ( auto imgGet = Image::get(repeatGlyph->path.c_str()) )
+			{
+				repeatGlyph->disabled = repeatImg->disabled || followerDisplay.bCommandNPCDisabled;
+				repeatGlyph->pos.w = imgGet->getWidth();
+				repeatGlyph->pos.h = imgGet->getHeight();
+				repeatGlyph->pos.x = repeatImg->pos.x - repeatGlyph->pos.w;
+				repeatGlyph->pos.y = repeatImg->pos.y + repeatImg->pos.h / 2 - repeatGlyph->pos.h / 2;
+			}
+		}
+	}
 }
 
 void updateAllyFollowerFrame(const int player)
@@ -1914,6 +2190,7 @@ void updateAllyFollowerFrame(const int player)
 	auto& hud_t = players[player]->hud;
 	Frame* baseFrame = hud_t.allyFollowerFrame;
 	Frame* titleFrame = hud_t.allyFollowerTitleFrame;
+	Frame* glyphFrame = hud_t.allyFollowerGlyphFrame;
 
 	static ConsoleVariable<bool> cvar_followerbars("/followerbars", true);
 
@@ -1921,6 +2198,7 @@ void updateAllyFollowerFrame(const int player)
 	{
 		baseFrame->setDisabled(true);
 		titleFrame->setDisabled(true);
+		glyphFrame->setDisabled(true);
 		return;
 	}
 
@@ -1929,17 +2207,19 @@ void updateAllyFollowerFrame(const int player)
 	baseFrame->setDisabled(false);
 	SDL_Rect baseFramePos = baseFrame->getSize();
 	baseFramePos.x = hud_t.hudFrame->getSize().w - baseFramePos.w;
-	baseFramePos.y = 20 + (infiniteScrolling ? 36 : 0);
+	const int baseY = 20;
+	baseFramePos.y = baseY + (infiniteScrolling ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.entryHeight : 0);
 	baseFrame->setSize(baseFramePos);
 
 	titleFrame->setDisabled(true);
+	glyphFrame->setDisabled(true);
 	if ( infiniteScrolling )
 	{
-		titleFrame->setSize(SDL_Rect{ baseFramePos.x, 20, baseFramePos.w, 36 });
+		titleFrame->setSize(SDL_Rect{ baseFramePos.x, 0, baseFramePos.w, baseY + 2 * AllyStatusBarSettings_t::FollowerBars_t::entrySettings.entryHeight });
 		titleFrame->setDisabled(false);
 	}
 
-	if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
+	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
 	{
 		keystatus[SDL_SCANCODE_H] = 0;
 		hud_t.followerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
@@ -1953,7 +2233,7 @@ void updateAllyFollowerFrame(const int player)
 			auto it = hud_t.followerBars.begin() + local_rng.rand() % hud_t.followerBars.size();
 			it->second.expired = true;
 		}
-	}
+	}*/
 
 	std::vector<Uint32> sortedUids;
 	for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
@@ -1969,7 +2249,7 @@ void updateAllyFollowerFrame(const int player)
 			Uint32 uid = follower->getUID();
 			auto it = std::find_if(hud_t.followerBars.begin(), hud_t.followerBars.end(),
 				[&uid](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
-			{ 
+			{
 				return bar.first == uid && !bar.second.expired;
 			});
 			if ( it == hud_t.followerBars.end() )
@@ -2094,6 +2374,12 @@ void updateAllyFollowerFrame(const int player)
 		}
 	}
 
+	if ( selectedFollower && (players[player]->shootmode || FollowerMenu[player].followerMenuIsOpen()) &&
+		list_Size(&stats[player]->FOLLOWERS) > 0 && !players[player]->bUseCompactGUIWidth() )
+	{
+		glyphFrame->setDisabled(false);
+	}
+
 	if ( !FollowerMenu[player].recentEntity )
 	{
 		followerDisplay.lastUidSelected = 0;
@@ -2177,7 +2463,7 @@ void updateAllyFollowerFrame(const int player)
 
 	followerDisplay.bCompact = followerDisplay.getCompactMode(player);
 
-	updateAllyBarFrame(player, baseFrame, activeBars, false);
+	updateAllyBarFrame(player, baseFrame, activeBars, realActiveBars, false);
 
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -2329,35 +2615,46 @@ void updateAllyFollowerFrame(const int player)
 
 		int scrollHeight = 0;
 		real_t scrollRemaining = followerDisplay.scrollAnimateX;
+		bool scrollingCompleted = false;
 		for ( auto f : baseFrame->getFrames() )
 		{
 			if ( strcmp(f->getName(), "entry") || f->isToBeDeleted() )
 			{
 				continue;
 			}
-			if ( scrollRemaining < 0.0 )
+
+			if ( !scrollingCompleted )
 			{
-				SDL_Rect pos = baseFrame->getSize();
-				int height = AllyStatusBarSettings_t::PlayerBars_t::entrySettings.entryHeight;
-				if ( infiniteScrolling && followerDisplay.bCompact )
+				if ( scrollRemaining < 0.0 )
 				{
-					height = AllyStatusBarSettings_t::PlayerBars_t::entrySettings.entryCompactHeight;
+					SDL_Rect pos = baseFrame->getSize();
+					int height = AllyStatusBarSettings_t::PlayerBars_t::entrySettings.entryHeight;
+					if ( infiniteScrolling && followerDisplay.bCompact )
+					{
+						height = AllyStatusBarSettings_t::PlayerBars_t::entrySettings.entryCompactHeight;
+					}
+					pos.y += -scrollRemaining * height;
+					baseFrame->setSize(pos);
 				}
-				pos.y += -scrollRemaining * height;
-				baseFrame->setSize(pos);
+				else if ( scrollRemaining >= 1.0 )
+				{
+					scrollHeight += f->getSize().h;
+				}
+				else
+				{
+					scrollHeight += f->getSize().h * scrollRemaining;
+				}
+				scrollRemaining -= 1.0;
 			}
-			else if ( scrollRemaining >= 1.0 )
 			{
-				scrollHeight += f->getSize().h;
+				// change frame size to allow text overflow
+				SDL_Rect pos = f->getSize();
+				pos.h += 4;
+				f->setSize(pos);
 			}
-			else
-			{
-				scrollHeight += f->getSize().h * scrollRemaining;
-			}
-			scrollRemaining -= 1.0;
 			if ( scrollRemaining <= 0.0 )
 			{
-				break;
+				scrollingCompleted = true;
 			}
 		}
 		SDL_Rect actualSize = baseFrame->getActualSize();
@@ -2386,7 +2683,7 @@ void updateAllyPlayerFrame(const int player)
 
 	baseFrame->setDisabled(false);
 	SDL_Rect baseFramePos = baseFrame->getSize();
-	baseFramePos.x = 0;
+	baseFramePos.x = 8;
 	baseFramePos.y = 20;
 	baseFrame->setSize(baseFramePos);
 
@@ -2436,7 +2733,7 @@ void updateAllyPlayerFrame(const int player)
 		}
 	}
 
-	updateAllyBarFrame(player, baseFrame, activeBars, true);
+	updateAllyBarFrame(player, baseFrame, activeBars, activeBars, true);
 }
 
 void createEnemyBar(const int player, Frame*& frame)
@@ -16817,6 +17114,22 @@ void loadHUDSettingsJSON()
 							{
 								Player::HUD_t::FollowerDisplay_t::numInfiniteSplitscreenCompactBars = ally_itr->value["splitscreen_max_compact_bars"].GetInt();
 							}
+							if ( ally_itr->value.HasMember("max_fullsize_name_len") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthFullsize = ally_itr->value["max_fullsize_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_compact_name_len") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthCompact = ally_itr->value["max_compact_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_splitscreen_fullsize_name_len") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthSplitscreenFullsize = ally_itr->value["max_splitscreen_fullsize_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_splitscreen_compact_name_len") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthSplitscreenCompact = ally_itr->value["max_splitscreen_compact_name_len"].GetInt();
+							}
 							if ( ally_itr->value.HasMember("hp") )
 							{
 								for ( auto val_itr = ally_itr->value["hp"].MemberBegin();
@@ -16831,6 +17144,10 @@ void loadHUDSettingsJSON()
 									else if ( key == "bar_compact_pixel_width" )
 									{
 										bar.barCompactPixelWidth = val_itr->value.GetInt();
+									}
+									else if ( key == "bar_splitscreen_pixel_width_offset" )
+									{
+										bar.barSplitscreenPixelWidthOffset = val_itr->value.GetInt();
 									}
 									else if ( key == "bar_max_amount_threshold" )
 									{
@@ -16941,6 +17258,22 @@ void loadHUDSettingsJSON()
 							if ( ally_itr->value.HasMember("entry_compact_height") )
 							{
 								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.entryCompactHeight = ally_itr->value["entry_compact_height"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_fullsize_name_len") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthFullsize = ally_itr->value["max_fullsize_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_compact_name_len") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthCompact = ally_itr->value["max_compact_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_splitscreen_fullsize_name_len") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthSplitscreenFullsize = ally_itr->value["max_splitscreen_fullsize_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("max_splitscreen_compact_name_len") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthSplitscreenCompact = ally_itr->value["max_splitscreen_compact_name_len"].GetInt();
 							}
 							if ( ally_itr->value.HasMember("hp") )
 							{
