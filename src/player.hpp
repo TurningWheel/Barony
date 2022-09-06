@@ -1369,6 +1369,7 @@ public:
 		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
 		Frame* allyFollowerTitleFrame = nullptr;
+		Frame* allyFollowerGlyphFrame = nullptr;
 		Frame* allyPlayerFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
@@ -1499,6 +1500,10 @@ public:
 			Uint32 scrollTicks = 0;
 			bool isInteractable = false;
 			bool bCompact = false;
+			bool bHalfWidthBars = false;
+			bool bCycleNextDisabled = false;
+			bool bCommandNPCDisabled = false;
+			bool bOpenFollowerMenuDisabled = false;
 		};
 		FollowerDisplay_t followerDisplay;
 		std::vector<std::pair<Uint32, FollowerBar_t>> followerBars;

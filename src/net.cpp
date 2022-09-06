@@ -1877,6 +1877,9 @@ static void changeLevel() {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		FollowerMenu[i].recentEntity = nullptr;
+		FollowerMenu[i].followerToCommand = nullptr;
+		FollowerMenu[i].entityToInteractWith = nullptr;
 	}
 
 	// stop all sounds

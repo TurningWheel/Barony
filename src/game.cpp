@@ -1015,6 +1015,9 @@ void gameLogic(void)
 	{
 	    for (int c = 0; c < MAXPLAYERS; ++c)
 	    {
+			players[c]->hud.followerDisplay.bCommandNPCDisabled = false;
+			players[c]->hud.followerDisplay.bOpenFollowerMenuDisabled = false;
+
 	        if (c != clientnum && !splitscreen)
 	        {
 	            continue;
@@ -1787,6 +1790,9 @@ void gameLogic(void)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						FollowerMenu[i].recentEntity = nullptr;
+						FollowerMenu[i].followerToCommand = nullptr;
+						FollowerMenu[i].entityToInteractWith = nullptr;
 					}
 
 					// stop all sounds
@@ -4859,20 +4865,21 @@ void ingameHud()
 				players[player]->worldUI.isEnabled()
 				&& players[player]->worldUI.bTooltipInView
 				&& players[player]->worldUI.tooltipsInRange.size() > 1);
+		if ( worldUIBlocksFollowerCycle )
+		{
+			std::string cycleNPCbinding = input.binding("Cycle NPCs");
+			if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
+				&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
+			{
+				worldUIBlocksFollowerCycle = false;
+			}
+		}
+		players[player]->hud.followerDisplay.bCycleNextDisabled = (worldUIBlocksFollowerCycle && players[player]->shootmode);
 
 		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Cycle NPCs")
 			&& !gamePaused
 			&& bControlEnabled )
 		{
-			if ( worldUIBlocksFollowerCycle )
-			{
-				std::string cycleNPCbinding = input.binding("Cycle NPCs");
-				if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
-					&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
-				{
-					worldUIBlocksFollowerCycle = false;
-				}
-			}
 			if ( (!worldUIBlocksFollowerCycle && players[player]->shootmode) || FollowerMenu[player].followerMenuIsOpen() )
 			{
 				// can select next follower in inventory or shootmode
@@ -6111,6 +6118,9 @@ int main(int argc, char** argv)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						FollowerMenu[i].recentEntity = nullptr;
+						FollowerMenu[i].followerToCommand = nullptr;
+						FollowerMenu[i].entityToInteractWith = nullptr;
 					}
 
 					// black background

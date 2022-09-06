@@ -3620,6 +3620,7 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 
 void Player::WorldUI_t::handleTooltips()
 {
+	//DebugTimers.addTimePoint("tooltip", "tooltip start");
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
 		if ( !players[player]->isLocalPlayerAlive() )
@@ -3706,13 +3707,13 @@ void Player::WorldUI_t::handleTooltips()
 			Entity* ohitentity = hit.entity;
 			lineTrace(players[player]->entity, players[player]->entity->x, players[player]->entity->y,
 				players[player]->entity->yaw, STRIKERANGE, 0, true);
-			if ( hit.entity && entityBlocksTooltipInteraction(player, *hit.entity) )
+			if ( hit.entity )
 			{
 				if ( hit.entity->behavior == &actMonster && followerSelectInteract )
 				{
 					// don't let hostile monsters get in the way of selection
 				}
-				else
+				else if ( entityBlocksTooltipInteraction(player, *hit.entity) )
 				{
 					bDoingActionHideTooltips = true;
 				}
@@ -3899,6 +3900,7 @@ void Player::WorldUI_t::handleTooltips()
 			}
 		}
 	}
+	//DebugTimers.addTimePoint("tooltip", "tooltip end");
 }
 
 void Player::Hotbar_t::initFaceButtonHotbar()
@@ -5681,6 +5683,7 @@ void Player::clearGUIPointers()
 	hud.minotaurFrame = nullptr;
 	hud.allyFollowerFrame = nullptr;
 	hud.allyFollowerTitleFrame = nullptr;
+	hud.allyFollowerGlyphFrame = nullptr;
 	hud.allyPlayerFrame = nullptr;
 	hud.mapWindow = nullptr;
 	hud.logWindow = nullptr;

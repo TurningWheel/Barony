@@ -9705,6 +9705,9 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			FollowerMenu[i].recentEntity = nullptr;
+			FollowerMenu[i].followerToCommand = nullptr;
+			FollowerMenu[i].entityToInteractWith = nullptr;
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -9948,6 +9951,9 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			FollowerMenu[i].recentEntity = nullptr;
+			FollowerMenu[i].followerToCommand = nullptr;
+			FollowerMenu[i].entityToInteractWith = nullptr;
 		}
 
 		client_disconnected[0] = false;
@@ -10596,6 +10602,9 @@ void doEndgame() {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		FollowerMenu[i].recentEntity = nullptr;
+		FollowerMenu[i].followerToCommand = nullptr;
+		FollowerMenu[i].entityToInteractWith = nullptr;
 	}
 
 	// load menu level
