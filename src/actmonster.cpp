@@ -9348,10 +9348,10 @@ void Entity::clearMonsterInteract()
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		FollowerMenu[i].entityToInteractWith = nullptr; // does this need to be unique?? is it safe to close everyones entity for splitscreen??
-		//if ( FollowerMenu[i].entityToInteractWith == this )
-		//{
-		//}
+		if ( FollowerMenu[i].entityToInteractWith == this )
+		{
+			FollowerMenu[i].entityToInteractWith = nullptr;
+		}
 	}
 	interactedByMonster = 0;
 }
