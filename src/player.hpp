@@ -1474,6 +1474,7 @@ public:
 			real_t animFadeScrollDummy = 0.0;
 			bool bInit = false;
 			std::string name = "";
+			std::string customPortraitPath = "";
 			int level = 0;
 			int model = 0;
 			int monsterType = 0;

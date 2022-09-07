@@ -114,6 +114,8 @@ static struct AllyStatusBarSettings_t
 		int maxNameLengthCompact = 10;
 		int maxNameLengthSplitscreenFullsize = 10;
 		int maxNameLengthSplitscreenCompact = 10;
+		int baseY = 20;
+		int baseYSplitscreen = 20;
 	};
 	static struct FollowerBars_t
 	{
@@ -938,11 +940,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 	}
 
 	auto& infiniteScrolling = Player::HUD_t::FollowerDisplay_t::infiniteScrolling;
-	if ( enableDebugKeys && keystatus[SDL_SCANCODE_F] )
+	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_F] )
 	{
 		keystatus[SDL_SCANCODE_F] = 0;
 		infiniteScrolling = !infiniteScrolling;
-	}
+	}*/
 
 	auto& followerDisplay = hud_t.followerDisplay;
 
@@ -963,7 +965,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 	bool updateTitleFrame = false;
 	bool doneTitleFrame = false;
 	barIndex = -1;
-	bool halfWidthBars = (splitscreen && players[player]->bUseCompactGUIWidth()) || (enableDebugKeys && keystatus[SDL_SCANCODE_G]);
+	bool halfWidthBars = (splitscreen && players[player]->bUseCompactGUIWidth()) 
+		/*|| (enableDebugKeys && keystatus[SDL_SCANCODE_G])*/;
 
 	for ( auto it = (bPlayerBars ? hud_t.playerBars.begin() : hud_t.followerBars.begin()); 
 		it != (bPlayerBars ? hud_t.playerBars.end() : hud_t.followerBars.end()); )
@@ -1249,7 +1252,6 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		int HP = HPBar.animateSetpoint;
 		int MAXMP = MPBar.maxValue;
 		int MP = MPBar.animateSetpoint;
-		std::string customPortraitPath = "";
 		Field* nameField = entryFrame->findField("name");
 		bool updateName = false;
 		if ( followerBar.name == "" || followerDisplay.bHalfWidthBars != halfWidthBars || updateTitleFrame )
@@ -1291,6 +1293,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		if ( updateName && (followerStats && ((!bPlayerBars && follower) || bPlayerBars)) )
 		{
 			std::string followerName = "";
+			followerBar.customPortraitPath = "";
 			size_t maxNameLen = 0;
 			if ( bPlayerBars )
 			{
@@ -1355,12 +1358,12 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 						if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton sentinel") )
 						{
 							followerName = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton sentinel"].shortname;
-							customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton sentinel"].uniqueIcon;
+							followerBar.customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton sentinel"].uniqueIcon;
 						}
 						else if ( MonsterData_t::nameMatchesSpecialNPCName(*followerStats, "skeleton knight") )
 						{
 							followerName = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton knight"].shortname;
-							customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton knight"].uniqueIcon;
+							followerBar.customPortraitPath = MonsterData_t::monsterDataEntries[SKELETON].specialNPCs["skeleton knight"].uniqueIcon;
 						}
 						else
 						{
@@ -1458,9 +1461,9 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 			portrait->setSize(SDL_Rect{ hpFramePos.x + 4 - portrait->getSize().w, 0, portrait->getSize().w, portrait->getSize().h });
 			auto portraitImg = portrait->findImage("portrait img");
-			if ( customPortraitPath != "" )
+			if ( followerBar.customPortraitPath != "" )
 			{
-				portraitImg->path = customPortraitPath;
+				portraitImg->path = followerBar.customPortraitPath;
 			}
 			else
 			{
@@ -2207,7 +2210,7 @@ void updateAllyFollowerFrame(const int player)
 	baseFrame->setDisabled(false);
 	SDL_Rect baseFramePos = baseFrame->getSize();
 	baseFramePos.x = hud_t.hudFrame->getSize().w - baseFramePos.w;
-	const int baseY = 20;
+	const int baseY = baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseY;
 	baseFramePos.y = baseY + (infiniteScrolling ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.entryHeight : 0);
 	baseFrame->setSize(baseFramePos);
 
@@ -2684,10 +2687,10 @@ void updateAllyPlayerFrame(const int player)
 	baseFrame->setDisabled(false);
 	SDL_Rect baseFramePos = baseFrame->getSize();
 	baseFramePos.x = 8;
-	baseFramePos.y = 20;
+	baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY;
 	baseFrame->setSize(baseFramePos);
 
-	if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
+	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
 	{
 		keystatus[SDL_SCANCODE_H] = 0;
 		hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
@@ -2701,10 +2704,14 @@ void updateAllyPlayerFrame(const int player)
 			auto it = hud_t.playerBars.begin() + local_rng.rand() % hud_t.playerBars.size();
 			it->second.expired = true;
 		}
-	}
+	}*/
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
+		if ( i == player )
+		{
+			continue;
+		}
 		if ( !client_disconnected[i] && players[i]->entity )
 		{
 			auto it = std::find_if(hud_t.playerBars.begin(), hud_t.playerBars.end(),
@@ -14306,10 +14313,10 @@ void Player::CharacterSheet_t::updateStats()
 	const int leftAlignPosX = 10;
 	auto statsInnerPos = statsInnerFrame->getSize();
 	statsInnerPos.x = rightAlignPosX;
-	if ( keystatus[SDL_SCANCODE_I] && enableDebugKeys )
+	/*if ( keystatus[SDL_SCANCODE_I] && enableDebugKeys )
 	{
 		statsInnerPos.x = leftAlignPosX;
-	}
+	}*/
 	statsInnerFrame->setSize(statsInnerPos);
 
 	Button* strButton = statsInnerFrame->findButton("str button");
@@ -17130,6 +17137,14 @@ void loadHUDSettingsJSON()
 							{
 								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.maxNameLengthSplitscreenCompact = ally_itr->value["max_splitscreen_compact_name_len"].GetInt();
 							}
+							if ( ally_itr->value.HasMember("base_y_pos") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseY = ally_itr->value["base_y_pos"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("base_y_pos_splitscreen") )
+							{
+								AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseYSplitscreen = ally_itr->value["base_y_pos_splitscreen"].GetInt();
+							}
 							if ( ally_itr->value.HasMember("hp") )
 							{
 								for ( auto val_itr = ally_itr->value["hp"].MemberBegin();
@@ -17274,6 +17289,14 @@ void loadHUDSettingsJSON()
 							if ( ally_itr->value.HasMember("max_splitscreen_compact_name_len") )
 							{
 								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.maxNameLengthSplitscreenCompact = ally_itr->value["max_splitscreen_compact_name_len"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("base_y_pos") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY = ally_itr->value["base_y_pos"].GetInt();
+							}
+							if ( ally_itr->value.HasMember("base_y_pos_splitscreen") )
+							{
+								AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen = ally_itr->value["base_y_pos_splitscreen"].GetInt();
 							}
 							if ( ally_itr->value.HasMember("hp") )
 							{
