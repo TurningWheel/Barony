@@ -620,7 +620,7 @@ void actBoulder(Entity* my)
 			my->vel_z = -(my->vel_z / 2);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_BOUNCE, 32000, 32000, 15, my->getUID());
+				inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_BOUNCE, 32000, 32000, 15, my->getUID());	
 			}
 			nobounce = true;
 		}

@@ -353,6 +353,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				// clear the button input if we missed a tooltip, otherwise it'll keep retrying (or pre-fire a button held)
 				input.consumeBinaryToggle("Use");
+				//input.consumeBindingsSharedWithBinding("Use");
 			}
 		}
 	}

@@ -3,6 +3,9 @@
 #include "Config.hpp"
 
 #ifdef USE_EOS
+#ifdef NINTENDO
+#include "eos/Switch/eos_Switch.h"
+#endif
 #include "eos_sdk.h"
 #include "eos_logging.h"
 #include "eos_auth.h"

@@ -96,11 +96,132 @@ int initGame()
 		achievementImages.emplace(std::make_pair(item, loadImage(name)));
 	}
 
+	// load item types
+	int newItems = 0;
+	printlog("loading items...\n");
+	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
+	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	File* fp = openDataFile(itemsDirectory.c_str(), "rb");
+	for (int c = 0; !fp->eof(); ++c)
+	{
+		if (c > SPELLBOOK_DETECT_FOOD)
+		{
+			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if (c > ARTIFACT_BOW)
+		{
+			newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else
+		{
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
+		items[c].index = fp->geti();
+		items[c].fpindex = fp->geti();
+		items[c].variations = fp->geti();
+		char name[32];
+		fp->gets2(name, sizeof(name));
+		if (!strcmp(name, "WEAPON"))
+		{
+			items[c].category = WEAPON;
+		}
+		else if (!strcmp(name, "ARMOR"))
+		{
+			items[c].category = ARMOR;
+		}
+		else if (!strcmp(name, "AMULET"))
+		{
+			items[c].category = AMULET;
+		}
+		else if (!strcmp(name, "POTION"))
+		{
+			items[c].category = POTION;
+		}
+		else if (!strcmp(name, "SCROLL"))
+		{
+			items[c].category = SCROLL;
+		}
+		else if (!strcmp(name, "MAGICSTAFF"))
+		{
+			items[c].category = MAGICSTAFF;
+		}
+		else if (!strcmp(name, "RING"))
+		{
+			items[c].category = RING;
+		}
+		else if (!strcmp(name, "SPELLBOOK"))
+		{
+			items[c].category = SPELLBOOK;
+		}
+		else if (!strcmp(name, "TOOL"))
+		{
+			items[c].category = TOOL;
+		}
+		else if (!strcmp(name, "FOOD"))
+		{
+			items[c].category = FOOD;
+		}
+		else if (!strcmp(name, "BOOK"))
+		{
+			items[c].category = BOOK;
+		}
+		else if (!strcmp(name, "THROWN"))
+		{
+			items[c].category = THROWN;
+		}
+		else if (!strcmp(name, "SPELL_CAT"))
+		{
+			items[c].category = SPELL_CAT;
+		}
+		else
+		{
+			items[c].category = GEM;
+		}
+		items[c].weight = fp->geti();
+		items[c].value = fp->geti();
+		items[c].images.first = NULL;
+		items[c].images.last = NULL;
+		while (1)
+		{
+			string_t* string = (string_t*)malloc(sizeof(string_t));
+			string->data = (char*)malloc(sizeof(char) * 64);
+			string->lines = 1;
+
+			node_t* node = list_AddNodeLast(&items[c].images);
+			node->element = string;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			string->node = node;
+
+			auto result = fp->gets2(string->data, 64);
+			if (result == nullptr || string->data[0] == '\0') {
+				list_RemoveNode(node);
+				break;
+			}
+		}
+	}
+	FileIO::close(fp);
+	loadItemLists();
+	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readTooltipsFromFile();
+	setupSpells();
+
+	loadHUDSettingsJSON();
+	Player::SkillSheet_t::loadSkillSheetJSON();
+	Player::CharacterSheet_t::loadCharacterSheetJSON();
+	StatusEffectQueue_t::loadStatusEffectsJSON();
+	FollowerRadialMenu::loadFollowerJSON();
+	ScriptTextParser.readAllScripts();
+
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
 		int c, x;
 		char name[32];
-		File* fp;
 
 		// load model offsets
 		printlog( "loading model offsets...\n");
@@ -119,6 +240,7 @@ int initGame()
 			strcpy(filename, "models/creatures/");
 			strcat(filename, monstertypename[c]);
 			strcat(filename, "/limbs.txt");
+			File* fp;
 			if ( (fp = openDataFile(filename, "rb")) == NULL )
 			{
 				continue;
@@ -160,117 +282,7 @@ int initGame()
 
 		updateLoadingScreen(92);
 
-		int newItems = 0;
-
-		// load item types
-		printlog( "loading items...\n");
-		std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
-		itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-		fp = openDataFile(itemsDirectory.c_str(), "rb");
-		for ( c = 0; !fp->eof(); ++c )
-		{
-			if ( c > SPELLBOOK_DETECT_FOOD )
-			{
-				newItems = c - SPELLBOOK_DETECT_FOOD - 1;
-				items[c].name_identified = language[3500 + newItems * 2];
-				items[c].name_unidentified = language[3501 + newItems * 2];
-			}
-			else if ( c > ARTIFACT_BOW )
-			{
-				newItems = c - ARTIFACT_BOW - 1;
-				items[c].name_identified = language[2200 + newItems * 2];
-				items[c].name_unidentified = language[2201 + newItems * 2];
-			}
-			else
-			{
-				items[c].name_identified = language[1545 + c * 2];
-				items[c].name_unidentified = language[1546 + c * 2];
-			}
-			items[c].index = fp->geti();
-			items[c].fpindex = fp->geti();
-			items[c].variations = fp->geti();
-			fp->gets2(name, 32);
-			if ( !strcmp(name, "WEAPON") )
-			{
-				items[c].category = WEAPON;
-			}
-			else if ( !strcmp(name, "ARMOR") )
-			{
-				items[c].category = ARMOR;
-			}
-			else if ( !strcmp(name, "AMULET") )
-			{
-				items[c].category = AMULET;
-			}
-			else if ( !strcmp(name, "POTION") )
-			{
-				items[c].category = POTION;
-			}
-			else if ( !strcmp(name, "SCROLL") )
-			{
-				items[c].category = SCROLL;
-			}
-			else if ( !strcmp(name, "MAGICSTAFF") )
-			{
-				items[c].category = MAGICSTAFF;
-			}
-			else if ( !strcmp(name, "RING") )
-			{
-				items[c].category = RING;
-			}
-			else if ( !strcmp(name, "SPELLBOOK") )
-			{
-				items[c].category = SPELLBOOK;
-			}
-			else if ( !strcmp(name, "TOOL") )
-			{
-				items[c].category = TOOL;
-			}
-			else if ( !strcmp(name, "FOOD") )
-			{
-				items[c].category = FOOD;
-			}
-			else if ( !strcmp(name, "BOOK") )
-			{
-				items[c].category = BOOK;
-			}
-			else if ( !strcmp(name, "THROWN") )
-			{
-				items[c].category = THROWN;
-			}
-			else if ( !strcmp(name, "SPELL_CAT") )
-			{
-				items[c].category = SPELL_CAT;
-			}
-			else
-			{
-				items[c].category = GEM;
-			}
-			items[c].weight = fp->geti();
-			items[c].value = fp->geti();
-			items[c].images.first = NULL;
-			items[c].images.last = NULL;
-			while ( 1 )
-			{
-				string_t* string = (string_t*) malloc(sizeof(string_t));
-				string->data = (char*) malloc(sizeof(char) * 64);
-				string->lines = 1;
-
-				node_t* node = list_AddNodeLast(&items[c].images);
-				node->element = string;
-				node->deconstructor = &stringDeconstructor;
-				node->size = sizeof(string_t);
-				string->node = node;
-
-				auto result = fp->gets2(string->data, 64);
-				if (result == nullptr || string->data[0] == '\0') {
-					list_RemoveNode(node);
-					break;
-				}
-			}
-		}
-		FileIO::close(fp);
-		setupSpells();
+		GlyphHelper.readFromFile();
 
 #ifdef NINTENDO
 		std::string maleNames, femaleNames;
@@ -282,20 +294,6 @@ int initGame()
 		randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
 		randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 #endif // !NINTENDO
-
-		loadItemLists();
-
-		ItemTooltips.readItemsFromFile();
-		ItemTooltips.readTooltipsFromFile();
-
-		GlyphHelper.readFromFile();
-
-		loadHUDSettingsJSON();
-		Player::SkillSheet_t::loadSkillSheetJSON();
-		Player::CharacterSheet_t::loadCharacterSheetJSON();
-		StatusEffectQueue_t::loadStatusEffectsJSON();
-		FollowerRadialMenu::loadFollowerJSON();
-		ScriptTextParser.readAllScripts();
 
 		updateLoadingScreen(94);
 
@@ -446,6 +444,11 @@ int initGame()
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+	updateLoadingScreen(100);
+	doLoadingScreen();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	doLoadingScreen();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	destroyLoadingScreen();
 
 	int result = loading_task.get();

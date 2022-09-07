@@ -42,62 +42,7 @@ int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
 bool autoLimbReload = false;
 
-/******************************************************************************/
-
-typedef std::map<std::string, ConsoleCommand> ccmd_map_t;
-static ccmd_map_t& getConsoleCommands()
-{
-    static ccmd_map_t ccmd_map;
-    return ccmd_map;
-}
-
-void ConsoleCommand::add_to_map()
-{
-    auto& map = getConsoleCommands();
-    auto result = map.emplace(name, *this);
-    if (result.second == false) {
-        printlog("A ConsoleCommand by the name \"%s\" already exists! Aborting\n", name);
-        assert(0 && "A ConsoleCommand with a duplicate name was found. Aborting");
-        exit(1);
-    }
-}
-/******************************************************************************/
-
-template<typename T>
-void ConsoleVariable<T>::setter(int argc, const char** argv)
-{
-    auto& map = getConsoleVariables();
-    auto find = map.find(argv[0]);
-    if (find != map.end()) {
-        auto& cvar = find->second;
-        if (argc >= 2) {
-            std::string data;
-            data = argv[1];
-            for (int c = 2; c < argc; ++c) {
-                data.append(" ");
-                data.append(argv[c]);
-            }
-            cvar = data.c_str();
-        } else {
-            cvar = "";
-        }
-    }
-}
-
-template<typename T>
-void ConsoleVariable<T>::add_to_map()
-{
-    auto& map = getConsoleVariables();
-    (void)map.emplace(name, *this);
-}
-
-template <typename T>
-typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables()
-{
-    static ConsoleVariable<T>::cvar_map_t cvar_map;
-    return cvar_map;
-}
-
+#ifndef NINTENDO
 /*******************************************************************************
     std::string cvars
 *******************************************************************************/
@@ -168,6 +113,65 @@ template<> void ConsoleVariable<Vector4>::operator=(const char* arg)
     }
     messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%f %f %f %f\"",
         name + 1, data.x, data.y, data.z, data.w);
+}
+
+/******************************************************************************/
+
+template<typename T>
+void ConsoleVariable<T>::setter(int argc, const char** argv)
+{
+	auto& map = getConsoleVariables();
+	auto find = map.find(argv[0]);
+	if (find != map.end()) {
+		auto& cvar = find->second;
+		if (argc >= 2) {
+			std::string data;
+			data = argv[1];
+			for (int c = 2; c < argc; ++c) {
+				data.append(" ");
+				data.append(argv[c]);
+			}
+			cvar = data.c_str();
+		}
+		else {
+			cvar = "";
+		}
+	}
+}
+
+template<typename T>
+void ConsoleVariable<T>::add_to_map()
+{
+	auto& map = getConsoleVariables();
+	(void)map.emplace(name, *this);
+}
+
+template <typename T>
+typename ConsoleVariable<T>::cvar_map_t& ConsoleVariable<T>::getConsoleVariables()
+{
+	static ConsoleVariable<T>::cvar_map_t cvar_map;
+	return cvar_map;
+}
+#endif
+
+/******************************************************************************/
+
+typedef std::map<std::string, ConsoleCommand> ccmd_map_t;
+static ccmd_map_t& getConsoleCommands()
+{
+	static ccmd_map_t ccmd_map;
+	return ccmd_map;
+}
+
+void ConsoleCommand::add_to_map()
+{
+	auto& map = getConsoleCommands();
+	auto result = map.emplace(name, *this);
+	if (result.second == false) {
+		printlog("A ConsoleCommand by the name \"%s\" already exists! Aborting\n", name);
+		assert(0 && "A ConsoleCommand with a duplicate name was found. Aborting");
+		exit(1);
+	}
 }
 
 /*-------------------------------------------------------------------------------

@@ -6406,8 +6406,12 @@ void deleteMultiplayerSaveGames()
 void handleScanPacket() {
     if (directConnect) {
         char hostname[256] = { '\0' };
+#ifdef NINTENDO
+		nxGetUsername(hostname, sizeof(hostname));
+#else
         (void)gethostname(hostname, sizeof(hostname));
         hostname[sizeof(hostname) - 1] = '\0';
+#endif
         Uint32 hostname_len = (Uint32)strlen(hostname);
         SDLNet_Write32(hostname_len, &net_packet->data[4]);
         for (int c = 0; c < hostname_len; ++c) {

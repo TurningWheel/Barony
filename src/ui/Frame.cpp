@@ -114,14 +114,18 @@ void Frame::fboInit() {
         gui_fb.init(Frame::virtualScreenX, Frame::virtualScreenY, GL_NEAREST, GL_NEAREST);
     }
 #endif
+#ifndef NINTENDO
     gui_fb_upscaled.init(Frame::virtualScreenX * 3, Frame::virtualScreenY * 3, GL_LINEAR, GL_NEAREST); // 4k resolution
     gui_fb_downscaled.init(Frame::virtualScreenX / 2, Frame::virtualScreenY / 2, GL_LINEAR, GL_NEAREST); // 360p resolution
+#endif
 }
 
 void Frame::fboDestroy() {
 	gui_fb.destroy();
+#ifndef NINTENDO
 	gui_fb_upscaled.destroy();
 	gui_fb_downscaled.destroy();
+#endif
 }
 
 void Frame::guiInit() {
@@ -133,6 +137,7 @@ void Frame::guiInit() {
 	}
 	fboInit();
 
+	assert(!gui && "gui already exists!");
 	gui = new Frame("root");
 	SDL_Rect guiRect;
 	guiRect.x = 0;
@@ -362,6 +367,16 @@ void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
 	Widget::drawPost(_size, selectedWidgets, searchParents);
 }
 
+#ifdef NINTENDO
+#define IS_MOUSE_ACTIVE() {\
+	fingerdown\
+}
+#else
+#define IS_MOUSE_ACTIVE() {\
+	inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel\
+}
+#endif
+
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (disabled || invisible)
 		return;
@@ -423,9 +438,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-
-#ifdef EDITOR
+#if defined(NINTENDO)
+	Sint32 mousex = (::fingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::fingery / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::ofingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::ofingery / (float)yres) * (float)Frame::virtualScreenY;
+#elif defined(EDITOR)
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -433,6 +451,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
@@ -532,11 +551,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		drawImage(image, _size, scroll);
 	}
 
-#ifdef EDITOR
-	const bool mouseActive = true;
-#else
-	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor;
-#endif
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 
 	// draw list entries
 	if (list.size()) {
@@ -836,9 +851,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	fullSize.h += (actualSize.w > size.w) ? sliderSize : 0;
 	fullSize.w += (actualSize.h > size.h) ? sliderSize : 0;
 
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-
-#ifdef EDITOR
+#if defined(NINTENDO)
+	Sint32 mousex = (::fingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::fingery / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::ofingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::ofingery / (float)yres) * (float)Frame::virtualScreenY;
+#elif defined(EDITOR)
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
@@ -846,6 +864,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
@@ -1027,11 +1046,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-#ifdef EDITOR
-	const bool mouseActive = true;
-#else
-	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
-#endif
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && result.usable) {
@@ -1106,6 +1121,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 			std::max(0, this->actualSize.h - _size.h));
 	}
 
+	bool clicked = false;
+	if (mousestatus[SDL_BUTTON_LEFT]) {
+		clicked = true;
+	}
+	else if (fingerdown) {
+		clicked = true;
+	}
+
 	// process (frame view) sliders
 	if (parent != nullptr && !hollow && usable && scrollbars) {
 		// filler in between sliders
@@ -1141,7 +1164,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// click & drag
 			if (draggingHSlider) {
-				if (!mousestatus[SDL_BUTTON_LEFT]) {
+				if (!clicked) {
 					draggingHSlider = false;
 				} else {
 					float winFactor = ((float)_size.w / (float)this->actualSize.w);
@@ -1153,7 +1176,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				ticks = -1; // hack to fix sliders in drop downs
 			} else {
 				if ( mouseActive && rectContainsPoint(handleRect, omousex, omousey) ) {
-					if (mousestatus[SDL_BUTTON_LEFT]) {
+					if (clicked) {
 						draggingHSlider = true;
 						oldSliderX = this->actualSize.x;
 					}
@@ -1161,10 +1184,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+					}
+					if (clicked) {
 						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize, size.w) : std::min(entrySize, size.w);
 						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
 					    syncScroll();
-						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
@@ -1195,7 +1220,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 			// click & drag
 			if (draggingVSlider) {
-				if (!mousestatus[SDL_BUTTON_LEFT]) {
+				if (!clicked) {
 					draggingVSlider = false;
 				} else {
 					float winFactor = ((float)_size.h / (float)this->actualSize.h);
@@ -1215,10 +1240,12 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					ticks = -1; // hack to fix sliders in drop downs
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+					}
+					if (clicked) {
 						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize, size.h) : std::min(entrySize, size.h);
 						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
 					    syncScroll();
-						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					result.usable = false;
 					ticks = -1; // hack to fix sliders in drop downs
@@ -1277,9 +1304,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					select();
 					selection = i;
 				}
-				if (mousestatus[SDL_BUTTON_LEFT]) {
-					if (!entry->pressed) {
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+				if (clicked) {
+					if (!entry->pressed && !activated) {
+						if (mousestatus[SDL_BUTTON_LEFT]) {
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
 						entry->pressed = true;
 						activateEntry(*entry);
 						activate();
@@ -1339,6 +1368,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (clickable && result.usable) {
 			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
+			if (clicked && !activated) {
 				activate();
 			}
 		}
@@ -1360,11 +1391,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#ifdef EDITOR
-	const bool mouseActive = true;
+#if defined(EDITOR) || defined(NINTENDO)
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #else
 	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #endif
 
 	// widget capture input
@@ -1411,11 +1442,11 @@ void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidge
 void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#ifdef EDITOR
-	const bool mouseActive = true;
+#if defined(EDITOR) || defined(NINTENDO)
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #else
 	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #endif
 
 	if (!destWidget) {
@@ -1443,11 +1474,11 @@ void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWi
 void Frame::processSlider(const SDL_Rect& _size, Slider& slider, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#ifdef EDITOR
-	const bool mouseActive = true;
+#if defined(EDITOR) || defined(NINTENDO)
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #else
 	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
+	const bool mouseActive = IS_MOUSE_ACTIVE();
 #endif
 
 	if (!destWidget && !slider.isActivated()) {

@@ -569,7 +569,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #ifndef EDITOR
 void ItemTooltips_t::readItemsFromFile()
 {
-	if ( !PHYSFS_getRealDir("/items/items.json") )
+	if ( !PHYSFS_getRealDir("items/items.json") )
 	{
 		printlog("[JSON]: Error: Could not find file: items/items.json");
 		return;
@@ -3782,7 +3782,7 @@ bool GlyphRenderer_t::readFromFile()
 
 void GlyphRenderer_t::renderGlyphsToPNGs()
 {
-#ifdef EDITOR
+#if defined(EDITOR) || defined(NINTENDO)
 	return;
 #else
 	printlog("[Glyph Export]: Starting export...");
@@ -3936,7 +3936,7 @@ void ScriptTextParser_t::readAllScripts()
 {
 	allEntries.clear();
 
-	std::string baseDir = "data/scripts";
+	std::string baseDir = "/data/scripts";
 	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
 	for ( auto file : files )
 	{
@@ -4679,6 +4679,14 @@ void VideoManager_t::destroyClip()
 	}
 }
 
+#ifndef NDEBUG
+#define PRELOAD_VIDEO_TO_RAM
+#endif
+
+#ifdef PRELOAD_VIDEO_TO_RAM
+#include <theoraplayer/MemoryDataSource.h>
+#endif
+
 void VideoManager_t::loadfile(const char* filename)
 {
 	if ( !isInit ) { init(); }
@@ -4686,14 +4694,23 @@ void VideoManager_t::loadfile(const char* filename)
 	{
 		destroyClip();
 	}
-	clip = theoraplayer::manager->createVideoClip(filename, outputMode, 16);
+	if (!filename || !PHYSFS_getRealDir(filename)) {
+		return;
+	}
+	std::string path = PHYSFS_getRealDir(filename);
+	path += PHYSFS_getDirSeparator();
+	path += filename;
+
+#ifdef PRELOAD_VIDEO_TO_RAM
+	clip = theoraplayer::manager->createVideoClip(new theoraplayer::MemoryDataSource(path.c_str()), theoraplayer::FORMAT_RGB);
+#else
+	clip = theoraplayer::manager->createVideoClip(path.c_str(), outputMode, 16);
+#endif
 	if ( !clip )
 	{
 		return;
 	}
 	currentfile = filename;
-	//  use this if you want to preload the file into ram and stream from there
-	//	clip = theoraplayer::manager->createVideoClip(new theoraplayer::MemoryDataSource("../media/short"), theoraplayer::FORMAT_RGB);
 	clip->setAutoRestart(true);
 	textureId = createTexture(potCeil(clip->getWidth()), potCeil(clip->getHeight()), textureFormat);
 }

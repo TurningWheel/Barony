@@ -67,6 +67,12 @@ void Field::activate() {
 	auto result = nxKeyboard(guide.c_str());
 	if (result.success) {
 		setText(result.str.c_str());
+		if (callback) {
+			(*callback)(*this);
+		}
+		else {
+			printlog("modified field with no callback");
+		}
 	}
 #else
     if (activated) {
@@ -413,18 +419,22 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		}
 	}
 #endif
-	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
-#ifdef EDITOR
+#if defined(EDITOR) || defined(NINTENDO)
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 #else
+	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
-#if !defined(NINTENDO) && !defined(EDITOR)
+#ifndef EDITOR
+#ifndef NINTENDO
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(mouseowner)->draw_cursor) {
+#else
+	if (rectContainsPoint(_size, omousex, omousey)) {
+#endif
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 	    result.tooltip = tooltip.c_str();

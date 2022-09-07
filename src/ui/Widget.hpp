@@ -159,6 +159,10 @@ public:
     Frame* findSearchRoot();
     const Frame* findSearchRoot() const;
 
+    //! find the selected widget amongst our children
+    //! @return the selected widget, or nullptr if it was not found
+    Widget* findSelectedWidget();
+
 protected:
     Widget* parent = nullptr;                                       //!< parent widget
     std::list<Widget*> widgets;                                     //!< widget children

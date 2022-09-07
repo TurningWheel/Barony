@@ -233,6 +233,11 @@ Uint32 lastkeypressed = 0;
 Sint8 keystatus[512];
 char* inputstr = nullptr;
 int inputlen = 0;
+bool fingerdown = false;
+int fingerx = 0;
+int fingery = 0;
+int ofingerx = 0;
+int ofingery = 0;
 Sint8 mousestatus[6];
 bool capture_mouse = true;
 string lastname;
@@ -516,6 +521,7 @@ SDL_Surface* font8x8_bmp = nullptr;
 SDL_Surface* font12x12_bmp = nullptr;
 SDL_Surface* font16x16_bmp = nullptr;
 SDL_Surface* fancyWindow_bmp = nullptr;
+SDL_Surface* backdrop_loading_bmp = nullptr;
 SDL_Surface** sprites = nullptr;
 SDL_Surface** tiles = nullptr;
 std::unordered_map<std::string, SDL_Surface*> achievementImages;
@@ -695,9 +701,11 @@ void printlog(const char* str, ...)
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;
 	}
+#ifndef NINTENDO
 	fprintf( stderr, "%s", newstr );
 	//fprintf( stderr, "[%s] %s", buffer, newstr );
 	fflush( stderr );
+#endif
 	fprintf( stdout, "%s", newstr );
 	//fprintf( stdout, "[%s] %s", buffer, newstr );
 	fflush( stdout );
