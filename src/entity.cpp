@@ -2213,9 +2213,9 @@ void Entity::setHP(int amount)
 
 	if ( multiplayer == SERVER )
 	{
-		for ( int i = 1; i < MAXPLAYERS; i++ )
+		for ( int i = 0; i < MAXPLAYERS; i++ )
 		{
-			if ( players[i] && this == players[i]->entity && !players[i]->isLocalPlayer() )
+			if ( i > 0 && players[i] && this == players[i]->entity && !players[i]->isLocalPlayer() )
 			{
 				// tell the client its HP changed
 				strcpy((char*)net_packet->data, "UPHP");
@@ -2230,7 +2230,7 @@ void Entity::setHP(int amount)
 			{
 				if ( serverSchedulePlayerHealthUpdate == 0 )
 				{
-					serverSchedulePlayerHealthUpdate = ticks;
+					serverSchedulePlayerHealthUpdate = ::ticks;
 				}
 			}
 		}

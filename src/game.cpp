@@ -2383,9 +2383,9 @@ void gameLogic(void)
 				}
 
 				bool updatePlayerHealth = false;
-				if ( serverSchedulePlayerHealthUpdate != 0 && (ticks - serverSchedulePlayerHealthUpdate) >= TICKS_PER_SECOND * 0.5 )
+				if ( serverSchedulePlayerHealthUpdate != 0 && (ticks - serverSchedulePlayerHealthUpdate) >= TICKS_PER_SECOND * 0.2 )
 				{
-					// update if 0.5s have passed since request of health update.
+					// update if x ticks have passed since request of health update.
 					// the scheduled update needs to be reset to 0 to be set again.
 					updatePlayerHealth = true;
 				}
