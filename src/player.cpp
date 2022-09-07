@@ -2892,12 +2892,12 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	{
 		if ( !entity.checkEnemy(players[player]->entity) )
 		{
-			return false;
+			return true;
 		}
 	}
 	if ( entity.monsterAllyGetPlayerLeader() == players[player]->entity )
 	{
-		return false; // this is my follower
+		return true; // this is my follower
 	}
 
 	Monster playerRace = stats[player]->type;
@@ -2905,22 +2905,31 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	if ( targetEntityType != NOTHING )
 	{
 		std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
+		int loops = 1;
 		if ( skillCapstoneUnlocked(player, PRO_LEADERSHIP) )
 		{
-			allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableLegendary;
+			loops = 2;
 		}
-		if ( allyTable->find(playerRace) != allyTable->end() )
+		while ( loops > 0 )
 		{
-			if ( !(*allyTable)[playerRace].empty() )
+			if ( allyTable->find(playerRace) != allyTable->end() )
 			{
-				for ( auto& ally : (*allyTable)[playerRace] )
+				if ( !(*allyTable)[playerRace].empty() )
 				{
-					if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
-					if ( ally == targetEntityType )
+					for ( auto& ally : (*allyTable)[playerRace] )
 					{
-						return false;
+						if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
+						if ( ally == targetEntityType )
+						{
+							return true;
+						}
 					}
 				}
+			}
+			--loops;
+			if ( loops == 1 )
+			{
+				allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableLegendary;
 			}
 		}
 		// unique recruits
@@ -2936,7 +2945,7 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 						if ( ally < 0 || ally >= NUMMONSTERS ) { continue; }
 						if ( ally == targetEntityType )
 						{
-							return false;
+							return true;
 						}
 					}
 				}
@@ -2944,7 +2953,7 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 		}
 	}
 
-	return true;
+	return false;
 }
 
 real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
@@ -3608,8 +3617,7 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	}
 	else if ( entity.behavior == &actMonster )
 	{
-		bool result = monsterIsFriendlyForTooltip(player, entity);
-		if ( !result )
+		if ( monsterIsFriendlyForTooltip(player, entity) )
 		{
 			return false;
 		}
