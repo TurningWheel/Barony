@@ -367,15 +367,16 @@ void Frame::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
 	Widget::drawPost(_size, selectedWidgets, searchParents);
 }
 
-#ifdef NINTENDO
-#define IS_MOUSE_ACTIVE() {\
-	fingerdown\
-}
+static bool isMouseActive(int owner) {
+#if defined(EDITOR)
+	return true;
+#elif defined(NINTENDO)
+	return fingerdown;
 #else
-#define IS_MOUSE_ACTIVE() {\
-	inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel\
-}
+	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	return inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
 #endif
+}
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (disabled || invisible)
@@ -551,7 +552,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		drawImage(image, _size, scroll);
 	}
 
-	const bool mouseActive = IS_MOUSE_ACTIVE();
+	const bool mouseActive = isMouseActive(owner);
 
 	// draw list entries
 	if (list.size()) {
@@ -1046,7 +1047,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	const bool mouseActive = IS_MOUSE_ACTIVE();
+	const bool mouseActive = isMouseActive(owner);
 
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && result.usable) {
@@ -1391,12 +1392,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#if defined(EDITOR) || defined(NINTENDO)
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#endif
+	const bool mouseActive = isMouseActive(owner);
 
 	// widget capture input
 	if (field.isActivated()) {
@@ -1442,12 +1438,7 @@ void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidge
 void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#if defined(EDITOR) || defined(NINTENDO)
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#endif
+	const bool mouseActive = isMouseActive(owner);
 
 	if (!destWidget) {
 		destWidget = button.handleInput();
@@ -1474,12 +1465,7 @@ void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWi
 void Frame::processSlider(const SDL_Rect& _size, Slider& slider, Widget*& destWidget, result_t& result) {
 	Input& input = Input::inputs[owner];
 
-#if defined(EDITOR) || defined(NINTENDO)
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
-	const bool mouseActive = IS_MOUSE_ACTIVE();
-#endif
+	const bool mouseActive = isMouseActive(owner);
 
 	if (!destWidget && !slider.isActivated()) {
 		destWidget = slider.handleInput();
