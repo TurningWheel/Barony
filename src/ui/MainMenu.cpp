@@ -15125,7 +15125,7 @@ bind_failed:
 #ifdef USE_EOS
 			            if ( LobbyHandler.crossplayEnabled )
 			            {
-							LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;#
+							LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
 				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 			            }
 #endif
