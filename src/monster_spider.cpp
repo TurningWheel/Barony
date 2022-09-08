@@ -282,7 +282,7 @@ void spiderDie(Entity* my)
 	for ( int c = 0; c < 8; c++ )
 	{
 		Entity* gib = spawnGib(my);
-		if ( my->sprite == 997 || my->sprite == 1180 ) // crabs
+		if ( my->sprite == 997 || my->sprite == 1189 ) // crabs
 		{
 			gib->sprite = 999;
 		}

@@ -119,7 +119,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
         823,    // player spider body
         1001,   // player crab body
         1118,   // shelob body
-		1180,	// bubbles body
+		1189,	// bubbles body
     },
 
     // GHOUL
