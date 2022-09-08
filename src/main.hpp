@@ -543,7 +543,7 @@ typedef struct polytriangle_t
 typedef struct polymodel_t
 {
 	polytriangle_t* faces;
-	Uint32 numfaces;
+	uint64_t numfaces;
 	GLuint vbo;
 	GLuint colors;
 	GLuint colors_shifted;

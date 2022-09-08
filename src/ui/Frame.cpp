@@ -1306,7 +1306,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					selection = i;
 				}
 				if (clicked) {
-					if (!entry->pressed && !activated) {
+					if (!entry->pressed) {
 						if (mousestatus[SDL_BUTTON_LEFT]) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
