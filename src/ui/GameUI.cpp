@@ -968,6 +968,15 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 	bool halfWidthBars = (splitscreen && players[player]->bUseCompactGUIWidth()) 
 		/*|| (enableDebugKeys && keystatus[SDL_SCANCODE_G])*/;
 
+	std::set<Uint32> followerUids;
+	for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		if ( (Uint32*)node->element )
+		{
+			followerUids.emplace(*((Uint32*)node->element));
+		}
+	}
+
 	for ( auto it = (bPlayerBars ? hud_t.playerBars.begin() : hud_t.followerBars.begin()); 
 		it != (bPlayerBars ? hud_t.playerBars.end() : hud_t.followerBars.end()); )
 	{
@@ -1070,6 +1079,42 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		}
 		entryFrame->setOpacity(baseFrame->getOpacity());
 
+
+		if ( followerBar.expired && ((ticks - followerBar.expiredTicks) > TICKS_PER_SECOND / 2) )
+		{
+			if ( doAnimation )
+			{
+				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFade)) / 5.0;
+				followerBar.animFade += setpointDiffFade;
+				followerBar.animFade = std::min(1.0, followerBar.animFade);
+			}
+			entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFade));
+
+			if ( doAnimation && followerBar.animFade >= 0.9999 )
+			{
+				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				real_t setpointDiffY = fpsScale * std::max(.01, (1.0 - followerBar.animy)) / 2.0;
+				followerBar.animy += setpointDiffY;
+				followerBar.animy = std::min(1.0, followerBar.animy);
+			}
+			pos.h *= (1.0 - followerBar.animy);
+		}
+
+		Uint32 uid = (*it).first;
+		Entity* follower = bPlayerBars ? players[uid]->entity : uidToEntity(uid);
+		if ( (!bPlayerBars && (!follower || followerUids.find(uid) == followerUids.end())) || (bPlayerBars && client_disconnected[uid]) )
+		{
+			if ( !followerBar.expired )
+			{
+				followerBar.expiredTicks = ticks;
+				followerBar.animFadeScroll = 0.0;
+				followerBar.animFadeScrollDummy = 1.0;
+			}
+			followerBar.expired = true;
+			followerBar.selected = false;
+		}
+
 		if ( !bPlayerBars )
 		{
 			if ( doAnimation )
@@ -1167,28 +1212,6 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			}
 		}
 
-
-		if ( followerBar.expired && ((ticks - followerBar.expiredTicks) > TICKS_PER_SECOND / 2) )
-		{
-			if ( doAnimation )
-			{
-				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-				real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFade)) / 5.0;
-				followerBar.animFade += setpointDiffFade;
-				followerBar.animFade = std::min(1.0, followerBar.animFade);
-			}
-			entryFrame->setOpacity(entryFrame->getOpacity() * (1.0 - followerBar.animFade));
-
-			if ( doAnimation && followerBar.animFade >= 0.9999 )
-			{
-				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-				real_t setpointDiffY = fpsScale * std::max(.01, (1.0 - followerBar.animy)) / 2.0;
-				followerBar.animy += setpointDiffY;
-				followerBar.animy = std::min(1.0, followerBar.animy);
-			}
-			pos.h *= (1.0 - followerBar.animy);
-		}
-
 		if ( !updateTitleFrame )
 		{
 			currentY += pos.h;
@@ -1228,16 +1251,6 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		const real_t mpCompactIntervalStartValue = mpBarSettings.barCompactIntervalStartValue;
 		const real_t mpIntervalStartValue = mpBarSettings.barIntervalStartValue;
 
-		Uint32 uid = (*it).first;
-		Entity* follower = bPlayerBars ? players[uid]->entity : uidToEntity(uid);
-		if ( (!bPlayerBars && !follower) || (bPlayerBars && client_disconnected[uid]) )
-		{
-			if ( !followerBar.expired )
-			{
-				followerBar.expiredTicks = ticks;
-			}
-			followerBar.expired = true;
-		}
 		Stat* followerStats = nullptr;
 		if ( bPlayerBars )
 		{
@@ -2258,6 +2271,9 @@ void updateAllyFollowerFrame(const int player)
 			if ( it == hud_t.followerBars.end() )
 			{
 				hud_t.followerBars.push_back(std::make_pair(uid, Player::HUD_t::FollowerBar_t()));
+				auto& bar = hud_t.followerBars.at(hud_t.followerBars.size() - 1);
+				bar.second.animFadeScroll = 1.0;
+				bar.second.animFadeScrollDummy = 1.0;
 			}
 		}
 	}
@@ -2491,10 +2507,12 @@ void updateAllyFollowerFrame(const int player)
 		if ( scrollAmount > 0 )
 		{
 			int index = 0;
+			bool foundSelected = false;
 			for ( auto& pair : hud_t.followerBars )
 			{
 				if ( pair.second.selected )
 				{
+					foundSelected = true;
 					if ( infiniteScrolling )
 					{
 						followerDisplay.scrollSetpoint = index + 1;
@@ -2515,6 +2533,12 @@ void updateAllyFollowerFrame(const int player)
 					break;
 				}
 				++index;
+			}
+
+			if ( !foundSelected )
+			{
+				followerDisplay.scrollSetpoint = 0;
+				followerDisplay.scrollAnimateX = followerDisplay.scrollSetpoint;
 			}
 			/*if ( inputs.bPlayerUsingKeyboardControl(player) )
 			{
@@ -2722,6 +2746,9 @@ void updateAllyPlayerFrame(const int player)
 			if ( it == hud_t.playerBars.end() )
 			{
 				hud_t.playerBars.push_back(std::make_pair(i, Player::HUD_t::FollowerBar_t()));
+				auto& bar = hud_t.playerBars.at(hud_t.playerBars.size() - 1);
+				bar.second.animFadeScroll = 1.0;
+				bar.second.animFadeScrollDummy = 1.0;
 			}
 		}
 	}
