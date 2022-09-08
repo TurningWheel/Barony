@@ -3963,6 +3963,7 @@ namespace ConsoleCommands {
 				if ( forceFollower(*players[clientnum]->entity, *monster) )
 				{
 					monster->monsterAllyIndex = clientnum;
+					monster->flags[USERFLAG2] = true;
 				}
 			}
 		}
@@ -4042,6 +4043,7 @@ namespace ConsoleCommands {
 					if ( forceFollower(*players[clientnum]->entity, *monster) )
 					{
 						monster->monsterAllyIndex = clientnum;
+						monster->flags[USERFLAG2] = true;
 					}
 				}
 			}
