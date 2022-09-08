@@ -961,7 +961,6 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 	quads.first = NULL;
 	quads.last = NULL;
 
-	printlog("generating poly models...\n");
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
@@ -975,6 +974,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
+	            printlog("loading model cache...\n");
 				char polymodelsVersionStr[7] = "v0.0.0";
 				char modelsCacheHeader[7] = "000000";
 				model_cache->read(&modelsCacheHeader, sizeof(char), strlen("BARONY"));
@@ -1011,12 +1011,14 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 				}
 				else
 				{
+				    printlog("failed to load model cache");
 					FileIO::close(model_cache);
 				}
 			}
-			return;
 		}
 	}
+
+	printlog("generating poly models...\n");
 
 	for ( c = start; c < end; ++c )
 	{
@@ -1908,7 +1910,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 		// translate quads into triangles
 		polymodels[c].faces = (polytriangle_t*) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
-		for ( i = 0; i < polymodels[c].numfaces; i++ )
+		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
 		{
 			node_t* node = list_Node(&quads, i / 2);
 			polyquad_t* quad = (polyquad_t*)node->element;
@@ -2074,7 +2076,7 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> grayscale_color_shifted_buffers(new GLuint[count]);
 	SDL_glGenBuffers(count, grayscale_color_shifted_buffers.get());
 
-	for ( int c = start; c < end; ++c )
+	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
 	{
 		polymodel_t *model = &polymodels[c];
 		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
@@ -2082,12 +2084,12 @@ void generateVBOs(int start, int end)
 		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> grayscale_colors(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> grayscale_colors_shifted(new GLfloat[9 * model->numfaces]);
-		for ( int i = 0; i < model->numfaces; i++ )
+		for (uint64_t i = 0; i < (uint64_t)model->numfaces; i++ )
 		{
 			const polytriangle_t *face = &model->faces[i];
-			for (int vert_index = 0; vert_index < 3; vert_index++)
+			for (uint64_t vert_index = 0; vert_index < 3; vert_index++)
 			{
-				int data_index = i * 9 + vert_index * 3;
+				const uint64_t data_index = i * 9 + vert_index * 3;
 				const vertex_t *vert = &face->vertex[vert_index];
 
 				points[data_index] = vert->x;

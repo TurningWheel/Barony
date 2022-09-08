@@ -446,8 +446,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	real_t s = 1;
 	//int x = 0;
 	//int y = 0;
-	Sint32 index;
-	Sint32 indexdown[3];
+	uint64_t index;
+	uint64_t indexdown[3];
 	voxel_t* model;
 	int modelindex = 0;
 	GLfloat rotx, roty, rotz;

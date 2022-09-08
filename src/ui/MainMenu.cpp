@@ -17060,7 +17060,9 @@ bind_failed:
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
 			} else {
-				button->setWidgetBack("Back to Game");
+			    // we would like to do this, but it conflicts with other in-game controls that use
+			    // B or Escape and for some reason, consuming those inputs doesn't work. Why???
+				//button->setWidgetBack("Back to Game");
 			}
 			y += button->getSize().h;
 			//y += 4;
