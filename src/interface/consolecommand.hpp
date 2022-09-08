@@ -14,6 +14,8 @@
 #include <string>
 #include <map>
 
+#include "../Config.hpp"
+
 const char* FindConsoleCommand(const char* str, int index);
 
 struct Vector4 {
@@ -81,6 +83,26 @@ private:
  * "cvar" is "Hello World"
  */
 
+#ifdef NINTENDO
+// Nintendo compiler can't handle the real deal, so here's a stub instead.
+template<typename T = std::string>
+class ConsoleVariable {
+public:
+    ConsoleVariable(const char* _name, const T& _default, const char* _desc = "")
+    {
+        data = _default;
+    }
+
+    T& operator*() {
+        return data;
+    }
+    T* operator->() {
+        return &data;
+    }
+
+    T data;
+};
+#else
 template<typename T = std::string>
 class ConsoleVariable : ConsoleCommand {
 public:
@@ -114,3 +136,4 @@ extern template class ConsoleVariable<int>;
 extern template class ConsoleVariable<float>;
 extern template class ConsoleVariable<bool>;
 extern template class ConsoleVariable<Vector4>;
+#endif

@@ -149,6 +149,14 @@ public:
 		return write(str, sizeof(char), size) == size ? 0 : -1;
 	}
 
+	// write char to file
+	// @param c the char to write
+	// @return 0 on success, -1 on error
+	int putc(char c)
+	{
+		return write(&c, sizeof(char), 1) == 1 ? 0 : -1;
+	}
+
 	// seek mode associated with seek()
 	enum class SeekMode : Uint8
 	{

@@ -95,19 +95,30 @@ void Text::render() {
 		strToRender = rest;
 	}
 
-#ifdef NINTENDO
-	// fixes weird crash in SDL_ttf when string length < 2
-	while ( strToRender.size() < 2 ) {
-		strToRender.append(" ");
-	}
-#endif
-
 	Font* font = Font::get(fontName.c_str());
 	if (!font) {
 		assert(0 && "Text tried to render, but font failed to load");
 		return;
 	}
 	TTF_Font* ttf = font->getTTF();
+
+#ifdef NINTENDO
+	// fixes weird crash in SDL_ttf when string length < 2
+	std::string spaces;
+	int num_spaces_needed = std::max(0, 2 - (int)strToRender.size());
+	while (num_spaces_needed) {
+		spaces.append(" ");
+		--num_spaces_needed;
+	}
+	int spaces_width = 0;
+	if (spaces.size()) {
+		TTF_SizeUTF8(ttf, spaces.c_str(), &spaces_width, nullptr);
+		spaces_width += spaces.size();
+		strToRender.append(spaces);
+	}
+#else
+	const int spaces_width = 0;
+#endif
 
 	SDL_Color colorText;
 	getColor(textColor, &colorText.r, &colorText.g, &colorText.b, &colorText.a);
@@ -137,7 +148,7 @@ void Text::render() {
 	    return;
 	}
 
-	width = surf->w;
+	width = surf->w - spaces_width;
 	height = surf->h;
 
 	// Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()

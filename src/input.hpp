@@ -64,6 +64,7 @@ public:
 		SDL_Scancode scancode = SDL_Scancode::SDL_SCANCODE_UNKNOWN;
 
 		//! gamepad binding info
+		int padIndex = -1;
 		SDL_GameController* pad = nullptr;
 		SDL_GameControllerAxis padAxis = SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_INVALID;
 		SDL_GameControllerButton padButton = SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_INVALID;

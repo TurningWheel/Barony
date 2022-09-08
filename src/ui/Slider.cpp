@@ -20,23 +20,23 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 
 	SDL_Rect _handleSize, _railSize;
 
-#ifdef EDITOR
-	bool focused = highlighted || selected;
+#if defined(EDITOR) || defined(NINTENDO)
+	const bool focused = (fingerdown && highlighted) || selected;
 #else
 	int mouseowner_pausemenu = clientnum;
-	if ( gamePaused )
+	if (gamePaused)
 	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
+		for (int i = 0; i < MAXPLAYERS; ++i)
 		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			if (inputs.bPlayerUsingKeyboardControl(i))
 			{
 				mouseowner_pausemenu = i;
 				break;
 			}
 		}
 	}
-	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
-	bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
+	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
 #endif
 
 	auto white = Image::get("images/system/white.png");
@@ -242,22 +242,34 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		}
 	}
 #endif
-	int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 
-#ifdef EDITOR
+#if defined(NINTENDO)
+	const bool clicking = fingerdown;
+	Sint32 mousex = (::fingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 mousey = (::fingery / (float)yres) * (float)Frame::virtualScreenY;
+	Sint32 omousex = (::ofingerx / (float)xres) * (float)Frame::virtualScreenX;
+	Sint32 omousey = (::ofingery / (float)yres) * (float)Frame::virtualScreenY;
+#elif defined(EDITOR)
+	const bool clicking = mousestatus[SDL_BUTTON_LEFT];
 	Sint32 mousex = (::mousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (::mousey / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 #else
+	const bool clicking = mousestatus[SDL_BUTTON_LEFT];
+	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
-#if !defined(NINTENDO) && !defined(EDITOR)
+#ifndef EDITOR
+#ifndef NINTENDO
 	if (rectContainsPoint(_size, omousex, omousey) && inputs.getVirtualMouse(mouseowner)->draw_cursor) {
+#else
+	if (rectContainsPoint(_size, omousex, omousey)) {
+#endif
 		result.highlighted = highlighted = true;
 		result.highlightTime = highlightTime;
 		result.tooltip = tooltip.c_str();
@@ -274,7 +286,7 @@ Slider::result_t Slider::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 
 	result.clicked = false;
 	if (highlighted) {
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (clicking) {
 			select();
 			pressed = true;
 			float oldValue = value;

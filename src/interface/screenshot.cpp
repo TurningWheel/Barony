@@ -17,6 +17,10 @@
 #include "../files.hpp"
 #include "interface.hpp"
 
+#ifdef NINTENDO
+#include "../nintendo/baronynx.hpp"
+#endif
+
 /*-------------------------------------------------------------------------------
 
 	takeScreenshot
@@ -56,11 +60,7 @@ void takeScreenshot(const char* output_path)
 	SDL_FillRect(temp, NULL, 0);
 	SDL_BlitSurface(temp2, NULL, temp, NULL);
 	SDL_FreeSurface( temp2 );
-	//TODO Nintendo needs to be able to do this!
-	//Otherwise there are no screenshots for save games!
-#ifndef NINTENDO
 	SDL_SavePNG( temp, filename );
-#endif
 	SDL_FreeSurface( temp );
 	if ( !intro && !output_path )
 	{

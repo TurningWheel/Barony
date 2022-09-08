@@ -190,6 +190,9 @@ void openURLTryWithOverlay(std::string url, bool forceSystemBrowser)
 #ifdef LINUX
 		system(std::string("xdg-open " + url).c_str());
 #endif // LINUX
+#ifdef NINTENDO
+		SDL_OpenURL(url.c_str());
+#endif // NINTENDO
 	}
 }
 
