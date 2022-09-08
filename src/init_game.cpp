@@ -216,6 +216,7 @@ int initGame()
 	Player::CharacterSheet_t::loadCharacterSheetJSON();
 	StatusEffectQueue_t::loadStatusEffectsJSON();
 	FollowerRadialMenu::loadFollowerJSON();
+	MonsterData_t::loadMonsterDataJSON();
 	ScriptTextParser.readAllScripts();
 
 	std::atomic_bool loading_done {false};
