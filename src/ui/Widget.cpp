@@ -12,6 +12,10 @@
 
 static Widget* _selectedWidgets[MAXPLAYERS] = { nullptr };
 
+#ifndef EDITOR
+ConsoleVariable<bool> cvar_hideGlyphs("/hideprompts", false, "hide button glyphs and prompts");
+#endif
+
 Widget::~Widget() {
 	if (parent) {
 		for (auto node = parent->widgets.begin(); node != parent->widgets.end(); ++node) {
@@ -398,7 +402,7 @@ void Widget::drawPost(const SDL_Rect size,
 
 	// button prompts
 #ifndef EDITOR
-    if (!hideGlyphs && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
+    if (!*cvar_hideGlyphs && !hideGlyphs && (inputs.hasController(owner) || !hideKeyboardGlyphs)) {
         auto& actions = selectedWidget->getWidgetActions();
         auto action = actions.begin();
 

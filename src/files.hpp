@@ -73,6 +73,7 @@ public:
 	// @return buf if successfully read a string, otherwise nullptr
 	char* gets(char* buf, int size)
 	{
+		char* result = buf;
 	    if (!buf) {
 		    return nullptr;
 	    }
@@ -89,12 +90,12 @@ public:
 				if (c == 0) {
 					return nullptr;
 				} else {
-					return buf;
+					return result;
 				}
 			}
 		}
-		*(buf + 1) = '\0';
-		return buf;
+		*(buf) = '\0';
+		return result;
 	}
 
 	// read an integer from the stream
@@ -146,6 +147,14 @@ public:
 	{
 		size_t size = strlen(str);
 		return write(str, sizeof(char), size) == size ? 0 : -1;
+	}
+
+	// write char to file
+	// @param c the char to write
+	// @return 0 on success, -1 on error
+	int putc(char c)
+	{
+		return write(&c, sizeof(char), 1) == 1 ? 0 : -1;
 	}
 
 	// seek mode associated with seek()

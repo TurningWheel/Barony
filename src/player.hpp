@@ -57,6 +57,7 @@ extern bool gamepad_menuy_invert;
 
 class GameController
 {
+	friend class Input;
 	SDL_GameController* sdl_device;
 	SDL_Haptic* sdl_haptic;
 	int id;
@@ -489,7 +490,7 @@ public:
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
 			return false;
 		}
-		return playerControllerIds[player] != -1;
+		return playerControllerIds[player] != -1 && getController(player);
 	}
 	void setControllerID(int player, const int id) 
 	{

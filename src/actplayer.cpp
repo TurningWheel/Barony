@@ -4481,6 +4481,7 @@ void actPlayer(Entity* my)
 				else
 				{
 					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
 					selectedEntity[PLAYER_NUM] = nullptr;
 				}
 			}
@@ -4496,6 +4497,7 @@ void actPlayer(Entity* my)
 						{
 							// we're selecting a point for the ally to move to.
 							input.consumeBinaryToggle("Use");
+							//input.consumeBindingsSharedWithBinding("Use");
 
 							// we're selecting a point for the ally to move to.
 							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
@@ -4549,6 +4551,7 @@ void actPlayer(Entity* my)
 							// we're selecting a target for the ally.
 							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
 							input.consumeBinaryToggle("Use");
+							//input.consumeBindingsSharedWithBinding("Use");
 							if ( target )
 							{
 								Entity* parent = uidToEntity(target->skill[2]);
@@ -4718,6 +4721,7 @@ void actPlayer(Entity* my)
 				if ( selectedEntity[PLAYER_NUM] )
 				{
 					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
 					bool foundTinkeringKit = false;
 					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{

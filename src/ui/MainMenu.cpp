@@ -31,6 +31,14 @@
 ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false,
     "if true, game restarts 1 second after last player death");
 
+#ifdef NINTENDO
+#define NETWORK_PORT_CLIENT 56175
+#define NETWORK_SCAN_PORT_CLIENT 56176
+#else
+#define NETWORK_PORT_CLIENT 0
+#define NETWORK_SCAN_PORT_CLIENT 0
+#endif
+
 namespace MainMenu {
     int pause_menu_owner = 0;
 	bool cursor_delete_mode = false;
@@ -64,13 +72,13 @@ namespace MainMenu {
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "DpadY-", emptyBinding},
-		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
-		{"Cycle NPCs", "E", "DpadX-", emptyBinding},
+		{"Command NPC", "Q", "DpadX+", emptyBinding},
+		{"Show NPC Commands", "C", "DpadX-", emptyBinding},
+		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
 		{"Minimap Scale", "=", emptyBinding, emptyBinding},
-		{"Toggle Minimap", "`", "DpadY+", emptyBinding},
+		{"Toggle Minimap", "`", "DpadY-", emptyBinding},
 		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
 		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
 		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
@@ -3240,6 +3248,9 @@ namespace MainMenu {
 		return size.h + 10;
 	}
 
+	static bool settingsBind(int player_index, int device_index, const char* binding, const char* input);
+	static bool bind_mode = false;
+
 	static int settingsAddBinding(
 		Frame& frame,
 		int y,
@@ -3282,6 +3293,30 @@ namespace MainMenu {
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		button->setGlyphPosition(Button::glyph_position_t::CENTERED_BOTTOM);
+		button->setUserData((void*)binding);
+#ifdef NINTENDO
+		// Press X to clear binding
+		button->setTickCallback([](Widget& widget){
+			auto& input = Input::inputs[widget.getOwner()];
+			if (widget.isSelected() && !bind_mode) {
+				if (input.consumeBinaryToggle("MenuAlt2")) {
+					auto binding = (const char*)widget.getUserData();
+					(void)settingsBind(widget.getOwner(), 1 /* Gamepad */, binding, nullptr);
+
+					auto button = static_cast<Button*>(&widget);
+					button->setText(emptyBinding);
+					button->setIcon("");
+
+					char buf[256];
+					assert(main_menu_frame);
+					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
+					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
+					snprintf(buf, sizeof(buf), "Deleted \"%s\" binding.", binding);
+					tooltip->setText(buf);
+				}
+			}
+			});
+#endif
 		return result;
 	}
 
@@ -4162,7 +4197,6 @@ namespace MainMenu {
 	static void settingsBindings(int player_index, int device_index, Setting setting_to_select) {
 		soundActivate();
 
-		static bool bind_mode;
 		static Button* bound_button;
 		static std::string bound_binding;
 		static std::string bound_input;
@@ -4245,6 +4279,7 @@ namespace MainMenu {
 		    //"Joystick", // Maybe for the future.
 		};
 
+#ifndef NINTENDO
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
 			"Select a controller for the given player.", devices, devices[device_index],
 			[](Button& button){
@@ -4260,12 +4295,17 @@ namespace MainMenu {
 						    {Setting::Type::Dropdown, "device_dropdown_button"});
 					});
 			});
+#endif
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
 
 		for (auto& binding : bindings) {
 			char tip[256];
+#ifdef NINTENDO
+			snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
+#else
 			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+#endif
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
@@ -4279,10 +4319,17 @@ namespace MainMenu {
 					auto settings = static_cast<Frame*>(subwindow->getParent()); assert(settings);
 					auto tooltip = settings->findField("tooltip"); assert(tooltip);
 					char buf[256];
+#ifdef NINTENDO
+					snprintf(buf, sizeof(buf),
+						"Binding \"%s\".\n"
+						"The next button you press will be bound to this action.",
+						bound_binding.c_str());
+#else
 					snprintf(buf, sizeof(buf),
 						"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
 						"The next input you activate will be bound to this action.",
 						bound_binding.c_str());
+#endif
 					tooltip->setText(buf);
 					Input::inputs[bound_player].setDisabled(true);
 					Input::lastInputOfAnyKind = "";
@@ -4300,7 +4347,7 @@ namespace MainMenu {
 				});
 		}
 
-		window->setTickCallback([](Widget&){
+		window->setTickCallback([](Widget& widget){
 			if (bind_mode) {
 				if (bound_button && !Input::lastInputOfAnyKind.empty()) {
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
@@ -4338,6 +4385,11 @@ namespace MainMenu {
 bind_failed:
                     // fix a bug where this wasn't always cleared...
                     mousestatus[SDL_BUTTON_LEFT] = 0;
+#ifdef NINTENDO
+					if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
+						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+					}
+#endif
 				}
 				else if (!bound_button) {
 					auto bindings = main_menu_frame->findFrame("bindings"); assert(bindings);
@@ -4362,7 +4414,9 @@ bind_failed:
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Dropdown, "player_dropdown_button"},
+#ifndef NINTENDO
 			{Setting::Type::Dropdown, "device_dropdown_button"},
+#endif
 			bindings[0],
 			});
 		hookSettings(*subwindow, bindings);
@@ -4443,7 +4497,7 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-#ifndef NINTENDO
+#ifdef NINTENDO
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
 #else
 			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
@@ -4452,6 +4506,7 @@ bind_failed:
 		}
 		int y = 0;
 
+#ifndef NINTENDO
 		int selected_res = 0;
 		std::list<resolution> resolutions;
 		getResolutionList(allSettings.video.display_id, resolutions);
@@ -4488,7 +4543,6 @@ bind_failed:
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
-#ifndef NINTENDO
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
             displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
@@ -4502,6 +4556,7 @@ bind_failed:
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
 #endif
+		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
@@ -5685,7 +5740,11 @@ bind_failed:
         };
         static const Tab tabs[] = {
             {"local", "Your Top 100\nLocal Scores", TAB_FN(BoardType::LOCAL)},
+#ifdef NINTENDO
+			{"lan", "Your Top 100\nWiFi Scores", TAB_FN(BoardType::LAN)},
+#else
             {"lan", "Your Top 100\nLAN Scores", TAB_FN(BoardType::LAN)},
+#endif
 #ifdef STEAMWORKS
             {"friends", "Friends\nLeaderboard", TAB_FN(BoardType::FRIENDS)},
             {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
@@ -6210,7 +6269,9 @@ bind_failed:
                     sendChatMessageOverNet(0xffffffff, buf, len);
                 }
                 field.setText("");
+#ifndef NINTENDO
                 field.activate();
+#endif
             }
             });
         chat_buffer->setTickCallback([](Widget& widget){
@@ -7819,7 +7880,7 @@ bind_failed:
 
 		    // open sockets
 		    printlog("opening UDP socket...\n");
-		    if (!(net_sock = SDLNet_UDP_Open(0))) {
+		    if (!(net_sock = SDLNet_UDP_Open(NETWORK_PORT_CLIENT))) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
 			    printlog(buf);
@@ -11495,6 +11556,7 @@ bind_failed:
 		    const int player = widget.getOwner();
 
             // determine whether I should own the keyboard
+#ifndef NINTENDO
             if (inputs.getPlayerIDAllowedKeyboard() != player) {
 		        if (currentLobbyType == LobbyType::LobbyLocal) {
 		            bool shouldOwnKeyboard = true;
@@ -11520,6 +11582,7 @@ bind_failed:
 		            inputs.setPlayerIDAllowedKeyboard(player);
 		        }
 		    }
+#endif
 
             // set field text
 		    auto field = static_cast<Field*>(&widget);
@@ -11593,6 +11656,7 @@ bind_failed:
 		            input.consumeBindingsSharedWithBinding("GamepadLoginStart");
 		        }
 		        // let the next empty player slot login with the keyboard
+#ifndef NINTENDO
 		        if (!isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
 		            for (int c = 0; c < MAXPLAYERS; ++c) {
 		                if (c == player) {
@@ -11605,6 +11669,7 @@ bind_failed:
 		                }
 		            }
 		        }
+#endif
 		        start_func(player);
 		        return;
 		    }
@@ -11626,6 +11691,16 @@ bind_failed:
 		    const bool controllerAvailable = inputs.hasController(player) || isControllerAvailable(player, countUnassignedControllers());
 		    const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
 		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+#ifdef NINTENDO
+			// draw A button
+			std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+			auto image = Image::get((std::string("*") + path).c_str());
+			const int x = pos.x + pos.w / 2;
+			const int y = pos.y + pos.h / 2 + 16;
+			const int w = image->getWidth();
+			const int h = image->getHeight();
+			image->draw(nullptr, SDL_Rect{ x - w / 2, y - h / 2, w, h }, viewport);
+#else
             if (inputs.getPlayerIDAllowedKeyboard() == player) {
                 if (controllerAvailable) {
                     // draw spacebar and A button
@@ -11667,6 +11742,7 @@ bind_failed:
                 const int h = image->getHeight();
                 image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
             }
+#endif
 		    });
 	}
 
@@ -12110,10 +12186,16 @@ bind_failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
-		// just in case we're still awaiting a controller for player 1,
-		// this clears it.
 		if (type == LobbyType::LobbyLocal) {
-		    Input::waitingToBindControllerForPlayer = -1;
+#ifdef NINTENDO
+			if (!nxIsHandheldMode()) {
+				nxAssignControllers(1, 4, true, true, false, false, nullptr);
+			}
+#else
+			// just in case we're still awaiting a controller for player 1,
+			// this clears it.
+			Input::waitingToBindControllerForPlayer = -1;
+#endif
 		}
 
 		// reset ALL player stats
@@ -12222,6 +12304,11 @@ bind_failed:
 			        disconnectFromLobby();
 			        destroyMainMenu();
 			        createMainMenu(false);
+#ifdef NINTENDO
+					if (!nxIsHandheldMode()) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
 			    } else {
 			        binaryPrompt(
 	                    "Are you sure you want to leave\nthis lobby?",
@@ -12231,6 +12318,11 @@ bind_failed:
 			                disconnectFromLobby();
 			                destroyMainMenu();
 			                createMainMenu(false);
+#ifdef NINTENDO
+							if (!nxIsHandheldMode()) {
+								nxAssignControllers(1, 1, true, false, true, false, nullptr);
+							}
+#endif
 	                    },
 	                    [](Button& button){ // no
 			                soundCancel();
@@ -12277,9 +12369,13 @@ bind_failed:
 		        }
 		        });
 	        back_button->setWidgetRight("lobby_name");
+#ifdef NINTENDO
+			back_button->setHideSelectors(true);
+			back_button->setHideGlyphs(true);
+#endif
 
             // lobby name
-            if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN) {
+            if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN && !directConnect) {
 		        auto text_box = banner->addImage(
 			        SDL_Rect{160, 10, 246, 36},
 			        0xffffffff,
@@ -12305,7 +12401,7 @@ bind_failed:
 		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		        field->setWidgetSearchParent(field->getParent()->getName());
-		        field->setWidgetBack("back");
+		        field->setWidgetBack("back_button");
 		        field->setWidgetRight("privacy");
 		        if (type != LobbyType::LobbyJoined) {
                     field->setCallback([](Field& field){
@@ -12356,7 +12452,11 @@ bind_failed:
 			    type_str = "Local Lobby";
 			} else {
 			    if (directConnect) {
-                    type_str = "LAN Lobby";
+#ifdef NINTENDO
+                    type_str = "WiFi Lobby";
+#else
+					type_str = "LAN Lobby";
+#endif
 			    } else {
 			        if (type == LobbyType::LobbyJoined) {
 			            if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -12400,9 +12500,27 @@ bind_failed:
 		            const char privacy_char = 'x';
 	                if (directConnect) {
                         const Uint16 port = ::portnumber;
+
                         char hostname[256] = { '\0' };
-                        (void)gethostname(hostname, sizeof(hostname));
-                        hostname[sizeof(hostname) - 1] = '\0';
+						if (currentLobbyType == LobbyType::LobbyJoined) {
+							stringCopy(hostname, last_address, sizeof(hostname), sizeof(last_address));
+						} else {
+#ifdef NINTENDO
+							nxGetHostname(hostname, sizeof(hostname));
+#else
+							(void)gethostname(hostname, sizeof(hostname));
+							hostname[sizeof(hostname) - 1] = '\0';
+#endif
+						}
+
+						// remove trailing port number
+						for (int c = 0; c < sizeof(hostname); ++c) {
+							if (hostname[c] == ':') {
+								hostname[c] = '\0';
+								break;
+							}
+						}
+
 	                    if (hide) {
                             char buf[1024];
                             snprintf(buf, sizeof(buf), "%hu", port);
@@ -12456,7 +12574,7 @@ bind_failed:
 		        privacy->setTextHighlightColor(0xffffffff);
 	            privacy->setTextColor(0xffffffff);
 	            privacy->setFont(smallfont_outline);
-	            privacy->setWidgetBack("back");
+	            privacy->setWidgetBack("back_button");
 	            privacy->setWidgetLeft("lobby_name");
 	            privacy->setWidgetRight("chat");
 		        privacy->setCallback([](Button& button){
@@ -12483,7 +12601,7 @@ bind_failed:
 		            soundActivate();
 		            (void)toggleLobbyChatWindow();
 		            });
-		        chat_button->setWidgetBack("back");
+		        chat_button->setWidgetBack("back_button");
 		        chat_button->setWidgetLeft("privacy");
 		        chat_button->setTickCallback([](Widget& widget){
 		            auto button = static_cast<Button*>(&widget);
@@ -12545,7 +12663,11 @@ bind_failed:
 		//toggleLobbyChatWindow();
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
             if (directConnect) {
+#ifdef NINTENDO
+				addLobbyChatMessage(uint32ColorBaronyBlue, "WiFi lobby opened successfully.");
+#else
                 addLobbyChatMessage(uint32ColorBaronyBlue, "Server hosted on LAN successfully.");
+#endif
             } else {
                 if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
                     addLobbyChatMessage(uint32ColorBaronyBlue, "Lobby successfully hosted via Steam.");
@@ -12557,7 +12679,11 @@ bind_failed:
 		}
 		else if (type == LobbyType::LobbyJoined) {
             if (directConnect) {
+#ifdef NINTENDO
+				addLobbyChatMessage(uint32ColorBaronyBlue, "Joined WiFi lobby successfully.");
+#else
                 addLobbyChatMessage(uint32ColorBaronyBlue, "Joined LAN server successfully.");
+#endif
             } else {
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
                     addLobbyChatMessage(uint32ColorBaronyBlue, "Joined lobby successfully via Steam.");
@@ -12905,7 +13031,25 @@ bind_failed:
             names->setActivation(names->getEntries()[selection]);
             players->setActivation(players->getEntries()[selection]);
             pings->setActivation(pings->getEntries()[selection]);
-            selectedLobby = *(int*)entry.data;
+			int& lobbyId = *(int*)entry.data;
+			if (selectedLobby != lobbyId) {
+				selectedLobby = lobbyId;
+			} else {
+				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+					// pressing A on a lobby after selecting it will join that lobby
+					const auto& lobby = lobbies[lobbyId];
+					if (!lobby.locked) {
+						if (connectToServer(lobby.address.c_str(), nullptr,
+							directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
+							// only deselect the list if the connection begins
+							entry.parent.deselect();
+						}
+					}
+					else {
+						soundWarning();
+					}
+				}
+			}
             };
 
         // name cell
@@ -13044,6 +13188,12 @@ bind_failed:
 #endif
                 // lobby list has returned
                 closePrompt("lobby_list_request");
+				
+				// select names list
+				assert(main_menu_frame);
+				auto lobby_browser_window = main_menu_frame->findFrame("lobby_browser_window"); assert(lobby_browser_window);
+				auto names = lobby_browser_window->findFrame("names"); assert(names);
+				names->select();
 
 #if defined(STEAMWORKS)
 	            for (Uint32 c = 0; c < numSteamLobbies; ++c) {
@@ -13141,7 +13291,7 @@ bind_failed:
         scan.close();
 
         // open a socket for network scanning
-	    scan.sock = SDLNet_UDP_Open(0);
+	    scan.sock = SDLNet_UDP_Open(NETWORK_SCAN_PORT_CLIENT);
 	    assert(scan.sock);
 
         // allocate packet data for scanning
@@ -13182,8 +13332,11 @@ bind_failed:
             if (directConnect) {
                 memcpy(scan.packet->data, "SCAN", 4);
                 scan.packet->len = 4;
-                //SDLNet_ResolveHost(&scan.packet->address, "255.255.255.255", DEFAULT_PORT);
-                scan.packet->address.host = 0xffffffff;
+#ifdef NINTENDO
+				SDLNet_ResolveHost(&scan.packet->address, "224.0.0.150", DEFAULT_PORT);
+				sendPacket(scan.sock, -1, scan.packet, 0);
+#endif
+				scan.packet->address.host = 0xffffffff;
                 SDLNet_Write16(DEFAULT_PORT, &scan.packet->address.port);
                 sendPacket(scan.sock, -1, scan.packet, 0);
             } else {
@@ -13227,11 +13380,19 @@ bind_failed:
 
                             Uint32 host = scan.packet->address.host;
 				            char buf[16];
-				            snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-				                (host & 0x000000ff) >> 0,
-				                (host & 0x0000ff00) >> 8,
-				                (host & 0x00ff0000) >> 16,
-				                (host & 0xff000000) >> 24);
+#ifdef NINTENDO
+							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
+								(host & 0xff000000) >> 24,
+								(host & 0x00ff0000) >> 16,
+								(host & 0x0000ff00) >> 8,
+								(host & 0x000000ff) >> 0);
+#else
+							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
+								(host & 0x000000ff) >> 0,
+								(host & 0x0000ff00) >> 8,
+								(host & 0x00ff0000) >> 16,
+								(host & 0xff000000) >> 24);
+#endif
 				            info.address = buf;
 				            addLobby(info);
 
@@ -13492,7 +13653,7 @@ bind_failed:
 		lan_tab->setBorder(0);
 		lan_tab->setColor(0);
 #if defined(NINTENDO)
-		lan_tab->setText("WIRELESS");
+		lan_tab->setText("WIFI");
 #else
 		lan_tab->setText("LAN");
 #endif
@@ -13636,6 +13797,9 @@ bind_failed:
 
 		static auto tick_callback = [](Widget& widget){
 		    widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
+			if (!gui->findSelectedWidget(widget.getOwner())) {
+				widget.select();
+			}
 	        };
 
 	    constexpr Uint32 highlightColor = makeColor(22, 25, 30, 255);
@@ -14444,7 +14608,11 @@ bind_failed:
 		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
 		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
 		    if (host_lan_button->isSelected()) {
-		        tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+#ifdef NINTENDO
+		        tooltip->setText("Host a game with 2-4 players\nover a local area network (WiFi)");
+#else
+				tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+#endif
                 host_lan_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
 		    } else {
@@ -14513,6 +14681,13 @@ bind_failed:
 		local_button->setWidgetDown("host_lan");
 		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
 
+		// default button to select when no other is
+		local_button->setTickCallback([](Widget& widget){
+			if (!gui->findSelectedWidget(widget.getOwner())) {
+				widget.select();
+			}
+			});
+
 		local_button->select();
 
 		(void)window->addImage(
@@ -14527,17 +14702,49 @@ bind_failed:
 		);
 
 		auto host_lan_fn = [](Button&){
-		    soundActivate();
-		    closeNetworkInterfaces();
-	        directConnect = true;
+			soundActivate();
+			closeNetworkInterfaces();
+			directConnect = true;
 
-	        Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+#ifdef NINTENDO
+			nxConnectToNetwork();
+			textPrompt("host_lobby_prompt", "Creating WiFi lobby...",
+				[](Widget&) {
+					if (nxConnectingToNetwork()) {
+						return;
+					}
+					else {
+						if (nxConnectedToNetwork()) {
+							// resolve localhost address
+							Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+							int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+							assert(resolve != -1);
 
-	        // resolve local host's address
+							// open socket
+							if (!(net_sock = SDLNet_UDP_Open(port))) {
+								char buf[1024];
+								snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+								monoPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
+								return;
+							}
+
+							// create lobby
+							createLobby(LobbyType::LobbyLAN);
+						}
+						else {
+							closePrompt("host_lobby_prompt");
+							monoPrompt("Failed to host WiFi lobby.", "Okay",
+								[](Button&) {soundCancel(); closeMono();});
+						}
+					}
+				});
+#else
+	        // resolve localhost address
+			Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
 	        int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
 	        assert(resolve != -1);
 
-	        // open sockets
+	        // open socket
 	        if (!(net_sock = SDLNet_UDP_Open(port))) {
 	            char buf[1024];
 	            snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
@@ -14547,6 +14754,7 @@ bind_failed:
 
 	        // create lobby
 	        createLobby(LobbyType::LobbyLAN);
+#endif
 		    };
 
 		auto host_lan_button = window->addButton("host_lan");
@@ -14554,7 +14762,11 @@ bind_failed:
 		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
 		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_lan_button->setColor(makeColor(255, 255, 255, 255));
+#ifdef NINTENDO
+		host_lan_button->setText("Host WiFi Party");
+#else
 		host_lan_button->setText("Host LAN Party");
+#endif
 		host_lan_button->setFont(smallfont_outline);
 		host_lan_button->setWidgetSearchParent(window->getName());
 		host_lan_button->setWidgetBack("back_button");
@@ -14656,6 +14868,33 @@ bind_failed:
 		    "host_online_image"
 		);
 
+		auto join_fn = [](Button& button){
+#ifdef NINTENDO
+			static Button* join_button;
+			join_button = &button;
+			nxConnectToNetwork();
+			textPrompt("lobby_browser_wait_prompt", "Connecting...",
+				[](Widget&) {
+					if (nxConnectingToNetwork()) {
+						return;
+					}
+					else {
+						if (nxConnectedToNetwork()) {
+							closePrompt("lobby_browser_wait_prompt");
+							createLobbyBrowser(*join_button);
+						}
+						else {
+							closePrompt("lobby_browser_wait_prompt");
+							monoPrompt("Network connection failed.", "Okay",
+								[](Button&) {soundCancel(); closeMono(); });
+						}
+					}
+				});
+#else
+			createLobbyBrowser(button);
+#endif
+		};
+
 		auto join_button = window->addButton("join");
 		join_button->setSize(SDL_Rect{96, 326, 164, 62});
 		join_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -14666,7 +14905,7 @@ bind_failed:
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("host_online");
-		join_button->setCallback(createLobbyBrowser);
+		join_button->setCallback(join_fn);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 324, 120, 68},
@@ -14683,48 +14922,59 @@ bind_failed:
 		tooltip->setText("");
 	}
 
+	static bool firstTimeTutorialPrompt() {
+		if (!gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
+			return false;
+		}
+		gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
+		gameModeManager.Tutorial.writeToDocument();
+		binaryPrompt(
+			"Barony is a challenging game.\nWould you like to play a tutorial?",
+			"Yes", "No",
+			[](Button& button) { // Yes
+				soundActivate();
+				destroyMainMenu();
+				createDummyMainMenu();
+				tutorial_map_destination = "tutorial_hub";
+				beginFade(MainMenu::FadeDestination::HallOfTrials);
+			},
+			[](Button& button) { // No
+				closeBinary();
+				monoPrompt(
+					"You can find the Tutorials\nin the Play Game menu.",
+					"Okay",
+					[](Button&) {
+						soundCancel();
+
+						assert(main_menu_frame);
+						auto window = main_menu_frame->findFrame("play_game_window");
+						if (window) {
+							auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+							dimmer->removeSelf();
+							createLocalOrNetworkMenu();
+						}
+						else {
+							auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+							auto play = buttons->findButton("Play Game"); assert(play);
+							play->select();
+						}
+
+						closeMono();
+					});
+			}, false, false); // both buttons are yellow
+		return true;
+	}
+
 	static void playNew(Button& button) {
 	    loadingsavegame = 0;
-	    if (gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
-	        gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt = false;
-			gameModeManager.Tutorial.writeToDocument();
-	        binaryPrompt(
-	            "Barony is a challenging game.\nWould you like to play a tutorial?",
-	            "Yes", "No",
-	            [](Button& button){ // Yes
-				    soundActivate();
-				    destroyMainMenu();
-				    createDummyMainMenu();
-				    tutorial_map_destination = "tutorial_hub";
-				    beginFade(MainMenu::FadeDestination::HallOfTrials);
-	            },
-	            [](Button& button){ // No
-			        closeBinary();
-	                monoPrompt(
-	                    "You can find the Tutorials\nin the Play Game menu.",
-	                    "Okay",
-	                    [](Button&){
-	                        soundCancel();
-	                        createLocalOrNetworkMenu();
 
-	                        assert(main_menu_frame);
-	                        auto window = main_menu_frame->findFrame("play_game_window"); assert(window);
-	                        auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
-	                        dimmer->removeSelf();
+	    soundActivate();
+	    createLocalOrNetworkMenu();
 
-			                closeMono();
-	                    });
-	            },
-	            false, false); // both buttons are yellow
-        } else {
-	        soundActivate();
-	        createLocalOrNetworkMenu();
-
-	        // remove "Play Game" window
-	        auto frame = static_cast<Frame*>(button.getParent());
-	        frame = static_cast<Frame*>(frame->getParent());
-	        frame->removeSelf();
-        }
+	    // remove "Play Game" window
+	    auto frame = static_cast<Frame*>(button.getParent());
+	    frame = static_cast<Frame*>(frame->getParent());
+	    frame->removeSelf();
 	}
 
 	static Button* savegame_selected = nullptr;
@@ -14853,7 +15103,9 @@ bind_failed:
                         }
                     }
                     assert(clientnum != -1);
+#ifndef NINTENDO
                     inputs.setPlayerIDAllowedKeyboard(clientnum);
+#endif
                     createLobby(LobbyType::LobbyLocal);
                 } else if (info.multiplayer_type == SERVER || info.multiplayer_type == DIRECTSERVER || info.multiplayer_type == SERVERCROSSPLAY) {
                     multiplayer = SERVER;
@@ -14873,7 +15125,7 @@ bind_failed:
 #ifdef USE_EOS
 			            if ( LobbyHandler.crossplayEnabled )
 			            {
-				            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
+							LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
 				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 			            }
 #endif
@@ -15210,7 +15462,11 @@ bind_failed:
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
+#ifdef NINTENDO
+		multiplayer->setText("Online + WiFi");
+#else
 		multiplayer->setText("Online + LAN");
+#endif
 		multiplayer->setFont(smallfont_outline);
 		multiplayer->setSize(SDL_Rect{702, 38, 144, 36});
 		multiplayer->setColor(makeColor(255, 255, 255, 255));
@@ -15556,6 +15812,15 @@ bind_failed:
 	        }
 	    };
 	    if (splitscreen) {
+#ifdef NINTENDO
+			int numplayers = 0;
+			for (int c = 0; c < 4; ++c) {
+				if (isPlayerSignedIn(c)) {
+					++numplayers;
+				}
+			}
+			nxAssignControllers(numplayers, numplayers, true, false, false, false, nullptr);
+#else
 	        static std::vector<int> players;
 	        players.clear();
 	        players.reserve(4);
@@ -15575,8 +15840,13 @@ bind_failed:
                     ); else return_to_main_menu();}
                     );
 	        }
+#endif
 	    } else {
+#ifdef NINTENDO
+			nxAssignControllers(1, 1, true, true, true, false, nullptr);
+#else
 	        createControllerPrompt(getMenuOwner(), false, return_to_main_menu);
+#endif
 	    }
 	}
 
@@ -15767,7 +16037,9 @@ bind_failed:
 				"UI",
 			};
 			if (intro) {
+#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
+#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
@@ -16143,6 +16415,11 @@ bind_failed:
 		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
 		        destroyMainMenu();
 				if (ingame) {
+#ifdef NINTENDO
+					if (!nxIsHandheldMode()) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
 				    doEndgame();
 				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
@@ -16152,6 +16429,11 @@ bind_failed:
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
 				if (ingame) {
+#ifdef NINTENDO
+					if (!nxIsHandheldMode()) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
 				    doEndgame();
 				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
@@ -16163,6 +16445,11 @@ bind_failed:
 				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
+#ifdef NINTENDO
+				if (!nxIsHandheldMode()) {
+					nxAssignControllers(1, 1, true, false, true, false, nullptr);
+				}
+#endif
 				doEndgame();
 				destroyMainMenu();
 				createDummyMainMenu();
@@ -16353,7 +16640,11 @@ bind_failed:
                     assert(main_menu_frame);
 			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+#ifdef NINTENDO
+					settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
+#else
 		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#endif
                 },
                 [](Button&){ // no
                     soundCancel();
@@ -16363,7 +16654,11 @@ bind_failed:
                     assert(main_menu_frame);
 			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#ifdef NINTENDO
+					settingsSelect(*settings_subwindow, { Setting::Type::Boolean, "vertical_split" });
+#else
+					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "device" });
+#endif
                 }, false, false); // yellow buttons
 
             // prompt timeout
@@ -16450,7 +16745,8 @@ bind_failed:
         char date[64];
 		strcpy(date, __DATE__ + 7);
 		strcat(date, ".");
-		Uint32 month = SDLNet_Read32(__DATE__);
+		Uint32 month;
+		memcpy(&month, __DATE__, sizeof(month));
 		switch (month) {
 		case 'Jan ': strcat(date, "01."); break;
 		case 'Feb ': strcat(date, "02."); break;
@@ -16550,7 +16846,11 @@ bind_failed:
 		start->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
-		    soundActivate();
+			settingsMount();
+			(void)settingsSave();
+			if (!firstTimeTutorialPrompt()) {
+				soundActivate();
+			}
 		    });
 		start->setTickCallback([](Widget& widget){
 		    auto button = static_cast<Button*>(&widget);
@@ -16759,6 +17059,8 @@ bind_failed:
 			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
+			} else {
+				button->setWidgetBack("Back to Game");
 			}
 			y += button->getSize().h;
 			//y += 4;
@@ -16772,6 +17074,13 @@ bind_failed:
 				main_menu_cursor_x = button->getSize().x - 80;
 				main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
 			}
+			button->setTickCallback([](Widget& widget){
+				if (!gui->findSelectedWidget(widget.getOwner())) {
+					if (!main_menu_frame->findWidget("dimmer", false)) {
+						widget.select();
+					}
+				}
+				});
 		}
 
 		main_menu_frame->addImage(
@@ -16841,7 +17150,11 @@ bind_failed:
 				//banner->setHideSelectors(true);
 
 				if (c == 0) {
+#ifdef NINTENDO
+					banner->setWidgetUp("Settings");
+#else
 				    banner->setWidgetUp("Quit");
+#endif
 				} else {
 				    banner->setWidgetUp((std::string("banner") + std::to_string(c + 0)).c_str());
 				}
@@ -16941,7 +17254,9 @@ bind_failed:
 		    disconnectFromLobby();
 	        destroyMainMenu();
 		    createDummyMainMenu();
+#ifndef NINTENDO
 	        inputs.setPlayerIDAllowedKeyboard(clientnum);
+#endif
             disconnectPrompt(text);
             if (!intro) {
 	            pauseGame(2, 0);

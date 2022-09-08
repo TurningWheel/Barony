@@ -6067,7 +6067,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	bool& itemMenuOpen = inputs.getUIInteraction(player)->itemMenuOpen;
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
-	if ( !players[player]->GUI.isDropdownActive()
+	if ( !*cvar_hideGlyphs
+		&& !players[player]->GUI.isDropdownActive()
 		&& !selectedItem
 		&& !inputs.getVirtualMouse(player)->draw_cursor 
 		&& !players[player]->shootmode

@@ -134,6 +134,10 @@ void GameController::reinitHaptic()
 
 bool GameController::open(int c)
 {
+#ifdef NINTENDO
+	id = c;
+	return true;
+#else
 	if (sdl_device)
 	{
 		close();
@@ -189,6 +193,7 @@ bool GameController::open(int c)
 
 
 	return (sdl_device != nullptr);
+#endif
 }
 
 void GameController::initBindings() 
@@ -232,7 +237,11 @@ void GameController::initBindings()
 
 const bool GameController::isActive()
 {
+#ifdef NINTENDO
+	return true;
+#else
 	return (sdl_device != nullptr);
+#endif
 }
 
 real_t getGamepadMenuXSensitivity(int player)
@@ -601,7 +610,11 @@ int GameController::getRawLeftXMove() // no sensitivity
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int x = nxGetControllerState(id, nxInput::LeftStickX);
+#else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTX);
+#endif
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < leftStickDeadzone && x > -leftStickDeadzone )
@@ -626,7 +639,11 @@ int GameController::getRawLeftYMove() // no sensitivity
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int y = nxGetControllerState(id, nxInput::LeftStickY);
+#else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTY);
+#endif
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < leftStickDeadzone && y > -leftStickDeadzone )
@@ -651,7 +668,11 @@ int GameController::getRawRightXMove() // no sensitivity
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int x = nxGetControllerState(id, nxInput::RightStickX);
+#else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
+#endif
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < rightStickDeadzone && x > -rightStickDeadzone )
@@ -676,7 +697,11 @@ int GameController::getRawRightYMove() // no sensitivity
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int y = nxGetControllerState(id, nxInput::RightStickY);
+#else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
+#endif
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < rightStickDeadzone && y > -rightStickDeadzone )
@@ -701,7 +726,11 @@ int GameController::getRawLeftTrigger()
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int n = nxGetControllerState(id, nxInput::ButtonZL) * INT16_MAX;
+#else
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+#endif
 	if (n < gamepad_trigger_deadzone)
 	{
 		return 0;
@@ -716,7 +745,11 @@ int GameController::getRawRightTrigger()
 	{
 		return 0;
 	}
+#ifdef NINTENDO
+	int n = nxGetControllerState(id, nxInput::ButtonZR) * INT16_MAX;
+#else
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+#endif
 	if (n < gamepad_trigger_deadzone)
 	{
 		return 0;
@@ -2767,6 +2800,9 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 	}
 	haptics.hapticEffect.leftright.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
 
+#ifdef NINTENDO
+	nxControllerRumble(id, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
+#else
 	if ( sdl_haptic )
 	{
 		if ( haptics.hapticEffectId == -1 )
@@ -2787,13 +2823,17 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 			printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
 		}
 	}
-	else
+	else if (sdl_device)
 	{
-		SDL_GameControllerRumble(getControllerDevice(), haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
+		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
 	}
+#endif
 }
 void GameController::stopRumble()
 {
+	if (!sdl_haptic) {
+		return;
+	}
 	SDL_HapticStopEffect(sdl_haptic, haptics.hapticEffectId);
 	haptics.hapticEffectId = -1;
 }
@@ -4713,6 +4753,27 @@ std::vector<std::pair<std::string, std::string>> Player::Minimap_t::mapDetails;
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 {
+#ifdef NINTENDO
+	if (fingerdown) {
+		switch (input) {
+		case X: fingerx = value; break;
+		case Y: fingery = value; break;
+		case OX: ofingerx = value; break;
+		case OY: ofingery = value; break;
+		}
+	}
+	if (hasController(player)) {
+		switch (input) {
+		case OX: getVirtualMouse(player)->ox = value; return;
+		case OY: getVirtualMouse(player)->oy = value; return;
+		case X: getVirtualMouse(player)->x = value; return;
+		case Y: getVirtualMouse(player)->y = value; return;
+		case XREL: getVirtualMouse(player)->xrel = value; return;
+		case YREL: getVirtualMouse(player)->yrel = value; return;
+		default: return;
+		}
+	}
+#else
 	// todo: add condition like getMouse()? && (!getVirtualMouse(player)->lastMovementFromController 
 	// || (players[player]->shootmode && !gamePaused && !intro))
 	if ( bPlayerUsingKeyboardControl(player) && (!getVirtualMouse(player)->lastMovementFromController
@@ -4768,10 +4829,33 @@ void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)
 				return;
 		}
 	}
+#endif
 }
 
 const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 {
+#ifdef NINTENDO
+	if (fingerdown) {
+		switch (input) {
+		case OX: return fingerx;
+		case OY: return fingery;
+		case X: return ofingerx;
+		case Y: return ofingery;
+		}
+	}
+	else if (hasController(player)) {
+		switch (input) {
+		case OX: return getVirtualMouse(player)->ox;
+		case OY: return getVirtualMouse(player)->oy;
+		case X: return getVirtualMouse(player)->x;
+		case Y: return getVirtualMouse(player)->y;
+		case XREL: return getVirtualMouse(player)->xrel;
+		case YREL: return getVirtualMouse(player)->yrel;
+		default: return 0;
+		}
+	}
+	return 0;
+#else
 	if ( bPlayerUsingKeyboardControl(player) 
 		&& 
 		(!getVirtualMouse(player)->lastMovementFromController 
@@ -4830,6 +4914,7 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 		}
 	}
 	return 0;
+#endif
 }
 
 const real_t Inputs::getMouseFloat(const int player, MouseInputs input)
@@ -4960,10 +5045,10 @@ GameController* Inputs::getController(int player) const
 		printlog("[INPUTS]: Warning: player index %d out of range.", player);
 		return nullptr;
 	}
-	if ( !hasController(player) )
+	/*if ( !hasController(player) )
 	{
 		return nullptr;
-	}
+	}*/
 
 	for ( auto& controller : game_controllers )
 	{
@@ -5092,6 +5177,11 @@ const bool Inputs::bMouseLeft(int player) const
 		{
 			return true;
 		}
+	}
+
+	if (fingerdown)
+	{
+		return true;
 	}
 
 	bool hackFromPreviousCode = bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK);
@@ -5409,10 +5499,30 @@ bool GameController::binaryOf(Binding_t& binding)
 {
 	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON || binding.type == Binding_t::VIRTUAL_DPAD )
 	{
-		SDL_GameController* pad = sdl_device;
 		if ( binding.type == Binding_t::CONTROLLER_BUTTON ) 
 		{
+#ifdef NINTENDO
+			switch (binding.padButton) {
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A: return nxGetControllerState(id, nxInput::ButtonB) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B: return nxGetControllerState(id, nxInput::ButtonA) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X: return nxGetControllerState(id, nxInput::ButtonY) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y: return nxGetControllerState(id, nxInput::ButtonX) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP: return nxGetControllerState(id, nxInput::ButtonUp) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return nxGetControllerState(id, nxInput::ButtonRight) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN: return nxGetControllerState(id, nxInput::ButtonDown) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT: return nxGetControllerState(id, nxInput::ButtonLeft) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START: return nxGetControllerState(id, nxInput::ButtonPlus) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK: return nxGetControllerState(id, nxInput::ButtonMinus) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK: return nxGetControllerState(id, nxInput::LeftStickClick) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK: return nxGetControllerState(id, nxInput::RightStickClick) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return nxGetControllerState(id, nxInput::ButtonL) == 1;
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return nxGetControllerState(id, nxInput::ButtonR) == 1;
+			default: return false;
+			}
+#else
+			SDL_GameController* pad = sdl_device;
 			return SDL_GameControllerGetButton(pad, binding.padButton) == 1;
+#endif
 		}
 		else if ( binding.type == Binding_t::VIRTUAL_DPAD )
 		{
@@ -5420,6 +5530,41 @@ bool GameController::binaryOf(Binding_t& binding)
 		}
 		else 
 		{
+#ifdef NINTENDO
+			if (binding.padAxisNegative) {
+				switch (binding.padAxis) {
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+					return nxGetControllerState(id, nxInput::LeftStickX) < (INT16_MIN / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+					return nxGetControllerState(id, nxInput::LeftStickY) < (INT16_MIN / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+					return nxGetControllerState(id, nxInput::RightStickX) < (INT16_MIN / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+					return nxGetControllerState(id, nxInput::RightStickY) < (INT16_MIN / 2);
+				default:
+					return false;
+				}
+			}
+			else {
+				switch (binding.padAxis) {
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+					return nxGetControllerState(id, nxInput::LeftStickX) > (INT16_MAX / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+					return nxGetControllerState(id, nxInput::LeftStickY) > (INT16_MAX / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+					return nxGetControllerState(id, nxInput::RightStickX) > (INT16_MAX / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+					return nxGetControllerState(id, nxInput::RightStickY) > (INT16_MAX / 2);
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+					return nxGetControllerState(id, nxInput::ButtonZL) == 1;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+					return nxGetControllerState(id, nxInput::ButtonZR) == 1;
+				default:
+					return false;
+				}
+			}
+#else
+			SDL_GameController* pad = sdl_device;
 			if ( binding.padAxisNegative ) 
 			{
 				return SDL_GameControllerGetAxis(pad, binding.padAxis) < -16384;
@@ -5428,6 +5573,7 @@ bool GameController::binaryOf(Binding_t& binding)
 			{
 				return SDL_GameControllerGetAxis(pad, binding.padAxis) > 16384;
 			}
+#endif
 		}
 	}
 
@@ -5438,13 +5584,66 @@ float GameController::analogOf(Binding_t& binding)
 {
 	if ( binding.type == Binding_t::CONTROLLER_AXIS || binding.type == Binding_t::CONTROLLER_BUTTON ) 
 	{
-		SDL_GameController* pad = sdl_device;
 		if ( binding.type == Binding_t::CONTROLLER_BUTTON ) 
 		{
+#ifdef NINTENDO
+			switch (binding.padButton) {
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A: return (float)nxGetControllerState(id, nxInput::ButtonB);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B: return (float)nxGetControllerState(id, nxInput::ButtonA);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X: return (float)nxGetControllerState(id, nxInput::ButtonY);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y: return (float)nxGetControllerState(id, nxInput::ButtonX);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP: return (float)nxGetControllerState(id, nxInput::ButtonUp);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return (float)nxGetControllerState(id, nxInput::ButtonRight);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN: return (float)nxGetControllerState(id, nxInput::ButtonDown);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT: return (float)nxGetControllerState(id, nxInput::ButtonLeft);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START: return (float)nxGetControllerState(id, nxInput::ButtonPlus);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK: return (float)nxGetControllerState(id, nxInput::ButtonMinus);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK: return (float)nxGetControllerState(id, nxInput::LeftStickClick);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK: return (float)nxGetControllerState(id, nxInput::RightStickClick);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return (float)nxGetControllerState(id, nxInput::ButtonL);
+			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return (float)nxGetControllerState(id, nxInput::ButtonR);
+			default: return 0.f;
+			}
+#else
+			SDL_GameController* pad = sdl_device;
 			return SDL_GameControllerGetButton(pad, binding.padButton) ? 1.f : 0.f;
+#endif
 		}
 		else 
 		{
+#ifdef NINTENDO
+			float result = 0.f;
+			if (binding.padAxisNegative) {
+				switch (binding.padAxis) {
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+					result = std::max((float)nxGetControllerState(id, nxInput::LeftStickX) / INT16_MIN, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+					result = std::max((float)nxGetControllerState(id, nxInput::LeftStickY) / INT16_MIN, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+					result = std::max((float)nxGetControllerState(id, nxInput::RightStickX) / INT16_MIN, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+					result = std::max((float)nxGetControllerState(id, nxInput::RightStickY) / INT16_MIN, 0.f); break;
+				}
+			}
+			else {
+				switch (binding.padAxis) {
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
+					result = std::max((float)nxGetControllerState(id, nxInput::LeftStickX) / INT16_MAX, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
+					result = std::max((float)nxGetControllerState(id, nxInput::LeftStickY) / INT16_MAX, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
+					result = std::max((float)nxGetControllerState(id, nxInput::RightStickX) / INT16_MAX, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
+					result = std::max((float)nxGetControllerState(id, nxInput::RightStickY) / INT16_MAX, 0.f); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+					result = nxGetControllerState(id, nxInput::ButtonZL); break;
+				case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+					result = nxGetControllerState(id, nxInput::ButtonZR); break;
+				}
+			}
+			return (fabs(result) > binding.deadzone) ? result : 0.f;
+#else
+			SDL_GameController* pad = sdl_device;
 			if ( binding.padAxisNegative )
 			{
 				float result = std::min(SDL_GameControllerGetAxis(pad, binding.padAxis) / 32768.f, 0.f) * -1.f;
@@ -5455,6 +5654,7 @@ float GameController::analogOf(Binding_t& binding)
 				float result = std::max(SDL_GameControllerGetAxis(pad, binding.padAxis) / 32767.f, 0.f);
 				return (fabs(result) > binding.deadzone) ? result : 0.f;
 			}
+#endif
 		}
 	}
 

@@ -3428,10 +3428,6 @@ static void bindControllerToPlayer(int id, int player) {
     }
 }
 
-#ifdef NINTENDO
-static real_t time_diff = (real_t)0;
-#endif
-
 void handleEvents(void)
 {
 	double d;
@@ -3475,6 +3471,10 @@ void handleEvents(void)
 	}
 
 	Input::lastInputOfAnyKind = "";
+
+#ifdef NINTENDO
+	nxControllersUpdate();
+#endif
 
     // consume mouse buttons that were eaten by GUI
 	if (!framesProcResult.usable && *framesEatMouse) {
@@ -3681,10 +3681,59 @@ void handleEvents(void)
 					}
 				}
 				break;
+			case SDL_FINGERDOWN: {
+				if (demo_mode == DemoMode::PLAYING) {
+					break;
+				}
+				fingerdown = true;
+				const int x = event.tfinger.x * xres;
+				const int y = event.tfinger.y * yres;
+				inputs.setMouse(clientnum, Inputs::MouseInputs::X, x);
+				inputs.setMouse(clientnum, Inputs::MouseInputs::Y, y);
+				inputs.setMouse(clientnum, Inputs::MouseInputs::OX, x);
+				inputs.setMouse(clientnum, Inputs::MouseInputs::OY, y);
+				//fingerx = x;
+				//fingery = y;
+				//ofingerx = x;
+				//ofingery = y;
+				//mousexrel += event.tfinger.dx * xres;
+				//mouseyrel += event.tfinger.dy * yres;
+				break;
+			}
+			case SDL_FINGERUP: {
+				if (demo_mode == DemoMode::PLAYING) {
+					break;
+				}
+				const int x = event.tfinger.x * xres;
+				const int y = event.tfinger.y * yres;
+				inputs.setMouse(clientnum, Inputs::MouseInputs::X, x);
+				inputs.setMouse(clientnum, Inputs::MouseInputs::Y, y);
+				fingerdown = false;
+				//fingerx = x;
+				//fingery = y;
+				//mousexrel += event.tfinger.dx * xres;
+				//mouseyrel += event.tfinger.dy * yres;
+				break;
+			}
+			case SDL_FINGERMOTION: {
+				if (demo_mode == DemoMode::PLAYING) {
+					break;
+				}
+				const int x = event.tfinger.x * xres;
+				const int y = event.tfinger.y * yres;
+				inputs.setMouse(clientnum, Inputs::MouseInputs::X, x);
+				inputs.setMouse(clientnum, Inputs::MouseInputs::Y, y);
+				//fingerx = x;
+				//fingery = y;
+				//mousexrel += event.tfinger.dx * xres;
+				//mouseyrel += event.tfinger.dy * yres;
+				break;
+			}
+#ifndef NINTENDO
 			case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
-			    if (demo_mode == DemoMode::PLAYING) {
-			        break;
-			    }
+				if (demo_mode == DemoMode::PLAYING) {
+					break;
+				}
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
 				Input::mouseButtons[event.button.button] = 1;
 				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
@@ -3797,7 +3846,6 @@ void handleEvents(void)
 				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: snprintf(buf, sizeof(buf), "Pad%dDpadY+", event.cbutton.which); break;
 				}
 				Input::lastInputOfAnyKind = buf;
-#ifndef NINTENDO
 			    if ( event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
 			         event.cbutton.button == SDL_CONTROLLER_BUTTON_B ||
 			         event.cbutton.button == SDL_CONTROLLER_BUTTON_START )
@@ -3891,7 +3939,6 @@ void handleEvents(void)
 					    }
 					}
 				}
-#endif
 				break;
 			}
 			case SDL_CONTROLLERAXISMOTION:
@@ -4201,6 +4248,7 @@ void handleEvents(void)
 				}
 				break;
 			}
+#endif
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if ( runtimes < 5 )
 				{
@@ -4230,8 +4278,11 @@ void handleEvents(void)
 						{
 							if ( inputs.hasController(i) )
 							{
-								inputs.getController(i)->handleRumble();
-								inputs.getController(i)->updateButtonsReleased();
+								if (inputs.getController(i))
+								{
+									inputs.getController(i)->handleRumble();
+									inputs.getController(i)->updateButtonsReleased();
+								}
 							}
 						}
 					}
@@ -4257,6 +4308,16 @@ void handleEvents(void)
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
+#ifdef NINTENDO
+					if (!changeVideoMode(event.window.data1, event.window.data2))
+					{
+						printlog("critical error! Attempting to abort safely...\n");
+						mainloop = 0;
+					}
+					if (!intro) {
+						MainMenu::setupSplitscreen();
+					}
+#else
 					if (fullscreen || ticks == 0)
 					{
 						break;
@@ -4266,6 +4327,7 @@ void handleEvents(void)
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
+#endif
 				}
 				break;
 				/*case SDL_CONTROLLERAXISMOTION:
@@ -5481,6 +5543,7 @@ void ingameHud()
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
+#ifndef NINTENDO
 				auto cursor = Image::get("images/system/cursor_hand.png");
 				real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -5511,6 +5574,7 @@ void ingameHud()
 					pos.y -= inputs.getUIInteraction(player)->itemMenuOffsetDetectionY;
 				}
 				cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+#endif
 			}
 			else
 			{
@@ -5739,7 +5803,6 @@ int main(int argc, char** argv)
 #endif // WINDOWS
 #ifdef NINTENDO
 	nxInit();
-	PHYSFS_init(nullptr);
 #endif // NINTENDO
 
 #ifdef LINUX
@@ -6031,6 +6094,15 @@ int main(int argc, char** argv)
 		// initialize player conducts
 		setDefaultPlayerConducts();
 
+#ifdef NINTENDO
+		nxAssignControllers(1, 1, true, false, true, false, nullptr);
+		for (int c = 0; c < 4; ++c) {
+			game_controllers[c].open(c);
+			bindControllerToPlayer(c, c);
+		}
+		//inputs.setPlayerIDAllowedKeyboard(-1);
+#endif
+
 		// play splash sound
 #ifdef MUSIC
 		playMusic(splashmusic, false, false, false);
@@ -6308,14 +6380,14 @@ int main(int argc, char** argv)
 
 #ifdef NINTENDO
 				// activate console
-				if ((inputs.bControllerInputPressed(clientnum, INJOY_PAUSE_MENU)) &&
-					(inputs.bControllerInputPressed(clientnum, INJOY_GAME_DEFEND)) &&
-					(inputs.bControllerInputPressed(clientnum, INJOY_GAME_ATTACK)))
+				auto& input = Input::inputs[clientnum];
+				if (input.binaryToggle("ConsoleCommand1") &&
+					input.binaryToggle("ConsoleCommand2") &&
+					input.binaryToggle("ConsoleCommand3"))
 				{
-					inputs.bControllerInputPressed(clientnum, INJOY_PAUSE_MENU);
-					inputs.bControllerInputPressed(clientnum, INJOY_GAME_DEFEND);
-					inputs.bControllerInputPressed(clientnum, INJOY_GAME_ATTACK);
-
+					input.consumeBinary("ConsoleCommand1");
+					input.consumeBinary("ConsoleCommand2");
+					input.consumeBinary("ConsoleCommand3");
 					auto result = nxKeyboard("Enter console command");
 					if (result.success)
 					{
@@ -6546,6 +6618,7 @@ int main(int argc, char** argv)
 						continue;
 					}
 
+#ifndef NINTENDO
 					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
@@ -6576,6 +6649,7 @@ int main(int argc, char** argv)
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 						}
 					}
+#endif
 
 					// to make sure scroll wheel gets cleared, as it never un-sets itself
 					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 

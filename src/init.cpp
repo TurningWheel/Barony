@@ -117,7 +117,7 @@ int initApp(char const * const title, int fullscreen)
 #ifndef NINTENDO
 	PHYSFS_init("/");
 	PHYSFS_permitSymbolicLinks(1);
-#endif // NINTENDO
+#endif
 
 	if ( !PHYSFS_isInit() )
 	{
@@ -411,6 +411,10 @@ int initApp(char const * const title, int fullscreen)
 	if ((font16x16_bmp = loadImage("images/system/font16x16.png")) == NULL)
 	{
 		printlog("failed to load font16x16.png\n");
+		return 5;
+	}
+	if ((backdrop_loading_bmp = loadImage("images/system/backdrop_loading.png")) == NULL)
+	{
 		return 5;
 	}
 
@@ -963,7 +967,11 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 		if ( useModelCache )
 		{
+#ifndef NINTENDO
             std::string cache_path = std::string(outputdir) + "/models.cache";
+#else
+			std::string cache_path = "models.cache";
+#endif
 			model_cache = openDataFile(cache_path.c_str(), "rb");
 			if ( model_cache )
 			{
@@ -1006,6 +1014,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 					FileIO::close(model_cache);
 				}
 			}
+			return;
 		}
 	}
 
@@ -2175,6 +2184,10 @@ int deinitApp()
 	{
 		SDL_FreeSurface(font16x16_bmp);
 	}
+	if ( backdrop_loading_bmp )
+	{
+		SDL_FreeSurface(backdrop_loading_bmp);
+	}
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
@@ -2612,8 +2625,13 @@ bool initVideo()
             screen_width = bound.w;
             screen_height = bound.h;
         }*/
+#ifdef NINTENDO
+		screen_width = bound.w;
+		screen_height = bound.h;
+#else
         screen_width = std::min(bound.w, screen_width);
         screen_height = std::min(bound.h, screen_height);
+#endif
         if (fullscreen) {
             screen_x = bound.x;
             screen_y = bound.y;
@@ -2673,15 +2691,16 @@ bool initVideo()
 
 	if ( !renderer )
 	{
-#ifdef NINTENDO
-	    initNxGL();
-#endif
 		if ((renderer = SDL_GL_CreateContext(screen)) == NULL)
 		{
 			printlog("failed to create GL context. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
 			return false;
 		}
+
+#ifdef NINTENDO
+		initNxGL();
+#endif
 
 #ifdef PANDORA
 	    GO_InitFBO();

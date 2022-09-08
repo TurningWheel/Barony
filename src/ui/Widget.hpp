@@ -159,6 +159,10 @@ public:
     Frame* findSearchRoot();
     const Frame* findSearchRoot() const;
 
+    //! find the selected widget amongst our children
+    //! @return the selected widget, or nullptr if it was not found
+    Widget* findSelectedWidget();
+
 protected:
     Widget* parent = nullptr;                                       //!< parent widget
     std::list<Widget*> widgets;                                     //!< widget children
@@ -195,3 +199,8 @@ protected:
         const std::vector<const Widget*>& selectedWidgets,
         const std::vector<const Widget*>& searchParents) const;
 };
+
+#ifndef EDITOR
+#include "../interface/consolecommand.hpp"
+extern ConsoleVariable<bool> cvar_hideGlyphs;
+#endif

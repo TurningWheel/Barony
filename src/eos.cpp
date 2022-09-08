@@ -1038,8 +1038,56 @@ bool EOSFuncs::serialize(void* file) {
 	return true;
 }
 
+#ifdef NINTENDO
+static void EOS_CALL CustomFree(void* Ptr)
+{
+	free(Ptr);
+}
+
+static void* EOS_CALL CustomMalloc(size_t Size, size_t Alignment)
+{
+	return aligned_alloc(Alignment, Size);
+}
+
+static void* EOS_CALL CustomRealloc(void* Ptr, size_t Size, size_t Alignment)
+{
+	// Realloc.
+	void* NewPtr = realloc(Ptr, Size);
+
+	// Did the alignment break?
+	if ((uintptr_t)NewPtr & (Alignment - 1))
+	{
+		// Alloc a fresh space.
+		void* AlignedPtr = CustomMalloc(Size, Alignment);
+		memcpy(AlignedPtr, NewPtr, Size);
+		CustomFree(NewPtr);
+		NewPtr = AlignedPtr;
+	}
+
+	return NewPtr;
+}
+#endif
+
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
+#ifdef NINTENDO
+	EOS_Switch_InitializeOptions SwitchOptions;
+	SwitchOptions.ApiVersion = EOS_SWITCH_INITIALIZEOPTIONS_API_LATEST;
+	SwitchOptions.OnNetworkRequested_DEPRECATED = 0;
+	SwitchOptions.CacheStorageSizekB = 0; // EOS_SWITCH_MIN_CACHE_STORAGE_SIZE_KB
+	SwitchOptions.CacheStorageIndex = 0;
+
+	EOS_InitializeOptions InitializeOptions;
+	InitializeOptions.ProductName = "Barony";
+	InitializeOptions.ProductVersion = VERSION;
+	InitializeOptions.ApiVersion = EOS_INITIALIZE_API_LATEST;
+	InitializeOptions.AllocateMemoryFunction = CustomMalloc;
+	InitializeOptions.ReallocateMemoryFunction = CustomRealloc;
+	InitializeOptions.ReleaseMemoryFunction = CustomFree;
+	InitializeOptions.Reserved = nullptr;
+	InitializeOptions.SystemInitializeOptions = &SwitchOptions;
+	InitializeOptions.OverrideThreadAffinity = nullptr;
+#else
 	EOS_InitializeOptions InitializeOptions;
 	InitializeOptions.ProductName = "Barony";
 	InitializeOptions.ProductVersion = VERSION;
@@ -1050,6 +1098,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	InitializeOptions.Reserved = nullptr;
 	InitializeOptions.SystemInitializeOptions = nullptr;
 	InitializeOptions.OverrideThreadAffinity = nullptr;
+#endif
 	EOS_EResult result = EOS_Initialize(&InitializeOptions);
 	if ( result != EOS_EResult::EOS_Success )
 	{
@@ -1175,7 +1224,11 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 		EOS_Connect_Credentials Credentials;
 		Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
 		Credentials.Token = UserAuthToken->AccessToken;
+#ifdef NINTENDO
+		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN;
+#else
 		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC; // change this to steam etc for different account providers.
+#endif
 
 		EOS_Connect_LoginOptions Options;
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
