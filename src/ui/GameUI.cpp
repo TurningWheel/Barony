@@ -1008,9 +1008,18 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		if ( doAnimation )
 		{
 			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - followerBar.animx)) / 2.0;
-			followerBar.animx += setpointDiffX;
-			followerBar.animx = std::min(1.0, followerBar.animx);
+			/*if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
+			{
+				real_t setpointDiffX = fpsScale * std::max(.01, (followerBar.animx)) / 2.0;
+				followerBar.animx -= setpointDiffX;
+				followerBar.animx = std::max(0.0, followerBar.animx);
+			}
+			else*/
+			{
+				real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - followerBar.animx)) / 2.0;
+				followerBar.animx += setpointDiffX;
+				followerBar.animx = std::min(1.0, followerBar.animx);
+			}
 		}
 
 		SDL_Rect pos = entryFrame->getSize();
@@ -2210,7 +2219,8 @@ void updateAllyFollowerFrame(const int player)
 
 	static ConsoleVariable<bool> cvar_followerbars("/followerbars", true);
 
-	if ( !players[player]->isLocalPlayer() || !(*cvar_followerbars) )
+	if ( !players[player]->isLocalPlayer() || !(*cvar_followerbars) 
+		|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()) )
 	{
 		baseFrame->setDisabled(true);
 		titleFrame->setDisabled(true);
@@ -2702,7 +2712,8 @@ void updateAllyPlayerFrame(const int player)
 
 	static ConsoleVariable<bool> cvar_playerbars("/playerbars", true);
 
-	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) )
+	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) 
+		|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()) )
 	{
 		baseFrame->setDisabled(true);
 		return;
