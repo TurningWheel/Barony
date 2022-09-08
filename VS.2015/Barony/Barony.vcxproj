@@ -647,7 +647,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS;USE_THEORA_VIDEO</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <UndefinePreprocessorDefinitions>
