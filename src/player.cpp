@@ -2895,6 +2895,10 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 			return true;
 		}
 	}
+	if ( entity.flags[USERFLAG2] )
+	{
+		return true;
+	}
 	if ( entity.monsterAllyGetPlayerLeader() == players[player]->entity )
 	{
 		return true; // this is my follower
@@ -3127,43 +3131,105 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			if ( followerSelectInteract )
 			{
 				// perform head pitch check
-				real_t startx = players[player.playernum]->entity->x;
-				real_t starty = players[player.playernum]->entity->y;
-				real_t startz = -4;
-				real_t pitch = players[player.playernum]->entity->pitch;
-				if ( pitch < 0 )
+				if ( false )
 				{
-					//pitch = 0; - unneeded - negative pitch looks in a cone upwards as well - good check
+					// old method, not entirely accurate
+					real_t startx = players[player.playernum]->entity->x;
+					real_t starty = players[player.playernum]->entity->y;
+					real_t startz = -4;
+					real_t pitch = players[player.playernum]->entity->pitch;
+					if ( pitch < 0 )
+					{
+						//pitch = 0; - unneeded - negative pitch looks in a cone upwards as well - good check
+					}
+
+					// draw line from the players height and direction until we hit the ground.
+					real_t previousx = startx;
+					real_t previousy = starty;
+					int index = 0;
+					for ( ; startz < 0.f; startz += abs(0.25 * tan(pitch)) )
+					{
+						startx += 0.5 * cos(players[player.playernum]->entity->yaw);
+						starty += 0.5 * sin(players[player.playernum]->entity->yaw);
+						index = (static_cast<int>(starty + 16 * sin(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+						if ( !map.tiles[OBSTACLELAYER + index] )
+						{
+							// store the last known good coordinate
+							previousx = startx;
+							previousy = starty;
+						}
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+					}
+					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					if ( lookDist < dist )
+					{
+						if ( abs(dist - lookDist) > 8.0 )
+						{
+							return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+						}
+					}
+
+					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					particle->sprite = 576;
+					particle->x = previousx;
+					particle->y = previousy;
+					particle->z = 7.5;*/
+				}
+				else
+				{
+					// more accurate line of sight
+					real_t startx = cameras[player.playernum].x * 16.0;
+					real_t starty = cameras[player.playernum].y * 16.0;
+					real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + -2.5;
+					real_t pitch = cameras[player.playernum].vang;
+					if ( pitch < 0 || pitch > PI )
+					{
+						pitch = 0;
+					}
+
+					// draw line from the players height and direction until we hit the ground.
+					real_t previousx = startx;
+					real_t previousy = starty;
+					int index = 0;
+					const real_t yaw = cameras[player.playernum].ang;
+					for ( ; startz < 7.5; startz += abs((0.1) * tan(pitch)) )
+					{
+						startx += 0.1 * cos(yaw);
+						starty += 0.1 * sin(yaw);
+						const int index_x = static_cast<int>(startx) >> 4;
+						const int index_y = static_cast<int>(starty) >> 4;
+						index = (index_y)* MAPLAYERS + (index_x)* MAPLAYERS * map.height;
+						if ( !map.tiles[OBSTACLELAYER + index] )
+						{
+							// store the last known good coordinate
+							previousx = startx;// + 16 * cos(yaw);
+							previousy = starty;// + 16 * sin(yaw);
+						}
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+					}
+
+					real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
+					if ( lookDist < dist )
+					{
+						if ( abs(dist - lookDist) > 24.0 )
+						{
+							return 0.0; // looking at a tile on the ground more than x units away from the tooltip
+						}
+					}
+
+					/*Entity* particle = spawnMagicParticle(players[player.playernum]->entity);
+					particle->sprite = 942;
+					particle->x = previousx;
+					particle->y = previousy;
+					particle->z = 7.5;*/
 				}
 
-				// draw line from the players height and direction until we hit the ground.
-				real_t previousx = startx;
-				real_t previousy = starty;
-				int index = 0;
-				for ( ; startz < 0.f; startz += abs(0.25 * tan(pitch)) )
-				{
-					startx += 0.5 * cos(players[player.playernum]->entity->yaw);
-					starty += 0.5 * sin(players[player.playernum]->entity->yaw);
-					index = (static_cast<int>(starty + 16 * sin(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[player.playernum]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
-					if ( !map.tiles[OBSTACLELAYER + index] )
-					{
-						// store the last known good coordinate
-						previousx = startx;
-						previousy = starty;
-					}
-					if ( map.tiles[OBSTACLELAYER + index] )
-					{
-						break;
-					}
-				}
-				real_t lookDist = sqrt(pow(previousx - players[player.playernum]->entity->x, 2) + pow(previousy - players[player.playernum]->entity->y, 2));
-				if ( lookDist < dist )
-				{
-					if ( abs(dist - lookDist) > 24.0 )
-					{
-						return 0.0; // looking at a tile on the ground more than x units away from the tooltip
-					}
-				}
 			}
 			return dist;
 		}
