@@ -4336,6 +4336,10 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 							{
 								promptString = language[4084];
 							}
+							else if ( stats[player.playernum]->weapon->type == TOOL_BEARTRAP )
+							{
+								promptString = language[337];
+							}
 						}
 					}
 					else

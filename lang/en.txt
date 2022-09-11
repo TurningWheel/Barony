@@ -546,7 +546,7 @@ thou makest use of them.#
 334 Prepare#
 335 Put Out#
 336 Ignite#
-337 Arm Trap#
+337 Set#
 338 Eat#
 339 Ready#
 340 Appraising:     #

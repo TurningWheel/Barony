@@ -6296,7 +6296,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			// if non-shapeshifted, or you're an imp with a staff then process throwing/magic weapons
 
 			// magical weapons
-			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
+			if ( myStats->weapon->type == TOOL_BEARTRAP )
+			{
+				Item* item = myStats->weapon;
+				item_ToolBeartrap(item, this);
+				return;
+			}
+			else if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
 			{
 				if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 				{

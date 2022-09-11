@@ -2334,7 +2334,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BEARTRAP:
-			item_ToolBeartrap(item, player);
+			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_ALEMBIC:
 			if ( !players[player]->isLocalPlayer() )

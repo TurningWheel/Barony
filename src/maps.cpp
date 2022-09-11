@@ -4680,6 +4680,7 @@ void assignActions(map_t* map)
 				entity->skill[13] = 1; //qty
 				entity->skill[14] = 0; //appearance
 				entity->skill[15] = 0; //identified
+				entity->skill[17] = -1; //owner
 				break;
 			}
 			case 108: //stalag column

@@ -580,7 +580,7 @@ void item_AmuletSexChange(Item* item, int player);
 void item_ToolTowel(Item*& item, int player);
 void item_ToolTinOpener(Item* item, int player);
 void item_ToolMirror(Item*& item, int player);
-void item_ToolBeartrap(Item*& item, int player);
+void item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);

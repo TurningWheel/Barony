@@ -3896,27 +3896,58 @@ void item_ToolMirror(Item*& item, int player)
 	}
 }
 
-void item_ToolBeartrap(Item*& item, int player)
+void item_ToolBeartrap(Item*& item, Entity* usedBy)
 {
-	int u, v;
-	if ( players[player] && players[player]->entity )
+	if ( !usedBy )
 	{
-		int x = std::min(std::max<unsigned int>(1, players[player]->entity->x / 16), map.width - 2);
-		int y = std::min(std::max<unsigned int>(1, players[player]->entity->y / 16), map.height - 2);
+		return;
+	}
+
+	int player = -1;
+	if ( usedBy->behavior == &actMonster ) // monster
+	{
+		int u, v;
+		int x = std::min(std::max<unsigned int>(1, usedBy->x / 16), map.width - 2);
+		int y = std::min(std::max<unsigned int>(1, usedBy->y / 16), map.height - 2);
 		for ( u = x - 1; u <= x + 1; u++ )
 		{
 			for ( v = y - 1; v <= y + 1; v++ )
 			{
-				if ( entityInsideTile(players[player]->entity, u, v, 0) )   // no floor
+				if ( entityInsideTile(usedBy, u, v, 0) )   // no floor
 				{
-					if ( multiplayer != CLIENT )
-					{
-						messagePlayer(player, MESSAGE_HINT, language[3035]);
-					}
 					return;
 				}
 			}
 		}
+		playSoundEntity(usedBy, 253, 64);
+		Entity* entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
+		entity->behavior = &actBeartrap;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = usedBy->x + 16.0 * cos(usedBy->yaw);
+		entity->y = usedBy->y + 16.0 * sin(usedBy->yaw);
+		entity->z = 6.75;
+		entity->yaw = usedBy->yaw;
+		entity->roll = -PI / 2; // flip the model
+		entity->parent = usedBy->getUID();
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->skill[17] = -1;
+		consumeItem(item, player);
+		return;
+	}
+	else if ( usedBy->behavior == &actPlayer )
+	{
+		player = usedBy->skill[2];
+	}
+
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -3976,8 +4007,25 @@ void item_ToolBeartrap(Item*& item, int player)
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
-	entity->x = players[player]->entity->x;
-	entity->y = players[player]->entity->y;
+	real_t dist = 16.0;
+	real_t checkx = players[player]->entity->x + dist * cos(players[player]->entity->yaw);
+	real_t checky = players[player]->entity->y + dist * sin(players[player]->entity->yaw);
+	int index = (static_cast<int>(checky) >> 4) * MAPLAYERS + (static_cast<int>(checkx) >> 4) * MAPLAYERS * map.height;
+	while ( !map.tiles[index] || map.tiles[OBSTACLELAYER + index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+	{
+		dist -= 4.001;
+		if ( dist < 0.0 )
+		{
+			checkx = players[player]->entity->x;
+			checky = players[player]->entity->y;
+			break;
+		}
+		checkx = players[player]->entity->x + dist * cos(players[player]->entity->yaw);
+		checky = players[player]->entity->y + dist * sin(players[player]->entity->yaw);
+		index = (static_cast<int>(checky) >> 4) * MAPLAYERS + (static_cast<int>(checkx) >> 4) * MAPLAYERS * map.height;
+	}
+	entity->x = checkx;
+	entity->y = checky;
 	entity->z = 6.75;
 	entity->yaw = players[player]->entity->yaw;
 	entity->roll = -PI / 2; // flip the model
