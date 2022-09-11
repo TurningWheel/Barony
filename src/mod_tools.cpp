@@ -891,7 +891,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	const int bufSize = 120000;
+	const int bufSize = 160000;
 	char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
