@@ -2057,6 +2057,9 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		{
 			if ( selector )
 			{
+				SDL_Color color;
+				getColor(selector->color, &color.r, &color.g, &color.b, &color.a);
+				selector->color = makeColor(color.r, color.g, color.b, 255 * entryFrame->getOpacity() / 100.0);
 				selector->disabled = false;
 				if ( auto imgGet = Image::get(selector->path.c_str()) )
 				{
@@ -2071,6 +2074,9 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		{
 			if ( titleSelector )
 			{
+				SDL_Color color;
+				getColor(titleSelector->color, &color.r, &color.g, &color.b, &color.a);
+				titleSelector->color = makeColor(color.r, color.g, color.b, 255 * entryFrame->getOpacity() / 100.0);
 				titleSelector->disabled = false;
 				if ( auto imgGet = Image::get(titleSelector->path.c_str()) )
 				{
@@ -2219,13 +2225,23 @@ void updateAllyFollowerFrame(const int player)
 
 	static ConsoleVariable<bool> cvar_followerbars("/followerbars", true);
 
-	if ( !players[player]->isLocalPlayer() || !(*cvar_followerbars) 
-		|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()) )
+	if ( !players[player]->isLocalPlayer() || !(*cvar_followerbars) )
 	{
 		baseFrame->setDisabled(true);
 		titleFrame->setDisabled(true);
 		glyphFrame->setDisabled(true);
 		return;
+	}
+
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
+	{
+		baseFrame->setOpacity(0.0);
+		baseFrame->setInheritParentFrameOpacity(false);
+	}
+	else
+	{
+		baseFrame->setInheritParentFrameOpacity(true);
+		baseFrame->setOpacity(baseFrame->getParent()->getOpacity());
 	}
 
 	auto& infiniteScrolling = Player::HUD_t::FollowerDisplay_t::infiniteScrolling;
@@ -2514,6 +2530,7 @@ void updateAllyFollowerFrame(const int player)
 		{
 			scrollAmount = (hud_t.followerBars.size() - kNumEntriesToShow);
 		}
+		int oldSetpoint = followerDisplay.scrollSetpoint;
 		if ( scrollAmount > 0 )
 		{
 			int index = 0;
@@ -2580,17 +2597,40 @@ void updateAllyFollowerFrame(const int player)
 				{
 					realActiveBars += std::max(0, followerDisplay.scrollSetpoint - 1); // don't delete as many if setpoint > 1
 					followerDisplay.scrollAnimateX = followerDisplay.scrollSetpoint - 1;
+
+					int index = 0;
+					std::vector<real_t> oldAnimFadeScrolls;
 					for ( auto& pair : hud_t.followerBars )
 					{
-						pair.second.animFadeScroll = pair.second.animFadeScrollDummy;
-						//pair.second.animFadeScrollDummy = 0.0;
+						if ( index >= oldSetpoint )
+						{
+							oldAnimFadeScrolls.push_back(pair.second.dummy ? pair.second.animFadeScrollDummy : pair.second.animFadeScroll);
+						}
+						++index;
+					}
+					index = 0;
+					for ( auto& pair : hud_t.followerBars )
+					{
+						if ( oldAnimFadeScrolls.size() > 0 )
+						{
+							if ( pair.second.dummy )
+							{
+								pair.second.animFadeScrollDummy = oldAnimFadeScrolls[0];
+							}
+							else
+							{
+								pair.second.animFadeScroll = oldAnimFadeScrolls[0];
+							}
+							oldAnimFadeScrolls.erase(oldAnimFadeScrolls.begin());
+						}
+						++index;
 					}
 
 					for ( int i = 0; i < realActiveBars; ++i )
 					{
-						if ( i + realActiveBars < baseFrame->getFrames().size() )
+						if ( i + (realActiveBars - 1) < baseFrame->getFrames().size() )
 						{
-							baseFrame->getFrames()[i]->setOpacity(baseFrame->getFrames()[i + realActiveBars]->getOpacity());
+							baseFrame->getFrames()[i]->setOpacity(baseFrame->getFrames()[i + (realActiveBars - 1)]->getOpacity());
 						}
 					}
 
@@ -2712,11 +2752,21 @@ void updateAllyPlayerFrame(const int player)
 
 	static ConsoleVariable<bool> cvar_playerbars("/playerbars", true);
 
-	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) 
-		|| (!players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()) )
+	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) )
 	{
 		baseFrame->setDisabled(true);
 		return;
+	}
+
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
+	{
+		baseFrame->setOpacity(0.0);
+		baseFrame->setInheritParentFrameOpacity(false);
+	}
+	else
+	{
+		baseFrame->setInheritParentFrameOpacity(true);
+		baseFrame->setOpacity(baseFrame->getParent()->getOpacity());
 	}
 
 	baseFrame->setDisabled(false);
