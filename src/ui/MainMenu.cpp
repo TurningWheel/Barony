@@ -28,8 +28,6 @@
 #include <functional>
 
 // quick restart:
-ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false,
-    "if true, game restarts 1 second after last player death");
 
 #ifdef NINTENDO
 #define NETWORK_PORT_CLIENT 56175
@@ -45,9 +43,13 @@ namespace MainMenu {
 	Frame* main_menu_frame = nullptr;
 
 	// ALL NEW menu options:
-	bool arachnophobia_filter = false;
-	bool vertical_splitscreen = false;
 	float master_volume = 100.f;
+	bool arachnophobia_filter = false;
+	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
+    ConsoleVariable<bool> staggered_splitscreen("/split_staggered", true);
+    ConsoleVariable<bool> clipped_splitscreen("/split_clipped", true);
+    static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
+    ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false, "if true, game restarts 1 second after last player death");
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -252,6 +254,8 @@ namespace MainMenu {
 		bool light_flicker_enabled;
 		Video video;
 		bool vertical_split_enabled;
+		bool staggered_split_enabled;
+		bool clipped_split_enabled;
 		float fov;
 		float fps;
 		float master_volume;
@@ -614,7 +618,7 @@ namespace MainMenu {
 				--playerindex;
 				continue;
 			}
-			if (vertical_splitscreen) {
+			if (*vertical_splitscreen) {
 				players[c]->splitScreenType = Player::SPLITSCREEN_VERTICAL;
 			} else {
 				players[c]->splitScreenType = Player::SPLITSCREEN_DEFAULT;
@@ -633,24 +637,23 @@ namespace MainMenu {
 					players[c]->camera().winw = xres;
 					players[c]->camera().winh = yres;
 				} else if (playercount == 2) {
-				    static ConsoleVariable<bool> staggered("/split_staggered", true);
-				    static ConsoleVariable<bool> clipped("/split_clipped", true);
-				    static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
+				    const bool clipped = *clipped_splitscreen;
+				    const bool staggered = *staggered_splitscreen;
 					if (players[c]->splitScreenType == Player::SPLITSCREEN_VERTICAL) {
 					    const int clip = (yres * *clipped_size) / 100;
 
 						// divide screen vertically
 						players[c]->camera().winx = playerindex * xres / 2;
-						players[c]->camera().winy = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
+						players[c]->camera().winy = clipped ? (staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winw = xres / 2;
-						players[c]->camera().winh = *clipped ? (yres - clip) : yres;
+						players[c]->camera().winh = clipped ? (yres - clip) : yres;
 					} else {
 					    const int clip = (xres * *clipped_size) / 100;
 
 						// divide screen horizontally
-						players[c]->camera().winx = *clipped ? (*staggered ? playerindex * clip : clip / 2) : 0;
+						players[c]->camera().winx = clipped ? (staggered ? playerindex * clip : clip / 2) : 0;
 						players[c]->camera().winy = playerindex * yres / 2;
-						players[c]->camera().winw = *clipped ? (xres - clip) : xres;
+						players[c]->camera().winw = clipped ? (xres - clip) : xres;
 						players[c]->camera().winh = yres / 2;
 					}
 				} else if (playercount >= 3) {
@@ -1752,7 +1755,9 @@ namespace MainMenu {
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
 		bool result = video.save();
-		vertical_splitscreen = vertical_split_enabled;
+		*vertical_splitscreen = vertical_split_enabled;
+		*staggered_splitscreen = staggered_split_enabled;
+		*clipped_splitscreen = clipped_split_enabled;
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
@@ -1823,7 +1828,9 @@ namespace MainMenu {
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
 		settings.video = Video::load();
-		settings.vertical_split_enabled = vertical_splitscreen;
+		settings.vertical_split_enabled = *vertical_splitscreen;
+		settings.staggered_split_enabled = *staggered_splitscreen;
+		settings.clipped_split_enabled = *clipped_splitscreen;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
 		settings.master_volume = MainMenu::master_volume * 200.f;
@@ -1878,6 +1885,8 @@ namespace MainMenu {
 		settings.light_flicker_enabled = true;
 		settings.video = Video::reset();
 		settings.vertical_split_enabled = false;
+		settings.clipped_split_enabled = false;
+		settings.staggered_split_enabled = false;
 		settings.fov = 60;
 		settings.fps = 60;
 		settings.master_volume = 100.f;
@@ -1911,7 +1920,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 2;
+	    int version = 3;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -1939,7 +1948,11 @@ namespace MainMenu {
 		if (file->isReading()) {
 		    if (version >= 1) {
 		        file->property("video", video);
-		        file->property("vertical_split_enabled", vertical_split_enabled);
+	            file->property("vertical_split_enabled", vertical_split_enabled);
+		        if (version >= 2) {
+		            file->property("clipped_split_enabled", clipped_split_enabled);
+		            file->property("staggered_split_enabled", staggered_split_enabled);
+		        }
 		    } else {
 		        int i = 0;
 		        float f = 0.f;
@@ -1954,6 +1967,8 @@ namespace MainMenu {
 		} else {
 		    file->property("video", video);
 	        file->property("vertical_split_enabled", vertical_split_enabled);
+	        file->property("clipped_split_enabled", clipped_split_enabled);
+	        file->property("staggered_split_enabled", staggered_split_enabled);
 		}
 		file->property("fov", fov);
 		file->property("fps", fps);
@@ -4560,9 +4575,17 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
+			"For splitscreen with two-players: reduce each viewport by 20%% to preserve aspect ratio.",
+			allSettings.clipped_split_enabled, [](Button& button){soundToggle(); allSettings.clipped_split_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
+			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
+			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
+#ifndef NINTENDO
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
 			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
+#endif
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
 			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
@@ -4607,6 +4630,8 @@ bind_failed:
 			{Setting::Type::Dropdown, "window_mode"},
 			{Setting::Type::Boolean, "vsync"},
 			{Setting::Type::Boolean, "vertical_split"},
+			{Setting::Type::Boolean, "clipped_split"},
+			{Setting::Type::Boolean, "staggered_split"},
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Slider, "fps"},
@@ -4623,7 +4648,8 @@ bind_failed:
 #else
 		hookSettings(*settings_subwindow,{
 			{Setting::Type::Boolean, "vertical_split"},
-			{Setting::Type::Slider, "gamma"},
+			{Setting::Type::Boolean, "clipped_split"},
+			{Setting::Type::Boolean, "staggered_split"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},

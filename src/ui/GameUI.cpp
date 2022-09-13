@@ -4325,7 +4325,7 @@ void Player::HUD_t::updateActionPrompts()
 	}
 
 	if ( !bShowActionPrompts || playercount > 2 ||
-	    (playercount == 2 && MainMenu::vertical_splitscreen) || *disableActionPrompts )
+	    (playercount == 2 && *MainMenu::vertical_splitscreen) || *disableActionPrompts )
 	{
 		actionPromptsFrame->setDisabled(true);
 		return;
@@ -4856,11 +4856,11 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
-    bool useBigFont = playercount == 1 || (playercount == 2 && !MainMenu::vertical_splitscreen);
+    bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
         ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
-        (playercount == 2 && !MainMenu::vertical_splitscreen));
+        (playercount == 2 && !*MainMenu::vertical_splitscreen));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	const int leftAlignedBottomY = 200;
@@ -5034,7 +5034,7 @@ static Frame* createMinimap(int player) {
 
 	    widget.setInvisible(*shareMinimap && playercount > 2);
 
-        bool reducedSize = playercount > 2 || (playercount == 2 && MainMenu::vertical_splitscreen);
+        bool reducedSize = playercount > 2 || (playercount == 2 && *MainMenu::vertical_splitscreen);
 
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
