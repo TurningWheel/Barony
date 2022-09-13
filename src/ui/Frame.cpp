@@ -671,6 +671,13 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
+	// draw sliders
+	for (auto slider : sliders) {
+		if (!slider->isOntop()) {
+			slider->draw(_size, scroll, selectedWidgets);
+		}
+	}
+
 	// draw fields
 	for (auto field : fields) {
 		if ( !field->isOntop() ) {
@@ -685,23 +692,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 
-	// draw sliders
-	for (auto slider : sliders) {
-		if ( !slider->isOntop() ) {
-		    slider->draw(_size, scroll, selectedWidgets);
-		}
-	}
-
 	// draw subframes
 	for ( auto frame : frames ) {
 		frame->draw(_size, scroll, selectedWidgets);
-	}
-
-	// draw "on top" sliders
-	for (auto slider : sliders) {
-		if ( slider->isOntop() ) {
-		    slider->draw(_size, scroll, selectedWidgets);
-		}
 	}
 
 	// draw "on top" buttons
@@ -715,6 +708,13 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	for ( auto field : fields ) {
 		if ( field->isOntop() ) {
 		    field->draw(_size, scroll, selectedWidgets);
+		}
+	}
+
+	// draw "on top" sliders
+	for (auto slider : sliders) {
+		if (slider->isOntop()) {
+			slider->draw(_size, scroll, selectedWidgets);
 		}
 	}
 
@@ -973,6 +973,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+	// process "ontop" (widget) sliders
+	for (int i = sliders.size() - 1; i >= 0; --i) {
+		Slider* slider = sliders[i];
+		if (slider->isOntop()) {
+			processSlider(_size, *slider, destWidget, result);
+		}
+	}
+
 	// process "ontop" fields
 	for (int i = fields.size() - 1; i >= 0; --i) {
 		Field* field = fields[i];
@@ -987,14 +995,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (button->isOntop()) {
 		    processButton(_size, *button, destWidget, result);
 	    }
-	}
-
-	// process "ontop" (widget) sliders
-	for (int i = sliders.size() - 1; i >= 0; --i) {
-		Slider* slider = sliders[i];
-		if (slider->isOntop()) {
-		    processSlider(_size, *slider, destWidget, result);
-		}
 	}
 
 	// process frames
@@ -1255,14 +1255,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
-	// process (widget) sliders
-	for (int i = sliders.size() - 1; i >= 0; --i) {
-		Slider* slider = sliders[i];
-		if (!slider->isOntop()) {
-		    processSlider(_size, *slider, destWidget, result);
-		}
-	}
-
 	// process buttons
 	for (int i = buttons.size() - 1; i >= 0; --i) {
 		Button* button = buttons[i];
@@ -1277,6 +1269,14 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		if (!field->isOntop()) {
             processField(_size, *field, destWidget, result);
         }
+	}
+
+	// process (widget) sliders
+	for (int i = sliders.size() - 1; i >= 0; --i) {
+		Slider* slider = sliders[i];
+		if (!slider->isOntop()) {
+			processSlider(_size, *slider, destWidget, result);
+		}
 	}
 
 	// process the frame's list entries
