@@ -17078,7 +17078,7 @@ bind_failed:
 			}
 			button->setTickCallback([](Widget& widget){
 				if (!gui->findSelectedWidget(widget.getOwner())) {
-					if (!main_menu_frame->findWidget("dimmer", false)) {
+					if (!main_menu_frame || !main_menu_frame->findWidget("dimmer", false)) {
 						widget.select();
 					}
 				}

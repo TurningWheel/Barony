@@ -891,9 +891,15 @@ void ItemTooltips_t::readTooltipsFromFile()
 		return;
 	}
 
-	const int bufSize = 120000;
-	char buf[bufSize];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+    constexpr uint32_t buffer_size = (1<<20); // 1mb
+    if (fp->size() >= buffer_size)
+    {
+		printlog("[JSON]: Error: file size is too large to fit in buffer! %s", inputPath.c_str());
+	    FileIO::close(fp);
+    }
+
+	char buf[buffer_size];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
 	rapidjson::StringStream is(buf);
@@ -901,6 +907,13 @@ void ItemTooltips_t::readTooltipsFromFile()
 	rapidjson::Document d;
 	d.ParseStream(is);
 	FileIO::close(fp);
+
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: json file does not define a complete object. Is there a syntax error? %s", inputPath.c_str());
+		return;
+	}
+
 	if ( !d.HasMember("version") || !d.HasMember("tooltips") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
@@ -2290,6 +2303,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.find("tooltip_whip") != std::string::npos
 		|| tooltipType.find("tooltip_polearm") != std::string::npos
 		|| tooltipType.find("tooltip_thrown") != std::string::npos
+		|| tooltipType.find("tooltip_boomerang") != std::string::npos
 		|| tooltipType.find("tooltip_gem") != std::string::npos
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos
@@ -2585,7 +2599,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
-	else if ( tooltipType.find("tooltip_thrown") != std::string::npos )
+	else if ( tooltipType.find("tooltip_thrown") != std::string::npos
+	    || tooltipType.find("tooltip_boomerang") != std::string::npos )
 	{
 		int proficiency = PRO_RANGED;
 		if ( detailTag.compare("weapon_base_atk") == 0 )
