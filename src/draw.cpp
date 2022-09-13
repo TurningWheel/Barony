@@ -2235,9 +2235,7 @@ void drawEntities2D(long camx, long camy)
 void drawGrid(long camx, long camy)
 {
 	long x, y;
-	Uint32 color;
-
-	color = makeColorRGB(127, 127, 127);
+	Uint32 color = makeColorRGB(127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	for ( y = 0; y < map.height; y++ )
