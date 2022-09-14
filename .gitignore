@@ -60,3 +60,4 @@ steam_appid.txt
 /VS.2015/x64/Steam Crossplay
 *.vsp
 /VS.2015/Steam Debug
+.vscode/*

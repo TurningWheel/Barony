@@ -13408,16 +13408,16 @@ bind_failed:
 				            char buf[16];
 #ifdef NINTENDO
 							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-								(host & 0xff000000) >> 24,
-								(host & 0x00ff0000) >> 16,
-								(host & 0x0000ff00) >> 8,
-								(host & 0x000000ff) >> 0);
+								(uint8_t)((host & 0xff000000) >> 24),
+								(uint8_t)((host & 0x00ff0000) >> 16),
+								(uint8_t)((host & 0x0000ff00) >> 8),
+								(uint8_t)((host & 0x000000ff) >> 0));
 #else
 							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-								(host & 0x000000ff) >> 0,
-								(host & 0x0000ff00) >> 8,
-								(host & 0x00ff0000) >> 16,
-								(host & 0xff000000) >> 24);
+								(uint8_t)((host & 0x000000ff) >> 0),
+								(uint8_t)((host & 0x0000ff00) >> 8),
+								(uint8_t)((host & 0x00ff0000) >> 16),
+								(uint8_t)((host & 0xff000000) >> 24));
 #endif
 				            info.address = buf;
 				            addLobby(info);

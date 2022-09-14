@@ -2434,7 +2434,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 								int type = tagged->getMonsterTypeFromSprite();
 								if ( type != NOTHING )
 								{
-									snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+									snprintf(buf, sizeof(buf), formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
 								}
 								else
 								{
@@ -2443,7 +2443,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 							}
 							else if ( tagged->behavior == &actPlayer )
 							{
-								snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+								snprintf(buf, sizeof(buf), formatString.c_str(), stats[tagged->skill[2]]->name);
 							}
 							std::string formattedName = buf;
 							uppercaseString(formattedName);
@@ -2833,7 +2833,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 										int type = tagged->getMonsterTypeFromSprite();
 										if ( type != NOTHING )
 										{
-											snprintf(buf, 1023, formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
+											snprintf(buf, sizeof(buf), formatString.c_str(), getMonsterLocalizedName((Monster)type).c_str());
 										}
 										else
 										{
@@ -2842,7 +2842,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 									}
 									else if ( tagged->behavior == &actPlayer )
 									{
-										snprintf(buf, 1023, formatString.c_str(), stats[tagged->skill[2]]->name);
+										snprintf(buf, sizeof(buf), formatString.c_str(), stats[tagged->skill[2]]->name);
 									}
 									std::string formattedName = buf;
 									notificationTxt->setText(formattedName.c_str());
@@ -7453,9 +7453,9 @@ void Player::GUIDropdown_t::process()
 	for ( auto& option : dropDown.options )
 	{
 		char glyphname[32] = "";
-		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
+		snprintf(glyphname, sizeof(glyphname), "glyph %d", (int)index);
 		char optionname[32] = "";
-		snprintf(optionname, sizeof(optionname), "interact option %d", index);
+		snprintf(optionname, sizeof(optionname), "interact option %d", (int)index);
 
 		auto img = dropdownFrame->findImage(glyphname);
 		auto txt = dropdownFrame->findField(optionname);

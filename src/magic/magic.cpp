@@ -1215,9 +1215,12 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				player = hit.entity->skill[2];
 			}
 
-			int difficulty = 0;
+			int difficulty;
 			switch ( hitstats->type )
 			{
+				default:
+					difficulty = 0;
+					break;
 				case HUMAN:
 				case RAT:
 				case SLIME:

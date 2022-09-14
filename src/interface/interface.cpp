@@ -2386,7 +2386,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( keepWheelOpen )
 				{
 					// need to reset the coordinates of the mouse.
-					if ( !players[gui_player]->gui_mode != GUI_MODE_FOLLOWERMENU )
+					if ( players[gui_player]->gui_mode != GUI_MODE_FOLLOWERMENU )
 					{
 						initfollowerMenuGUICursor(true); // set gui_mode to follower menu
 					}

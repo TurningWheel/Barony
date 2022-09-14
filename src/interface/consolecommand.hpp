@@ -83,26 +83,6 @@ private:
  * "cvar" is "Hello World"
  */
 
-#ifdef NINTENDO
-// Nintendo compiler can't handle the real deal, so here's a stub instead.
-template<typename T = std::string>
-class ConsoleVariable {
-public:
-    ConsoleVariable(const char* _name, const T& _default, const char* _desc = "")
-    {
-        data = _default;
-    }
-
-    T& operator*() {
-        return data;
-    }
-    T* operator->() {
-        return &data;
-    }
-
-    T data;
-};
-#else
 template<typename T = std::string>
 class ConsoleVariable : ConsoleCommand {
 public:
@@ -131,6 +111,7 @@ private:
 };
 
 // Valid ConsoleVariable types:
+#ifndef __clang__
 extern template class ConsoleVariable<std::string>;
 extern template class ConsoleVariable<int>;
 extern template class ConsoleVariable<float>;
