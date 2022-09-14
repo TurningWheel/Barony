@@ -6268,8 +6268,13 @@ bind_failed:
         label->setHJustify(Field::justify_t::LEFT);
         label->setVJustify(Field::justify_t::CENTER);
         label->setFont(bigfont_outline);
+#ifdef NINTENDO
+        label->setText("Messages");
+#else
         label->setText("Chat");
+#endif
 
+#ifndef NINTENDO
         auto chat_buffer = frame->addField("buffer", 1024);
         chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
         chat_buffer->setHJustify(Field::justify_t::LEFT);
@@ -6324,7 +6329,9 @@ bind_failed:
                 chat_buffer->isActivated();
             widget.setDisabled(hidden);
             });
+#endif
 
+#ifndef NINTENDO
         auto close_button = frame->addButton("close");
         close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
 	    close_button->setColor(makeColor(255, 255, 255, 255));
@@ -6356,6 +6363,7 @@ bind_failed:
         close_button->setWidgetSearchParent(frame->getName());
         close_button->setWidgetDown("buffer");
 	    close_button->setWidgetBack("close");
+#endif
 
         return frame;
     }
@@ -8697,6 +8705,8 @@ bind_failed:
 			setting->setColor(0);
 			setting->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			setting->addWidgetAction("MenuStart", "confirm");
+			setting->addWidgetAction("MenuSelect", "chat");
+			setting->addWidgetAction("MenuAlt2", "privacy");
 			setting->setWidgetBack("back_button");
 			if (c > 0) {
 				setting->setWidgetUp((std::string("setting") + std::to_string(c - 1)).c_str());
@@ -8831,6 +8841,8 @@ bind_failed:
 		custom_difficulty->setText("Game Flags");
 		custom_difficulty->setWidgetSearchParent(name.c_str());
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
+		custom_difficulty->addWidgetAction("MenuSelect", "chat");
+		custom_difficulty->addWidgetAction("MenuAlt2", "privacy");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
@@ -8871,6 +8883,8 @@ bind_failed:
 			invite->setHighlightColor(0xffffffff);
 			invite->setWidgetSearchParent(name.c_str());
 			invite->addWidgetAction("MenuStart", "confirm");
+			invite->addWidgetAction("MenuSelect", "chat");
+			invite->addWidgetAction("MenuAlt2", "privacy");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom_difficulty");
 			invite->setWidgetDown("friends");
@@ -8946,6 +8960,8 @@ bind_failed:
 			friends->setHighlightColor(0xffffffff);
 			friends->setWidgetSearchParent(name.c_str());
 			friends->addWidgetAction("MenuStart", "confirm");
+			friends->addWidgetAction("MenuSelect", "chat");
+			friends->addWidgetAction("MenuAlt2", "privacy");
 			friends->setWidgetBack("back_button");
 			friends->setWidgetUp("invite");
 			friends->setWidgetDown("open");
@@ -9027,6 +9043,8 @@ bind_failed:
 			open->setHighlightColor(0xffffffff);
 			open->setWidgetSearchParent(name.c_str());
 			open->addWidgetAction("MenuStart", "confirm");
+			open->addWidgetAction("MenuSelect", "chat");
+			open->addWidgetAction("MenuAlt2", "privacy");
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
 			open->setWidgetDown("player_count_2");
@@ -9101,6 +9119,8 @@ bind_failed:
 		    player_count->setColor(uint32ColorWhite);
 		    player_count->setWidgetSearchParent(name.c_str());
 			player_count->addWidgetAction("MenuStart", "confirm");
+			player_count->addWidgetAction("MenuSelect", "chat");
+			player_count->addWidgetAction("MenuAlt2", "privacy");
 			player_count->setWidgetBack("back_button");
 			player_count->setWidgetUp(online ? "open" : "custom_difficulty");
 		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
@@ -9225,6 +9245,8 @@ bind_failed:
 		    kick_player->setColor(uint32ColorWhite);
 		    kick_player->setWidgetSearchParent(name.c_str());
 			kick_player->addWidgetAction("MenuStart", "confirm");
+			kick_player->addWidgetAction("MenuSelect", "chat");
+			kick_player->addWidgetAction("MenuAlt2", "privacy");
 			kick_player->setWidgetBack("back_button");
 		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
 		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
@@ -9839,6 +9861,8 @@ bind_failed:
 		    race->setHighlightColor(0xffffffff);
 		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		    race->addWidgetAction("MenuStart", "confirm");
+		    race->addWidgetAction("MenuSelect", "chat");
+		    race->addWidgetAction("MenuAlt2", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c == 0) {
 		        race->setWidgetRight("appearances");
@@ -9909,6 +9933,8 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
+		appearances->addWidgetAction("MenuSelect", "chat");
+		appearances->addWidgetAction("MenuAlt2", "privacy");
 		appearances->setWidgetBack("back_button");
 	    appearances->addWidgetAction("MenuPageLeft", "male");
 	    appearances->addWidgetAction("MenuPageRight", "female");
@@ -9988,6 +10014,8 @@ bind_failed:
 	        }
 	        });
 		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
+		appearance_uparrow->addWidgetAction("MenuSelect", "chat");
+		appearance_uparrow->addWidgetAction("MenuAlt2", "privacy");
 		appearance_uparrow->setWidgetBack("back_button");
 	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_uparrow->addWidgetAction("MenuPageRight", "female");
@@ -10022,6 +10050,8 @@ bind_failed:
 	        }
 	        });
 		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
+		appearance_downarrow->addWidgetAction("MenuSelect", "chat");
+		appearance_downarrow->addWidgetAction("MenuAlt2", "privacy");
 		appearance_downarrow->setWidgetBack("back_button");
 	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
@@ -10088,6 +10118,8 @@ bind_failed:
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
 		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
+		disable_abilities->addWidgetAction("MenuSelect", "chat");
+		disable_abilities->addWidgetAction("MenuAlt2", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
 		disable_abilities->setWidgetUp(races[num_races - 1]);
@@ -10123,6 +10155,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
+		male_button->addWidgetAction("MenuSelect", "chat");
+		male_button->addWidgetAction("MenuAlt2", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
@@ -10150,6 +10184,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
+		female_button->addWidgetAction("MenuSelect", "chat");
+		female_button->addWidgetAction("MenuAlt2", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetUp("disable_abilities");
 		female_button->setWidgetDown("confirm");
@@ -10179,6 +10215,8 @@ bind_failed:
 		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
+		show_race_info->addWidgetAction("MenuSelect", "chat");
+		show_race_info->addWidgetAction("MenuAlt2", "privacy");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
@@ -10830,6 +10868,8 @@ bind_failed:
 		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
+		class_info->addWidgetAction("MenuSelect", "chat");
+		class_info->addWidgetAction("MenuAlt2", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
 		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
@@ -10898,6 +10938,8 @@ bind_failed:
 				button->setWidgetDown(reduced_class_list[reduced_class_list.size() - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
+			button->addWidgetAction("MenuSelect", "chat");
+			button->addWidgetAction("MenuAlt2", "privacy");
 			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
@@ -10963,6 +11005,30 @@ bind_failed:
 						    break;
 					    }
 				    }
+
+					// you can request a particular class from your party with this hotkey.
+					if (currentLobbyType != LobbyType::LobbyLocal) {
+						const int player = widget.getOwner();
+						if (inputs.hasController(player)) {
+							auto& input = Input::inputs[player];
+							size_t len = strlen(widget.getName());
+							if (stringCmp(widget.getName(), "random", len, 6) && input.consumeBinaryToggle("MenuAlt1")) {
+								constexpr Uint32 waitingPeriod = 3;
+								static Uint32 lastClassRequest = 0;
+								char buf[1024];
+								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
+									snprintf(buf, sizeof(buf), "%s: We need a %s.",
+										players[player]->getAccountName(), widget.getName());
+									sendChatMessageOverNet(0xffffffff, buf, len);
+									lastClassRequest = ticks;
+								} else {
+									snprintf(buf, sizeof(buf), "*** Please wait %d seconds before suggesting another class. ***",
+										waitingPeriod - (ticks - lastClassRequest) / TICKS_PER_SECOND);
+									addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+								}
+							}
+						}
+					}
 			    }
 			    });
 		}
@@ -11055,9 +11121,17 @@ bind_failed:
 		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
 		name_field->setVJustify(Field::justify_t::CENTER);
+#ifdef NINTENDO
+		if (currentLobbyType == LobbyType::LobbyLocal) {
+			name_field->setEditable(true);
+		}
+#else
 		name_field->setEditable(true);
+#endif
 		name_field->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		name_field->addWidgetAction("MenuStart", "ready");
+		name_field->addWidgetAction("MenuSelect", "chat");
+		name_field->addWidgetAction("MenuAlt2", "privacy");
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
@@ -11108,6 +11182,8 @@ bind_failed:
 		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
+		randomize_name->addWidgetAction("MenuSelect", "chat");
+		randomize_name->addWidgetAction("MenuAlt2", "privacy");
 		randomize_name->setWidgetBack("back_button");
 		randomize_name->setWidgetLeft("name");
 		randomize_name->setWidgetDown("game_settings");
@@ -11137,6 +11213,8 @@ bind_failed:
 		game_settings->setFont(smallfont_outline);
 		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		game_settings->addWidgetAction("MenuStart", "ready");
+		game_settings->addWidgetAction("MenuSelect", "chat");
+		game_settings->addWidgetAction("MenuAlt2", "privacy");
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
@@ -11164,6 +11242,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
+		male_button->addWidgetAction("MenuSelect", "chat");
+		male_button->addWidgetAction("MenuAlt2", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
@@ -11187,6 +11267,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
+		female_button->addWidgetAction("MenuSelect", "chat");
+		female_button->addWidgetAction("MenuAlt2", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("race");
@@ -11222,6 +11304,8 @@ bind_failed:
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		race_button->addWidgetAction("MenuStart", "ready");
+		race_button->addWidgetAction("MenuSelect", "chat");
+		race_button->addWidgetAction("MenuAlt2", "privacy");
 		race_button->setWidgetBack("back_button");
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
@@ -11326,6 +11410,8 @@ bind_failed:
 		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
+		randomize_class->addWidgetAction("MenuSelect", "chat");
+		randomize_class->addWidgetAction("MenuAlt2", "privacy");
 		randomize_class->setWidgetBack("back_button");
 		randomize_class->setWidgetLeft("class");
 		randomize_class->setWidgetDown("ready");
@@ -11356,7 +11442,7 @@ bind_failed:
 		}
 		(*class_text->getTickCallback())(*class_text);
 
-		static auto class_button_fn = [](Button& button, int index) {
+		static auto class_button_tick_fn = [](Button& button, int index) {
 			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
@@ -11376,6 +11462,18 @@ bind_failed:
 			}
 		};
 
+		static auto class_button_fn = [](int index){
+			soundActivate();
+#ifdef NINTENDO
+		    addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press Y to suggest a class for your party ***");
+#else
+			if (inputs.hasController(index)) {
+		    	addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press X to suggest a class for your party ***");
+			}
+#endif
+			characterCardClassMenu(index, false, 0);
+		};
+
 		auto class_button = card->addButton("class");
 		class_button->setColor(makeColor(255, 255, 255, 255));
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -11383,26 +11481,28 @@ bind_failed:
 		class_button->setBorder(0);
 		class_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_button->addWidgetAction("MenuStart", "ready");
+		class_button->addWidgetAction("MenuSelect", "chat");
+		class_button->addWidgetAction("MenuAlt2", "privacy");
 		class_button->setWidgetBack("back_button");
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
 		switch (index) {
 		case 0:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 0);});
+			class_button->setCallback([](Button&){class_button_fn(0);});
 			break;
 		case 1:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 1);});
+			class_button->setCallback([](Button&){class_button_fn(1);});
 			break;
 		case 2:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 2);});
+			class_button->setCallback([](Button&){class_button_fn(2);});
 			break;
 		case 3:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 3);});
+			class_button->setCallback([](Button&){class_button_fn(3);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);
@@ -11420,6 +11520,8 @@ bind_failed:
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+		ready_button->addWidgetAction("MenuSelect", "chat");
+		ready_button->addWidgetAction("MenuAlt2", "privacy");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
 		switch (index) {
@@ -12415,7 +12517,9 @@ bind_failed:
 		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+#ifndef NINTENDO
 		        field->setEditable(type != LobbyType::LobbyJoined);
+#endif
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
 		        field->setSize(SDL_Rect{162, 14, 242, 28});
@@ -12426,7 +12530,9 @@ bind_failed:
 		        field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
-		        field->setWidgetSearchParent(field->getParent()->getName());
+		        field->setWidgetSearchParent(banner->getName());
+				field->addWidgetAction("MenuSelect", "chat");
+				field->addWidgetAction("MenuAlt2", "privacy");
 		        field->setWidgetBack("back_button");
 		        field->setWidgetRight("privacy");
 		        if (type != LobbyType::LobbyJoined) {
@@ -12600,6 +12706,10 @@ bind_failed:
 		        privacy->setTextHighlightColor(0xffffffff);
 	            privacy->setTextColor(0xffffffff);
 	            privacy->setFont(smallfont_outline);
+				privacy->setAlwaysShowGlyphs(true);
+		        privacy->setWidgetSearchParent(banner->getName());
+				privacy->addWidgetAction("MenuSelect", "chat");
+				privacy->addWidgetAction("MenuAlt2", "privacy");
 	            privacy->setWidgetBack("back_button");
 	            privacy->setWidgetLeft("lobby_name");
 	            privacy->setWidgetRight("chat");
@@ -12620,13 +12730,21 @@ bind_failed:
 		        chat_button->setColor(0xffffffff);
 			    chat_button->setTextHighlightColor(0xffffffff);
 		        chat_button->setTextColor(0xffffffff);
+#ifdef NINTENDO
+		        chat_button->setText("Messages");
+#else
 		        chat_button->setText("Chat");
+#endif
 		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
 		            (void)toggleLobbyChatWindow();
 		            });
+				chat_button->setAlwaysShowGlyphs(true);
+		        chat_button->setWidgetSearchParent(banner->getName());
+				chat_button->addWidgetAction("MenuSelect", "chat");
+				chat_button->addWidgetAction("MenuAlt2", "privacy");
 		        chat_button->setWidgetBack("back_button");
 		        chat_button->setWidgetLeft("privacy");
 		        chat_button->setTickCallback([](Widget& widget){

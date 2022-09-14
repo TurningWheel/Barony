@@ -90,6 +90,7 @@ public:
     void    setSelectorOffset(SDL_Rect r) { selectorOffset = r; }
 	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
     void    setGlyphPosition(glyph_position_t p) { glyphPosition = p; }
+    void    setAlwaysShowGlyphs(bool b) { alwaysShowGlyphs = b; }
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget
@@ -177,6 +178,7 @@ protected:
     bool hideGlyphs = false;                                        //!< true if you don't want to see controller button glyphs on the widget
     bool hideKeyboardGlyphs = true;                                 //!< true if you don't want to see keyboard glyphs on the widget
     bool hideSelectors = false;                                     //!< true if you don't want to see selectors on the borders of this widget
+    bool alwaysShowGlyphs = false;                                  //!< true if you want relevant glyphs to always be displayed for this widget
 	int menuConfirmControlType =									//!< which input types are allowed to 'activate' the widget via 'MenuConfirm'
 		MenuConfirmTypes::MENU_CONFIRM_KEYBOARD 
 		| MenuConfirmTypes::MENU_CONFIRM_CONTROLLER;

@@ -369,7 +369,11 @@ const char* Input::getKeyboardGlyph() {
 }
 
 const char* Input::getControllerGlyph() {
+#ifdef NINTENDO
+    return "*#images/ui/Glyphs/G_Control_Switch_01.png";
+#else
     return "*#images/ui/Glyphs/G_Control_Xbox_02.png";
+#endif
 }
 
 std::string Input::getGlyphPathForInput(const char* input, bool pressed)
