@@ -10121,8 +10121,10 @@ void doNewGame(bool makeHighscore) {
 	    enchantedFeatherScrollsShuffled.clear();
 	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
 	    auto shuffle = enchantedFeatherScrollsFixedList;
+		BaronyRNG feather_rng;
+		feather_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 	    while (!shuffle.empty()) {
-	        int index = net_rng.getU8() % shuffle.size();
+	        int index = feather_rng.getU8() % shuffle.size();
 	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
 	        shuffle.erase(shuffle.begin() + index);
 	    }
