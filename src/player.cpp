@@ -2880,6 +2880,7 @@ void Player::init() // for use on new/restart game, UI related
 	characterSheet.setDefaultPartySheetBox();
 	characterSheet.setDefaultCharacterSheetBox();
 	paperDoll.clear();
+	minotaurWarning[playernum].deinit();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -5959,6 +5960,8 @@ void Player::clearGUIPointers()
 	hud.gameTimerFrame = nullptr;
 	hud.allyStatusFrame = nullptr;
 	hud.minotaurFrame = nullptr;
+	hud.minotaurSharedDisplay = nullptr;
+	hud.minotaurDisplay = nullptr;
 	hud.allyFollowerFrame = nullptr;
 	hud.allyFollowerTitleFrame = nullptr;
 	hud.allyFollowerGlyphFrame = nullptr;

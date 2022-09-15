@@ -5232,6 +5232,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
+		players[player]->hud.updateMinotaurWarning();
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
@@ -5271,7 +5272,6 @@ void ingameHud()
 			//	//updateShopWindow(player);
 			//}
 		}
-
 
 		static ConsoleVariable<bool> cvar_debugmouse("/debugmouse", false);
 		if ( *cvar_debugmouse )

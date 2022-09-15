@@ -156,6 +156,8 @@ int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 
+MinotaurWarning_t minotaurWarning[MAXPLAYERS];
+
 void capitalizeString(std::string& str)
 {
 	if ( str.size() < 1 ) { return; }
@@ -2797,7 +2799,7 @@ void updateAllyPlayerFrame(const int player)
 		{
 			continue;
 		}
-		if ( !client_disconnected[i] && players[i]->entity )
+		if ( !client_disconnected[i] && players[i]->entity && !splitscreen )
 		{
 			auto it = std::find_if(hud_t.playerBars.begin(), hud_t.playerBars.end(),
 				[&i](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
@@ -2817,7 +2819,13 @@ void updateAllyPlayerFrame(const int player)
 	int activeBars = 0;
 	for ( auto it = hud_t.playerBars.begin(); it != hud_t.playerBars.end(); )
 	{
-		if ( it->second.expired && it->second.animy >= 0.999 )
+		int playernum = it->first;
+		if ( playernum >= 0 && playernum < MAXPLAYERS
+			&& client_disconnected[playernum] )
+		{
+			it = hud_t.playerBars.erase(it);
+		}
+		else if ( it->second.expired && it->second.animy >= 0.999 )
 		{
 			it = hud_t.playerBars.erase(it);
 		}
@@ -5170,8 +5178,25 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		    {
 			    if ( effectSet.find(i) == effectSet.end() )
 			    {
-				    insertEffect(i, -1);
+					if ( i == EFF_SHAPESHIFT )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							insertEffect(i, -1);
+						}
+					}
+					else
+					{
+						insertEffect(i, -1);
+					}
 			    }
+				else if ( i == EFF_SHAPESHIFT )
+				{
+					if ( !players[player] || !players[player]->entity )
+					{
+						deleteEffect(i);
+					}
+				}
 		    }
 		    else
 		    {
@@ -7108,6 +7133,40 @@ void Player::HUD_t::processHUD()
 		hudFrame->setOwner(player.playernum);
 	}
 
+	if ( !minotaurSharedDisplay && player.playernum == 0 )
+	{
+		minotaurSharedDisplay = gameUIFrame[player.playernum]->addFrame("minotaur shared display");
+		minotaurSharedDisplay->setHollow(true);
+		minotaurSharedDisplay->setOwner(player.playernum);
+		minotaurSharedDisplay->setDisabled(true);
+		minotaurSharedDisplay->setInheritParentFrameOpacity(false);
+		auto img = minotaurSharedDisplay->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "*images/ui/HUD/HUD_Minotaur_00.png",
+			"mino img");
+		if ( auto imgGet = Image::get(img->path.c_str()) )
+		{
+			img->pos.w = imgGet->getWidth();
+			img->pos.h = imgGet->getHeight();
+		}
+		minotaurSharedDisplay->setSize(SDL_Rect{ 0, 0, img->pos.w, img->pos.h });
+	}
+
+	if ( !minotaurDisplay )
+	{
+		minotaurDisplay = hudFrame->addFrame("minotaur display");
+		minotaurDisplay->setHollow(true);
+		minotaurDisplay->setOwner(player.playernum);
+		minotaurDisplay->setDisabled(true);
+		minotaurDisplay->setInheritParentFrameOpacity(false);
+		auto img = minotaurDisplay->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "*images/ui/HUD/HUD_Minotaur_00.png",
+			"mino img");
+		if ( auto imgGet = Image::get(img->path.c_str()) )
+		{
+			img->pos.w = imgGet->getWidth();
+			img->pos.h = imgGet->getHeight();
+		}
+		minotaurDisplay->setSize(SDL_Rect{ 0, 0, img->pos.w, img->pos.h });
+	}
+
     if ( !controllerFrame )
     {
         controllerFrame = gameUIFrame[player.playernum]->addFrame("reconnect_controller");
@@ -7527,6 +7586,12 @@ static Frame* createMinimap(int player) {
         real_t factor1 = sin(scale_ang);
         real_t scale_small = std::min(reducedSize ? 25.0 : 50.0, minimap.real_scale);
         real_t scale_big = std::min(reducedSize ? 75.0 : 100.0, minimap.real_scale);
+
+		{
+			real_t scale = factor0 * scale_small;
+			minotaurWarning[player].minimapPos.w = (int)(scale * 4);
+			minotaurWarning[player].minimapPos.h = (int)(scale * 4);
+		}
 
         scale = factor0 * scale_small + factor1 * scale_big;
 
@@ -27495,4 +27560,596 @@ void Player::Inventory_t::ChestGUI_t::scrollToSlot(int x, int y, bool instantly)
 	{
 		isInteractable = false;
 	}
+}
+
+void MinotaurWarning_t::deinit()
+{
+	started = false;
+	state = 0;
+	stateInit = 0;
+	animFade = 0.0;
+	animTicks = 0;
+	animBg = 0.0;
+	initialWarningCompleted = false;
+	minotaurSpawned = false;
+	minotaurDied = false;
+	minotaurUid = 0;
+	animFlashIncrease = true;
+	animFlash = 0.0;
+}
+
+void MinotaurWarning_t::init()
+{
+	deinit();
+	started = true;
+}
+
+void MinotaurWarning_t::setAnimatePosition(const int destx, const int desty, const int destw, const int desth)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = destw;
+	animateSetpointH = desth;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void MinotaurWarning_t::setAnimatePosition(int destx, int desty)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = 0;
+	animateSetpointH = 0;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void Player::HUD_t::updateMinotaurWarning()
+{
+	auto& m = minotaurWarning[player.playernum];
+
+	static ConsoleVariable<bool> cvar_minoanimdebug("/minoanimdebug", false);
+	if ( *cvar_minoanimdebug && player.playernum == clientnum )
+	{
+		*cvar_minoanimdebug = false;
+		m.init();
+	}
+
+	static ConsoleVariable<float> cvar_minoflashmax("/minoflashmax", 1.25);
+	static ConsoleVariable<float> cvar_minoflashmin("/minoflashmin", 0.25);
+	static ConsoleVariable<float> cvar_minoflashrate("/minoflashrate", 0.125);
+
+	if ( m.processedOnTick == 0 )
+	{
+		m.processedOnTick = ticks;
+	}
+	else if ( m.processedOnTick != ticks )
+	{
+		m.processedOnTick = ticks;
+		++m.animTicks;
+	}
+
+	bool newLevel = m.levelProcessed != currentlevel;
+	if ( !minotaurlevel || (newLevel && m.started) )
+	{
+		m.deinit();
+	}
+	m.levelProcessed = currentlevel;
+
+	if ( !m.started )
+	{
+		if ( minotaurFrame )
+		{
+			minotaurFrame->setDisabled(true);
+		}
+	}
+	if ( minotaurDisplay )
+	{
+		minotaurDisplay->setDisabled(true);
+	}
+	if ( player.playernum == 0 && minotaurSharedDisplay )
+	{
+		minotaurSharedDisplay->setDisabled(true);
+	}
+
+	if ( !player.isLocalPlayer() )
+	{
+		m.deinit();
+		return;
+	}
+
+	if ( minotaurlevel && m.animTicks >= 50 && !m.started )
+	{
+		m.init();
+	}
+
+	if ( !m.started )
+	{
+		return;
+	}
+
+	if ( !minotaurFrame )
+	{
+		minotaurFrame = gameUIFrame[player.playernum]->addFrame("minotaur");
+		minotaurFrame->setInheritParentFrameOpacity(false);
+		minotaurFrame->setHollow(true);
+
+		Frame::image_t* img = minotaurFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0,
+			"*images/system/white.png", "mino dimmer");
+		img->disabled = true;
+
+		img = minotaurFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"*images/ui/HUD/HUD_Minotaur_00.png", "mino img bg");
+		img->disabled = true;
+
+		img = minotaurFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"*images/ui/HUD/HUD_Minotaur_00.png", "mino img fg");
+		img->disabled = true;
+	}
+
+	minotaurFrame->setSize(SDL_Rect{ 
+		player.camera_virtualx1(),
+		player.camera_virtualy1(),
+		player.camera_virtualWidth(),
+		player.camera_virtualHeight() });
+
+	auto dimmer = minotaurFrame->findImage("mino dimmer");
+	dimmer->pos = SDL_Rect{ 0, 0, minotaurFrame->getSize().w, minotaurFrame->getSize().h };
+	dimmer->disabled = false;
+	auto minotaurImgBg = minotaurFrame->findImage("mino img bg");
+	minotaurImgBg->disabled = true;
+	auto minotaurImgFg = minotaurFrame->findImage("mino img fg");
+	minotaurImgFg->disabled = true;
+	minotaurFrame->setDisabled(false);
+	int imgSizeX = 60;
+	int imgSizeY = 66;
+	if ( auto imgGet = Image::get(minotaurImgBg->path.c_str()) )
+	{
+		imgSizeX = imgGet->getWidth();
+		imgSizeY = imgGet->getHeight();
+	}
+	const int midX = dimmer->pos.w / 2;
+	const int midY = dimmer->pos.h / 2;
+
+	std::string minimapFrameName = "minimap";
+	minimapFrameName.append(std::to_string(player.playernum));
+	SDL_Rect sharedminimapPos{ 0, 0, 0, 0 };
+	Frame* minimap = nullptr;
+	if ( minimap = player.hud.hudFrame->findFrame(minimapFrameName.c_str()) )
+	{
+		m.minimapPos.x = minotaurFrame->getSize().w - m.minimapPos.w;
+		m.minimapPos.y = minotaurFrame->getSize().h - m.minimapPos.h;
+	}
+	if ( ::minimapFrame )
+	{
+		sharedminimapPos = ::minimapFrame->getSize();
+	}
+
+	{
+		Uint8 r, g, b, a;
+		getColor(dimmer->color, &r, &g, &b, &a);
+		a = m.animFade * 64;
+		dimmer->color = makeColor(r, g, b, a);
+
+		if ( m.state >= 8 || m.initialWarningCompleted )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.01, (m.animFade)) / 5.0;
+			m.animFade -= setpointDiff;
+			m.animFade = std::max(0.0, m.animFade);
+		}
+		else
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.01, (1.0 - m.animFade)) / 5.0;
+			m.animFade += setpointDiff;
+			m.animFade = std::min(1.0, m.animFade);
+		}
+	}
+
+	static ConsoleVariable<float> cvar_minoanimspeed("/minoanimspeed", 1.0);
+	static ConsoleVariable<int> cvar_minoanimvolume("/minoanimvolume", 128);
+	real_t animspeed = 5.0 * (*cvar_minoanimspeed);//5.0 / 4.0;
+	const int movementAmount = 0;
+	real_t scalingAmount = 2.0;
+	real_t midScalingAmount = 1.5;
+
+	if ( m.state == 0 )
+	{
+		if ( m.stateInit == 0 )
+		{
+			m.pos = SDL_Rect{ midX - imgSizeX / 2, midY - imgSizeY / 2, imgSizeX, imgSizeY };
+			m.stateInit = 1;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount,
+				midY - imgSizeY / 2 - movementAmount,
+				imgSizeX, imgSizeY);
+		}
+		minotaurImgFg->color = makeColor(255, 255, 255, 255 * m.animateX);
+		minotaurImgFg->disabled = false;
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 1;
+		}
+		animspeed *= 2;
+	}
+	else if ( m.state == 1 )
+	{
+		if ( m.stateInit == 1 )
+		{
+			m.stateInit = 2;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (scalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (scalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * scalingAmount,
+				imgSizeY * scalingAmount);
+		}
+		minotaurImgFg->color = 0xFFFFFFFF;
+		minotaurImgFg->disabled = false;
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 2;
+		}
+		animspeed /= 2;
+	}
+	else if ( m.state == 2 )
+	{
+		if ( m.stateInit == 2 )
+		{
+			m.stateInit = 3;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * midScalingAmount,
+				imgSizeY * midScalingAmount);
+			m.animBg = 1.0;
+			if ( !splitscreen || (splitscreen && player.playernum == 0) )
+			{
+				playSound(514, *cvar_minoanimvolume);
+			}
+		}
+		minotaurImgFg->disabled = false;
+
+		minotaurImgBg->pos = SDL_Rect{ midX - imgSizeX,
+			midY - imgSizeY, imgSizeX * 2, imgSizeY * 2 };
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 3;
+		}
+	}
+	else if ( m.state == 3 )
+	{
+		if ( m.stateInit == 3 )
+		{
+			m.stateInit = 4;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * midScalingAmount,
+				imgSizeY * midScalingAmount);
+		}
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 4;
+		}
+	}
+	else if ( m.state == 4 )
+	{
+		if ( m.stateInit == 4 )
+		{
+			m.stateInit = 5;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount,
+				midY - imgSizeY / 2 - movementAmount,
+				imgSizeX, imgSizeY);
+		}
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 5;
+		}
+		animspeed /= 2;
+	}
+	else if ( m.state == 5 )
+	{
+		if ( m.stateInit == 5 )
+		{
+			m.stateInit = 6;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (scalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (scalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * scalingAmount,
+				imgSizeY * scalingAmount);
+		}
+		minotaurImgFg->color = 0xFFFFFFFF;
+		minotaurImgFg->disabled = false;
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 6;
+		}
+		animspeed /= 2;
+	}
+	else if ( m.state == 6 )
+	{
+		if ( m.stateInit == 6 )
+		{
+			m.stateInit = 7;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * midScalingAmount,
+				imgSizeY * midScalingAmount);
+			m.animBg = 1.0;
+			if ( !splitscreen || (splitscreen && player.playernum == 0) )
+			{
+				playSound(515, *cvar_minoanimvolume);
+			}
+		}
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 7;
+		}
+	}
+	else if ( m.state == 7 )
+	{
+		if ( m.stateInit == 7 )
+		{
+			m.stateInit = 8;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeX / 2,
+				midY - imgSizeY / 2 - movementAmount - (midScalingAmount - 1.0) * imgSizeY / 2,
+				imgSizeX * midScalingAmount,
+				imgSizeY * midScalingAmount);
+		}
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 8;
+		}
+	}
+	else if ( m.state == 8 )
+	{
+		if ( m.stateInit == 8 )
+		{
+			m.stateInit = 9;
+			m.setAnimatePosition(
+				midX - imgSizeX / 2 - movementAmount,
+				midY - imgSizeY / 2 - movementAmount,
+				imgSizeX, imgSizeY);
+		}
+		minotaurImgFg->color = makeColor(255, 255, 255, 255);
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 9;
+		}
+		animspeed /= 2;
+	}
+	else if ( m.state == 9 )
+	{
+		if ( m.stateInit == 9 )
+		{
+			m.stateInit = 10;
+			if ( ::minimapFrame && !::minimapFrame->isInvisible() && sharedminimapPos.x > 0 )
+			{
+				if ( minotaurSharedDisplay )
+				{
+					/*m.setAnimatePosition(
+						sharedminimapPos.x + sharedminimapPos.w / 2 - imgSizeX / 2 - movementAmount,
+						sharedminimapPos.y - imgSizeY - 16 - movementAmount,
+						imgSizeX, imgSizeY);*/
+				}
+				m.setAnimatePosition(
+					midX - imgSizeX / 2 - movementAmount,
+					midY - imgSizeY / 2 - movementAmount,
+					imgSizeX, imgSizeY);
+			}
+			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+			{
+				m.setAnimatePosition(
+					m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
+					m.minimapPos.y - imgSizeY - 16 - movementAmount,
+					imgSizeX, imgSizeY);
+			}
+			else
+			{
+				m.setAnimatePosition(
+					minotaurFrame->getSize().w - imgSizeX - 16 - movementAmount,
+					minotaurFrame->getSize().h - imgSizeY - 16 - movementAmount,
+					imgSizeX, imgSizeY);
+			}
+		}
+
+		minotaurImgFg->color = makeColor(255, 255, 255, 255);
+		if ( ::minimapFrame && !::minimapFrame->isInvisible() )
+		{
+			/*if ( !minotaurSharedDisplay )*/
+			{
+				// fade out icon for local splitscreen
+				minotaurImgFg->color = makeColor(255, 255, 255, 255 * (1.0 - m.animateX));
+			}
+		}
+
+		minotaurImgFg->disabled = false;
+
+		if ( m.animateX >= 1.0 )
+		{
+			m.animTicks = 0;
+			m.state = 10;
+			m.animFlash = *cvar_minoflashmax * 2;
+			m.animFlashIncrease = false;
+			/*if ( !splitscreen || (splitscreen && player.playernum == 0) )
+			{
+				playSound(517, 64);
+			}*/
+		}
+	}
+	else if ( m.state == 10 )
+	{
+		m.initialWarningCompleted = true;
+	}
+
+	if ( m.initialWarningCompleted )
+	{
+		if ( !m.minotaurDied && ticks % 5 == 0 && (!splitscreen || splitscreen && player.playernum == 0) )
+		{
+			if ( !m.minotaurSpawned )
+			{
+				for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+				{
+					Entity* monster = (Entity*)mapNode->element;
+					if ( monster && monster->getMonsterTypeFromSprite() == MINOTAUR )
+					{
+						m.minotaurSpawned = true;
+						m.minotaurUid = monster->getUID();
+					}
+				}
+			}
+			else if ( !uidToEntity(m.minotaurUid) )
+			{
+				m.minotaurDied = true;
+			}
+		}
+
+		if ( splitscreen && player.playernum != 0 )
+		{
+			m.minotaurDied = minotaurWarning[0].minotaurDied;
+			m.minotaurSpawned = minotaurWarning[0].minotaurSpawned;
+		}
+
+		bool flash = false;
+		if ( m.minotaurSpawned && !m.minotaurDied )
+		{
+			m.animFlash = 1.0;
+			flash = !((ticks % 50) - (ticks % 25));
+		}
+		else if ( m.animFlashIncrease )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * (*cvar_minoflashrate) / 5.0;
+			m.animFlash += setpointDiff;
+			if ( m.animFlash >= *cvar_minoflashmax )
+			{
+				m.animFlashIncrease = false;
+			}
+			m.animFlash = std::min(*cvar_minoflashmax, (float)m.animFlash);
+		}
+		else	
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiff = fpsScale * (*cvar_minoflashrate) / 5.0;
+			m.animFlash -= setpointDiff;
+			if ( m.animFlash <= *cvar_minoflashmin )
+			{
+				m.animFlashIncrease = true;
+			}
+			m.animFlash = std::max(*cvar_minoflashmin, (float)m.animFlash);
+		}
+
+		if ( m.minotaurDied )
+		{
+			// don't show icon.
+		}
+		else if ( ::minimapFrame && !::minimapFrame->isInvisible() && sharedminimapPos.x > 0 )
+		{
+			if ( minotaurSharedDisplay )
+			{
+				minotaurSharedDisplay->setDisabled(flash);
+				minotaurSharedDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
+				minotaurSharedDisplay->setSize(SDL_Rect{ sharedminimapPos.x + sharedminimapPos.w / 2 - imgSizeX / 2 - movementAmount,
+					sharedminimapPos.y - imgSizeY - 16 - movementAmount,
+					imgSizeX, imgSizeY });
+				/*if ( (minotaurSharedDisplay->getSize().x + minotaurSharedDisplay->getSize().w) > 
+					(players[0]->camera_virtualx1() + players[0]->camera_virtualWidth()) )*/
+				{
+					// keep on player 1's camera for now.
+					SDL_Rect pos = minotaurSharedDisplay->getSize();
+					//int diff = (players[0]->camera_virtualx1() + players[0]->camera_virtualWidth()) -
+					//	(minotaurSharedDisplay->getSize().x + minotaurSharedDisplay->getSize().w);
+					//pos.x -= abs(diff) + 4;
+					pos.x = players[0]->camera_virtualx1() + players[0]->camera_virtualWidth() - pos.w - 4;
+					pos.y = players[0]->camera_virtualy1() + players[0]->camera_virtualHeight() - pos.h - 4;
+					minotaurSharedDisplay->setSize(pos);
+				}
+			}
+		}
+		else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+		{
+			minotaurDisplay->setDisabled(flash);
+			minotaurDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
+			minotaurDisplay->setSize(SDL_Rect{ m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
+				m.minimapPos.y - imgSizeY - 16 - movementAmount,
+				imgSizeX, imgSizeY });
+		}
+		else
+		{
+			minotaurDisplay->setDisabled(flash);
+			minotaurDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
+			minotaurDisplay->setSize(SDL_Rect{ minotaurFrame->getSize().w - imgSizeX - 16 - movementAmount,
+				minotaurFrame->getSize().h - imgSizeY - 16 - movementAmount,
+				imgSizeX, imgSizeY });
+		}
+	}
+
+	if ( m.animBg > 0.0 )
+	{
+		minotaurImgBg->color = makeColor(255, 255, 255, 255 * (std::min(1.0, m.animBg)));
+		minotaurImgBg->disabled = false;
+	}
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - m.animateX)) / (animspeed);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - m.animateY)) / (animspeed);
+	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - m.animateW)) / (animspeed);
+	real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - m.animateH)) / (animspeed);
+	m.animateX += setpointDiffX;
+	m.animateY += setpointDiffY;
+	m.animateX = std::min(1.0, m.animateX);
+	m.animateY = std::min(1.0, m.animateY);
+	m.animateW += setpointDiffW;
+	m.animateH += setpointDiffH;
+	m.animateW = std::min(1.0, m.animateW);
+	m.animateH = std::min(1.0, m.animateH);
+
+	int destX = m.animateSetpointX - m.animateStartX;
+	int destY = m.animateSetpointY - m.animateStartY;
+	int destW = m.animateSetpointW - m.animateStartW;
+	int destH = m.animateSetpointH - m.animateStartH;
+
+	m.pos.x = m.animateStartX + destX * m.animateX;
+	m.pos.y = m.animateStartY + destY * m.animateY;
+	m.pos.w = m.animateStartW + destW * m.animateW;
+	m.pos.h = m.animateStartH + destH * m.animateH;
+	minotaurImgFg->pos = m.pos;
+
+	m.animBg -= fpsScale * 0.2 / animspeed;
+	m.animBg = std::max(0.0, m.animBg);
 }
