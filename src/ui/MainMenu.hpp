@@ -5,11 +5,7 @@
 #include "../main.hpp"
 #include "../json.hpp"
 #include "../ui/Frame.hpp"
-
-#ifndef EDITOR
 #include "../interface/consolecommand.hpp"
-extern ConsoleVariable<bool> cvar_fastRestart;
-#endif
 
 namespace MainMenu {
     extern int pause_menu_owner; // which player is driving the pause menu
@@ -19,7 +15,10 @@ namespace MainMenu {
 	// Here be new menu options:
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
-	extern bool vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
+	extern ConsoleVariable<bool> vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout
+	extern ConsoleVariable<bool> staggered_splitscreen; // if true, viewport sizes are reduced to preserve aspect ratio
+	extern ConsoleVariable<bool> clipped_splitscreen; // if true, viewports rest in a corner rather than centered
+    extern ConsoleVariable<bool> cvar_fastRestart;
 	
 	static constexpr const char* emptyBinding = "[unbound]"; // string appended to default empty bindings
 	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI
