@@ -84,7 +84,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 	const int ymax = map.height - ymin;
 	for ( int x = xmin; x < xmax; ++x ) {
 		for ( int y = ymin; y < ymax; ++y ) {
-		    Uint32 color;
+		    Uint32 color = 0;
 		    Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
 		    Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
 			if (x < 0 || y < 0 || x >= map.width || y >= map.height)
@@ -403,7 +403,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 		if ( drawMonsterAlly >= 0 || foundplayer >= 0 || entity->sprite == 239)
 		{
-			Uint32 color;
+			Uint32 color = 0;
 			if ( foundplayer >= 0 ) {
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
