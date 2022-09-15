@@ -2362,15 +2362,15 @@ void drawStatusNew(const int player)
 	//}
 
 	// minotaur icon
-	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
-	{
-		SDL_Rect pos;
-		pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 64 + 43 + 64; // was pos.x = 128;
-		pos.y = y2 - 160 + 64 + 2 - 82 + 4;
-		pos.w = 64;
-		pos.h = 64;
-		drawImageScaled(minotaur_bmp, nullptr, &pos);
-	}
+	//if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
+	//{
+	//	SDL_Rect pos;
+	//	pos.x = /*xoffset*/ +playerStatusBarWidth + 10 - 64 + 43 + 64; // was pos.x = 128;
+	//	pos.y = y2 - 160 + 64 + 2 - 82 + 4;
+	//	pos.w = 64;
+	//	pos.h = 64;
+	//	drawImageScaled(minotaur_bmp, nullptr, &pos);
+	//}
 
 
 	if ( players[player]->hotbar.useHotbarFaceMenu )
