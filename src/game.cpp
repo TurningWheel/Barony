@@ -4301,7 +4301,7 @@ void handleEvents(void)
 						MainMenu::setupSplitscreen();
 					}
 #else
-					if (fullscreen || ticks == 0)
+					if (fullscreen)
 					{
 						break;
 					}
@@ -4313,54 +4313,6 @@ void handleEvents(void)
 #endif
 				}
 				break;
-				/*case SDL_CONTROLLERAXISMOTION:
-					printlog("Controller axis motion detected.\n");
-					//if (event.caxis.which == 0) //TODO: Multi-controller support.
-					//{
-						printlog("Controller 0!\n");
-						int x = 0, y = 0;
-						if (event.caxis.axis == 0) //0 = x axis.
-						{
-							printlog("X-axis! Value: %d\n", event.caxis.value);
-							if (event.caxis.value < -gamepad_deadzone)
-							{
-								printlog("Left!\n");
-								x = -1; //Gamepad moved left.
-							}
-							else if (event.caxis.value > gamepad_deadzone)
-							{
-								printlog("Right!\n");
-								x = 1; //Gamepad moved right.
-							}
-						}
-						else if (event.caxis.axis  == 1)
-						{
-							if (event.caxis.value < -gamepad_deadzone)
-							{
-								printlog("Up!\n");
-								y = -1; //Gamepad moved up.
-							}
-							else if (event.caxis.value > gamepad_deadzone)
-							{
-								printlog("Down!\n");
-								y = 1; //Gamepad moved down.
-							}
-						}
-
-						if (x || y)
-						{
-							printlog("Generating mouse motion!\n");
-							SDL_Event e;
-
-							e.type = SDL_MOUSEMOTION;
-							e.motion.x += x;
-							e.motion.y += y;
-							e.motion.xrel = x;
-							e.motion.yrel = y;
-							SDL_PushEvent(&e);
-						}
-					//}
-					break;*/
 		}
 	}
 	if ( !mousestatus[SDL_BUTTON_LEFT] )

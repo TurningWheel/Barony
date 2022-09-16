@@ -16503,6 +16503,12 @@ bind_failed:
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
+
+				// set unique game key
+				local_rng.seedTime();
+				local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
 				if (multiplayer == SERVER) {
                     for (int c = 1; c < MAXPLAYERS; c++) {
 	                    if (client_disconnected[c]) {
@@ -17856,6 +17862,12 @@ bind_failed:
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
+
+				// set unique game key
+				local_rng.seedTime();
+				local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
 				if (multiplayer == SERVER) {
                     for (int c = 1; c < MAXPLAYERS; c++) {
 	                    if (client_disconnected[c]) {
