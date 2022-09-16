@@ -43,6 +43,7 @@ namespace MainMenu {
 	Frame* main_menu_frame = nullptr;
 
 	// ALL NEW menu options:
+	int current_audio_device = 0;
 	float master_volume = 100.f;
 	bool arachnophobia_filter = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
@@ -258,6 +259,7 @@ namespace MainMenu {
 		bool clipped_split_enabled;
 		float fov;
 		float fps;
+		int audio_device;
 		float master_volume;
 		float gameplay_volume;
 		float ambient_volume;
@@ -786,6 +788,7 @@ namespace MainMenu {
 				auto customize = "*images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png";
 				auto dropdown = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
+				auto dropdown_wide = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png";
 
 				// Maybe we need a more sensible way to identify these button types.
 				auto boolean_button_text = "Off          On";
@@ -794,6 +797,8 @@ namespace MainMenu {
 				} else if (strcmp(button->getBackground(), binding) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), dropdown) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
+				} else if (strcmp(button->getBackground(), dropdown_wide) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getText(), boolean_button_text) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
@@ -1760,6 +1765,7 @@ namespace MainMenu {
 		*clipped_splitscreen = clipped_split_enabled;
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
+		current_audio_device = audio_device;
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 200.f), .5f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 200.f), .5f);
@@ -1833,6 +1839,7 @@ namespace MainMenu {
 		settings.clipped_split_enabled = *clipped_splitscreen;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
+		settings.audio_device = current_audio_device;
 		settings.master_volume = MainMenu::master_volume * 200.f;
 		settings.gameplay_volume = (float)sfxvolume * 200.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 200.f;
@@ -1889,6 +1896,7 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.fov = 60;
 		settings.fps = 60;
+		settings.audio_device = 0;
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
@@ -1920,7 +1928,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 3;
+	    int version = 4;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -1972,6 +1980,13 @@ namespace MainMenu {
 		}
 		file->property("fov", fov);
 		file->property("fps", fps);
+		if (file->isReading()) {
+		    if (version >= 4) {
+		    	file->property("audio_device", audio_device);
+			}
+		} else {
+			file->property("audio_device", audio_device);
+		}
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
@@ -2650,6 +2665,13 @@ namespace MainMenu {
 
 		// update volume for sound groups
 		if (initialized) {
+#ifdef USE_FMOD
+			int num_drivers = 0;
+			fmod_system->getNumDrivers(&num_drivers);
+			current_audio_device = current_audio_device >= num_drivers ?
+				0 : current_audio_device;
+			fmod_system->setDriver(current_audio_device);
+#endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
 
@@ -3007,27 +3029,38 @@ namespace MainMenu {
 		);
 	}
 
-	static void settingsOpenDropdown(Button& button, const char* name, bool small_dropdown, void(*entry_func)(Frame::entry_t&)) {
+	enum DropdownType {
+		Normal,
+		Short,
+		Wide,
+	};
+
+	static void settingsOpenDropdown(Button& button, const char* name, DropdownType type, void(*entry_func)(Frame::entry_t&)) {
 		std::string dropdown_name = "setting_" + std::string(name) + "_dropdown";
 		auto frame = static_cast<Frame*>(button.getParent());
 		auto dropdown = frame->addFrame(dropdown_name.c_str()); assert(dropdown);
 		dropdown->setSize(SDL_Rect{
 			button.getSize().x,
 			button.getSize().y,
-			174,
-			small_dropdown ? 181 : 362
+			type == DropdownType::Wide ? 400 : 174,
+			type == DropdownType::Short ? 181 : 362
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
 		dropdown->setColor(0);
 		dropdown->setBorder(0);
 		dropdown->setDropDown(true);
 
+		const char* background_img;
+		switch (type) {
+		default:
+		case DropdownType::Normal: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png"; break;
+		case DropdownType::Short: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png"; break;
+		case DropdownType::Wide: background_img = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG01.png"; break;
+		}
 		auto background = dropdown->addImage(
 			dropdown->getActualSize(),
 			0xffffffff,
-			small_dropdown ?
-				"*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png" :
-				"*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png",
+			background_img,
 			"background"
 		);
 
@@ -3086,7 +3119,7 @@ namespace MainMenu {
 		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
-			SDL_Rect{8, 0, 158, 30},
+			SDL_Rect{8, 0, type == DropdownType::Wide ? 384 : 158, 30},
 			0xffffffff,
 			"*images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
 			"selection"
@@ -3127,21 +3160,22 @@ namespace MainMenu {
 	}
 
 	static void settingsResolutionSmall(Button& button) {
-		settingsOpenDropdown(button, "resolution", true, settingsResolutionEntry);
+		settingsOpenDropdown(button, "resolution", DropdownType::Short, settingsResolutionEntry);
 	}
 
 	static void settingsResolutionBig(Button& button) {
-		settingsOpenDropdown(button, "resolution", false, settingsResolutionEntry);
+		settingsOpenDropdown(button, "resolution", DropdownType::Normal, settingsResolutionEntry);
 	}
 
 	static void settingsDisplayDevice(Button& button) {
-		settingsOpenDropdown(button, "device", true, [](Frame::entry_t& entry){
+		settingsOpenDropdown(button, "device", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			int new_device = 0;
 		    if (sscanf(entry.name.c_str(), "Display %d", &new_device) == 1) {
 		        --new_device;
 		    }
 			allSettings.video.display_id = new_device;
+
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
@@ -3175,8 +3209,24 @@ namespace MainMenu {
 			});
 	}
 
+	static void settingsAudioDevice(Button& button) {
+		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
+			soundActivate();
+			const int new_device = (int)strtol(entry.name.c_str(), nullptr, 10);
+			allSettings.audio_device = new_device;
+
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+			});
+	}
+
 	static void settingsWindowMode(Button& button) {
-		settingsOpenDropdown(button, "window_mode", true, [](Frame::entry_t& entry){
+		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			do {
 				if (entry.name == "Windowed") {
@@ -3508,6 +3558,7 @@ namespace MainMenu {
 		const char* name,
 		const char* text,
 		const char* tip,
+		bool wide,
 		const std::vector<const char*>& items,
 		const char* selected,
 		void (*callback)(Button&),
@@ -3519,14 +3570,19 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y,
-			174,
+			wide ? 400 : 174,
 			52});
 		button->setFont(bigfont_outline);
 		button->setText(selected);
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
-		button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		if (wide) {
+			button->setBackground("*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00_Highlighted.png");
+		} else {
+			button->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		}
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -4272,11 +4328,11 @@ namespace MainMenu {
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
 		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
-			"Select the player whose controls you wish to customize.",
+			"Select the player whose controls you wish to customize.", false,
 			{"Player 1", "Player 2", "Player 3", "Player 4"}, player_str.c_str(),
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "player_dropdown", true,
+				settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
@@ -4296,10 +4352,10 @@ namespace MainMenu {
 
 #ifndef NINTENDO
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", devices, devices[device_index],
+			"Select a controller for the given player.", false, devices, devices[device_index],
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", true,
+				settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
@@ -4559,13 +4615,13 @@ bind_failed:
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
-            displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
+            false, displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
 		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
-			resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
+			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			{"Windowed", "Fullscreen", "Borderless"}, selected_mode,
+			false, {"Windowed", "Fullscreen", "Borderless"}, selected_mode,
 			settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
@@ -4669,27 +4725,74 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+#if defined(NINTENDO) || !defined(USE_FMOD)
 			settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
+#else
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#endif
 			return;
 		}
 		int y = 0;
 
+#if !defined(NINTENDO) && defined(USE_FMOD)
+		struct AudioDriver {
+			char name[128];
+			FMOD_GUID guid;
+			int system_rate;
+			FMOD_SPEAKERMODE speaker_mode;
+			int speaker_mode_channels;
+		};
+		std::vector<AudioDriver> drivers;
+
+		int num_drivers = 0;
+		(void)fmod_system->getNumDrivers(&num_drivers);
+		drivers.reserve(num_drivers);
+		for (int c = 0; c < num_drivers; ++c) {
+			AudioDriver d;
+			char buf[128];
+			(void)fmod_system->getDriverInfo(c, buf, sizeof(buf), &d.guid,
+				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
+			snprintf(d.name, sizeof(d.name), "%d: %s", c, buf);
+			drivers.push_back(d);
+		}
+		std::vector<const char*> drivers_formatted_ptrs;
+		drivers_formatted_ptrs.reserve(num_drivers);
+		for (auto& d : drivers) {
+			drivers_formatted_ptrs.push_back(d.name);
+		}
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "output", "Output");
+		y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "The output device for all game audio",
+            true, drivers_formatted_ptrs, drivers_formatted_ptrs[allSettings.audio_device],
+            settingsAudioDevice);
+#endif
+
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();});
+			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();});
+			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();});
+			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();});
+			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();});
+			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -4706,7 +4809,11 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Slider, "master_volume"},
+			{
+#ifdef USE_FMOD
+			{Setting::Type::Dropdown, "device"},
+#endif
+			{Setting::Type::Slider, "master_volume"},
 			{Setting::Type::Slider, "gameplay_volume"},
 			{Setting::Type::Slider, "ambient_volume"},
 			{Setting::Type::Slider, "environment_volume"},
@@ -4725,8 +4832,13 @@ bind_failed:
 			{Setting::Type::Boolean, "player_monster_sounds"}});
 #endif
 
+#if !defined(NINTENDO) && defined(USE_FMOD)
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#else
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
+#endif
 	}
 
 	static void settingsControls(Button& button) {
@@ -16263,6 +16375,7 @@ bind_failed:
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
+		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
