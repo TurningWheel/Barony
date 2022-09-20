@@ -2341,31 +2341,29 @@ void item_ScrollIdentify(Item* item, int player)
 
 	conductIlliterate = false;
 
-	if ( item->identified )
-	{
-		// Uncurse an item
-		// quickly check if we have any items available so we don't waste our scroll
-		bool foundIdentifiable = false;
-		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
-		{
-			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI[player].isItemIdentifiable(inventoryItem) )
-			{
-				foundIdentifiable = true;
-				break;
-			}
-		}
-		if ( !foundIdentifiable )
-		{
-			messagePlayer(player, MESSAGE_HINT, language[3996]);
-			return;
-		}
-	}
+	//if ( item->identified )
+	//{
+	//	// Uncurse an item
+	//	// quickly check if we have any items available so we don't waste our scroll
+	//	bool foundIdentifiable = false;
+	//	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	//	{
+	//		Item* inventoryItem = (Item*)node->element;
+	//		if ( GenericGUI[player].isItemIdentifiable(inventoryItem) )
+	//		{
+	//			foundIdentifiable = true;
+	//			break;
+	//		}
+	//	}
+	//	if ( !foundIdentifiable )
+	//	{
+	//		messagePlayer(player, MESSAGE_HINT, language[3996]);
+	//		return;
+	//	}
+	//}
 
 	item->identified = true;
-	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
-	GenericGUI[player].openGUI(GUI_TYPE_IDENTIFY, item->beatitude, item->type);
-	consumeItem(item, player);
+	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 }
 
 void item_ScrollLight(Item* item, int player)
@@ -2753,31 +2751,31 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-	if ( item->identified && item->beatitude >= 0 )
-	{
-		// Uncurse an item
-		// quickly check if we have any items available so we don't waste our scroll
-		bool foundUncurseable = false;
-		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
-		{
-			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI[player].isItemRemoveCursable(inventoryItem) )
-			{
-				foundUncurseable = true;
-				break;
-			}
-		}
-		if ( !foundUncurseable )
-		{
-			messagePlayer(player, MESSAGE_HINT, language[3995]);
-			return;
-		}
-	}
+	//if ( item->identified && item->beatitude >= 0 )
+	//{
+	//	// Uncurse an item
+	//	// quickly check if we have any items available so we don't waste our scroll
+	//	bool foundUncurseable = false;
+	//	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	//	{
+	//		Item* inventoryItem = (Item*)node->element;
+	//		if ( GenericGUI[player].isItemRemoveCursable(inventoryItem) )
+	//		{
+	//			foundUncurseable = true;
+	//			break;
+	//		}
+	//	}
+	//	if ( !foundUncurseable )
+	//	{
+	//		messagePlayer(player, MESSAGE_HINT, language[3995]);
+	//		return;
+	//	}
+	//}
 
 	item->identified = true;
-	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if ( item->beatitude < 0 )
 	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 		// choose a random piece of worn equipment to curse!
 		int tryIndex = local_rng.rand() % 8;
 		int startIndex = tryIndex;
@@ -2895,12 +2893,12 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT, language[862]);
 		}
+		consumeItem(item, player);
 	}
 	else
 	{
-		GenericGUI[player].openGUI(GUI_TYPE_REMOVECURSE, item->beatitude, item->type);
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 	}
-	consumeItem(item, player);
 }
 
 bool item_ScrollFire(Item* item, int player)
@@ -3140,37 +3138,37 @@ void item_ScrollRepair(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-	if ( item->identified && item->beatitude >= 0 )
-	{
-		// quickly check if we have any items available so we don't waste our scroll
-		bool foundRepairableItem = false;
-		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
-		{
-			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI[player].isItemRepairable(inventoryItem, item->type) )
-			{
-				foundRepairableItem = true;
-				break;
-			}
-		}
-		if ( !foundRepairableItem )
-		{
-			if ( item->type == SCROLL_REPAIR )
-			{
-				messagePlayer(player, MESSAGE_HINT, language[3288]);
-			}
-			else if ( item->type == SCROLL_CHARGING )
-			{
-				messagePlayer(player, MESSAGE_HINT, language[3731]);
-			}
-			return;
-		}
-	}
+	//if ( item->identified && item->beatitude >= 0 )
+	//{
+	//	// quickly check if we have any items available so we don't waste our scroll
+	//	bool foundRepairableItem = false;
+	//	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	//	{
+	//		Item* inventoryItem = (Item*)node->element;
+	//		if ( GenericGUI[player].isItemRepairable(inventoryItem, item->type) )
+	//		{
+	//			foundRepairableItem = true;
+	//			break;
+	//		}
+	//	}
+	//	if ( !foundRepairableItem )
+	//	{
+	//		if ( item->type == SCROLL_REPAIR )
+	//		{
+	//			messagePlayer(player, MESSAGE_HINT, language[3288]);
+	//		}
+	//		else if ( item->type == SCROLL_CHARGING )
+	//		{
+	//			messagePlayer(player, MESSAGE_HINT, language[3731]);
+	//		}
+	//		return;
+	//	}
+	//}
 
 	item->identified = true;
-	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if ( item->beatitude < 0 )
 	{
+		messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 		int tryIndex = local_rng.rand() % 7;
 		int startIndex = tryIndex;
 		int armornum = 0;
@@ -3300,13 +3298,13 @@ void item_ScrollRepair(Item* item, int player)
 				}
 			}
 		}
+		consumeItem(item, player);
 	}
 	else
 	{
 		// Repair an item
-		GenericGUI[player].openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
+		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 	}
-	consumeItem(item, player);
 }
 
 void item_ScrollDestroyArmor(Item* item, int player)

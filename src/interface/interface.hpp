@@ -300,12 +300,10 @@ void drawSustainedSpells(const int player); //Draws an icon for every sustained 
 enum GUICurrentType
 {
 	GUI_TYPE_NONE,
-	GUI_TYPE_REPAIR,
 	GUI_TYPE_ALCHEMY,
 	GUI_TYPE_TINKERING,
 	GUI_TYPE_SCRIBING,
-	GUI_TYPE_REMOVECURSE,
-	GUI_TYPE_IDENTIFY
+	GUI_TYPE_ITEMFX
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -320,7 +318,6 @@ class GenericGUIMenu
 	int windowX2 = 0;
 	int windowY1 = 0;
 	int windowY2 = 0;
-	int usingScrollBeatitude = 0;
 	int scroll = 0;
 	GUICurrentType guiType;
 public:
@@ -330,19 +327,19 @@ public:
 	bool guiActive;
 	int selectedSlot;
 
-	// Repair
-	int repairItemType;
-	
+
 	// Alchemy
 	Item* basePotion;
 	Item* secondaryPotion;
 	Item* alembicItem;
 	bool experimentingAlchemy;
 	
-	// Remove Curse
-	bool removeCurseUsingSpell = false;
-	// Identify
-	bool identifyUsingSpell = false;
+	// Misc item/spell effects
+	Item* itemEffectScrollItem;
+	bool itemEffectUsingSpell;
+	bool itemEffectUsingSpellbook;
+	int itemEffectItemType;
+	int itemEffectItemBeatitude;
 
 	// Tinkering
 	enum TinkeringFilter
@@ -388,6 +385,11 @@ public:
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
 		experimentingAlchemy(false),
+		itemEffectScrollItem(nullptr),
+		itemEffectUsingSpell(false),
+		itemEffectUsingSpellbook(false),
+		itemEffectItemType(0),
+		itemEffectItemBeatitude(0),
 		tinkeringKitItem(nullptr),
 		tinkeringTotalLastCraftableNode(nullptr),
 		tinkeringFilter(TINKER_FILTER_CRAFTABLE),
@@ -399,10 +401,10 @@ public:
 		scribingBlankScrollTarget(nullptr),
 		scribingLastUsageAmount(0),
 		scribingLastUsageDisplayTimer(0),
-		repairItemType(0),
 		tinkerGUI(*this),
 		alchemyGUI(*this),
-		featherGUI(*this)
+		featherGUI(*this),
+		itemfxGUI(*this)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -419,7 +421,7 @@ public:
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
 	void closeGUI();
-	void openGUI(int type, int scrollBeatitude, int scrollType);
+	void openGUI(int type, Item* effectItem, int effectBeatitude, int effectItemType, int usingSpellID);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
 	void openGUI(int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
@@ -511,7 +513,7 @@ public:
 	{
 		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem
 			|| &item == scribingBlankScrollTarget
-			|| &item == basePotion || &item == secondaryPotion )
+			|| &item == basePotion || &item == secondaryPotion || &item == itemEffectScrollItem )
 		{
 			return true;
 		}
@@ -542,6 +544,10 @@ public:
 		if ( &item == secondaryPotion )
 		{
 			secondaryPotion = nullptr;
+		}
+		if ( &item == itemEffectScrollItem )
+		{
+			itemEffectScrollItem = nullptr;
 		}
 	}
 	bool isNodeFromPlayerInventory(node_t* node);
@@ -636,6 +642,76 @@ public:
 		static int heightOffsetWhenNotCompact;
 	};
 	TinkerGUI_t tinkerGUI;
+
+	struct ItemEffectGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		ItemEffectGUI_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{}
+
+		Frame* itemEffectFrame = nullptr;
+		real_t animx = 0.0;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		enum ItemEffectModes : int
+		{
+			ITEMFX_MODE_NONE,
+			ITEMFX_MODE_SCROLL_REPAIR,
+			ITEMFX_MODE_SCROLL_CHARGING,
+			ITEMFX_MODE_SCROLL_IDENTIFY,
+			ITEMFX_MODE_SCROLL_REMOVECURSE,
+			ITEMFX_MODE_SPELL_IDENTIFY,
+			ITEMFX_MODE_SPELL_REMOVECURSE
+		};
+		void openItemEffectMenu(ItemEffectModes mode);
+		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
+		void closeItemEffectMenu();
+		void updateItemEffectMenu();
+		void createItemEffectMenu();
+		bool isItemSelectedToEffect(Item* item);
+		bool isItemEffectMenuActive() const;
+		bool ItemEffectHasBeenCreated() const;
+		std::string itemDesc = "";
+		int itemType = -1;
+		int itemRequirement = -1;
+		enum ItemEffectActions_t : int
+		{
+			ITEMFX_ACTION_NONE,
+			ITEMFX_ACTION_OK,
+			ITEMFX_ACTION_INVALID_ITEM,
+			ITEMFX_ACTION_ITEM_FULLY_REPAIRED,
+			ITEMFX_ACTION_ITEM_FULLY_CHARGED,
+			ITEMFX_ACTION_ITEM_IDENTIFIED,
+			ITEMFX_ACTION_MUST_BE_UNEQUIPPED,
+			ITEMFX_ACTION_NOT_IDENTIFIED_YET,
+			ITEMFX_ACTION_NOT_CURSED
+		};
+		ItemEffectActions_t itemActionType = ITEMFX_ACTION_NONE;
+		bool itemRequiresTitleReflow = true;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animFilter = 0.0;
+		real_t animPrompt = 0.0;
+		Uint32 animPromptTicks = 0;
+		bool animPromptMoveLeft = false;
+		real_t animInvalidAction = 0.0;
+		Uint32 animInvalidActionTicks = 0;
+		bool panelJustifyInverted = false;
+		enum InvalidActionFeedback_t : int
+		{
+			INVALID_ACTION_NONE,
+			INVALID_ACTION_SHAKE_PROMPT
+		};
+		InvalidActionFeedback_t invalidActionType = INVALID_ACTION_NONE;
+
+		ItemEffectActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
+		void clearItemDisplayed();
+
+		static int heightOffsetWhenNotCompact;
+	};
+	ItemEffectGUI_t itemfxGUI;
 
 	struct FeatherGUI_t
 	{
@@ -1213,7 +1289,6 @@ public:
 	}
 
 	void createFollowerMenuGUI();
-	void updateFollowerMenuGUI();
 	bool followerGUIHasBeenCreated() const;
 	static void loadFollowerJSON();
 	enum PanelDirections : int

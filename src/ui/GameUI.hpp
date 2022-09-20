@@ -249,4 +249,40 @@ void capitalizeString(std::string& str);
 void uppercaseString(std::string& str);
 void camelCaseString(std::string& str);
 
-void drawUnidentifiedItemEffectCallback(const int player, SDL_Rect rect);
+struct MinotaurWarning_t
+{
+	int state = 0;
+	int stateInit = 0;
+	real_t animFade = 0.0;
+	real_t animBg = 0.0;
+	real_t animFlash = 0.0;
+	bool animFlashIncrease = true;
+	real_t animateX = 0.0;
+	real_t animateY = 0.0;
+	real_t animateW = 0.0;
+	real_t animateH = 0.0;
+	int animateSetpointX = 0;
+	int animateSetpointY = 0;
+	int animateSetpointW = 0;
+	int animateSetpointH = 0;
+	int animateStartX = 0;
+	int animateStartY = 0;
+	int animateStartW = 0;
+	int animateStartH = 0;
+
+	Uint32 animTicks = 0;
+	SDL_Rect pos{ 0, 0, 0, 0 };
+	SDL_Rect minimapPos{ 0, 0, 0, 0 };
+	Uint32 processedOnTick = 0;
+	bool started = false;
+	bool initialWarningCompleted = false;
+	Uint32 minotaurUid = 0;
+	bool minotaurSpawned = false;
+	bool minotaurDied = false;
+	int levelProcessed = 0;
+	void setAnimatePosition(const int destx, const int desty, const int destw, const int desth);
+	void setAnimatePosition(int destx, int desty);
+	void init();
+	void deinit();
+};
+extern MinotaurWarning_t minotaurWarning[MAXPLAYERS];

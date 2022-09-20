@@ -378,12 +378,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool overdrewIntoHP = false;
 	bool playerCastingFromKnownSpellbook = false;
 	int spellBookBonusPercent = 0;
+	int spellBookBeatitude = 0;
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			spellBookBeatitude = stat->shield->beatitude;
 			spellBookBonusPercent += getSpellbookBonusPercent(caster, stat, stat->shield);
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
 			{
@@ -964,15 +966,32 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "IDEN");
+						if ( usingSpellbook )
+						{
+							net_packet->data[4] = 1;
+							net_packet->data[5] = static_cast<Uint8>(spellBookBeatitude);
+						}
+						else
+						{
+							net_packet->data[4] = 0;
+							net_packet->data[5] = 0;
+						}
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 4;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
 						//Identify an item.
-						GenericGUI[i].openGUI(GUI_TYPE_IDENTIFY, nullptr);
+						if ( usingSpellbook )
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, spellBookBeatitude, getSpellbookFromSpellID(SPELL_IDENTIFY), SPELL_IDENTIFY);
+						}
+						else
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_IDENTIFY);
+						}
 					}
 				}
 			}
@@ -988,17 +1007,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 					if ( i != 0 && !players[i]->isLocalPlayer() )
 					{
-						//Tell the client to uncurse an item.
+						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "CRCU");
+						if ( usingSpellbook )
+						{
+							net_packet->data[4] = 1;
+							net_packet->data[5] = static_cast<Uint8>(spellBookBeatitude);
+						}
+						else
+						{
+							net_packet->data[4] = 0;
+							net_packet->data[5] = 0;
+						}
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 4;
+						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
-						//Uncurse an item
-						GenericGUI[i].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
+						//Identify an item.
+						if ( usingSpellbook )
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, spellBookBeatitude, getSpellbookFromSpellID(SPELL_REMOVECURSE), SPELL_REMOVECURSE);
+						}
+						else
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_REMOVECURSE);
+						}
 					}
 				}
 			}

@@ -724,7 +724,8 @@ public:
 			MODULE_STATUS_EFFECTS,
 			MODULE_LOG,
 			MODULE_MAP,
-			MODULE_SIGN_VIEW
+			MODULE_SIGN_VIEW,
+			MODULE_ITEMEFFECTGUI
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -1366,6 +1367,8 @@ public:
 		Frame* gameTimerFrame = nullptr;
 		Frame* allyStatusFrame = nullptr;
 		Frame* minotaurFrame = nullptr;
+		Frame* minotaurSharedDisplay = nullptr;
+		Frame* minotaurDisplay = nullptr;
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
@@ -1575,6 +1578,7 @@ public:
 		void updateActionPrompts();
 		void updateWorldTooltipPrompts();
 		void updateUINavigation();
+		void updateMinotaurWarning();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;

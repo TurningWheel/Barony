@@ -313,6 +313,45 @@ struct SaveGameInfo {
     std::string timestamp;
     int multiplayer_type = SINGLE;
 	bool secretlevel = false;
+
+	SaveGameInfo()
+	{
+		player_name = "";
+		player_class = "";
+		dungeon_lvl = 0;
+		player_lvl = 0;
+		player_num = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players_connected[i] = false;
+		}
+		timestamp = "";
+		multiplayer_type = SINGLE;
+		secretlevel = false;
+	};
+	SaveGameInfo(std::string _player_name,
+		std::string _player_class,
+		int _dungeon_lvl,
+		int _player_lvl,
+		int _player_num,
+		bool _players_connected[MAXPLAYERS],
+		std::string _timestamp,
+		int _multiplayer_type,
+		bool _secretlevel)
+	{
+		player_name = _player_name;
+		player_class = _player_class;
+		dungeon_lvl = _dungeon_lvl;
+		player_lvl = _player_lvl;
+		player_num = _player_num;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			players_connected[i] = _players_connected[i];
+		}
+		timestamp = _timestamp;
+		multiplayer_type = _multiplayer_type;
+		secretlevel = _secretlevel;
+	};
 };
 
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);

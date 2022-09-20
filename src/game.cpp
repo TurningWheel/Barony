@@ -4989,6 +4989,7 @@ void ingameHud()
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
 		GenericGUI[player].featherGUI.updateFeatherMenu();
+		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
 		players[player]->skillSheet.processSkillSheet();
@@ -4999,6 +5000,7 @@ void ingameHud()
 		players[player]->inventoryUI.updateCursor();
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
+		players[player]->hud.updateMinotaurWarning();
 		if ( !players[player]->isLocalPlayer() )
 		{
 			continue;
@@ -5038,7 +5040,6 @@ void ingameHud()
 			//	//updateShopWindow(player);
 			//}
 		}
-
 
 		static ConsoleVariable<bool> cvar_debugmouse("/debugmouse", false);
 		if ( *cvar_debugmouse )

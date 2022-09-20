@@ -4327,7 +4327,7 @@ Legendary:
 
 3285 The ZAP Brigade has arrived!
  "The minotaur is coming! Let us slay any other foul beasts here as well!"#
-3286 Repair Item#
+3286 #
 3287 This %s
  is unable to be repaired.#
 3288 You have no items able to be repaired!#
@@ -5032,7 +5032,7 @@ any gyrobot findings.#
 3729 Your %s begins to fade.#
 3730 Your %s gets charged up!#
 3731 You have no items able to be charged!#
-3732 Charge Item#
+3732 #
 3733 Your shot glances off the %s!#
 3734 Your shot glances off %s!#
 3735 The %s's demons have already been exorcised!#
@@ -6170,5 +6170,17 @@ Combination!#
 4199 Blueprints#
 4200 Command %s to...#
 4201 (All) #
+4202 Repair#
+4203 Select#
+4204 Uncurse#
+4205 Select an item to uncurse:#
+4206 Charge#
+4207 Select an item to recharge:#
+4208 Identify#
+4209 Select an item to identify:#
+4210 Effect has no use#
+4211 This is already fully charged#
+4212 This is already identified#
+4213 This is already uncursed#
 
 4249 end#

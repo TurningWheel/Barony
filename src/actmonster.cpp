@@ -4233,6 +4233,10 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
+									else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
+									{
+										hit.entity->skill[3] = 0; // chestHealth
+									}
 									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 									{
 										// asplode the rock
@@ -5297,6 +5301,10 @@ timeToGoAgain:
 										}
 										playSoundEntity(hit.entity, 28, 64);
 									}
+								}
+								else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
+								{
+									hit.entity->skill[3] = 0; // chestHealth
 								}
 								else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 								{

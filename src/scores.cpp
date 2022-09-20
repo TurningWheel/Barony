@@ -2827,8 +2827,10 @@ int loadGame(int player, int saveIndex)
 	    enchantedFeatherScrollsShuffled.clear();
 	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
 	    auto shuffle = enchantedFeatherScrollsFixedList;
+		BaronyRNG feather_rng;
+		feather_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 	    while (!shuffle.empty()) {
-	        int index = net_rng.getU8() % shuffle.size();
+	        int index = feather_rng.getU8() % shuffle.size();
 	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
 	        shuffle.erase(shuffle.begin() + index);
 	    }
@@ -3423,22 +3425,22 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
 	}
 
-    SaveGameInfo saveGameInfo = {
-        name,
-        playerClassLangEntry(class_, plnumTemp),
+	bool players_connected_arr[MAXPLAYERS];
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players_connected_arr[i] = (bool)(players_connected & (1 << i));
+	}
+    SaveGameInfo saveGameInfo(
+        std::string(name),
+        std::string(playerClassLangEntry(class_, plnumTemp)),
         dungeonlevel,
         level,
         plnum,
-        {
-            (bool)(players_connected & (1<<0)),
-            (bool)(players_connected & (1<<1)),
-            (bool)(players_connected & (1<<2)),
-            (bool)(players_connected & (1<<3)),
-        },
-        timestamp,
-        mul,
-		secret_lvl,
-    };
+		players_connected_arr,
+        std::string(timestamp),
+        (int)mul,
+		secret_lvl
+    );
 
 	// close file
 	FileIO::close(fp);
