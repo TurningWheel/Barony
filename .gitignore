@@ -61,3 +61,4 @@ steam_appid.txt
 *.vsp
 /VS.2015/Steam Debug
 /VS.2015/enc_temp_folder/*
+.vscode/*

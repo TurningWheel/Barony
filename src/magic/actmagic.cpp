@@ -1467,7 +1467,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									&& parent->behavior == &actParticleDot
 									&& parent->skill[1] > 0 )
 								{
-									if ( hitstats && hitstats->obituary && !strcmp(hitstats->obituary, language[3898]) )
+									if ( hitstats && !strcmp(hitstats->obituary, language[3898]) )
 									{
 										// was caused by a flaming boulder.
 										hit.entity->setObituary(language[3898]);
