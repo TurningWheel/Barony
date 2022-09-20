@@ -141,7 +141,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 			return;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -184,7 +184,7 @@ void GameModeManager_t::Tutorial_t::readFromFile()
 			return;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -256,7 +256,7 @@ void GameModeManager_t::Tutorial_t::writeToDocument()
 		return;
 	}
 	char buf[65536];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
 	FileIO::close(fp);
@@ -392,7 +392,7 @@ bool IRCHandler_t::readFromFile()
 			return false;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -587,7 +587,7 @@ void ItemTooltips_t::readItemsFromFile()
 
 	const int bufSize = 200000;
 	char buf[bufSize];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
 	rapidjson::StringStream is(buf);
@@ -900,7 +900,7 @@ void ItemTooltips_t::readTooltipsFromFile()
 	}
 
 	static char buf[buffer_size];
-	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
 	rapidjson::StringStream is(buf);
@@ -3572,7 +3572,7 @@ void StatueManager_t::readStatueFromFile(int index, std::string filename)
 			return;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -3671,7 +3671,7 @@ bool GlyphRenderer_t::readFromFile()
 			return false;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -4037,7 +4037,7 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 			return false;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -4824,7 +4824,7 @@ void MonsterData_t::loadMonsterDataJSON()
 			return;
 		}
 		char buf[65536];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
