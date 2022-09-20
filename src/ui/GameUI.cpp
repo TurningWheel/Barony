@@ -73,7 +73,7 @@ int hpmpbarCompactIntervalStartValue = 20; // hp / mp of this value is the small
 int hpmpbarCompactBasePercentSize = 44; // smallest width at low hp/mp value
 real_t hpmpbarCompactWidthIncreasePercentOnInterval = 2.0; // % to grow bar per interval
 
-static struct AllyStatusBarSettings_t
+struct AllyStatusBarSettings_t
 {
 	struct HPBar_t
 	{
@@ -117,13 +117,13 @@ static struct AllyStatusBarSettings_t
 		int baseY = 20;
 		int baseYSplitscreen = 20;
 	};
-	static struct FollowerBars_t
+	struct FollowerBars_t
 	{
 		static EntrySettings_t entrySettings;
 		static HPBar_t hpBar;
 		static MPBar_t mpBar;
 	};
-	static struct PlayerBars_t
+	struct PlayerBars_t
 	{
 		static EntrySettings_t entrySettings;
 		static HPBar_t hpBar;
@@ -7367,11 +7367,11 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
-    bool useBigFont = playercount == 1 || (playercount == 2 && !(*MainMenu::vertical_splitscreen));
+    bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
         ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
-        (playercount == 2 && !(*MainMenu::vertical_splitscreen)));
+        (playercount == 2 && !*MainMenu::vertical_splitscreen));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	const int leftAlignedBottomY = 200;
@@ -9969,9 +9969,9 @@ void Player::GUIDropdown_t::process()
 	for ( auto& option : dropDown.options )
 	{
 		char glyphname[32] = "";
-		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
+		snprintf(glyphname, sizeof(glyphname), "glyph %d", (int)index);
 		char optionname[32] = "";
-		snprintf(optionname, sizeof(optionname), "interact option %d", index);
+		snprintf(optionname, sizeof(optionname), "interact option %d", (int)index);
 
 		auto img = dropdownFrame->findImage(glyphname);
 		auto txt = dropdownFrame->findField(optionname);
