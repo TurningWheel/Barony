@@ -306,12 +306,13 @@ bool anySaveFileExists();
 struct SaveGameInfo {
     std::string player_name;
     std::string player_class;
-    int dungeon_lvl;
-    int player_lvl;
-    int player_num;
-    bool players_connected[MAXPLAYERS];
+    int dungeon_lvl = 0;
+    int player_lvl = 0;
+    int player_num = 0;
+    bool players_connected[MAXPLAYERS] = { false };
     std::string timestamp;
-    int multiplayer_type;
+    int multiplayer_type = SINGLE;
+	bool secretlevel = false;
 };
 
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
