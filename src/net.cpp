@@ -4542,6 +4542,10 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 				DebugStats.handlePacketStartLoop = false;
 			}
 			delete packet;
+			if ( !net_handler )
+			{
+				break;
+			}
 
 			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
@@ -5843,7 +5847,7 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 			DebugStats.handlePacketStartLoop = true;
 		}
 
-		while (packet = net_handler->getGamePacket())
+		while ( packet = net_handler->getGamePacket() )
 		{
 			memcpy(net_packet->data, packet->data(), packet->len());
 			net_packet->len = packet->len();
@@ -5856,6 +5860,10 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 				DebugStats.handlePacketStartLoop = false;
 			}
 			delete packet;
+			if ( !net_handler )
+			{
+				break;
+			}
 
 			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
