@@ -4318,7 +4318,7 @@ void handleEvents(void)
 						MainMenu::setupSplitscreen();
 					}
 #else
-					if (fullscreen || ticks == 0)
+					if (fullscreen)
 					{
 						break;
 					}
@@ -4330,54 +4330,6 @@ void handleEvents(void)
 #endif
 				}
 				break;
-				/*case SDL_CONTROLLERAXISMOTION:
-					printlog("Controller axis motion detected.\n");
-					//if (event.caxis.which == 0) //TODO: Multi-controller support.
-					//{
-						printlog("Controller 0!\n");
-						int x = 0, y = 0;
-						if (event.caxis.axis == 0) //0 = x axis.
-						{
-							printlog("X-axis! Value: %d\n", event.caxis.value);
-							if (event.caxis.value < -gamepad_deadzone)
-							{
-								printlog("Left!\n");
-								x = -1; //Gamepad moved left.
-							}
-							else if (event.caxis.value > gamepad_deadzone)
-							{
-								printlog("Right!\n");
-								x = 1; //Gamepad moved right.
-							}
-						}
-						else if (event.caxis.axis  == 1)
-						{
-							if (event.caxis.value < -gamepad_deadzone)
-							{
-								printlog("Up!\n");
-								y = -1; //Gamepad moved up.
-							}
-							else if (event.caxis.value > gamepad_deadzone)
-							{
-								printlog("Down!\n");
-								y = 1; //Gamepad moved down.
-							}
-						}
-
-						if (x || y)
-						{
-							printlog("Generating mouse motion!\n");
-							SDL_Event e;
-
-							e.type = SDL_MOUSEMOTION;
-							e.motion.x += x;
-							e.motion.y += y;
-							e.motion.xrel = x;
-							e.motion.yrel = y;
-							SDL_PushEvent(&e);
-						}
-					//}
-					break;*/
 		}
 	}
 	if ( !mousestatus[SDL_BUTTON_LEFT] )
@@ -4953,191 +4905,6 @@ void ingameHud()
 					//players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 				}
 			}
-		}
-	}
-
-	// commands - uses local clientnum only
-	Input& input = Input::inputs[clientnum];
-	bool& bControlEnabled = players[clientnum]->bControlEnabled;
-	if ( (input.binaryToggle("Chat") || input.binaryToggle("Console Command")) && !command 
-		&& !gamePaused
-		&& bControlEnabled )
-	{
-		cursorflash = ticks;
-		command = true;
-		if ( !input.binaryToggle("Console Command") )
-		{
-			strcpy(command_str, "");
-		}
-		else
-		{
-			strcpy(command_str, "/");
-		}
-		inputstr = command_str;
-
-		input.consumeBinaryToggle("Chat");
-		input.consumeBinaryToggle("Console Command");
-		keystatus[SDL_SCANCODE_RETURN] = 0;
-		Input::keys[SDL_SCANCODE_RETURN] = 0;
-
-		SDL_StartTextInput();
-
-		// clear follower menu entities.
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				FollowerMenu[i].closeFollowerMenuGUI();
-			}
-		}
-	}
-	else if ( command && !gamePaused )
-	{
-		int commandPlayer = clientnum;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				commandPlayer = i;
-				break;
-			}
-		}
-
-		if ( !SDL_IsTextInputActive() )
-		{
-			SDL_StartTextInput();
-			inputstr = command_str;
-		}
-		//strncpy(command_str,inputstr,127);
-		inputlen = 127;
-		if ( keystatus[SDL_SCANCODE_ESCAPE] )   // escape
-		{
-			keystatus[SDL_SCANCODE_ESCAPE] = 0;
-			chosen_command = NULL;
-			command = false;
-		}
-		if ( !players[commandPlayer]->bControlEnabled )
-		{
-			chosen_command = NULL;
-			command = false;
-		}
-		else if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
-		{
-		    input.consumeBinaryToggle("Chat");
-		    input.consumeBinaryToggle("Console Command");
-		    keystatus[SDL_SCANCODE_RETURN] = 0;
-		    Input::keys[SDL_SCANCODE_RETURN] = 0;
-			command = false;
-
-			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
-
-			if ( multiplayer != CLIENT )
-			{
-				if ( command_str[0] == '/' )
-				{
-					// backslash invokes command procedure
-					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
-					consoleCommand(command_str);
-				}
-				else
-				{
-					if ( strcmp(command_str, "") )
-					{
-						char chatstring[256];
-						strcpy(chatstring, language[739]);
-						strcat(chatstring, command_str);
-						Uint32 color = makeColor( 0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-						    playSound(238, 64);
-						}
-						if ( multiplayer == SERVER )
-						{
-							// send message to all clients
-							for ( int c = 1; c < MAXPLAYERS; c++ )
-							{
-								if ( client_disconnected[c] || players[c]->isLocalPlayer() )
-								{
-									continue;
-								}
-								strcpy((char*)net_packet->data, "MSGS");
-								// strncpy() does not copy N bytes if a terminating null is encountered first
-								// see http://www.cplusplus.com/reference/cstring/strncpy/
-								// see https://en.cppreference.com/w/c/string/byte/strncpy
-								// GCC throws a warning (intended) when the length argument to strncpy() in any
-								// way depends on strlen(src) to discourage this (and related) construct(s).
-
-								strncpy(chatstring, stats[0]->name, 10);
-								chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
-								strcat(chatstring, ": ");
-								strcat(chatstring, command_str);
-								SDLNet_Write32(color, &net_packet->data[4]);
-								strcpy((char*)(&net_packet->data[8]), chatstring);
-								net_packet->address.host = net_clients[c - 1].host;
-								net_packet->address.port = net_clients[c - 1].port;
-								net_packet->len = 8 + strlen(chatstring) + 1;
-								sendPacketSafe(net_sock, -1, net_packet, c - 1);
-							}
-						}
-					}
-					else
-					{
-						strcpy(command_str, "");
-					}
-				}
-			}
-			else
-			{
-				if ( command_str[0] == '/' )
-				{
-					// backslash invokes command procedure
-					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
-					consoleCommand(command_str);
-				}
-				else
-				{
-					if ( strcmp(command_str, "") )
-					{
-						char chatstring[256];
-						strcpy(chatstring, language[739]);
-						strcat(chatstring, command_str);
-						Uint32 color = makeColor( 0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-						    playSound(238, 64);
-						}
-
-						// send message to server
-						strcpy((char*)net_packet->data, "MSGS");
-						net_packet->data[4] = commandPlayer;
-						SDLNet_Write32(color, &net_packet->data[5]);
-						strcpy((char*)(&net_packet->data[9]), command_str);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9 + strlen(command_str) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
-					}
-					else
-					{
-						strcpy(command_str, "");
-					}
-				}
-			}
-			//In either case, save this in the command history.
-			if ( strcmp(command_str, "") )
-			{
-				saveCommand(command_str);
-			}
-			chosen_command = NULL;
-		}
-	}
-	else
-	{
-		if ( SDL_IsTextInputActive() )
-		{
-			SDL_StopTextInput();
-		}
-		if ( inputstr == command_str )
-		{
-			inputstr = nullptr;
 		}
 	}
 
@@ -5789,6 +5556,190 @@ void drawAllPlayerCameras() {
 
 -------------------------------------------------------------------------------*/
 
+static void doConsoleCommands() {
+	Input& input = Input::inputs[clientnum]; // commands - uses local clientnum only
+	bool& bControlEnabled = players[clientnum]->bControlEnabled;
+	if (((input.binaryToggle("Chat") && !intro && !movie) || input.binaryToggle("Console Command")) && !command && bControlEnabled)
+	{
+		cursorflash = ticks;
+		command = true;
+		if ( !input.binaryToggle("Console Command") )
+		{
+			strcpy(command_str, "");
+		}
+		else
+		{
+			strcpy(command_str, "/");
+		}
+		inputstr = command_str;
+
+		input.consumeBinaryToggle("Chat");
+		input.consumeBinaryToggle("Console Command");
+		keystatus[SDL_SCANCODE_RETURN] = 0;
+		Input::keys[SDL_SCANCODE_RETURN] = 0;
+
+		SDL_StartTextInput();
+
+		// clear follower menu entities.
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				FollowerMenu[i].closeFollowerMenuGUI();
+			}
+		}
+	}
+	else if (command)
+	{
+		int commandPlayer = clientnum;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			{
+				commandPlayer = i;
+				break;
+			}
+		}
+
+		if ( !SDL_IsTextInputActive() )
+		{
+			SDL_StartTextInput();
+			inputstr = command_str;
+		}
+		//strncpy(command_str,inputstr,127);
+		inputlen = 127;
+		if ( keystatus[SDL_SCANCODE_ESCAPE] )   // escape
+		{
+			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+			chosen_command = NULL;
+			command = false;
+		}
+		if ( !players[commandPlayer]->bControlEnabled )
+		{
+			chosen_command = NULL;
+			command = false;
+		}
+		else if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
+		{
+		    input.consumeBinaryToggle("Chat");
+		    input.consumeBinaryToggle("Console Command");
+		    keystatus[SDL_SCANCODE_RETURN] = 0;
+		    Input::keys[SDL_SCANCODE_RETURN] = 0;
+			command = false;
+
+			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
+
+			if ( multiplayer != CLIENT )
+			{
+				if ( command_str[0] == '/' )
+				{
+					// backslash invokes command procedure
+					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
+					consoleCommand(command_str);
+				}
+				else
+				{
+					if ( strcmp(command_str, "") )
+					{
+						char chatstring[256];
+						strcpy(chatstring, language[739]);
+						strcat(chatstring, command_str);
+						Uint32 color = makeColor( 0, 255, 255, 255);
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+						    playSound(238, 64);
+						}
+						if ( multiplayer == SERVER )
+						{
+							// send message to all clients
+							for ( int c = 1; c < MAXPLAYERS; c++ )
+							{
+								if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+								{
+									continue;
+								}
+								strcpy((char*)net_packet->data, "MSGS");
+								// strncpy() does not copy N bytes if a terminating null is encountered first
+								// see http://www.cplusplus.com/reference/cstring/strncpy/
+								// see https://en.cppreference.com/w/c/string/byte/strncpy
+								// GCC throws a warning (intended) when the length argument to strncpy() in any
+								// way depends on strlen(src) to discourage this (and related) construct(s).
+
+								strncpy(chatstring, stats[0]->name, 10);
+								chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+								strcat(chatstring, ": ");
+								strcat(chatstring, command_str);
+								SDLNet_Write32(color, &net_packet->data[4]);
+								strcpy((char*)(&net_packet->data[8]), chatstring);
+								net_packet->address.host = net_clients[c - 1].host;
+								net_packet->address.port = net_clients[c - 1].port;
+								net_packet->len = 8 + strlen(chatstring) + 1;
+								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							}
+						}
+					}
+					else
+					{
+						strcpy(command_str, "");
+					}
+				}
+			}
+			else
+			{
+				if ( command_str[0] == '/' )
+				{
+					// backslash invokes command procedure
+					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
+					consoleCommand(command_str);
+				}
+				else
+				{
+					if ( strcmp(command_str, "") )
+					{
+						char chatstring[256];
+						strcpy(chatstring, language[739]);
+						strcat(chatstring, command_str);
+						Uint32 color = makeColor( 0, 255, 255, 255);
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+						    playSound(238, 64);
+						}
+
+						// send message to server
+						strcpy((char*)net_packet->data, "MSGS");
+						net_packet->data[4] = commandPlayer;
+						SDLNet_Write32(color, &net_packet->data[5]);
+						strcpy((char*)(&net_packet->data[9]), command_str);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 9 + strlen(command_str) + 1;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						strcpy(command_str, "");
+					}
+				}
+			}
+			//In either case, save this in the command history.
+			if ( strcmp(command_str, "") )
+			{
+				saveCommand(command_str);
+			}
+			chosen_command = NULL;
+		}
+	}
+	else
+	{
+		if ( inputstr == command_str )
+		{
+			inputstr = nullptr;
+		}
+		if ( !inputstr && SDL_IsTextInputActive() )
+		{
+			SDL_StopTextInput();
+		}
+	}
+}
+
 #include <stdio.h>
 //#include <unistd.h>
 #include <stdlib.h>
@@ -6120,6 +6071,9 @@ int main(int argc, char** argv)
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
 			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
+
+			doConsoleCommands();
+
 			// game logic
 			if ( !intro )
 			{
@@ -6589,7 +6543,7 @@ int main(int argc, char** argv)
 					if ( subwindow )
 					{
 						drawWindowFancy(subx1, suby1, subx2, suby2);
-						if ( subtext && subtext[0] != '\0')
+						if ( subtext[0] != '\0')
 						{
 							if ( strncmp(subtext, language[1133], 12) )
 							{

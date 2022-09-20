@@ -13,6 +13,7 @@ namespace MainMenu {
 	extern Frame* main_menu_frame; // root main menu node
 
 	// Here be new menu options:
+	extern int current_audio_device; // index of the audio device currently being used
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs
 	extern ConsoleVariable<bool> vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout

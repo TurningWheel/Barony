@@ -3242,7 +3242,10 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // mapseed
 	fp->read(&dungeonlevel, sizeof(Uint32), 1);
 	dungeonlevel = dungeonlevel & 0xFF;
-	fp->seek(sizeof(bool), File::SeekMode::ADD); // secretlevel
+
+	bool secret_lvl;
+	fp->read(&secret_lvl, sizeof(bool), 1);
+
 	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // completion time
 	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct penniless
 	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct foodless
@@ -3434,6 +3437,7 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
         },
         timestamp,
         mul,
+		secret_lvl,
     };
 
 	// close file

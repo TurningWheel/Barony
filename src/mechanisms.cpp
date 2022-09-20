@@ -132,7 +132,7 @@ void Entity::updateCircuitNeighbors()
 
 void Entity::mechanismPowerOn()
 {
-	if (skill)
+	//if (skill)
 	{
 		circuit_status = CIRCUIT_ON;    //Power on.
 	}
@@ -140,7 +140,7 @@ void Entity::mechanismPowerOn()
 
 void Entity::mechanismPowerOff()
 {
-	if (skill)
+	//if (skill)
 	{
 		circuit_status = CIRCUIT_OFF;    //Power off.
 	}

@@ -437,11 +437,11 @@ void drawMinimap(const int player, SDL_Rect rect)
 					color = uint32ColorPlayerX_Ally; // grey
 				} else {
 				    switch ( drawMonsterAlly ) {
-					    case 0: uint32ColorPlayer1_Ally; break;
-					    case 1: uint32ColorPlayer2_Ally; break;
-					    case 2: uint32ColorPlayer3_Ally; break;
-					    case 3: uint32ColorPlayer4_Ally; break;
-					    default: uint32ColorPlayerX_Ally; break;
+					    case 0: color = uint32ColorPlayer1_Ally; break;
+					    case 1: color = uint32ColorPlayer2_Ally; break;
+					    case 2: color = uint32ColorPlayer3_Ally; break;
+					    case 3: color = uint32ColorPlayer4_Ally; break;
+					    default: color = uint32ColorPlayerX_Ally; break;
 				    }
 				}
 			}

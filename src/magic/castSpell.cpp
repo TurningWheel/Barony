@@ -661,7 +661,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->x = caster->x;
 			entity->y = caster->y;
 			entity->z = -5.5 + ((-6.5f + -4.5f) / 2) * sin(0);
-			entity->skill[7] = -5.5; //Base z.
+			entity->skill[7] = -5; //Base z.
 			entity->sizex = 1;
 			entity->sizey = 1;
 			entity->yaw = caster->yaw;
@@ -1122,7 +1122,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						for ( auto it = effectCoordinates.begin(); it != effectCoordinates.end(); ++it )
 						{
 							std::pair<int, int> coords = *it;
-							spawnMagicEffectParticles(coords.first * 16 + 8, coords.second * 16 + 8, 7.5, 171);
+							spawnMagicEffectParticles(coords.first * 16 + 8, coords.second * 16 + 8, 7, 171);
 						}
 					}
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);

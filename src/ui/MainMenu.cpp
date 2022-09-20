@@ -43,6 +43,7 @@ namespace MainMenu {
 	Frame* main_menu_frame = nullptr;
 
 	// ALL NEW menu options:
+	int current_audio_device = 0;
 	float master_volume = 100.f;
 	bool arachnophobia_filter = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
@@ -258,6 +259,7 @@ namespace MainMenu {
 		bool clipped_split_enabled;
 		float fov;
 		float fps;
+		int audio_device;
 		float master_volume;
 		float gameplay_volume;
 		float ambient_volume;
@@ -786,6 +788,7 @@ namespace MainMenu {
 				auto customize = "*images/ui/Main Menus/Settings/Settings_Button_Customize00.png";
 				auto binding = "*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png";
 				auto dropdown = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png";
+				auto dropdown_wide = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png";
 
 				// Maybe we need a more sensible way to identify these button types.
 				auto boolean_button_text = "Off          On";
@@ -794,6 +797,8 @@ namespace MainMenu {
 				} else if (strcmp(button->getBackground(), binding) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_binding_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getBackground(), dropdown) == 0) {
+					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
+				} else if (strcmp(button->getBackground(), dropdown_wide) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_dropdown_button") - 1) - (sizeof("setting_") - 1));
 				} else if (strcmp(button->getText(), boolean_button_text) == 0) {
 					setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_button") - 1) - (sizeof("setting_") - 1));
@@ -1760,6 +1765,7 @@ namespace MainMenu {
 		*clipped_splitscreen = clipped_split_enabled;
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
+		current_audio_device = audio_device;
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 200.f), .5f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 200.f), .5f);
@@ -1833,6 +1839,7 @@ namespace MainMenu {
 		settings.clipped_split_enabled = *clipped_splitscreen;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
+		settings.audio_device = current_audio_device;
 		settings.master_volume = MainMenu::master_volume * 200.f;
 		settings.gameplay_volume = (float)sfxvolume * 200.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 200.f;
@@ -1889,6 +1896,7 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.fov = 60;
 		settings.fps = 60;
+		settings.audio_device = 0;
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
@@ -1920,7 +1928,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 3;
+	    int version = 4;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -1972,6 +1980,13 @@ namespace MainMenu {
 		}
 		file->property("fov", fov);
 		file->property("fps", fps);
+		if (file->isReading()) {
+		    if (version >= 4) {
+		    	file->property("audio_device", audio_device);
+			}
+		} else {
+			file->property("audio_device", audio_device);
+		}
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
@@ -2650,6 +2665,13 @@ namespace MainMenu {
 
 		// update volume for sound groups
 		if (initialized) {
+#ifdef USE_FMOD
+			int num_drivers = 0;
+			fmod_system->getNumDrivers(&num_drivers);
+			current_audio_device = current_audio_device >= num_drivers ?
+				0 : current_audio_device;
+			fmod_system->setDriver(current_audio_device);
+#endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
 
@@ -3007,27 +3029,38 @@ namespace MainMenu {
 		);
 	}
 
-	static void settingsOpenDropdown(Button& button, const char* name, bool small_dropdown, void(*entry_func)(Frame::entry_t&)) {
+	enum DropdownType {
+		Normal,
+		Short,
+		Wide,
+	};
+
+	static void settingsOpenDropdown(Button& button, const char* name, DropdownType type, void(*entry_func)(Frame::entry_t&)) {
 		std::string dropdown_name = "setting_" + std::string(name) + "_dropdown";
 		auto frame = static_cast<Frame*>(button.getParent());
 		auto dropdown = frame->addFrame(dropdown_name.c_str()); assert(dropdown);
 		dropdown->setSize(SDL_Rect{
 			button.getSize().x,
 			button.getSize().y,
-			174,
-			small_dropdown ? 181 : 362
+			type == DropdownType::Wide ? 400 : 174,
+			type == DropdownType::Short ? 181 : 362
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
 		dropdown->setColor(0);
 		dropdown->setBorder(0);
 		dropdown->setDropDown(true);
 
+		const char* background_img;
+		switch (type) {
+		default:
+		case DropdownType::Normal: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png"; break;
+		case DropdownType::Short: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png"; break;
+		case DropdownType::Wide: background_img = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG01.png"; break;
+		}
 		auto background = dropdown->addImage(
 			dropdown->getActualSize(),
 			0xffffffff,
-			small_dropdown ?
-				"*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png" :
-				"*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png",
+			background_img,
 			"background"
 		);
 
@@ -3086,7 +3119,7 @@ namespace MainMenu {
 		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
-			SDL_Rect{8, 0, 158, 30},
+			SDL_Rect{8, 0, type == DropdownType::Wide ? 384 : 158, 30},
 			0xffffffff,
 			"*images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
 			"selection"
@@ -3127,21 +3160,22 @@ namespace MainMenu {
 	}
 
 	static void settingsResolutionSmall(Button& button) {
-		settingsOpenDropdown(button, "resolution", true, settingsResolutionEntry);
+		settingsOpenDropdown(button, "resolution", DropdownType::Short, settingsResolutionEntry);
 	}
 
 	static void settingsResolutionBig(Button& button) {
-		settingsOpenDropdown(button, "resolution", false, settingsResolutionEntry);
+		settingsOpenDropdown(button, "resolution", DropdownType::Normal, settingsResolutionEntry);
 	}
 
 	static void settingsDisplayDevice(Button& button) {
-		settingsOpenDropdown(button, "device", true, [](Frame::entry_t& entry){
+		settingsOpenDropdown(button, "device", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			int new_device = 0;
 		    if (sscanf(entry.name.c_str(), "Display %d", &new_device) == 1) {
 		        --new_device;
 		    }
 			allSettings.video.display_id = new_device;
+
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
@@ -3175,8 +3209,24 @@ namespace MainMenu {
 			});
 	}
 
+	static void settingsAudioDevice(Button& button) {
+		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
+			soundActivate();
+			const int new_device = (int)strtol(entry.name.c_str(), nullptr, 10);
+			allSettings.audio_device = new_device;
+
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+			});
+	}
+
 	static void settingsWindowMode(Button& button) {
-		settingsOpenDropdown(button, "window_mode", true, [](Frame::entry_t& entry){
+		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
 			soundActivate();
 			do {
 				if (entry.name == "Windowed") {
@@ -3508,6 +3558,7 @@ namespace MainMenu {
 		const char* name,
 		const char* text,
 		const char* tip,
+		bool wide,
 		const std::vector<const char*>& items,
 		const char* selected,
 		void (*callback)(Button&),
@@ -3519,14 +3570,19 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y,
-			174,
+			wide ? 400 : 174,
 			52});
 		button->setFont(bigfont_outline);
 		button->setText(selected);
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
-		button->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
-		button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		if (wide) {
+			button->setBackground("*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG00_Highlighted.png");
+		} else {
+			button->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		}
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -4272,11 +4328,11 @@ namespace MainMenu {
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
 		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
-			"Select the player whose controls you wish to customize.",
+			"Select the player whose controls you wish to customize.", false,
 			{"Player 1", "Player 2", "Player 3", "Player 4"}, player_str.c_str(),
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "player_dropdown", true,
+				settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
@@ -4296,10 +4352,10 @@ namespace MainMenu {
 
 #ifndef NINTENDO
 		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", devices, devices[device_index],
+			"Select a controller for the given player.", false, devices, devices[device_index],
 			[](Button& button){
 				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", true,
+				settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
 					[](Frame::entry_t& entry){
 						soundActivate();
 						auto parent = main_menu_frame->findFrame("bindings");
@@ -4559,13 +4615,13 @@ bind_failed:
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
-            displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
+            false, displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
 		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
-			resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
+			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			{"Windowed", "Fullscreen", "Borderless"}, selected_mode,
+			false, {"Windowed", "Fullscreen", "Borderless"}, selected_mode,
 			settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
@@ -4669,27 +4725,74 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+#if defined(NINTENDO) || !defined(USE_FMOD)
 			settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
+#else
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#endif
 			return;
 		}
 		int y = 0;
 
+#if !defined(NINTENDO) && defined(USE_FMOD)
+		struct AudioDriver {
+			char name[128];
+			FMOD_GUID guid;
+			int system_rate;
+			FMOD_SPEAKERMODE speaker_mode;
+			int speaker_mode_channels;
+		};
+		std::vector<AudioDriver> drivers;
+
+		int num_drivers = 0;
+		(void)fmod_system->getNumDrivers(&num_drivers);
+		drivers.reserve(num_drivers);
+		for (int c = 0; c < num_drivers; ++c) {
+			AudioDriver d;
+			char buf[128];
+			(void)fmod_system->getDriverInfo(c, buf, sizeof(buf), &d.guid,
+				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
+			snprintf(d.name, sizeof(d.name), "%d: %s", c, buf);
+			drivers.push_back(d);
+		}
+		std::vector<const char*> drivers_formatted_ptrs;
+		drivers_formatted_ptrs.reserve(num_drivers);
+		for (auto& d : drivers) {
+			drivers_formatted_ptrs.push_back(d.name);
+		}
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "output", "Output");
+		y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "The output device for all game audio",
+            true, drivers_formatted_ptrs, drivers_formatted_ptrs[allSettings.audio_device],
+            settingsAudioDevice);
+#endif
+
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();});
+			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();});
+			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();});
+			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();});
+			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();});
+			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
+				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
+				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -4706,7 +4809,11 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Slider, "master_volume"},
+			{
+#ifdef USE_FMOD
+			{Setting::Type::Dropdown, "device"},
+#endif
+			{Setting::Type::Slider, "master_volume"},
 			{Setting::Type::Slider, "gameplay_volume"},
 			{Setting::Type::Slider, "ambient_volume"},
 			{Setting::Type::Slider, "environment_volume"},
@@ -4725,8 +4832,13 @@ bind_failed:
 			{Setting::Type::Boolean, "player_monster_sounds"}});
 #endif
 
+#if !defined(NINTENDO) && defined(USE_FMOD)
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+#else
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "master_volume"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "master_volume"});
+#endif
 	}
 
 	static void settingsControls(Button& button) {
@@ -6268,8 +6380,13 @@ bind_failed:
         label->setHJustify(Field::justify_t::LEFT);
         label->setVJustify(Field::justify_t::CENTER);
         label->setFont(bigfont_outline);
+#ifdef NINTENDO
+        label->setText("Messages");
+#else
         label->setText("Chat");
+#endif
 
+#ifndef NINTENDO
         auto chat_buffer = frame->addField("buffer", 1024);
         chat_buffer->setSize(SDL_Rect{4, h - 32, w - 8, 32});
         chat_buffer->setHJustify(Field::justify_t::LEFT);
@@ -6324,7 +6441,9 @@ bind_failed:
                 chat_buffer->isActivated();
             widget.setDisabled(hidden);
             });
+#endif
 
+#ifndef NINTENDO
         auto close_button = frame->addButton("close");
         close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
 	    close_button->setColor(makeColor(255, 255, 255, 255));
@@ -6356,6 +6475,7 @@ bind_failed:
         close_button->setWidgetSearchParent(frame->getName());
         close_button->setWidgetDown("buffer");
 	    close_button->setWidgetBack("close");
+#endif
 
         return frame;
     }
@@ -8697,6 +8817,8 @@ bind_failed:
 			setting->setColor(0);
 			setting->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			setting->addWidgetAction("MenuStart", "confirm");
+			setting->addWidgetAction("MenuSelect", "chat");
+			setting->addWidgetAction("MenuAlt2", "privacy");
 			setting->setWidgetBack("back_button");
 			if (c > 0) {
 				setting->setWidgetUp((std::string("setting") + std::to_string(c - 1)).c_str());
@@ -8831,6 +8953,8 @@ bind_failed:
 		custom_difficulty->setText("Game Flags");
 		custom_difficulty->setWidgetSearchParent(name.c_str());
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
+		custom_difficulty->addWidgetAction("MenuSelect", "chat");
+		custom_difficulty->addWidgetAction("MenuAlt2", "privacy");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
@@ -8871,6 +8995,8 @@ bind_failed:
 			invite->setHighlightColor(0xffffffff);
 			invite->setWidgetSearchParent(name.c_str());
 			invite->addWidgetAction("MenuStart", "confirm");
+			invite->addWidgetAction("MenuSelect", "chat");
+			invite->addWidgetAction("MenuAlt2", "privacy");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom_difficulty");
 			invite->setWidgetDown("friends");
@@ -8946,6 +9072,8 @@ bind_failed:
 			friends->setHighlightColor(0xffffffff);
 			friends->setWidgetSearchParent(name.c_str());
 			friends->addWidgetAction("MenuStart", "confirm");
+			friends->addWidgetAction("MenuSelect", "chat");
+			friends->addWidgetAction("MenuAlt2", "privacy");
 			friends->setWidgetBack("back_button");
 			friends->setWidgetUp("invite");
 			friends->setWidgetDown("open");
@@ -9027,6 +9155,8 @@ bind_failed:
 			open->setHighlightColor(0xffffffff);
 			open->setWidgetSearchParent(name.c_str());
 			open->addWidgetAction("MenuStart", "confirm");
+			open->addWidgetAction("MenuSelect", "chat");
+			open->addWidgetAction("MenuAlt2", "privacy");
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
 			open->setWidgetDown("player_count_2");
@@ -9101,6 +9231,8 @@ bind_failed:
 		    player_count->setColor(uint32ColorWhite);
 		    player_count->setWidgetSearchParent(name.c_str());
 			player_count->addWidgetAction("MenuStart", "confirm");
+			player_count->addWidgetAction("MenuSelect", "chat");
+			player_count->addWidgetAction("MenuAlt2", "privacy");
 			player_count->setWidgetBack("back_button");
 			player_count->setWidgetUp(online ? "open" : "custom_difficulty");
 		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
@@ -9225,6 +9357,8 @@ bind_failed:
 		    kick_player->setColor(uint32ColorWhite);
 		    kick_player->setWidgetSearchParent(name.c_str());
 			kick_player->addWidgetAction("MenuStart", "confirm");
+			kick_player->addWidgetAction("MenuSelect", "chat");
+			kick_player->addWidgetAction("MenuAlt2", "privacy");
 			kick_player->setWidgetBack("back_button");
 		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
 		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
@@ -9839,6 +9973,8 @@ bind_failed:
 		    race->setHighlightColor(0xffffffff);
 		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		    race->addWidgetAction("MenuStart", "confirm");
+		    race->addWidgetAction("MenuSelect", "chat");
+		    race->addWidgetAction("MenuAlt2", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c == 0) {
 		        race->setWidgetRight("appearances");
@@ -9909,6 +10045,8 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
+		appearances->addWidgetAction("MenuSelect", "chat");
+		appearances->addWidgetAction("MenuAlt2", "privacy");
 		appearances->setWidgetBack("back_button");
 	    appearances->addWidgetAction("MenuPageLeft", "male");
 	    appearances->addWidgetAction("MenuPageRight", "female");
@@ -9988,6 +10126,8 @@ bind_failed:
 	        }
 	        });
 		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
+		appearance_uparrow->addWidgetAction("MenuSelect", "chat");
+		appearance_uparrow->addWidgetAction("MenuAlt2", "privacy");
 		appearance_uparrow->setWidgetBack("back_button");
 	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_uparrow->addWidgetAction("MenuPageRight", "female");
@@ -10022,6 +10162,8 @@ bind_failed:
 	        }
 	        });
 		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
+		appearance_downarrow->addWidgetAction("MenuSelect", "chat");
+		appearance_downarrow->addWidgetAction("MenuAlt2", "privacy");
 		appearance_downarrow->setWidgetBack("back_button");
 	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
@@ -10088,6 +10230,8 @@ bind_failed:
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
 		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
+		disable_abilities->addWidgetAction("MenuSelect", "chat");
+		disable_abilities->addWidgetAction("MenuAlt2", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
 		disable_abilities->setWidgetUp(races[num_races - 1]);
@@ -10123,6 +10267,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
+		male_button->addWidgetAction("MenuSelect", "chat");
+		male_button->addWidgetAction("MenuAlt2", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
@@ -10150,6 +10296,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
+		female_button->addWidgetAction("MenuSelect", "chat");
+		female_button->addWidgetAction("MenuAlt2", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetUp("disable_abilities");
 		female_button->setWidgetDown("confirm");
@@ -10179,6 +10327,8 @@ bind_failed:
 		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
+		show_race_info->addWidgetAction("MenuSelect", "chat");
+		show_race_info->addWidgetAction("MenuAlt2", "privacy");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
@@ -10830,6 +10980,8 @@ bind_failed:
 		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
+		class_info->addWidgetAction("MenuSelect", "chat");
+		class_info->addWidgetAction("MenuAlt2", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
 		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
@@ -10898,6 +11050,8 @@ bind_failed:
 				button->setWidgetDown(reduced_class_list[reduced_class_list.size() - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
+			button->addWidgetAction("MenuSelect", "chat");
+			button->addWidgetAction("MenuAlt2", "privacy");
 			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
@@ -10963,6 +11117,30 @@ bind_failed:
 						    break;
 					    }
 				    }
+
+					// you can request a particular class from your party with this hotkey.
+					if (currentLobbyType != LobbyType::LobbyLocal) {
+						const int player = widget.getOwner();
+						if (inputs.hasController(player)) {
+							auto& input = Input::inputs[player];
+							size_t len = strlen(widget.getName());
+							if (stringCmp(widget.getName(), "random", len, 6) && input.consumeBinaryToggle("MenuAlt1")) {
+								constexpr Uint32 waitingPeriod = 3;
+								static Uint32 lastClassRequest = 0;
+								char buf[1024];
+								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
+									snprintf(buf, sizeof(buf), "%s: We need a %s.",
+										players[player]->getAccountName(), widget.getName());
+									sendChatMessageOverNet(0xffffffff, buf, len);
+									lastClassRequest = ticks;
+								} else {
+									snprintf(buf, sizeof(buf), "*** Please wait %d seconds before suggesting another class. ***",
+										waitingPeriod - (ticks - lastClassRequest) / TICKS_PER_SECOND);
+									addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+								}
+							}
+						}
+					}
 			    }
 			    });
 		}
@@ -11055,9 +11233,17 @@ bind_failed:
 		name_field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		name_field->setHJustify(Field::justify_t::LEFT);
 		name_field->setVJustify(Field::justify_t::CENTER);
+#ifdef NINTENDO
+		if (currentLobbyType == LobbyType::LobbyLocal) {
+			name_field->setEditable(true);
+		}
+#else
 		name_field->setEditable(true);
+#endif
 		name_field->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		name_field->addWidgetAction("MenuStart", "ready");
+		name_field->addWidgetAction("MenuSelect", "chat");
+		name_field->addWidgetAction("MenuAlt2", "privacy");
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
@@ -11108,6 +11294,8 @@ bind_failed:
 		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
+		randomize_name->addWidgetAction("MenuSelect", "chat");
+		randomize_name->addWidgetAction("MenuAlt2", "privacy");
 		randomize_name->setWidgetBack("back_button");
 		randomize_name->setWidgetLeft("name");
 		randomize_name->setWidgetDown("game_settings");
@@ -11137,6 +11325,8 @@ bind_failed:
 		game_settings->setFont(smallfont_outline);
 		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		game_settings->addWidgetAction("MenuStart", "ready");
+		game_settings->addWidgetAction("MenuSelect", "chat");
+		game_settings->addWidgetAction("MenuAlt2", "privacy");
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
@@ -11164,6 +11354,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
+		male_button->addWidgetAction("MenuSelect", "chat");
+		male_button->addWidgetAction("MenuAlt2", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
@@ -11187,6 +11379,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
+		female_button->addWidgetAction("MenuSelect", "chat");
+		female_button->addWidgetAction("MenuAlt2", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("race");
@@ -11222,6 +11416,8 @@ bind_failed:
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		race_button->addWidgetAction("MenuStart", "ready");
+		race_button->addWidgetAction("MenuSelect", "chat");
+		race_button->addWidgetAction("MenuAlt2", "privacy");
 		race_button->setWidgetBack("back_button");
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
@@ -11326,6 +11522,8 @@ bind_failed:
 		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
+		randomize_class->addWidgetAction("MenuSelect", "chat");
+		randomize_class->addWidgetAction("MenuAlt2", "privacy");
 		randomize_class->setWidgetBack("back_button");
 		randomize_class->setWidgetLeft("class");
 		randomize_class->setWidgetDown("ready");
@@ -11356,7 +11554,7 @@ bind_failed:
 		}
 		(*class_text->getTickCallback())(*class_text);
 
-		static auto class_button_fn = [](Button& button, int index) {
+		static auto class_button_tick_fn = [](Button& button, int index) {
 			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
@@ -11376,6 +11574,18 @@ bind_failed:
 			}
 		};
 
+		static auto class_button_fn = [](int index){
+			soundActivate();
+#ifdef NINTENDO
+		    addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press Y to suggest a class for your party ***");
+#else
+			if (inputs.hasController(index)) {
+		    	addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press X to suggest a class for your party ***");
+			}
+#endif
+			characterCardClassMenu(index, false, 0);
+		};
+
 		auto class_button = card->addButton("class");
 		class_button->setColor(makeColor(255, 255, 255, 255));
 		class_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -11383,26 +11593,28 @@ bind_failed:
 		class_button->setBorder(0);
 		class_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_button->addWidgetAction("MenuStart", "ready");
+		class_button->addWidgetAction("MenuSelect", "chat");
+		class_button->addWidgetAction("MenuAlt2", "privacy");
 		class_button->setWidgetBack("back_button");
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
 		switch (index) {
 		case 0:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(0, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 0);});
+			class_button->setCallback([](Button&){class_button_fn(0);});
 			break;
 		case 1:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(1, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 1);});
+			class_button->setCallback([](Button&){class_button_fn(1);});
 			break;
 		case 2:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(2, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 2);});
+			class_button->setCallback([](Button&){class_button_fn(2);});
 			break;
 		case 3:
-			class_button->setTickCallback([](Widget& widget){class_button_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){soundActivate(); characterCardClassMenu(3, false, 0);});
+			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 3);});
+			class_button->setCallback([](Button&){class_button_fn(3);});
 			break;
 		}
 		(*class_button->getTickCallback())(*class_button);
@@ -11420,6 +11632,8 @@ bind_failed:
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+		ready_button->addWidgetAction("MenuSelect", "chat");
+		ready_button->addWidgetAction("MenuAlt2", "privacy");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
 		switch (index) {
@@ -12415,7 +12629,9 @@ bind_failed:
 		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+#ifndef NINTENDO
 		        field->setEditable(type != LobbyType::LobbyJoined);
+#endif
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
 		        field->setSize(SDL_Rect{162, 14, 242, 28});
@@ -12426,7 +12642,9 @@ bind_failed:
 		        field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
-		        field->setWidgetSearchParent(field->getParent()->getName());
+		        field->setWidgetSearchParent(banner->getName());
+				field->addWidgetAction("MenuSelect", "chat");
+				field->addWidgetAction("MenuAlt2", "privacy");
 		        field->setWidgetBack("back_button");
 		        field->setWidgetRight("privacy");
 		        if (type != LobbyType::LobbyJoined) {
@@ -12600,6 +12818,10 @@ bind_failed:
 		        privacy->setTextHighlightColor(0xffffffff);
 	            privacy->setTextColor(0xffffffff);
 	            privacy->setFont(smallfont_outline);
+				privacy->setAlwaysShowGlyphs(true);
+		        privacy->setWidgetSearchParent(banner->getName());
+				privacy->addWidgetAction("MenuSelect", "chat");
+				privacy->addWidgetAction("MenuAlt2", "privacy");
 	            privacy->setWidgetBack("back_button");
 	            privacy->setWidgetLeft("lobby_name");
 	            privacy->setWidgetRight("chat");
@@ -12620,13 +12842,21 @@ bind_failed:
 		        chat_button->setColor(0xffffffff);
 			    chat_button->setTextHighlightColor(0xffffffff);
 		        chat_button->setTextColor(0xffffffff);
+#ifdef NINTENDO
+		        chat_button->setText("Messages");
+#else
 		        chat_button->setText("Chat");
+#endif
 		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
 		            (void)toggleLobbyChatWindow();
 		            });
+				chat_button->setAlwaysShowGlyphs(true);
+		        chat_button->setWidgetSearchParent(banner->getName());
+				chat_button->addWidgetAction("MenuSelect", "chat");
+				chat_button->addWidgetAction("MenuAlt2", "privacy");
 		        chat_button->setWidgetBack("back_button");
 		        chat_button->setWidgetLeft("privacy");
 		        chat_button->setTickCallback([](Widget& widget){
@@ -13408,16 +13638,16 @@ bind_failed:
 				            char buf[16];
 #ifdef NINTENDO
 							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-								(host & 0xff000000) >> 24,
-								(host & 0x00ff0000) >> 16,
-								(host & 0x0000ff00) >> 8,
-								(host & 0x000000ff) >> 0);
+								(uint8_t)((host & 0xff000000) >> 24),
+								(uint8_t)((host & 0x00ff0000) >> 16),
+								(uint8_t)((host & 0x0000ff00) >> 8),
+								(uint8_t)((host & 0x000000ff) >> 0));
 #else
 							snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu",
-								(host & 0x000000ff) >> 0,
-								(host & 0x0000ff00) >> 8,
-								(host & 0x00ff0000) >> 16,
-								(host & 0xff000000) >> 24);
+								(uint8_t)((host & 0x000000ff) >> 0),
+								(uint8_t)((host & 0x0000ff00) >> 8),
+								(uint8_t)((host & 0x00ff0000) >> 16),
+								(uint8_t)((host & 0xff000000) >> 24));
 #endif
 				            info.address = buf;
 				            addLobby(info);
@@ -16145,6 +16375,7 @@ bind_failed:
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
+		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
@@ -16272,6 +16503,12 @@ bind_failed:
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
+
+				// set unique game key
+				local_rng.seedTime();
+				local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
 				if (multiplayer == SERVER) {
                     for (int c = 1; c < MAXPLAYERS; c++) {
 	                    if (client_disconnected[c]) {
@@ -17625,6 +17862,12 @@ bind_failed:
 				    tutorial_map_destination = map.filename;
 					beginFade(MainMenu::FadeDestination::HallOfTrials);
 				}
+
+				// set unique game key
+				local_rng.seedTime();
+				local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+				net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
 				if (multiplayer == SERVER) {
                     for (int c = 1; c < MAXPLAYERS; c++) {
 	                    if (client_disconnected[c]) {

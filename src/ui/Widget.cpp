@@ -113,11 +113,15 @@ Widget* Widget::handleInput() {
 				if (input.consumeBinaryToggle(move.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
+					if (!result) {
+						result = gui ? gui->findWidget(move.second.c_str(), true) : nullptr;
+					}
 					//printlog("%s: %p", move.second.c_str(), (void*)result);
 					if (result && !result->disabled && !result->invisible) {
 						auto in = input.input(move.first.c_str());
 #ifndef EDITOR
-						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON && in.type != Input::binding_t::bindtype_t::KEYBOARD) {
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON &&
+							in.type != Input::binding_t::bindtype_t::KEYBOARD) {
 							inputs.getVirtualMouse(owner)->draw_cursor = false;
 						}
 						playSound(495, 64);
@@ -135,11 +139,15 @@ Widget* Widget::handleInput() {
 				if (input.consumeBinaryToggle(action.first.c_str()) && !inputstr) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
+					if (!result) {
+						result = gui ? gui->findWidget(action.second.c_str(), true) : nullptr;
+					}
 					//printlog("%s: %p", action.second.c_str(), (void*)result);
 					if (result && !result->disabled) {
 						auto in = input.input(action.first.c_str());
 #ifndef EDITOR
-						if ( in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON && in.type != Input::binding_t::bindtype_t::KEYBOARD ) {
+						if (in.type != Input::binding_t::bindtype_t::MOUSE_BUTTON &&
+							in.type != Input::binding_t::bindtype_t::KEYBOARD) {
 							inputs.getVirtualMouse(owner)->draw_cursor = false;
 						}
 #endif
@@ -151,20 +159,16 @@ Widget* Widget::handleInput() {
 		}
 
 		// activate current selection
-		if ( !(menuConfirmControlType & MENU_CONFIRM_CONTROLLER) || !(menuConfirmControlType & MENU_CONFIRM_KEYBOARD) )
-		{
+		if (!(menuConfirmControlType & MENU_CONFIRM_CONTROLLER) || !(menuConfirmControlType & MENU_CONFIRM_KEYBOARD)) {
 			auto binding = input.input("MenuConfirm");
-			if ( (binding.isBindingUsingGamepad() && (menuConfirmControlType & MENU_CONFIRM_CONTROLLER))
-				|| (binding.isBindingUsingKeyboard() && (menuConfirmControlType & MENU_CONFIRM_KEYBOARD)) )
-			{
-				if ( input.consumeBinaryToggle("MenuConfirm") && !disabled ) {
+			if ((binding.isBindingUsingGamepad() && (menuConfirmControlType & MENU_CONFIRM_CONTROLLER)) ||
+				(binding.isBindingUsingKeyboard() && (menuConfirmControlType & MENU_CONFIRM_KEYBOARD))) {
+				if (input.consumeBinaryToggle("MenuConfirm") && !disabled) {
 					activate();
 					return nullptr;
 				}
 			}
-		}
-		else
-		{
+		} else {
 			if (input.consumeBinaryToggle("MenuConfirm") && !disabled) {
 				activate();
 				return nullptr;
@@ -351,7 +355,7 @@ void Widget::drawPost(const SDL_Rect size,
 	if (!selectedWidget) {
 		return;
 	} else {
-		if (searchParent && !isChildOf(*searchParent)) {
+		if (!alwaysShowGlyphs && searchParent && !isChildOf(*searchParent)) {
 			return;
 		}
 	}
@@ -412,6 +416,7 @@ void Widget::drawPost(const SDL_Rect size,
             "MenuAlt1",
             "MenuAlt2",
             "MenuStart",
+            "MenuSelect",
             "MenuBack",
             "MenuPageLeft",
             "MenuPageRight",

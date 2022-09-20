@@ -9902,9 +9902,9 @@ void Player::GUIDropdown_t::process()
 	for ( auto& option : dropDown.options )
 	{
 		char glyphname[32] = "";
-		snprintf(glyphname, sizeof(glyphname), "glyph %d", index);
+		snprintf(glyphname, sizeof(glyphname), "glyph %d", (int)index);
 		char optionname[32] = "";
-		snprintf(optionname, sizeof(optionname), "interact option %d", index);
+		snprintf(optionname, sizeof(optionname), "interact option %d", (int)index);
 
 		auto img = dropdownFrame->findImage(glyphname);
 		auto txt = dropdownFrame->findField(optionname);

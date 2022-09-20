@@ -684,7 +684,7 @@ void drawStatus(int player)
 	{
 		x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
 		y = players[player]->camera_y2();
-		textscroll = std::max(std::min<Uint32>(list_Size(&messages) - 3, textscroll), 0u);
+		textscroll = std::min<Uint32>(list_Size(&messages) - 3, textscroll);
 		c = 0;
 		for ( node = messages.last; node != NULL; node = node->prev )
 		{

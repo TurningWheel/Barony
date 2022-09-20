@@ -14,6 +14,10 @@
 #include "../../ui/LoadingScreen.hpp"
 #include "sound.hpp"
 
+#ifndef EDITOR
+#include "../../ui/MainMenu.hpp"
+#endif
+
 bool initSoundEngine()
 {
 #ifdef USE_FMOD
@@ -55,9 +59,11 @@ bool initSoundEngine()
 			// call fmod_system->setDriver() any time to change the device mid-game - no shutdown/reinit required
 		}
 		// if currentDriver == 0, then we're using the OS 'default' audio driver
-		int currentDriver = 0;
-		fmod_system->getDriver(&currentDriver);
-		printlog("[FMOD]: Current audio device: %d", currentDriver);
+#ifndef EDITOR
+		fmod_system->setDriver(MainMenu::current_audio_device);
+		fmod_system->getDriver(&MainMenu::current_audio_device);
+		printlog("[FMOD]: Current audio device: %d", MainMenu::current_audio_device);
+#endif
 
 		fmod_result = fmod_system->createChannelGroup(nullptr, &sound_group);
 		if (FMODErrorCheck())
