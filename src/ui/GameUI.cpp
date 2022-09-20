@@ -3539,7 +3539,8 @@ void Player::HUD_t::updateUINavigation()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_CHEST) )
 		{
 			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
-				&& !GenericGUI[player.playernum].featherGUI.bOpen )
+				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
 				leftTriggerGlyph->disabled = false;
@@ -3593,7 +3594,8 @@ void Player::HUD_t::updateUINavigation()
 
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
 				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
-				&& !GenericGUI[player.playernum].featherGUI.bOpen )
+				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_RIGHT;
 				rightTriggerGlyph->disabled = false;
@@ -6786,7 +6788,7 @@ void Player::HUD_t::updateActionPrompts()
 	}
 
 	if ( !bShowActionPrompts || playercount > 2 ||
-	    (playercount == 2 && MainMenu::vertical_splitscreen) || *disableActionPrompts )
+	    (playercount == 2 && *MainMenu::vertical_splitscreen) || *disableActionPrompts )
 	{
 		actionPromptsFrame->setDisabled(true);
 		return;
@@ -7365,11 +7367,11 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
-    bool useBigFont = playercount == 1 || (playercount == 2 && !MainMenu::vertical_splitscreen);
+    bool useBigFont = playercount == 1 || (playercount == 2 && !(*MainMenu::vertical_splitscreen));
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
         ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
-        (playercount == 2 && !MainMenu::vertical_splitscreen));
+        (playercount == 2 && !(*MainMenu::vertical_splitscreen)));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	const int leftAlignedBottomY = 200;
@@ -7543,7 +7545,7 @@ static Frame* createMinimap(int player) {
 
 	    widget.setInvisible(*shareMinimap && playercount > 2);
 
-        bool reducedSize = playercount > 2 || (playercount == 2 && MainMenu::vertical_splitscreen);
+        bool reducedSize = playercount > 2 || (playercount == 2 && *MainMenu::vertical_splitscreen);
 
         auto player = widget.getOwner();
         auto& minimap = players[player]->minimap;
@@ -19092,6 +19094,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].featherGUI.featherFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].featherGUI.featherFrame->setDisabled(true);
 
+		GenericGUI[player].itemfxGUI.itemEffectFrame = frame->addFrame("itemfx");
+		GenericGUI[player].itemfxGUI.itemEffectFrame->setHollow(true);
+		GenericGUI[player].itemfxGUI.itemEffectFrame->setBorder(0);
+		GenericGUI[player].itemfxGUI.itemEffectFrame->setOwner(player);
+		GenericGUI[player].itemfxGUI.itemEffectFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].itemfxGUI.itemEffectFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -20437,19 +20446,6 @@ void Player::Inventory_t::updateCursor()
 		bool moveMouse = false;
 		auto queuedModule = cursor.queuedModule;
 		if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
-		{
-			if ( frame->isDisabled() || player.inventory_mode != INVENTORY_MODE_ITEM )
-			{
-				// cancel
-				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
-			}
-			else if ( isInteractable )
-			{
-				moveMouse = true;
-				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
-			}
-		}
-		else if ( cursor.queuedModule == Player::GUI_t::MODULE_INVENTORY )
 		{
 			if ( frame->isDisabled() || player.inventory_mode != INVENTORY_MODE_ITEM )
 			{
