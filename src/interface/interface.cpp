@@ -6401,7 +6401,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 {
 	this->closeGUI();
 
-	if ( !effectItem && usingSpellID != SPELL_NONE && effectItemType == SPELL_CAT )
+	if ( !effectItem && usingSpellID != SPELL_NONE && effectItemType == SPELL_ITEM )
 	{
 		for ( node_t* node = stats[gui_player]->inventory.first; node; node = node->next )
 		{
@@ -20634,20 +20634,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( isSpell )
 			{
 				std::string prefix = ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str();
-				if ( prefix[0] >= 'a' && prefix[0] <= 'z' )
-				{
-					prefix[0] = (char)toupper((int)prefix[0]);
-				}
-				size_t found = prefix.find(' ');
-				while ( found != std::string::npos )
-				{
-					auto& c = prefix[std::min(found + 1, prefix.size() - 1)];
-					if ( c >= 'a' && c <= 'z' )
-					{
-						c = (char)toupper((int)c);
-					}
-					found = prefix.find(' ', found + 1);
-				}
+				camelCaseString(prefix);
 				itemFxTitle->setText(prefix.c_str());
 
 				std::string statusStr = "";
@@ -20657,20 +20644,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				}
 				if ( !statusStr.empty() )
 				{
-					if ( statusStr[0] >= 'a' && statusStr[0] <= 'z' )
-					{
-						statusStr[0] = (char)toupper((int)statusStr[0]);
-					}
-					size_t found = statusStr.find(' ');
-					while ( found != std::string::npos )
-					{
-						auto& c = statusStr[std::min(found + 1, statusStr.size() - 1)];
-						if ( c >= 'a' && c <= 'z' )
-						{
-							c = (char)toupper((int)c);
-						}
-						found = statusStr.find(' ', found + 1);
-					}
+					camelCaseString(statusStr);
 					itemFxStatus->setText(statusStr.c_str());
 				}
 			}
@@ -20678,41 +20652,46 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			{
 				if ( !item->identified )
 				{
-					snprintf(buf, sizeof(buf), "%s (?)", item->getName());
+					std::string prefix = ItemTooltips.adjectives["scroll_prefixes"]["unknown_scroll"].c_str();
+					snprintf(buf, sizeof(buf), "%s (?)", prefix.c_str());
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), "%s (%+d)", item->getName(), item->beatitude);
+					std::string prefix = ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"].c_str();
+					snprintf(buf, sizeof(buf), "%s", prefix.c_str());
 				}
 				std::string titleStr = buf;
 				if ( !titleStr.empty() )
 				{
-					if ( titleStr[0] >= 'a' && titleStr[0] <= 'z' )
-					{
-						titleStr[0] = (char)toupper((int)titleStr[0]);
-					}
-					size_t found = titleStr.find(' ');
-					while ( found != std::string::npos )
-					{
-						auto& c = titleStr[std::min(found + 1, titleStr.size() - 1)];
-						if ( c >= 'a' && c <= 'z' )
-						{
-							c = (char)toupper((int)c);
-						}
-						found = titleStr.find(' ', found + 1);
-					}
+					camelCaseString(titleStr);
 					itemFxTitle->setText(titleStr.c_str());
 				}
 				else
 				{
 					itemFxTitle->setText(buf);
 				}
+
+				if ( item->identified )
+				{
+					std::string scrollShortName = items[item->type].name_identified;
+					if ( scrollShortName.find(ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"]) != std::string::npos )
+					{
+						scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"].size());
+					}
+					if ( scrollShortName.find(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"]) != std::string::npos )
+					{
+						scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"].size());
+					}
+					camelCaseString(scrollShortName);
+					snprintf(buf, sizeof(buf), "%s (%+d)", scrollShortName.c_str(), item->beatitude);
+					itemFxStatus->setText(buf);
+				}
+				else
+				{
+					itemFxStatus->setText("");
+				}
 			}
 
-			if ( !isSpell && item )
-			{
-				itemFxStatus->setText(ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str());
-			}
 			itemFxStatus->setTextColor(hudColors.characterSheetLightNeutral);
 		}
 		else
@@ -20742,6 +20721,95 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				}
 				skillIcon->disabled = false;
 				break;
+			}
+		}
+
+		auto itemIcon = baseFrame->findImage("itemfx item img");
+		itemIcon->disabled = true;
+		if ( parentGUI.itemEffectUsingSpell || parentGUI.itemEffectUsingSpellbook )
+		{
+			if ( parentGUI.itemEffectUsingSpell )
+			{
+				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+				{
+					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem) )
+					{
+						if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID) )
+						{
+							string_t* string = (string_t*)spellImageNode->element;
+							if ( string )
+							{
+								itemIcon->path = "*";
+								itemIcon->path += string->data;
+								if ( auto imgGet = Image::get(itemIcon->path.c_str()) )
+								{
+									itemIcon->pos.w = imgGet->getWidth();
+									itemIcon->pos.h = imgGet->getHeight();
+									itemIcon->disabled = false;
+									itemIcon->pos.x = 48 - itemIcon->pos.w / 2;
+									itemIcon->pos.y = 68 + heightOffsetCompact - itemIcon->pos.h / 2;
+									if ( itemIcon->pos.x % 2 == 1 )
+									{
+										++itemIcon->pos.x;
+									}
+									if ( itemIcon->pos.y % 2 == 1 )
+									{
+										++itemIcon->pos.y;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else if ( parentGUI.itemEffectUsingSpellbook && items[parentGUI.itemEffectItemType].category == SPELLBOOK )
+			{
+				if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images,
+					getSpellIDFromSpellbook(static_cast<ItemType>(parentGUI.itemEffectItemType))) )
+				{
+					string_t* string = (string_t*)spellImageNode->element;
+					if ( string )
+					{
+						itemIcon->path = "*";
+						itemIcon->path += string->data;
+						if ( auto imgGet = Image::get(itemIcon->path.c_str()) )
+						{
+							itemIcon->pos.w = imgGet->getWidth();
+							itemIcon->pos.h = imgGet->getHeight();
+							itemIcon->disabled = false;
+							itemIcon->pos.x = 48 - itemIcon->pos.w / 2;
+							itemIcon->pos.y = 68 + heightOffsetCompact - itemIcon->pos.h / 2;
+							if ( itemIcon->pos.x % 2 == 1 )
+							{
+								++itemIcon->pos.x;
+							}
+							if ( itemIcon->pos.y % 2 == 1 )
+							{
+								++itemIcon->pos.y;
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			itemIcon->path = "*images/ui/ScrollSpells/Scroll_Icon_Scroll_00.png";
+			if ( auto imgGet = Image::get(itemIcon->path.c_str()) )
+			{
+				itemIcon->pos.w = imgGet->getWidth();
+				itemIcon->pos.h = imgGet->getHeight();
+				itemIcon->disabled = false;
+				itemIcon->pos.x = 48 - itemIcon->pos.w / 2;
+				itemIcon->pos.y = 68 + heightOffsetCompact - itemIcon->pos.h / 2;
+				if ( itemIcon->pos.x % 2 == 1 )
+				{
+					++itemIcon->pos.x;
+				}
+				if ( itemIcon->pos.y % 2 == 1 )
+				{
+					++itemIcon->pos.y;
+				}
 			}
 		}
 	}
@@ -21265,6 +21333,11 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 			makeColor(255, 255, 255, 255),
 			"", "itemfx skill img");
 		skillIcon->disabled = true;
+
+		auto itemIcon = bgFrame->addImage(SDL_Rect{ 270, 36, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "itemfx item img");
+		itemIcon->disabled = true;
 
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto itemFxTitle = bgFrame->addField("itemfx title", 128);

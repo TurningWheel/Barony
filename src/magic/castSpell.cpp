@@ -990,7 +990,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_CAT, SPELL_IDENTIFY);
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_IDENTIFY);
 						}
 					}
 				}
@@ -1033,7 +1033,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_CAT, SPELL_REMOVECURSE);
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_REMOVECURSE);
 						}
 					}
 				}
