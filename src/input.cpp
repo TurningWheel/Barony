@@ -41,7 +41,7 @@ void Input::defaultBindings() {
 	// these bindings should probably not be accessible to the player to change.
 	for (int c = 0; c < MAXPLAYERS; ++c) {
 		// NOTE disabled on public release!!!
-#ifndef PUBLIC_RELEASE_CANDIDATE
+#ifdef NINTENDO_DEBUG
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("ConsoleCommand1", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("ConsoleCommand2", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("ConsoleCommand3", (std::string("Pad") + std::to_string(c) + std::string("ButtonBack")).c_str()));
