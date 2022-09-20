@@ -1218,7 +1218,8 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 
 	if ( inventoryUI.bCompactView )
 	{
-		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen || GenericGUI[player].featherGUI.bOpen )
+		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen 
+			|| GenericGUI[player].featherGUI.bOpen )
 		{
 			return false;
 		}
@@ -1981,7 +1982,9 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 					else
 					{
 						bool skipPaperDollSelection = false;
-						if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen || GenericGUI[player].featherGUI.bOpen )
+						if ( GenericGUI[player].tinkerGUI.bOpen 
+							|| GenericGUI[player].alchemyGUI.bOpen 
+							|| GenericGUI[player].featherGUI.bOpen )
 						{
 							skipPaperDollSelection = true;
 						}
@@ -6579,6 +6582,7 @@ void Player::Inventory_t::updateInventory()
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
+	auto& itemfxGUI = GenericGUI[player].itemfxGUI;
 
 	appraisal.updateAppraisalAnim();
 
@@ -6601,7 +6605,7 @@ void Player::Inventory_t::updateInventory()
 	}
 
 	if ( (!chestFrame->isDisabled() && chestGUI.bOpen)
-		|| GenericGUI[player].isGUIOpen()
+		|| (GenericGUI[player].isGUIOpen() && !(GenericGUI[player].itemfxGUI.bOpen))
 		|| shopGUI.bOpen )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
@@ -7566,6 +7570,18 @@ void Player::Inventory_t::updateInventory()
 						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
 					}
 				}
+				else if ( itemfxGUI.isItemEffectMenuActive() )
+				{
+					auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
+					if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+					}
+				}
 				else if ( tinkerCraftableListOpen || tinkeringSalvageOrRepairMenuActive )
 				{
 					// grab action status of this item, don't modify using 'true' param
@@ -7687,6 +7703,7 @@ void Player::Inventory_t::updateInventory()
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
 	alchemyGUI.clearItemDisplayed();
+	itemfxGUI.clearItemDisplayed();
 	if ( !featherDrawerOpen || (featherDrawerOpen && GenericGUI[player].scribingBlankScrollTarget == nullptr) )
 	{
 		featherGUI.clearItemDisplayed();
@@ -8369,6 +8386,7 @@ void Player::Inventory_t::updateInventory()
 				bool tinkerOpen = false;
 				bool alchemyOpen = false;
 				bool featherOpen = false;
+				bool itemfxOpen = false;
 				if ( featherInscribeOrRepairActive )
 				{
 					tooltipOpen = false;
@@ -8377,6 +8395,12 @@ void Player::Inventory_t::updateInventory()
 					{
 						featherGUI.setItemDisplayNameAndPrice(item, false);
 					}
+				}
+				else if ( itemfxGUI.isItemEffectMenuActive() )
+				{
+					tooltipOpen = false;
+					itemfxOpen = true;
+					itemfxGUI.setItemDisplayNameAndPrice(item);
 				}
 				else if ( tinkeringSalvageOrRepairMenuActive )
 				{
@@ -8424,6 +8448,7 @@ void Player::Inventory_t::updateInventory()
 					|| sellingItemToShop
 					|| tinkerOpen
 					|| featherOpen
+					|| itemfxOpen
 					|| alchemyOpen)
 					&& inventoryControlActive
 					&& !selectedItem
@@ -8619,7 +8644,7 @@ void Player::Inventory_t::updateInventory()
 							playerTryEquipItemAndUpdateServer(player, item, false);
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !featherInscribeOrRepairActive )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !featherInscribeOrRepairActive && !itemfxOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -8947,6 +8972,18 @@ void Player::Inventory_t::updateInventory()
 						{
 							auto res = featherGUI.setItemDisplayNameAndPrice(item, true);
 							if ( res == GenericGUIMenu::FeatherGUI_t::FEATHER_ACTION_OK )
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+						}
+						else if ( itemfxGUI.isItemEffectMenuActive() )
+						{
+							auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
+							if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
 							{
 								updateSlotFrameFromItem(slotFrame, item);
 							}
@@ -9552,6 +9589,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	bool tinkerOpen = false;
 	bool alembicOpen = false;
 	bool featherOpen = false;
+	bool itemfxOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -9571,10 +9609,14 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		featherOpen = true;
 	}
+	else if ( GenericGUI[player].itemfxGUI.bOpen )
+	{
+		itemfxOpen = true;
+	}
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen )
+		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen || itemfxOpen )
 		{
 			if ( getContextMenuOptionBindingName(player, *it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(player, *it) == "MenuCancel" )

@@ -1195,7 +1195,8 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_HOTBAR || moduleToAccess == MODULE_CHEST
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
 		|| moduleToAccess == MODULE_FEATHER
-		|| moduleToAccess == MODULE_ALCHEMY )
+		|| moduleToAccess == MODULE_ALCHEMY
+		|| moduleToAccess == MODULE_ITEMEFFECTGUI )
 	{
 		if ( moduleToAccess == MODULE_HOTBAR )
 		{
@@ -5990,6 +5991,8 @@ void Player::clearGUIPointers()
 	genericGUI.featherGUI.featherFrame = nullptr;
 	genericGUI.featherGUI.featherSlotFrames.clear();
 	genericGUI.featherGUI.itemRequiresTitleReflow = true;
+	genericGUI.itemfxGUI.itemEffectFrame = nullptr;
+	genericGUI.itemfxGUI.itemRequiresTitleReflow = true;
 
 	StatusEffectQueue[playernum].statusEffectFrame = nullptr;
 	StatusEffectQueue[playernum].statusEffectTooltipFrame = nullptr;

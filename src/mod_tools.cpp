@@ -896,10 +896,11 @@ void ItemTooltips_t::readTooltipsFromFile()
 	{
 		printlog("[JSON]: Error: file size is too large to fit in buffer! %s", inputPath.c_str());
 		FileIO::close(fp);
+		return;
 	}
 
-	char buf[buffer_size];
-	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	static char buf[buffer_size];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
 	rapidjson::StringStream is(buf);

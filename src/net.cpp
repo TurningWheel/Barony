@@ -3993,13 +3993,29 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	//Open up the GUI to identify an item.
 	{'IDEN', [](){
-		GenericGUI[clientnum].openGUI(GUI_TYPE_IDENTIFY, nullptr);
+		if ( net_packet->data[4] == 1 ) // spellbook
+		{
+			int beatitude = static_cast<Sint8>(net_packet->data[5]);
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, beatitude, getSpellbookFromSpellID(SPELL_IDENTIFY), SPELL_IDENTIFY);
+		}
+		else
+		{
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_IDENTIFY);
+		}
 	}},
 
 	// Open up the Remove Curse GUI
 	{'CRCU', [](){
 		//Uncurse an item
-		GenericGUI[clientnum].openGUI(GUI_TYPE_REMOVECURSE, nullptr);
+		if ( net_packet->data[4] == 1 ) // spellbook
+		{
+			int beatitude = static_cast<Sint8>(net_packet->data[5]);
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, beatitude, getSpellbookFromSpellID(SPELL_REMOVECURSE), SPELL_REMOVECURSE);
+		}
+		else
+		{
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_REMOVECURSE);
+		}
 	}},
 
 	//Add a spell to the channeled spells list.

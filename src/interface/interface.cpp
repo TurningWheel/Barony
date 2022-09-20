@@ -5152,6 +5152,28 @@ void GenericGUIMenu::updateGUI()
 				scribingLastUsageAmount = 0;
 			}
 		}
+		else if ( guiType == GUI_TYPE_ITEMFX )
+		{
+			if ( !itemEffectScrollItem && !itemEffectUsingSpell && !itemEffectUsingSpellbook )
+			{
+				closeGUI();
+				return;
+			}
+			if ( itemEffectScrollItem )
+			{
+				if ( !itemEffectScrollItem->node )
+				{
+					closeGUI();
+					return;
+				}
+				else if ( itemEffectScrollItem->node->list != &stats[gui_player]->inventory )
+				{
+					// dropped out of inventory or something.
+					closeGUI();
+					return;
+				}
+			}
+		}
 
 		gui_starty = (players[gui_player]->camera_midx() + (inventoryChest_bmp->w / 2)) + offsetx;
 		gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
@@ -5434,101 +5456,101 @@ void GenericGUIMenu::updateGUI()
 		if ( guiType != GUI_TYPE_TINKERING && guiType != GUI_TYPE_ALCHEMY
 			&& guiType != GUI_TYPE_SCRIBING ) // gradually remove all this for all windows once upgraded
 		{
-			drawImage(identifyGUI_img, NULL, &pos);
+			//drawImage(identifyGUI_img, NULL, &pos);
 
-			//Buttons
-			if ( inputs.bMouseLeft(gui_player) )
-			{
-				//GUI scroll up button.
-				if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
-				{
-					if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
-					{
-						buttonclick = 7;
-						scroll--;
-						inputs.mouseClearLeft(gui_player);
-					}
-				}
-				//GUI scroll down button.
-				else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
-				{
-					if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
-					{
-						buttonclick = 8;
-						scroll++;
-						inputs.mouseClearLeft(gui_player);
-					}
-				}
-				else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
-				{
-					//GUI close button.
-					if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
-					{
-						buttonclick = 9;
-						inputs.mouseClearLeft(gui_player);
-					}
+			////Buttons
+			//if ( inputs.bMouseLeft(gui_player) )
+			//{
+			//	//GUI scroll up button.
+			//	if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
+			//	{
+			//		if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+			//		{
+			//			buttonclick = 7;
+			//			scroll--;
+			//			inputs.mouseClearLeft(gui_player);
+			//		}
+			//	}
+			//	//GUI scroll down button.
+			//	else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
+			//	{
+			//		if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+			//		{
+			//			buttonclick = 8;
+			//			scroll++;
+			//			inputs.mouseClearLeft(gui_player);
+			//		}
+			//	}
+			//	else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
+			//	{
+			//		//GUI close button.
+			//		if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
+			//		{
+			//			buttonclick = 9;
+			//			inputs.mouseClearLeft(gui_player);
+			//		}
 
-					// 20/12/20 - disabling this for now. unnecessary
-					if ( false )
-					{
-						if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
-						{
-							gui_clickdrag[gui_player] = true;
-							draggingGUI = true;
-							dragoffset_x[gui_player] = omousex - gui_starty;
-							dragoffset_y[gui_player] = omousey - gui_startx;
-							inputs.mouseClearLeft(gui_player);
-						}
-					}
-				}
-			}
+			//		// 20/12/20 - disabling this for now. unnecessary
+			//		if ( false )
+			//		{
+			//			if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+			//			{
+			//				gui_clickdrag[gui_player] = true;
+			//				draggingGUI = true;
+			//				dragoffset_x[gui_player] = omousex - gui_starty;
+			//				dragoffset_y[gui_player] = omousey - gui_startx;
+			//				inputs.mouseClearLeft(gui_player);
+			//			}
+			//		}
+			//	}
+			//}
 
-			// mousewheel
-			if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
-			{
-				if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
-				{
-					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-					{
-						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-						scroll++;
-					}
-					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-					{
-						mousestatus[SDL_BUTTON_WHEELUP] = 0;
-						scroll--;
-					}
-				}
-			}
+			//// mousewheel
+			//if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
+			//{
+			//	if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
+			//	{
+			//		if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+			//		{
+			//			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+			//			scroll++;
+			//		}
+			//		else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+			//		{
+			//			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			//			scroll--;
+			//		}
+			//	}
+			//}
 
-			if ( draggingGUI )
-			{
-				if ( gui_clickdrag[gui_player] )
-				{
-					offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
-					offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
-					if ( gui_starty <= 0 )
-					{
-						offsetx = 0 - (gui_starty - offsetx);
-					}
-					if ( gui_starty > 0 + xres - identifyGUI_img->w )
-					{
-						offsetx = (0 + xres - identifyGUI_img->w) - (gui_starty - offsetx);
-					}
-					if ( gui_startx <= 0 )
-					{
-						offsety = 0 - (gui_startx - offsety);
-					}
-					if ( gui_startx > 0 + players[gui_player]->camera_y2() - identifyGUI_img->h )
-					{
-						offsety = (0 + players[gui_player]->camera_y2() - identifyGUI_img->h) - (gui_startx - offsety);
-					}
-				}
-				else
-				{
-					draggingGUI = false;
-				}
-			}
+			//if ( draggingGUI )
+			//{
+			//	if ( gui_clickdrag[gui_player] )
+			//	{
+			//		offsetx = (omousex - dragoffset_x[gui_player]) - (gui_starty - offsetx);
+			//		offsety = (omousey - dragoffset_y[gui_player]) - (gui_startx - offsety);
+			//		if ( gui_starty <= 0 )
+			//		{
+			//			offsetx = 0 - (gui_starty - offsetx);
+			//		}
+			//		if ( gui_starty > 0 + xres - identifyGUI_img->w )
+			//		{
+			//			offsetx = (0 + xres - identifyGUI_img->w) - (gui_starty - offsetx);
+			//		}
+			//		if ( gui_startx <= 0 )
+			//		{
+			//			offsety = 0 - (gui_startx - offsety);
+			//		}
+			//		if ( gui_startx > 0 + players[gui_player]->camera_y2() - identifyGUI_img->h )
+			//		{
+			//			offsety = (0 + players[gui_player]->camera_y2() - identifyGUI_img->h) - (gui_startx - offsety);
+			//		}
+			//	}
+			//	else
+			//	{
+			//		draggingGUI = false;
+			//	}
+			//}
 		}
 
 		list_t* player_inventory = &stats[gui_player]->inventory;
@@ -5555,389 +5577,391 @@ void GenericGUIMenu::updateGUI()
 		{
 			messagePlayer(0, MESSAGE_DEBUG, "Warning: stats[%d].inventory is not a valid list. This should not happen.", gui_player);
 		}
-		else
-		{
-			//Print the window label signifying this GUI.
-			char* window_name;
-			if ( guiType == GUI_TYPE_REPAIR )
-			{
-				if ( repairItemType == SCROLL_REPAIR )
-				{
-					window_name = language[3286];
-				}
-				else if ( repairItemType == SCROLL_CHARGING )
-				{
-					window_name = language[3732];
-				}
-				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
-			}
-			else if ( guiType == GUI_TYPE_ALCHEMY )
-			{
-				/*if ( !basePotion )
-				{
-					if ( !experimentingAlchemy )
-					{
-						window_name = language[3328];
-					}
-					else
-					{
-						window_name = language[3344];
-					}
-					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
-				}
-				else
-				{
-					if ( !experimentingAlchemy )
-					{
-						window_name = language[3329];
-					}
-					else
-					{
-						window_name = language[3345];
-					}
-					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
-						gui_startx + 4 - TTF8_HEIGHT - 4, window_name);
-					int count = basePotion->count;
-					basePotion->count = 1;
-					char *description = basePotion->description();
-					basePotion->count = count;
-					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(description)) / 2))),
-						gui_startx + 4, description);
-				}*/
-			}
-			else if ( guiType == GUI_TYPE_REMOVECURSE )
-			{
-				window_name = language[346];
-				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
-			}
-			else if ( guiType == GUI_TYPE_IDENTIFY )
-			{
-				window_name = language[318];
-				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
-			}
 
-			if ( guiType != GUI_TYPE_TINKERING 
-				&& guiType != GUI_TYPE_ALCHEMY
-				&& guiType != GUI_TYPE_SCRIBING )
-			{
-				//GUI up button.
-				if ( buttonclick == 7 )
-				{
-					pos.x = gui_starty + (identifyGUI_img->w - 28);
-					pos.y = gui_startx + 16;
-					pos.w = 0;
-					pos.h = 0;
-					drawImage(invup_bmp, NULL, &pos);
-				}
-				//GUI down button.
-				if ( buttonclick == 8 )
-				{
-					pos.x = gui_starty + (identifyGUI_img->w - 28);
-					pos.y = gui_startx + 52;
-					pos.w = 0;
-					pos.h = 0;
-					drawImage(invdown_bmp, NULL, &pos);
-				}
-				//GUI close button.
-				if ( buttonclick == 9 )
-				{
-					pos.x = gui_starty + 393;
-					pos.y = gui_startx;
-					pos.w = 0;
-					pos.h = 0;
-					drawImage(invclose_bmp, NULL, &pos);
-					closeGUI();
-				}
+		//else
+		//{
+		//	//Print the window label signifying this GUI.
+		//	char* window_name;
+		//	/*if ( guiType == GUI_TYPE_REPAIR )
+		//	{
+		//		if ( itemEffectItemType == SCROLL_REPAIR )
+		//		{
+		//			window_name = language[3286];
+		//		}
+		//		else if ( itemEffectItemType == SCROLL_CHARGING )
+		//		{
+		//			window_name = language[3732];
+		//		}
+		//		ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+		//	}
+		//	else */
+		//	if ( guiType == GUI_TYPE_ALCHEMY )
+		//	{
+		//		/*if ( !basePotion )
+		//		{
+		//			if ( !experimentingAlchemy )
+		//			{
+		//				window_name = language[3328];
+		//			}
+		//			else
+		//			{
+		//				window_name = language[3344];
+		//			}
+		//			ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+		//		}
+		//		else
+		//		{
+		//			if ( !experimentingAlchemy )
+		//			{
+		//				window_name = language[3329];
+		//			}
+		//			else
+		//			{
+		//				window_name = language[3345];
+		//			}
+		//			ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
+		//				gui_startx + 4 - TTF8_HEIGHT - 4, window_name);
+		//			int count = basePotion->count;
+		//			basePotion->count = 1;
+		//			char *description = basePotion->description();
+		//			basePotion->count = count;
+		//			ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(description)) / 2))),
+		//				gui_startx + 4, description);
+		//		}*/
+		//	}
+		//	/*else if ( guiType == GUI_TYPE_REMOVECURSE )
+		//	{
+		//		window_name = language[346];
+		//		ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+		//	}
+		//	else if ( guiType == GUI_TYPE_IDENTIFY )
+		//	{
+		//		window_name = language[318];
+		//		ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+		//	}*/
 
-				Item *item = nullptr;
+		//	if ( guiType != GUI_TYPE_TINKERING 
+		//		&& guiType != GUI_TYPE_ALCHEMY
+		//		&& guiType != GUI_TYPE_SCRIBING )
+		//	{
+		//		//GUI up button.
+		//		if ( buttonclick == 7 )
+		//		{
+		//			pos.x = gui_starty + (identifyGUI_img->w - 28);
+		//			pos.y = gui_startx + 16;
+		//			pos.w = 0;
+		//			pos.h = 0;
+		//			drawImage(invup_bmp, NULL, &pos);
+		//		}
+		//		//GUI down button.
+		//		if ( buttonclick == 8 )
+		//		{
+		//			pos.x = gui_starty + (identifyGUI_img->w - 28);
+		//			pos.y = gui_startx + 52;
+		//			pos.w = 0;
+		//			pos.h = 0;
+		//			drawImage(invdown_bmp, NULL, &pos);
+		//		}
+		//		//GUI close button.
+		//		if ( buttonclick == 9 )
+		//		{
+		//			pos.x = gui_starty + 393;
+		//			pos.y = gui_startx;
+		//			pos.w = 0;
+		//			pos.h = 0;
+		//			drawImage(invclose_bmp, NULL, &pos);
+		//			closeGUI();
+		//		}
 
-				bool selectingSlot = false;
-				SDL_Rect slotPos;
-				slotPos.x = gui_starty + 12;
-				slotPos.w = inventoryoptionChest_bmp->w;
-				slotPos.y = gui_startx + 16;
-				slotPos.h = inventoryoptionChest_bmp->h;
-				bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
+		//		Item *item = nullptr;
 
-				for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
-				{
-					pos.x = slotPos.x;
-					pos.w = 0;
-					pos.h = 0;
+		//		bool selectingSlot = false;
+		//		SDL_Rect slotPos;
+		//		slotPos.x = gui_starty + 12;
+		//		slotPos.w = inventoryoptionChest_bmp->w;
+		//		slotPos.y = gui_startx + 16;
+		//		slotPos.h = inventoryoptionChest_bmp->h;
+		//		bool mouseWithinBoundaryX = (mousex >= slotPos.x && mousex < slotPos.x + slotPos.w);
+
+		//		for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
+		//		{
+		//			pos.x = slotPos.x;
+		//			pos.w = 0;
+		//			pos.h = 0;
 
 
-					if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
-					{
-						pos.y = slotPos.y;
-						drawImage(inventoryoptionChest_bmp, nullptr, &pos);
-						selectedSlot = i;
-						selectingSlot = true;
-						if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
-						{
-							inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
-							inputs.mouseClearLeft(gui_player);
+		//			if ( mouseWithinBoundaryX && omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+		//			{
+		//				pos.y = slotPos.y;
+		//				drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+		//				selectedSlot = i;
+		//				selectingSlot = true;
+		//				if ( (inputs.bMouseLeft(gui_player) || inputs.bControllerInputPressed(gui_player, INJOY_MENU_USE)) )
+		//				{
+		//					inputs.controllerClearInput(gui_player, INJOY_MENU_USE);
+		//					inputs.mouseClearLeft(gui_player);
 
-							bool result = executeOnItemClick(itemsDisplayed[i]);
-							GUICurrentType oldType = guiType;
-							rebuildGUIInventory();
+		//					bool result = executeOnItemClick(itemsDisplayed[i]);
+		//					GUICurrentType oldType = guiType;
+		//					rebuildGUIInventory();
 
-							if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
-							{
-								// do nothing
-							}
-							else if ( itemsDisplayed[i] == nullptr )
-							{
-								if ( itemsDisplayed[0] == nullptr )
-								{
-									//Go back to inventory.
-									selectedSlot = -1;
-									players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
-								}
-								else
-								{
-									//Move up one slot.
-									--selectedSlot;
-									warpMouseToSelectedSlot();
-								}
-							}
-						}
-					}
-				}
+		//					if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
+		//					{
+		//						// do nothing
+		//					}
+		//					else if ( itemsDisplayed[i] == nullptr )
+		//					{
+		//						if ( itemsDisplayed[0] == nullptr )
+		//						{
+		//							//Go back to inventory.
+		//							selectedSlot = -1;
+		//							players[gui_player]->inventoryUI.warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+		//						}
+		//						else
+		//						{
+		//							//Move up one slot.
+		//							--selectedSlot;
+		//							warpMouseToSelectedSlot();
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
 
-				if ( !selectingSlot )
-				{
-					selectedSlot = -1;
-				}
-			}
+		//		if ( !selectingSlot )
+		//		{
+		//			selectedSlot = -1;
+		//		}
+		//	}
 
-			//Okay, now prepare to render all the items.
-			y = gui_startx + 22;
-			c = 0;
-			if ( player_inventory && guiType != GUI_TYPE_ALCHEMY )
-			{
-				rebuildGUIInventory();
+		//	//Okay, now prepare to render all the items.
+		//	y = gui_startx + 22;
+		//	c = 0;
+		//	if ( player_inventory && guiType != GUI_TYPE_ALCHEMY )
+		//	{
+		//		rebuildGUIInventory();
 
-				std::unordered_map<ItemType, int> itemCounts;
-				if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TINKER_FILTER_CRAFTABLE )
-				{
-					for ( node = stats[gui_player]->inventory.first; node != NULL; node = node->next )
-					{
-						if ( node->element )
-						{
-							Item* item = (Item*)node->element;
-							itemCounts[item->type] += item->count;
-						}
-					}
-					for ( node = player_inventory->first; node != NULL; node = node->next )
-					{
-						if ( node->element )
-						{
-							Item* item = (Item*)node->element;
-							if ( isNodeTinkeringCraftableItem(item->node) )
-							{
-								// make the displayed items reflect how many you are carrying.
-								item->count = 0;
-								if ( itemCounts.find(item->type) != itemCounts.end() )
-								{
-									item->count = itemCounts[item->type];
-								}
-							}
-							else
-							{
-								// stop once we reach normal inventory.
-								break;
-							}
-						}
-					}
-				}
-				//Actually render the items.
-				c = 0;
-				for ( node = player_inventory->first; node != NULL; node = node->next )
-				{
-					if ( node->element )
-					{
-						Item* item = (Item*)node->element;
-						bool displayItem = shouldDisplayItemInGUI(item);
-						if ( displayItem )   //Skip over all non-used items
-						{
-							c++;
-							if ( c <= scroll )
-							{
-								continue;
-							}
-							char tempstr[256] = { 0 };
-							int showTinkeringBotHealthPercentage = false;
-							Uint32 color = uint32ColorWhite;
-							if ( guiType == GUI_TYPE_TINKERING )
-							{
-								break;
-								if ( isNodeTinkeringCraftableItem(item->node) )
-								{
-									// if anything, these should be doing
-									// strncpy(tempstr, language[N], TEMPSTR_LEN - <extra space needed>)
-									// not strlen(language[N]). there is zero safety conferred from this
-									// anti-pattern. different story with memcpy(), but strcpy() is not
-									// memcpy().
-									strcpy(tempstr, language[3644]); // craft
-									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
-									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
-									{
-										color = uint32ColorGray;
-									}
-								}
-								else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
-								{
-									strcpy(tempstr, language[3645]); // salvage
-									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
-								}
-								else if ( tinkeringIsItemRepairable(item, gui_player) )
-								{
-									if ( tinkeringIsItemUpgradeable(item) )
-									{
-										if ( tinkeringUpgradeMaxStatus(item) <= item->status )
-										{
-											color = uint32ColorGray; // can't upgrade since it's higher status than we can craft.
-										}
-										else if ( !tinkeringPlayerCanAffordRepair(item) )
-										{
-											color = uint32ColorGray; // can't upgrade since no materials
-										}
-										strcpy(tempstr, language[3684]); // upgrade
-										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
-									}
-									else
-									{
-										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 && itemCategory(item) == TOOL )
-										{
-											color = uint32ColorGray; // can't repair since no we can't craft it.
-										}
-										else if ( !tinkeringPlayerCanAffordRepair(item) )
-										{
-											color = uint32ColorGray; // can't repair since no materials
-										}
-										strcpy(tempstr, language[3646]); // repair
-										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
-									}
-									if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
-									{
-										showTinkeringBotHealthPercentage = true;
-									}
-								}
-								else
-								{
-									messagePlayer(clientnum, MESSAGE_DEBUG, "%d", item->type);
-									strncat(tempstr, "invalid item", 13);
-								}
-							}
-							else if ( guiType == GUI_TYPE_SCRIBING )
-							{
-								break;
-								if ( isNodeScribingCraftableItem(item->node) )
-								{
-									snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
-								}
-								else
-								{
-									if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
-									{
-										strcpy(tempstr, language[3719]); // repair
-										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
-									}
-									else
-									{
-										strcpy(tempstr, language[3718]); // inscribe
-										int oldcount = item->count;
-										item->count = 1;
-										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
-										item->count = oldcount;
-									}
-								}
-							}
-							else
-							{
-								strncpy(tempstr, item->description(), 46);
-							}
+		//		std::unordered_map<ItemType, int> itemCounts;
+		//		if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+		//		{
+		//			for ( node = stats[gui_player]->inventory.first; node != NULL; node = node->next )
+		//			{
+		//				if ( node->element )
+		//				{
+		//					Item* item = (Item*)node->element;
+		//					itemCounts[item->type] += item->count;
+		//				}
+		//			}
+		//			for ( node = player_inventory->first; node != NULL; node = node->next )
+		//			{
+		//				if ( node->element )
+		//				{
+		//					Item* item = (Item*)node->element;
+		//					if ( isNodeTinkeringCraftableItem(item->node) )
+		//					{
+		//						// make the displayed items reflect how many you are carrying.
+		//						item->count = 0;
+		//						if ( itemCounts.find(item->type) != itemCounts.end() )
+		//						{
+		//							item->count = itemCounts[item->type];
+		//						}
+		//					}
+		//					else
+		//					{
+		//						// stop once we reach normal inventory.
+		//						break;
+		//					}
+		//				}
+		//			}
+		//		}
+		//		//Actually render the items.
+		//		c = 0;
+		//		for ( node = player_inventory->first; node != NULL; node = node->next )
+		//		{
+		//			if ( node->element )
+		//			{
+		//				Item* item = (Item*)node->element;
+		//				bool displayItem = shouldDisplayItemInGUI(item);
+		//				if ( displayItem )   //Skip over all non-used items
+		//				{
+		//					c++;
+		//					if ( c <= scroll )
+		//					{
+		//						continue;
+		//					}
+		//					char tempstr[256] = { 0 };
+		//					int showTinkeringBotHealthPercentage = false;
+		//					Uint32 color = uint32ColorWhite;
+		//					if ( guiType == GUI_TYPE_TINKERING )
+		//					{
+		//						break;
+		//						if ( isNodeTinkeringCraftableItem(item->node) )
+		//						{
+		//							// if anything, these should be doing
+		//							// strncpy(tempstr, language[N], TEMPSTR_LEN - <extra space needed>)
+		//							// not strlen(language[N]). there is zero safety conferred from this
+		//							// anti-pattern. different story with memcpy(), but strcpy() is not
+		//							// memcpy().
+		//							strcpy(tempstr, language[3644]); // craft
+		//							strncat(tempstr, item->description(), 46 - strlen(language[3644]));
+		//							if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
+		//							{
+		//								color = uint32ColorGray;
+		//							}
+		//						}
+		//						else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+		//						{
+		//							strcpy(tempstr, language[3645]); // salvage
+		//							strncat(tempstr, item->description(), 46 - strlen(language[3645]));
+		//						}
+		//						else if ( tinkeringIsItemRepairable(item, gui_player) )
+		//						{
+		//							if ( tinkeringIsItemUpgradeable(item) )
+		//							{
+		//								if ( tinkeringUpgradeMaxStatus(item) <= item->status )
+		//								{
+		//									color = uint32ColorGray; // can't upgrade since it's higher status than we can craft.
+		//								}
+		//								else if ( !tinkeringPlayerCanAffordRepair(item) )
+		//								{
+		//									color = uint32ColorGray; // can't upgrade since no materials
+		//								}
+		//								strcpy(tempstr, language[3684]); // upgrade
+		//								strncat(tempstr, item->description(), 46 - strlen(language[3684]));
+		//							}
+		//							else
+		//							{
+		//								if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 && itemCategory(item) == TOOL )
+		//								{
+		//									color = uint32ColorGray; // can't repair since no we can't craft it.
+		//								}
+		//								else if ( !tinkeringPlayerCanAffordRepair(item) )
+		//								{
+		//									color = uint32ColorGray; // can't repair since no materials
+		//								}
+		//								strcpy(tempstr, language[3646]); // repair
+		//								strncat(tempstr, item->description(), 46 - strlen(language[3646]));
+		//							}
+		//							if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
+		//							{
+		//								showTinkeringBotHealthPercentage = true;
+		//							}
+		//						}
+		//						else
+		//						{
+		//							messagePlayer(clientnum, MESSAGE_DEBUG, "%d", item->type);
+		//							strncat(tempstr, "invalid item", 13);
+		//						}
+		//					}
+		//					else if ( guiType == GUI_TYPE_SCRIBING )
+		//					{
+		//						break;
+		//						if ( isNodeScribingCraftableItem(item->node) )
+		//						{
+		//							snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
+		//						}
+		//						else
+		//						{
+		//							if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+		//							{
+		//								strcpy(tempstr, language[3719]); // repair
+		//								strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+		//							}
+		//							else
+		//							{
+		//								strcpy(tempstr, language[3718]); // inscribe
+		//								int oldcount = item->count;
+		//								item->count = 1;
+		//								strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+		//								item->count = oldcount;
+		//							}
+		//						}
+		//					}
+		//					else
+		//					{
+		//						strncpy(tempstr, item->description(), 46);
+		//					}
 
-							if ( showTinkeringBotHealthPercentage )
-							{
-								int health = 100;
-								if ( item->appearance >= 0 && item->appearance <= 4 )
-								{
-									health = 25 * item->appearance;
-									if ( health == 0 && item->status != BROKEN )
-									{
-										health = 5;
-									}
-								}
-								char healthstr[32] = "";
-								snprintf(healthstr, 16, " (%d%%)", health);
-								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
-							}
-							else if ( item->type == ENCHANTED_FEATHER && item->identified )
-							{
-								char healthstr[32] = "";
-								snprintf(healthstr, 16, " (%d%%)", item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
-								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
-							}
-							
+		//					if ( showTinkeringBotHealthPercentage )
+		//					{
+		//						int health = 100;
+		//						if ( item->appearance >= 0 && item->appearance <= 4 )
+		//						{
+		//							health = 25 * item->appearance;
+		//							if ( health == 0 && item->status != BROKEN )
+		//							{
+		//								health = 5;
+		//							}
+		//						}
+		//						char healthstr[32] = "";
+		//						snprintf(healthstr, 16, " (%d%%)", health);
+		//						strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+		//					}
+		//					else if ( item->type == ENCHANTED_FEATHER && item->identified )
+		//					{
+		//						char healthstr[32] = "";
+		//						snprintf(healthstr, 16, " (%d%%)", item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+		//						strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+		//					}
+		//					
 
-							if ( strlen(tempstr) >= 46 )
-							{
-								strcat(tempstr, " ...");
-							}
-							ttfPrintTextColor(ttf8, gui_starty + 36, y, color, true, tempstr);
-							pos.x = gui_starty + 16;
-							pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
-							pos.w = 16;
-							pos.h = 16;
-							drawImageScaled(itemSprite(item), NULL, &pos);
-							if ( guiType == GUI_TYPE_TINKERING )
-							{
-								int metal = 0;
-								int magic = 0;
-								if ( isNodeTinkeringCraftableItem(item->node) )
-								{
-									tinkeringGetCraftingCost(item, &metal, &magic);
-								}
-								else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
-								{
-									tinkeringGetItemValue(item, &metal, &magic);
-								}
-								else if ( tinkeringIsItemRepairable(item, gui_player) )
-								{
-									tinkeringGetRepairCost(item, &metal, &magic);
-								}
-								pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
-								if ( !item->identified )
-								{
-									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "  ?    ?");
-								}
-								else
-								{
-									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
-								}
-								node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
-								if ( imageNode )
-								{
-									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
-								}
-								pos.x += TTF12_WIDTH * 4;
-								imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
-								if ( imageNode )
-								{
-									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
-								}
-							}
-							y += 18;
-							if ( c > 3 + scroll )
-							{
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
+		//					if ( strlen(tempstr) >= 46 )
+		//					{
+		//						strcat(tempstr, " ...");
+		//					}
+		//					ttfPrintTextColor(ttf8, gui_starty + 36, y, color, true, tempstr);
+		//					pos.x = gui_starty + 16;
+		//					pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
+		//					pos.w = 16;
+		//					pos.h = 16;
+		//					drawImageScaled(itemSprite(item), NULL, &pos);
+		//					if ( guiType == GUI_TYPE_TINKERING )
+		//					{
+		//						int metal = 0;
+		//						int magic = 0;
+		//						if ( isNodeTinkeringCraftableItem(item->node) )
+		//						{
+		//							tinkeringGetCraftingCost(item, &metal, &magic);
+		//						}
+		//						else if ( isItemSalvageable(item, gui_player) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
+		//						{
+		//							tinkeringGetItemValue(item, &metal, &magic);
+		//						}
+		//						else if ( tinkeringIsItemRepairable(item, gui_player) )
+		//						{
+		//							tinkeringGetRepairCost(item, &metal, &magic);
+		//						}
+		//						pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
+		//						if ( !item->identified )
+		//						{
+		//							ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "  ?    ?");
+		//						}
+		//						else
+		//						{
+		//							ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
+		//						}
+		//						node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+		//						if ( imageNode )
+		//						{
+		//							drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+		//						}
+		//						pos.x += TTF12_WIDTH * 4;
+		//						imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+		//						if ( imageNode )
+		//						{
+		//							drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+		//						}
+		//					}
+		//					y += 18;
+		//					if ( c > 3 + scroll )
+		//					{
+		//						break;
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 	}
 }
 
@@ -5947,9 +5971,24 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	{
 		return false;
 	}
-	if ( guiType == GUI_TYPE_REPAIR )
+	if ( guiType == GUI_TYPE_ITEMFX )
 	{
-		return isItemRepairable(item, repairItemType);
+		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY )
+		{
+			return isItemIdentifiable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING )
+		{
+			return isItemRepairable(item, itemEffectItemType);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REMOVECURSE 
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE )
+		{
+			return isItemRemoveCursable(item);
+		}
+		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
 	{
@@ -6003,14 +6042,6 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 				return true;
 			}
 		}
-	}
-	else if ( guiType == GUI_TYPE_REMOVECURSE )
-	{
-		return isItemRemoveCursable(item);
-	}
-	else if ( guiType == GUI_TYPE_IDENTIFY )
-	{
-		return isItemIdentifiable(item);
 	}
 	return false;
 }
@@ -6116,13 +6147,13 @@ void GenericGUIMenu::repairItem(Item* item)
 
 	bool isEquipped = itemIsEquipped(item, gui_player);
 
-	if ( repairItemType == SCROLL_CHARGING )
+	if ( itemEffectItemType == SCROLL_CHARGING )
 	{
 		if ( itemCategory(item) == MAGICSTAFF )
 		{
 			if ( item->status == BROKEN )
 			{
-				if ( usingScrollBeatitude > 0 )
+				if ( itemEffectItemBeatitude > 0 )
 				{
 					item->status = EXCELLENT;
 				}
@@ -6142,7 +6173,7 @@ void GenericGUIMenu::repairItem(Item* item)
 			int repairAmount = 100 - durability;
 			if ( repairAmount > (ENCHANTED_FEATHER_MAX_DURABILITY / 2) )
 			{
-				if ( usingScrollBeatitude == 0 )
+				if ( itemEffectItemBeatitude == 0 )
 				{
 					repairAmount = ENCHANTED_FEATHER_MAX_DURABILITY / 2;
 				}
@@ -6166,7 +6197,7 @@ void GenericGUIMenu::repairItem(Item* item)
 			}
 			else
 			{
-				item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+				item->status = static_cast<Status>(std::min(item->status + 2 + itemEffectItemBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
 		messagePlayer(gui_player, MESSAGE_MISC, language[872], item->getName());
@@ -6230,9 +6261,12 @@ void GenericGUIMenu::closeGUI()
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
-	repairItemType = 0;
-	removeCurseUsingSpell = false;
-	identifyUsingSpell = false;
+	itemEffectUsingSpell = false;
+	itemEffectUsingSpellbook = false;
+	itemEffectScrollItem = nullptr;
+	itemEffectItemType = 0;
+	itemEffectItemBeatitude = 0;
+	itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_NONE;
 	if ( tinkerGUI.bOpen )
 	{
 		tinkerGUI.closeTinkerMenu();
@@ -6244,6 +6278,10 @@ void GenericGUIMenu::closeGUI()
 	if ( featherGUI.bOpen )
 	{
 		featherGUI.closeFeatherMenu();
+	}
+	if ( itemfxGUI.bOpen )
+	{
+		itemfxGUI.closeItemEffectMenu();
 	}
 	if ( wasOpen )
 	{
@@ -6359,16 +6397,102 @@ void GenericGUIMenu::warpMouseToSelectedSlot()
 	//SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
 
-void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
+void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, int effectItemType, int usingSpellID)
 {
 	this->closeGUI();
 
+	if ( !effectItem && usingSpellID != SPELL_NONE && effectItemType == SPELL_CAT )
+	{
+		for ( node_t* node = stats[gui_player]->inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			if ( !item )
+			{
+				continue;
+			}
+			//Search player's inventory for the special spell item.
+			if ( itemCategory(item) != SPELL_CAT )
+			{
+				continue;
+			}
+			spell_t* spell = getSpellFromItem(gui_player, item);
+			if ( spell && spell->ID == usingSpellID )
+			{
+				effectItem = item;
+				break;
+			}
+		}
+		if ( !effectItem )
+		{
+			return;
+		}
+	}
+
+	if ( players[gui_player] && players[gui_player]->entity )
+	{
+		if ( players[gui_player]->entity->isBlind() )
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, language[892]);
+			return; // I can't see!
+		}
+	}
+
+	if ( players[gui_player]->inventoryUI.bCompactView )
+	{
+		// if compact view, then we don't want the inventory slot being selected
+		if ( players[gui_player]->inventoryUI.getSelectedSlotY() < 0 )
+		{
+			players[gui_player]->inventoryUI.selectSlot(0, 0);
+		}
+	}
 	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 
 	guiActive = true;
-	usingScrollBeatitude = scrollBeatitude;
-	repairItemType = scrollType;
+	itemEffectItemBeatitude = effectBeatitude;
+	itemEffectItemType = effectItemType;
 	guiType = static_cast<GUICurrentType>(type);
+	if ( type == GUICurrentType::GUI_TYPE_ITEMFX )
+	{
+		if ( items[effectItemType].category == SPELLBOOK )
+		{
+			itemEffectUsingSpellbook = true;
+		}
+		else if ( itemEffectItemType == SPELL_ITEM )
+		{
+			itemEffectUsingSpell = true;
+		}
+		itemEffectScrollItem = effectItem;
+		if ( itemEffectItemType == SCROLL_IDENTIFY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY;
+		}
+		else if ( usingSpellID == SPELL_IDENTIFY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY;
+		}
+		else if ( itemEffectItemType == SCROLL_CHARGING )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING;
+		}
+		else if ( itemEffectItemType == SCROLL_REMOVECURSE )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REMOVECURSE;
+		}
+		else if ( usingSpellID == SPELL_REMOVECURSE )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE;
+		}
+		else if ( itemEffectItemType == SCROLL_REPAIR )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR;
+		}
+		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_NONE )
+		{
+			this->closeGUI();
+			return;
+		}
+		itemfxGUI.openItemEffectMenu(itemfxGUI.currentMode);
+	}
 	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
@@ -6466,20 +6590,6 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 		scribingCreateCraftableItemList();
 		featherGUI.openFeatherMenu();
 	}
-	else if ( guiType == GUI_TYPE_REMOVECURSE )
-	{
-		if ( !itemOpenedWith )
-		{
-			removeCurseUsingSpell = true;
-		}
-	}
-	else if ( guiType == GUI_TYPE_IDENTIFY )
-	{
-		if ( !itemOpenedWith )
-		{
-			identifyUsingSpell = true;
-		}
-	}
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
@@ -6500,20 +6610,42 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		return false;
 	}
 
-	if ( guiType == GUI_TYPE_REPAIR )
+	if ( guiType == GUI_TYPE_ITEMFX )
 	{
-		repairItem(item);
-		return true;
-	}
-	else if ( guiType == GUI_TYPE_REMOVECURSE )
-	{
-		uncurseItem(item);
-		return true;
-	}
-	else if ( guiType == GUI_TYPE_IDENTIFY )
-	{
-		identifyItem(item);
-		return true;
+		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING )
+		{
+			if ( itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, language[848]); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			repairItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REMOVECURSE
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE )
+		{
+			if ( itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, language[848]); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			uncurseItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_IDENTIFY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY )
+		{
+			if ( itemEffectScrollItem && itemCategory(itemEffectScrollItem) == SCROLL )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, language[848]); // as you read the scroll it disappears...
+				consumeItem(itemEffectScrollItem, gui_player);
+			}
+			identifyItem(item);
+			return true;
+		}
+		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
 	{
@@ -13164,6 +13296,11 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 					}
 				}
 				snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+			}
+			else if ( item->type == ENCHANTED_FEATHER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s %d%% (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), 
+					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
 			}
 			else
 			{
@@ -19877,4 +20014,1378 @@ bool GenericGUIMenu::FeatherGUI_t::isInscribeOrRepairActive() const
 		return true;
 	}
 	return false;
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::clearItemDisplayed()
+{
+	itemType = -1;
+	itemActionType = ITEMFX_ACTION_NONE;
+}
+
+GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
+{
+	auto result = ITEMFX_ACTION_NONE;
+
+	if ( item )
+	{
+		if ( currentMode == ITEMFX_MODE_SCROLL_IDENTIFY 
+			|| currentMode == ITEMFX_MODE_SPELL_IDENTIFY )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( item->identified )
+			{
+				//result = ITEMFX_ACTION_ITEM_IDENTIFIED;
+			}
+			else
+			{
+				result = ITEMFX_ACTION_OK;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_REMOVECURSE
+			|| currentMode == ITEMFX_MODE_SPELL_REMOVECURSE )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else if ( item->beatitude >= 0 )
+			{
+				//result = ITEMFX_ACTION_NOT_CURSED;
+			}
+			else if ( item->beatitude < 0 )
+			{
+				result = ITEMFX_ACTION_OK;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_CHARGING )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( item->type == ENCHANTED_FEATHER )
+			{
+				if ( item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY < 100 )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_ITEM_FULLY_CHARGED;
+				}
+			}
+			else if ( itemCategory(item) == MAGICSTAFF )
+			{
+				if ( item->status == EXCELLENT )
+				{
+					result = ITEMFX_ACTION_ITEM_FULLY_CHARGED;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+			}
+			else
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else 
+			{
+				switch ( itemCategory(item) )
+				{
+					case WEAPON:
+						result = ITEMFX_ACTION_OK;
+						break;
+					case ARMOR:
+						result = ITEMFX_ACTION_OK;
+						break;
+					case MAGICSTAFF:
+						result = ITEMFX_ACTION_INVALID_ITEM;
+						break;
+					case THROWN:
+						if ( item->type == BOOMERANG )
+						{
+							result = ITEMFX_ACTION_OK;
+						}
+						result = ITEMFX_ACTION_INVALID_ITEM;
+						break;
+					case TOOL:
+						switch ( item->type )
+						{
+							case TOOL_TOWEL:
+							case TOOL_MIRROR:
+							case TOOL_SKELETONKEY:
+							case TOOL_TINOPENER:
+							case TOOL_METAL_SCRAP:
+							case TOOL_MAGIC_SCRAP:
+							case TOOL_TINKERING_KIT:
+							case TOOL_SENTRYBOT:
+							case TOOL_DETONATOR_CHARGE:
+							case TOOL_BOMB:
+							case TOOL_SLEEP_BOMB:
+							case TOOL_FREEZE_BOMB:
+							case TOOL_TELEPORT_BOMB:
+							case TOOL_GYROBOT:
+							case TOOL_SPELLBOT:
+							case TOOL_DECOY:
+							case TOOL_DUMMYBOT:
+							case ENCHANTED_FEATHER:
+								result = ITEMFX_ACTION_INVALID_ITEM;
+								break;
+							default:
+								if ( itemTypeIsQuiver(item->type) )
+								{
+									result = ITEMFX_ACTION_INVALID_ITEM;
+								}
+								else
+								{
+									result = ITEMFX_ACTION_OK;
+								}
+								break;
+						}
+						break;
+					default:
+						result = ITEMFX_ACTION_INVALID_ITEM;
+						break;
+				}
+
+				if ( result == ITEMFX_ACTION_OK )
+				{
+					if ( item->status == EXCELLENT )
+					{
+						result = ITEMFX_ACTION_ITEM_FULLY_REPAIRED;
+					}
+				}
+			}
+		}
+
+		if ( result == ITEMFX_ACTION_INVALID_ITEM || item == parentGUI.itemEffectScrollItem )
+		{
+			result = ITEMFX_ACTION_NONE;
+		}
+	}
+
+	if ( !checkResultOnly )
+	{
+		if ( result != ITEMFX_ACTION_NONE && item )
+		{
+			char buf[1024];
+			if ( !item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+			}
+			else
+			{
+				if ( (item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT
+					|| item->type == TOOL_GYROBOT) )
+				{
+					int health = 100;
+					if ( !item->tinkeringBotIsMaxHealth() )
+					{
+						health = 25 * (item->appearance % 10);
+						if ( health == 0 && item->status != BROKEN )
+						{
+							health = 5;
+						}
+					}
+					snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+				}
+				else if ( item->type == ENCHANTED_FEATHER && item->identified )
+				{
+					snprintf(buf, sizeof(buf), "%s %s %d%% (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+				}
+			}
+			if ( itemDesc != buf )
+			{
+				itemRequiresTitleReflow = true;
+			}
+			itemDesc = buf;
+			itemType = item->type;
+
+			if ( itemEffectFrame )
+			{
+				if ( auto baseFrame = itemEffectFrame->findFrame("itemfx base") )
+				{
+					if ( auto itemTooltipFrame = baseFrame->findFrame("itemfx display tooltip") )
+					{
+						auto itemSlotFrame = itemTooltipFrame->findFrame("item slot frame");
+						updateSlotFrameFromItem(itemSlotFrame, item);
+					}
+				}
+			}
+		}
+		itemActionType = result;
+	}
+	return result;
+}
+
+bool GenericGUIMenu::ItemEffectGUI_t::isItemSelectedToEffect(Item* item)
+{
+	if ( !item || itemCategory(item) == SPELL_CAT )
+	{
+		return false;
+	}
+
+	if ( !parentGUI.isNodeFromPlayerInventory(item->node) )
+	{
+		return false;
+	}
+
+	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+	{
+		auto& inventoryUI = players[parentGUI.getPlayer()]->inventoryUI;
+		auto& paperDoll = players[parentGUI.getPlayer()]->paperDoll;
+		if ( item->y < 0 && paperDoll.getSlotForItem(*item) != Player::PaperDoll_t::SLOT_MAX )
+		{
+			int slotx, sloty;
+			paperDoll.getCoordinatesFromSlotType(paperDoll.getSlotForItem(*item), slotx, sloty);
+			if ( slotx == inventoryUI.getSelectedSlotX() && sloty == inventoryUI.getSelectedSlotY() )
+			{
+				if ( auto slotFrame = inventoryUI.getInventorySlotFrame(slotx, sloty) )
+				{
+					return slotFrame->capturesMouse();
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		else
+		{
+			if ( inventoryUI.getSelectedSlotX() >= 0
+				&& inventoryUI.getSelectedSlotX() < inventoryUI.getSizeX()
+				&& inventoryUI.getSelectedSlotY() >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1
+				&& inventoryUI.getSelectedSlotY() < inventoryUI.getSizeY()
+				&& item->x == inventoryUI.getSelectedSlotX() && item->y == inventoryUI.getSelectedSlotY() )
+			{
+				if ( auto slotFrame = inventoryUI.getInventorySlotFrame(item->x, item->y) )
+				{
+					return slotFrame->capturesMouse();
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEffectGUI_t::ItemEffectModes mode)
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	currentMode = mode;
+	if ( itemEffectFrame )
+	{
+		bool wasDisabled = itemEffectFrame->isDisabled();
+		itemEffectFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			animTooltip = 0.0;
+			animPrompt = 0.0;
+			animFilter = 0.0;
+			isInteractable = false;
+			bFirstTimeSnapCursor = false;
+		}
+		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player->inventory_mode = INVENTORY_MODE_ITEM;
+		bOpen = true;
+	}
+	if ( inputs.getUIInteraction(playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
+	}
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	clearItemDisplayed();
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( itemEffectFrame )
+	{
+		itemEffectFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	animTooltip = 0.0;
+	animPrompt = 0.0;
+	animFilter = 0.0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
+	panelJustifyInverted = false;
+	currentMode = ITEMFX_MODE_NONE;
+	invalidActionType = INVALID_ACTION_NONE;
+	isInteractable = false;
+	bool wasOpen = bOpen;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	if ( wasOpen )
+	{
+		if ( inputs.getUIInteraction(playernum)->selectedItem )
+		{
+			inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+			inputs.getUIInteraction(playernum)->toggleclick = false;
+		}
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	}
+	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ITEMEFFECTGUI
+		&& !players[playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in itemeffect GUI
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	clearItemDisplayed();
+	itemRequiresTitleReflow = true;
+	if ( itemEffectFrame )
+	{
+		for ( auto f : itemEffectFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+	}
+}
+
+int GenericGUIMenu::ItemEffectGUI_t::heightOffsetWhenNotCompact = 170;
+const int itemEffectBaseWidth = 334;
+
+bool GenericGUIMenu::ItemEffectGUI_t::ItemEffectHasBeenCreated() const
+{
+	if ( itemEffectFrame )
+	{
+		if ( !itemEffectFrame->getFrames().empty() )
+		{
+			for ( auto f : itemEffectFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( !player->isLocalPlayer() )
+	{
+		closeItemEffectMenu();
+		return;
+	}
+
+	if ( !itemEffectFrame )
+	{
+		return;
+	}
+
+	itemEffectFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		tinkerBaseWidth,
+		players[playernum]->camera_virtualHeight() });
+
+	if ( !itemEffectFrame->isDisabled() && bOpen )
+	{
+		if ( player->inventoryUI.getSelectedSlotY() < 0 && player->inventoryUI.bCompactView )
+		{
+			if ( !panelJustifyInverted )
+			{
+				animx = 0.0; // reinit animation
+			}
+			panelJustifyInverted = true;
+		}
+		else
+		{
+			if ( panelJustifyInverted )
+			{
+				animx = 0.0; // reinit animation
+			}
+			panelJustifyInverted = false;
+		}
+
+		if ( !ItemEffectHasBeenCreated() )
+		{
+			createItemEffectMenu();
+		}
+
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				//if ( !inputs.getUIInteraction(playernum)->selectedItem
+				//	&& player->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+				//{
+				//	warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+				//}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		animTooltip = 0.0;
+		isInteractable = false;
+	}
+
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
+		animFilter += setpointDiffX;
+		animFilter = std::min(1.0, animFilter);
+	}
+
+	auto itemFxFramePos = itemEffectFrame->getSize();
+	if ( (player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT && !panelJustifyInverted) 
+		|| (player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT && panelJustifyInverted) )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = itemFxFramePos.w + 210; // inventory width 210
+			itemFxFramePos.x = -itemFxFramePos.w + animx * fullWidth;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				itemFxFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			itemFxFramePos.x = player->camera_virtualWidth() - animx * itemFxFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				itemFxFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( (player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT && !panelJustifyInverted) 
+		|| (player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT && panelJustifyInverted) )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = itemFxFramePos.w + 210; // inventory width 210
+			itemFxFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				itemFxFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			itemFxFramePos.x = -itemFxFramePos.w + animx * itemFxFramePos.w;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				itemFxFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+
+	int heightOffsetCompact = 0;
+	if ( !player->bUseCompactGUIHeight() )
+	{
+		itemFxFramePos.y = heightOffsetWhenNotCompact;
+	}
+	else
+	{
+		itemFxFramePos.y = 0;
+		heightOffsetCompact = -20;
+	}
+
+	if ( !ItemEffectHasBeenCreated() )
+	{
+		return;
+	}
+
+	auto baseFrame = itemEffectFrame->findFrame("itemfx base");
+	baseFrame->setDisabled(false);
+
+	itemEffectFrame->setSize(itemFxFramePos);
+
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = 0;
+	baseFramePos.w = itemEffectBaseWidth;
+	baseFrame->setSize(baseFramePos);
+
+	auto baseBg = baseFrame->findImage("itemfx base img");
+	baseBg->pos.y = heightOffsetCompact;
+
+	{
+		itemFxFramePos.h = baseFramePos.y + baseFramePos.h;
+		itemEffectFrame->setSize(itemFxFramePos);
+
+		baseFramePos.x = itemFxFramePos.w - baseFramePos.w;
+		baseFrame->setSize(baseFramePos);
+	}
+
+	if ( !bOpen )
+	{
+		return;
+	}
+
+	if ( !parentGUI.isGUIOpen()
+		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_ITEMFX
+		|| !stats[playernum]
+		|| stats[playernum]->HP <= 0
+		|| !player->entity
+		|| player->shootmode )
+	{
+		closeItemEffectMenu();
+		return;
+	}
+
+	if ( player->entity && player->entity->isBlind() )
+	{
+		messagePlayer(playernum, MESSAGE_MISC, language[4159]);
+		parentGUI.closeGUI();
+		return; // I can't see!
+	}
+
+	// item effect status
+	{
+		auto itemFxTitle = baseFrame->findField("itemfx title");
+		auto itemFxStatus = baseFrame->findField("itemfx status");
+		if ( parentGUI.itemEffectScrollItem || (!parentGUI.itemEffectScrollItem && parentGUI.itemEffectUsingSpellbook) )
+		{
+			Item* item = parentGUI.itemEffectScrollItem;
+			bool isSpell = false;
+			spell_t* spell = nullptr;
+			int spellID = SPELL_NONE;
+			char buf[128];
+			if ( item && item->type == SPELL_ITEM )
+			{
+				isSpell = true;
+				spell = getSpellFromItem(parentGUI.getPlayer(), item);
+				if ( spell )
+				{
+					spellID = spell->ID;
+				}
+			}
+			else if ( !parentGUI.itemEffectScrollItem && parentGUI.itemEffectUsingSpellbook )
+			{
+				isSpell = true;
+				spellID = getSpellIDFromSpellbook(parentGUI.itemEffectItemType);
+				if ( spellID != SPELL_NONE )
+				{
+					spell = getSpellFromID(spellID);
+				}
+			}
+			
+			if ( isSpell )
+			{
+				std::string prefix = ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str();
+				if ( prefix[0] >= 'a' && prefix[0] <= 'z' )
+				{
+					prefix[0] = (char)toupper((int)prefix[0]);
+				}
+				size_t found = prefix.find(' ');
+				while ( found != std::string::npos )
+				{
+					auto& c = prefix[std::min(found + 1, prefix.size() - 1)];
+					if ( c >= 'a' && c <= 'z' )
+					{
+						c = (char)toupper((int)c);
+					}
+					found = prefix.find(' ', found + 1);
+				}
+				itemFxTitle->setText(prefix.c_str());
+
+				std::string statusStr = "";
+				if ( spell )
+				{
+					statusStr = spell->name;
+				}
+				if ( !statusStr.empty() )
+				{
+					if ( statusStr[0] >= 'a' && statusStr[0] <= 'z' )
+					{
+						statusStr[0] = (char)toupper((int)statusStr[0]);
+					}
+					size_t found = statusStr.find(' ');
+					while ( found != std::string::npos )
+					{
+						auto& c = statusStr[std::min(found + 1, statusStr.size() - 1)];
+						if ( c >= 'a' && c <= 'z' )
+						{
+							c = (char)toupper((int)c);
+						}
+						found = statusStr.find(' ', found + 1);
+					}
+					itemFxStatus->setText(statusStr.c_str());
+				}
+			}
+			else if ( item )
+			{
+				if ( !item->identified )
+				{
+					snprintf(buf, sizeof(buf), "%s (?)", item->getName());
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%s (%+d)", item->getName(), item->beatitude);
+				}
+				std::string titleStr = buf;
+				if ( !titleStr.empty() )
+				{
+					if ( titleStr[0] >= 'a' && titleStr[0] <= 'z' )
+					{
+						titleStr[0] = (char)toupper((int)titleStr[0]);
+					}
+					size_t found = titleStr.find(' ');
+					while ( found != std::string::npos )
+					{
+						auto& c = titleStr[std::min(found + 1, titleStr.size() - 1)];
+						if ( c >= 'a' && c <= 'z' )
+						{
+							c = (char)toupper((int)c);
+						}
+						found = titleStr.find(' ', found + 1);
+					}
+					itemFxTitle->setText(titleStr.c_str());
+				}
+				else
+				{
+					itemFxTitle->setText(buf);
+				}
+			}
+
+			if ( !isSpell && item )
+			{
+				itemFxStatus->setText(ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str());
+			}
+			itemFxStatus->setTextColor(hudColors.characterSheetLightNeutral);
+		}
+		else
+		{
+			itemFxTitle->setText("");
+			itemFxStatus->setText("");
+		}
+
+		SDL_Rect textPos{ 0, 47 + heightOffsetCompact, baseFrame->getSize().w, 24 };
+		itemFxTitle->setSize(textPos);
+		textPos.y += 20;
+		itemFxStatus->setSize(textPos);
+
+		auto skillIcon = baseFrame->findImage("itemfx skill img");
+		skillIcon->pos.y = 56 + heightOffsetCompact;
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( skill.skillId == PRO_MAGIC )
+			{
+				if ( skillCapstoneUnlocked(playernum, skill.skillId) )
+				{
+					skillIcon->path = skill.skillIconPathLegend;
+				}
+				else
+				{
+					skillIcon->path = skill.skillIconPath;
+				}
+				skillIcon->disabled = false;
+				break;
+			}
+		}
+	}
+
+	if ( itemActionType == ITEMFX_ACTION_OK )
+	{
+		animInvalidAction = 0.0;
+		animInvalidActionTicks = 0;
+	}
+	else
+	{
+		// shaking feedback for invalid action
+		// constant decay for animation
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+		animInvalidAction -= setpointDiffX;
+		animInvalidAction = std::max(0.0, animInvalidAction);
+	}
+	bool bInvalidActionAnimating = false;
+	if ( animInvalidAction > 0.001 || (ticks - animInvalidActionTicks) < TICKS_PER_SECOND * .8 )
+	{
+		bInvalidActionAnimating = true;
+	}
+
+	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
+
+	{
+		// close btn
+		auto closeBtn = baseFrame->findButton("close itemfx button");
+		SDL_Rect closeBtnPos = closeBtn->getSize();
+		closeBtnPos.y = 34 + heightOffsetCompact;
+		closeBtn->setSize(closeBtnPos);
+		auto closeGlyph = baseFrame->findImage("close itemfx glyph");
+		closeBtn->setDisabled(true);
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonTinkerUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+		}
+	}
+
+	auto itemDisplayTooltip = baseFrame->findFrame("itemfx display tooltip");
+	itemDisplayTooltip->setDisabled(false);
+
+	auto actionPromptTxt = baseFrame->findField("action prompt txt");
+	actionPromptTxt->setDisabled(false);
+	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+	//auto actionModifierImg = baseFrame->findImage("action modifier glyph");
+
+	//int skillLVL = (stats[playernum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[playernum], players[playernum]->entity));
+	Uint32 negativeColor = hudColors.characterSheetRed;
+	Uint32 neutralColor = hudColors.characterSheetLightNeutral;
+	Uint32 positiveColor = hudColors.characterSheetGreen;
+	Uint32 defaultPromptColor = makeColor(255, 255, 255, 255);
+
+	auto displayItemName = itemDisplayTooltip->findField("item display name");
+	auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
+	auto itemSlotBg = itemDisplayTooltip->findImage("item bg img");
+	itemSlotBg->pos.x = 12;
+	itemSlotBg->pos.y = 12;
+	const int displayItemTextImgBaseX = itemSlotBg->pos.x + itemSlotBg->pos.w;
+	displayItemTextImg->pos.x = displayItemTextImgBaseX;
+	displayItemTextImg->pos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - displayItemTextImg->pos.h / 2;
+	SDL_Rect displayItemNamePos{ displayItemTextImg->pos.x + 6, displayItemTextImg->pos.y - 4, 208, 24 };
+	displayItemNamePos.h = 50;
+	displayItemName->setSize(displayItemNamePos);
+	static ConsoleVariable<int> cvar_itemfxPromptY("/itemfx_action_prompt_y", -2);
+	SDL_Rect actionPromptTxtPos{ 0, 205 + *cvar_itemfxPromptY + heightOffsetCompact, baseFrame->getSize().w - 18 - 8, 24 };
+	actionPromptTxt->setSize(actionPromptTxtPos);
+
+	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
+	tooltipPos.w = 298;
+	tooltipPos.h = baseFrame->getSize().h - 100;
+	tooltipPos.y = 118 + heightOffsetCompact;
+	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
+	itemDisplayTooltip->setSize(tooltipPos);
+
+	auto itemSlotFrame = itemDisplayTooltip->findFrame("item slot frame");
+	bool modifierPressed = false;
+	if ( usingGamepad && Input::inputs[playernum].binary("MenuPageLeftAlt") )
+	{
+		modifierPressed = true;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
+		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+	{
+		modifierPressed = true;
+	}
+
+	if ( itemActionType != ITEMFX_ACTION_NONE && itemDesc.size() > 1 )
+	{
+		if ( isInteractable )
+		{
+			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			//animTooltip += setpointDiffX;
+			//animTooltip = std::min(1.0, animTooltip);
+			animTooltip = 1.0;
+			animTooltipTicks = ticks;
+		}
+
+		itemDisplayTooltip->setDisabled(false);
+
+		{
+			// prompt + glyph
+			actionPromptTxt->setDisabled(false);
+			if ( itemActionType == ITEMFX_ACTION_OK && isInteractable )
+			{
+				if ( usingGamepad )
+				{
+					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+					if ( modifierPressed )
+					{
+						//actionModifierImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+					}
+				}
+				else if ( !usingGamepad )
+				{
+					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
+					if ( modifierPressed )
+					{
+						//actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+					}
+				}
+				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
+				{
+					actionPromptImg->pos.w = imgGet->getWidth();
+					actionPromptImg->pos.h = imgGet->getHeight();
+					actionPromptImg->disabled = false;
+					/*if ( modifierPressed && parentGUI.tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+					{
+						if ( auto imgGet2 = Image::get(actionModifierImg->path.c_str()) )
+						{
+							actionModifierImg->pos.w = imgGet2->getWidth();
+							actionModifierImg->pos.h = imgGet2->getHeight();
+							actionModifierImg->disabled = false;
+						}
+					}
+					else
+					{
+						actionModifierImg->disabled = true;
+					}*/
+				}
+				switch ( currentMode )
+				{
+					case ITEMFX_MODE_NONE:
+						actionPromptTxt->setText("");
+						break;
+					case ITEMFX_MODE_SCROLL_REPAIR:
+						actionPromptTxt->setText(language[4202]);
+						break;
+					case ITEMFX_MODE_SCROLL_CHARGING:
+						actionPromptTxt->setText(language[4206]);
+						break;
+					case ITEMFX_MODE_SCROLL_IDENTIFY:
+						actionPromptTxt->setText(language[4208]);
+						break;
+					case ITEMFX_MODE_SPELL_IDENTIFY:
+						actionPromptTxt->setText(language[4208]);
+						break;
+					case ITEMFX_MODE_SCROLL_REMOVECURSE:
+						actionPromptTxt->setText(language[4204]);
+						break;
+					case ITEMFX_MODE_SPELL_REMOVECURSE:
+						actionPromptTxt->setText(language[4204]);
+						break;
+					default:
+						actionPromptTxt->setText("");
+						break;
+				}
+				actionPromptTxt->setColor(defaultPromptColor);
+			}
+			else
+			{
+				actionPromptTxt->setText("");
+				actionPromptImg->disabled = true;
+				//actionModifierImg->disabled = true;
+				if ( isInteractable )
+				{
+					switch ( itemActionType )
+					{
+						case ITEMFX_ACTION_INVALID_ITEM:
+							actionPromptTxt->setText(language[4210]);
+							break;
+						case ITEMFX_ACTION_ITEM_FULLY_REPAIRED:
+							actionPromptTxt->setText(language[4136]);
+							break;
+						case ITEMFX_ACTION_ITEM_FULLY_CHARGED:
+							actionPromptTxt->setText(language[4211]);
+							break;
+						case ITEMFX_ACTION_ITEM_IDENTIFIED:
+							actionPromptTxt->setText(language[4212]);
+							break;
+						case ITEMFX_ACTION_MUST_BE_UNEQUIPPED:
+							actionPromptTxt->setText(language[4136]);
+							break;
+						case ITEMFX_ACTION_NOT_IDENTIFIED_YET:
+							actionPromptTxt->setText(language[4153]);
+							break;
+						case ITEMFX_ACTION_NOT_CURSED:
+							actionPromptTxt->setText(language[4213]);
+							break;
+						default:
+							actionPromptTxt->setText("-");
+							break;
+					}
+				}
+				actionPromptTxt->setColor(negativeColor);
+			}
+			if ( auto textGet = actionPromptTxt->getTextObject() )
+			{
+				actionPromptImg->pos.x = actionPromptTxtPos.x + actionPromptTxtPos.w
+					- textGet->getWidth() - 8 - actionPromptImg->pos.w;
+				actionPromptImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg->pos.h / 2;
+				if ( actionPromptImg->pos.y % 2 == 1 )
+				{
+					actionPromptImg->pos.y -= 1;
+				}
+				//actionModifierImg->pos.x = actionPromptImg->pos.x - 4 - actionModifierImg->pos.w;
+				//actionModifierImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionModifierImg->pos.h / 2;
+				//if ( actionModifierImg->pos.y % 2 == 1 )
+				//{
+				//	actionModifierImg->pos.y -= 1;
+				//}
+			}
+		}
+
+
+		{
+			// item slot + frame
+			SDL_Rect slotFramePos = itemSlotFrame->getSize();
+			slotFramePos.x = itemSlotBg->pos.x + itemSlotBg->pos.w / 2 - slotFramePos.w / 2 - 1;
+			slotFramePos.y = itemSlotBg->pos.y + itemSlotBg->pos.h / 2 - slotFramePos.h / 2 - 1;
+			itemSlotFrame->setSize(slotFramePos);
+		}
+
+		{
+			// item name + text bg
+			displayItemName->setVJustify(Field::justify_t::CENTER);
+			if ( itemRequiresTitleReflow )
+			{
+				displayItemName->setText(itemDesc.c_str());
+				displayItemName->reflowTextToFit(0);
+				if ( displayItemName->getNumTextLines() > 2 )
+				{
+					// more than 2 lines, append ...
+					std::string copiedName = displayItemName->getText();
+					auto lastNewline = copiedName.find_last_of('\n');
+					copiedName = copiedName.substr(0U, lastNewline);
+					copiedName += "...";
+					displayItemName->setText(copiedName.c_str());
+					displayItemName->reflowTextToFit(0);
+					if ( displayItemName->getNumTextLines() > 2 )
+					{
+						// ... doesn't fit, replace last 3 characters with ...
+						copiedName = copiedName.substr(0U, copiedName.size() - 6);
+						copiedName += "...";
+						displayItemName->setText(copiedName.c_str());
+						displayItemName->reflowTextToFit(0);
+					}
+				}
+				itemRequiresTitleReflow = false;
+			}
+		}
+	}
+	else
+	{
+		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
+			|| (usingGamepad)
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+	}
+
+	auto actionPromptUnselectedTxt = baseFrame->findField("action prompt unselected txt");
+	auto actionPromptCoverLeftImg = baseFrame->findImage("action prompt lcover");
+	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
+	actionPromptCoverLeftImg->pos.x = 0;
+	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
+	actionPromptCoverLeftImg->pos.y = 90 + heightOffsetCompact;
+	actionPromptCoverRightImg->pos.y = 90 + heightOffsetCompact;
+
+	{
+		actionPromptUnselectedTxt->setDisabled(false);
+		actionPromptUnselectedTxt->setColor(makeColor(224, 224, 224, 255));
+		switch ( currentMode )
+		{
+			case ITEMFX_MODE_NONE:
+				actionPromptUnselectedTxt->setText("");
+				break;
+			case ITEMFX_MODE_SCROLL_REPAIR:
+				actionPromptUnselectedTxt->setText(language[4151]);
+				break;
+			case ITEMFX_MODE_SCROLL_CHARGING:
+				actionPromptUnselectedTxt->setText(language[4207]);
+				break;
+			case ITEMFX_MODE_SCROLL_IDENTIFY:
+				actionPromptUnselectedTxt->setText(language[4209]);
+				break;
+			case ITEMFX_MODE_SCROLL_REMOVECURSE:
+				actionPromptUnselectedTxt->setText(language[4205]);
+				break;
+			case ITEMFX_MODE_SPELL_IDENTIFY:
+				actionPromptUnselectedTxt->setText(language[4209]);
+				break;
+			case ITEMFX_MODE_SPELL_REMOVECURSE:
+				actionPromptUnselectedTxt->setText(language[4205]);
+				break;
+			default:
+				actionPromptUnselectedTxt->setText("");
+				break;
+		}
+
+		{
+			SDL_Rect pos = actionPromptTxt->getSize();
+			pos.x = 26;
+			pos.w -= 26;
+			if ( animPromptMoveLeft )
+			{
+				pos.x -= actionPromptUnselectedTxt->getSize().w * animPrompt;
+			}
+			else
+			{
+				pos.x += actionPromptUnselectedTxt->getSize().w * animPrompt;
+			}
+			pos.y = 93 + heightOffsetCompact;
+			actionPromptUnselectedTxt->setSize(pos);
+		}
+
+		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
+			animPrompt -= setpointDiffX;
+			animPrompt = std::max(0.0, animPrompt);
+		}
+		SDL_Color color;
+		getColor(actionPromptUnselectedTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * (pow(1.0 - animPrompt, 2)));
+		actionPromptUnselectedTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	{
+		SDL_Color color;
+		getColor(actionPromptTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		actionPromptImg->color = makeColor(255, 255, 255, color.a);
+		//actionModifierImg->color = actionPromptImg->color;
+		actionPromptTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
+		if ( invalidActionType == INVALID_ACTION_SHAKE_PROMPT )
+		{
+			SDL_Rect pos = actionPromptTxt->getSize();
+			pos.x += -4 + 4 * (cos(animInvalidAction * 4 * PI));
+			actionPromptTxt->setSize(pos);
+		}
+	}
+	{
+		SDL_Color color;
+		getColor(displayItemName->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		displayItemName->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+
+	//itemDisplayTooltip->setOpacity(100.0 * animTooltip);
+	itemSlotFrame->setOpacity(100.0 * animTooltip);
+
+	bool activateSelection = false;
+	if ( isInteractable )
+	{
+		if ( !inputs.getUIInteraction(playernum)->selectedItem
+			&& !player->GUI.isDropdownActive()
+			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ITEMEFFECTGUI)
+			&& player->bControlEnabled && !gamePaused
+			&& !player->usingCommand() )
+		{
+			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
+				parentGUI.closeGUI();
+				return;
+			}
+			else
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuRightClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuRightClick");
+				}
+			}
+		}
+	}
+
+	if ( activateSelection && players[playernum] && players[playernum]->entity )
+	{
+		node_t* nextnode = nullptr;
+		list_t* player_inventory = &stats[playernum]->inventory;
+		bool foundItem = false;
+		bool checkConsumedItem = false;
+		bool itemActionOK = itemActionType == ITEMFX_ACTION_OK;
+		if ( player_inventory )
+		{
+			for ( node_t* node = player_inventory->first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( node->element )
+				{
+					Item* item = (Item*)node->element;
+					if ( isItemSelectedToEffect(item) )
+					{
+						foundItem = true;
+						if ( itemCategory(item) == SPELLBOOK )
+						{
+							//repairingSpellbook = true;
+						}
+						if ( itemActionOK )
+						{
+							parentGUI.executeOnItemClick(item);
+						}
+						break;
+					}
+				}
+			}
+		}
+		if ( foundItem )
+		{
+			parentGUI.rebuildGUIInventory();
+
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+			
+			if ( !itemActionOK )
+			{
+				invalidActionType = INVALID_ACTION_SHAKE_PROMPT;
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+				// play bad feedback sfx
+				playSound(90, 64);
+			}
+			else
+			{
+				if ( !parentGUI.itemEffectScrollItem )
+				{
+					// immediately fade the tooltip on mouse control
+					animTooltipTicks = 0;
+				}
+			}
+		}
+	}
+}
+
+bool GenericGUIMenu::ItemEffectGUI_t::isItemEffectMenuActive() const
+{
+	if ( !parentGUI.isGUIOpen() || !ItemEffectHasBeenCreated() )
+	{
+		return false;
+	}
+	if ( bOpen && parentGUI.guiType == GUICurrentType::GUI_TYPE_ITEMFX )
+	{
+		return true;
+	}
+	return false;
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !itemEffectFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+	if ( ItemEffectHasBeenCreated() )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, itemEffectBaseWidth, 242 };
+	{
+		auto bgFrame = itemEffectFrame->addFrame("itemfx base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(false);
+		bgFrame->setDisabled(true);
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"*images/ui/ScrollSpells/Scroll_Window_00.png", "itemfx base img");
+
+		auto skillIcon = bgFrame->addImage(SDL_Rect{ 270, 36, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "itemfx skill img");
+		skillIcon->disabled = true;
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemFxTitle = bgFrame->addField("itemfx title", 128);
+		itemFxTitle->setFont(headerFont);
+		itemFxTitle->setText("");
+		itemFxTitle->setHJustify(Field::justify_t::CENTER);
+		itemFxTitle->setVJustify(Field::justify_t::TOP);
+		itemFxTitle->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemFxTitle->setTextColor(hudColors.characterSheetLightNeutral);
+		itemFxTitle->setOutlineColor(makeColor(29, 16, 11, 255));
+		auto itemFxStatus = bgFrame->addField("itemfx status", 128);
+		itemFxStatus->setFont(headerFont);
+		itemFxStatus->setText("");
+		itemFxStatus->setHJustify(Field::justify_t::CENTER);
+		itemFxStatus->setVJustify(Field::justify_t::TOP);
+		itemFxStatus->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemFxStatus->setTextColor(hudColors.characterSheetLightNeutral);
+		itemFxStatus->setOutlineColor(makeColor(29, 16, 11, 255));
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemDisplayTooltip = bgFrame->addFrame("itemfx display tooltip");
+		itemDisplayTooltip->setSize(SDL_Rect{ 0, 0, 298, 108 });
+		itemDisplayTooltip->setHollow(true);
+		itemDisplayTooltip->setInheritParentFrameOpacity(false);
+		{
+			auto itemNameText = itemDisplayTooltip->addField("item display name", 1024);
+			itemNameText->setFont(itemFont);
+			itemNameText->setText("");
+			itemNameText->setHJustify(Field::justify_t::LEFT);
+			itemNameText->setVJustify(Field::justify_t::TOP);
+			itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemNameText->setColor(hudColors.characterSheetLightNeutral);
+
+			auto itemDisplayTextBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 220, 42 },
+				0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_LabelName_2Row_00.png", "item text img");
+
+			auto itemBgImg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
+				"*images/ui/ScrollSpells/Scroll_ItemBGSurround_00.png", "item bg img");
+
+			auto slotFrame = itemDisplayTooltip->addFrame("item slot frame");
+			SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+		}
+
+		{
+			auto closeBtn = bgFrame->addButton("close itemfx button");
+			SDL_Rect closeBtnPos{ basePos.w - 4 - 26, 14, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont(itemFont);
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("*images/ui/ScrollSpells/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*images/ui/ScrollSpells/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*images/ui/ScrollSpells/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].closeGUI();
+			});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close itemfx glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+		}
+
+		{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt", 64);
+			actionPromptTxt->setFont(itemFont);
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph");
+			actionPromptGlyph->ontop = true;
+
+			auto actionModifierGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action modifier glyph");
+			actionModifierGlyph->ontop = true;
+			actionModifierGlyph->disabled = true;
+		}
+
+		{
+			auto actionPromptUnselectedTxt = bgFrame->addField("action prompt unselected txt", 64);
+			actionPromptUnselectedTxt->setFont(itemFont);
+			actionPromptUnselectedTxt->setText("");
+			actionPromptUnselectedTxt->setHJustify(Field::justify_t::CENTER);
+			actionPromptUnselectedTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptUnselectedTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptUnselectedTxt->setColor(makeColor(255, 255, 255, 255));
+			actionPromptUnselectedTxt->setDisabled(true);
+
+			auto actionPromptCoverLeftImg = bgFrame->addImage(SDL_Rect{ 0, 70, 56, 26 },
+				0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_PromptCoverLeft_00.png", "action prompt lcover");
+			actionPromptCoverLeftImg->ontop = true;
+			auto actionPromptCoverRightImg = bgFrame->addImage(SDL_Rect{ bg->pos.w - 56, 70, 56, 26 },
+				0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_PromptCoverRight_00.png", "action prompt rcover");
+			actionPromptCoverRightImg->ontop = true;
+		}
+
+		{
+			auto itemIncrementText = bgFrame->addField("item increment txt", 64);
+			itemIncrementText->setFont(itemFont);
+			itemIncrementText->setText("");
+			itemIncrementText->setHJustify(Field::justify_t::TOP);
+			itemIncrementText->setVJustify(Field::justify_t::LEFT);
+			itemIncrementText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			itemIncrementText->setColor(hudColors.characterSheetLightNeutral);
+			itemIncrementText->setDisabled(true);
+			itemIncrementText->setOntop(true);
+		}
+	}
 }

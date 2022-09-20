@@ -724,7 +724,8 @@ public:
 			MODULE_STATUS_EFFECTS,
 			MODULE_LOG,
 			MODULE_MAP,
-			MODULE_SIGN_VIEW
+			MODULE_SIGN_VIEW,
+			MODULE_ITEMEFFECTGUI
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
