@@ -905,10 +905,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				    }
 				    else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
 				    {
-					    entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					    /*entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
 					    entity2->x += 2 * cos(entity->yaw);
 					    entity2->y += 2 * sin(entity->yaw);
-					    entity2->z -= 2;
+					    entity2->z -= 2;*/
 				    }
 				    else if ( entity->sprite == items[TOOL_LANTERN].index )
 				    {
