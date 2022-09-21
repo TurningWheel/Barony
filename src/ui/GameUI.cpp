@@ -3154,12 +3154,14 @@ void createUINavigation(const int player)
 		magicButton->setText(language[4115]);
 		magicButton->setFont(buttonFont);
 		magicButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
+		magicButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
+		magicButton->setBackgroundHighlighted("*#images/ui/HUD/HUD_Button_Base_SmallHigh_00.png");
 		magicButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		magicButton->setHideGlyphs(true);
 		magicButton->setHideKeyboardGlyphs(true);
 		magicButton->setHideSelectors(true);
 		magicButton->setMenuConfirmControlType(0);
-		magicButton->setColor(makeColor(255, 255, 255, 191));
+		magicButton->setColor(makeColor(255, 255, 255, 255));
 		magicButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		magicButton->setCallback([](Button& button) {
 			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
@@ -3189,12 +3191,14 @@ void createUINavigation(const int player)
 		statusButton->setText(language[4118]);
 		statusButton->setFont(buttonFont);
 		statusButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
+		statusButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
+		statusButton->setBackgroundHighlighted("*#images/ui/HUD/HUD_Button_Base_SmallHigh_00.png");
 		statusButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		statusButton->setHideGlyphs(true);
 		statusButton->setHideKeyboardGlyphs(true);
 		statusButton->setHideSelectors(true);
 		statusButton->setMenuConfirmControlType(0);
-		statusButton->setColor(makeColor(255, 255, 255, 191));
+		statusButton->setColor(makeColor(255, 255, 255, 255));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
 			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
@@ -3221,12 +3225,14 @@ void createUINavigation(const int player)
 		itemsButton->setText(language[4116]);
 		itemsButton->setFont(buttonFont);
 		itemsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
+		itemsButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
+		itemsButton->setBackgroundHighlighted("*#images/ui/HUD/HUD_Button_Base_SmallHigh_00.png");
 		itemsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		itemsButton->setHideGlyphs(true);
 		itemsButton->setHideKeyboardGlyphs(true);
 		itemsButton->setHideSelectors(true);
 		itemsButton->setMenuConfirmControlType(0);
-		itemsButton->setColor(makeColor(255, 255, 255, 191));
+		itemsButton->setColor(makeColor(255, 255, 255, 255));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
@@ -3253,12 +3259,14 @@ void createUINavigation(const int player)
 		skillsButton->setText(language[4117]);
 		skillsButton->setFont(buttonFont);
 		skillsButton->setBackground("*#images/ui/HUD/HUD_Button_Base_Small_00.png");
+		skillsButton->setBackgroundActivated("*#images/ui/HUD/HUD_Button_Base_SmallPress_00.png");
+		skillsButton->setBackgroundHighlighted("*#images/ui/HUD/HUD_Button_Base_SmallHigh_00.png");
 		skillsButton->setSize(SDL_Rect{ 0, 0, 98, 38 });
 		skillsButton->setHideGlyphs(true);
 		skillsButton->setHideKeyboardGlyphs(true);
 		skillsButton->setHideSelectors(true);
 		skillsButton->setMenuConfirmControlType(0);
-		skillsButton->setColor(makeColor(255, 255, 255, 191));
+		skillsButton->setColor(makeColor(255, 255, 255, 255));
 		skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		skillsButton->setCallback([](Button& button) {
 			players[button.getOwner()]->skillSheet.openSkillSheet();
@@ -8400,11 +8408,13 @@ void Player::CharacterSheet_t::createCharacterSheet()
 						{
 							b->setBackgroundHighlighted("*#images/ui/CharSheet/HUD_CharSheet_ButtonHigh_00.png");
 							b->setBackground("*#images/ui/CharSheet/HUD_CharSheet_Button_00.png");
+							b->setBackgroundActivated("*#images/ui/CharSheet/HUD_CharSheet_ButtonPress_00.png");
 						}
 						else
 						{
 							b->setBackgroundHighlighted("*#images/ui/CharSheet/HUD_CharSheet_ButtonHighCompact_00.png");
 							b->setBackground("*#images/ui/CharSheet/HUD_CharSheet_ButtonCompact_00.png");
+							b->setBackgroundActivated("*#images/ui/CharSheet/HUD_CharSheet_ButtonCompactPress_00.png");
 						}
 					}
 				}
@@ -8539,12 +8549,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			skillsButton->setText(language[4074]);
 			skillsButton->setFont(skillsFont);
 			skillsButton->setBackground("*#images/ui/CharSheet/HUD_CharSheet_ButtonWide_00.png");
+			skillsButton->setBackgroundActivated("*#images/ui/CharSheet/HUD_CharSheet_ButtonWidePress_00.png");
+			skillsButton->setBackgroundHighlighted("*#images/ui/CharSheet/HUD_CharSheet_ButtonWideHigh_00.png");
 			skillsButton->setSize(SDL_Rect{ 0, 0, skillsButtonFrame->getSize().w, skillsButtonFrame->getSize().h });
 			skillsButton->setHideGlyphs(true);
 			skillsButton->setHideKeyboardGlyphs(true);
 			skillsButton->setHideSelectors(true);
 			skillsButton->setMenuConfirmControlType(Widget::MENU_CONFIRM_CONTROLLER);
-			skillsButton->setColor(makeColor(255, 255, 255, 191));
+			skillsButton->setColor(makeColor(255, 255, 255, 255));
 			skillsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			skillsButton->setCallback([](Button& button) {
 				players[button.getOwner()]->skillSheet.openSkillSheet();
