@@ -4628,6 +4628,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					}
 					snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
 				}
+				else if ( item->type == ENCHANTED_FEATHER )
+				{
+					snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+				}
 				else
 				{
 					snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);

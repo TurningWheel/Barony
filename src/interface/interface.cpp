@@ -13299,7 +13299,7 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 			}
 			else if ( item->type == ENCHANTED_FEATHER && item->identified )
 			{
-				snprintf(buf, sizeof(buf), "%s %s %d%% (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), 
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), 
 					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
 			}
 			else
@@ -17999,6 +17999,15 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	}
 
 	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
+	auto bgImg = drawerFrame->findImage("feather drawer img");
+	if ( usingGamepad )
+	{
+		bgImg->path = "*images/ui/Feather/Feather_Drawer_00.png";
+	}
+	else
+	{
+		bgImg->path = "*images/ui/Feather/Feather_Drawer_TallScroll_00.png";
+	}
 
 	int filterLeftSideX = 0;
 	int filterStartY = 0;
@@ -18957,6 +18966,22 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		slider->setDisabled(false);
 	}
 
+	SDL_Rect sliderPos = slider->getRailSize();
+	auto sliderCapTop = drawerFrame->findImage("feather slider top");
+	if ( usingGamepad )
+	{
+		sliderPos.y = 50;
+		sliderPos.h = bgImg->pos.h - 44 - 50;
+	}
+	else
+	{
+		sliderPos.y = 50 - 18;
+		sliderPos.h = bgImg->pos.h - 44 - 50 + 18;
+	}
+	sliderCapTop->pos.y = sliderPos.y;
+	slider->setRailSize(sliderPos);
+
+
 	currentScrollRow = scrollSetpoint / inscriptionSlotHeight;
 
 	if ( bOpen && isInteractable )
@@ -19066,6 +19091,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		drawerFrame->setSize(drawerPos);
 		drawerPos.h -= 10; // empty area
 		drawerFrame->setHollow(false);
+
 		auto bg = drawerFrame->addImage(drawerPos,
 			makeColor(255, 255, 255, 255),
 			"*images/ui/Feather/Feather_Drawer_00.png", "feather drawer img");
