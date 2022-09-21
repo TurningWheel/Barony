@@ -2544,7 +2544,13 @@ GameController::Haptic_t::Haptic_t()
 	memset(&hapticEffect, 0, sizeof(SDL_HapticEffect));
 }
 
-void GameController::handleRumble()
+#ifdef NINTENDO
+#include <chrono>
+static std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
+static std::chrono::high_resolution_clock::time_point timeEnd;
+#endif
+
+SDL_HapticEffect * GameController::handleRumble()
 {
 	if ( haptics.hapticTick == std::numeric_limits<Uint32>::max() )
 	{
@@ -2552,12 +2558,22 @@ void GameController::handleRumble()
 	}
 	else
 	{
+#ifndef NINTENDO
 		++haptics.hapticTick;
+#else
+		timeEnd = std::chrono::high_resolution_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeNow);
+		if ((elapsed.count()) > 10)
+		{
+			timeNow = std::chrono::high_resolution_clock::now();
+			++haptics.hapticTick;
+		}
+#endif
 	}
 	size_t size = haptics.activeRumbles.size();
 	if ( size == 0 )
 	{
-		return;
+		return nullptr;
 	}
 
 	Uint32 highestPriority = 0;
@@ -2613,8 +2629,9 @@ void GameController::handleRumble()
 		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
 		rumbleToPlay->second.startTime = newStartTime; // move the playhead forward.
 		rumbleToPlay->second.isPlaying = true;
-		doRumble(&rumbleToPlay->second);
+		return doRumble(&rumbleToPlay->second);
 	}
+	return nullptr;
 }
 
 void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
@@ -2690,11 +2707,11 @@ void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
 	}
 }
 
-void GameController::doRumble(Haptic_t::Rumble* r)
+SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 {
 	if ( !r )
 	{
-		return;
+		return nullptr;
 	}
 
 	// init an effect.
@@ -2802,7 +2819,7 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 	haptics.hapticEffect.leftright.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
 
 #ifdef NINTENDO
-	nxControllerRumble(id, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
+	return &haptics.hapticEffect;
 #else
 	if ( sdl_haptic )
 	{
@@ -2817,7 +2834,7 @@ void GameController::doRumble(Haptic_t::Rumble* r)
 		if ( SDL_HapticUpdateEffect(sdl_haptic, haptics.hapticEffectId, &haptics.hapticEffect) < 0 )
 		{
 			printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
-			return;
+			return nullptr;
 		}
 		if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
 		{
