@@ -21658,11 +21658,31 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	{
 		if ( ticks - enemyDetails->enemy_timer >= EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks )
 		{
-			auto& camera = cameras[player.playernum];
-			double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
-			if ( playerdist <= EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance * 16.0 )
+			if ( splitscreen )
 			{
-				enemyDetails->expired = true;
+				// if anyone in splitscreen is near the bar, expire it instead of just the owner
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( i == player.playernum || players[i]->isLocalPlayerAlive() )
+					{
+						auto& camera = cameras[i];
+						double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+						if ( playerdist <= EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance * 16.0 )
+						{
+							enemyDetails->expired = true;
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				auto& camera = cameras[player.playernum];
+				double playerdist = sqrt(pow(camera.x * 16.0 - enemyDetails->worldX, 2) + pow(camera.y * 16.0 - enemyDetails->worldY, 2));
+				if ( playerdist <= EnemyHPDamageBarHandler::shortDistanceHPBarFadeDistance * 16.0 )
+				{
+					enemyDetails->expired = true;
+				}
 			}
 		}
 	}

@@ -310,6 +310,20 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		{
 			p = clientnum; // remote clients, add it to the local list.
 		}
+		if ( splitscreen ) // check if anyone else has this enemy bar on their screen
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( players[i]->isLocalPlayer() )
+				{
+					if ( enemyHPDamageBarHandler[i].HPBars.find(target->getUID()) != enemyHPDamageBarHandler[i].HPBars.end() )
+					{
+						p = i;
+						break;
+					}
+				}
+			}
+		}
 		if ( stats )
 		{
 			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp,
