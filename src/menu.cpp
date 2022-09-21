@@ -10521,9 +10521,9 @@ void doEndgame() {
 	intro = true;
 	splitscreen = false;
 
-    // this is done so that save game screenshots get reloaded after the game
-    // is done.
-	Image::dumpCache();
+    // this is done so that save game screenshots get
+    // reloaded after the game is done.
+	//Image::dumpCache();
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{

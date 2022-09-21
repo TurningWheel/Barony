@@ -2440,12 +2440,14 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 			src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
 			src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 		} else {
-			src.x = std::max(0.f, (_size.x - pos.x) * ((float)actualImage->getWidth() / image->pos.w));
-			src.y = std::max(0.f, (_size.y - pos.y) * ((float)actualImage->getHeight() / image->pos.h));
-			src.w = ((float)dest.w / pos.w) * (image->section.w ? image->section.w : actualImage->getWidth());
-			src.h = ((float)dest.h / pos.h) * (image->section.h ? image->section.h : actualImage->getHeight());
-			src.x += image->section.x;
-			src.y += image->section.y;
+			const int w = image->section.w ? image->section.w : (actualImage->getWidth() - image->section.x);
+			const int h = image->section.h ? image->section.h : (actualImage->getHeight() - image->section.y);
+			src.x = std::max((float)image->section.x, image->section.x + (_size.x - pos.x) * (w / (float)image->pos.w));
+			src.y = std::max((float)image->section.y, image->section.y + (_size.y - pos.y) * (h / (float)image->pos.h));
+			src.w = ((float)dest.w / pos.w) * w;
+			src.h = ((float)dest.h / pos.h) * h;
+			//src.x += image->section.x - std::min(0, _size.x - pos.x);
+			//src.y += image->section.y - std::min(0, _size.y - pos.y);
 		}
 
 

@@ -2504,9 +2504,10 @@ void actPlayer(Entity* my)
 		{
 			if ( PLAYER_ALIVETIME == 300 && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT )
 			{
+				// we no longer do the following:
 				// take a screenshot to be associated with the current save game
-				auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
-				takeScreenshot(screenshot_path.c_str());
+				//auto screenshot_path = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::SCREENSHOT);
+				//takeScreenshot(screenshot_path.c_str());
 			}
 			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
