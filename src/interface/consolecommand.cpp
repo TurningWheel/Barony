@@ -47,11 +47,11 @@ bool autoLimbReload = false;
 *******************************************************************************/
 
 template ConsoleVariable<std::string>::ConsoleVariable(const char*, std::string const&, const char*);
-template<> void ConsoleVariable<std::string>::set(ConsoleVariable& cvar, const char* arg)
+template<> void ConsoleVariable<std::string>::set(const char* arg)
 {
-	cvar.data = arg;
+	data = arg;
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%s\"",
-		cvar.name + 1, cvar.data.c_str());
+		name + 1, data.c_str());
 }
 
 /*******************************************************************************
@@ -59,13 +59,13 @@ template<> void ConsoleVariable<std::string>::set(ConsoleVariable& cvar, const c
 *******************************************************************************/
 
 template ConsoleVariable<int>::ConsoleVariable(const char*, int const&, const char*);
-template<> void ConsoleVariable<int>::set(ConsoleVariable& cvar, const char* arg)
+template<> void ConsoleVariable<int>::set(const char* arg)
 {
 	if (arg && arg[0] != '\0') {
-		cvar.data = (int)strtol(arg, nullptr, 10);
+		data = (int)strtol(arg, nullptr, 10);
 	}
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%d\"",
-		cvar.name + 1, cvar.data);
+		name + 1, data);
 }
 
 /*******************************************************************************
@@ -73,13 +73,13 @@ template<> void ConsoleVariable<int>::set(ConsoleVariable& cvar, const char* arg
 *******************************************************************************/
 
 template ConsoleVariable<float>::ConsoleVariable(const char*, float const&, const char*);
-template<> void ConsoleVariable<float>::set(ConsoleVariable& cvar, const char* arg)
+template<> void ConsoleVariable<float>::set(const char* arg)
 {
 	if (arg && arg[0] != '\0') {
-		cvar.data = strtof(arg, nullptr);
+		data = strtof(arg, nullptr);
 	}
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%f\"",
-		cvar.name + 1, cvar.data);
+		name + 1, data);
 }
 
 /*******************************************************************************
@@ -87,13 +87,13 @@ template<> void ConsoleVariable<float>::set(ConsoleVariable& cvar, const char* a
 *******************************************************************************/
 
 template ConsoleVariable<bool>::ConsoleVariable(const char*, bool const&, const char*);
-template<> void ConsoleVariable<bool>::set(ConsoleVariable& cvar, const char* arg)
+template<> void ConsoleVariable<bool>::set(const char* arg)
 {
 	if (arg && arg[0] != '\0') {
-		cvar.data = !(!strcmp(arg, "false") || !strcmp(arg, "0"));
+		data = !(!strcmp(arg, "false") || !strcmp(arg, "0"));
 	}
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%s\"",
-		cvar.name + 1, cvar.data ? "true" : "false");
+		name + 1, data ? "true" : "false");
 }
 
 /*******************************************************************************
@@ -101,17 +101,17 @@ template<> void ConsoleVariable<bool>::set(ConsoleVariable& cvar, const char* ar
 *******************************************************************************/
 
 template ConsoleVariable<Vector4>::ConsoleVariable(const char*, Vector4 const&, const char*);
-template<> void ConsoleVariable<Vector4>::set(ConsoleVariable& cvar, const char* arg)
+template<> void ConsoleVariable<Vector4>::set(const char* arg)
 {
 	if (arg && arg[0] != '\0') {
 		char* ptr = const_cast<char*>(arg);
-		cvar.data.x = strtof(ptr, &ptr);
-		cvar.data.y = strtof(ptr, &ptr);
-		cvar.data.z = strtof(ptr, &ptr);
-		cvar.data.w = strtof(ptr, &ptr);
+		data.x = strtof(ptr, &ptr);
+		data.y = strtof(ptr, &ptr);
+		data.z = strtof(ptr, &ptr);
+		data.w = strtof(ptr, &ptr);
 	}
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%f %f %f %f\"",
-		cvar.name + 1, cvar.data.x, cvar.data.y, cvar.data.z, cvar.data.w);
+		name + 1, data.x, data.y, data.z, data.w);
 }
 
 /******************************************************************************/
@@ -120,7 +120,7 @@ template<typename T>
 ConsoleVariable<T>::ConsoleVariable(const char* _name, const T& _default, const char* _desc) :
 	ConsoleCommand(_name, _desc, &ConsoleVariable<T>::setter)
 {
-	add_to_map(*this);
+	add_to_map();
 	data = _default;
 }
 
@@ -138,19 +138,19 @@ void ConsoleVariable<T>::setter(int argc, const char** argv)
 				data.append(" ");
 				data.append(argv[c]);
 			}
-			cvar.set(cvar, data.c_str());
+			cvar.set(data.c_str());
 		}
 		else {
-			cvar.set(cvar, "");
+			cvar.set("");
 		}
 	}
 }
 
 template<typename T>
-void ConsoleVariable<T>::add_to_map(ConsoleVariable& cvar)
+void ConsoleVariable<T>::add_to_map()
 {
 	auto& map = getConsoleVariables();
-	(void)map.emplace(cvar.name, cvar);
+	(void)map.emplace(name, *this);
 }
 
 template <typename T>

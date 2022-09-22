@@ -95,16 +95,9 @@ public:
     T data;
 
 private:
-    static void set(ConsoleVariable& cvar, const char* arg);
+    void set(const char* arg);
+    void add_to_map();
     static void setter(int argc, const char** argv);
-    static void add_to_map(ConsoleVariable& cvar);
     using cvar_map_t = std::map<std::string, ConsoleVariable<T>&>;
     static cvar_map_t& getConsoleVariables();
 };
-
-// Valid ConsoleVariable types:
-extern template ConsoleVariable<std::string>::ConsoleVariable(const char*, const std::string&, const char*);
-extern template ConsoleVariable<int>::ConsoleVariable(const char*, const int&, const char*);
-extern template ConsoleVariable<float>::ConsoleVariable(const char*, const float&, const char*);
-extern template ConsoleVariable<bool>::ConsoleVariable(const char*, const bool&, const char*);
-extern template ConsoleVariable<Vector4>::ConsoleVariable(const char*, const Vector4&, const char*);
