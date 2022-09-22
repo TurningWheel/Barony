@@ -4951,10 +4951,10 @@ void GenericGUIMenu::rebuildGUIInventory()
 			item = (Item*)node->element;
 			if ( item )
 			{
-				if ( shouldDisplayItemInGUI(item) )
-				{
-					++c;
-				}
+				//if ( shouldDisplayItemInGUI(item) )
+				//{
+				//	++c;
+				//}
 				if ( guiType == GUI_TYPE_TINKERING )
 				{
 					if ( item->node && item->node->list == &stats[gui_player]->inventory )
@@ -4985,34 +4985,34 @@ void GenericGUIMenu::rebuildGUIInventory()
 			//closeGUI();
 			//return;
 		}
-		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
+		/*scroll = std::max(0, std::min(scroll, c - kNumShownItems));
 		for ( c = 0; c < kNumShownItems; ++c )
 		{
 			itemsDisplayed[c] = nullptr;
 		}
-		c = 0;
+		c = 0;*/
 
 		//Assign the visible items to the GUI slots.
-		for ( node = player_inventory->first; node != nullptr; node = node->next )
-		{
-			if ( node->element )
-			{
-				item = (Item*)node->element;
-				if ( shouldDisplayItemInGUI(item) ) //Skip over all non-applicable items.
-				{
-					++c;
-					if ( c <= scroll )
-					{
-						continue;
-					}
-					itemsDisplayed[c - scroll - 1] = item;
-					if ( c > 3 + scroll )
-					{
-						break;
-					}
-				}
-			}
-		}
+		//for ( node = player_inventory->first; node != nullptr; node = node->next )
+		//{
+		//	if ( node->element )
+		//	{
+		//		item = (Item*)node->element;
+		//		if ( shouldDisplayItemInGUI(item) ) //Skip over all non-applicable items.
+		//		{
+		//			++c;
+		//			if ( c <= scroll )
+		//			{
+		//				continue;
+		//			}
+		//			itemsDisplayed[c - scroll - 1] = item;
+		//			if ( c > 3 + scroll )
+		//			{
+		//				break;
+		//			}
+		//		}
+		//	}
+		//}
 
 		if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TinkeringFilter::TINKER_FILTER_CRAFTABLE )
 		{
@@ -5737,43 +5737,44 @@ void GenericGUIMenu::updateGUI()
 		//	//Okay, now prepare to render all the items.
 		//	y = gui_startx + 22;
 		//	c = 0;
-		//	if ( player_inventory && guiType != GUI_TYPE_ALCHEMY )
-		//	{
-		//		rebuildGUIInventory();
+			if ( player_inventory && guiType != GUI_TYPE_ALCHEMY )
+			{
+				rebuildGUIInventory();
 
-		//		std::unordered_map<ItemType, int> itemCounts;
-		//		if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TINKER_FILTER_CRAFTABLE )
-		//		{
-		//			for ( node = stats[gui_player]->inventory.first; node != NULL; node = node->next )
-		//			{
-		//				if ( node->element )
-		//				{
-		//					Item* item = (Item*)node->element;
-		//					itemCounts[item->type] += item->count;
-		//				}
-		//			}
-		//			for ( node = player_inventory->first; node != NULL; node = node->next )
-		//			{
-		//				if ( node->element )
-		//				{
-		//					Item* item = (Item*)node->element;
-		//					if ( isNodeTinkeringCraftableItem(item->node) )
-		//					{
-		//						// make the displayed items reflect how many you are carrying.
-		//						item->count = 0;
-		//						if ( itemCounts.find(item->type) != itemCounts.end() )
-		//						{
-		//							item->count = itemCounts[item->type];
-		//						}
-		//					}
-		//					else
-		//					{
-		//						// stop once we reach normal inventory.
-		//						break;
-		//					}
-		//				}
-		//			}
-		//		}
+				std::unordered_map<ItemType, int> itemCounts;
+				if ( guiType == GUI_TYPE_TINKERING && tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+				{
+					for ( node = stats[gui_player]->inventory.first; node != NULL; node = node->next )
+					{
+						if ( node->element )
+						{
+							Item* item = (Item*)node->element;
+							itemCounts[item->type] += item->count;
+						}
+					}
+					for ( node = player_inventory->first; node != NULL; node = node->next )
+					{
+						if ( node->element )
+						{
+							Item* item = (Item*)node->element;
+							if ( isNodeTinkeringCraftableItem(item->node) )
+							{
+								// make the displayed items reflect how many you are carrying.
+								item->count = 0;
+								if ( itemCounts.find(item->type) != itemCounts.end() )
+								{
+									item->count = itemCounts[item->type];
+								}
+							}
+							else
+							{
+								// stop once we reach normal inventory.
+								break;
+							}
+						}
+					}
+				}
+
 		//		//Actually render the items.
 		//		c = 0;
 		//		for ( node = player_inventory->first; node != NULL; node = node->next )
@@ -5961,7 +5962,7 @@ void GenericGUIMenu::updateGUI()
 		//			}
 		//		}
 		//	}
-		//}
+		}
 	}
 }
 

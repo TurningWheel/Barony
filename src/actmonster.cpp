@@ -413,14 +413,14 @@ void summonManyMonster(Monster creature)
 
 -------------------------------------------------------------------------------*/
 
-bool monsterMoveAside(Entity* my, Entity* entity)
+bool monsterMoveAside(Entity* my, Entity* entity, bool ignoreMonsterState)
 {
 	if ( !my || !entity )
 	{
 		return false;
 	}
 
-	if ( my->monsterState != MONSTER_STATE_WAIT )
+	if ( !ignoreMonsterState && my->monsterState != MONSTER_STATE_WAIT )
 	{
 		return false;
 	}
