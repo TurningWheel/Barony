@@ -4898,6 +4898,14 @@ void actPlayer(Entity* my)
 					PLAYER_TORCH = 0;
 				}
 			}
+
+			static ConsoleVariable<int> cvar_playerlightmin("/playerlightmin", 0);
+			static ConsoleVariable<int> cvar_playerlightadd("/playerlightadd", 0);
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				PLAYER_TORCH += *cvar_playerlightadd;
+				PLAYER_TORCH = std::max(*cvar_playerlightmin, PLAYER_TORCH);
+			}
 		}
 	}
 	else
