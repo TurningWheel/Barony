@@ -2852,6 +2852,7 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 #endif
 	}
 #endif
+	return nullptr;
 }
 void GameController::stopRumble()
 {
