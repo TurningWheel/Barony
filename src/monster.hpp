@@ -656,7 +656,7 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
 Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
-bool monsterMoveAside(Entity* my, Entity* entity);
+bool monsterMoveAside(Entity* my, Entity* entity, bool ignoreMonsterState = false);
 
 //--init* functions--
 void initHuman(Entity* my, Stat* myStats);
