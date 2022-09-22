@@ -17120,13 +17120,14 @@ bind_failed:
 		main_menu_frame->setColor(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
 
+		const auto title_scale = 4.0;
 		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 4.0) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * title_scale) / 2,
 				Frame::virtualScreenY / 4,
-				(int)(title_img->getWidth() * 4.0),
-				(int)(title_img->getHeight() * 4.0)
+				(int)(title_img->getWidth() * title_scale),
+				(int)(title_img->getHeight() * title_scale)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),
@@ -17270,13 +17271,14 @@ bind_failed:
 
 		int y = 0;
 
+		const auto title_scale = 3.0;
 		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
 			SDL_Rect{
-				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * 3.0) / 2,
+				(int)(Frame::virtualScreenX - (int)title_img->getWidth() * title_scale) / 2,
 				y,
-				(int)(title_img->getWidth() * 3.0),
-				(int)(title_img->getHeight() * 3.0)
+				(int)(title_img->getWidth() * title_scale),
+				(int)(title_img->getHeight() * title_scale)
 			},
 			makeColor(255, 255, 255, 255),
 			title_img->getName(),

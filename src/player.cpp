@@ -165,6 +165,9 @@ bool GameController::open(int c)
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
 
+#ifdef DISABLE_RUMBLE
+		haptics.vibrationEnabled = false;
+#else
 		if ( SDL_GameControllerHasRumble(sdl_device) == SDL_FALSE )
 		{
 			printlog("Notice: Controller does not support rumble!");
@@ -175,6 +178,7 @@ bool GameController::open(int c)
 			printlog("Controller name is \"%s\", rumble enabled", name.c_str());
 			haptics.vibrationEnabled = true;
 		}
+#endif
 		/*SDL_Joystick* joystick = SDL_GameControllerGetJoystick(sdl_device);
 		sdl_haptic = SDL_HapticOpenFromJoystick(joystick);
 		if ( sdl_haptic == nullptr )
@@ -2843,7 +2847,9 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 	}
 	else if (sdl_device)
 	{
+#ifndef DISABLE_RUMBLE
 		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
+#endif
 	}
 #endif
 }

@@ -3379,7 +3379,9 @@ namespace ConsoleCommands {
 		{
 			if (inputs.hasController(i))
 			{
+#ifndef DISABLE_RUMBLE
 				SDL_GameControllerRumble(inputs.getController(i)->getControllerDevice(), 8000, 0, 500);
+#endif
 			}
 		}
 		});
