@@ -298,13 +298,15 @@ int initGame()
 
 		updateLoadingScreen(94);
 
-#if defined(USE_EOS) || defined(STEAMWORKS)
-#else
-#ifdef NINTENDO
+#ifdef NINTENDO_DEBUG
 		//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
 		enabledDLCPack1 = true;
 		enabledDLCPack2 = true;
-#else // NINTENDO
+#endif
+
+#if defined(USE_EOS) || defined(STEAMWORKS)
+#else
+#ifndef NINTENDO
 		if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 		{
 			std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");

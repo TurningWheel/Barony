@@ -4280,7 +4280,9 @@ void handleEvents(void)
 							{
 								if (inputs.getController(i))
 								{
-									inputs.getController(i)->handleRumble();
+#ifndef NINTENDO
+									(void)inputs.getController(i)->handleRumble();
+#endif
 									inputs.getController(i)->updateButtonsReleased();
 								}
 							}

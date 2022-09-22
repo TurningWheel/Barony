@@ -210,9 +210,9 @@ public:
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
-	void doRumble(Haptic_t::Rumble* r);
+	SDL_HapticEffect* doRumble(Haptic_t::Rumble* r);
+	SDL_HapticEffect* handleRumble();
 	void stopRumble();
-	void handleRumble();
 	void reinitHaptic();
 
 	/*
