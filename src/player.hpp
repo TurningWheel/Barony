@@ -381,12 +381,23 @@ public:
 	~Inputs() {};
 	const void setPlayerIDAllowedKeyboard(const int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			setPlayerIDAllowedKeyboard(0);
+			return;
+		}
 	    printlog("giving keyboard to player %d", player);
 		playerUsingKeyboardControl = player;
 	}
 	const int getPlayerIDAllowedKeyboard()
 	{
-	    return playerUsingKeyboardControl;
+		if (multiplayer != SINGLE)
+		{
+			return clientnum;
+		}
+		else
+		{
+	   		return playerUsingKeyboardControl;
+		}
 	}
 	const bool bPlayerUsingKeyboardControl(const int player) const
 	{
@@ -423,6 +434,9 @@ public:
 	}
 	VirtualMouse* getVirtualMouse(int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return getVirtualMouse(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -432,6 +446,9 @@ public:
 	}
 	UIStatus* getUIInteraction(int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return getUIInteraction(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -474,6 +491,9 @@ public:
 	void warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 flags);
 	const int getControllerID(int player) const
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return getControllerID(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -485,6 +505,9 @@ public:
 
 	const bool hasController(int player) const 
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return hasController(0);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -494,23 +517,14 @@ public:
 	}
 	void setControllerID(int player, const int id) 
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			return setControllerID(0, id);
+		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
 		}
 		playerControllerIds[player] = id;
-	}
-	void addControllerIDToNextAvailableInput(const int id)
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( playerControllerIds[i] == -1 )
-			{
-				playerControllerIds[i] = id;
-				printlog("[INPUTS]: Automatically assigned controller id %d to player index %d.", id, i);
-				break;
-			}
-		}
 	}
 	const bool bPlayerIsControllable(int player) const;
 	void updateAllMouse()
@@ -564,6 +578,10 @@ public:
 	}
 	void rumble(const int player, GameController::Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			rumble(0, pattern, smallMagnitude, largeMagnitude, length, srcEntityUid);
+			return;
+		}
 		if ( !hasController(player) )
 		{
 			return;
@@ -572,6 +590,10 @@ public:
 	}
 	void rumbleStop(const int player)
 	{
+		if (multiplayer != SINGLE && player != 0) {
+			rumbleStop(0);
+			return;
+		}
 		if ( !hasController(player) )
 		{
 			return;

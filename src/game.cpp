@@ -901,7 +901,6 @@ void gameLogic(void)
     }
 
 	for (auto& input : Input::inputs) {
-		input.updateReleasedBindings();
 		input.update();
 		input.consumeBindingsSharedWithFaceHotbar();
 	}
@@ -3814,7 +3813,7 @@ void handleEvents(void)
 								inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							}
 						}
-						else
+						else if (multiplayer == SINGLE)
 						{
 							inputs.getVirtualMouse(i)->draw_cursor = false;
 						}
@@ -4069,7 +4068,6 @@ void handleEvents(void)
 					if ( SDL_IsGameController(device_index) && controller.open(device_index) )
 					{
 						printlog("(Device %d successfully initialized as game controller.)\n", controller.getID());
-						//inputs.addControllerIDToNextAvailableInput(id);
 						controller.initBindings();
 						Input::gameControllers[controller.getID()] = controller.getControllerDevice();
 						for (int c = 0; c < 4; ++c) {
@@ -5562,7 +5560,7 @@ void drawAllPlayerCameras() {
 static void doConsoleCommands() {
 	Input& input = Input::inputs[clientnum]; // commands - uses local clientnum only
 	bool& bControlEnabled = players[clientnum]->bControlEnabled;
-	if (((input.binaryToggle("Chat") && !intro && !movie) || input.binaryToggle("Console Command")) && !command && bControlEnabled)
+	if (((input.binaryToggle("Chat") && !intro && !movie) || (input.binaryToggle("Console Command") && !inputstr)) && !command && bControlEnabled)
 	{
 		cursorflash = ticks;
 		command = true;

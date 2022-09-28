@@ -6153,9 +6153,15 @@ bind_failed:
         "fonts/PixelMaz_monospace.ttf#32#2");
 
     static void addLobbyChatMessage(Uint32 color, const char* msg, bool add_to_list = true) {
+		if (currentLobbyType == LobbyType::LobbyLocal) {
+			// chat messages disabled in local lobbies
+			return;
+		}
         if (!msg || !msg[0]) {
+			// check input
             return;
         }
+
         constexpr Uint32 seconds_in_day = 86400;
         const Uint32 seconds = time(NULL) / seconds_in_day;
 
@@ -11928,7 +11934,11 @@ bind_failed:
 		    });
 		start->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		    const int player = widget.getOwner();
-		    const bool controllerAvailable = inputs.hasController(player) || isControllerAvailable(player, countUnassignedControllers());
+			const bool keyboardAvailable = inputs.getPlayerIDAllowedKeyboard() == player ||
+				currentLobbyType != LobbyType::LobbyLocal;
+		    const bool controllerAvailable = inputs.hasController(player) ||
+				(currentLobbyType != LobbyType::LobbyLocal && countControllers()) ||
+				isControllerAvailable(player, countUnassignedControllers());
 		    const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
 		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 #ifdef NINTENDO
@@ -11941,7 +11951,7 @@ bind_failed:
 			const int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{ x - w / 2, y - h / 2, w, h }, viewport);
 #else
-            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+            if (keyboardAvailable) {
                 if (controllerAvailable) {
                     // draw spacebar and A button
                     {
