@@ -3042,7 +3042,7 @@ namespace MainMenu {
 		dropdown->setSize(SDL_Rect{
 			button.getSize().x,
 			button.getSize().y,
-			type == DropdownType::Wide ? 400 : 174,
+			type == DropdownType::Wide ? 640 : 174,
 			type == DropdownType::Short ? 181 : 362
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
@@ -3119,7 +3119,7 @@ namespace MainMenu {
 		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
-			SDL_Rect{8, 0, type == DropdownType::Wide ? 384 : 158, 30},
+			SDL_Rect{8, 0, type == DropdownType::Wide ? 624 : 158, 30},
 			0xffffffff,
 			"*images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
 			"selection"
@@ -3570,7 +3570,7 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y,
-			wide ? 400 : 174,
+			wide ? 640 : 174,
 			52});
 		button->setFont(bigfont_outline);
 		button->setText(selected);

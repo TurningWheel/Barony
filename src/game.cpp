@@ -947,10 +947,6 @@ void gameLogic(void)
 
 	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
 
-#ifdef SOUND
-	// sound_update(); //Update FMOD and whatnot.
-#endif
-
 	// camera shaking
 	for (int c = 0; c < MAXPLAYERS; ++c) 
 	{
@@ -4253,7 +4249,23 @@ void handleEvents(void)
 					if ( runtimes == 0 )
 					{
 #ifdef SOUND
-						sound_update(); //Update FMOD and whatnot.
+						// update listener position, music fades, etc
+						if (multiplayer != SINGLE || intro) {
+							sound_update(0, clientnum, 1);
+						} else {
+							int numplayers = 0;
+							for (int c = 0; c < MAXPLAYERS; ++c) {
+								if (!client_disconnected[c]) {
+									++numplayers;
+								}
+							}
+							for (int player = 0, c = 0; c < MAXPLAYERS; ++c) {
+								if (!client_disconnected[c]) {
+									sound_update(player, c, numplayers);
+									++player;
+								}
+							}
+						}
 #endif
 					}
 

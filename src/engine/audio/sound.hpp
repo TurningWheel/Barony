@@ -90,7 +90,7 @@ extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group;
  */
 bool FMODErrorCheck();
 
-void sound_update();
+void sound_update(int player, int index, int numplayers);
 bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
 void exitSoundEngine();
 int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
@@ -184,8 +184,7 @@ extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group;
 int initOPENAL();
 int closeOPENAL();
 
-//Updates OpenAL and whatnot (dummy function)
-void sound_update();
+void sound_update(int player, int index, int numplayers);
 
 OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol);
 OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);

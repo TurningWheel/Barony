@@ -63,7 +63,7 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	soundEnvironment_group->setVolume(master * environment);
 }
 
-void sound_update()
+void sound_update(int player, int index, int numplayers)
 {
 	if (no_sound)
 	{
@@ -77,7 +77,7 @@ void sound_update()
 	FMOD_VECTOR position, forward, up;
 	bool playing = false;
 
-	auto& camera = cameras[clientnum];
+	auto& camera = cameras[index];
 
 	position.x = -camera.y;
 	position.y = -camera.z / 32;
@@ -92,54 +92,58 @@ void sound_update()
 	up.z = 0;
 
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
-	fmod_system->set3DListenerAttributes(0, &position, 0, &forward, &up); //TODO: For splitscreen, change the listener number to the current player...
+	fmod_system->set3DNumListeners(numplayers);
+	fmod_system->set3DListenerAttributes(player, &position, 0, &forward, &up);
 
-	//Fade in the currently playing music.
-	if (music_channel)
-	{
-		playing = false;
-		music_channel->isPlaying(&playing);
-		if (playing)
+	if (player == 0) {
+		//Fade in the currently playing music.
+		if (music_channel)
 		{
-			float volume = 1.0f;
-			music_channel->getVolume(&volume);
-
-			if (volume < 1.0f)
+			playing = false;
+			music_channel->isPlaying(&playing);
+			if (playing)
 			{
-				volume += fadein_increment * 2;
-				if (volume > 1.0f)
+				float volume = 1.0f;
+				music_channel->getVolume(&volume);
+
+				if (volume < 1.0f)
 				{
-					volume = 1.0f;
+					volume += fadein_increment * 2;
+					if (volume > 1.0f)
+					{
+						volume = 1.0f;
+					}
+					music_channel->setVolume(volume);
 				}
-				music_channel->setVolume(volume);
+			}
+		}
+
+		//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
+		if (music_channel2)
+		{
+			playing = false;
+			music_channel2->isPlaying(&playing);
+			if (playing)
+			{
+				float volume = 0.0f;
+				music_channel2->getVolume(&volume);
+
+				if (volume > 0.0f)
+				{
+					volume -= fadeout_increment * 2;
+					if (volume < 0.0f)
+					{
+						volume = 0.0f;
+					}
+					music_channel2->setVolume(volume);
+				}
 			}
 		}
 	}
 
-	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
-	if (music_channel2)
-	{
-		playing = false;
-		music_channel2->isPlaying(&playing);
-		if (playing)
-		{
-			float volume = 0.0f;
-			music_channel2->getVolume(&volume);
-
-			if (volume > 0.0f)
-			{
-				volume -= fadeout_increment * 2;
-				if (volume < 0.0f)
-				{
-					volume = 0.0f;
-				}
-				music_channel2->setVolume(volume);
-			}
-		}
+	if (player == numplayers - 1) {
+		fmod_system->update();
 	}
-
-	fmod_system->update();
-	//TODO: Mute sound if focus lost.
 }
 
 #elif defined USE_OPENAL
@@ -557,7 +561,7 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
 }
 
-void sound_update()
+void sound_update(int player, int index, int numplayers)
 {
 	if (no_sound)
 	{
@@ -570,7 +574,7 @@ void sound_update()
 
 	FMOD_VECTOR position;
 
-	auto& camera = cameras[clientnum];
+	auto& camera = cameras[index];
 	if ( splitscreen )
 	{
 		camera = cameras[0];
@@ -615,48 +619,50 @@ void sound_update()
 	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, 0, &forward, &up);
 
 	//Fade in the currently playing music.
-	if (music_channel)
-	{
-		ALint playing = 0;
-		alGetSourcei( music_channel->id, AL_SOURCE_STATE, &playing );
-		if (playing==AL_PLAYING)
+	if (player == 0) {
+		if (music_channel)
 		{
-			float volume = music_channel->volume;
-
-			if (volume < 1.0f)
+			ALint playing = 0;
+			alGetSourcei( music_channel->id, AL_SOURCE_STATE, &playing );
+			if (playing==AL_PLAYING)
 			{
-				volume += fadein_increment * 2;
-				if (volume > 1.0f)
+				float volume = music_channel->volume;
+
+				if (volume < 1.0f)
 				{
-					volume = 1.0f;
+					volume += fadein_increment * 2;
+					if (volume > 1.0f)
+					{
+						volume = 1.0f;
+					}
+					OPENAL_Channel_SetVolume(music_channel, volume);
 				}
-				OPENAL_Channel_SetVolume(music_channel, volume);
 			}
 		}
-	}
-	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
-	if (music_channel2)
-	{
-		ALint playing = 0;
-		alGetSourcei( music_channel2->id, AL_SOURCE_STATE, &playing );
-		if (playing)
+		//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
+		if (music_channel2)
 		{
-			float volume = music_channel2->volume;
-
-			if (volume > 0.0f)
+			ALint playing = 0;
+			alGetSourcei( music_channel2->id, AL_SOURCE_STATE, &playing );
+			if (playing)
 			{
-				//volume -= 0.001f;
-				//volume -= 0.005f;
-				volume -= fadeout_increment * 2;
-				if (volume < 0.0f)
+				float volume = music_channel2->volume;
+
+				if (volume > 0.0f)
 				{
-					volume = 0.0f;
+					//volume -= 0.001f;
+					//volume -= 0.005f;
+					volume -= fadeout_increment * 2;
+					if (volume < 0.0f)
+					{
+						volume = 0.0f;
+					}
+					OPENAL_Channel_SetVolume(music_channel2, volume);
+				} else {
+					/*OPENAL_Channel_Stop(music_channel2);
+					music_channel2 = NULL;*/
+					OPENAL_Channel_Pause(music_channel2);
 				}
-				OPENAL_Channel_SetVolume(music_channel2, volume);
-			} else {
-				/*OPENAL_Channel_Stop(music_channel2);
-				music_channel2 = NULL;*/
-				OPENAL_Channel_Pause(music_channel2);
 			}
 		}
 	}
