@@ -17170,26 +17170,48 @@ bind_failed:
 			});
 		version->setColor(0xffffffff);
 
-		auto start = main_menu_frame->addButton("start");
-		start->setSize(SDL_Rect{
-		    (Frame::virtualScreenX - 320) / 2,
-		    (Frame::virtualScreenY + 200) / 2,
-		    320,
-		    100,
-		    });
+		auto start = main_menu_frame->addFrame("start");
 		start->setBorder(0);
-		start->setColor(makeColor(255, 255, 255, 255));
-		start->setHighlightColor(makeColor(255, 255, 255, 255));
-		start->setBackground("images/ui/Main Menus/StartGradient.png");
-		start->setFont(bigfont_outline);
-		start->setText("Press to Start");
-		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		start->setButtonsOffset(SDL_Rect{0, 24, 0, 0});
-		start->setHideKeyboardGlyphs(false);
-		//start->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
-		start->setHideSelectors(true);
-		start->addWidgetAction("MenuConfirm", "start");
-		start->setCallback([](Button&){
+		start->setColor(0);
+		start->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 300) / 2,
+			(Frame::virtualScreenY) / 2 - 32,
+			300,
+			200
+			});
+		start->setActualSize(SDL_Rect{0, 0, start->getSize().w, start->getSize().h});
+		start->setTickCallback([](Widget& widget){
+			auto frame = static_cast<Frame*>(&widget); assert(frame);
+			auto button = frame->findButton("button"); assert(button);
+			auto top = frame->findImage("glow_top"); assert(top);
+			auto bottom = frame->findImage("glow_bottom"); assert(bottom);
+			auto left = frame->findImage("glow_left"); assert(left);
+			auto right = frame->findImage("glow_right"); assert(right);
+			const auto color = button->getColor();
+			top->color = color;
+			bottom->color = color;
+			left->color = color;
+			right->color = color;
+			});
+
+		auto button = start->addButton("button");
+		button->setSize(SDL_Rect{
+		    (start->getSize().w - 292) / 2,
+		    40, 292, 120 });
+		button->setBorder(0);
+		button->setColor(makeColor(255, 255, 255, 255));
+		button->setHighlightColor(makeColor(255, 255, 255, 255));
+		button->setBackground("images/ui/Main Menus/Title/UI_Title_GradLight_Pink_01.png");
+		button->setIcon("images/ui/Main Menus/Title/UI_Title_Text_PressToStart_Gold_01.png");
+		button->setFont(bigfont_outline);
+		button->setText("Press to Start");
+		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0});
+		button->setHideKeyboardGlyphs(false);
+		//button->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
+		button->setHideSelectors(true);
+		button->addWidgetAction("MenuConfirm", "button");
+		button->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
 			settingsMount();
@@ -17198,30 +17220,67 @@ bind_failed:
 				soundActivate();
 			}
 		    });
-		start->setTickCallback([](Widget& widget){
+		button->setTickCallback([](Widget& widget){
+			const int pace = TICKS_PER_SECOND * 4;
+            const real_t ang = PI * 2.0 * ((ticks % pace) / (real_t)pace);
+			const uint8_t alpha = 191 + fabs(sin(ang)) * 64;
+            const Uint32 newColor = makeColor(255, 255, 255, alpha);
 		    auto button = static_cast<Button*>(&widget);
-		    auto color = button->getColor();
-            Uint8 r, g, b, a;
-            ::getColor(color, &r, &g, &b, &a);
-            static bool fadingDown = true;
-            if (fadingDown) {
-                if (a == 127) {
-                    fadingDown = false;
-                } else {
-                    --a;
-                }
-            } else {
-                if (a == 255) {
-                    fadingDown = true;
-                } else {
-                    ++a;
-                }
-            }
-            const Uint32 newColor = makeColor(r, g, b, a);
             button->setColor(newColor);
             button->setHighlightColor(newColor);
 		    });
-		start->select();
+		button->select();
+
+		// borders
+		{
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 210) / 2,
+				0, 210, 82 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateTop_01.png",
+				"top");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 70) / 2,
+				start->getSize().h - 34, 70, 34 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBot_01.png",
+				"bottom");
+
+			start->addImage(SDL_Rect{64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBL_01.png",
+				"left");
+
+			start->addImage(SDL_Rect{start->getSize().w - 46 - 64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBR_01.png",
+				"right");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 210) / 2,
+				0, 210, 82 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateTop_GlowPink_01B.png",
+				"glow_top");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 70) / 2,
+				start->getSize().h - 34, 70, 34 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBot_GlowPink_01B.png",
+				"glow_bottom");
+
+			start->addImage(SDL_Rect{64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBL_GlowPink_01B.png",
+				"glow_left");
+
+			start->addImage(SDL_Rect{start->getSize().w - 46 - 64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBR_GlowPink_01B.png",
+				"glow_right");
+		}
 
 #ifdef STEAMWORKS
 	    if (!cmd_line.empty()) {

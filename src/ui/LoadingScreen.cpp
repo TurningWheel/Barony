@@ -120,9 +120,9 @@ void createLoadingScreen(real_t progress) {
     default:
     case 0: image = "#images/ui/LoadingScreen/backdrop0.png"; break;
     case 1: image = "#images/ui/LoadingScreen/backdrop1.png"; break;
-    case 2: image = "#images/ui/LoadingScreen/backdrop4.png"; break;
-    //case 3: image = "#images/ui/LoadingScreen/backdrop2.png"; break;
-    //case 4: image = "#images/ui/LoadingScreen/backdrop3.png"; break;
+    case 2: image = "#images/ui/LoadingScreen/backdrop2.png"; break;
+    case 3: image = "#images/ui/LoadingScreen/backdrop3.png"; break;
+    case 4: image = "#images/ui/LoadingScreen/backdrop4.png"; break;
     }
     baseCreateLoadingScreen(progress, image);
 }
