@@ -3359,16 +3359,18 @@ namespace MainMenu {
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		button->setGlyphPosition(Button::glyph_position_t::CENTERED_BOTTOM);
 		button->setUserData((void*)binding);
-#ifdef NINTENDO
-		// Press X to clear binding
-		button->setTickCallback([](Widget& widget){
-			auto& input = Input::inputs[widget.getOwner()];
-			if (widget.isSelected() && !bind_mode) {
-				if (input.consumeBinaryToggle("MenuAlt2")) {
-					auto binding = (const char*)widget.getUserData();
-					(void)settingsBind(widget.getOwner(), 1 /* Gamepad */, binding, nullptr);
 
-					auto button = static_cast<Button*>(&widget);
+		button->setTickCallback([](Widget& widget){
+			auto button = static_cast<Button*>(&widget);
+			const int player = widget.getOwner();
+			auto& input = Input::inputs[player];
+
+			// Press X or Y to clear binding
+			if (widget.isSelected() && !bind_mode) {
+				if (inputs.hasController(player) && input.consumeBinaryToggle("MenuAlt2")) {
+					auto binding = (const char*)widget.getUserData();
+					(void)settingsBind(player, 1 /* Gamepad */, binding, nullptr);
+
 					button->setText(emptyBinding);
 					button->setIcon("");
 
@@ -3380,8 +3382,12 @@ namespace MainMenu {
 					tooltip->setText(buf);
 				}
 			}
+
+			// cycle icon
+			const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+			button->setIcon(Input::getGlyphPathForInput(button->getText(), pressed).c_str());
 			});
-#endif
+
 		return result;
 	}
 
@@ -4372,11 +4378,15 @@ namespace MainMenu {
 
 		for (auto& binding : bindings) {
 			char tip[256];
+			if (inputs.hasController(getMenuOwner())) {
 #ifdef NINTENDO
-			snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
+				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
 #else
-			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press Y to delete the current binding", binding.name);
 #endif
+			} else {
+				snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+			}
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
@@ -4390,17 +4400,19 @@ namespace MainMenu {
 					auto settings = static_cast<Frame*>(subwindow->getParent()); assert(settings);
 					auto tooltip = settings->findField("tooltip"); assert(tooltip);
 					char buf[256];
-#ifdef NINTENDO
-					snprintf(buf, sizeof(buf),
-						"Binding \"%s\".\n"
-						"The next button you press will be bound to this action.",
-						bound_binding.c_str());
-#else
-					snprintf(buf, sizeof(buf),
-						"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
-						"The next input you activate will be bound to this action.",
-						bound_binding.c_str());
-#endif
+					
+					if (inputs.hasController(getMenuOwner())) {
+						snprintf(buf, sizeof(buf),
+							"Binding \"%s\".\n"
+							"The next button you press will be bound to this action.",
+							bound_binding.c_str());
+					} else {
+						snprintf(buf, sizeof(buf),
+							"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
+							"The next input you activate will be bound to this action.",
+							bound_binding.c_str());
+					}
+
 					tooltip->setText(buf);
 					Input::inputs[bound_player].setDisabled(true);
 					Input::lastInputOfAnyKind = "";

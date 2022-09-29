@@ -580,19 +580,47 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	}
 	if (in == "DpadY-")
 	{
-		return rootPath + "G_Up00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Up_Press00.png";
+		}
     }
 	if (in == "DpadX-")
 	{
-		return rootPath + "G_Left00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Left_Press00.png";
+		}
     }
 	if (in == "DpadY+")
 	{
-		return rootPath + "G_Down00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Down_Press00.png";
+		}
     }
 	if (in == "DpadX+")
 	{
-		return rootPath + "G_Right00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Right_Press00.png";
+		}
     }
 #else
 	if (in == "ButtonA")
@@ -747,19 +775,47 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	}
 	if (in == "DpadY-")
 	{
-		return rootPath + "G_Up00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Up_Press00.png";
+		}
     }
 	if (in == "DpadX-")
 	{
-		return rootPath + "G_Left00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Left_Press00.png";
+		}
     }
 	if (in == "DpadY+")
 	{
-		return rootPath + "G_Down00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Down_Press00.png";
+		}
     }
 	if (in == "DpadX+")
 	{
-		return rootPath + "G_Right00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Right_Press00.png";
+		}
     }
 #endif
 	if (in == "Mouse1")
@@ -877,13 +933,41 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
 				return rootPath + "MinusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				return rootPath + "G_Up00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Up_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				return rootPath + "G_Left00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Left_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				return rootPath + "G_Down00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Down_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				return rootPath + "G_Right00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Right_Press00.png";
+				}
 			default:
 				return "";
 		}
@@ -925,13 +1009,41 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
 				return rootPath + "Button_Xbox_View_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				return rootPath + "G_Up00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Up_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				return rootPath + "G_Left00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Left_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				return rootPath + "G_Down00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Down_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				return rootPath + "G_Right00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Right_Press00.png";
+				}
 			default:
 				return "";
 		}
