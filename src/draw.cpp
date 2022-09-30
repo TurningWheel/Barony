@@ -2849,16 +2849,26 @@ bool testTileOccludes(map_t& map, int index) {
 
 void occlusionCulling(map_t& map, const view_t& camera)
 {
-	const int size = map.width * map.height;
-
-#if !defined(EDITOR) && !defined(NDEBUG)
-    static ConsoleVariable<bool> cvar("/skipculling", false);
-    const bool disabled = *cvar;
+	// cvars
+#ifndef EDITOR
+    static ConsoleVariable<int> max_distance("/culling_max_distance", CLIPFAR / 16);
+    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 2);
+	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
+    static ConsoleVariable<bool> disabled("/skipculling", false);
 #else
-    const bool disabled = false;
+	static int ed_distance = CLIPFAR / 16;
+	static int ed_walls_hit = 2;
+	static bool ed_culling = true;
+	static bool ed_disabled = false;
+	auto* max_distance = &ed_distance;
+	auto* max_walls_hit = &ed_walls_hit;
+	auto* diagonalCulling = &ed_culling;
+    auto* disabled = &ed_disabled;
 #endif
 
-    if (disabled)
+	const int size = map.width * map.height;
+	
+    if (*disabled)
     {
         memset(map.vismap, 1, sizeof(bool) * size);
         return;
@@ -2882,35 +2892,33 @@ void occlusionCulling(map_t& map, const view_t& camera)
     const int woff = MAPLAYERS * map.height;
 
     // do line tests throughout the map
-    constexpr int max_distance = CLIPFAR / 16.0;
-    constexpr int max_walls_hit = 2;
-    for (int foo = -1; foo <= 1; ++foo) {
-        for (int bar = -1; bar <= 1; ++bar) {
-            if (foo && bar) {
-                continue;
-            }
-            const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
-            const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
-	        const int xyindex = y * hoff + x * woff;
-	        if (testTileOccludes(map, xyindex)) {
-	            continue;
-	        }
-            const int beginx = std::max(0, x - max_distance);
-            const int beginy = std::max(0, y - max_distance);
-            const int endx = std::min((int)map.width - 1, x + max_distance);
-            const int endy = std::min((int)map.height - 1, y + max_distance);
-	        for ( int u = beginx; u <= endx; u++ ) {
-	            for ( int v = beginy; v <= endy; v++ ) {
-			        const int uvindex = v * hoff + u * woff;
-			        if (map.vismap[v + u * map.height]) {
-			            continue;
-			        }
-			        if (testTileOccludes(map, uvindex)) {
-			            continue;
-			        }
-			        if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
-			            continue;
-			        }
+	const int beginx = std::max(0, camx - *max_distance);
+	const int beginy = std::max(0, camy - *max_distance);
+	const int endx = std::min((int)map.width - 1, camx + *max_distance);
+	const int endy = std::min((int)map.height - 1, camy + *max_distance);
+	for ( int u = beginx; u <= endx; u++ ) {
+		for ( int v = beginy; v <= endy; v++ ) {
+			if (map.vismap[v + u * map.height]) {
+				continue;
+			}
+			const int uvindex = v * hoff + u * woff;
+			if (testTileOccludes(map, uvindex)) {
+				continue;
+			}
+			if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
+				continue;
+			}
+			for (int foo = -1; foo <= 1; ++foo) {
+				for (int bar = -1; bar <= 1; ++bar) {
+					if (!*diagonalCulling && foo && bar) {
+						continue;
+					}
+					const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
+					const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
+					const int xyindex = y * hoff + x * woff;
+					if (testTileOccludes(map, xyindex)) {
+						continue;
+					}
 			        const int dx = u - x;
 			        const int dy = v - y;
 			        const int sdx = sgn(dx);
@@ -2921,7 +2929,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 			        if (dxabs >= dyabs) { // the line is more horizontal than vertical
 			            int a = dxabs >> 1;
 			            int index = uvindex;
-				        for (int i = 0; i < dxabs - 1; ++i) {
+				        for (int i = 1; i < dxabs; ++i) {
 					        index -= woff * sdx;
 					        a += dyabs;
 					        if (a >= dxabs) {
@@ -2930,7 +2938,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 					        }
 					        if (testTileOccludes(map, index)) {
 						        ++wallshit;
-						        if (wallshit >= max_walls_hit) {
+						        if (wallshit >= *max_walls_hit) {
 						            break;
 						        }
 					        }
@@ -2938,7 +2946,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 			        } else { // the line is more vertical than horizontal
 			            int a = dyabs >> 1;
 			            int index = uvindex;
-				        for (int i = 0; i < dyabs - 1; ++i) {
+				        for (int i = 1; i < dyabs; ++i) {
 					        index -= hoff * sdy;
 					        a += dxabs;
 					        if (a >= dyabs) {
@@ -2947,17 +2955,19 @@ void occlusionCulling(map_t& map, const view_t& camera)
 					        }
 					        if (testTileOccludes(map, index)) {
 						        ++wallshit;
-						        if (wallshit >= max_walls_hit) {
+						        if (wallshit >= *max_walls_hit) {
 						            break;
 						        }
 					        }
 				        }
 			        }
-			        if (wallshit < max_walls_hit) {
+			        if (wallshit < *max_walls_hit) {
                         map.vismap[v + u * map.height] = true;
+						goto next;
 			        }
 		        }
 	        }
+next:;
         }
     }
 
@@ -2972,12 +2982,6 @@ void occlusionCulling(map_t& map, const view_t& camera)
             const int index = v + u * h;
 	        vmap[index] = map.vismap[index];
 		    if (!vmap[index]) {
-#ifndef EDITOR
-                static ConsoleVariable<bool> diagonalCulling("/diagonalculling", true);
-#else
-                static bool culling = true;
-                auto* diagonalCulling = &culling;
-#endif
 		        if (v >= 1) {
 		            if (map.vismap[index - 1]) {
 		                vmap[index] = true;

@@ -4644,7 +4644,7 @@ bind_failed:
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
-			"For splitscreen with two-players: reduce each viewport by 20%% to preserve aspect ratio.",
+			"For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.",
 			allSettings.clipped_split_enabled, [](Button& button){soundToggle(); allSettings.clipped_split_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
 			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
@@ -4980,24 +4980,12 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
 			return;
 		}
 		int y = 0;
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
-			"Toggle this option to make the game end after the battle with Baron Herx.",
-			allSettings.classic_mode_enabled, [](Button& button){soundToggle(); allSettings.classic_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
-			"Greatly increases the difficulty of all combat encounters.",
-			allSettings.hardcore_mode_enabled, [](Button& button){soundToggle(); allSettings.hardcore_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
-			"Enable players to harm eachother and their allies.",
-			allSettings.friendly_fire_enabled, [](Button& button){soundToggle(); allSettings.friendly_fire_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
-			"When a player dies, they retain their inventory when revived on the next level.",
-			allSettings.keep_inventory_enabled, [](Button& button){soundToggle(); allSettings.keep_inventory_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
 			"Toggle player hunger. When hunger is off, eating food heals the player directly.",
 			allSettings.hunger_enabled, [](Button& button){soundToggle(); allSettings.hunger_enabled = button.isPressed();});
@@ -5007,6 +4995,18 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", "Random Traps",
 			"Toggle the random placement of traps throughout each level.",
 			allSettings.random_traps_enabled, [](Button& button){soundToggle(); allSettings.random_traps_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
+			"Enable players to harm each other and their allies.",
+			allSettings.friendly_fire_enabled, [](Button& button){soundToggle(); allSettings.friendly_fire_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
+			"Greatly increases the difficulty of all combat encounters.",
+			allSettings.hardcore_mode_enabled, [](Button& button){soundToggle(); allSettings.hardcore_mode_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
+			"Toggle this option to make the game end after the battle with Baron Herx.",
+			allSettings.classic_mode_enabled, [](Button& button){soundToggle(); allSettings.classic_mode_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
+			"When a player dies, they retain their inventory when revived on the next level.",
+			allSettings.keep_inventory_enabled, [](Button& button){soundToggle(); allSettings.keep_inventory_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", "Extra Life",
 			"Start the game with an Amulet of Life-saving, to prevent one death.",
 			allSettings.extra_life_enabled, [](Button& button){soundToggle(); allSettings.extra_life_enabled = button.isPressed();});
@@ -5018,29 +5018,29 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "classic_mode"},
-			{Setting::Type::Boolean, "hardcore_mode"},
-			{Setting::Type::Boolean, "friendly_fire"},
-			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "hunger"},
+			{{Setting::Type::Boolean, "hunger"},
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
+			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "hardcore_mode"},
+			{Setting::Type::Boolean, "classic_mode"},
+			{Setting::Type::Boolean, "keep_inventory"},
 			{Setting::Type::Boolean, "extra_life"},
 			{Setting::Type::Boolean, "cheats"}});
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "classic_mode"},
-			{Setting::Type::Boolean, "hardcore_mode"},
-			{Setting::Type::Boolean, "friendly_fire"},
-			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "hunger"},
+			{{Setting::Type::Boolean, "hunger"},
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
+			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "hardcore_mode"},
+			{Setting::Type::Boolean, "classic_mode"},
+			{Setting::Type::Boolean, "keep_inventory"},
 			{Setting::Type::Boolean, "extra_life"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "classic_mode"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "hunger"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
 	}
 
 /******************************************************************************/
@@ -17747,6 +17747,9 @@ bind_failed:
 		    if (stats[widget.getOwner()]->HP > 0) {
 		        dimmer->removeSelf();
 		    }
+			if (gamePaused) {
+				dimmer->removeSelf();
+			}
 		    });
 
 		Frame* window = dimmer->addFrame("window");
@@ -17761,7 +17764,7 @@ bind_failed:
             auto size = window->getSize();
             auto height = (parent->getSize().h - size.h) / 2;
             if (size.y < height) {
-                int fallspeed = 32;
+                const int fallspeed = 80 * ((real_t)TICKS_PER_SECOND / fpsLimit);
                 size.y += fallspeed;
                 if (size.y >= height) {
                     size.y = height;
