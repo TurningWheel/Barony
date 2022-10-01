@@ -392,7 +392,7 @@ public:
 	{
 		if (multiplayer != SINGLE)
 		{
-			return clientnum;
+			return 0;
 		}
 		else
 		{

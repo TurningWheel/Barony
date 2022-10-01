@@ -8747,9 +8747,11 @@ bind_failed:
 
 		card->setTickCallback([](Widget& widget){
 		    const int player = widget.getOwner();
-		    if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
-                createStartButton(player);
-		    }
+			if (multiplayer == SINGLE) {
+				if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
+					createStartButton(player);
+				}
+			}
 		    });
 
 		return card;
@@ -11757,8 +11759,13 @@ bind_failed:
 		// release any controller assigned to this player
         if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-            Input::inputs[index].refresh();
+			for (int c = 0; c < 4; ++c) {
+            	Input::inputs[c].refresh();
+			}
         }
+		if (currentLobbyType != LobbyType::LobbyLocal) {
+		    inputs.setPlayerIDAllowedKeyboard(clientnum);
+		}
 #endif
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
@@ -11815,8 +11822,8 @@ bind_failed:
 
             // determine whether I should own the keyboard
 #ifndef NINTENDO
-            if (inputs.getPlayerIDAllowedKeyboard() != player) {
-		        if (currentLobbyType == LobbyType::LobbyLocal) {
+			if (currentLobbyType == LobbyType::LobbyLocal) {
+            	if (inputs.getPlayerIDAllowedKeyboard() != player) {
 		            bool shouldOwnKeyboard = true;
 		            if (isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
 		                shouldOwnKeyboard = false;
@@ -11836,8 +11843,6 @@ bind_failed:
 		            if (shouldOwnKeyboard) {
 		                inputs.setPlayerIDAllowedKeyboard(player);
 		            }
-		        } else {
-		            inputs.setPlayerIDAllowedKeyboard(player);
 		        }
 		    }
 #endif
@@ -11845,7 +11850,7 @@ bind_failed:
             // set field text
 		    auto field = static_cast<Field*>(&widget);
 		    if (inputs.getPlayerIDAllowedKeyboard() == player ||
-		        inputs.hasController(player)) {
+		        inputs.hasController(player) || multiplayer != SINGLE) {
 		        field->setText("Press to Start");
 		    } else {
 		        const int num_controllers = countUnassignedControllers();
@@ -11915,7 +11920,7 @@ bind_failed:
 		        }
 		        // let the next empty player slot login with the keyboard
 #ifndef NINTENDO
-		        if (!isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		        if (multiplayer == SINGLE && !isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
 		            for (int c = 0; c < MAXPLAYERS; ++c) {
 		                if (c == player) {
 		                    // skip ourselves
@@ -11931,17 +11936,21 @@ bind_failed:
 		        start_func(player);
 		        return;
 		    }
-		    if (inputs.getPlayerIDAllowedKeyboard() == player && !inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
-		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
+		    if (!inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
+				if (inputs.getPlayerIDAllowedKeyboard() == player || multiplayer != SINGLE) {
+		        	input.consumeBindingsSharedWithBinding("KeyboardLogin");
 #ifndef NINTENDO
-		        // release any controller assigned to this player
-                if (inputs.hasController(player)) {
-                    inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
-                    Input::inputs[player].refresh();
-                }
+					// release any controller assigned to this player
+					if (inputs.hasController(player)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
+						for (int c = 0; c < 4; ++c) {
+							Input::inputs[c].refresh();
+						}
+					}
 #endif
-		        start_func(player);
-		        return;
+					start_func(player);
+					return;
+				}
 		    }
 		    });
 		start->setDrawCallback([](const Widget& widget, SDL_Rect pos){
@@ -12594,7 +12603,9 @@ bind_failed:
                             const int index = button.getOwner();
                             if (inputs.hasController(index)) {
                                 inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-                                Input::inputs[index].refresh();
+								for (int c = 0; c < 4; ++c) {
+									Input::inputs[c].refresh();
+								}
                             }
 #endif
 	                    });
@@ -12991,7 +13002,7 @@ bind_failed:
 	            if (inputs.hasController(index)) {
 	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
 	            }
-	            inputs.setPlayerIDAllowedKeyboard(index);
+				inputs.setPlayerIDAllowedKeyboard(index);
 	            inputs.getVirtualMouse(index)->draw_cursor = true;
 	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	        } else {
@@ -13084,15 +13095,19 @@ bind_failed:
 		button->select();
 
 	    int playercount = 0;
-	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-	            ++playercount;
-	        }
-	    }
+		if (multiplayer == SINGLE) {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (isPlayerSignedIn(c)) {
+					++playercount;
+				}
+			}
+		} else {
+			playercount = 1;
+		}
 
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
+	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
                     Input::getKeyboardGlyph() : Input::getControllerGlyph();
                 auto image = Image::get(path);
@@ -18235,15 +18250,19 @@ bind_failed:
         dimmer->setOwner(player);
 
 	    int playercount = 0;
-	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-	            ++playercount;
-	        }
-	    }
+		if (multiplayer == SINGLE) {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (isPlayerSignedIn(c)) {
+					++playercount;
+				}
+			}
+		} else {
+			playercount = 1;
+		}
 
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
+	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
                     Input::getKeyboardGlyph() : Input::getControllerGlyph();
                 auto image = Image::get(path);
