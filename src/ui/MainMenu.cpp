@@ -18173,13 +18173,24 @@ bind_failed:
         }
 
 		Frame* old_prompt;
-        old_prompt = main_menu_frame->findFrame("controller_disconnect_prompt");
-        if (old_prompt) {
-			return;
-        }
         old_prompt = main_menu_frame->findFrame("controller_prompt");
         if (old_prompt) {
+			// obviously we don't need disconnect prompts
+			// if we're in the reassignment menu...
 			return;
+        }
+        old_prompt = main_menu_frame->findFrame("controller_disconnect_prompt");
+        if (old_prompt) {
+            if (old_prompt->getOwner() < player) {
+                // don't open a new disconnect prompt.
+                // the controller would be swallowed by the current player.
+                return;
+            } else {
+                // this player is gonna take over the controller when we plug it in,
+                // so give them the prompt instead.
+                destroyMainMenu();
+                createDummyMainMenu();
+	    	}
         }
 
         static real_t bounce;
