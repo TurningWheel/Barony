@@ -2408,7 +2408,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 sprite = (Sint16)SDLNet_Read16(&net_packet->data[10]);
 		Entity* gib = spawnGibClient(x, y, z, sprite);
 		gib->flags[SPRITE] = net_packet->data[12];
-		if ( !spawn_blood && (!gib->flags[SPRITE] || gib->sprite != 29) )
+		if ( !spawn_blood && !gib->flags[SPRITE] && gib->sprite != 5 )
 		{
 			gib->flags[INVISIBLE] = true;
 		}

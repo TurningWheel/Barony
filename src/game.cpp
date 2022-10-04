@@ -219,6 +219,8 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 }
 #endif
 
+ConsoleVariable<bool> cvar_enableKeepAlives("/keepalive_enabled", true);
+
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
 std::vector<std::string> physFSFilesInDirectory;
@@ -901,7 +903,6 @@ void gameLogic(void)
     }
 
 	for (auto& input : Input::inputs) {
-		input.updateReleasedBindings();
 		input.update();
 		input.consumeBindingsSharedWithFaceHotbar();
 	}
@@ -947,10 +948,6 @@ void gameLogic(void)
 	}
 
 	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
-
-#ifdef SOUND
-	// sound_update(); //Update FMOD and whatnot.
-#endif
 
 	// camera shaking
 	for (int c = 0; c < MAXPLAYERS; ++c) 
@@ -2433,44 +2430,46 @@ void gameLogic(void)
 				}
 
 				// handle keep alives
-				for ( c = 1; c < MAXPLAYERS; c++ )
-				{
-					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				if (*cvar_enableKeepAlives) {
+					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						continue;
-					}
-					if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
-					{
-						// send a keep alive every second
-						strcpy((char*)net_packet->data, "KPAL");
-						net_packet->data[4] = clientnum;
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 5;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
-					}
-					if ( losingConnection[c] && ticks - client_keepalive[c] == 1 )
-					{
-						// regained connection
-						losingConnection[c] = false;
-						messageLocalPlayers(MESSAGE_MISC, language[724], c, stats[c]->name);
-					}
-					else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
-					{
-						// 30 second timer
-						losingConnection[c] = true;
-						messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name);
-					}
-					else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 45 - 1 )
-					{
-						// additional 15 seconds (kick time)
-						messageLocalPlayers(MESSAGE_MISC, language[726], c, stats[c]->name);
-						strcpy((char*)net_packet->data, "KICK");
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
-						client_disconnected[c] = true;
+						if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+						{
+							continue;
+						}
+						if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
+						{
+							// send a keep alive every second
+							strcpy((char*)net_packet->data, "KPAL");
+							net_packet->data[4] = clientnum;
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 5;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
+						if ( losingConnection[c] && ticks - client_keepalive[c] == 1 )
+						{
+							// regained connection
+							losingConnection[c] = false;
+							messageLocalPlayers(MESSAGE_MISC, language[724], c, stats[c]->name);
+						}
+						else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
+						{
+							// 30 second timer
+							losingConnection[c] = true;
+							messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name);
+						}
+						else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 45 - 1 )
+						{
+							// additional 15 seconds (kick time)
+							messageLocalPlayers(MESSAGE_MISC, language[726], c, stats[c]->name);
+							strcpy((char*)net_packet->data, "KICK");
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 4;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							client_disconnected[c] = true;
+						}
 					}
 				}
 			}
@@ -2646,7 +2645,7 @@ void gameLogic(void)
 		else if ( multiplayer == CLIENT )
 		{
 			// keep alives
-			if ( multiplayer == CLIENT ) //lol
+			if ( *cvar_enableKeepAlives )
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -3814,7 +3813,7 @@ void handleEvents(void)
 								inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							}
 						}
-						else
+						else if (multiplayer == SINGLE)
 						{
 							inputs.getVirtualMouse(i)->draw_cursor = false;
 						}
@@ -4020,15 +4019,15 @@ void handleEvents(void)
 			    if (demo_mode == DemoMode::PLAYING) {
 			        break;
 			    }
-				const int device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
-				if ( !SDL_IsGameController(device_index) )
+				const int sdl_device_index = event.cdevice.which; // this is an index within SDL_Numjoysticks(), not to be referred to from now on.
+				if ( !SDL_IsGameController(sdl_device_index) )
 				{
-					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
+					printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", sdl_device_index);
 					break;
 				}
 
 				bool deviceAlreadyAdded = false;
-				SDL_GameController* newControllerAdded = SDL_GameControllerOpen(device_index);
+				SDL_GameController* newControllerAdded = SDL_GameControllerOpen(sdl_device_index);
 				if ( newControllerAdded != nullptr )
 				{
 					for ( auto& controller : game_controllers )
@@ -4039,7 +4038,7 @@ void handleEvents(void)
 							{
 								// we already have this controller in our system.
 								deviceAlreadyAdded = true;
-								printlog("(Device %d added, but already in use as game controller.)\n", device_index);
+								printlog("(Device %d added, but already in use as game controller.)\n", sdl_device_index);
 								break;
 							}
 						}
@@ -4058,39 +4057,29 @@ void handleEvents(void)
 				}
 
 				// now find a free controller slot.
-				int newControllerInstance = -1;
-				for ( auto& controller : game_controllers )
+				for ( int c = 0; c < game_controllers.size(); ++c )
 				{
+					auto& controller = game_controllers[c];
 					if ( controller.isActive() )
 					{
 						continue;
 					}
 
-					if ( SDL_IsGameController(device_index) && controller.open(device_index) )
-					{
-						printlog("(Device %d successfully initialized as game controller.)\n", controller.getID());
-						//inputs.addControllerIDToNextAvailableInput(id);
-						controller.initBindings();
-						Input::gameControllers[controller.getID()] = controller.getControllerDevice();
-						for (int c = 0; c < 4; ++c) {
-							Input::inputs[c].refresh();
-						}
-						newControllerInstance = controller.getID();
-					}
-					else
-					{
-						printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", device_index);
+					bool result = controller.open(sdl_device_index, c);
+					assert(result); // this should always succeed because we test that the device index is valid above.
+					printlog("Device %d successfully initialized as game controller in slot %d.\n", sdl_device_index, controller.getID());
+					controller.initBindings();
+					Input::gameControllers[controller.getID()] = controller.getControllerDevice();
+					for (int c = 0; c < 4; ++c) {
+						Input::inputs[c].refresh();
 					}
 					break;
 				}
 				for ( auto& controller : game_controllers )
 				{
-					if ( controller.getID() != newControllerInstance )
-					{
-						// haptic devices are enumerated differently than joysticks
-						// reobtain haptic devices for each existing controller
-						controller.reinitHaptic();
-					}
+					// haptic devices are enumerated differently than joysticks
+					// reobtain haptic devices for each existing controller
+					controller.reinitHaptic();
 				}
 				break;
 			}
@@ -4111,9 +4100,9 @@ void handleEvents(void)
 				{
 					if ( controller.isActive() && controller.getControllerDevice() == pad )
 					{
-						int id = controller.getID();
+						const int id = controller.getID();
 						inputs.removeControllerWithDeviceID(id);
-						printlog("(Device %d removed as game controller, instance id: %d.)\n", id, instanceID);
+						printlog("Device %d removed as game controller (it was in slot %d).\n", instanceID, id);
 						controller.close();
 						Input::gameControllers.erase(id);
 						for ( int c = 0; c < 4; ++c ) {
@@ -4255,7 +4244,23 @@ void handleEvents(void)
 					if ( runtimes == 0 )
 					{
 #ifdef SOUND
-						sound_update(); //Update FMOD and whatnot.
+						// update listener position, music fades, etc
+						if (multiplayer != SINGLE || intro) {
+							sound_update(0, clientnum, 1);
+						} else {
+							int numplayers = 0;
+							for (int c = 0; c < MAXPLAYERS; ++c) {
+								if (!client_disconnected[c]) {
+									++numplayers;
+								}
+							}
+							for (int player = 0, c = 0; c < MAXPLAYERS; ++c) {
+								if (!client_disconnected[c]) {
+									sound_update(player, c, numplayers);
+									++player;
+								}
+							}
+						}
 #endif
 					}
 
@@ -5562,7 +5567,7 @@ void drawAllPlayerCameras() {
 static void doConsoleCommands() {
 	Input& input = Input::inputs[clientnum]; // commands - uses local clientnum only
 	bool& bControlEnabled = players[clientnum]->bControlEnabled;
-	if (((input.binaryToggle("Chat") && !intro && !movie) || input.binaryToggle("Console Command")) && !command && bControlEnabled)
+	if (((input.binaryToggle("Chat") && !intro && !movie) || (input.binaryToggle("Console Command") && !inputstr)) && !command && bControlEnabled)
 	{
 		cursorflash = ticks;
 		command = true;
@@ -6051,7 +6056,7 @@ int main(int argc, char** argv)
 #ifdef NINTENDO
 		nxAssignControllers(1, 1, true, false, true, false, nullptr);
 		for (int c = 0; c < 4; ++c) {
-			game_controllers[c].open(c);
+			game_controllers[c].open(0, c); // first parameter is not used by Nintendo.
 			bindControllerToPlayer(c, c);
 		}
 		//inputs.setPlayerIDAllowedKeyboard(-1);

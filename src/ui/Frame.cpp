@@ -1020,13 +1020,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 		// x scroll
 		if (this->actualSize.w > size.w) {
-			if (input.binary("MenuScrollRight")) {
-				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
-				result.usable = false;
-		        syncScroll();
-			}
-			else if (input.binary("MenuScrollLeft")) {
-				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
+			const float power = input.analog("MenuScrollRight") - input.analog("MenuScrollLeft");
+			if (power) {
+				this->actualSize.x = std::min(std::max(0, this->actualSize.x + (int)(5 * power)),
+					this->actualSize.w - _size.w);
 				result.usable = false;
 		        syncScroll();
 			}
@@ -1034,13 +1031,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 		// y scroll
 		if (this->actualSize.h > size.h) {
-			if (input.binary("MenuScrollDown")) {
-				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
-				result.usable = false;
-		        syncScroll();
-			}
-			else if (input.binary("MenuScrollUp")) {
-				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
+			const float power = input.analog("MenuScrollDown") - input.analog("MenuScrollUp");
+			if (power) {
+				this->actualSize.y = std::min(std::max(0, this->actualSize.y + (int)(5 * power)),
+					this->actualSize.h - _size.h);
 				result.usable = false;
 		        syncScroll();
 			}

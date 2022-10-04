@@ -179,9 +179,6 @@ public:
 	//! updates the state of all current bindings from the physical devices
 	void update();
 
-	//! updates released button binding status after gameLogic() has been run
-	void updateReleasedBindings();
-
 	//! if true, Y axis for mouse/gamepads/joysticks is inverted
 	bool inverted = false;
 
@@ -191,7 +188,7 @@ public:
     static const char* getKeyboardGlyph();
     static const char* getControllerGlyph();
 	static std::string getGlyphPathForInput(const char* input, bool pressed = false);
-	std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false) const;
+	static std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false);
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;
 
 	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }

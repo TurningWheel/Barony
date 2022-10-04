@@ -3042,7 +3042,7 @@ namespace MainMenu {
 		dropdown->setSize(SDL_Rect{
 			button.getSize().x,
 			button.getSize().y,
-			type == DropdownType::Wide ? 400 : 174,
+			type == DropdownType::Wide ? 640 : 174,
 			type == DropdownType::Short ? 181 : 362
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
@@ -3119,7 +3119,7 @@ namespace MainMenu {
 		dropdown_list->activate();
 
 		auto selection = dropdown_list->addImage(
-			SDL_Rect{8, 0, type == DropdownType::Wide ? 384 : 158, 30},
+			SDL_Rect{8, 0, type == DropdownType::Wide ? 624 : 158, 30},
 			0xffffffff,
 			"*images/ui/Main Menus/Settings/Settings_Drop_SelectBacking00.png",
 			"selection"
@@ -3359,16 +3359,18 @@ namespace MainMenu {
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		button->setGlyphPosition(Button::glyph_position_t::CENTERED_BOTTOM);
 		button->setUserData((void*)binding);
-#ifdef NINTENDO
-		// Press X to clear binding
-		button->setTickCallback([](Widget& widget){
-			auto& input = Input::inputs[widget.getOwner()];
-			if (widget.isSelected() && !bind_mode) {
-				if (input.consumeBinaryToggle("MenuAlt2")) {
-					auto binding = (const char*)widget.getUserData();
-					(void)settingsBind(widget.getOwner(), 1 /* Gamepad */, binding, nullptr);
 
-					auto button = static_cast<Button*>(&widget);
+		button->setTickCallback([](Widget& widget){
+			auto button = static_cast<Button*>(&widget);
+			const int player = widget.getOwner();
+			auto& input = Input::inputs[player];
+
+			// Press X or Y to clear binding
+			if (widget.isSelected() && !bind_mode) {
+				if (inputs.hasController(player) && input.consumeBinaryToggle("MenuAlt2")) {
+					auto binding = (const char*)widget.getUserData();
+					(void)settingsBind(player, 1 /* Gamepad */, binding, nullptr);
+
 					button->setText(emptyBinding);
 					button->setIcon("");
 
@@ -3380,8 +3382,12 @@ namespace MainMenu {
 					tooltip->setText(buf);
 				}
 			}
+
+			// cycle icon
+			const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
+			button->setIcon(Input::getGlyphPathForInput(button->getText(), pressed).c_str());
 			});
-#endif
+
 		return result;
 	}
 
@@ -3570,7 +3576,7 @@ namespace MainMenu {
 		button->setSize(SDL_Rect{
 			390,
 			y,
-			wide ? 400 : 174,
+			wide ? 640 : 174,
 			52});
 		button->setFont(bigfont_outline);
 		button->setText(selected);
@@ -4372,11 +4378,15 @@ namespace MainMenu {
 
 		for (auto& binding : bindings) {
 			char tip[256];
+			if (inputs.hasController(getMenuOwner())) {
 #ifdef NINTENDO
-			snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
+				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press X to delete the current binding", binding.name);
 #else
-			snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press Y to delete the current binding", binding.name);
 #endif
+			} else {
+				snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+			}
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
 					soundToggle();
@@ -4390,17 +4400,19 @@ namespace MainMenu {
 					auto settings = static_cast<Frame*>(subwindow->getParent()); assert(settings);
 					auto tooltip = settings->findField("tooltip"); assert(tooltip);
 					char buf[256];
-#ifdef NINTENDO
-					snprintf(buf, sizeof(buf),
-						"Binding \"%s\".\n"
-						"The next button you press will be bound to this action.",
-						bound_binding.c_str());
-#else
-					snprintf(buf, sizeof(buf),
-						"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
-						"The next input you activate will be bound to this action.",
-						bound_binding.c_str());
-#endif
+					
+					if (inputs.hasController(getMenuOwner())) {
+						snprintf(buf, sizeof(buf),
+							"Binding \"%s\".\n"
+							"The next button you press will be bound to this action.",
+							bound_binding.c_str());
+					} else {
+						snprintf(buf, sizeof(buf),
+							"Binding \"%s\". Press ESC to cancel or DEL to delete the binding.\n"
+							"The next input you activate will be bound to this action.",
+							bound_binding.c_str());
+					}
+
 					tooltip->setText(buf);
 					Input::inputs[bound_player].setDisabled(true);
 					Input::lastInputOfAnyKind = "";
@@ -4632,7 +4644,7 @@ bind_failed:
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
-			"For splitscreen with two-players: reduce each viewport by 20%% to preserve aspect ratio.",
+			"For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.",
 			allSettings.clipped_split_enabled, [](Button& button){soundToggle(); allSettings.clipped_split_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
 			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
@@ -4968,24 +4980,12 @@ bind_failed:
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
 			return;
 		}
 		int y = 0;
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
-			"Toggle this option to make the game end after the battle with Baron Herx.",
-			allSettings.classic_mode_enabled, [](Button& button){soundToggle(); allSettings.classic_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
-			"Greatly increases the difficulty of all combat encounters.",
-			allSettings.hardcore_mode_enabled, [](Button& button){soundToggle(); allSettings.hardcore_mode_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
-			"Enable players to harm eachother and their allies.",
-			allSettings.friendly_fire_enabled, [](Button& button){soundToggle(); allSettings.friendly_fire_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
-			"When a player dies, they retain their inventory when revived on the next level.",
-			allSettings.keep_inventory_enabled, [](Button& button){soundToggle(); allSettings.keep_inventory_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
 			"Toggle player hunger. When hunger is off, eating food heals the player directly.",
 			allSettings.hunger_enabled, [](Button& button){soundToggle(); allSettings.hunger_enabled = button.isPressed();});
@@ -4995,6 +4995,18 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "random_traps", "Random Traps",
 			"Toggle the random placement of traps throughout each level.",
 			allSettings.random_traps_enabled, [](Button& button){soundToggle(); allSettings.random_traps_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", "Friendly Fire",
+			"Enable players to harm each other and their allies.",
+			allSettings.friendly_fire_enabled, [](Button& button){soundToggle(); allSettings.friendly_fire_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", "Hardcore Mode",
+			"Greatly increases the difficulty of all combat encounters.",
+			allSettings.hardcore_mode_enabled, [](Button& button){soundToggle(); allSettings.hardcore_mode_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", "Classic Mode",
+			"Toggle this option to make the game end after the battle with Baron Herx.",
+			allSettings.classic_mode_enabled, [](Button& button){soundToggle(); allSettings.classic_mode_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", "Keep Inventory after Death",
+			"When a player dies, they retain their inventory when revived on the next level.",
+			allSettings.keep_inventory_enabled, [](Button& button){soundToggle(); allSettings.keep_inventory_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", "Extra Life",
 			"Start the game with an Amulet of Life-saving, to prevent one death.",
 			allSettings.extra_life_enabled, [](Button& button){soundToggle(); allSettings.extra_life_enabled = button.isPressed();});
@@ -5006,29 +5018,29 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "classic_mode"},
-			{Setting::Type::Boolean, "hardcore_mode"},
-			{Setting::Type::Boolean, "friendly_fire"},
-			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "hunger"},
+			{{Setting::Type::Boolean, "hunger"},
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
+			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "hardcore_mode"},
+			{Setting::Type::Boolean, "classic_mode"},
+			{Setting::Type::Boolean, "keep_inventory"},
 			{Setting::Type::Boolean, "extra_life"},
 			{Setting::Type::Boolean, "cheats"}});
 #else
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "classic_mode"},
-			{Setting::Type::Boolean, "hardcore_mode"},
-			{Setting::Type::Boolean, "friendly_fire"},
-			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "hunger"},
+			{{Setting::Type::Boolean, "hunger"},
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
+			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "hardcore_mode"},
+			{Setting::Type::Boolean, "classic_mode"},
+			{Setting::Type::Boolean, "keep_inventory"},
 			{Setting::Type::Boolean, "extra_life"}});
 #endif
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "classic_mode"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "classic_mode"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "hunger"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
 	}
 
 /******************************************************************************/
@@ -6153,9 +6165,15 @@ bind_failed:
         "fonts/PixelMaz_monospace.ttf#32#2");
 
     static void addLobbyChatMessage(Uint32 color, const char* msg, bool add_to_list = true) {
+		if (currentLobbyType == LobbyType::LobbyLocal) {
+			// chat messages disabled in local lobbies
+			return;
+		}
         if (!msg || !msg[0]) {
+			// check input
             return;
         }
+
         constexpr Uint32 seconds_in_day = 86400;
         const Uint32 seconds = time(NULL) / seconds_in_day;
 
@@ -6559,30 +6577,32 @@ bind_failed:
 					}
 #endif
 				}
-				if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30)) {
-					client_disconnected[i] = true;
-					strncpy((char*)(net_packet->data), "DISC", 4);
-					net_packet->data[4] = i;
-					net_packet->len = 5;
-					for (int c = 1; c < MAXPLAYERS; c++) {
-						if (client_disconnected[c]) {
-							continue;
+				if (*cvar_enableKeepAlives) {
+					if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30)) {
+						client_disconnected[i] = true;
+						strncpy((char*)(net_packet->data), "DISC", 4);
+						net_packet->data[4] = i;
+						net_packet->len = 5;
+						for (int c = 1; c < MAXPLAYERS; c++) {
+							if (client_disconnected[c]) {
+								continue;
+							}
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+						char buf[1024];
+						snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
+						addLobbyChatMessage(uint32ColorYellow, buf);
+
+						if (directConnect) {
+							createWaitingStone(i);
+						} else {
+							createInviteButton(i);
+						}
+						continue;
 					}
-
-					char buf[1024];
-					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
-					addLobbyChatMessage(uint32ColorYellow, buf);
-
-				    if (directConnect) {
-		                createWaitingStone(i);
-		            } else {
-		                createInviteButton(i);
-		            }
-					continue;
 				}
 			}
 		} else if (multiplayer == CLIENT) {
@@ -6626,32 +6646,36 @@ bind_failed:
                 connectionErrorPrompt(error_str.c_str());
 			}
 
-			else if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
-			    // timeout after 30 seconds of no messages from server
-                disconnectFromLobby();
-	            destroyMainMenu();
-	            createMainMenu(false);
-                connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+			if (*cvar_enableKeepAlives) {
+				if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
+					// timeout after 30 seconds of no messages from server
+					disconnectFromLobby();
+					destroyMainMenu();
+					createMainMenu(false);
+					connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+				}
 			}
 		}
 
 		// send keepalive messages every second
-		if (ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE) {
-			strcpy((char*)net_packet->data, "KPAL");
-			net_packet->data[4] = clientnum;
-			net_packet->len = 5;
-			if (multiplayer == CLIENT) {
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-			} else if (multiplayer == SERVER) {
-				for (int i = 1; i < MAXPLAYERS; i++) {
-					if (client_disconnected[i]) {
-						continue;
+		if (*cvar_enableKeepAlives) {
+			if (ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE) {
+				strcpy((char*)net_packet->data, "KPAL");
+				net_packet->data[4] = clientnum;
+				net_packet->len = 5;
+				if (multiplayer == CLIENT) {
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				} else if (multiplayer == SERVER) {
+					for (int i = 1; i < MAXPLAYERS; i++) {
+						if (client_disconnected[i]) {
+							continue;
+						}
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
 			}
 		}
@@ -8729,9 +8753,11 @@ bind_failed:
 
 		card->setTickCallback([](Widget& widget){
 		    const int player = widget.getOwner();
-		    if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
-                createStartButton(player);
-		    }
+			if (multiplayer == SINGLE) {
+				if (inputs.getPlayerIDAllowedKeyboard() != player && !inputs.hasController(player)) {
+					createStartButton(player);
+				}
+			}
 		    });
 
 		return card;
@@ -11739,8 +11765,13 @@ bind_failed:
 		// release any controller assigned to this player
         if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-            Input::inputs[index].refresh();
+			for (int c = 0; c < 4; ++c) {
+            	Input::inputs[c].refresh();
+			}
         }
+		if (currentLobbyType != LobbyType::LobbyLocal) {
+		    inputs.setPlayerIDAllowedKeyboard(clientnum);
+		}
 #endif
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
@@ -11776,17 +11807,6 @@ bind_failed:
 		case 3: banner->setColor(uint32ColorPlayer4); break;
 		}
 
-		static auto start_func = [](int index){
-		    auto controller_prompt = main_menu_frame->findFrame("controller_prompt");
-	        if (!controller_prompt) {
-                if (loadingsavegame) {
-                    createReadyStone(index, true, true);
-                } else {
-                    createCharacterCard(index);
-                }
-	        }
-		    };
-
 		auto start = card->addField("start", 128);
 		start->setFont(smallfont_outline);
 		start->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -11797,8 +11817,8 @@ bind_failed:
 
             // determine whether I should own the keyboard
 #ifndef NINTENDO
-            if (inputs.getPlayerIDAllowedKeyboard() != player) {
-		        if (currentLobbyType == LobbyType::LobbyLocal) {
+			if (currentLobbyType == LobbyType::LobbyLocal) {
+            	if (inputs.getPlayerIDAllowedKeyboard() != player) {
 		            bool shouldOwnKeyboard = true;
 		            if (isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
 		                shouldOwnKeyboard = false;
@@ -11818,8 +11838,6 @@ bind_failed:
 		            if (shouldOwnKeyboard) {
 		                inputs.setPlayerIDAllowedKeyboard(player);
 		            }
-		        } else {
-		            inputs.setPlayerIDAllowedKeyboard(player);
 		        }
 		    }
 #endif
@@ -11827,7 +11845,7 @@ bind_failed:
             // set field text
 		    auto field = static_cast<Field*>(&widget);
 		    if (inputs.getPlayerIDAllowedKeyboard() == player ||
-		        inputs.hasController(player)) {
+		        inputs.hasController(player) || multiplayer != SINGLE) {
 		        field->setText("Press to Start");
 		    } else {
 		        const int num_controllers = countUnassignedControllers();
@@ -11897,7 +11915,7 @@ bind_failed:
 		        }
 		        // let the next empty player slot login with the keyboard
 #ifndef NINTENDO
-		        if (!isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
+		        if (multiplayer == SINGLE && !isPlayerSignedIn(inputs.getPlayerIDAllowedKeyboard())) {
 		            for (int c = 0; c < MAXPLAYERS; ++c) {
 		                if (c == player) {
 		                    // skip ourselves
@@ -11910,25 +11928,41 @@ bind_failed:
 		            }
 		        }
 #endif
-		        start_func(player);
+                if (loadingsavegame) {
+                    createReadyStone(player, true, true);
+                } else {
+                    createCharacterCard(player);
+                }
 		        return;
 		    }
-		    if (inputs.getPlayerIDAllowedKeyboard() == player && !inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
-		        input.consumeBindingsSharedWithBinding("KeyboardLogin");
+		    if (!inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
+				if (inputs.getPlayerIDAllowedKeyboard() == player || multiplayer != SINGLE) {
+		        	input.consumeBindingsSharedWithBinding("KeyboardLogin");
 #ifndef NINTENDO
-		        // release any controller assigned to this player
-                if (inputs.hasController(player)) {
-                    inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
-                    Input::inputs[player].refresh();
-                }
+					// release any controller assigned to this player
+					if (inputs.hasController(player)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
+						for (int c = 0; c < 4; ++c) {
+							Input::inputs[c].refresh();
+						}
+					}
 #endif
-		        start_func(player);
-		        return;
+					if (loadingsavegame) {
+						createReadyStone(player, true, true);
+					} else {
+						createCharacterCard(player);
+					}
+					return;
+				}
 		    }
 		    });
 		start->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 		    const int player = widget.getOwner();
-		    const bool controllerAvailable = inputs.hasController(player) || isControllerAvailable(player, countUnassignedControllers());
+			const bool keyboardAvailable = inputs.getPlayerIDAllowedKeyboard() == player ||
+				currentLobbyType != LobbyType::LobbyLocal;
+		    const bool controllerAvailable = inputs.hasController(player) ||
+				(currentLobbyType != LobbyType::LobbyLocal && countControllers()) ||
+				isControllerAvailable(player, countUnassignedControllers());
 		    const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
 		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 #ifdef NINTENDO
@@ -11941,7 +11975,7 @@ bind_failed:
 			const int h = image->getHeight();
 			image->draw(nullptr, SDL_Rect{ x - w / 2, y - h / 2, w, h }, viewport);
 #else
-            if (inputs.getPlayerIDAllowedKeyboard() == player) {
+            if (keyboardAvailable) {
                 if (controllerAvailable) {
                     // draw spacebar and A button
                     {
@@ -12572,7 +12606,9 @@ bind_failed:
                             const int index = button.getOwner();
                             if (inputs.hasController(index)) {
                                 inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-                                Input::inputs[index].refresh();
+								for (int c = 0; c < 4; ++c) {
+									Input::inputs[c].refresh();
+								}
                             }
 #endif
 	                    });
@@ -12969,16 +13005,16 @@ bind_failed:
 	            if (inputs.hasController(index)) {
 	                inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
 	            }
-	            inputs.setPlayerIDAllowedKeyboard(index);
+				inputs.setPlayerIDAllowedKeyboard(index);
 	            inputs.getVirtualMouse(index)->draw_cursor = true;
 	            inputs.getVirtualMouse(index)->lastMovementFromController = false;
 	        } else {
 	            // this happens if a controller was bound to the player
 				inputs.getVirtualMouse(index)->draw_cursor = false;
 				inputs.getVirtualMouse(index)->lastMovementFromController = true;
-	            if (inputs.getPlayerIDAllowedKeyboard() == index) {
-	                inputs.setPlayerIDAllowedKeyboard(-1);
-	            }
+	            //if (inputs.getPlayerIDAllowedKeyboard() == index) {
+	            //    inputs.setPlayerIDAllowedKeyboard(-1);
+	            //}
 	        }
 		    button.deselect();
 		    clicked = true;
@@ -13062,17 +13098,21 @@ bind_failed:
 		button->select();
 
 	    int playercount = 0;
-	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-	            ++playercount;
-	        }
-	    }
+		if (multiplayer == SINGLE) {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (isPlayerSignedIn(c)) {
+					++playercount;
+				}
+			}
+		} else {
+			playercount = 1;
+		}
 
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
+                const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
+                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
@@ -17160,26 +17200,48 @@ bind_failed:
 			});
 		version->setColor(0xffffffff);
 
-		auto start = main_menu_frame->addButton("start");
-		start->setSize(SDL_Rect{
-		    (Frame::virtualScreenX - 320) / 2,
-		    (Frame::virtualScreenY + 200) / 2,
-		    320,
-		    100,
-		    });
+		auto start = main_menu_frame->addFrame("start");
 		start->setBorder(0);
-		start->setColor(makeColor(255, 255, 255, 255));
-		start->setHighlightColor(makeColor(255, 255, 255, 255));
-		start->setBackground("images/ui/Main Menus/StartGradient.png");
-		start->setFont(bigfont_outline);
-		start->setText("Press to Start");
-		start->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		start->setButtonsOffset(SDL_Rect{0, 24, 0, 0});
-		start->setHideKeyboardGlyphs(false);
-		//start->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
-		start->setHideSelectors(true);
-		start->addWidgetAction("MenuConfirm", "start");
-		start->setCallback([](Button&){
+		start->setColor(0);
+		start->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 300) / 2,
+			(Frame::virtualScreenY) / 2 - 32,
+			300,
+			200
+			});
+		start->setActualSize(SDL_Rect{0, 0, start->getSize().w, start->getSize().h});
+		start->setTickCallback([](Widget& widget){
+			auto frame = static_cast<Frame*>(&widget); assert(frame);
+			auto button = frame->findButton("button"); assert(button);
+			auto top = frame->findImage("glow_top"); assert(top);
+			auto bottom = frame->findImage("glow_bottom"); assert(bottom);
+			auto left = frame->findImage("glow_left"); assert(left);
+			auto right = frame->findImage("glow_right"); assert(right);
+			const auto color = button->getColor();
+			top->color = color;
+			bottom->color = color;
+			left->color = color;
+			right->color = color;
+			});
+
+		auto button = start->addButton("button");
+		button->setSize(SDL_Rect{
+		    (start->getSize().w - 292) / 2,
+		    40, 292, 120 });
+		button->setBorder(0);
+		button->setColor(makeColor(255, 255, 255, 255));
+		button->setHighlightColor(makeColor(255, 255, 255, 255));
+		button->setBackground("images/ui/Main Menus/Title/UI_Title_GradLight_Pink_01.png");
+		button->setIcon("images/ui/Main Menus/Title/UI_Title_Text_PressToStart_Gold_01.png");
+		button->setFont(bigfont_outline);
+		button->setText("Press to Start");
+		button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
+		button->setButtonsOffset(SDL_Rect{0, 48, 0, 0});
+		button->setHideKeyboardGlyphs(false);
+		//button->setSelectorOffset(SDL_Rect{32, 32, -32, -32});
+		button->setHideSelectors(true);
+		button->addWidgetAction("MenuConfirm", "button");
+		button->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
 			settingsMount();
@@ -17188,30 +17250,67 @@ bind_failed:
 				soundActivate();
 			}
 		    });
-		start->setTickCallback([](Widget& widget){
+		button->setTickCallback([](Widget& widget){
+			const int pace = TICKS_PER_SECOND * 4;
+            const real_t ang = PI * 2.0 * ((ticks % pace) / (real_t)pace);
+			const uint8_t alpha = 191 + fabs(sin(ang)) * 64;
+            const Uint32 newColor = makeColor(255, 255, 255, alpha);
 		    auto button = static_cast<Button*>(&widget);
-		    auto color = button->getColor();
-            Uint8 r, g, b, a;
-            ::getColor(color, &r, &g, &b, &a);
-            static bool fadingDown = true;
-            if (fadingDown) {
-                if (a == 127) {
-                    fadingDown = false;
-                } else {
-                    --a;
-                }
-            } else {
-                if (a == 255) {
-                    fadingDown = true;
-                } else {
-                    ++a;
-                }
-            }
-            const Uint32 newColor = makeColor(r, g, b, a);
             button->setColor(newColor);
             button->setHighlightColor(newColor);
 		    });
-		start->select();
+		button->select();
+
+		// borders
+		{
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 210) / 2,
+				0, 210, 82 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateTop_01.png",
+				"top");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 70) / 2,
+				start->getSize().h - 34, 70, 34 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBot_01.png",
+				"bottom");
+
+			start->addImage(SDL_Rect{64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBL_01.png",
+				"left");
+
+			start->addImage(SDL_Rect{start->getSize().w - 46 - 64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBR_01.png",
+				"right");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 210) / 2,
+				0, 210, 82 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateTop_GlowPink_01B.png",
+				"glow_top");
+
+			start->addImage(SDL_Rect{
+				(start->getSize().w - 70) / 2,
+				start->getSize().h - 34, 70, 34 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBot_GlowPink_01B.png",
+				"glow_bottom");
+
+			start->addImage(SDL_Rect{64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBL_GlowPink_01B.png",
+				"glow_left");
+
+			start->addImage(SDL_Rect{start->getSize().w - 46 - 64, start->getSize().h - 70, 46, 48 },
+				0xffffffff,
+				"images/ui/Main Menus/Title/UI_Title_Surround_GateBR_GlowPink_01B.png",
+				"glow_right");
+		}
 
 #ifdef STEAMWORKS
 	    if (!cmd_line.empty()) {
@@ -17666,6 +17765,9 @@ bind_failed:
 		    if (stats[widget.getOwner()]->HP > 0) {
 		        dimmer->removeSelf();
 		    }
+			if (gamePaused) {
+				dimmer->removeSelf();
+			}
 		    });
 
 		Frame* window = dimmer->addFrame("window");
@@ -17680,7 +17782,7 @@ bind_failed:
             auto size = window->getSize();
             auto height = (parent->getSize().h - size.h) / 2;
             if (size.y < height) {
-                int fallspeed = 32;
+                const int fallspeed = 80 * ((real_t)TICKS_PER_SECOND / fpsLimit);
                 size.y += fallspeed;
                 if (size.y >= height) {
                     size.y = height;
@@ -18070,18 +18172,25 @@ bind_failed:
             createDummyMainMenu();
         }
 
-        auto old_prompt = main_menu_frame->findFrame("controller_prompt");
+		Frame* old_prompt;
+        old_prompt = main_menu_frame->findFrame("controller_prompt");
+        if (old_prompt) {
+			// obviously we don't need disconnect prompts
+			// if we're in the reassignment menu...
+			return;
+        }
+        old_prompt = main_menu_frame->findFrame("controller_disconnect_prompt");
         if (old_prompt) {
             if (old_prompt->getOwner() < player) {
-                // don't open a new prompt.
-                // we're trying to deal with another player.
+                // don't open a new disconnect prompt.
+                // the controller would be swallowed by the current player.
                 return;
             } else {
                 // this player is gonna take over the controller when we plug it in,
-                // so give them a prompt.
+                // so give them the prompt instead.
                 destroyMainMenu();
                 createDummyMainMenu();
-            }
+	    	}
         }
 
         static real_t bounce;
@@ -18129,7 +18238,7 @@ bind_failed:
         // at this point the prompt should ALWAYS open
         // because we already handled the case where one exists above.
 
-        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        auto prompt = textPrompt("controller_disconnect_prompt", text, prompt_tick_callback, false);
         assert(prompt);
 
         prompt->setOwner(player);
@@ -18151,17 +18260,21 @@ bind_failed:
         dimmer->setOwner(player);
 
 	    int playercount = 0;
-	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-	            ++playercount;
-	        }
-	    }
+		if (multiplayer == SINGLE) {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (isPlayerSignedIn(c)) {
+					++playercount;
+				}
+			}
+		} else {
+			playercount = 1;
+		}
 
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
-	        if (isPlayerSignedIn(c)) {
-                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
+                const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
+                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();

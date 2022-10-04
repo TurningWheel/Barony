@@ -334,7 +334,7 @@ void Entity::removeMonsterDeathNodes()
 
 void Entity::spawnBlood(int bloodSprite)
 {
-	if ( spawn_blood )
+	if ( spawn_blood || bloodSprite != 160 )
 	{
 		int tileX = std::min<unsigned int>(std::max<int>(0, this->x / 16), map.width - 1);
 		int tileY = std::min<unsigned int>(std::max<int>(0, this->y / 16), map.height - 1);

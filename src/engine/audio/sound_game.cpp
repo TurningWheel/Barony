@@ -88,34 +88,11 @@ FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol)
 
 FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 {
-	if (no_sound)
-	{
-		return nullptr;
-	}
-
-#ifndef SOUND
-	return nullptr;
-#endif
-
-	FMOD::Channel* channel;
-	int c;
-
-	if (intro)
-	{
-		return nullptr;
-	}
-	if (snd < 0 || snd >= numsounds) //TODO: snd < 0 is impossible with a Uint32.
-	{
-		return nullptr;
-	}
-	if (sounds[snd] == nullptr || vol == 0)
-	{
-		return nullptr;
-	}
+	auto result = playSoundPosLocal(x, y, snd, vol);
 
 	if (multiplayer == SERVER)
 	{
-		for (c = 1; c < MAXPLAYERS; c++)
+		for (int c = 1; c < MAXPLAYERS; c++)
 		{
 			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
 			{
@@ -133,56 +110,7 @@ FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		}
 	}
 
-	if (!fmod_system)   //For the client.
-	{
-		return nullptr;
-	}
-
-	FMOD_VECTOR position;
-	position.x = -y / 16; //Left/right.
-	position.y = 0; //Up/down. //Should be z, but that's not passed. Ignore? Ignoring. Useful for sounds in the floor and ceiling though.
-	position.z = -x / 16; //Forward/backward.
-
-	if ( soundAmbient_group && getChannelGroupForSoundIndex(snd) == soundAmbient_group )
-	{
-		int numChannels = 0;
-		soundAmbient_group->getNumChannels(&numChannels);
-		for ( int i = 0; i < numChannels; ++i )
-		{
-			FMOD::Channel* c;
-			if ( soundAmbient_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
-			{
-				//float audibility = 0.f;
-				//FMOD_Channel_GetAudibility(c, &audibility);
-				float volume = 0.f;
-				c->getVolume(&volume);
-				FMOD_VECTOR playingPosition;
-				c->get3DAttributes(&playingPosition, nullptr);
-				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
-				if ( abs(volume - (vol / 128.f)) < 0.05 )
-				{
-					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
-					{
-						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
-						return nullptr;
-					}
-				}
-			}
-		}
-	}
-
-	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel); //TODO: Link to sound_group instead of master channel?
-	if (FMODErrorCheck())
-	{
-		return nullptr;
-	}
-
-	channel->setVolume(vol / 128.f);
-	channel->set3DAttributes(&position, nullptr);
-	//FMOD_Channel_SetChannelGroup(channel, sound_group); //TODO: Already done in fmod_system->playSound()?
-	channel->setPaused(false);
-
-	return channel;
+	return result;
 }
 
 FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)

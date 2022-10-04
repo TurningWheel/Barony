@@ -7110,6 +7110,9 @@ void createGameTimerFrame(const int player)
 static void checkControllerState(int player) {
     auto& controllerFrame = players[player]->hud.controllerFrame;
     assert(controllerFrame);
+	if (multiplayer != SINGLE) {
+		player = 0;
+	}
     if (inputs.getPlayerIDAllowedKeyboard() != player) {
         auto controller = inputs.getController(player);
         if (!controller || (controller && !controller->isActive())) {
@@ -7252,9 +7255,9 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
-    if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
-    {
-	    checkControllerState(player.playernum);
+	if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+	{
+		checkControllerState(player.playernum);
 	}
 
     if ( !minimapFrame )

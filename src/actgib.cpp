@@ -53,6 +53,8 @@ void poof(Entity* my) {
 
 void actGib(Entity* my)
 {
+	my->flags[INVISIBLE] = !spawn_blood && !my->flags[SPRITE] && my->sprite == 5;
+
 	// don't update gibs that have no velocity
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
@@ -126,6 +128,8 @@ void actGib(Entity* my)
 
 void actDamageGib(Entity* my)
 {
+	my->flags[INVISIBLE] = !spawn_blood && !my->flags[SPRITE] && my->sprite == 5;
+
 	// don't update gibs that have no velocity
 	if ( my->z >= 8 )
 	{
@@ -277,10 +281,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-	if ( !spawn_blood && customGibSprite == -1 )
-	{
-		entity->flags[INVISIBLE] = true;
-	}
+	entity->flags[INVISIBLE] = !spawn_blood && !entity->flags[SPRITE] && entity->sprite == 5;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -323,6 +324,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[INVISIBLE] = !spawn_blood && !entity->flags[SPRITE] && entity->sprite == 5;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -354,6 +356,7 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[INVISIBLE] = !spawn_blood && !entity->flags[SPRITE] && entity->sprite == 5;
 
 	return entity;
 }

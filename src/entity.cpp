@@ -3960,10 +3960,10 @@ void Entity::handleEffects(Stat* myStats)
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 				messagePlayer(player, MESSAGE_STATUS, language[642]);
-				if ( spawn_blood )
+				
 				{
 					Entity* entity = nullptr;
-					if ( gibtype[myStats->type] == 1 )
+					if ( spawn_blood && gibtype[myStats->type] == 1 )
 					{
 						entity = newEntity(203, 1, map.entities, nullptr); //Blood entity.
 					}

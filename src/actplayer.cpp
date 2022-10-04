@@ -5113,33 +5113,16 @@ void actPlayer(Entity* my)
 					{
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
-						for ( i = 0; i < 5; i++ )
+						Entity* gib = spawnGib(my);
+						gib->skill[5] = 1; // poof
+						gib->sprite = my->sprite;
+						serverSpawnGibForClient(gib);
+						for ( int c = 0; c < 8; c++ )
 						{
 							Entity* gib = spawnGib(my);
 							serverSpawnGibForClient(gib);
 						}
-						if ( spawn_blood )
-						{
-							if ( !checkObstacle(my->x, my->y, my, NULL) )
-							{
-								int x, y;
-								x = std::min(std::max<unsigned int>(0, my->x / 16), map.width - 1);
-								y = std::min(std::max<unsigned int>(0, my->y / 16), map.height - 1);
-								if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-								{
-									entity = newEntity(160, 1, map.entities, nullptr); //Limb entity.
-									entity->x = my->x;
-									entity->y = my->y;
-									entity->z = 8.0 + (local_rng.rand() % 20) / 100.0;
-									entity->parent = my->getUID();
-									entity->sizex = 2;
-									entity->sizey = 2;
-									entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-									entity->flags[UPDATENEEDED] = true;
-									entity->flags[PASSABLE] = true;
-								}
-							}
-						}
+						my->spawnBlood();
 						node_t* spellnode;
 						spellnode = stats[PLAYER_NUM]->magic_effects.first;
 						while ( spellnode )

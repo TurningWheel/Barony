@@ -1155,7 +1155,7 @@ void actBoulder(Entity* my)
 				}
 				if ( spawn_blood && my->ticks % (rate + local_rng.rand() % 3) == 0 )
 				{
-					Entity* blood = newEntity(BOULDER_SPAWNBLOOD, 1, map.entities, nullptr); //Gib entity.;
+					Entity* blood = newEntity(BOULDER_SPAWNBLOOD, 1, map.entities, nullptr); //Gib entity.
 					if ( blood != NULL )
 					{
 						blood->x = my->x - 4 + local_rng.rand() % 9;
