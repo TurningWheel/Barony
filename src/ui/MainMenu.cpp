@@ -6577,30 +6577,32 @@ bind_failed:
 					}
 #endif
 				}
-				if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30)) {
-					client_disconnected[i] = true;
-					strncpy((char*)(net_packet->data), "DISC", 4);
-					net_packet->data[4] = i;
-					net_packet->len = 5;
-					for (int c = 1; c < MAXPLAYERS; c++) {
-						if (client_disconnected[c]) {
-							continue;
+				if (*cvar_enableKeepAlives) {
+					if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30)) {
+						client_disconnected[i] = true;
+						strncpy((char*)(net_packet->data), "DISC", 4);
+						net_packet->data[4] = i;
+						net_packet->len = 5;
+						for (int c = 1; c < MAXPLAYERS; c++) {
+							if (client_disconnected[c]) {
+								continue;
+							}
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
-						net_packet->address.host = net_clients[c - 1].host;
-						net_packet->address.port = net_clients[c - 1].port;
-						sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+						char buf[1024];
+						snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
+						addLobbyChatMessage(uint32ColorYellow, buf);
+
+						if (directConnect) {
+							createWaitingStone(i);
+						} else {
+							createInviteButton(i);
+						}
+						continue;
 					}
-
-					char buf[1024];
-					snprintf(buf, sizeof(buf), "*** %s has timed out ***", players[i]->getAccountName());
-					addLobbyChatMessage(uint32ColorYellow, buf);
-
-				    if (directConnect) {
-		                createWaitingStone(i);
-		            } else {
-		                createInviteButton(i);
-		            }
-					continue;
 				}
 			}
 		} else if (multiplayer == CLIENT) {
@@ -6644,32 +6646,36 @@ bind_failed:
                 connectionErrorPrompt(error_str.c_str());
 			}
 
-			else if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
-			    // timeout after 30 seconds of no messages from server
-                disconnectFromLobby();
-	            destroyMainMenu();
-	            createMainMenu(false);
-                connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+			if (*cvar_enableKeepAlives) {
+				if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
+					// timeout after 30 seconds of no messages from server
+					disconnectFromLobby();
+					destroyMainMenu();
+					createMainMenu(false);
+					connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+				}
 			}
 		}
 
 		// send keepalive messages every second
-		if (ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE) {
-			strcpy((char*)net_packet->data, "KPAL");
-			net_packet->data[4] = clientnum;
-			net_packet->len = 5;
-			if (multiplayer == CLIENT) {
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-			} else if (multiplayer == SERVER) {
-				for (int i = 1; i < MAXPLAYERS; i++) {
-					if (client_disconnected[i]) {
-						continue;
+		if (*cvar_enableKeepAlives) {
+			if (ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE) {
+				strcpy((char*)net_packet->data, "KPAL");
+				net_packet->data[4] = clientnum;
+				net_packet->len = 5;
+				if (multiplayer == CLIENT) {
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				} else if (multiplayer == SERVER) {
+					for (int i = 1; i < MAXPLAYERS; i++) {
+						if (client_disconnected[i]) {
+							continue;
+						}
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
-					net_packet->address.host = net_clients[i - 1].host;
-					net_packet->address.port = net_clients[i - 1].port;
-					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
 			}
 		}
@@ -11801,17 +11807,6 @@ bind_failed:
 		case 3: banner->setColor(uint32ColorPlayer4); break;
 		}
 
-		static auto start_func = [](int index){
-		    auto controller_prompt = main_menu_frame->findFrame("controller_prompt");
-	        if (!controller_prompt) {
-                if (loadingsavegame) {
-                    createReadyStone(index, true, true);
-                } else {
-                    createCharacterCard(index);
-                }
-	        }
-		    };
-
 		auto start = card->addField("start", 128);
 		start->setFont(smallfont_outline);
 		start->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
@@ -11933,7 +11928,11 @@ bind_failed:
 		            }
 		        }
 #endif
-		        start_func(player);
+                if (loadingsavegame) {
+                    createReadyStone(player, true, true);
+                } else {
+                    createCharacterCard(player);
+                }
 		        return;
 		    }
 		    if (!inputstr && input.consumeBinaryToggle("KeyboardLogin")) {
@@ -11948,7 +11947,11 @@ bind_failed:
 						}
 					}
 #endif
-					start_func(player);
+					if (loadingsavegame) {
+						createReadyStone(player, true, true);
+					} else {
+						createCharacterCard(player);
+					}
 					return;
 				}
 		    }
@@ -13009,9 +13012,9 @@ bind_failed:
 	            // this happens if a controller was bound to the player
 				inputs.getVirtualMouse(index)->draw_cursor = false;
 				inputs.getVirtualMouse(index)->lastMovementFromController = true;
-	            if (inputs.getPlayerIDAllowedKeyboard() == index) {
-	                inputs.setPlayerIDAllowedKeyboard(-1);
-	            }
+	            //if (inputs.getPlayerIDAllowedKeyboard() == index) {
+	            //    inputs.setPlayerIDAllowedKeyboard(-1);
+	            //}
 	        }
 		    button.deselect();
 		    clicked = true;
@@ -13108,8 +13111,8 @@ bind_failed:
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
-                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+                const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
+                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
@@ -18169,18 +18172,14 @@ bind_failed:
             createDummyMainMenu();
         }
 
-        auto old_prompt = main_menu_frame->findFrame("controller_prompt");
+		Frame* old_prompt;
+        old_prompt = main_menu_frame->findFrame("controller_disconnect_prompt");
         if (old_prompt) {
-            if (old_prompt->getOwner() < player) {
-                // don't open a new prompt.
-                // we're trying to deal with another player.
-                return;
-            } else {
-                // this player is gonna take over the controller when we plug it in,
-                // so give them a prompt.
-                destroyMainMenu();
-                createDummyMainMenu();
-            }
+			return;
+        }
+        old_prompt = main_menu_frame->findFrame("controller_prompt");
+        if (old_prompt) {
+			return;
         }
 
         static real_t bounce;
@@ -18228,7 +18227,7 @@ bind_failed:
         // at this point the prompt should ALWAYS open
         // because we already handled the case where one exists above.
 
-        auto prompt = textPrompt("controller_prompt", text, prompt_tick_callback, false);
+        auto prompt = textPrompt("controller_disconnect_prompt", text, prompt_tick_callback, false);
         assert(prompt);
 
         prompt->setOwner(player);
@@ -18263,8 +18262,8 @@ bind_failed:
 	    int num = 0;
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
-                const char* path = inputs.getPlayerIDAllowedKeyboard() == c ?
-                    Input::getKeyboardGlyph() : Input::getControllerGlyph();
+                const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
+                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();

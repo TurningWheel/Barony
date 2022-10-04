@@ -132,10 +132,10 @@ void GameController::reinitHaptic()
 	}
 }
 
-bool GameController::open(int c)
+bool GameController::open(int sdl_which, int index)
 {
 #ifdef NINTENDO
-	id = c;
+	id = index;
 	return true;
 #else
 	if (sdl_device)
@@ -143,17 +143,17 @@ bool GameController::open(int c)
 		close();
 	}
 
-	if (c < 0 || c >= SDL_NumJoysticks())
+	if (sdl_which < 0 || sdl_which >= SDL_NumJoysticks())
 	{
 		return false;
 	}
 
-	if (!SDL_IsGameController(c))
+	if (!SDL_IsGameController(sdl_which))
 	{
 		return false;
 	}
 
-	sdl_device = SDL_GameControllerOpen(c);
+	sdl_device = SDL_GameControllerOpen(sdl_which);
 
 	if (sdl_device == nullptr)
 	{
@@ -161,9 +161,9 @@ bool GameController::open(int c)
 	}
 	else
 	{
-		id = c;
+		id = index;
 		printlog("Successfully initialized game controller!\n");
-		name = (SDL_GameControllerNameForIndex(c));
+		name = (SDL_GameControllerNameForIndex(sdl_which));
 
 #ifdef DISABLE_RUMBLE
 		haptics.vibrationEnabled = false;

@@ -201,8 +201,9 @@ public:
 	void close();
 
 	//Opens the SDL device.
-	//If c < 0 or c >= SDL_NumJoysticks() or c is not a game controller, then returns false.
-	bool open(int c);
+	//If sdl_which < 0 or sdl_which >= SDL_NumJoysticks() or sdl_which is not a game controller, then returns false.
+	//index is the new id of the game controller.
+	bool open(int sdl_which, int index);
 
 	void initBindings();
 	const int getID() { return id; }
@@ -403,7 +404,7 @@ public:
 	{
 		if ( !splitscreen )
 		{
-			return player == clientnum;
+			return true;
 		}
 		return player == playerUsingKeyboardControl;
 	}

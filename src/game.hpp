@@ -498,6 +498,8 @@ public:
 	void storeEventStats();
 };
 
+extern ConsoleVariable<bool> cvar_enableKeepAlives;
+
 extern DebugStatsClass DebugStats;
 //extern ConsoleVariable<bool> cvar_useTimerInterpolation;
 

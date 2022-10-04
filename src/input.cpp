@@ -203,7 +203,13 @@ bool Input::binary(const char* binding) const {
 	}
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binary : false;
+	if (b == bindings.end()) {
+		return false;
+	} else {
+		auto& bind = b->second;
+		return bind.binary;
+	}
+	//return b != bindings.end() ? (*b).second.binary : false;
 }
 
 bool Input::binaryToggle(const char* binding) const {
@@ -212,7 +218,13 @@ bool Input::binaryToggle(const char* binding) const {
 	}
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
+	if (b == bindings.end()) {
+		return false;
+	} else {
+		auto& bind = b->second;
+		return bind.binary && !bind.consumed;
+	}
+	//return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
 bool Input::analogToggle(const char* binding) const {
