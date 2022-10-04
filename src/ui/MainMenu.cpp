@@ -17121,7 +17121,7 @@ bind_failed:
         char date[64];
 		strcpy(date, __DATE__ + 7);
 		strcat(date, ".");
-		Uint32 month = SDLNet_Read32(__DATE__);
+		Uint32 month = SDLNet_Read32((void*)__DATE__);
 		switch (month) {
 		case 'Jan ': strcat(date, "01."); break;
 		case 'Feb ': strcat(date, "02."); break;

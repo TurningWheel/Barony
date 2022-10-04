@@ -250,7 +250,7 @@ int lastCreatedCharacterRace = -1;
 Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
-int multiplayer = -1;
+int multiplayer = 0;
 SteamGlobalStat_t g_SteamAPIGlobalStats[1] =
 {
 	{ 57, STEAM_STAT_INT, "STAT_GLOBAL_GAME_STARTED" }

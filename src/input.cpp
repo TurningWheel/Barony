@@ -442,19 +442,19 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 #ifdef NINTENDO
 	if (in == "ButtonA")
 	{
-		return rootPath + "G_Switch_A00.png";
+		return rootPath + "Button_Xbox_DarkA_00.png";
     }
 	if (in == "ButtonB")
 	{
-		return rootPath + "G_Switch_B00.png";
+		return rootPath + "Button_Xbox_DarkB_00.png";
     }
 	if (in == "ButtonX")
 	{
-		return rootPath + "G_Switch_X00.png";
+		return rootPath + "Button_Xbox_DarkX_00.png";
     }
 	if (in == "ButtonY")
 	{
-		return rootPath + "G_Switch_Y00.png";
+		return rootPath + "Button_Xbox_DarkY_00.png";
     }
 	if (in == "ButtonLeftBumper")
 	{
@@ -911,13 +911,13 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padButton )
 		{
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "G_Switch_B00.png";
+				return rootPath + "Button_Xbox_DarkB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-				return rootPath + "G_Switch_A00.png";
+				return rootPath + "Button_Xbox_DarkA_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "G_Switch_Y00.png";
+				return rootPath + "Button_Xbox_DarkY_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-				return rootPath + "G_Switch_X00.png";
+				return rootPath + "Button_Xbox_DarkX_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 				return rootPath + "G_Switch_L00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
