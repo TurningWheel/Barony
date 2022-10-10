@@ -2993,11 +2993,13 @@ void drawStatusNew(const int player)
 								}
 							}
 						}
+
+						players[player]->hotbar.faceMenuButtonHeld = Player::Hotbar_t::GROUP_NONE;
 						break;
 					}
 
-					std::array<int, 3> slotOrder = { 0, 1, 2 };
 					int centerSlot = 1;
+					std::array<int, 3> slotOrder = { 0, 1, 2 };
 					if ( inputName == "HotbarFacebarLeft" )
 					{
 						pressed = Player::Hotbar_t::GROUP_LEFT;
@@ -3042,23 +3044,30 @@ void drawStatusNew(const int player)
 				}
 			}
 
-			if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE
-				&& players[player]->hotbar.faceMenuQuickCastEnabled && item && itemCategory(item) == SPELL_CAT )
+			// using items
+			if (pressed != Player::Hotbar_t::GROUP_NONE)
 			{
-				spell_t* spell = getSpellFromItem(player, item);
-				if ( spell && players[player]->magic.selectedSpell() == spell )
+				players[player]->hotbar.faceMenuButtonHeld = pressed;
+			}
+			else
+			{
+				if (players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE)
 				{
-					players[player]->hotbar.faceMenuQuickCast = true;
-				}
-			}
-			if (pressed != Player::Hotbar_t::GROUP_NONE) {
-				players[player]->hotbar.faceMenuButtonHeld = pressed;
-			} else {
-				if (players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE) {
 					item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
+
+					// quickcasting spells
+					if (item && itemCategory(item) == SPELL_CAT )
+					{
+						spell_t* spell = getSpellFromItem(player, item);
+						if ( spell && players[player]->magic.selectedSpell() == spell )
+						{
+							players[player]->hotbar.faceMenuQuickCast = true;
+						}
+					}
 				}
 				players[player]->hotbar.faceMenuButtonHeld = pressed;
 			}
+
 			Input::inputs[player].consumeBindingsSharedWithFaceHotbar();
 		}
 		else
