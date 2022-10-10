@@ -16886,14 +16886,14 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 						scrollSetpoint = std::max(scrollSetpoint - slotSize, 0);
 					}
 				}
-				if ( Input::inputs[player].analogToggle("MenuScrollDown") )
+				if ( Input::inputs[player].binaryToggle("MenuScrollDown") )
 				{
-					Input::inputs[player].consumeAnalogToggle("MenuScrollDown");
+					Input::inputs[player].consumeBinaryToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + slotSize, 0);
 				}
-				else if ( Input::inputs[player].analogToggle("MenuScrollUp") )
+				else if ( Input::inputs[player].binaryToggle("MenuScrollUp") )
 				{
-					Input::inputs[player].consumeAnalogToggle("MenuScrollUp");
+					Input::inputs[player].consumeBinaryToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - slotSize, 0);
 				}
 			}
@@ -19006,18 +19006,18 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 						scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight, 0);
 					}
 				}
-				if ( Input::inputs[playernum].analogToggle("MenuScrollDown") )
+				if ( Input::inputs[playernum].binaryToggle("MenuScrollDown") )
 				{
-					Input::inputs[playernum].consumeAnalogToggle("MenuScrollDown");
+					Input::inputs[playernum].consumeBinaryToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
 					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
 					{
 						player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 					}
 				}
-				else if ( Input::inputs[playernum].analogToggle("MenuScrollUp") )
+				else if ( Input::inputs[playernum].binaryToggle("MenuScrollUp") )
 				{
-					Input::inputs[playernum].consumeAnalogToggle("MenuScrollUp");
+					Input::inputs[playernum].consumeBinaryToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight * kNumInscriptionsToDisplayVertical, 0);
 					if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_FEATHER )
 					{

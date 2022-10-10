@@ -96,12 +96,12 @@ void exitSoundEngine();
 int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
 void freeSoundResources();
 
-FMOD::Channel* playSoundPlayer(int player, Uint32 snd, int vol);
-FMOD::Channel* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
-FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
-FMOD::Channel* playSoundEntity(Entity* entity, Uint32 snd, int vol);
-FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
-FMOD::Channel* playSound(Uint32 snd, int vol);
+FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundEntity(Entity* entity, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSound(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
 // all parameters should be in ranges of [0.0 - 1.0]
@@ -186,12 +186,12 @@ int closeOPENAL();
 
 void sound_update(int player, int index, int numplayers);
 
-OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundEntity(Entity* entity, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
-OPENAL_SOUND* playSound(Uint32 snd, int vol);
+OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundEntity(Entity* entity, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundEntityLocal(Entity* entity, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSound(Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundVelocity(); //TODO: Write.
 
 void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.

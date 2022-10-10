@@ -1766,11 +1766,11 @@ namespace MainMenu {
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		current_audio_device = audio_device;
-		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 200.f), .5f);
-		sfxvolume = std::min(std::max(0.f, gameplay_volume / 200.f), .5f);
-		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 200.f), .5f);
-		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 200.f), .5f);
-		musvolume = std::min(std::max(0.f, music_volume / 200.f), .5f);
+		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), .5f);
+		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), .5f);
+		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), .5f);
+		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), .5f);
+		musvolume = std::min(std::max(0.f, music_volume / 100.f), .5f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -1840,11 +1840,11 @@ namespace MainMenu {
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
 		settings.audio_device = current_audio_device;
-		settings.master_volume = MainMenu::master_volume * 200.f;
-		settings.gameplay_volume = (float)sfxvolume * 200.f;
-		settings.ambient_volume = (float)sfxAmbientVolume * 200.f;
-		settings.environment_volume = (float)sfxEnvironmentVolume* 200.f;
-		settings.music_volume = (float)musvolume * 200.f;
+		settings.master_volume = MainMenu::master_volume * 100.f;
+		settings.gameplay_volume = (float)sfxvolume * 100.f;
+		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
+		settings.environment_volume = (float)sfxEnvironmentVolume* 100.f;
+		settings.music_volume = (float)musvolume * 100.f;
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
@@ -4783,28 +4783,28 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
 			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
-				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
-				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
 			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
-				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
-				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
 			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
-				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
-				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
 			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
-				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
-				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
 			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
-				setGlobalVolume(allSettings.master_volume / 200.0, allSettings.music_volume / 200.0, allSettings.gameplay_volume / 200.0,
-				allSettings.ambient_volume / 200.0, allSettings.environment_volume / 200.0);});
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -5135,8 +5135,8 @@ bind_failed:
             auto& input = Input::inputs[widget.getOwner()];
             real_t speed = PI / fpsLimit;
             if (frame->capturesMouse()) {
-                portrait_rotation += input.analogToggle("MenuMouseWheelDown") * speed * 10;
-                portrait_rotation -= input.analogToggle("MenuMouseWheelUp") * speed * 10;
+                portrait_rotation += (real_t)input.binaryToggle("MenuMouseWheelDown") * speed * 10;
+                portrait_rotation -= (real_t)input.binaryToggle("MenuMouseWheelUp") * speed * 10;
             }
             portrait_rotation += input.analog("MenuScrollRight") * speed;
             portrait_rotation -= input.analog("MenuScrollLeft") * speed;

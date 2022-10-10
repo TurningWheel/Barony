@@ -2976,7 +2976,6 @@ void drawStatusNew(const int player)
 					if ( Input::inputs[player].binaryToggle("HotbarFacebarCancel") )
 					{
 						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
-						Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
 						Input::inputs[player].consumeBindingsSharedWithBinding("HotbarFacebarCancel");
 
@@ -3041,12 +3040,6 @@ void drawStatusNew(const int player)
 					}
 					break;
 				}
-				else if ( Input::inputs[player].binaryReleaseToggle(inputName.c_str()) )
-				{
-					item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
-					Input::inputs[player].consumeBinaryReleaseToggle(inputName.c_str());
-					break;
-				}
 			}
 
 			if ( players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE
@@ -3058,8 +3051,14 @@ void drawStatusNew(const int player)
 					players[player]->hotbar.faceMenuQuickCast = true;
 				}
 			}
-
-			players[player]->hotbar.faceMenuButtonHeld = pressed;
+			if (pressed != Player::Hotbar_t::GROUP_NONE) {
+				players[player]->hotbar.faceMenuButtonHeld = pressed;
+			} else {
+				if (players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE) {
+					item = uidToItem(players[player]->hotbar.slots()[hotbar_t.current_hotbar].item);
+				}
+				players[player]->hotbar.faceMenuButtonHeld = pressed;
+			}
 			Input::inputs[player].consumeBindingsSharedWithFaceHotbar();
 		}
 		else

@@ -227,38 +227,6 @@ bool Input::binaryToggle(const char* binding) const {
 	//return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
-bool Input::analogToggle(const char* binding) const {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].analogToggle(binding);
-	}
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
-}
-
-bool Input::binaryReleaseToggle(const char* binding) const {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].binaryReleaseToggle(binding);
-	}
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
-}
-
-bool Input::consumeAnalog(const char* binding) {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].consumeAnalog(binding);
-	}
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && !(*b).second.analogConsumed ) {
-		(*b).second.analogConsumed = true;
-		return disabled == false;
-	}
-	else {
-		return false;
-	}
-}
-
 bool Input::consumeBinary(const char* binding) {
 	if (multiplayer != SINGLE && player != 0) {
 		return inputs[0].consumeBinary(binding);
@@ -274,20 +242,6 @@ bool Input::consumeBinary(const char* binding) {
 		}
 		return disabled == false;
 	} else {
-		return false;
-	}
-}
-
-bool Input::consumeAnalogToggle(const char* binding) {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].consumeAnalogToggle(binding);
-	}
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
-		(*b).second.analogConsumed = true;
-		return disabled == false;
-	}
-	else {
 		return false;
 	}
 }
@@ -311,20 +265,6 @@ bool Input::consumeBinaryToggle(const char* binding) {
 	}
 }
 
-bool Input::consumeBinaryReleaseToggle(const char* binding) {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].consumeBinaryReleaseToggle(binding);
-	}
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed ) {
-		(*b).second.binaryReleaseConsumed = true;
-		return disabled == false;
-	}
-	else {
-		return false;
-	}
-}
-
 bool Input::binaryHeldToggle(const char* binding) const {
 	if (multiplayer != SINGLE && player != 0) {
 		return inputs[0].binaryHeldToggle(binding);
@@ -332,18 +272,7 @@ bool Input::binaryHeldToggle(const char* binding) const {
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
 	return b != bindings.end() 
-		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
-		: false;
-}
-
-bool Input::analogHeldToggle(const char* binding) const {
-	if (multiplayer != SINGLE && player != 0) {
-		return inputs[0].analogHeldToggle(binding);
-	}
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end()
-		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
+		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.heldTicks) > BUTTON_HELD_TICKS)
 		: false;
 }
 
@@ -1501,67 +1430,20 @@ void Input::bind(const char* binding, const char* input) {
 void Input::update() {
 	for (auto& pair : bindings) {
 		auto& binding = pair.second;
-		float oldAnalog = binding.analog;
+		const float oldAnalog = binding.analog;
 		binding.analog = analogOf(binding);
-		bool oldBinary = binding.binary;
+		const bool oldBinary = binding.binary;
 		binding.binary = binaryOf(binding);
 		if (oldBinary != binding.binary) {
-			// unconsume the input whenever it's released or pressed again.
-			if ( oldBinary && !binding.binary && !binding.consumed )
-			{
-				// detected a 'rising' edge of the binding being released
-				binding.binaryRelease = true;
-			}
-			else
-			{
-				binding.binaryRelease = false;
-			}
-
-			binding.binaryReleaseConsumed = false;
-			if (!binding.binary) {
+			if (binding.binary) {
+				if (binding.heldTicks == 0) {
+					binding.heldTicks = ticks; // start the held detection counter
+				}
+			} else {
 			    binding.consumed = false;
-			}
-
-			if ( binding.binary && binding.binaryHeldTicks == 0 )
-			{
-				// start the held detection counter
-				binding.binaryHeldTicks = ticks;
-			}
-			else if ( !binding.binary )
-			{
-				// button not pressed, reset the held counter
-				binding.binaryHeldTicks = 0;
+				binding.heldTicks = 0; // button not pressed, reset the held counter
 			}
 		}
-		
-		const bool analogHigh = binding.analog > analogToggleThreshold;
-		if ( (oldAnalog <= analogToggleThreshold && analogHigh)
-			|| (oldAnalog > analogToggleThreshold && !analogHigh))
-		{
-			binding.analogConsumed = false;
-			if ( analogHigh && binding.analogHeldTicks == 0 )
-			{
-				// start the held detection counter
-				binding.analogHeldTicks = ticks;
-			}
-			else if ( !analogHigh )
-			{
-				// button not pressed, reset the held counter
-				binding.analogHeldTicks = 0;
-			}
-		}
-		else if ( analogHigh )
-		{
-			if ( binding.analogConsumed && (ticks - binding.analogHeldTicks) > BUTTON_ANALOG_REPEAT_TICKS )
-			{
-				binding.analogConsumed = false;
-				binding.analogHeldTicks = ticks;
-			}
-		}
-	}
-	for ( auto& pair : bindings ) 
-	{
-		pair.second.binaryReleaseConsumed = true;
 	}
 }
 

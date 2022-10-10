@@ -2453,13 +2453,13 @@ void gameLogic(void)
 							losingConnection[c] = false;
 							messageLocalPlayers(MESSAGE_MISC, language[724], c, stats[c]->name);
 						}
-						else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
+						else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 15 - 1 )
 						{
-							// 30 second timer
+							// 15 second timer
 							losingConnection[c] = true;
 							messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name);
 						}
-						else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 45 - 1 )
+						else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 30 - 1 )
 						{
 							// additional 15 seconds (kick time)
 							messageLocalPlayers(MESSAGE_MISC, language[726], c, stats[c]->name);
@@ -2663,13 +2663,13 @@ void gameLogic(void)
 					losingConnection[0] = false;
 					messagePlayer(i, MESSAGE_MISC, language[728]);
 				}
-				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * 30 - 1 )
+				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * 15 - 1 )
 				{
-					// 30 second timer
+					// 15 second timer
 					losingConnection[0] = true;
 					messageLocalPlayers(MESSAGE_MISC, language[729]);
 				}
-				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 45 - 1 )
+				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 30 - 1 )
 				{
 					// additional 15 seconds (disconnect time)
 					messageLocalPlayers(MESSAGE_MISC, language[730]);
@@ -4717,9 +4717,6 @@ void ingameHud()
 				input.consumeBinaryToggle("HotbarFacebarLeft");
 				input.consumeBinaryToggle("HotbarFacebarUp");
 				input.consumeBinaryToggle("HotbarFacebarRight");
-				input.consumeBinaryReleaseToggle("HotbarFacebarLeft");
-				input.consumeBinaryReleaseToggle("HotbarFacebarUp");
-				input.consumeBinaryReleaseToggle("HotbarFacebarRight");
 			}
 		}
 

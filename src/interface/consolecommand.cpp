@@ -1284,7 +1284,7 @@ namespace ConsoleCommands {
 			return;
 		}
 		int num = atoi(argv[1]);
-		playSound(num, 256);
+		playSound(num, 255);
 		});
 
 	static ConsoleCommand ccmd_skipintro("/skipintro", "toggle skipping the opening cutscene", []CCMD{

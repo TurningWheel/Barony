@@ -23189,17 +23189,14 @@ void Player::Hotbar_t::updateHotbar()
 		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarLeft") )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarLeft");
-			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarLeft");
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarUp") )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarUp");
-			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarUp");
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarRight") )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarRight");
-			Input::inputs[player.playernum].consumeBinaryReleaseToggle("HotbarFacebarRight");
 		}
 		faceMenuButtonHeld = FaceMenuGroup::GROUP_NONE;
 	}
@@ -23681,10 +23678,6 @@ Frame::result_t doFrames() {
 
         static ConsoleVariable<bool> gui_process("/gui_process", true);
         if (*gui_process) {
-	        for (auto& input : Input::inputs) {
-	            // release any consumed inputs from rest of game
-		        input.update();
-	        }
 	        result = gui->process();
 	    }
 
@@ -26807,18 +26800,18 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 					}
 				}
 
-				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuScrollDown") )
 				{
-					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 					{
 						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 					}
 				}
-				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
+				else if ( Input::inputs[player.playernum].binaryToggle("MenuScrollUp") )
 				{
-					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 					{
@@ -27456,14 +27449,14 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}
-				if ( Input::inputs[player.playernum].analogToggle("MenuScrollDown") )
+				if ( Input::inputs[player.playernum].binaryToggle("MenuScrollDown") )
 				{
-					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollDown");
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 				}
-				else if ( Input::inputs[player.playernum].analogToggle("MenuScrollUp") )
+				else if ( Input::inputs[player.playernum].binaryToggle("MenuScrollUp") )
 				{
-					Input::inputs[player.playernum].consumeAnalogToggle("MenuScrollUp");
+					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 				}
 			}
