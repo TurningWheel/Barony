@@ -234,12 +234,6 @@ bool Input::consumeBinary(const char* binding) {
 	auto b = bindings.find(binding);
 	if (b != bindings.end() && !(*b).second.consumed) {
 		(*b).second.consumed = true;
-		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
-			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
-				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
-		{
-			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
-		}
 		return disabled == false;
 	} else {
 		return false;
@@ -253,12 +247,6 @@ bool Input::consumeBinaryToggle(const char* binding) {
 	auto b = bindings.find(binding);
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
-		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
-			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
-				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
-		{
-			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
-		}
 		return disabled == false;
 	} else {
 		return false;
@@ -1753,11 +1741,6 @@ void Input::consumeBindingsSharedWithBinding(const char* binding)
 				if ( b.second.mouseButton == checkBinding.second.mouseButton )
 				{
 					b.second.consumed = true;
-					if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
-						|| b.second.mouseButton == MOUSE_WHEEL_UP )
-					{
-						mouseButtons[b.second.mouseButton] = false; // manually need to clear this
-					}
 				}
 			}
 			else if ( b.second.type == binding_t::KEYBOARD )
@@ -1864,11 +1847,6 @@ void Input::consumeBindingsSharedWithFaceHotbar()
 							if ( b.second.mouseButton == faceMenuBinding.second.mouseButton )
 							{
 								b.second.consumed = true;
-								if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
-									|| b.second.mouseButton == MOUSE_WHEEL_UP )
-								{
-									mouseButtons[b.second.mouseButton] = false; // manually need to clear this
-								}
 							}
 						}
 						else if ( b.second.type == binding_t::KEYBOARD ) 

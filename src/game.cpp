@@ -3427,7 +3427,7 @@ static void bindControllerToPlayer(int id, int player) {
     }
 }
 
-void handleEvents(void)
+bool handleEvents(void)
 {
 	double d;
 	int j;
@@ -3442,11 +3442,19 @@ void handleEvents(void)
 	ot = t;
 
 	// do timer
+	int numframes = 0;
 	time_diff += timesync;
 	constexpr real_t frame = (real_t)1000 / (real_t)TICKS_PER_SECOND;
 	while (time_diff >= frame) {
 		time_diff -= frame;
-		timerCallback(0, NULL);
+		++numframes;
+	}
+
+	// drop excessive frames
+	constexpr int max_frames = 5;
+	if (numframes > max_frames) {
+		//printlog("dropped %d frames", numframes - max_frames);
+		numframes = max_frames;
 	}
 
 	// calculate fps
@@ -4238,68 +4246,6 @@ void handleEvents(void)
 				break;
 			}
 #endif
-			case SDL_USEREVENT: // if the game timer has elapsed
-				if ( runtimes < 5 )
-				{
-					if ( runtimes == 0 )
-					{
-#ifdef SOUND
-						// update listener position, music fades, etc
-						if (multiplayer != SINGLE || intro) {
-							sound_update(0, clientnum, 1);
-						} else {
-							int numplayers = 0;
-							for (int c = 0; c < MAXPLAYERS; ++c) {
-								if (!client_disconnected[c]) {
-									++numplayers;
-								}
-							}
-							for (int player = 0, c = 0; c < MAXPLAYERS; ++c) {
-								if (!client_disconnected[c]) {
-									sound_update(player, c, numplayers);
-									++player;
-								}
-							}
-						}
-#endif
-					}
-
-				    if (!loading && initialized)
-				    {
-						gameLogic();
-                        ++ticks;
-					}
-					else
-					{
-					    ++loadingticks;
-					}
-
-					mousexrel = 0;
-					mouseyrel = 0;
-					if (initialized)
-					{
-						inputs.updateAllRelMouse();
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							if ( inputs.hasController(i) )
-							{
-								if (inputs.getController(i))
-								{
-#ifndef NINTENDO
-									(void)inputs.getController(i)->handleRumble();
-#endif
-									inputs.getController(i)->updateButtonsReleased();
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					//printlog("dropped frame");
-				}
-				++runtimes;
-				break;
 			case SDL_WINDOWEVENT:
 				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
 				{
@@ -4322,12 +4268,7 @@ void handleEvents(void)
 						mainloop = 0;
 					}
 					if (!intro) {
-						MainMenu::setupSplitscreen();
-					}
-#else
-					if (fullscreen)
-					{
-						break;
+						MainMenu::setupSplitscreen();void
 					}
 					if (!resizeWindow(event.window.data1, event.window.data2))
 					{
@@ -4339,45 +4280,79 @@ void handleEvents(void)
 				break;
 		}
 	}
-	if ( !mousestatus[SDL_BUTTON_LEFT] )
+
+	if (numframes)
 	{
-		omousex = mousex;
-		omousey = mousey;
+#ifdef SOUND
+		// update listener position, music fades, etc
+		if (multiplayer != SINGLE || intro) {
+			sound_update(0, clientnum, 1);
+		} else {
+			int numplayers = 0;
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (!client_disconnected[c]) {
+					++numplayers;
+				}
+			}
+			for (int player = 0, c = 0; c < MAXPLAYERS; ++c) {
+				if (!client_disconnected[c]) {
+					sound_update(player, c, numplayers);
+					++player;
+				}
+			}
+		}
+#endif
 	}
-	if (!initialized) {
-		return;
-	}
-	inputs.updateAllOMouse();
-	for ( auto& controller : game_controllers )
+
+	for (int runtimes = 0; runtimes < numframes; ++runtimes)
 	{
-		controller.updateButtons();
-		controller.updateAxis();
+		if (!loading && initialized)
+		{
+			gameLogic();
+			++ticks;
+		}
+		else
+		{
+			++loadingticks;
+		}
+
+		mousexrel = 0;
+		mouseyrel = 0;
+		if (initialized)
+		{
+			inputs.updateAllRelMouse();
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( inputs.hasController(i) )
+				{
+					if (inputs.getController(i))
+					{
+#ifndef NINTENDO
+						(void)inputs.getController(i)->handleRumble();
+#endif
+						inputs.getController(i)->updateButtonsReleased();
+					}
+				}
+			}
+		}
 	}
 
-}
+	if (initialized)
+	{
+		if ( !mousestatus[SDL_BUTTON_LEFT] )
+		{
+			omousex = mousex;
+			omousey = mousey;
+		}
+		inputs.updateAllOMouse();
+		for ( auto& controller : game_controllers )
+		{
+			controller.updateButtons();
+			controller.updateAxis();
+		}
+	}
 
-/*-------------------------------------------------------------------------------
-
-	timerCallback
-
-	A callback function for the game timer which pushes an SDL event
-
--------------------------------------------------------------------------------*/
-
-Uint32 timerCallback(Uint32 interval, void* param)
-{
-	SDL_Event event;
-	SDL_UserEvent userevent;
-
-	userevent.type = SDL_USEREVENT;
-	userevent.code = 0;
-	userevent.data1 = NULL;
-	userevent.data2 = NULL;
-
-	event.type = SDL_USEREVENT;
-	event.user = userevent;
-	SDL_PushEvent(&event);
-	return (interval);
+	return numframes > 0;
 }
 
 /*-------------------------------------------------------------------------------
@@ -5578,8 +5553,14 @@ static void doConsoleCommands() {
 		}
 		inputstr = command_str;
 
-		input.consumeBinaryToggle("Chat");
-		input.consumeBinaryToggle("Console Command");
+		if (input.consumeBinaryToggle("Chat")) {
+			input.consumeBindingsSharedWithBinding("Chat");
+		}
+
+		if (input.consumeBinaryToggle("Console Command")) {
+			input.consumeBindingsSharedWithBinding("Console Command");
+		}
+
 		keystatus[SDL_SCANCODE_RETURN] = 0;
 		Input::keys[SDL_SCANCODE_RETURN] = 0;
 
@@ -5626,8 +5607,12 @@ static void doConsoleCommands() {
 		}
 		else if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
 		{
-		    input.consumeBinaryToggle("Chat");
-		    input.consumeBinaryToggle("Console Command");
+			if (input.consumeBinaryToggle("Chat")) {
+				input.consumeBindingsSharedWithBinding("Chat");
+			}
+			if (input.consumeBinaryToggle("Console Command")) {
+				input.consumeBindingsSharedWithBinding("Console Command");
+			}
 		    keystatus[SDL_SCANCODE_RETURN] = 0;
 		    Input::keys[SDL_SCANCODE_RETURN] = 0;
 			command = false;
@@ -6098,7 +6083,7 @@ int main(int argc, char** argv)
 				}
 			}
 			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
-			handleEvents();
+			bool ranframes = handleEvents();
 			DebugStats.t2PostEvents = std::chrono::high_resolution_clock::now();
 			// handle steam callbacks
 #ifdef STEAMWORKS
@@ -6720,10 +6705,11 @@ int main(int argc, char** argv)
 				players[i]->GUI.clearHoveringOverModuleButton();
 			}
 
-			Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
-			Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
-			mousestatus[SDL_BUTTON_WHEELUP] = 0;
-			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+			if (ranframes)
+			{
+				Input::mouseButtons[Input::MOUSE_WHEEL_UP] = false;
+				Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = false;
+			}
 
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 

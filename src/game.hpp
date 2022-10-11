@@ -37,7 +37,7 @@ extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
 extern int reversemouse;
 extern real_t mousespeed;
 
-void handleEvents(void);
+bool handleEvents(void);
 void startMessages();
 
 // net packet send
@@ -224,7 +224,6 @@ void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
 void deinitGame();
-Uint32 timerCallback(Uint32 interval, void* param);
 void handleButtons(void);
 void gameLogic(void);
 

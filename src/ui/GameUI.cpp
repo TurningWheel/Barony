@@ -2569,19 +2569,6 @@ void updateAllyFollowerFrame(const int player)
 				followerDisplay.scrollSetpoint = 0;
 				followerDisplay.scrollAnimateX = followerDisplay.scrollSetpoint;
 			}
-			/*if ( inputs.bPlayerUsingKeyboardControl(player) )
-			{
-				if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
-				{
-					Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
-					followerDisplay.scrollSetpoint = std::max(followerDisplay.scrollSetpoint + 1, 0);
-				}
-				if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
-				{
-					Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
-					followerDisplay.scrollSetpoint = std::max(followerDisplay.scrollSetpoint - 1, 0);
-				}
-			}*/
 		}
 		else
 		{
@@ -26786,32 +26773,29 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			if ( !inputs.getUIInteraction(player.playernum)->selectedItem
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 			{
+				auto& input = Input::inputs[player.playernum];
 				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 				{
-					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
+					if ( input.consumeBinaryToggle("MenuMouseWheelDown") )
 					{
-						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					}
-					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
+					if ( input.consumeBinaryToggle("MenuMouseWheelUp") )
 					{
-						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
 				}
 
-				if ( Input::inputs[player.playernum].binaryToggle("MenuScrollDown") )
+				if ( input.consumeBinaryToggle("MenuScrollDown") )
 				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollDown");
 					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 					{
 						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 					}
 				}
-				else if ( Input::inputs[player.playernum].binaryToggle("MenuScrollUp") )
+				else if ( input.consumeBinaryToggle("MenuScrollUp") )
 				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollUp");
 					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 					{
@@ -27405,103 +27389,6 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 			}
 		}
 	}
-
-	/*int lowestItemY = getNumItemsToDisplayVertical() - 1;
-	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
-	{
-		Item* item = (Item*)node->element;
-		if ( !item ) { continue; }
-		if ( itemCategory(item) == SPELL_CAT ) { continue; }
-
-		lowestItemY = std::max(lowestItemY, item->y);
-	}
-
-	int scrollAmount = std::max((lowestItemY + 1) - (getNumItemsToDisplayVertical()), 0) * player.inventoryUI.getSlotSize();
-	if ( scrollAmount == 0 )
-	{
-		slider->setDisabled(true);
-	}
-	else
-	{
-		slider->setDisabled(false);
-	}
-
-	currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
-
-	if ( bOpen && isInteractable )
-	{
-		// do sliders
-		if ( !slider->isDisabled() )
-		{
-			if ( !inputs.getUIInteraction(player.playernum)->selectedItem
-				&& player.GUI.activeModule == Player::GUI_t::MODULE_CHEST )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
-				{
-					if ( Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] )
-					{
-						Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = 0;
-						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
-					}
-					if ( Input::mouseButtons[Input::MOUSE_WHEEL_UP] )
-					{
-						Input::mouseButtons[Input::MOUSE_WHEEL_UP] = 0;
-						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-					}
-				}
-				if ( Input::inputs[player.playernum].binaryToggle("MenuScrollDown") )
-				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollDown");
-					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
-				}
-				else if ( Input::inputs[player.playernum].binaryToggle("MenuScrollUp") )
-				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuScrollUp");
-					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-				}
-			}
-		}
-
-		scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
-		currentScrollRow = scrollSetpoint / player.inventoryUI.getSlotSize();
-
-		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
-		{
-			isInteractable = false;
-			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-			real_t setpointDiff = 0.0;
-			if ( scrollSetpoint - scrollAnimateX > 0.0 )
-			{
-				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
-			}
-			else
-			{
-				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
-			}
-			scrollAnimateX += setpointDiff;
-			if ( setpointDiff > 0.0 )
-			{
-				scrollAnimateX = std::min((real_t)scrollSetpoint, scrollAnimateX);
-			}
-			else
-			{
-				scrollAnimateX = std::max((real_t)scrollSetpoint, scrollAnimateX);
-			}
-		}
-		else
-		{
-			scrollAnimateX = scrollSetpoint;
-		}
-	}
-
-	if ( scrollAmount > 0 )
-	{
-		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
-	}
-	else
-	{
-		slider->setValue(0.0);
-	}*/
 
 	SDL_Rect actualSize = chestSlotsFrame->getActualSize();
 	actualSize.y = scrollAnimateX;

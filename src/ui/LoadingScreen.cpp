@@ -140,7 +140,7 @@ void doLoadingScreen() {
 	}
 
 	const Uint32 oldTicks = loadingticks;
-	handleEvents();
+	(void)handleEvents();
 	if (oldTicks != loadingticks) {
 		// find spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget"); assert(spinning_widget);
