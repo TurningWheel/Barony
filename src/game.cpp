@@ -3495,6 +3495,12 @@ void handleEvents(void)
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			ImGui_ImplSDL2_ProcessEvent(&event);
+		}
+#endif
 		// Global events
 		switch ( event.type )
 		{
@@ -3734,6 +3740,12 @@ void handleEvents(void)
 				if (demo_mode == DemoMode::PLAYING) {
 					break;
 				}
+#ifdef USE_IMGUI
+				if ( ImGui_t::requestingMouse() )
+				{
+					break;
+				}
+#endif // USE_IMGUI
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
 				Input::mouseButtons[event.button.button] = 1;
 				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
@@ -3761,6 +3773,12 @@ void handleEvents(void)
 			    if (demo_mode == DemoMode::PLAYING) {
 			        break;
 			    }
+#ifdef USE_IMGUI
+				if ( ImGui_t::requestingMouse() )
+				{
+					break;
+				}
+#endif // USE_IMGUI
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
@@ -4637,6 +4655,15 @@ void ingameHud()
 		{
 			players[player]->bControlEnabled = true;
 		}
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			if ( ImGui_t::disablePlayerControl && player == clientnum )
+			{
+				players[player]->bControlEnabled = false;
+			}
+		}
+#endif
 		bool& bControlEnabled = players[player]->bControlEnabled;
 
 	    Input& input = Input::inputs[player];
@@ -6073,6 +6100,25 @@ int main(int argc, char** argv)
 			lastGameTickCount = SDL_GetPerformanceCounter();
 			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
 
+#ifdef USE_IMGUI
+			if ( ImGui_t::queueInit )
+			{
+				ImGui_t::queueInit = false;
+				if ( !ImGui_t::isInit )
+				{
+					ImGui_t::init();
+				}
+			}
+			if ( ImGui_t::queueDeinit )
+			{
+				ImGui_t::queueDeinit = false;
+				if ( ImGui_t::isInit )
+				{
+					ImGui_t::deinit();
+				}
+			}
+#endif
+
 			doConsoleCommands();
 
 			// game logic
@@ -6113,6 +6159,10 @@ int main(int argc, char** argv)
 #endif // USE_EOS
 
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
+
+#ifdef USE_IMGUI
+			ImGui_t::update();
+#endif
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
@@ -6285,6 +6335,10 @@ int main(int argc, char** argv)
 						}
 
                         framesProcResult = doFrames();
+
+#ifdef USE_IMGUI
+						ImGui_t::render();
+#endif
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
@@ -6510,7 +6564,7 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-                framesProcResult = doFrames();
+				framesProcResult = doFrames();
 				ingameHud();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
@@ -6565,6 +6619,10 @@ int main(int argc, char** argv)
 				{
 					UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 				}
+
+#ifdef USE_IMGUI
+				ImGui_t::render();
+#endif
 
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{

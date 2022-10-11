@@ -4107,4 +4107,23 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
 		}
 	});
+
+	static ConsoleCommand ccmd_imgui("/devmenu", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			ImGui_t::queueDeinit = true;
+		}
+		else
+		{
+			ImGui_t::queueInit = true;
+		}
+#endif
+	});
 }

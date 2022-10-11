@@ -647,7 +647,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS;USE_THEORA_VIDEO</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;STEAMWORKS;USE_THEORA_VIDEO;USE_IMGUI</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <UndefinePreprocessorDefinitions>
@@ -743,7 +743,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);USE_EOS; USE_IMGUI; USE_THEORA_VIDEO</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <UndefinePreprocessorDefinitions>
@@ -805,7 +805,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;%(PreprocessorDefinitions);USE_EOS;USE_IMGUI</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <UndefinePreprocessorDefinitions>
@@ -1118,6 +1118,13 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\engine\audio\music.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound_game.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_impl_sdl.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\..\src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\..\src\input.cpp" />
     <ClCompile Include="..\..\src\interface\ui_general.cpp" />
     <ClCompile Include="..\..\src\lobbies.cpp" />
@@ -1228,6 +1235,16 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\engine\audio\music_pc.hpp" />
     <ClInclude Include="..\..\src\engine\audio\sound.hpp" />
     <ClInclude Include="..\..\src\engine\filepc.hpp" />
+    <ClInclude Include="..\..\src\imgui\imconfig.h" />
+    <ClInclude Include="..\..\src\imgui\imgui.h" />
+    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl2.h" />
+    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\..\src\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\..\src\imgui\imgui_impl_sdl.h" />
+    <ClInclude Include="..\..\src\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\src\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\src\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\src\imgui\imstb_truetype.h" />
     <ClInclude Include="..\..\src\init.hpp" />
     <ClInclude Include="..\..\src\input.hpp" />
     <ClInclude Include="..\..\src\interface\consolecommand.hpp" />
