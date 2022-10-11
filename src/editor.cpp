@@ -46,7 +46,7 @@ bool duplicatedSprite = false;
 int game = 0;
 // function prototypes
 Uint32 timerCallback(Uint32 interval, void* param);
-void handleEvents(void);
+bool handleEvents(void);
 void mainLogic(void);
 std::vector<Entity*> groupedEntities;
 bool moveSelectionNegativeX = false;
@@ -677,7 +677,7 @@ void handleButtons(void)
 
 -------------------------------------------------------------------------------*/
 
-void handleEvents(void)
+bool handleEvents(void)
 {
 	real_t d;
 	int j;
@@ -880,6 +880,8 @@ void handleEvents(void)
 		ocamx = camx;
 		ocamy = camy;
 	}
+
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1971,7 +1973,7 @@ int main(int argc, char** argv)
 	while (mainloop)
 	{
 		// game logic
-		handleEvents();
+		(void)handleEvents();
 
 #ifdef STEAMWORKS
 		SteamAPI_RunCallbacks();
