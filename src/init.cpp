@@ -232,9 +232,7 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #endif
 	Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
-#ifndef NINTENDO
 	init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
-#endif
 	if (SDL_Init(init_flags) == -1)
 	{
 		printlog("failed to initialize SDL: %s\n", SDL_GetError());

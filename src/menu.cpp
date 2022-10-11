@@ -7291,9 +7291,10 @@ void handleMainMenu(bool mode)
 					{
 						switch ( g_SteamWorkshop->createItemResult.m_eResult )
 						{
-							case 0:
-								ttfPrintTextFormatted(ttf12, status_padx, status_pady, "creating item...");
-								break;
+							// causes a warning so this code is disabled for now
+							//case 0:
+							//	ttfPrintTextFormatted(ttf12, status_padx, status_pady, "creating item...");
+							//	break;
 							case k_EResultOK:
 								if ( gamemods_uploadStatus < 2 )
 								{

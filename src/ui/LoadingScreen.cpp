@@ -116,12 +116,12 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 
 void createLoadingScreen(real_t progress) {
     const char* image;
-    switch (local_rng.rand()%3) {
+    switch (local_rng.uniform(0, 3)) {
     default:
     case 0: image = "#images/ui/LoadingScreen/backdrop0.png"; break;
     case 1: image = "#images/ui/LoadingScreen/backdrop1.png"; break;
-    case 2: image = "#images/ui/LoadingScreen/backdrop4.png"; break;
-    //case 3: image = "#images/ui/LoadingScreen/backdrop2.png"; break;
+    case 2: image = "#images/ui/LoadingScreen/backdrop2.png"; break;
+    case 3: image = "#images/ui/LoadingScreen/backdrop4.png"; break;
     //case 4: image = "#images/ui/LoadingScreen/backdrop3.png"; break;
     }
     baseCreateLoadingScreen(progress, image);
@@ -140,7 +140,7 @@ void doLoadingScreen() {
 	}
 
 	const Uint32 oldTicks = loadingticks;
-	handleEvents();
+	(void)handleEvents();
 	if (oldTicks != loadingticks) {
 		// find spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget"); assert(spinning_widget);

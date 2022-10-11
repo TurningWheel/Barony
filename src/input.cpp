@@ -189,117 +189,85 @@ void Input::defaultBindings() {
 }
 
 float Input::analog(const char* binding) const {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].analog(binding);
+	}
     if (disabled) { return 0.f; }
 	auto b = bindings.find(binding);
 	return b != bindings.end() ? (*b).second.analog : 0.f;
 }
 
 bool Input::binary(const char* binding) const {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].binary(binding);
+	}
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binary : false;
+	if (b == bindings.end()) {
+		return false;
+	} else {
+		auto& bind = b->second;
+		return bind.binary;
+	}
+	//return b != bindings.end() ? (*b).second.binary : false;
 }
 
 bool Input::binaryToggle(const char* binding) const {
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
-}
-
-bool Input::analogToggle(const char* binding) const {
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed : false;
-}
-
-bool Input::binaryReleaseToggle(const char* binding) const {
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end() ? (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed : false;
-}
-
-bool Input::consumeAnalog(const char* binding) {
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && !(*b).second.analogConsumed ) {
-		(*b).second.analogConsumed = true;
-		return disabled == false;
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].binaryToggle(binding);
 	}
-	else {
+    if (disabled) { return false; }
+	auto b = bindings.find(binding);
+	if (b == bindings.end()) {
 		return false;
+	} else {
+		auto& bind = b->second;
+		return bind.binary && !bind.consumed;
 	}
+	//return b != bindings.end() ? (*b).second.binary && !(*b).second.consumed : false;
 }
 
 bool Input::consumeBinary(const char* binding) {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].consumeBinary(binding);
+	}
 	auto b = bindings.find(binding);
 	if (b != bindings.end() && !(*b).second.consumed) {
 		(*b).second.consumed = true;
-		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
-			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
-				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
-		{
-			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
-		}
 		return disabled == false;
 	} else {
-		return false;
-	}
-}
-
-bool Input::consumeAnalogToggle(const char* binding) {
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && (*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed ) {
-		(*b).second.analogConsumed = true;
-		return disabled == false;
-	}
-	else {
 		return false;
 	}
 }
 
 bool Input::consumeBinaryToggle(const char* binding) {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].consumeBinaryToggle(binding);
+	}
 	auto b = bindings.find(binding);
 	if (b != bindings.end() && (*b).second.binary && !(*b).second.consumed) {
 		(*b).second.consumed = true;
-		if ( (*b).second.type == binding_t::bindtype_t::MOUSE_BUTTON
-			&& ((*b).second.mouseButton == MOUSE_WHEEL_DOWN
-				|| (*b).second.mouseButton == MOUSE_WHEEL_UP) )
-		{
-			mouseButtons[(*b).second.mouseButton] = false; // manually need to clear this
-		}
 		return disabled == false;
 	} else {
 		return false;
 	}
 }
 
-bool Input::consumeBinaryReleaseToggle(const char* binding) {
-	auto b = bindings.find(binding);
-	if ( b != bindings.end() && (*b).second.binaryRelease && !(*b).second.binaryReleaseConsumed ) {
-		(*b).second.binaryReleaseConsumed = true;
-		return disabled == false;
-	}
-	else {
-		return false;
-	}
-}
-
 bool Input::binaryHeldToggle(const char* binding) const {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].binaryHeldToggle(binding);
+	}
     if (disabled) { return false; }
 	auto b = bindings.find(binding);
 	return b != bindings.end() 
-		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.binaryHeldTicks) > BUTTON_HELD_TICKS)
-		: false;
-}
-
-bool Input::analogHeldToggle(const char* binding) const {
-    if (disabled) { return false; }
-	auto b = bindings.find(binding);
-	return b != bindings.end()
-		? ((*b).second.analog > analogToggleThreshold && !(*b).second.analogConsumed && (ticks - (*b).second.analogHeldTicks) > BUTTON_HELD_TICKS)
+		? ((*b).second.binary && !(*b).second.consumed && (ticks - (*b).second.heldTicks) > BUTTON_HELD_TICKS)
 		: false;
 }
 
 const char* Input::binding(const char* binding) const {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].binding(binding);
+	}
 	auto b = bindings.find(binding);
 	return b != bindings.end() ? (*b).second.input.c_str() : "";
 }
@@ -312,14 +280,14 @@ void Input::refresh() {
 	{
 		bind(binding.first.c_str(), binding.second.c_str());
 	}
-	if ( ::inputs.bPlayerUsingKeyboardControl(player) )
+	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD )
 	{
 	    for (auto& binding : getKeyboardBindings() )
 	    {
 		    bind(binding.first.c_str(), binding.second.c_str());
 	    }
 	}
-	if ( ::inputs.hasController(player) )
+	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_CONTROLLER )
 	{
 		for ( auto& binding : gamepad_system_bindings )
 		{
@@ -342,7 +310,7 @@ void Input::refresh() {
 			bind(binding.first.c_str(), (prefix + binding.second).c_str());
 		}
 	}
-	if ( false /*::inputs.hasJoystick(player)*/ )
+	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_JOYSTICK )
 	{
 		for ( auto& binding : joystick_system_bindings )
 		{
@@ -360,6 +328,9 @@ void Input::refresh() {
 }
 
 Input::binding_t Input::input(const char* binding) const {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].input(binding);
+	}
 	auto b = bindings.find(binding);
 	return b != bindings.end() ? (*b).second : Input::binding_t();
 }
@@ -388,19 +359,19 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 #ifdef NINTENDO
 	if (in == "ButtonA")
 	{
-		return rootPath + "G_Switch_A00.png";
+		return rootPath + "Button_Xbox_DarkA_00.png";
     }
 	if (in == "ButtonB")
 	{
-		return rootPath + "G_Switch_B00.png";
+		return rootPath + "Button_Xbox_DarkB_00.png";
     }
 	if (in == "ButtonX")
 	{
-		return rootPath + "G_Switch_X00.png";
+		return rootPath + "Button_Xbox_DarkX_00.png";
     }
 	if (in == "ButtonY")
 	{
-		return rootPath + "G_Switch_Y00.png";
+		return rootPath + "Button_Xbox_DarkY_00.png";
     }
 	if (in == "ButtonLeftBumper")
 	{
@@ -538,19 +509,47 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	}
 	if (in == "DpadY-")
 	{
-		return rootPath + "G_Up00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Up_Press00.png";
+		}
     }
 	if (in == "DpadX-")
 	{
-		return rootPath + "G_Left00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Left_Press00.png";
+		}
     }
 	if (in == "DpadY+")
 	{
-		return rootPath + "G_Down00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Down_Press00.png";
+		}
     }
 	if (in == "DpadX+")
 	{
-		return rootPath + "G_Right00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Right_Press00.png";
+		}
     }
 #else
 	if (in == "ButtonA")
@@ -705,19 +704,47 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	}
 	if (in == "DpadY-")
 	{
-		return rootPath + "G_Up00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Up_Press00.png";
+		}
     }
 	if (in == "DpadX-")
 	{
-		return rootPath + "G_Left00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Left_Press00.png";
+		}
     }
 	if (in == "DpadY+")
 	{
-		return rootPath + "G_Down00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Down_Press00.png";
+		}
     }
 	if (in == "DpadX+")
 	{
-		return rootPath + "G_Right00.png";
+		if (pressed)
+		{
+			return rootPath + "G_Direct_00.png";
+		}
+		else
+		{
+			return rootPath + "G_Direct_Right_Press00.png";
+		}
     }
 #endif
 	if (in == "Mouse1")
@@ -792,7 +819,7 @@ std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) con
 	return getGlyphPathForBinding(input(binding), pressed);
 }
 
-std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed) const
+std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed)
 {
 	std::string rootPath = "images/ui/Glyphs/";
 	if ( binding.type == binding_t::bindtype_t::CONTROLLER_BUTTON )
@@ -801,13 +828,13 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 		switch ( binding.padButton )
 		{
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "G_Switch_B00.png";
+				return rootPath + "Button_Xbox_DarkB_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-				return rootPath + "G_Switch_A00.png";
+				return rootPath + "Button_Xbox_DarkA_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "G_Switch_Y00.png";
+				return rootPath + "Button_Xbox_DarkY_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-				return rootPath + "G_Switch_X00.png";
+				return rootPath + "Button_Xbox_DarkX_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 				return rootPath + "G_Switch_L00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
@@ -835,13 +862,41 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
 				return rootPath + "MinusMed00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				return rootPath + "G_Up00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Up_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				return rootPath + "G_Left00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Left_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				return rootPath + "G_Down00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Down_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				return rootPath + "G_Right00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Right_Press00.png";
+				}
 			default:
 				return "";
 		}
@@ -883,13 +938,41 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
 				return rootPath + "Button_Xbox_View_00.png";
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				return rootPath + "G_Up00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Up_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				return rootPath + "G_Left00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Left_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				return rootPath + "G_Down00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Down_Press00.png";
+				}
 			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				return rootPath + "G_Right00.png";
+				if (pressed)
+				{
+					return rootPath + "G_Direct_00.png";
+				}
+				else
+				{
+					return rootPath + "G_Direct_Right_Press00.png";
+				}
 			default:
 				return "";
 		}
@@ -1335,71 +1418,20 @@ void Input::bind(const char* binding, const char* input) {
 void Input::update() {
 	for (auto& pair : bindings) {
 		auto& binding = pair.second;
-		float oldAnalog = binding.analog;
+		const float oldAnalog = binding.analog;
 		binding.analog = analogOf(binding);
-		bool oldBinary = binding.binary;
+		const bool oldBinary = binding.binary;
 		binding.binary = binaryOf(binding);
 		if (oldBinary != binding.binary) {
-			// unconsume the input whenever it's released or pressed again.
-			if ( oldBinary && !binding.binary && !binding.consumed )
-			{
-				// detected a 'rising' edge of the binding being released
-				binding.binaryRelease = true;
-			}
-			else
-			{
-				binding.binaryRelease = false;
-			}
-
-			binding.binaryReleaseConsumed = false;
-			if (!binding.binary) {
+			if (binding.binary) {
+				if (binding.heldTicks == 0) {
+					binding.heldTicks = ticks; // start the held detection counter
+				}
+			} else {
 			    binding.consumed = false;
-			}
-
-			if ( binding.binary && binding.binaryHeldTicks == 0 )
-			{
-				// start the held detection counter
-				binding.binaryHeldTicks = ticks;
-			}
-			else if ( !binding.binary )
-			{
-				// button not pressed, reset the held counter
-				binding.binaryHeldTicks = 0;
+				binding.heldTicks = 0; // button not pressed, reset the held counter
 			}
 		}
-		
-		const bool analogHigh = binding.analog > analogToggleThreshold;
-		if ( (oldAnalog <= analogToggleThreshold && analogHigh)
-			|| (oldAnalog > analogToggleThreshold && !analogHigh))
-		{
-			binding.analogConsumed = false;
-			if ( analogHigh && binding.analogHeldTicks == 0 )
-			{
-				// start the held detection counter
-				binding.analogHeldTicks = ticks;
-			}
-			else if ( !analogHigh )
-			{
-				// button not pressed, reset the held counter
-				binding.analogHeldTicks = 0;
-			}
-		}
-		else if ( analogHigh )
-		{
-			if ( binding.analogConsumed && (ticks - binding.analogHeldTicks) > BUTTON_ANALOG_REPEAT_TICKS )
-			{
-				binding.analogConsumed = false;
-				binding.analogHeldTicks = ticks;
-			}
-		}
-	}
-}
-
-void Input::updateReleasedBindings()
-{
-	for ( auto& pair : bindings ) 
-	{
-		pair.second.binaryReleaseConsumed = true;
 	}
 }
 
@@ -1614,6 +1646,9 @@ SDL_Scancode Input::getScancodeFromName(const char* name) {
 
 Input::playerControlType_t Input::getPlayerControlType()
 {
+	if (multiplayer != SINGLE && player != 0) {
+		return inputs[0].getPlayerControlType();
+	}
 #ifndef EDITOR
 	if ( ::inputs.hasController(player) )
 	{
@@ -1629,6 +1664,10 @@ Input::playerControlType_t Input::getPlayerControlType()
 
 void Input::consumeBindingsSharedWithBinding(const char* binding)
 {
+	if (multiplayer != SINGLE && player != 0) {
+		inputs[0].consumeBindingsSharedWithBinding(binding);
+		return;
+	}
 #ifndef EDITOR
 	if ( disabled )
 	{
@@ -1702,11 +1741,6 @@ void Input::consumeBindingsSharedWithBinding(const char* binding)
 				if ( b.second.mouseButton == checkBinding.second.mouseButton )
 				{
 					b.second.consumed = true;
-					if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
-						|| b.second.mouseButton == MOUSE_WHEEL_UP )
-					{
-						mouseButtons[b.second.mouseButton] = false; // manually need to clear this
-					}
 				}
 			}
 			else if ( b.second.type == binding_t::KEYBOARD )
@@ -1723,6 +1757,10 @@ void Input::consumeBindingsSharedWithBinding(const char* binding)
 
 void Input::consumeBindingsSharedWithFaceHotbar()
 {
+	if (multiplayer != SINGLE && player != 0) {
+		inputs[0].consumeBindingsSharedWithFaceHotbar();
+		return;
+	}
 #ifndef EDITOR
 	if ( disabled )
 	{
@@ -1809,11 +1847,6 @@ void Input::consumeBindingsSharedWithFaceHotbar()
 							if ( b.second.mouseButton == faceMenuBinding.second.mouseButton )
 							{
 								b.second.consumed = true;
-								if ( b.second.mouseButton == MOUSE_WHEEL_DOWN
-									|| b.second.mouseButton == MOUSE_WHEEL_UP )
-								{
-									mouseButtons[b.second.mouseButton] = false; // manually need to clear this
-								}
 							}
 						}
 						else if ( b.second.type == binding_t::KEYBOARD ) 

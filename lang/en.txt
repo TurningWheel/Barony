@@ -730,11 +730,11 @@ thou makest use of them.#
 
 # Easter egg messages
 
-478 "NO WAY! stop fucking clones and minecraft for casual child gamer."#
-479 "icherednoy 'minecraft'"#
-480 "looks like it was made in minecraft"#
-481 "The textures are lawsuitingly-close to Minecraft."#
-482 "Sigh.. another Mineshit bullshit. Fuck no."#
+478 This would be useful in another sort of game.#
+479 You feel like mining and crafting, then it passes.#
+480 This strange tool does not belong in this world.#
+481 You aren't crafting something, so you don't need this.#
+482 Lesser minds think this belongs to our universe.#
 
 
 # Gold

@@ -340,7 +340,6 @@ public:
 	void	setBorder(const int _border) { border = _border; }
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(SDL_Rect _size) { size = _size; }
-	void	setActualSize(SDL_Rect _actualSize) { actualSize = _actualSize; allowScrolling = true; scrollInertiaX = 0.f; scrollInertiaY = 0.f; }
 	void	setBorderStyle(int _borderStyle) { borderStyle = static_cast<border_style_t>(_borderStyle); }
 	void	setHigh(bool b) { borderStyle = b ? BORDER_BEVEL_HIGH : BORDER_BEVEL_LOW; }
 	void	setColor(const Uint32& _color) { color = _color; }
@@ -362,6 +361,19 @@ public:
 	void    setEntrySize(int _size) { entrySize = _size; }
 	void    setActivation(entry_t* entry) { activation = entry; }
 	void    setScrollWithLeftControls(const bool b) { scrollWithLeftControls = b; }
+
+	void setActualSize(SDL_Rect _actualSize) {
+		allowScrolling = true;
+		actualSize = _actualSize;
+		scrollX -= (int)scrollX;
+		scrollY -= (int)scrollY;
+		scrollX += actualSize.x;
+		scrollY += actualSize.y;
+		scrollVelocityX = 0.f;
+		scrollVelocityY = 0.f;
+		scrollAccelerationX = 0.f;
+		scrollAccelerationY = 0.f;
+	}
 
 private:
 	Uint32 ticks = 0;									//!< number of engine ticks this frame has persisted
@@ -394,8 +406,12 @@ private:
 	bool inheritParentFrameOpacity = true;				//!< if true, uses parent frame opacity
 	justify_t justify = justify_t::LEFT;				//!< frame list horizontal justification
 	bool clickable = false;								//!< if true, you can activate the frame by clicking on it (used for lists)
-	real_t scrollInertiaX = 0.0;						//!< scroll inertia x
-	real_t scrollInertiaY = 0.0;						//!< scroll inertia y
+	real_t scrollX = 0.0;								//!< scroll x
+	real_t scrollY = 0.0;								//!< scroll y
+	real_t scrollVelocityX = 0.0;						//!< scroll velocity x
+	real_t scrollVelocityY = 0.0;						//!< scroll velocity y
+	real_t scrollAccelerationX = 0.0;					//!< scroll acceleration x
+	real_t scrollAccelerationY = 0.0;					//!< scroll acceleration y
 	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
 	int entrySize = 0;                                  //!< the height of every entry in the list (if 0, derived from font instead)
 	bool scrollWithLeftControls = true;                 //!< if true, left stick and left d-pad can scroll the frame if no items can be selected

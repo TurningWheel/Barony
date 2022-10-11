@@ -32,18 +32,10 @@ public:
 	//! input mapping
 	struct binding_t {
 		std::string input = "";
-		float analog = 0.f;
-		bool binary = false;
-		bool consumed = false;
-
-		bool analogConsumed = false;
-		bool analogHeld = false;
-		Uint32 analogHeldTicks = 0; // tick when the binding was pressed
-
-		Uint32 binaryHeldTicks = 0; // tick when the binding was pressed
-		bool binaryHeld = false; // if the current binding is held
-		bool binaryRelease = false; // to detect when a button is lifted
-		bool binaryReleaseConsumed = false; // to detect when a button is lifted + consumed
+		float analog = 0.f; // input power [0.0 - 1.0]
+		bool binary = false; // input is "active" (ie button is pressed or not)
+		bool consumed = false; // input is "consumed" (ie it has been used for an action)
+		Uint32 heldTicks = 0; // tick when the binding was first activated
 
 		//! bind type
 		enum bindtype_t {
@@ -131,37 +123,22 @@ public:
 	//! @param binding the binding to query
 	//! @return the bool value (false = not pressed, true = pressed)
 	bool binaryToggle(const char* binding) const;
-	bool analogToggle(const char* binding) const;
 
 	//! consume an input action no matter what
 	//! @param binding the binding to be consumed
 	//! @return true if the toggle was consumed (ie the button was pressed)
 	bool consumeBinary(const char* binding);
-	bool consumeAnalog(const char* binding);
 
 	//! consume an input action, if it is being pressed
 	//! @param binding the binding to be consumed
 	//! @return true if the toggle was consumed (ie the button was pressed)
 	bool consumeBinaryToggle(const char* binding);
-	bool consumeAnalogToggle(const char* binding);
-
-	//! gets the 'released' binary value of a particular input binding, if it's not been consumed
-	//! pressing the input and rereleasing it "unconsumes"
-	//! @param binding the binding to query
-	//! @return the bool value (false = pressed/untouched, true = released)
-	bool binaryReleaseToggle(const char* binding) const;
-
-	//! consume an input release action
-	//! @param binding the binding to be consumed
-	//! @return true if the toggle was consumed (ie the button was released)
-	bool consumeBinaryReleaseToggle(const char* binding);
 
 	//! gets the 'held' button value of a particular input binding, if it's not been consumed
 	//! requires the button to be held for 'BUTTON_HELD_TICKS' to return true
 	//! @param binding the binding to query
 	//! @return the bool value (false = not pressed, true = pressed for greater than tick time)
 	bool binaryHeldToggle(const char* binding) const;
-	bool analogHeldToggle(const char* binding) const;
 
 	//! gets the input mapped to a particular input binding
 	//! @param binding the binding to query
@@ -179,8 +156,8 @@ public:
 	//! updates the state of all current bindings from the physical devices
 	void update();
 
-	//! updates released button binding status after gameLogic() has been run
-	void updateReleasedBindings();
+	//! updates the state of release consumed variable on bindings (needs to happen exactly once per game tick)
+	void updateReleaseConsumed();
 
 	//! if true, Y axis for mouse/gamepads/joysticks is inverted
 	bool inverted = false;
@@ -191,7 +168,7 @@ public:
     static const char* getKeyboardGlyph();
     static const char* getControllerGlyph();
 	static std::string getGlyphPathForInput(const char* input, bool pressed = false);
-	std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false) const;
+	static std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false);
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;
 
 	static float getJoystickRebindingDeadzone() { return rebinding_deadzone; }

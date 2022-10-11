@@ -2408,7 +2408,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 sprite = (Sint16)SDLNet_Read16(&net_packet->data[10]);
 		Entity* gib = spawnGibClient(x, y, z, sprite);
 		gib->flags[SPRITE] = net_packet->data[12];
-		if ( !spawn_blood && (!gib->flags[SPRITE] || gib->sprite != 29) )
+		if ( !spawn_blood && !gib->flags[SPRITE] && gib->sprite != 5 )
 		{
 			gib->flags[INVISIBLE] = true;
 		}
@@ -2953,15 +2953,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		playSoundPos(
 		    SDLNet_Read32(&net_packet->data[4]),
 		    SDLNet_Read32(&net_packet->data[8]),
-		    SDLNet_Read32(&net_packet->data[12]),
-		    SDLNet_Read32(&net_packet->data[16]));
+		    SDLNet_Read16(&net_packet->data[12]),
+		    (Uint8)net_packet->data[14]);
 	}},
 
 	// play sound global
 	{'SNDG', [](){
 		playSound(
-		    SDLNet_Read32(&net_packet->data[4]),
-		    SDLNet_Read32(&net_packet->data[8]));
+		    SDLNet_Read16(&net_packet->data[4]),
+		    (Uint8)net_packet->data[6]);
 	}},
 
 	// play sound entity local

@@ -345,7 +345,7 @@ void succubusDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 71, 256);
+	playSoundEntity(my, 71, 255);
 
 	my->removeMonsterDeathNodes();
 

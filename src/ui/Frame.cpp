@@ -1014,19 +1014,21 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		}
 	}
 
+	const real_t timeFactor = 1.0 / (real_t)fpsLimit;
+
 	// scroll with right stick
 	if (result.usable && allowScrolling && allowScrollBinds) {
 		Input& input = Input::inputs[owner];
 
+		const float speed = 1000.0 * timeFactor;
+
 		// x scroll
 		if (this->actualSize.w > size.w) {
-			if (input.binary("MenuScrollRight")) {
-				this->actualSize.x += std::min(this->actualSize.x + 5, this->actualSize.w - _size.w);
-				result.usable = false;
-		        syncScroll();
-			}
-			else if (input.binary("MenuScrollLeft")) {
-				this->actualSize.x -= std::max(this->actualSize.x - 5, 0);
+			const float power = input.analog("MenuScrollRight") - input.analog("MenuScrollLeft");
+			if (power) {
+				scrollX = std::min(std::max(0.0, scrollX + speed * power),
+					(real_t)(this->actualSize.w - _size.w));
+				this->actualSize.x = scrollX;
 				result.usable = false;
 		        syncScroll();
 			}
@@ -1034,13 +1036,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 		// y scroll
 		if (this->actualSize.h > size.h) {
-			if (input.binary("MenuScrollDown")) {
-				this->actualSize.y = std::min(this->actualSize.y + 5, this->actualSize.h - _size.h);
-				result.usable = false;
-		        syncScroll();
-			}
-			else if (input.binary("MenuScrollUp")) {
-				this->actualSize.y = std::max(this->actualSize.y - 5, 0);
+			const float power = input.analog("MenuScrollDown") - input.analog("MenuScrollUp");
+			if (power) {
+				scrollY = std::min(std::max(0.0, scrollY + speed * power),
+					(real_t)(this->actualSize.h - _size.h));
+				this->actualSize.y = scrollY;
 				result.usable = false;
 		        syncScroll();
 			}
@@ -1049,15 +1049,25 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 	const bool mouseActive = isMouseActive(owner);
 
+#ifndef EDITOR
+	static ConsoleVariable<float> cvar_scrollFriction("/scroll_friction", 10.0);
+	static ConsoleVariable<float> cvar_scrollSpeed("/scroll_speed", 50000.0);
+	const real_t scrollFriction = *cvar_scrollFriction * timeFactor;
+	const real_t scrollSpeed = *cvar_scrollSpeed * timeFactor;
+#else
+	const real_t scrollFriction = 10.0 * timeFactor;
+	const real_t scrollSpeed = 50000.0 * timeFactor;
+#endif
+
 	// scroll with mouse wheel
 	if (parent != nullptr && !hollow && mouseActive && rectContainsPoint(fullSize, omousex, omousey) && result.usable) {
 		bool mwheeldown = false;
 		bool mwheelup = false;
 		if (allowScrolling && allowScrollBinds) {
-			if (input.consumeBinaryToggle("MenuMouseWheelDown")) {
+			if (input.binaryToggle("MenuMouseWheelDown")) {
 				mwheeldown = true;
 			}
-			if (input.consumeBinaryToggle("MenuMouseWheelUp")) {
+			if (input.binaryToggle("MenuMouseWheelUp")) {
 				mwheelup = true;
 			}
 			if (mwheeldown || mwheelup) {
@@ -1067,10 +1077,10 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				if (this->actualSize.w > size.w) {
 					if (this->actualSize.h <= size.h) {
 						if (mwheeldown) {
-							scrollInertiaX += .15;
+							scrollAccelerationX += scrollSpeed;
 						}
 						if (mwheelup) {
-							scrollInertiaX -= .15;
+							scrollAccelerationX -= scrollSpeed;
 						}
 					}
 				}
@@ -1078,48 +1088,53 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				// y scroll with mouse wheel
 				if (this->actualSize.h > size.h) {
 					if (mwheeldown) {
-						scrollInertiaY += .15;
+						scrollAccelerationY += scrollSpeed;
 					}
 					if (mwheelup) {
-						scrollInertiaY -= .15;
+						scrollAccelerationY -= scrollSpeed;
 					}
 				}
 			}
 		}
 	}
 
-    if (scrollInertiaX) {
-	    this->actualSize.x += scrollInertiaX * entrySize * 2;
-		this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-			std::max(0, this->actualSize.w - _size.w));
-	    syncScroll();
-	}
-	if (scrollInertiaY) {
-	    this->actualSize.y += scrollInertiaY * entrySize * 2;
-		this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-			std::max(0, this->actualSize.h - _size.h));
+	scrollVelocityX -= scrollVelocityX * std::min(1.0, scrollFriction);
+	scrollVelocityX += scrollAccelerationX * timeFactor;
+	scrollAccelerationX = 0.0;
+    if (scrollVelocityX) {
+	    scrollX += scrollVelocityX;
+		const real_t oldScrollX = scrollX;
+		scrollX = std::min(std::max(0.0, scrollX),
+			std::max(0.0, (real_t)(this->actualSize.w - _size.w)));
+		if (oldScrollX != scrollX) {
+			scrollVelocityX = 0.0;
+		}
+		this->actualSize.x = scrollX;
 	    syncScroll();
 	}
 
-	if (fabs(scrollInertiaX) > 0.0) {
-		scrollInertiaX *= .9;
-		if (fabs(scrollInertiaX) < 0.01) {
-			scrollInertiaX = 0.0;
+	scrollVelocityY -= scrollVelocityY * std::min(1.0, scrollFriction);
+	scrollVelocityY += scrollAccelerationY * timeFactor;
+	scrollAccelerationY = 0.0;
+	if (scrollVelocityY) {
+	    scrollY += scrollVelocityY;
+		const real_t oldScrollY = scrollY;
+		scrollY = std::min(std::max(0.0, scrollY),
+			std::max(0.0, (real_t)(this->actualSize.h - _size.h)));
+		if (oldScrollY != scrollY) {
+			scrollVelocityY = 0.0;
 		}
-	}
-
-	if (fabs(scrollInertiaY) > 0.0) {
-		scrollInertiaY *= .9;
-		if (fabs(scrollInertiaY) < 0.01) {
-			scrollInertiaY = 0.0;
-		}
+		this->actualSize.y = scrollY;
+	    syncScroll();
 	}
 
 	if ((scrollbars || allowScrollBinds) && allowScrolling) {
-		this->actualSize.x = std::min(std::max(0, this->actualSize.x),
-			std::max(0, this->actualSize.w - _size.w));
-		this->actualSize.y = std::min(std::max(0, this->actualSize.y),
-			std::max(0, this->actualSize.h - _size.h));
+		scrollX = std::min(std::max(0.0, scrollX),
+			std::max(0.0, (real_t)(this->actualSize.w - _size.w)));
+		this->actualSize.x = scrollX;
+		scrollY = std::min(std::max(0.0, scrollY),
+			std::max(0.0, (real_t)(this->actualSize.h - _size.h)));
+		this->actualSize.y = scrollY;
 	}
 
 	bool clicked = false;
@@ -1171,6 +1186,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					float winFactor = ((float)_size.w / (float)this->actualSize.w);
 					this->actualSize.x = (mousex - omousex) / winFactor + oldSliderX;
 					this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
+					scrollX = this->actualSize.x;
 					syncScroll();
 				}
 				result.usable = false;
@@ -1182,7 +1198,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 						oldSliderX = this->actualSize.x;
 					}
 					result.usable = false;
-					ticks = -1; // hack to fix sliders in drop downs
+					ticks = -1; // hack to fix sliders in drop.15 *  downs
 				} else if ( mouseActive && rectContainsPoint(sliderRect, omousex, omousey) ) {
 					if (mousestatus[SDL_BUTTON_LEFT]) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1190,6 +1206,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					if (clicked) {
 						this->actualSize.x += omousex < handleRect.x ? -std::min(entrySize, size.w) : std::min(entrySize, size.w);
 						this->actualSize.x = std::min(std::max(0, this->actualSize.x), std::max(0, this->actualSize.w - _size.w));
+						scrollX = this->actualSize.x;
 					    syncScroll();
 					}
 					result.usable = false;
@@ -1227,6 +1244,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					float winFactor = ((float)_size.h / (float)this->actualSize.h);
 					this->actualSize.y = (mousey - omousey) / winFactor + oldSliderY;
 					this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
+					scrollY = this->actualSize.y;
 					syncScroll();
 				}
 				result.usable = false;
@@ -1246,6 +1264,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 					if (clicked) {
 						this->actualSize.y += omousey < handleRect.y ? -std::min(entrySize, size.h) : std::min(entrySize, size.h);
 						this->actualSize.y = std::min(std::max(0, this->actualSize.y), std::max(0, this->actualSize.h - _size.h));
+						scrollY = this->actualSize.y;
 					    syncScroll();
 					}
 					result.usable = false;
@@ -1342,11 +1361,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		// x scroll
 		if (this->actualSize.w > size.w) {
 			if (input.binaryToggle("MenuRight") || input.binaryToggle("AltMenuRight")) {
-				scrollInertiaX += .15;
+				scrollAccelerationX += scrollSpeed;
 				result.usable = false;
 			}
 			else if (input.binaryToggle("MenuLeft") || input.binaryToggle("AltMenuLeft")) {
-				scrollInertiaX -= .15;
+				scrollAccelerationX -= scrollSpeed;
 				result.usable = false;
 			}
 		}
@@ -1354,11 +1373,11 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 		// y scroll
 		if (this->actualSize.h > size.h) {
 			if (input.binaryToggle("MenuDown") || input.binaryToggle("AltMenuDown")) {
-				scrollInertiaY += .15;
+				scrollAccelerationY += scrollSpeed;
 				result.usable = false;
 			}
 			else if (input.binaryToggle("MenuUp") || input.binaryToggle("AltMenuUp")) {
-				scrollInertiaY -= .15;
+				scrollAccelerationY -= scrollSpeed;
 				result.usable = false;
 			}
 		}
@@ -2045,10 +2064,12 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 	if (scroll_to_top || actualSize.y > index * entrySize) {
 		actualSize.y = index * entrySize;
 		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
+		scrollY = actualSize.y;
 	}
 	if (actualSize.y + size.h < (index + 1) * entrySize) {
 		actualSize.y = (index + 1) * entrySize - size.h;
 		actualSize.y = std::min(std::max(0, actualSize.y), std::max(0, actualSize.h - size.h));
+		scrollY = actualSize.y;
 	}
 	syncScroll();
 }

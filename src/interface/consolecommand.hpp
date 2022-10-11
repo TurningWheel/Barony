@@ -1,11 +1,11 @@
 /*-------------------------------------------------------------------------------
 
-	BARONY
-	File: consolecommand.hpp
-	Desc: console command class
+    BARONY
+    File: consolecommand.hpp
+    Desc: console command class
 
-	Copyright 2022 (c) Turning Wheel LLC, all rights reserved.
-	See LICENSE for details.
+    Copyright 2022 (c) Turning Wheel LLC, all rights reserved.
+    See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
@@ -39,17 +39,11 @@ struct Vector4 {
  * They can be defined anywhere.
  */
 
-typedef void (*const ccmd_function)(int argc, const char **argv);
+typedef void (* const ccmd_function)(int argc, const char** argv);
 
 class ConsoleCommand {
 public:
-    ConsoleCommand(const char* _name, const char* _desc, const ccmd_function _func) :
-        name(_name),
-        desc(_desc),
-        func(_func)
-    {
-        add_to_map();
-    }
+    ConsoleCommand(const char* _name, const char* _desc, const ccmd_function _func);
 
     const char* const name;
     const char* const desc;
@@ -89,14 +83,8 @@ private:
 template<typename T = std::string>
 class ConsoleVariable : ConsoleCommand {
 public:
-    ConsoleVariable(const char* _name, const T& _default, const char* _desc = ""):
-        ConsoleCommand(_name, _desc, &ConsoleVariable::setter)
-    {
-        add_to_map();
-        data = _default;
-    }
+    ConsoleVariable(const char* _name, const T& _default, const char* _desc = "");
 
-    void operator=(const char* arg);
     T& operator*() {
         return data;
     }
@@ -107,17 +95,9 @@ public:
     T data;
 
 private:
-    static void setter(int argc, const char** argv);
+    void set(const char* arg);
     void add_to_map();
+    static void setter(int argc, const char** argv);
     using cvar_map_t = std::map<std::string, ConsoleVariable<T>&>;
     static cvar_map_t& getConsoleVariables();
 };
-
-// Valid ConsoleVariable types:
-#ifndef __clang__
-extern template class ConsoleVariable<std::string>;
-extern template class ConsoleVariable<int>;
-extern template class ConsoleVariable<float>;
-extern template class ConsoleVariable<bool>;
-extern template class ConsoleVariable<Vector4>;
-#endif
