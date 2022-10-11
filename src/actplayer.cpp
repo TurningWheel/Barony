@@ -71,9 +71,16 @@ void actDeathCam(Entity* my)
 	DEATHCAM_TIME++;
 
 	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND : TICKS_PER_SECOND * 6;
-	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+	if ( !*MainMenu::cvar_fastRestart )
 	{
-		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
+		{
+			deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
+		}
+		else if ( splitscreen )
+		{
+			deathcamGameoverPromptTicks = TICKS_PER_SECOND;
+		}
 	}
 
 	real_t mousex_relative = mousexrel;
