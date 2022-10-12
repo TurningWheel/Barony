@@ -26776,11 +26776,11 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 				auto& input = Input::inputs[player.playernum];
 				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 				{
-					if ( input.consumeBinaryToggle("MenuMouseWheelDown") )
+					if ( input.binaryToggle("MenuMouseWheelDown") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					}
-					if ( input.consumeBinaryToggle("MenuMouseWheelUp") )
+					if ( input.binaryToggle("MenuMouseWheelUp") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}

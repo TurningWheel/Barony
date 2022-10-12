@@ -502,6 +502,15 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 		return;
 	}
 
+	for (int c = 0; c < num_banned_books; ++c) {
+		const char* banned_book = banned_books[c];
+		if ( !spawn_blood && getBookNameFromIndex(index, false) == banned_book )
+		{
+			openBook((index + 1) % numbooks, item);
+			return;
+		}
+	}
+
 	player.GUI.previousModule = player.GUI.activeModule;
 
 	players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY, 

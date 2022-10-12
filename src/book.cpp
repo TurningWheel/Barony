@@ -54,11 +54,18 @@ int getBook(std::string bookTitle)
 	return 0;
 }
 
-std::string getBookNameFromIndex(int index)
+std::string getBookNameFromIndex(int index, bool censored)
 {
-	if ( allBooks.empty() || index < 0 || index >= allBooks.size() )
-	{
+	if (allBooks.empty() || index < 0 || index >= allBooks.size()) {
 		return "";
+	}
+	if (!spawn_blood && censored) {
+		for (int c = 0; c < num_banned_books; ++c) {
+			auto banned_book = banned_books[c];
+			if (allBooks[index].name == banned_book) {
+				return getBookNameFromIndex((index + 1) % allBooks.size(), censored);
+			}
+		}
 	}
 	return allBooks[index].name;
 }

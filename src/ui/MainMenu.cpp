@@ -491,6 +491,7 @@ namespace MainMenu {
 	static void mainEditor(Button&);
 	static void mainClose(Button&);
 	static void mainEndLife(Button&);
+	static void mainDropOut(Button&);
 	static void mainRestartGame(Button&);
 	static void mainReturnToHallofTrials(Button&);
 	static void mainQuitToMainMenu(Button&);
@@ -4764,6 +4765,7 @@ bind_failed:
 			char buf[128];
 			(void)fmod_system->getDriverInfo(c, buf, sizeof(buf), &d.guid,
 				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
+			memcpy(buf + 32, "...", 4); // long names get truncated
 			snprintf(d.name, sizeof(d.name), "%d: %s", c, buf);
 			drivers.push_back(d);
 		}
@@ -8603,6 +8605,11 @@ bind_failed:
 				else {
 					stats[index]->appearance = 0;
 				}
+				if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+					// perhaps the class is not valid for this race.
+					// if so, change the class to the default (Barbarian)
+					client_classes[index] = 0;
+				}
 			} else {
 				auto other_button = frame->findButton(race);
 				if (other_button) {
@@ -11010,7 +11017,7 @@ bind_failed:
 		class_info->addWidgetAction("MenuAlt2", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
-		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		if (details) {
 		    switch (index) {
 		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, false, class_selection[0]);}); break;
@@ -13469,7 +13476,7 @@ bind_failed:
 #endif
 
 	    // create new window
-	    textPrompt("lobby_list_request", "Requesting lobby list...",
+	    cancellablePrompt("lobby_list_request", "Requesting lobby list...", "Cancel",
 	        [](Widget& widget){
 #if defined(STEAMWORKS)
 #if defined(USE_EOS)
@@ -13520,7 +13527,24 @@ bind_failed:
 	            }
 #endif
             }
-	        });
+			},
+			[](Button&){ // cancel
+#if defined(STEAMWORKS)
+				requestingLobbies = false;
+#endif
+#if defined(USE_EOS)
+            	EOS.bRequestingLobbies = false;
+#endif
+
+                // lobby list has returned
+                closePrompt("lobby_list_request");
+				
+				// select names list
+				assert(main_menu_frame);
+				auto lobby_browser_window = main_menu_frame->findFrame("lobby_browser_window"); assert(lobby_browser_window);
+				auto names = lobby_browser_window->findFrame("names"); assert(names);
+				names->select();
+			});
 
         // request new lobbies
 	    LobbyHandler.selectedLobbyInList = 0;
@@ -16595,6 +16619,28 @@ bind_failed:
 			});
 	}
 
+	static void mainDropOut(Button& button) {
+	    const char* prompt = "Do you want to drop out?\nThis player will be lost forever.";
+		binaryPrompt(
+			prompt, // window text
+			"Okay", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				client_disconnected[getMenuOwner()] = true;
+				soundActivate();
+				closeMainMenu();
+				setupSplitscreen();
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				Button* quit_button = buttons->findButton("Drop Out"); assert(quit_button);
+				quit_button->select();
+			    closeBinary();
+			});
+	}
+
 	static void mainRestartGame(Button& button) {
 	    const char* prompt;
 	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
@@ -16965,6 +17011,7 @@ bind_failed:
 				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
 				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
 				doNewGame(false);
+				setupSplitscreen();
 			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;
@@ -17059,10 +17106,6 @@ bind_failed:
             resolution_changed = false;
         }
 
-		if (fadeout && fadealpha >= 255) {
-            handleFadeFinished(ingame);
-        }
-
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie) {
@@ -17114,6 +17157,20 @@ bind_failed:
             if (!inputs.hasController(getMenuOwner())) {
                 Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
+        }
+
+		// hide mouse if we're driving around with a controller
+		auto vmouse = inputs.getVirtualMouse(getMenuOwner());
+		auto cmouse = inputs.getVirtualMouse(clientnum);
+		if (vmouse->lastMovementFromController && cmouse->draw_cursor) {
+			cmouse->draw_cursor = false;
+		}
+		if (vmouse->lastMovementFromController && vmouse->draw_cursor) {
+			vmouse->draw_cursor = false;
+		}
+
+		if (fadeout && fadealpha >= 255) {
+            handleFadeFinished(ingame);
         }
 	}
 
@@ -17258,6 +17315,9 @@ bind_failed:
 		    auto button = static_cast<Button*>(&widget);
             button->setColor(newColor);
             button->setHighlightColor(newColor);
+			if (!widget.isSelected()) {
+				widget.select();
+			}
 		    });
 		button->select();
 
@@ -17389,6 +17449,12 @@ bind_failed:
 			auto notification = main_menu_frame->addFrame("notification");
 			notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
 			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
+			notification->setTickCallback([](Widget& widget){
+				assert(main_menu_frame);
+				auto dimmer = main_menu_frame->findFrame("dimmer");
+				widget.setInvisible(dimmer != nullptr);
+				});
+
 			y += notification->getSize().h;
 			y += 16;
 		}
@@ -17410,7 +17476,14 @@ bind_failed:
 			    options.insert(options.end(), {
 				    {"End Life", "END LIFE", mainEndLife},
 				    });
-				if (multiplayer != CLIENT) {
+				if (splitscreen && getMenuOwner() != clientnum) {
+					// in splitscreen games, everyone but the first player can drop out of the game.
+			        options.insert(options.end(), {
+				        {"Drop Out", "DROP OUT", mainDropOut},
+				        });
+				}
+				if (multiplayer == SERVER || (multiplayer == SINGLE && getMenuOwner() == clientnum)) {
+					// only the first player has the power to restart the game.
 			        options.insert(options.end(), {
 				        {"Restart Game", "RESTART GAME", mainRestartGame},
 				        });
@@ -17606,6 +17679,11 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
+			banners->setTickCallback([](Widget& widget){
+				assert(main_menu_frame);
+				auto dimmer = main_menu_frame->findFrame("dimmer");
+				widget.setInvisible(dimmer != nullptr);
+				});
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -18171,6 +18249,10 @@ bind_failed:
             destroyMainMenu();
             createDummyMainMenu();
         }
+
+		if (!main_menu_frame) {
+			return;
+		}
 
 		Frame* old_prompt;
         old_prompt = main_menu_frame->findFrame("controller_prompt");

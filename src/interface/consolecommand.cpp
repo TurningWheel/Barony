@@ -1934,6 +1934,9 @@ namespace ConsoleCommands {
 				intro = oldIntro;
 			}
 		}
+		for (auto& input : Input::inputs) {
+			input.refresh();
+		}
 		});
 
 	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", "", []CCMD{
