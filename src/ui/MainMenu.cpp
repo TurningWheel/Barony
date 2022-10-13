@@ -11806,12 +11806,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto start = card->addField("start", 128);
@@ -12064,12 +12074,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto invite = card->addButton("invite_button");
@@ -12118,12 +12138,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto text = card->addField("text", 128);
@@ -12234,12 +12264,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		// name needs to be updated constantly in case it gets updated over the net
@@ -13136,13 +13176,23 @@ bind_failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-                switch (c) {
-                default: field->setColor(uint32ColorPlayerX); break;
-                case 0: field->setColor(uint32ColorPlayer1); break;
-		        case 1: field->setColor(uint32ColorPlayer2); break;
-		        case 2: field->setColor(uint32ColorPlayer3); break;
-		        case 3: field->setColor(uint32ColorPlayer4); break;
-                }
+				if (colorblind) {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX_colorblind); break;
+					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+					}
+				} else {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX); break;
+					case 0: field->setColor(uint32ColorPlayer1); break;
+					case 1: field->setColor(uint32ColorPlayer2); break;
+					case 2: field->setColor(uint32ColorPlayer3); break;
+					case 3: field->setColor(uint32ColorPlayer4); break;
+					}
+				}
                 ++num;
 	        }
 	    }
@@ -18393,13 +18443,23 @@ bind_failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-                switch (c) {
-                default: field->setColor(uint32ColorPlayerX); break;
-                case 0: field->setColor(uint32ColorPlayer1); break;
-		        case 1: field->setColor(uint32ColorPlayer2); break;
-		        case 2: field->setColor(uint32ColorPlayer3); break;
-		        case 3: field->setColor(uint32ColorPlayer4); break;
-                }
+				if (colorblind) {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX_colorblind); break;
+					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+					}
+				} else {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX); break;
+					case 0: field->setColor(uint32ColorPlayer1); break;
+					case 1: field->setColor(uint32ColorPlayer2); break;
+					case 2: field->setColor(uint32ColorPlayer3); break;
+					case 3: field->setColor(uint32ColorPlayer4); break;
+					}
+				}
                 ++num;
 	        }
 	    }

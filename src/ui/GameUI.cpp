@@ -7215,13 +7215,23 @@ void Player::HUD_t::processHUD()
         field->setJustify(Field::justify_t::CENTER);
         field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
         field->setFont(bigfont_outline);
+		if (colorblind) {
         switch (player.playernum) {
-        default: field->setColor(uint32ColorPlayerX); break;
+        case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+		case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+		case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+		case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+        default: field->setColor(uint32ColorPlayerX_colorblind); break;
+        }
+		} else {
+        switch (player.playernum) {
         case 0: field->setColor(uint32ColorPlayer1); break;
 		case 1: field->setColor(uint32ColorPlayer2); break;
 		case 2: field->setColor(uint32ColorPlayer3); break;
 		case 3: field->setColor(uint32ColorPlayer4); break;
+        default: field->setColor(uint32ColorPlayerX); break;
         }
+		}
     }
 
     controllerFrame->setSize(hudSize);

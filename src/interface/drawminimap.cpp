@@ -339,14 +339,23 @@ void drawMinimap(const int player, SDL_Rect rect)
 
 					// set color
 		            Uint32 color;
-			        switch ( ping.player )
-			        {
-				        case 0: color = uint32ColorPlayer1; break;
-				        case 1: color = uint32ColorPlayer2; break;
-				        case 2: color = uint32ColorPlayer3; break;
-				        case 3: color = uint32ColorPlayer4; break;
-				        default: color = uint32ColorPlayerX; break;
-			        }
+					if (colorblind) {
+						switch (ping.player) {
+						case 0: color = uint32ColorPlayer1_colorblind; break;
+						case 1: color = uint32ColorPlayer2_colorblind; break;
+						case 2: color = uint32ColorPlayer3_colorblind; break;
+						case 3: color = uint32ColorPlayer4_colorblind; break;
+						default: color = uint32ColorPlayerX_colorblind; break;
+						}
+					} else {
+						switch (ping.player) {
+						case 0: color = uint32ColorPlayer1; break;
+						case 1: color = uint32ColorPlayer2; break;
+						case 2: color = uint32ColorPlayer3; break;
+						case 3: color = uint32ColorPlayer4; break;
+						default: color = uint32ColorPlayerX; break;
+						}
+					}
 			        uint8_t r, g, b, a;
 			        getColor(color, &r, &g, &b, &a);
 			        color = makeColor(r, g, b, alpha);
@@ -404,20 +413,33 @@ void drawMinimap(const int player, SDL_Rect rect)
 		if ( drawMonsterAlly >= 0 || foundplayer >= 0 || entity->sprite == 239)
 		{
 			Uint32 color = 0;
+			Uint32 color_edge = 0;
 			if ( foundplayer >= 0 ) {
+				color_edge = uint32ColorWhite;
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
 					color = uint32ColorPlayerX; // grey
 				} else {
-		            switch ( foundplayer ) {
-			            case 0: color = uint32ColorPlayer1; break;
-			            case 1: color = uint32ColorPlayer2; break;
-			            case 2: color = uint32ColorPlayer3; break;
-			            case 3: color = uint32ColorPlayer4; break;
-			            default: color = uint32ColorPlayerX; break;
-		            }
+					if (colorblind) {
+						switch (foundplayer) {
+						case 0: color = uint32ColorPlayer1_colorblind; break;
+						case 1: color = uint32ColorPlayer2_colorblind; break;
+						case 2: color = uint32ColorPlayer3_colorblind; break;
+						case 3: color = uint32ColorPlayer4_colorblind; break;
+						default: color = uint32ColorPlayerX_colorblind; break;
+						}
+					} else {
+						switch (foundplayer) {
+						case 0: color = uint32ColorPlayer1; break;
+						case 1: color = uint32ColorPlayer2; break;
+						case 2: color = uint32ColorPlayer3; break;
+						case 3: color = uint32ColorPlayer4; break;
+						default: color = uint32ColorPlayerX; break;
+						}
+					}
 		        }
 			} else if ( entity->sprite == 239 ) {
+				color_edge = uint32ColorBlack;
 			    if (!players[player] || !players[player]->entity) {
 			        continue;
 			    }
@@ -432,6 +454,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 				}
 				color = makeColor(255, 0, 0, 255);
 			} else {
+				color_edge = uint32ColorGray;
 				if ( players[player] && players[player]->entity
 					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
 					color = uint32ColorPlayerX_Ally; // grey
@@ -446,32 +469,68 @@ void drawMinimap(const int player, SDL_Rect rect)
 				}
 			}
 
-            const real_t zoom = entity->sprite == 239 ?
-                minimapObjectZoom / 50.0:
-                minimapObjectZoom / 100.0;
-            const real_t x = ((entity->x / 16.0) - xmin) * unitX + rect.x;
-            const real_t y = ((entity->y / 16.0) - ymin) * unitY + rect.y;
-            const real_t ang = entity->yaw;
+			static ConsoleVariable<bool> cvar_brightTriangles("/minimap_bright_triangles", false);
+			static ConsoleVariable<bool> cvar_outlineTriangles("/minimap_outline_triangles", false);
 
-            const real_t v[][2] = {
-                {  1.0,  0.0 },
-                { -0.5, -0.5 },
-                { -0.5,  0.5 },
-            };
-            const int num_vertices = sizeof(v) / sizeof(v[0]);
+			auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
+				const int windowLCD = std::min(rect.w, rect.h);
+				const int windowGCD = std::max(rect.w, rect.h);
+				const int mapLCD = std::min(map.width, map.height);
+				const int mapGCD = std::max(map.width, map.height);
+				const int xmin = ((int)map.width - mapGCD) / 2;
+				const int ymin = ((int)map.height - mapGCD) / 2;
+				const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+				const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+           		const real_t zoom = minimapObjectZoom / 100.0 * size;
+				x = (x - xmin) * unitX + rect.x;
+				y = (y - ymin) * unitY + rect.y;
 
-			Uint8 r, g, b, a;
-			getColor(color, &r, &g, &b, &a);
-			glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	        glBegin(GL_TRIANGLES);
-	        for (int c = 0; c < num_vertices; ++c) {
-	            const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
-	            const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
-	            const real_t sx = vx * unitX * zoom;
-	            const real_t sy = vy * unitY * zoom;
-	            glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-	        }
-	        glEnd();
+				const real_t v[][2] = {
+					{  1.0,  0.0 },
+					{  0.0,  0.0 },
+					{ -0.5,  0.5 },
+
+					{  1.0,  0.0 },
+					{ -0.5, -0.5 },
+					{  0.0,  0.0 },
+
+					{  0.0,  0.0 },
+					{ -0.5, -0.5 },
+					{ -0.5,  0.5 },
+				};
+				const int num_vertices = sizeof(v) / sizeof(v[0]);
+
+				Uint8 r, g, b, a;
+				getColor(color, &r, &g, &b, &a);
+				glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+				glBegin(GL_TRIANGLES);
+				for (int c = 0; c < num_vertices; ++c) {
+					const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
+					const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
+					const real_t sx = vx * unitX * zoom;
+					const real_t sy = vy * unitY * zoom;
+					if (*cvar_brightTriangles) {
+						if (c == 0 || c == 3) {
+							glColor4f(1.f, 1.f, 1.f, 1.f);
+						} else {
+							glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+						}
+					}
+					glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+				}
+				glEnd();
+			};
+
+			const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
+			const real_t x = entity->x / 16.0;
+			const real_t y = entity->y / 16.0;
+			const real_t ang = entity->yaw;
+			if (*cvar_outlineTriangles) {
+            	drawTriangle(x, y, ang, size, rect, color_edge);
+            	drawTriangle(x, y, ang, size - 0.25, rect, color);
+			} else {
+            	drawTriangle(x, y, ang, size, rect, color);
+			}
 		}
 	}
 
