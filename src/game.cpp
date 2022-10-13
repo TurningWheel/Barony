@@ -4268,8 +4268,9 @@ bool handleEvents(void)
 						mainloop = 0;
 					}
 					if (!intro) {
-						MainMenu::setupSplitscreen();void
+						MainMenu::setupSplitscreen();
 					}
+#else
 					if (!resizeWindow(event.window.data1, event.window.data2))
 					{
 						printlog("critical error! Attempting to abort safely...\n");

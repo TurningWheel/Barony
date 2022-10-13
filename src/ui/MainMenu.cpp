@@ -44,7 +44,7 @@ namespace MainMenu {
 
 	// ALL NEW menu options:
 	int current_audio_device = 0;
-	float master_volume = 100.f;
+	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
     ConsoleVariable<bool> staggered_splitscreen("/split_staggered", true);
@@ -1767,11 +1767,11 @@ namespace MainMenu {
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		current_audio_device = audio_device;
-		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), .5f);
-		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), .5f);
-		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), .5f);
-		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), .5f);
-		musvolume = std::min(std::max(0.f, music_volume / 100.f), .5f);
+		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
+		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
+		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
+		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), 1.f);
+		musvolume = std::min(std::max(0.f, music_volume / 100.f), 1.f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -16847,6 +16847,12 @@ bind_failed:
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
@@ -16865,6 +16871,12 @@ bind_failed:
 				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
 				    saved_invite_lobby = nullptr;
 				}
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
@@ -16877,6 +16889,12 @@ bind_failed:
 				createDummyMainMenu();
 				createCreditsScreen(true);
 	            playMusic(intromusic[0], true, false, false);
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();

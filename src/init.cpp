@@ -2663,7 +2663,7 @@ bool initVideo()
 	    {
 		    flags |= SDL_WINDOW_FULLSCREEN;
 	    }
-	    else if ( borderless )
+	    if ( borderless )
 	    {
 		    flags |= SDL_WINDOW_BORDERLESS;
 	    }
