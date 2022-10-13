@@ -2609,12 +2609,13 @@ bool initVideo()
 
     int screen_x = SDL_WINDOWPOS_CENTERED;
     int screen_y = SDL_WINDOWPOS_CENTERED;
-#ifdef PANDORA
-	int screen_width = 800;
-	int screen_height = 480;
-#else
 	int screen_width = xres;
 	int screen_height = yres;
+#ifdef PANDORA
+	screen_width = 800;
+	screen_height = 480;
+#endif
+
     static const int displays = SDL_GetNumVideoDisplays();
     std::vector<SDL_Rect> displayBounds;
     for( int i = 0; i < displays; i++ ) {
@@ -2623,34 +2624,50 @@ bool initVideo()
     }
     if (display_id >= 0 && display_id < displays) {
         auto& bound = displayBounds[display_id];
-        /*if (borderless && fullscreen) {
-            screen_width = bound.w;
-            screen_height = bound.h;
-        }*/
 #ifdef NINTENDO
+		screen_x = bound.x;
+		screen_y = bound.y;
 		screen_width = bound.w;
 		screen_height = bound.h;
 #else
-        screen_width = std::min(bound.w, screen_width);
-        screen_height = std::min(bound.h, screen_height);
-#endif
         if (fullscreen) {
             screen_x = bound.x;
             screen_y = bound.y;
+			screen_width = bound.w;
+			screen_height = bound.h;
         } else {
             screen_x = bound.x + (bound.w - screen_width) / 2;
             screen_y = bound.y + (bound.h - screen_height) / 2;
+			screen_width = std::min(bound.w, screen_width);
+			screen_height = std::min(bound.h, screen_height);
         }
-    }
 #endif
+    }
     xres = screen_width;
     yres = screen_height;
 
 	printlog("setting display mode to %dx%d on device %d...\n", xres, yres, display_id);
 
+	/*
+
+	2022-10-12
+
+	Fullscreen modes in SDL2 are absolutely broken right now (at least on Linux). We are experiencing:
+
+	- display server crashes when changing video mode (must be reset in a desktop properties window)
+	- severe visual glitches when reverting to windowed mode in fullscreen desktop
+	- fullscreen desktop mode only supports native res - you can't downscale
+	- window can be placed on the wrong display, and on wayland, it can't be moved at all
+	- window size sometimes changes but not actual display mode
+	- window position sometimes wrong, mouse stops at wrong place
+	- huge black bars (display mode or window size changes, but not contents)
+
+	So, "true" fullscreen mode is cancelled on POSIX devices. Thanks SDL.
+
+	*/
+
 	if ( !screen )
 	{
-	    //Uint32 flags = game ? 0 : SDL_WINDOW_RESIZABLE;
 	    Uint32 flags = SDL_WINDOW_RESIZABLE;
 	    flags |= SDL_WINDOW_OPENGL;
 #ifdef PANDORA
@@ -2659,10 +2676,12 @@ bool initVideo()
 #ifdef NINTENDO
     	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
 #else
+#ifdef WINDOWS
 	    if ( fullscreen )
 	    {
 		    flags |= SDL_WINDOW_FULLSCREEN;
 	    }
+#endif
 	    if ( borderless )
 	    {
 		    flags |= SDL_WINDOW_BORDERLESS;
@@ -2676,8 +2695,11 @@ bool initVideo()
 	}
 	else
 	{
+		SDL_RestoreWindow(screen); // if the window is maximized, we need to un-maximize it.
         SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
         SDL_SetWindowPosition(screen, screen_x, screen_y);
+	    SDL_SetWindowSize(screen, screen_width, screen_height);
+#ifdef WINDOWS
 	    if (fullscreen) {
 		    SDL_DisplayMode mode;
             SDL_GetDesktopDisplayMode(display_id, &mode);
@@ -2686,9 +2708,9 @@ bool initVideo()
 		    SDL_SetWindowDisplayMode(screen, &mode);
 	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		} else {
-	        SDL_SetWindowSize(screen, screen_width, screen_height);
 	        SDL_SetWindowFullscreen(screen, 0);
 		}
+#endif
 	}
 
 	if ( !renderer )
