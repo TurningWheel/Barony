@@ -4473,6 +4473,10 @@ bind_failed:
 					if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
 						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
 					}
+#else
+					if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
+						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+					}
 #endif
 				}
 				else if (!bound_button) {

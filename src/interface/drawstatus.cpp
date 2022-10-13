@@ -3099,8 +3099,6 @@ void drawStatusNew(const int player)
 		//Gamepad change hotbar selection.
 		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Right") )
 		{
-			Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Right");
-
 			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Right").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
@@ -3112,18 +3110,21 @@ void drawStatusNew(const int player)
 				&& !players[player]->signGUI.bSignOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
-				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
-				auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
-				if ( slotFrame && slotFrame->isDisabled() )
+				if (hotbar_t.hotbarTooltipLastGameTick != ticks)
 				{
-					// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
 					players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+					auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
+					if ( slotFrame && slotFrame->isDisabled() )
+					{
+						// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+						players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar + 1);
+					}
+					if ( gamepadControl )
+					{
+						warpMouseToSelectedHotbarSlot(player); // controller only functionality
+					}
+					hotbar_t.hotbarTooltipLastGameTick = ticks;
 				}
-				if ( gamepadControl )
-				{
-					warpMouseToSelectedHotbarSlot(player); // controller only functionality
-				}
-				hotbar_t.hotbarTooltipLastGameTick = ticks;
 			}
 			else
 			{
@@ -3132,8 +3133,6 @@ void drawStatusNew(const int player)
 		}
 		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Left") )
 		{
-			Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Left");
-
 			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Left").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
@@ -3145,18 +3144,21 @@ void drawStatusNew(const int player)
 				&& !players[player]->signGUI.bSignOpen
 				&& !GenericGUI[player].isGUIOpen() )
 			{
-				players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
-				auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
-				if ( slotFrame && slotFrame->isDisabled() )
+				if (hotbar_t.hotbarTooltipLastGameTick != ticks)
 				{
-					// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
 					players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
+					auto slotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar);
+					if ( slotFrame && slotFrame->isDisabled() )
+					{
+						// skip this disabled one, move twice. e.g using facebar and 10th slot disabled
+						players[player]->hotbar.selectHotbarSlot(players[player]->hotbar.current_hotbar - 1);
+					}
+					if ( gamepadControl )
+					{
+						warpMouseToSelectedHotbarSlot(player); // controller only functionality
+					}
+					hotbar_t.hotbarTooltipLastGameTick = ticks;
 				}
-				if ( gamepadControl )
-				{
-					warpMouseToSelectedHotbarSlot(player); // controller only functionality
-				}
-				hotbar_t.hotbarTooltipLastGameTick = ticks;
 			}
 			else
 			{
