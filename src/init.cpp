@@ -2586,13 +2586,52 @@ void GO_InitFBO()
 
 -------------------------------------------------------------------------------*/
 
+static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
+{
+	static const int displays = SDL_GetNumVideoDisplays();
+	std::vector<SDL_Rect> displayBounds;
+	for (int i = 0; i < displays; i++) {
+		displayBounds.push_back(SDL_Rect());
+		SDL_GetDisplayBounds(i, &displayBounds.back());
+	}
+	if (display_id >= 0 && display_id < displays) {
+		auto& bound = displayBounds[display_id];
+#ifdef NINTENDO
+		x = bound.x;
+		y = bound.y;
+		w = bound.w;
+		h = bound.h;
+#else
+		if (fullscreen) {
+#ifdef WINDOWS
+			x = bound.x;
+			y = bound.y;
+			w = std::min(bound.w, w);
+			h = std::min(bound.h, h);
+#else
+			x = bound.x;
+			y = bound.y;
+			w = bound.w;
+			h = bound.h;
+#endif
+		}
+		else {
+			x = bound.x + (bound.w - w) / 2;
+			y = bound.y + (bound.h - h) / 2;
+			w = std::min(bound.w, w);
+			h = std::min(bound.h, h);
+		}
+#endif
+	}
+}
+
 bool initVideo()
 {
     if (!renderer) {
 #ifdef NINTENDO
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #else
@@ -2607,8 +2646,9 @@ bool initVideo()
 #endif
     }
 
-    int screen_x = SDL_WINDOWPOS_CENTERED;
-    int screen_y = SDL_WINDOWPOS_CENTERED;
+	// desired screen dimensions + position
+    int screen_x = 0;
+    int screen_y = 0;
 	int screen_width = xres;
 	int screen_height = yres;
 #ifdef PANDORA
@@ -2616,37 +2656,7 @@ bool initVideo()
 	screen_height = 480;
 #endif
 
-    static const int displays = SDL_GetNumVideoDisplays();
-    std::vector<SDL_Rect> displayBounds;
-    for( int i = 0; i < displays; i++ ) {
-        displayBounds.push_back( SDL_Rect() );
-        SDL_GetDisplayBounds( i, &displayBounds.back() );
-    }
-    if (display_id >= 0 && display_id < displays) {
-        auto& bound = displayBounds[display_id];
-#ifdef NINTENDO
-		screen_x = bound.x;
-		screen_y = bound.y;
-		screen_width = bound.w;
-		screen_height = bound.h;
-#else
-        if (fullscreen) {
-            screen_x = bound.x;
-            screen_y = bound.y;
-			screen_width = bound.w;
-			screen_height = bound.h;
-        } else {
-            screen_x = bound.x + (bound.w - screen_width) / 2;
-            screen_y = bound.y + (bound.h - screen_height) / 2;
-			screen_width = std::min(bound.w, screen_width);
-			screen_height = std::min(bound.h, screen_height);
-        }
-#endif
-    }
-    xres = screen_width;
-    yres = screen_height;
-
-	printlog("setting display mode to %dx%d on device %d...\n", xres, yres, display_id);
+	printlog("attempting to set display mode to %dx%d on device %d...", screen_width, screen_height, display_id);
 
 	/*
 
@@ -2687,6 +2697,12 @@ bool initVideo()
 		    flags |= SDL_WINDOW_BORDERLESS;
 	    }
 #endif
+
+		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
+		xres = screen_width;
+		yres = screen_height;
+		printlog("set window size to %dx%d", xres, yres);
+
 		if ((screen = SDL_CreateWindow( window_title, screen_x, screen_y, screen_width, screen_height, flags )) == NULL)
 		{
 			printlog("failed to set video mode.\n");
@@ -2695,20 +2711,26 @@ bool initVideo()
 	}
 	else
 	{
+	    SDL_SetWindowFullscreen(screen, 0);
+
+		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
+		xres = screen_width;
+		yres = screen_height;
+		printlog("set window size to %dx%d", xres, yres);
+
 		SDL_RestoreWindow(screen); // if the window is maximized, we need to un-maximize it.
-        SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
-        SDL_SetWindowPosition(screen, screen_x, screen_y);
-	    SDL_SetWindowSize(screen, screen_width, screen_height);
+		SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
+		SDL_SetWindowPosition(screen, screen_x, screen_y);
+		SDL_SetWindowSize(screen, screen_width, screen_height);
+
 #ifdef WINDOWS
-	    if (fullscreen) {
-		    SDL_DisplayMode mode;
-            SDL_GetDesktopDisplayMode(display_id, &mode);
-            mode.w = screen_width;
-            mode.h = screen_height;
-		    SDL_SetWindowDisplayMode(screen, &mode);
-	        SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
-		} else {
-	        SDL_SetWindowFullscreen(screen, 0);
+		if (fullscreen) {
+			SDL_DisplayMode mode;
+			SDL_GetDesktopDisplayMode(display_id, &mode);
+			mode.w = xres;
+			mode.h = yres;
+			SDL_SetWindowDisplayMode(screen, &mode);
+			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		}
 #endif
 	}

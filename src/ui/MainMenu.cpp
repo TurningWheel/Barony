@@ -17061,6 +17061,7 @@ bind_failed:
             // reset resolution function
 		    static auto resetResolution = [](){
 		        allSettings.video = old_video;
+				allSettings.video.window_mode = 0;
 		        if (allSettings.video.save()) {
 		            int x = std::max(allSettings.video.resolution_x, 1024);
 		            int y = std::max(allSettings.video.resolution_y, 720);
