@@ -7560,13 +7560,13 @@ static Frame* createMinimap(int player) {
         auto& input = Input::inputs[player];
         if ( !gamePaused && players[player]->bControlEnabled 
 			&& !players[player]->usingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
-            if (minimap.real_scale > 75.0) {
+            if (minimap.scale > 75.0) {
                 minimap.real_scale = 75.0;
             }
-            else if (minimap.real_scale > 50.0) {
+            else if (minimap.scale > 50.0) {
                 minimap.real_scale = 50.0;
             }
-            else if (minimap.real_scale > 25.0) {
+            else if (minimap.scale > 25.0) {
                 minimap.real_scale = 25.0;
             }
             else {

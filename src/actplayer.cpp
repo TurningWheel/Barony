@@ -5256,11 +5256,32 @@ void actPlayer(Entity* my)
 							{
 								if ( multiplayer == SINGLE )
 								{
-									deleteSaveGame(multiplayer); // stops save scumming c:
+									// stops save scumming c:
+									if ( !splitscreen )
+									{
+										deleteSaveGame(multiplayer);
+									}
+									else
+									{
+										bool allDead = true;
+										for (int c = 0; c < MAXPLAYERS; ++c)
+										{
+											if (!client_disconnected[c] && stats[c]->HP > 0)
+											{
+												allDead = false;
+												break;
+											}
+										}
+										if (allDead)
+										{
+											deleteSaveGame(multiplayer);
+										}
+									}
 								}
 								else
 								{
-									deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+									// Will only delete save games if was last player alive.
+									deleteMultiplayerSaveGames();
 								}
 							}
 
