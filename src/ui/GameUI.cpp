@@ -7504,7 +7504,7 @@ void doSharedMinimap() {
 			        ++playercount;
 		        }
 	        }
-            if (intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
+            if (gamePaused || intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
 				minimapFrame->setInvisible(true);
             } else {
 				minimapFrame->setInvisible(false);

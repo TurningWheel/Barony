@@ -17550,19 +17550,57 @@ bind_failed:
 		);
 		y += title->pos.h;
 
-		if (!ingame) {
-			auto notification = main_menu_frame->addFrame("notification");
-			notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
-			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-			notification->setTickCallback([](Widget& widget){
-				assert(main_menu_frame);
-				auto dimmer = main_menu_frame->findFrame("dimmer");
-				widget.setInvisible(dimmer != nullptr);
-				});
+		auto notification = main_menu_frame->addFrame("notification");
+		notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
+		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
+		notification->setTickCallback([](Widget& widget){
+			assert(main_menu_frame);
+			auto dimmer = main_menu_frame->findFrame("dimmer");
+			widget.setInvisible(dimmer != nullptr);
+			});
 
-			y += notification->getSize().h;
-			y += 16;
+		if (ingame && splitscreen) {
+			const int player = getMenuOwner();
+			const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
+				Input::getControllerGlyph() : Input::getKeyboardGlyph();
+			auto image = Image::get(path);
+			const int w = image->getWidth();
+			const int h = image->getHeight();
+			const int space = 100;
+			const int x = (notification->getSize().w - w) / 2;
+			const int y = (notification->getSize().h - h) / 2;
+			const std::string name = std::string("player") + std::to_string(player);
+			notification->addImage(
+				SDL_Rect{x, y, w, h},
+				makeColor(255, 255, 255, 255),
+				path, name.c_str());
+
+			auto field = notification->addField(name.c_str(), 16);
+			field->setSize(SDL_Rect{x, y, w, h});
+			field->setJustify(Field::justify_t::CENTER);
+			field->setText((std::string("P") + std::to_string(player + 1)).c_str());
+			field->setFont(bigfont_outline);
+			if (colorblind) {
+				switch (player) {
+				default: field->setColor(uint32ColorPlayerX_colorblind); break;
+				case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+				case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+				case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+				case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+				}
+			} else {
+				switch (player) {
+				default: field->setColor(uint32ColorPlayerX); break;
+				case 0: field->setColor(uint32ColorPlayer1); break;
+				case 1: field->setColor(uint32ColorPlayer2); break;
+				case 2: field->setColor(uint32ColorPlayer3); break;
+				case 3: field->setColor(uint32ColorPlayer4); break;
+				}
+			}
 		}
+
+		y += notification->getSize().h;
+		y += 16;
 
 		struct Option {
 			const char* name;
