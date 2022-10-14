@@ -43,7 +43,7 @@ namespace MainMenu {
 	Frame* main_menu_frame = nullptr;
 
 	// ALL NEW menu options:
-	int current_audio_device = 0;
+	std::string current_audio_device;
 	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
@@ -259,7 +259,7 @@ namespace MainMenu {
 		bool clipped_split_enabled;
 		float fov;
 		float fps;
-		int audio_device;
+		std::string audio_device;
 		float master_volume;
 		float gameplay_volume;
 		float ambient_volume;
@@ -1897,7 +1897,7 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.fov = 60;
 		settings.fps = 60;
-		settings.audio_device = 0;
+		settings.audio_device = "";
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
@@ -2667,11 +2667,22 @@ namespace MainMenu {
 		// update volume for sound groups
 		if (initialized) {
 #ifdef USE_FMOD
-			int num_drivers = 0;
-			fmod_system->getNumDrivers(&num_drivers);
-			current_audio_device = current_audio_device >= num_drivers ?
-				0 : current_audio_device;
-			fmod_system->setDriver(current_audio_device);
+			int selected_driver = 0;
+			int numDrivers = 0;
+			fmod_system->getNumDrivers(&numDrivers);
+			for (int i = 0; i < numDrivers; ++i) {
+				FMOD_GUID guid;
+				fmod_result = fmod_system->getDriverInfo(i, nullptr, 0, &guid, nullptr, nullptr, nullptr);
+
+				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+				char guid_string[25];
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				if (!selected_driver && current_audio_device == guid_string) {
+					selected_driver = i;
+				}
+			}
+			fmod_system->setDriver(selected_driver);
 #endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
@@ -3086,6 +3097,7 @@ namespace MainMenu {
 				entry->text = entry_name;
 				entry->click = entry_func;
 				entry->ctrlClick = entry_func;
+				memcpy(&entry->data, &i, sizeof(i));
 				dropdown_list->resizeForEntries();
 				auto size = dropdown_list->getActualSize();
 				size.h += 14;
@@ -3210,11 +3222,30 @@ namespace MainMenu {
 			});
 	}
 
+#if defined(USE_FMOD)
+	struct AudioDriver {
+		char name[40];
+		FMOD_GUID guid;
+		int system_rate;
+		FMOD_SPEAKERMODE speaker_mode;
+		int speaker_mode_channels;
+	};
+	static std::vector<AudioDriver> audio_drivers;
+
 	static void settingsAudioDevice(Button& button) {
 		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
 			soundActivate();
-			const int new_device = (int)strtol(entry.name.c_str(), nullptr, 10);
-			allSettings.audio_device = new_device;
+
+			// store driver
+			unsigned int index; memcpy(&index, &entry.data, sizeof(index));
+			if (index < audio_drivers.size()) {
+				const auto& driver = audio_drivers[index];
+				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
+				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
+				char guid_string[25];
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				allSettings.audio_device = guid_string;
+			}
 
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -3225,6 +3256,7 @@ namespace MainMenu {
 			button->select();
 			});
 	}
+#endif
 
 	static void settingsWindowMode(Button& button) {
 		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
@@ -4752,36 +4784,36 @@ bind_failed:
 		int y = 0;
 
 #if !defined(NINTENDO) && defined(USE_FMOD)
-		struct AudioDriver {
-			char name[128];
-			FMOD_GUID guid;
-			int system_rate;
-			FMOD_SPEAKERMODE speaker_mode;
-			int speaker_mode_channels;
-		};
-		std::vector<AudioDriver> drivers;
-
+		int selected_device = 0;
 		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
-		drivers.reserve(num_drivers);
+
+		audio_drivers.clear();
+		audio_drivers.reserve(num_drivers);
 		for (int c = 0; c < num_drivers; ++c) {
 			AudioDriver d;
-			char buf[128];
-			(void)fmod_system->getDriverInfo(c, buf, sizeof(buf), &d.guid,
+			(void)fmod_system->getDriverInfo(c, d.name, sizeof(d.name), &d.guid,
 				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
-			memcpy(buf + 32, "...", 4); // long names get truncated
-			snprintf(d.name, sizeof(d.name), "%d: %s", c, buf);
-			drivers.push_back(d);
+			memcpy(d.name + 32, "...", 4); // long names get truncated
+			audio_drivers.push_back(d);
+
+			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
+			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
+			char guid_string[25];
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+			if (!selected_device && allSettings.audio_device == guid_string) {
+				selected_device = c;
+			}
 		}
 		std::vector<const char*> drivers_formatted_ptrs;
 		drivers_formatted_ptrs.reserve(num_drivers);
-		for (auto& d : drivers) {
+		for (auto& d : audio_drivers) {
 			drivers_formatted_ptrs.push_back(d.name);
 		}
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "output", "Output");
 		y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "The output device for all game audio",
-            true, drivers_formatted_ptrs, drivers_formatted_ptrs[allSettings.audio_device],
+            true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
             settingsAudioDevice);
 #endif
 
