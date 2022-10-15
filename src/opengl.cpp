@@ -18,6 +18,8 @@
 #include "ui/GameUI.hpp"
 #include "interface/interface.hpp"
 #include "interface/consolecommand.hpp"
+#include "mod_tools.hpp"
+#include "player.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -1173,10 +1175,121 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	return anyVertexVisible;
 }
 
+void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
+{
+#ifndef EDITOR
+	if ( !worldDialogue )
+	{
+		return;
+	}
+	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t*)worldDialogue;
+	SDL_Surface* sprite = nullptr;
+	if ( !dialogue->dialogueTooltipSurface )
+	{
+		sprite = dialogue->blitDialogueTooltip();
+	}
+	else
+	{
+		sprite = dialogue->dialogueTooltipSurface;
+	}
+	if ( !sprite )
+	{
+		return;
+	}
+	real_t s = 1;
+
+	int player = dialogue->getPlayerNum();
+
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
+
+	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+	GLfloat rotz = 0; // get z rotation
+	glRotatef(rotx, 1, 0, 0); // rotate pitch
+	glRotatef(roty, 0, 1, 0); // rotate yaw
+	glRotatef(rotz, 0, 0, 1); // rotate roll
+	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPushMatrix();
+	if ( mode == REALCOLORS )
+	{
+		glEnable(GL_BLEND);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+
+	// assign texture
+	TempTexture* tex = nullptr;
+	tex = new TempTexture();
+	if ( sprite ) {
+		tex->load(sprite, false, true);
+		if ( mode == REALCOLORS )
+		{
+			tex->bind();
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
+
+	// translate sprite and rotate towards camera
+	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
+	glTranslatef(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2);
+	real_t tangent = 180 - camera->ang * (180 / PI);
+	glRotatef(tangent, 0, 1, 0);
+
+	real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
+	glRotatef(tangent2, 0, 0, 1);
+
+	glScalef(0.1f, 0.1f, 0.1f);
+
+	glDepthRange(0, .6);
+
+	// get shade factor
+	glColor4f(1.f, 1.f, 1.f, dialogue->alpha);
+
+
+	// draw quad
+	if ( sprite ) {
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex3f(0, sprite->h / 2, sprite->w / 2);
+		glTexCoord2f(0, 1);
+		glVertex3f(0, -sprite->h / 2, sprite->w / 2);
+		glTexCoord2f(1, 1);
+		glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
+		glTexCoord2f(1, 0);
+		glVertex3f(0, sprite->h / 2, -sprite->w / 2);
+		glEnd();
+		glPopMatrix();
+	}
+
+	glDepthRange(0, 1);
+	glDisable(GL_ALPHA_TEST);
+
+	if ( tex ) {
+		delete tex;
+		tex = nullptr;
+	}
+#endif
+}
+
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
 #ifndef EDITOR
-	SDL_Surface* sprite = nullptr;
 	real_t s = 1;
 
 	if ( !entity )
@@ -1256,6 +1369,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	}
 
 	// assign texture
+	SDL_Surface* sprite = nullptr;
 	TempTexture* tex = nullptr;
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
@@ -1270,142 +1384,12 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 				return;
 			}
 
-			SDL_Rect tooltip;
-			tooltip.h = TTF12_HEIGHT * 4 + 8;
-			tooltip.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
-			tooltip.w = std::max(20 * TTF12_WIDTH + 8, tooltip.w);
-			if ( parent->behavior == &actItem )
-			{
-				sprite = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, makeColor( 0, 0, 0, 255));
-				SDL_LockSurface(sprite);
+			sprite = players[player]->worldUI.worldTooltipItem.blitItemWorldTooltip(item);
 
-				for ( int x = 0; x < sprite->w; x++ )
-				{
-					Uint32 color = makeColor( 0, 192, 255, 255);
-					putPixel(sprite, x, 0, color);
-					putPixel(sprite, x, sprite->h - 1, color);
-				}
-				for ( int y = 0; y < sprite->h; y++ )
-				{
-					Uint32 color = makeColor( 0, 192, 255, 255);
-					putPixel(sprite, 0, y, color);
-					putPixel(sprite, sprite->w - 1, y, color);
-				}
-			}
-			else
-			{
-				sprite = SDL_CreateRGBSurface(0, 320, 32, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-				SDL_FillRect(sprite, nullptr, makeColor( 0, 0, 0, 0));
-				SDL_LockSurface(sprite);
-			}
-			SDL_UnlockSurface(sprite);
-
-			node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-			if ( !node )
-			{
-				return;
-			}
-			SDL_Rect pos;
-			pos.w = 48;
-			pos.h = 48;
-			pos.x = tooltip.w - pos.w - 8;
-			pos.y = TTF12_HEIGHT;
-			SDL_Surface** itemSurf = static_cast<SDL_Surface**>(node->element);
-			SDL_BlitScaled(*itemSurf, nullptr, sprite, &pos);
-
-			GLuint itemTexid = 0;
-			SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
-			if ( textSurf )
-			{
-				pos.x = 4;
-				pos.y = 0;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-			char buf[256] = "";
-			if ( !item->identified )
-			{
-				textSurf = glTextSurface(language[309], &itemTexid);
-				if ( textSurf )
-				{
-					pos.y += TTF12_HEIGHT;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
-			}
-			else
-			{
-				if ( item->beatitude < 0 )
-				{
-					textSurf = glTextSurface(language[310], &itemTexid);
-				}
-				else if ( item->beatitude > 0 )
-				{
-					textSurf = glTextSurface(language[312], &itemTexid);
-				}
-				else
-				{
-					textSurf = glTextSurface(language[311], &itemTexid);
-				}
-				if ( textSurf )
-				{
-					pos.y += TTF12_HEIGHT;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				}
-			}
-
-			snprintf(buf, 255, language[313], items[item->type].weight);
-			textSurf = glTextSurface(buf, &itemTexid);
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
-			snprintf(buf, 255, language[314], item->sellValue(player));
-			textSurf = glTextSurface(buf, &itemTexid);
-			if ( textSurf )
-			{
-				pos.y += TTF12_HEIGHT;
-				SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-			}
 			free(item);
 			item = nullptr;
 		}
-		if ( static_cast<Sint32>(entity->getUID()) == -21 )
-		{
-			GLuint tmpTextid = 0;
-			SDL_Rect pos;
-			pos.x = 0;
-			pos.y = 0;
-			pos.w = 64;
-			pos.h = 64;
-			if ( parent->behavior == &actItem )
-			{
-				//SDL_Surface* textSurf = glTextSurface("Press use to pick up!", &tmpTextid);
-				//if ( textSurf )
-				//{
-				//	pos.x = 32 + 16;
-				//	pos.y += 32;
-				//	if ( multiplayer == CLIENT && parent->itemReceivedDetailsFromServer == 0 )
-				//	{
-				//		// no details yet.
-				//		pos.y -= 24;
-				//	}
-				//	SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-				//}
-			}
-			/*else
-			{
-				SDL_Surface* textSurf = glTextSurface("Press use to interact!", &tmpTextid);
-				if ( textSurf )
-				{
-					pos.x = 32 + 16;
-					pos.y += 8;
-					SDL_BlitSurface(textSurf, nullptr, sprite, &pos);
-					SDL_BlitSurface(selected_glyph_bmp, nullptr, sprite, &pos);
-				}
-			}*/
-		}
-		//
+
 		tex = new TempTexture();
 		if (sprite) {
 		    tex->load(sprite, false, true);
@@ -1446,6 +1430,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	{
 		real_t tangent = 180 - camera->ang * (180 / PI);
 		glRotatef(tangent, 0, 1, 0);
+
+		real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
+		glRotatef(tangent2, 0, 0, 1);
 	}
 	else
 	{
@@ -1458,6 +1445,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	if ( entity->flags[OVERDRAW] )
 	{
 		glDepthRange(0.1, 0.2);
+	}
+	else
+	{
+		glDepthRange(0, .6);
 	}
 
 	// get shade factor
@@ -1515,10 +1506,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	    glTexCoord2f(1, 0);
 	    glVertex3f(0, sprite->h / 2, -sprite->w / 2);
 	    glEnd();
-	    glDepthRange(0, 1);
 	    glPopMatrix();
 	}
 
+	glDepthRange(0, 1);
 	glDisable(GL_ALPHA_TEST);
 
 	if ( entity->behavior == &actSpriteWorldTooltip )
@@ -1526,10 +1517,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		if ( tex ) {
 			delete tex;
 			tex = nullptr;
-		}
-		if ( sprite ) {
-			SDL_FreeSurface(sprite);
-			sprite = nullptr;
 		}
 	}
 #endif

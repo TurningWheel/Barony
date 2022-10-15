@@ -4404,6 +4404,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			deleteSaveGame(multiplayer);
 		}
 	}},
+
+	// text bubbles
+	{'BUBL', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t type = 
+			(Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t)net_packet->data[8];
+		const char* msg = (const char*)(&net_packet->data[9]);
+		players[clientnum]->worldUI.worldTooltipDialogue.createDialogueTooltip(uid, type, msg);
+		return;
+	}},
 };
 
 void clientHandlePacket()

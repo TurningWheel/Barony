@@ -108,7 +108,11 @@ void actHeadstone(Entity* my)
 			{
 				if (inrange[i])
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[485 + HEADSTONE_MESSAGE % 17]);
+					//messagePlayer(i, MESSAGE_INTERACTION, language[485 + HEADSTONE_MESSAGE % 17]);
+					players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE,
+						language[485 + HEADSTONE_MESSAGE % 17]);
+
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
 						shouldspawn = true;
