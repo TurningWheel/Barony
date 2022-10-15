@@ -1254,7 +1254,8 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
 	glRotatef(tangent2, 0, 0, 1);
 
-	glScalef(0.1f, 0.1f, 0.1f);
+	const float scale = static_cast<float>(dialogue->drawScale);
+	glScalef(scale, scale, scale);
 
 	glDepthRange(0, .6);
 

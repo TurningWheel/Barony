@@ -1778,6 +1778,7 @@ public:
 			bool init = false;
 			real_t animZ = 0.0;
 			real_t alpha = 0.0;
+			real_t drawScale = 0.0;
 			Uint32 spawnTick = 0;
 			Uint32 updatedThisTick = 0;
 			Uint32 expiryTicks = 0;

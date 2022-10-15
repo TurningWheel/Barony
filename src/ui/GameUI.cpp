@@ -152,6 +152,7 @@ struct WorldDialogueSettings_t
 		int padx = 8;
 		int pady = 8;
 		int padAfterFirstLine = 0;
+		real_t scaleMod = 0.0;
 	};
 	static std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, Setting_t> settings;
 };
@@ -17752,6 +17753,10 @@ void loadHUDSettingsJSON()
 							{
 								WorldDialogueSettings_t::settings[dialogueType].padAfterFirstLine = itr->value["pad_after_first_line"].GetInt();
 							}
+							if ( itr->value.HasMember("scale_modifier") )
+							{
+								WorldDialogueSettings_t::settings[dialogueType].scaleMod = itr->value["scale_modifier"].GetDouble();
+							}
 						}
 					}
 				}
@@ -28779,6 +28784,7 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	y = parentEnt->y;
 	z = parentEnt->z + setting.offsetZ;
 	animZ = 1.5;
+	drawScale = 0.1 + setting.scaleMod;
 
 	active = true;
 	init = true;
