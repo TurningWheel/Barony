@@ -2972,6 +2972,13 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 
 	Monster playerRace = stats[player]->type;
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
+	if ( targetEntityType == SHOPKEEPER )
+	{
+		if ( monsterally[playerRace][SHOPKEEPER] )
+		{
+			return true;
+		}
+	}
 	if ( targetEntityType != NOTHING )
 	{
 		std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
@@ -3740,6 +3747,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
+	else if ( entity.behavior == &actStatue )
+	{
+		return false;
+	}
 	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
 		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
@@ -3763,6 +3774,7 @@ void Player::WorldUI_t::handleTooltips()
 	//DebugTimers.addTimePoint("tooltip", "tooltip start");
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
+		players[player]->worldUI.worldTooltipDialogue.update();
 		if ( !players[player]->isLocalPlayerAlive() )
 		{
 			players[player]->worldUI.reset();
