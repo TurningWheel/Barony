@@ -1441,7 +1441,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		glRotatef(tangent, 0, 1, 0);
 	}
 
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
+	float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
+	glScalef(static_cast<GLfloat>(entity->scalex + scale), 
+		static_cast<GLfloat>(entity->scalez + scale), 
+		static_cast<GLfloat>(entity->scaley + scale));
 
 	if ( entity->flags[OVERDRAW] )
 	{
@@ -1477,7 +1480,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		{
 			if ( entity->behavior == &actSpriteWorldTooltip )
 			{
-				glColor4f(1.f, 1.f, 1.f, entity->worldTooltipAlpha);
+				glColor4f(1.f, 1.f, 1.f, entity->worldTooltipAlpha * Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity);
 			}
 			else if ( camera->globalLightModifierActive )
 			{

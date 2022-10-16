@@ -1764,6 +1764,12 @@ public:
 			SDL_Surface* blitItemWorldTooltip(Item* item);
 			SDL_Surface* itemWorldTooltipSurface = nullptr;
 			Frame* itemFrame = nullptr;
+
+			struct WorldItemSettings_t
+			{
+				static real_t scaleMod;
+				static real_t opacity;
+			};
 		} worldTooltipItem;
 
 		struct WorldTooltipDialogue_t
@@ -1816,6 +1822,24 @@ public:
 			void createDialogueTooltip(Uint32 uid, DialogueType_t type, char const * const message, ...);
 			SDL_Surface* blitDialogueTooltip();
 			SDL_Surface* dialogueTooltipSurface = nullptr;
+			struct WorldDialogueSettings_t
+			{
+				struct Setting_t
+				{
+					real_t offsetZ = 0.0;
+					int textDelay = 0;
+					bool followEntity = false;
+					real_t fadeDist = STRIKERANGE;
+					Uint32 baseTicksToDisplay = TICKS_PER_SECOND * 3;
+					Uint32 extraTicksPerLine = TICKS_PER_SECOND * 2;
+					int maxWidth = 300;
+					int padx = 8;
+					int pady = 8;
+					int padAfterFirstLine = 0;
+					real_t scaleMod = 0.0;
+				};
+				static std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, Setting_t> settings;
+			};
 		} worldTooltipDialogue;
 
 		WorldUI_t(Player& p) : 

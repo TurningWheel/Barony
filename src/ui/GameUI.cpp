@@ -138,25 +138,10 @@ AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::FollowerBars_t::mpBar;
 AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::PlayerBars_t::hpBar;
 AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::PlayerBars_t::mpBar;
 
-struct WorldDialogueSettings_t
-{
-	struct Setting_t
-	{
-		real_t offsetZ = 0.0;
-		int textDelay = 0;
-		bool followEntity = false;
-		real_t fadeDist = STRIKERANGE;
-		Uint32 baseTicksToDisplay = TICKS_PER_SECOND * 3;
-		Uint32 extraTicksPerLine = TICKS_PER_SECOND * 2;
-		int maxWidth = 300;
-		int padx = 8;
-		int pady = 8;
-		int padAfterFirstLine = 0;
-		real_t scaleMod = 0.0;
-	};
-	static std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, Setting_t> settings;
-};
-std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, WorldDialogueSettings_t::Setting_t> WorldDialogueSettings_t::settings;
+std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
+	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
+real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
+real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity = 0.0;
 
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
@@ -17693,6 +17678,17 @@ void loadHUDSettingsJSON()
 						actionPromptBackingIconPath100 = d["action_prompts"]["prompt_img_100"].GetString();
 					}
 				}
+				if ( d.HasMember("world_items") )
+				{
+					if ( d["world_items"].HasMember("scale_modifier") )
+					{
+						Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = d["world_items"]["scale_modifier"].GetDouble();
+					}
+					if ( d["world_items"].HasMember("tooltip_opacity") )
+					{
+						Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity = d["world_items"]["tooltip_opacity"].GetDouble();
+					}
+				}
 				if ( d.HasMember("world_dialogue") )
 				{
 					if ( d["world_dialogue"].HasMember("types") )
@@ -17719,49 +17715,50 @@ void loadHUDSettingsJSON()
 								continue;
 							}
 
+							auto& settings = Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings[dialogueType];
 							if ( itr->value.HasMember("z_offset") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].offsetZ = itr->value["z_offset"].GetDouble();
+								settings.offsetZ = itr->value["z_offset"].GetDouble();
 							}
 							if ( itr->value.HasMember("text_delay") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].textDelay = itr->value["text_delay"].GetInt();
+								settings.textDelay = itr->value["text_delay"].GetInt();
 							}
 							if ( itr->value.HasMember("follow_entity") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].followEntity = itr->value["follow_entity"].GetBool();
+								settings.followEntity = itr->value["follow_entity"].GetBool();
 							}
 							if ( itr->value.HasMember("fade_dist") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].fadeDist = itr->value["fade_dist"].GetDouble();
+								settings.fadeDist = itr->value["fade_dist"].GetDouble();
 							}
 							if ( itr->value.HasMember("base_ticks_to_display") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].baseTicksToDisplay = itr->value["base_ticks_to_display"].GetUint();
+								settings.baseTicksToDisplay = itr->value["base_ticks_to_display"].GetUint();
 							}
 							if ( itr->value.HasMember("extra_ticks_per_line") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].extraTicksPerLine = itr->value["extra_ticks_per_line"].GetUint();
+								settings.extraTicksPerLine = itr->value["extra_ticks_per_line"].GetUint();
 							}
 							if ( itr->value.HasMember("max_width") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].maxWidth = itr->value["max_width"].GetInt();
+								settings.maxWidth = itr->value["max_width"].GetInt();
 							}
 							if ( itr->value.HasMember("padx") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].padx = itr->value["padx"].GetInt();
+								settings.padx = itr->value["padx"].GetInt();
 							}
 							if ( itr->value.HasMember("pady") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].pady = itr->value["pady"].GetInt();
+								settings.pady = itr->value["pady"].GetInt();
 							}
 							if ( itr->value.HasMember("pad_after_first_line") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].padAfterFirstLine = itr->value["pad_after_first_line"].GetInt();
+								settings.padAfterFirstLine = itr->value["pad_after_first_line"].GetInt();
 							}
 							if ( itr->value.HasMember("scale_modifier") )
 							{
-								WorldDialogueSettings_t::settings[dialogueType].scaleMod = itr->value["scale_modifier"].GetDouble();
+								settings.scaleMod = itr->value["scale_modifier"].GetDouble();
 							}
 						}
 					}
