@@ -402,11 +402,7 @@ public:
 	}
 	const bool bPlayerUsingKeyboardControl(const int player) const
 	{
-		if ( !splitscreen )
-		{
-			return true;
-		}
-		return player == playerUsingKeyboardControl;
+		return player == playerUsingKeyboardControl || multiplayer != SINGLE;
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;

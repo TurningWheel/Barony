@@ -16876,11 +16876,11 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 				auto& input = Input::inputs[player];
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					if ( input.consumeBinaryToggle("MenuMouseWheelDown") )
+					if ( input.binaryToggle("MenuMouseWheelDown") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint + slotSize, 0);
 					}
-					if ( input.consumeBinaryToggle("MenuMouseWheelUp") )
+					if ( input.binaryToggle("MenuMouseWheelUp") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint - slotSize, 0);
 					}
@@ -18993,11 +18993,11 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 				auto& input = Input::inputs[playernum];
 				if ( inputs.bPlayerUsingKeyboardControl(playernum) )
 				{
-					if ( input.consumeBinaryToggle("MenuMouseWheelDown") )
+					if ( input.binaryToggle("MenuMouseWheelDown") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint + inscriptionSlotHeight, 0);
 					}
-					if ( input.consumeBinaryToggle("MenuMouseWheelUp") )
+					if ( input.binaryToggle("MenuMouseWheelUp") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint - inscriptionSlotHeight, 0);
 					}

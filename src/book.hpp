@@ -41,6 +41,11 @@ public:
 extern BookParser_t bookParser_t;
 
 int getBook(std::string bookTitle);
-std::string getBookNameFromIndex(int index);
+std::string getBookNameFromIndex(int index, bool censored = true);
 extern int numbooks;
 
+static const char* banned_books[] = {
+	"The Lusty Goblin Maid"
+};
+static constexpr int num_banned_books =
+	sizeof(banned_books) / sizeof(banned_books[0]);

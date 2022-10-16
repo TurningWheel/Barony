@@ -43,8 +43,8 @@ namespace MainMenu {
 	Frame* main_menu_frame = nullptr;
 
 	// ALL NEW menu options:
-	int current_audio_device = 0;
-	float master_volume = 100.f;
+	std::string current_audio_device;
+	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
     ConsoleVariable<bool> staggered_splitscreen("/split_staggered", true);
@@ -259,7 +259,7 @@ namespace MainMenu {
 		bool clipped_split_enabled;
 		float fov;
 		float fps;
-		int audio_device;
+		std::string audio_device;
 		float master_volume;
 		float gameplay_volume;
 		float ambient_volume;
@@ -491,6 +491,7 @@ namespace MainMenu {
 	static void mainEditor(Button&);
 	static void mainClose(Button&);
 	static void mainEndLife(Button&);
+	static void mainDropOut(Button&);
 	static void mainRestartGame(Button&);
 	static void mainReturnToHallofTrials(Button&);
 	static void mainQuitToMainMenu(Button&);
@@ -1766,11 +1767,11 @@ namespace MainMenu {
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		current_audio_device = audio_device;
-		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), .5f);
-		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), .5f);
-		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), .5f);
-		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), .5f);
-		musvolume = std::min(std::max(0.f, music_volume / 100.f), .5f);
+		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
+		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
+		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
+		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), 1.f);
+		musvolume = std::min(std::max(0.f, music_volume / 100.f), 1.f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -1896,7 +1897,7 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.fov = 60;
 		settings.fps = 60;
-		settings.audio_device = 0;
+		settings.audio_device = "";
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
@@ -2666,11 +2667,22 @@ namespace MainMenu {
 		// update volume for sound groups
 		if (initialized) {
 #ifdef USE_FMOD
-			int num_drivers = 0;
-			fmod_system->getNumDrivers(&num_drivers);
-			current_audio_device = current_audio_device >= num_drivers ?
-				0 : current_audio_device;
-			fmod_system->setDriver(current_audio_device);
+			int selected_driver = 0;
+			int numDrivers = 0;
+			fmod_system->getNumDrivers(&numDrivers);
+			for (int i = 0; i < numDrivers; ++i) {
+				FMOD_GUID guid;
+				fmod_result = fmod_system->getDriverInfo(i, nullptr, 0, &guid, nullptr, nullptr, nullptr);
+
+				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+				char guid_string[25];
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				if (!selected_driver && current_audio_device == guid_string) {
+					selected_driver = i;
+				}
+			}
+			fmod_system->setDriver(selected_driver);
 #endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
@@ -3085,6 +3097,7 @@ namespace MainMenu {
 				entry->text = entry_name;
 				entry->click = entry_func;
 				entry->ctrlClick = entry_func;
+				memcpy(&entry->data, &i, sizeof(i));
 				dropdown_list->resizeForEntries();
 				auto size = dropdown_list->getActualSize();
 				size.h += 14;
@@ -3209,11 +3222,30 @@ namespace MainMenu {
 			});
 	}
 
+#if defined(USE_FMOD)
+	struct AudioDriver {
+		char name[40];
+		FMOD_GUID guid;
+		int system_rate;
+		FMOD_SPEAKERMODE speaker_mode;
+		int speaker_mode_channels;
+	};
+	static std::vector<AudioDriver> audio_drivers;
+
 	static void settingsAudioDevice(Button& button) {
 		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
 			soundActivate();
-			const int new_device = (int)strtol(entry.name.c_str(), nullptr, 10);
-			allSettings.audio_device = new_device;
+
+			// store driver
+			unsigned int index; memcpy(&index, &entry.data, sizeof(index));
+			if (index < audio_drivers.size()) {
+				const auto& driver = audio_drivers[index];
+				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
+				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
+				char guid_string[25];
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				allSettings.audio_device = guid_string;
+			}
 
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -3224,6 +3256,7 @@ namespace MainMenu {
 			button->select();
 			});
 	}
+#endif
 
 	static void settingsWindowMode(Button& button) {
 		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
@@ -4472,6 +4505,10 @@ bind_failed:
 					if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
 						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
 					}
+#else
+					if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
+						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+					}
 #endif
 				}
 				else if (!bound_button) {
@@ -4747,35 +4784,36 @@ bind_failed:
 		int y = 0;
 
 #if !defined(NINTENDO) && defined(USE_FMOD)
-		struct AudioDriver {
-			char name[128];
-			FMOD_GUID guid;
-			int system_rate;
-			FMOD_SPEAKERMODE speaker_mode;
-			int speaker_mode_channels;
-		};
-		std::vector<AudioDriver> drivers;
-
+		int selected_device = 0;
 		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
-		drivers.reserve(num_drivers);
+
+		audio_drivers.clear();
+		audio_drivers.reserve(num_drivers);
 		for (int c = 0; c < num_drivers; ++c) {
 			AudioDriver d;
-			char buf[128];
-			(void)fmod_system->getDriverInfo(c, buf, sizeof(buf), &d.guid,
+			(void)fmod_system->getDriverInfo(c, d.name, sizeof(d.name), &d.guid,
 				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
-			snprintf(d.name, sizeof(d.name), "%d: %s", c, buf);
-			drivers.push_back(d);
+			memcpy(d.name + 32, "...", 4); // long names get truncated
+			audio_drivers.push_back(d);
+
+			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
+			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
+			char guid_string[25];
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+			if (!selected_device && allSettings.audio_device == guid_string) {
+				selected_device = c;
+			}
 		}
 		std::vector<const char*> drivers_formatted_ptrs;
 		drivers_formatted_ptrs.reserve(num_drivers);
-		for (auto& d : drivers) {
+		for (auto& d : audio_drivers) {
 			drivers_formatted_ptrs.push_back(d.name);
 		}
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "output", "Output");
 		y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "The output device for all game audio",
-            true, drivers_formatted_ptrs, drivers_formatted_ptrs[allSettings.audio_device],
+            true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
             settingsAudioDevice);
 #endif
 
@@ -8603,6 +8641,11 @@ bind_failed:
 				else {
 					stats[index]->appearance = 0;
 				}
+				if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+					// perhaps the class is not valid for this race.
+					// if so, change the class to the default (Barbarian)
+					client_classes[index] = 0;
+				}
 			} else {
 				auto other_button = frame->findButton(race);
 				if (other_button) {
@@ -11010,7 +11053,7 @@ bind_failed:
 		class_info->addWidgetAction("MenuAlt2", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
-		class_info->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
+		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		if (details) {
 		    switch (index) {
 		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, false, class_selection[0]);}); break;
@@ -11799,12 +11842,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto start = card->addField("start", 128);
@@ -12057,12 +12110,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto invite = card->addButton("invite_button");
@@ -12111,12 +12174,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		auto text = card->addField("text", 128);
@@ -12227,12 +12300,22 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		switch (index) {
-		default: banner->setColor(uint32ColorPlayerX); break;
-		case 0: banner->setColor(uint32ColorPlayer1); break;
-		case 1: banner->setColor(uint32ColorPlayer2); break;
-		case 2: banner->setColor(uint32ColorPlayer3); break;
-		case 3: banner->setColor(uint32ColorPlayer4); break;
+		if (colorblind) {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
+			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
+			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
+			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
+			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
+			}
+		} else {
+			switch (index) {
+			default: banner->setColor(uint32ColorPlayerX); break;
+			case 0: banner->setColor(uint32ColorPlayer1); break;
+			case 1: banner->setColor(uint32ColorPlayer2); break;
+			case 2: banner->setColor(uint32ColorPlayer3); break;
+			case 3: banner->setColor(uint32ColorPlayer4); break;
+			}
 		}
 
 		// name needs to be updated constantly in case it gets updated over the net
@@ -13129,13 +13212,23 @@ bind_failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-                switch (c) {
-                default: field->setColor(uint32ColorPlayerX); break;
-                case 0: field->setColor(uint32ColorPlayer1); break;
-		        case 1: field->setColor(uint32ColorPlayer2); break;
-		        case 2: field->setColor(uint32ColorPlayer3); break;
-		        case 3: field->setColor(uint32ColorPlayer4); break;
-                }
+				if (colorblind) {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX_colorblind); break;
+					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+					}
+				} else {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX); break;
+					case 0: field->setColor(uint32ColorPlayer1); break;
+					case 1: field->setColor(uint32ColorPlayer2); break;
+					case 2: field->setColor(uint32ColorPlayer3); break;
+					case 3: field->setColor(uint32ColorPlayer4); break;
+					}
+				}
                 ++num;
 	        }
 	    }
@@ -13469,7 +13562,7 @@ bind_failed:
 #endif
 
 	    // create new window
-	    textPrompt("lobby_list_request", "Requesting lobby list...",
+	    cancellablePrompt("lobby_list_request", "Requesting lobby list...", "Cancel",
 	        [](Widget& widget){
 #if defined(STEAMWORKS)
 #if defined(USE_EOS)
@@ -13520,7 +13613,24 @@ bind_failed:
 	            }
 #endif
             }
-	        });
+			},
+			[](Button&){ // cancel
+#if defined(STEAMWORKS)
+				requestingLobbies = false;
+#endif
+#if defined(USE_EOS)
+            	EOS.bRequestingLobbies = false;
+#endif
+
+                // lobby list has returned
+                closePrompt("lobby_list_request");
+				
+				// select names list
+				assert(main_menu_frame);
+				auto lobby_browser_window = main_menu_frame->findFrame("lobby_browser_window"); assert(lobby_browser_window);
+				auto names = lobby_browser_window->findFrame("names"); assert(names);
+				names->select();
+			});
 
         // request new lobbies
 	    LobbyHandler.selectedLobbyInList = 0;
@@ -16595,6 +16705,28 @@ bind_failed:
 			});
 	}
 
+	static void mainDropOut(Button& button) {
+	    const char* prompt = "Do you want to drop out?\nThis player will be lost forever.";
+		binaryPrompt(
+			prompt, // window text
+			"Okay", // okay text
+			"Cancel", // cancel text
+			[](Button&){ // okay
+				client_disconnected[getMenuOwner()] = true;
+				soundActivate();
+				closeMainMenu();
+				setupSplitscreen();
+			},
+			[](Button&){ // cancel
+				soundCancel();
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				Button* quit_button = buttons->findButton("Drop Out"); assert(quit_button);
+				quit_button->select();
+			    closeBinary();
+			});
+	}
+
 	static void mainRestartGame(Button& button) {
 	    const char* prompt;
 	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
@@ -16801,6 +16933,12 @@ bind_failed:
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
@@ -16819,6 +16957,12 @@ bind_failed:
 				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
 				    saved_invite_lobby = nullptr;
 				}
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
@@ -16831,6 +16975,12 @@ bind_failed:
 				createDummyMainMenu();
 				createCreditsScreen(true);
 	            playMusic(intromusic[0], true, false, false);
+				for (int c = 1; c < 4; ++c) {
+					if (inputs.hasController(c)) {
+						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+						Input::inputs[c].refresh();
+					}
+				}
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();
@@ -16965,6 +17115,7 @@ bind_failed:
 				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
 				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
 				doNewGame(false);
+				setupSplitscreen();
 			}
 			fadeout = false;
 			main_menu_fade_destination = FadeDestination::None;
@@ -16996,6 +17147,7 @@ bind_failed:
             // reset resolution function
 		    static auto resetResolution = [](){
 		        allSettings.video = old_video;
+				allSettings.video.window_mode = 0;
 		        if (allSettings.video.save()) {
 		            int x = std::max(allSettings.video.resolution_x, 1024);
 		            int y = std::max(allSettings.video.resolution_y, 720);
@@ -17059,10 +17211,6 @@ bind_failed:
             resolution_changed = false;
         }
 
-		if (fadeout && fadealpha >= 255) {
-            handleFadeFinished(ingame);
-        }
-
 		if (!main_menu_frame) {
 		    if (ingame) {
 		        if (movie) {
@@ -17114,6 +17262,20 @@ bind_failed:
             if (!inputs.hasController(getMenuOwner())) {
                 Input::waitingToBindControllerForPlayer = getMenuOwner();
             }
+        }
+
+		// hide mouse if we're driving around with a controller
+		auto vmouse = inputs.getVirtualMouse(getMenuOwner());
+		auto cmouse = inputs.getVirtualMouse(clientnum);
+		if (vmouse->lastMovementFromController && cmouse->draw_cursor) {
+			cmouse->draw_cursor = false;
+		}
+		if (vmouse->lastMovementFromController && vmouse->draw_cursor) {
+			vmouse->draw_cursor = false;
+		}
+
+		if (fadeout && fadealpha >= 255) {
+            handleFadeFinished(ingame);
         }
 	}
 
@@ -17258,6 +17420,9 @@ bind_failed:
 		    auto button = static_cast<Button*>(&widget);
             button->setColor(newColor);
             button->setHighlightColor(newColor);
+			if (!widget.isSelected()) {
+				widget.select();
+			}
 		    });
 		button->select();
 
@@ -17385,13 +17550,57 @@ bind_failed:
 		);
 		y += title->pos.h;
 
-		if (!ingame) {
-			auto notification = main_menu_frame->addFrame("notification");
-			notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
-			notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
-			y += notification->getSize().h;
-			y += 16;
+		auto notification = main_menu_frame->addFrame("notification");
+		notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
+		notification->setActualSize(SDL_Rect{0, 0, notification->getSize().w, notification->getSize().h});
+		notification->setTickCallback([](Widget& widget){
+			assert(main_menu_frame);
+			auto dimmer = main_menu_frame->findFrame("dimmer");
+			widget.setInvisible(dimmer != nullptr);
+			});
+
+		if (ingame && splitscreen) {
+			const int player = getMenuOwner();
+			const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
+				Input::getControllerGlyph() : Input::getKeyboardGlyph();
+			auto image = Image::get(path);
+			const int w = image->getWidth();
+			const int h = image->getHeight();
+			const int space = 100;
+			const int x = (notification->getSize().w - w) / 2;
+			const int y = (notification->getSize().h - h) / 2;
+			const std::string name = std::string("player") + std::to_string(player);
+			notification->addImage(
+				SDL_Rect{x, y, w, h},
+				makeColor(255, 255, 255, 255),
+				path, name.c_str());
+
+			auto field = notification->addField(name.c_str(), 16);
+			field->setSize(SDL_Rect{x, y, w, h});
+			field->setJustify(Field::justify_t::CENTER);
+			field->setText((std::string("P") + std::to_string(player + 1)).c_str());
+			field->setFont(bigfont_outline);
+			if (colorblind) {
+				switch (player) {
+				default: field->setColor(uint32ColorPlayerX_colorblind); break;
+				case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+				case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+				case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+				case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+				}
+			} else {
+				switch (player) {
+				default: field->setColor(uint32ColorPlayerX); break;
+				case 0: field->setColor(uint32ColorPlayer1); break;
+				case 1: field->setColor(uint32ColorPlayer2); break;
+				case 2: field->setColor(uint32ColorPlayer3); break;
+				case 3: field->setColor(uint32ColorPlayer4); break;
+				}
+			}
 		}
+
+		y += notification->getSize().h;
+		y += 16;
 
 		struct Option {
 			const char* name;
@@ -17410,7 +17619,14 @@ bind_failed:
 			    options.insert(options.end(), {
 				    {"End Life", "END LIFE", mainEndLife},
 				    });
-				if (multiplayer != CLIENT) {
+				if (splitscreen && getMenuOwner() != clientnum) {
+					// in splitscreen games, everyone but the first player can drop out of the game.
+			        options.insert(options.end(), {
+				        {"Drop Out", "DROP OUT", mainDropOut},
+				        });
+				}
+				if (multiplayer == SERVER || (multiplayer == SINGLE && getMenuOwner() == clientnum)) {
+					// only the first player has the power to restart the game.
 			        options.insert(options.end(), {
 				        {"Restart Game", "RESTART GAME", mainRestartGame},
 				        });
@@ -17606,6 +17822,11 @@ bind_failed:
 				y += banner->getSize().h;
 				y += 16;
 			}
+			banners->setTickCallback([](Widget& widget){
+				assert(main_menu_frame);
+				auto dimmer = main_menu_frame->findFrame("dimmer");
+				widget.setInvisible(dimmer != nullptr);
+				});
 
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
@@ -18172,6 +18393,10 @@ bind_failed:
             createDummyMainMenu();
         }
 
+		if (!main_menu_frame) {
+			return;
+		}
+
 		Frame* old_prompt;
         old_prompt = main_menu_frame->findFrame("controller_prompt");
         if (old_prompt) {
@@ -18292,13 +18517,23 @@ bind_failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-                switch (c) {
-                default: field->setColor(uint32ColorPlayerX); break;
-                case 0: field->setColor(uint32ColorPlayer1); break;
-		        case 1: field->setColor(uint32ColorPlayer2); break;
-		        case 2: field->setColor(uint32ColorPlayer3); break;
-		        case 3: field->setColor(uint32ColorPlayer4); break;
-                }
+				if (colorblind) {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX_colorblind); break;
+					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+					}
+				} else {
+					switch (c) {
+					default: field->setColor(uint32ColorPlayerX); break;
+					case 0: field->setColor(uint32ColorPlayer1); break;
+					case 1: field->setColor(uint32ColorPlayer2); break;
+					case 2: field->setColor(uint32ColorPlayer3); break;
+					case 3: field->setColor(uint32ColorPlayer4); break;
+					}
+				}
                 ++num;
 	        }
 	    }

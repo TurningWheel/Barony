@@ -282,6 +282,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD )
 	{
+		printlog("keyboard bindings for player %d", player);
 	    for (auto& binding : getKeyboardBindings() )
 	    {
 		    bind(binding.first.c_str(), binding.second.c_str());
@@ -289,6 +290,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_CONTROLLER )
 	{
+		printlog("controller bindings for player %d", player);
 		for ( auto& binding : gamepad_system_bindings )
 		{
 			bind(binding.first.c_str(), binding.second.c_str());
@@ -312,6 +314,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_JOYSTICK )
 	{
+		printlog("joystick bindings for player %d", player);
 		for ( auto& binding : joystick_system_bindings )
 		{
 			bind(binding.first.c_str(), binding.second.c_str());

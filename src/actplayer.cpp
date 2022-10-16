@@ -70,17 +70,11 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND : TICKS_PER_SECOND * 6;
-	if ( !*MainMenu::cvar_fastRestart )
+	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
+		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
+	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
-		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
-		{
-			deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
-		}
-		else if ( splitscreen )
-		{
-			deathcamGameoverPromptTicks = TICKS_PER_SECOND;
-		}
+		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
 	}
 
 	real_t mousex_relative = mousexrel;
@@ -242,12 +236,17 @@ void actDeathCam(Entity* my)
 		DEATHCAM_ROTY = 0;
 	}
 
+	const bool clicked =
+		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") ||
+		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm");
+
 	if ( players[DEATHCAM_PLAYERNUM] && players[DEATHCAM_PLAYERNUM]->entity )
 	{
 		// do nothing if still alive
 	}
-	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
-		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled
+	else if (clicked && shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
+		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
 		&& !gamePaused )
 	{
 		DEATHCAM_PLAYERTARGET++;
@@ -5271,11 +5270,32 @@ void actPlayer(Entity* my)
 							{
 								if ( multiplayer == SINGLE )
 								{
-									deleteSaveGame(multiplayer); // stops save scumming c:
+									// stops save scumming c:
+									if ( !splitscreen )
+									{
+										deleteSaveGame(multiplayer);
+									}
+									else
+									{
+										bool allDead = true;
+										for (int c = 0; c < MAXPLAYERS; ++c)
+										{
+											if (!client_disconnected[c] && stats[c]->HP > 0)
+											{
+												allDead = false;
+												break;
+											}
+										}
+										if (allDead)
+										{
+											deleteSaveGame(multiplayer);
+										}
+									}
 								}
 								else
 								{
-									deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+									// Will only delete save games if was last player alive.
+									deleteMultiplayerSaveGames();
 								}
 							}
 
@@ -5290,7 +5310,24 @@ void actPlayer(Entity* my)
 							{
 								playMusic(tutorialmusic, true, true, true);
 							}
-							playMusic(sounds[209], false, true, false);
+
+							bool allDead = true;
+							if (splitscreen)
+							{
+								for (int c = 0; c < MAXPLAYERS; ++c)
+								{
+									if (!client_disconnected[c] && stats[c]->HP > 0)
+									{
+										allDead = false;
+										break;
+									}
+								}
+							}
+
+							if (allDead)
+							{
+								playMusic(sounds[209], false, true, false);
+							}
 #endif
 							combat = false;
 
