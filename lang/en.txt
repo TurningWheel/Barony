@@ -745,66 +745,50 @@ thou makest use of them.#
 
 # headstone messages
 
-485 The headstone is engraved:
- "Here lies Johnny Yeast
+485 "Here lies Johnny Yeast
   Pardon me for not rising"#
 
-486 The headstone is engraved:
- "Here lies my wife
+486 "Here lies my wife
   Here let her lie!
   Now she's at rest and so am I."#
 
-487 The headstone is engraved:
- "Here lies the body of Blake
+487 "Here lies the body of Blake
   Hit the gas instead of the brake"#
 
-488 The headstone is engraved:
- "Here lies Weird Ed
+488 "Here lies Weird Ed
   Got his package but now he's dead"#
 
-489 The headstone is engraved:
- "Rest in Peace"#
+489 "Rest in Peace"#
 
-490 The headstone is engraved:
- "R.I.P."#
+490 "R.I.P."#
 
-491 The headstone is engraved:
- "Sum quod eris"#
+491 "Sum quod eris"#
 
-492 The headstone is engraved:
- "Off the dock dove Sir Jim
+492 "Off the dock dove Sir Jim
   Then he found he couldn't swim"#
 
-493 The headstone is engraved:
- "Here lies Mary Poppins
+493 "Here lies Mary Poppins
   A hole in her umbrella proved undoing"#
 
-494 The headstone is engraved:
- "Here lies Horace P. Fetch
+494 "Here lies Horace P. Fetch
   The goblins got him at last"#
 
-495 The headstone is engraved:
- "Here lies Julian
+495 "Here lies Julian
   Got thumped by his pet troll"#
 
-496 The headstone is engraved:
- "Here lies Ingrid
+496 "Here lies Ingrid
   Spooked by a scary skeleton"#
 
-497 The headstone is engraved:
- "Here lies Sir Robin
+497 "Here lies Sir Robin
   He bravely ran away"#
 
-498 The headstone is engraved:
- "Here lies Tom
+498 "Here lies Tom
   Lost a game of Russian Roulette"#
 
-499 The headstone is engraved:
- "Here lies Mitch
+499 "Here lies Mitch
   Met his end by a lich"#
 
-500 The headstone is engraved:
- "Here lies The Proto Pegasus
+500 "Here lies The Proto Pegasus
   Had a potato stuck in its exhaust pipe"#
 
 501 This headstone is blank.#
@@ -3593,112 +3577,214 @@ anyone seeking that power again, deep underground. #
 
 # NPC Chatter. Groups of 10 lines for each NPC type
 2700 type:seq#
-2701 The %s You are quite the party animal, %s. I couldn't keep up with you!#
-2702 The %s Are you sure you got enough rest, %s?#
-2703 The %s First you defeat the Baron, and you still out-party a joker like me!#
-2704 The %s You're going to take it easy now, though, right %s?#
+2701 The %s
+ You are quite the party animal, %s. I couldn't keep up with you!#
+2702 The %s
+ Are you sure you got enough rest, %s?#
+2703 The %s
+ First you defeat the Baron, and you still out-party a joker like me!#
+2704 The %s
+ You're going to take it easy now, though, right %s?#
+2705 The %s
+ ...#
 
 2710 type:rand#
-2711 The %s Everyone came back to their shops, like nothing happened.#
-2712 The %s Hamlet's Shopkeepers are tougher after surviving the Baron's dungeon.#
+2711 The %s
+ Everyone came back to their shops, like nothing happened.#
+2712 The %s
+ Hamlet's Shopkeepers are tougher after surviving the Baron's dungeon.#
 
 2720 type:rand#
-2721 The %s How could I ever thank you %s? *hic!*#
-2722 The %s I love you, man. Like, seriously, %s, I love you. *hic!*#
+2721 The %s
+ How could I ever thank you %s? *hic!*#
+2722 The %s
+ I love you, man. Like, seriously, %s, I love you. *hic!*#
 
 2730 type:seq#
-2731 %s It's a secret to everybody.#
-2732 %s This used to be the foyer to the Baron's mansion.#
-2733 %s We're remodeling the interior for our next ruler.#
-2734 %s We want to forget all about Herx.#
-2735 %s It's a secret to everybody.#
+2731 %s
+ It's a secret to everybody.#
+2732 %s
+ This used to be the foyer to the Baron's mansion.#
+2733 %s
+ We're remodeling the interior for our next ruler.#
+2734 %s
+ We want to forget all about Herx.#
+2735 %s
+ It's a secret to everybody.#
+2736 %s
+ ...#
 
 2740 type:seq#
-2741 The %s I tried to get into the Crystal Caves, but a barrier stopped me.#
-2742 The %s Perhaps the Magician's Guild erected that barrier.#
-2743 The %s I'm from a distant city, and a member of the Hunter's Guild.#
-2744 The %s Hamlet's Hunters' Guild isn't in this district.#
-2745 The %s I guess Magicians and Hunters don't get along so well.#
-2746 The %s Hunters kill bad guys. Sometimes they're Magicians.#
-2747 The %s No grudges, just don't be a bad guy!#
+2741 The %s
+ I tried to get into the Crystal Caves, but a barrier stopped me.#
+2742 The %s
+ Perhaps the Magician's Guild erected that barrier.#
+2743 The %s
+ I'm from a distant city, and a member of the Hunter's Guild.#
+2744 The %s
+ Hamlet's Hunters' Guild isn't in this district.#
+2745 The %s
+ I guess Magicians and Hunters don't get along so well.#
+2746 The %s
+ Hunters kill bad guys. Sometimes they're Magicians.#
+2747 The %s
+ No grudges, just don't be a bad guy!#
+2748 The %s
+ ...#
 
 2750 type:rand#
-2751 The %s Is it strange that I am tempted to go back into the mine?#
-2752 The %s The sky out here is so large. I'm scared.#
-2753 The %s The mines, Herx's dungeon, is on the other side of this gate.#
-2754 The %s Maybe I'll just go back for a little while.#
+2751 The %s
+ Is it strange that I am tempted to go back into the mine?#
+2752 The %s
+ The sky out here is so large. I'm scared.#
+2753 The %s
+ The mines, Herx's dungeon, is on the other side of this gate.#
+2754 The %s
+ Maybe I'll just go back for a little while.#
 
 2760 type:seq#
-2761 The %s The Magician's Guild must be up to something.#
-2762 The %s Guilds always have too many secrets.#
-2763 The %s I heard that Merlin and the Magician's Guild had a falling out.#
-2764 The %s I bet Herx is in tight with Archmagisters Orpheus and Erudyce.#
-2765 The %s Don't get me started on the Hunters' Guild.#
-2766 The %s I heard the Masons Guild works for the Church.#
-2767 The %s The Church has secrets, but they also help the poor.#
-2768 The %s Is the Church a Guild? Asking for a friend.#
+2761 The %s
+ The Magician's Guild must be up to something.#
+2762 The %s
+ Guilds always have too many secrets.#
+2763 The %s
+ I heard that Merlin and the Magician's Guild had a falling out.#
+2764 The %s
+ I bet Herx is in tight with Archmagisters Orpheus and Erudyce.#
+2765 The %s
+ Don't get me started on the Hunters' Guild.#
+2766 The %s
+ I heard the Masons Guild works for the Church.#
+2767 The %s
+ The Church has secrets, but they also help the poor.#
+2768 The %s
+ Is the Church a Guild? Asking for a friend.#
+2769 The %s
+ ...#
 
 2770 type:seq#
-2771 The %s Welcome back, %s. I hope you're rested.#
-2772 The %s The magicians inside can explain everything.#
-2773 The %s Me? No I'm just a doorman.#
-2774 The %s Many come and go, %s. No membership required.#
-2775 The %s Merlin used to come by a lot, but then he just stopped.#
-2776 The %s Come to think of it, Herx used to come by regularly.#
-2777 The %s Herx would always leave angry after every visit.#
-2778 The %s I wish I could've seen Herx's face when you showed up...#
+2771 The %s
+ Welcome back, %s. I hope you're rested.#
+2772 The %s
+ The magicians inside can explain everything.#
+2773 The %s
+ Me? No I'm just a doorman.#
+2774 The %s
+ Many come and go, %s. No membership required.#
+2775 The %s
+ Merlin used to come by a lot, but then he just stopped.#
+2776 The %s
+ Come to think of it, Herx used to come by regularly.#
+2777 The %s
+ Herx would always leave angry after every visit.#
+2778 The %s
+ I wish I could've seen Herx's face when you showed up...#
+2779 The %s
+ ...#
 
 2780 type:seq#
-2781 The %s The Baron wanted to set up the mine in the Crystal Caves.#
-2782 The %s The Archmagisters refused to allow Herx to mine there.#
-2783 The %s Herx offered a lot of grants to the Magicians' Guild.#
-2784 The %s I think Herx expected favors from the Archmagisters.#
-2785 The %s Eventually Herx gave up on getting the help of the Guild.#
-2786 The %s Things turned out bad, but they could've been worse.#
+2781 The %s
+ The Baron wanted to set up the mine in the Crystal Caves.#
+2782 The %s
+ The Archmagisters refused to allow Herx to mine there.#
+2783 The %s
+ Herx offered a lot of grants to the Magicians' Guild.#
+2784 The %s
+ I think Herx expected favors from the Archmagisters.#
+2785 The %s
+ Eventually Herx gave up on getting the help of the Guild.#
+2786 The %s
+ Things turned out bad, but they could've been worse.#
+2787 The %s
+ ...#
 
 2790 type:seq#
-2791 The %s Merlin told us about the dangerous magic Herx found.#
-2792 The %s We never heard from Merlin again after he left to stop Herx.#
-2793 The %s I heard rumors about a new letter from Merlin, but I never saw it.#
-2794 The %s You know, Merlin was never an official member of the Magicians Guild.#
-2795 The %s Some people just need their independence. I respect that.#
+2791 The %s
+ Merlin told us about the dangerous magic Herx found.#
+2792 The %s
+ We never heard from Merlin again after he left to stop Herx.#
+2793 The %s
+ I heard rumors about a new letter from Merlin, but I never saw it.#
+2794 The %s
+ You know, Merlin was never an official member of the Magicians Guild.#
+2795 The %s
+ Some people just need their independence. I respect that.#
+2796 The %s
+ ...#
 
 2800 type:seq#
-2801 The %s After Herx was locked away, the Archmagisters went to the Crystal Caves.#
-2802 The %s I guess they wanted to see what all the fuss was about.#
-2803 The %s If it wasn't for the Archmagisters, Herx would've built an army here.#
-2804 The %s We never would've been able to figure out how to lock Herx away. #
-2805 The %s I think Erudyce and Orpheus knew sealing up Herx wouldn't be enough.#
+2801 The %s
+ After Herx was locked away, the Archmagisters went to the Crystal Caves.#
+2802 The %s
+ I guess they wanted to see what all the fuss was about.#
+2803 The %s
+ If it wasn't for the Archmagisters, Herx would've built an army here.#
+2804 The %s
+ We never would've been able to figure out how to lock Herx away. #
+2805 The %s
+ I think Erudyce and Orpheus knew sealing up Herx wouldn't be enough.#
+2806 The %s
+ ...#
 
 2810 type:seq#
-2811 The %s Powerful monsters started coming from the Crystal Caves.#
-2812 The %s The Guild had to seal the Caves to keep Hamlet from being destroyed.#
-2813 The %s I hope that the Archmagisters inside are alright.#
-2814 The %s I really hope those monsters have nothing to do with their research.#
-2815 The %s Orpheus is so driven. Nothing can stop him.#
-2816 The %s Erudyce likes to influence things from behind the scenes.#
+2811 The %s
+ Powerful monsters started coming from the Crystal Caves.#
+2812 The %s
+ The Guild had to seal the Caves to keep Hamlet from being destroyed.#
+2813 The %s
+ I hope that the Archmagisters inside are alright.#
+2814 The %s
+ I really hope those monsters have nothing to do with their research.#
+2815 The %s
+ Orpheus is so driven. Nothing can stop him.#
+2816 The %s
+ Erudyce likes to influence things from behind the scenes.#
+2817 The %s
+ ...#
 
 2820 type:seq#
-2821 The %s I sensed power from the orb when you put it on that pedestal.#
-2822 The %s I wonder why Herx didn't use that power to escape the dungeon.#
-2823 The %s I was able to trap some of the power that Herx's orb released.#
-2824 The %s This portal pierces the seal to the Caves using the power of the orb.#
-2825 The %s Archmagisters Orpheus and Erudyce will help return things to normal.#
-2826 The %s They must have learned something about the power Herx found.#
+2821 The %s
+ I sensed power from the orb when you put it on that pedestal.#
+2822 The %s
+ I wonder why Herx didn't use that power to escape the dungeon.#
+2823 The %s
+ I was able to trap some of the power that Herx's orb released.#
+2824 The %s
+ This portal pierces the seal to the Caves using the power of the orb.#
+2825 The %s
+ Archmagisters Orpheus and Erudyce will help return things to normal.#
+2826 The %s
+ They must have learned something about the power Herx found.#
+2827 The %s
+ ...#
 
 2830 type:seq#
-2831 The %s Don't worry %s, I know who you are.#
-2832 The %s I wanted to meet you before you left town.#
-2833 The %s Me? I am one of the esteemed members of the Merchant's guild.#
-2834 The %s I'm only interested in the rarest of artifacts in the land.
+2831 %s
+ Don't worry %s, I know who you are.#
+2832 %s
+ I wanted to meet you before you left town.#
+2833 %s
+ Me? I am one of the esteemed members of the Merchant's guild.#
+2834 %s
+ I'm only interested in the rarest of
+ artifacts in the land.              
  In particular, the Magician's orbs that were stolen by Herx.#
-2835 The %s If you happened to retrieve any of them, I'd be willing to
- part with one of my prized possessions in return.#
-2836 The %s You see, a high ranking guild member such as myself can extort
- those mages for every penny they own with their precious orbs!#
-2837 The %s I know you have too much of a heart to do the same yourself.#
-2838 The %s So it is up to you. Leave them with me and we'll say no more
- about our little encounter.#
+2835 %s
+ If you happened to retrieve any of 
+ them, I'd be willing to part with one of my prized possessions in return.#
+2836 %s
+ You see, a high ranking guild member
+ such as myself can extort those mages 
+ for every penny they own with their 
+ precious orbs!#
+2837 %s
+ I know you have too much of a heart to do the same yourself.#
+2838 %s
+ So it is up to you.                
+ Leave them with me and we'll say no 
+ more about our little encounter.#
+2839 %s
+ ...#
 
 2850 type:rand#
 2851 %s Response 1.#
@@ -6182,5 +6268,8 @@ Combination!#
 4211 This is already fully charged#
 4212 This is already identified#
 4213 This is already uncursed#
+4214 copy of#
+4215 labelled#
+4216 %s:#
 
 4249 end#
