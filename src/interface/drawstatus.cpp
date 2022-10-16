@@ -3099,6 +3099,19 @@ void drawStatusNew(const int player)
 		//Gamepad change hotbar selection.
 		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Right") )
 		{
+			bool usingMouseWheel = false;
+			const auto binding = Input::inputs[player].input("Hotbar Scroll Right");
+			if ( binding.type == Input::binding_t::bindtype_t::MOUSE_BUTTON )
+			{
+				if ( binding.mouseButton == Input::MOUSE_WHEEL_DOWN || binding.mouseButton == Input::MOUSE_WHEEL_UP )
+				{
+					usingMouseWheel = true;
+				}
+			}
+			if ( !usingMouseWheel )
+			{
+				Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Right");
+			}
 			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Right").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
@@ -3133,6 +3146,19 @@ void drawStatusNew(const int player)
 		}
 		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Left") )
 		{
+			bool usingMouseWheel = false;
+			const auto binding = Input::inputs[player].input("Hotbar Scroll Left");
+			if ( binding.type == Input::binding_t::bindtype_t::MOUSE_BUTTON )
+			{
+				if ( binding.mouseButton == Input::MOUSE_WHEEL_DOWN || binding.mouseButton == Input::MOUSE_WHEEL_UP )
+				{
+					usingMouseWheel = true;
+				}
+			}
+			if ( !usingMouseWheel )
+			{
+				Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Left");
+			}
 			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Left").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
