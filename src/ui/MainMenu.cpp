@@ -3956,6 +3956,20 @@ namespace MainMenu {
 		slider->setMaxValue(height - size.h);
 		auto names = getFullSettingNames(setting);
 		slider->setWidgetLeft(names.first.c_str());
+
+		// rescues focus if it is lost somehow
+		static std::string rescueSetting;
+		rescueSetting = names.first;
+		frame.setTickCallback([](Widget& widget){
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(getMenuOwner());
+			if (!selectedWidget) {
+				auto rescue = widget.findWidget(rescueSetting.c_str(), true);
+				if (rescue) {
+					rescue->select();
+				}
+			}
+			});
 	}
 
 	static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
