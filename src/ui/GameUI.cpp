@@ -5817,6 +5817,10 @@ void updateStatusEffectQueue(const int player)
 	{
 		return;
 	}
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		return;
+	}
 	auto& hud_t = players[player]->hud;
 	SDL_Rect mainFramePos{ 0, 0, players[player]->camera_virtualWidth(), players[player]->camera_virtualHeight() / 2 };
 	mainFramePos.x = hud_t.hpFrame->getSize().x;
@@ -7500,6 +7504,7 @@ void Player::MessageZone_t::processChatbox()
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
 Frame* minimapFrame = nullptr; // shared minimap
+SDL_Rect Player::Minimap_t::sharedMinimapPos{ 0, 0, 0, 0 };
 
 void doSharedMinimap() {
     if (!minimapFrame) {
@@ -7534,6 +7539,7 @@ void doSharedMinimap() {
                     Frame::virtualScreenY / 2,
                     size, size});
             }
+			Player::Minimap_t::sharedMinimapPos = static_cast<Frame*>(&widget)->getSize();
             });
     }
 	minimapFrame->setOwner(clientnum);
@@ -7611,8 +7617,8 @@ static Frame* createMinimap(int player) {
 
 		{
 			real_t scale = factor0 * scale_small;
-			minotaurWarning[player].minimapPos.w = (int)(scale * 4);
-			minotaurWarning[player].minimapPos.h = (int)(scale * 4);
+			players[player]->minimap.minimapPos.w = (int)(scale * 4);
+			players[player]->minimap.minimapPos.h = (int)(scale * 4);
 		}
 
         scale = factor0 * scale_small + factor1 * scale_big;
@@ -27631,6 +27637,15 @@ void Player::HUD_t::updateMinotaurWarning()
 {
 	auto& m = minotaurWarning[player.playernum];
 
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		if ( minotaurFrame )
+		{
+			minotaurFrame->setDisabled(true);
+		}
+		return;
+	}
+
 	static ConsoleVariable<bool> cvar_minoanimdebug("/minoanimdebug", false);
 	if ( *cvar_minoanimdebug && player.playernum == clientnum )
 	{
@@ -27723,7 +27738,7 @@ void Player::HUD_t::updateMinotaurWarning()
 	minotaurImgBg->disabled = true;
 	auto minotaurImgFg = minotaurFrame->findImage("mino img fg");
 	minotaurImgFg->disabled = true;
-	minotaurFrame->setDisabled(false);
+	minotaurFrame->setDisabled(player.hud.hudFrame->isDisabled());
 	int imgSizeX = 60;
 	int imgSizeY = 66;
 	if ( auto imgGet = Image::get(minotaurImgBg->path.c_str()) )
@@ -27737,15 +27752,18 @@ void Player::HUD_t::updateMinotaurWarning()
 	std::string minimapFrameName = "minimap";
 	minimapFrameName.append(std::to_string(player.playernum));
 	SDL_Rect sharedminimapPos{ 0, 0, 0, 0 };
+	SDL_Rect minimapPos{ 0, 0, 0, 0 };
 	Frame* minimap = nullptr;
 	if ( minimap = player.hud.hudFrame->findFrame(minimapFrameName.c_str()) )
 	{
-		m.minimapPos.x = minotaurFrame->getSize().w - m.minimapPos.w;
-		m.minimapPos.y = minotaurFrame->getSize().h - m.minimapPos.h;
+		minimapPos.x = minotaurFrame->getSize().w - player.minimap.minimapPos.w;
+		minimapPos.y = minotaurFrame->getSize().h - player.minimap.minimapPos.h;
 	}
+	minimapPos.w = player.minimap.minimapPos.w;
+	minimapPos.h = player.minimap.minimapPos.h;
 	if ( ::minimapFrame )
 	{
-		sharedminimapPos = ::minimapFrame->getSize();
+		sharedminimapPos = Player::Minimap_t::sharedMinimapPos;
 	}
 
 	{
@@ -27983,11 +28001,11 @@ void Player::HUD_t::updateMinotaurWarning()
 					midY - imgSizeY / 2 - movementAmount,
 					imgSizeX, imgSizeY);
 			}
-			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && minimapPos.x > 0 )
 			{
 				m.setAnimatePosition(
-					m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
-					m.minimapPos.y - imgSizeY - 16 - movementAmount,
+					minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+					minimapPos.y - imgSizeY - 16 - movementAmount,
 					imgSizeX, imgSizeY);
 			}
 			else
@@ -28112,12 +28130,12 @@ void Player::HUD_t::updateMinotaurWarning()
 				}
 			}
 		}
-		else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+		else if ( minotaurDisplay && minimap && !minimap->isInvisible() && minimapPos.x > 0 )
 		{
 			minotaurDisplay->setDisabled(flash);
 			minotaurDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
-			minotaurDisplay->setSize(SDL_Rect{ m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
-				m.minimapPos.y - imgSizeY - 16 - movementAmount,
+			minotaurDisplay->setSize(SDL_Rect{ minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+				minimapPos.y - imgSizeY - 16 - movementAmount,
 				imgSizeX, imgSizeY });
 		}
 		else

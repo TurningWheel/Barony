@@ -2058,6 +2058,8 @@ public:
 		real_t real_scale = 0.0;    // canonical scale
 		real_t scale = 0.0;         // momentary scale
 		real_t scale_ang = 0.0;     // used to interpolate
+		SDL_Rect minimapPos;
+		static SDL_Rect sharedMinimapPos;
 	} minimap;
 };
 

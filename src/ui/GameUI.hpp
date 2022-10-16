@@ -273,7 +273,6 @@ struct MinotaurWarning_t
 
 	Uint32 animTicks = 0;
 	SDL_Rect pos{ 0, 0, 0, 0 };
-	SDL_Rect minimapPos{ 0, 0, 0, 0 };
 	Uint32 processedOnTick = 0;
 	bool started = false;
 	bool initialWarningCompleted = false;
