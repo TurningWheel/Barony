@@ -28344,13 +28344,13 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 				textGet = Text::get(buf, font->getName(), 0xFFFFFFFF, 0);
 				numHeaderLines++;
 			}
-			longestLine = std::max(longestLine, textGet->getWidth());
+			longestLine = std::max(longestLine, (size_t)textGet->getWidth());
 		}
 		if ( numHeaderLines > 1 )
 		{
 			if ( auto textGet = Text::get(buf2, font->getName(), 0xFFFFFFFF, 0) )
 			{
-				longestLine = std::max(longestLine, textGet->getWidth());
+				longestLine = std::max(longestLine, (size_t)textGet->getWidth());
 			}
 		}
 		tooltip.w = 16 + 16 + 8 + longestLine;
