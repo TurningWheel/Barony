@@ -2862,7 +2862,27 @@ void actMonster(Entity* my)
 					}
 					else
 					{
-						handleMonsterChatter(monsterclicked, ringconflict, namesays, my, myStats);
+						char dialogueName[64];
+						if ( !strcmp(myStats->name, "") || monsterNameIsGeneric(*myStats) )
+						{
+							if ( monsterNameIsGeneric(*myStats) )
+							{
+								snprintf(dialogueName, sizeof(dialogueName), language[4216], myStats->name);
+							}
+							else
+							{
+								snprintf(dialogueName, sizeof(dialogueName), language[4216], getMonsterLocalizedName(myStats->type).c_str());
+							}
+						}
+						else
+						{
+							snprintf(dialogueName, sizeof(dialogueName), language[4216], myStats->name);
+						}
+						if ( dialogueName[0] >= 'a' && dialogueName[0] <= 'z' )
+						{
+							dialogueName[0] = toupper(dialogueName[0]);
+						}
+						handleMonsterChatter(monsterclicked, ringconflict, dialogueName, my, myStats);
 					}
 					my->lookAtEntity(*players[monsterclicked]->entity);
 				}
@@ -2919,7 +2939,27 @@ void actMonster(Entity* my)
 						}
 						if ( !hasOrb )
 						{
-							handleMonsterChatter(monsterclicked, ringconflict, namesays, my, myStats);
+							char dialogueName[64];
+							if ( !strcmp(myStats->name, "") || monsterNameIsGeneric(*myStats) )
+							{
+								if ( monsterNameIsGeneric(*myStats) )
+								{
+									snprintf(dialogueName, sizeof(dialogueName), language[4216], myStats->name);
+								}
+								else
+								{
+									snprintf(dialogueName, sizeof(dialogueName), language[4216], getMonsterLocalizedName(myStats->type).c_str());
+								}
+							}
+							else
+							{
+								snprintf(dialogueName, sizeof(dialogueName), language[4216], myStats->name);
+							}
+							if ( dialogueName[0] >= 'a' && dialogueName[0] <= 'z' )
+							{
+								dialogueName[0] = toupper(dialogueName[0]);
+							}
+							handleMonsterChatter(monsterclicked, ringconflict, dialogueName, my, myStats);
 							my->lookAtEntity(*players[monsterclicked]->entity);
 						}
 						else
@@ -8507,6 +8547,10 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 
 bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
+	if ( !my )
+	{
+		return false;
+	}
 	if ( ringconflict || myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 	{
 		//Instant fail if ring of conflict is in effect/not NPC
@@ -8514,7 +8558,12 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[6
 	}
 
 	int NPCtype = myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF; // get NPC type, lowest 8 bits.
-	int NPClastLine = (myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF00) >> 8; // get last line said, next 8 bits.
+	int NPClastLines[MAXPLAYERS];
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		NPClastLines[i] = 0xF & ((myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFFFF00) >> (8 + i * 4)); // get last line said, next 16 bits.	
+	}
+	int& NPClastLine = NPClastLines[monsterclicked];
 
 	int numLines = 0;
 	int startLine = 2700 + (NPCtype - 1) * MONSTER_NPC_DIALOGUE_LINES; // lang line to start from.
@@ -8564,8 +8613,18 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[6
 			// choose randomly
 			NPClastLine = 1 + local_rng.rand() % numLines;
 		}
-		messagePlayer(monsterclicked, MESSAGE_WORLD | MESSAGE_INTERACTION, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
-		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
+		//messagePlayer(monsterclicked, MESSAGE_WORLD | MESSAGE_INTERACTION, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
+		players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+			Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC,
+			language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
+		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype;
+		Uint32 data = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			data |= ((0xF & NPClastLines[i]) << i * 4);
+		}
+		data = data << 8;
+		myStats->MISC_FLAGS[STAT_FLAG_NPC] |= data;
 	}
 	return true;
 }

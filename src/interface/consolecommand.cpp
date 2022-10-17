@@ -1934,6 +1934,9 @@ namespace ConsoleCommands {
 				intro = oldIntro;
 			}
 		}
+		for (auto& input : Input::inputs) {
+			input.refresh();
+		}
 		});
 
 	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", "", []CCMD{
@@ -4079,4 +4082,73 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_loadmonsterdata("/loadmonsterdata", "", []CCMD{
 		MonsterData_t::loadMonsterDataJSON();
 		});
+
+	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( argc < 4 )
+		{
+			return;
+		}
+
+		int beatitude = atoi(argv[1]);
+		beatitude = std::max(std::min(99, beatitude), -99);
+		int status = atoi(argv[2]);
+		status = std::max(std::min(static_cast<int>(EXCELLENT), status), static_cast<int>(BROKEN));
+
+		std::string name = argv[3];
+		for ( int arg = 4; arg < argc; ++arg ) {
+			name.append(" ");
+			name.append(argv[arg]);
+		}
+
+		int c;
+		for ( c = 0; c < NUMITEMS; c++ )
+		{
+			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
+			{
+				dropItem(newItem(static_cast<ItemType>(c), static_cast<Status>(status), beatitude, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			for ( c = 0; c < NUMITEMS; c++ )
+			{
+				if ( strstr(items[c].name_identified, name.c_str()) )
+				{
+					dropItem(newItem(static_cast<ItemType>(c), static_cast<Status>(status), beatitude, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+					break;
+				}
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
+		}
+	});
+
+	static ConsoleCommand ccmd_imgui("/devmenu", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			ImGui_t::queueDeinit = true;
+		}
+		else
+		{
+			ImGui_t::queueInit = true;
+		}
+#endif
+	});
 }
+

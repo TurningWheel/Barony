@@ -62,3 +62,11 @@ steam_appid.txt
 /VS.2015/Steam Debug
 /VS.2015/enc_temp_folder/*
 .vscode/*
+**/v17
+**/v16
+**/FileContentIndex
+*VSWorkspaceState.json
+*slnx.sqlite
+*ProjectSettings.json
+*FileListAbsolute.txt
+*recipe

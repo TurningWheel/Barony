@@ -2965,3 +2965,51 @@ public:
 };
 extern VideoManager_t VideoManager[MAXPLAYERS];
 #endif
+
+#ifndef EDITOR
+#ifdef USE_IMGUI
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+class ImGui_t
+{
+public:
+	static bool isInit;
+	static bool queueInit;
+	static bool queueDeinit;
+	static bool disablePlayerControl;
+	ImGui_t() {};
+	~ImGui_t()
+	{
+		// Cleanup
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+	};
+	static void init();
+	static void deinit();
+	static ImGuiIO& getIO() { return ImGui::GetIO(); }
+	static bool show_demo_window;
+	static void showConsoleCommands();
+	static void buttonConsoleCommandHighlight(const char* cmd, bool flag);
+	static void update();
+	static void render();
+	static bool requestingMouse() // if mouse is detected on a module (the game should not process the mouse clicks)
+	{
+		if ( isInit )
+		{
+			return getIO().WantCaptureMouse;
+		}
+		return false;
+	}
+
+	static ImVec4 colorOn;
+	static ImVec4 colorOnHovered;
+	static ImVec4 colorOnActive;
+	static ImVec4 colorBtnDefault;
+	static ImVec4 colorBtnDefaultActive;
+	static ImVec4 colorBtnDefaultHovered;
+};
+#endif
+#endif

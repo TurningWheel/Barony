@@ -799,6 +799,7 @@ real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
+void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
 bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 void glDrawWorld(view_t* camera, int mode);

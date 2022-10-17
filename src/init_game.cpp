@@ -892,4 +892,7 @@ void deinitGame()
 #ifdef USE_THEORA_VIDEO
 	VideoManager_t::deinitManager();
 #endif
+#ifdef USE_IMGUI
+	ImGui_t::deinit();
+#endif
 }

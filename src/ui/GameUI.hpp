@@ -60,6 +60,7 @@ extern int GAMEUI_FRAMEDATA_ANIMATING_ITEM;
 extern int GAMEUI_FRAMEDATA_ALCHEMY_ITEM;
 extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy gui when hovering over recipe
 extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
+extern int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM;
 
 // if true, use the new user interface
 extern bool newui;
@@ -272,7 +273,6 @@ struct MinotaurWarning_t
 
 	Uint32 animTicks = 0;
 	SDL_Rect pos{ 0, 0, 0, 0 };
-	SDL_Rect minimapPos{ 0, 0, 0, 0 };
 	Uint32 processedOnTick = 0;
 	bool started = false;
 	bool initialWarningCompleted = false;

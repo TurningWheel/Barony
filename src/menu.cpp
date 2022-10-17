@@ -10142,6 +10142,9 @@ void doNewGame(bool makeHighscore) {
 		list_FreeAll(&chestInv[c]);
 	}
 
+	Frame::guiDestroy();
+	Frame::guiInit();
+
 	// make some messages
 	startMessages();
 

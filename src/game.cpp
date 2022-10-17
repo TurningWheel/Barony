@@ -3502,6 +3502,12 @@ bool handleEvents(void)
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			ImGui_ImplSDL2_ProcessEvent(&event);
+		}
+#endif
 		// Global events
 		switch ( event.type )
 		{
@@ -3741,6 +3747,12 @@ bool handleEvents(void)
 				if (demo_mode == DemoMode::PLAYING) {
 					break;
 				}
+#ifdef USE_IMGUI
+				if ( ImGui_t::requestingMouse() )
+				{
+					break;
+				}
+#endif // USE_IMGUI
 				mousestatus[event.button.button] = 1; // set this mouse button to 1
 				Input::mouseButtons[event.button.button] = 1;
 				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
@@ -3768,6 +3780,12 @@ bool handleEvents(void)
 			    if (demo_mode == DemoMode::PLAYING) {
 			        break;
 			    }
+#ifdef USE_IMGUI
+				if ( ImGui_t::requestingMouse() )
+				{
+					break;
+				}
+#endif // USE_IMGUI
 				if ( event.wheel.y > 0 )
 				{
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
@@ -4268,8 +4286,9 @@ bool handleEvents(void)
 						mainloop = 0;
 					}
 					if (!intro) {
-						MainMenu::setupSplitscreen();void
+						MainMenu::setupSplitscreen();
 					}
+#else
 					if (!resizeWindow(event.window.data1, event.window.data2))
 					{
 						printlog("critical error! Attempting to abort safely...\n");
@@ -4314,26 +4333,6 @@ bool handleEvents(void)
 		else
 		{
 			++loadingticks;
-		}
-
-		mousexrel = 0;
-		mouseyrel = 0;
-		if (initialized)
-		{
-			inputs.updateAllRelMouse();
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.hasController(i) )
-				{
-					if (inputs.getController(i))
-					{
-#ifndef NINTENDO
-						(void)inputs.getController(i)->handleRumble();
-#endif
-						inputs.getController(i)->updateButtonsReleased();
-					}
-				}
-			}
 		}
 	}
 
@@ -4420,6 +4419,9 @@ void pauseGame(int mode, int ignoreplayer)
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
+		if (keystatus[SDL_SCANCODE_ESCAPE]) {
+			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
 		{
@@ -4454,6 +4456,9 @@ void pauseGame(int mode, int ignoreplayer)
 		if ( !SDL_GetRelativeMouseMode() && capture_mouse )
 		{
 			SDL_SetRelativeMouseMode(EnableMouseCapture);
+		}
+		if (keystatus[SDL_SCANCODE_ESCAPE]) {
+			keystatus[SDL_SCANCODE_ESCAPE] = 0;
 		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
@@ -4619,6 +4624,15 @@ void ingameHud()
 		{
 			players[player]->bControlEnabled = true;
 		}
+#ifdef USE_IMGUI
+		if ( ImGui_t::isInit )
+		{
+			if ( ImGui_t::disablePlayerControl && player == clientnum )
+			{
+				players[player]->bControlEnabled = false;
+			}
+		}
+#endif
 		bool& bControlEnabled = players[player]->bControlEnabled;
 
 	    Input& input = Input::inputs[player];
@@ -4861,8 +4875,8 @@ void ingameHud()
 		if ( worldUIBlocksFollowerCycle )
 		{
 			std::string cycleNPCbinding = input.binding("Cycle NPCs");
-			if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
-				&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
+			if ( cycleNPCbinding != input.binding("Interact Tooltip Next")
+				&& cycleNPCbinding != input.binding("Interact Tooltip Prev") )
 			{
 				worldUIBlocksFollowerCycle = false;
 			}
@@ -6062,6 +6076,25 @@ int main(int argc, char** argv)
 			lastGameTickCount = SDL_GetPerformanceCounter();
 			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
 
+#ifdef USE_IMGUI
+			if ( ImGui_t::queueInit )
+			{
+				ImGui_t::queueInit = false;
+				if ( !ImGui_t::isInit )
+				{
+					ImGui_t::init();
+				}
+			}
+			if ( ImGui_t::queueDeinit )
+			{
+				ImGui_t::queueDeinit = false;
+				if ( ImGui_t::isInit )
+				{
+					ImGui_t::deinit();
+				}
+			}
+#endif
+
 			doConsoleCommands();
 
 			// game logic
@@ -6103,19 +6136,26 @@ int main(int argc, char** argv)
 
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 
+#ifdef USE_IMGUI
+			ImGui_t::update();
+#endif
+
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( nohud || intro || !players[i]->isLocalPlayer() )
+				if ( nohud || intro || !players[i]->isLocalPlayer() || !MainMenu::isPlayerSignedIn(i) )
 				{
-					gameUIFrame[i]->setDisabled(true);
-					if ( intro || !players[i]->isLocalPlayer() )
+					if (gameUIFrame[i])
 					{
-						StatusEffectQueue[i].resetQueue();
+						gameUIFrame[i]->setDisabled(true);
 					}
+					StatusEffectQueue[i].resetQueue();
 				}
 				else
 				{
-					gameUIFrame[i]->setDisabled(false);
+					if (gameUIFrame[i])
+					{
+						gameUIFrame[i]->setDisabled(false);
+					}
 				}
 			}
 
@@ -6274,6 +6314,10 @@ int main(int argc, char** argv)
 						}
 
                         framesProcResult = doFrames();
+
+#ifdef USE_IMGUI
+						ImGui_t::render();
+#endif
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
@@ -6366,7 +6410,6 @@ int main(int argc, char** argv)
 								|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
 							&& !command )
 						{
-							keystatus[SDL_SCANCODE_ESCAPE] = 0;
 							if ( !players[i]->shootmode )
 							{
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
@@ -6380,7 +6423,6 @@ int main(int argc, char** argv)
 						}
 					}
 					if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 					    doPause = true;
 					}
 				}
@@ -6499,7 +6541,7 @@ int main(int argc, char** argv)
 
 				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
-                framesProcResult = doFrames();
+				framesProcResult = doFrames();
 				ingameHud();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
@@ -6555,17 +6597,20 @@ int main(int argc, char** argv)
 					UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
 				}
 
+#ifdef USE_IMGUI
+				ImGui_t::render();
+#endif
+
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !players[i]->isLocalPlayer() && !(gamePaused || players[i]->GUI.isGameoverActive()) )
-					{
+					if ( !MainMenu::isPlayerSignedIn(i) || !players[i]->isLocalPlayer() ) {
 						continue;
 					}
 
 #ifndef NINTENDO
 					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
-						if ( inputs.bPlayerUsingKeyboardControl(i) )
+						if ( inputs.bPlayerUsingKeyboardControl(i) && inputs.getVirtualMouse(i)->draw_cursor )
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
 							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
@@ -6578,28 +6623,7 @@ int main(int argc, char** argv)
 						}
 						continue;
 					}
-
-					if ((subwindow && !players[i]->shootmode))
-					{
-						if (inputs.getVirtualMouse(i)->draw_cursor)
-						{
-							auto cursor = Image::get("images/system/cursor_hand.png");
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
-							pos.x += 4;
-							pos.y += 4;
-							pos.w = cursor->getWidth();
-							pos.h = cursor->getHeight();
-							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
-						}
-					}
 #endif
-
-					// to make sure scroll wheel gets cleared, as it never un-sets itself
-					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Left"); 
-					Input::inputs[i].consumeBinaryToggle("Hotbar Scroll Right");
-					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelUpAlt");
-					Input::inputs[i].consumeBinaryToggle("MenuMouseWheelDownAlt");
 				}
 			}
 
@@ -6709,6 +6733,25 @@ int main(int argc, char** argv)
 			{
 				Input::mouseButtons[Input::MOUSE_WHEEL_UP] = false;
 				Input::mouseButtons[Input::MOUSE_WHEEL_DOWN] = false;
+				mousexrel = 0;
+				mouseyrel = 0;
+				if (initialized)
+				{
+					inputs.updateAllRelMouse();
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( inputs.hasController(i) )
+						{
+							if (inputs.getController(i))
+							{
+#ifndef NINTENDO
+								(void)inputs.getController(i)->handleRumble();
+#endif
+								inputs.getController(i)->updateButtonsReleased();
+							}
+						}
+					}
+				}
 			}
 
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();

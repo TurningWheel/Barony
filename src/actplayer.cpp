@@ -70,7 +70,8 @@ void actDeathCam(Entity* my)
 	}*/
 	DEATHCAM_TIME++;
 
-	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND : TICKS_PER_SECOND * 6;
+	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
+		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -235,12 +236,17 @@ void actDeathCam(Entity* my)
 		DEATHCAM_ROTY = 0;
 	}
 
+	const bool clicked =
+		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") ||
+		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm");
+
 	if ( players[DEATHCAM_PLAYERNUM] && players[DEATHCAM_PLAYERNUM]->entity )
 	{
 		// do nothing if still alive
 	}
-	else if (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") && shootmode
-		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() && players[DEATHCAM_PLAYERNUM]->bControlEnabled
+	else if (clicked && shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
+		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
 		&& !gamePaused )
 	{
 		DEATHCAM_PLAYERTARGET++;
@@ -4630,15 +4636,15 @@ void actPlayer(Entity* my)
 				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
 				{
 					if ( showNPCCommandsOnGamepad &&
-						(showNPCCommandsInputStr == input.binding("CycleWorldTooltipNext")
-							|| showNPCCommandsInputStr == input.binding("CycleWorldTooltipPrev")) )
+						(showNPCCommandsInputStr == input.binding("Interact Tooltip Next")
+							|| showNPCCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 					{
 						input.consumeBinaryToggle("Show NPC Commands");
 						players[PLAYER_NUM]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
 					}
 					if ( lastNPCCommandOnGamepad &&
-						(lastNPCCommandInputStr == input.binding("CycleWorldTooltipNext")
-							|| lastNPCCommandInputStr == input.binding("CycleWorldTooltipPrev")) )
+						(lastNPCCommandInputStr == input.binding("Interact Tooltip Next")
+							|| lastNPCCommandInputStr == input.binding("Interact Tooltip Prev")) )
 					{
 						input.consumeBinaryToggle("Command NPC");
 						players[PLAYER_NUM]->hud.followerDisplay.bCommandNPCDisabled = true;
@@ -4897,6 +4903,14 @@ void actPlayer(Entity* my)
 				{
 					PLAYER_TORCH = 0;
 				}
+			}
+
+			static ConsoleVariable<int> cvar_playerlightmin("/playerlightmin", 0);
+			static ConsoleVariable<int> cvar_playerlightadd("/playerlightadd", 0);
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				PLAYER_TORCH += *cvar_playerlightadd;
+				PLAYER_TORCH = std::max(*cvar_playerlightmin, PLAYER_TORCH);
 			}
 		}
 	}
@@ -5256,11 +5270,32 @@ void actPlayer(Entity* my)
 							{
 								if ( multiplayer == SINGLE )
 								{
-									deleteSaveGame(multiplayer); // stops save scumming c:
+									// stops save scumming c:
+									if ( !splitscreen )
+									{
+										deleteSaveGame(multiplayer);
+									}
+									else
+									{
+										bool allDead = true;
+										for (int c = 0; c < MAXPLAYERS; ++c)
+										{
+											if (!client_disconnected[c] && stats[c]->HP > 0)
+											{
+												allDead = false;
+												break;
+											}
+										}
+										if (allDead)
+										{
+											deleteSaveGame(multiplayer);
+										}
+									}
 								}
 								else
 								{
-									deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+									// Will only delete save games if was last player alive.
+									deleteMultiplayerSaveGames();
 								}
 							}
 
@@ -5275,7 +5310,24 @@ void actPlayer(Entity* my)
 							{
 								playMusic(tutorialmusic, true, true, true);
 							}
-							playMusic(sounds[209], false, true, false);
+
+							bool allDead = true;
+							if (splitscreen)
+							{
+								for (int c = 0; c < MAXPLAYERS; ++c)
+								{
+									if (!client_disconnected[c] && stats[c]->HP > 0)
+									{
+										allDead = false;
+										break;
+									}
+								}
+							}
+
+							if (allDead)
+							{
+								playMusic(sounds[209], false, true, false);
+							}
 #endif
 							combat = false;
 

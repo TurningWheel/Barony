@@ -5002,3 +5002,331 @@ void MonsterData_t::loadMonsterDataJSON()
 	printlog("[JSON]: Error: Could not locate json file %s", "/data/monster_data.json");
 }
 #endif
+
+#ifdef USE_IMGUI
+ImVec4 ImGui_t::colorOn = (ImVec4)ImColor::HSV(2 / 7.0f, 0.6f, 0.6f);
+ImVec4 ImGui_t::colorOnHovered = (ImVec4)ImColor::HSV(2 / 7.0f, 0.7f, 0.7f);
+ImVec4 ImGui_t::colorOnActive = (ImVec4)ImColor::HSV(2 / 7.0f, 0.8f, 0.8f);
+ImVec4 ImGui_t::colorBtnDefault = { 0, 0, 0, 0 };
+ImVec4 ImGui_t::colorBtnDefaultActive = { 0, 0, 0, 0 };
+ImVec4 ImGui_t::colorBtnDefaultHovered = { 0, 0, 0, 0 };
+bool ImGui_t::isInit = false;
+bool ImGui_t::queueInit = false;
+bool ImGui_t::queueDeinit = false;
+bool ImGui_t::show_demo_window = false;
+bool ImGui_t::disablePlayerControl = false;
+
+void ImGui_t::init()
+{
+	if ( isInit )
+	{
+		return;
+	}
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplSDL2_InitForOpenGL(screen, renderer);
+	ImGui_ImplOpenGL3_Init();
+
+	colorBtnDefault = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+	colorBtnDefaultActive = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+	colorBtnDefaultHovered = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+
+	isInit = true;
+	disablePlayerControl = false;
+}
+
+void ImGui_t::deinit()
+{
+	queueInit = false;
+	queueDeinit = false;
+	disablePlayerControl = false;
+	if ( !isInit )
+	{
+		return;
+	}
+	isInit = false;
+	SDL_ShowCursor(SDL_FALSE);
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void ImGui_t::render()
+{
+	if ( !ImGui_t::isInit )
+	{
+		return;
+	}
+
+	auto& io = ImGui_t::getIO();
+	ImGui::Render();
+	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void ImGui_t::update()
+{
+	if ( !ImGui_t::isInit )
+	{
+		return;
+	}
+
+	auto& io = ImGui_t::getIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.DisplaySize.x = xres;
+	io.DisplaySize.y = yres;
+
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+
+	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+	if ( ImGui_t::show_demo_window )
+		ImGui::ShowDemoWindow(&ImGui_t::show_demo_window);
+
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+	ImVec2 lastWindowSize;
+	ImVec2 lastWindowPos;
+	{
+		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 200, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
+
+		ImGui::Begin("Dev Menu");
+
+		if ( ImGui::Button("Close Menu") )
+		{
+			queueDeinit = true;
+		}
+		ImGui::Checkbox("Demo Window", &ImGui_t::show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::Checkbox("Disable Player Control", &ImGui_t::disablePlayerControl);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		lastWindowSize = ImGui::GetWindowSize();
+		lastWindowPos = ImGui::GetWindowPos();
+		ImGui::End();
+	}
+
+	{
+		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + lastWindowPos.x, 
+			main_viewport->WorkPos.y + lastWindowPos.y + 140), 
+			ImGuiCond_FirstUseEver);
+		ImGui_t::showConsoleCommands();
+	}
+}
+
+void ImGui_t::buttonConsoleCommandHighlight(const char* cmd, bool flag)
+{
+	flag ? ImGui::PushStyleColor(ImGuiCol_Button, colorOn) : ImGui::PushStyleColor(ImGuiCol_Button, colorBtnDefault);
+	flag ? ImGui::PushStyleColor(ImGuiCol_ButtonActive, colorOnActive) : ImGui::PushStyleColor(ImGuiCol_ButtonActive, colorBtnDefaultActive);
+	flag ? ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colorOnHovered) : ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colorBtnDefaultHovered);
+	if ( ImGui::Button(cmd) )
+	{
+		consoleCommand(cmd);
+	}
+	ImGui::PopStyleColor(3);
+}
+
+void ImGui_t::showConsoleCommands()
+{
+	int ids = 0;
+
+	ImGui::Begin("Console Commands", nullptr);
+
+	if ( ImGui::Button("/nextlevel") )
+	{
+		consoleCommand("/nextlevel");
+	}
+	ImGui::SameLine();
+	buttonConsoleCommandHighlight("/god", godmode);
+	ImGui::SameLine();
+	buttonConsoleCommandHighlight("/entityfreeze", gameloopFreezeEntities);
+
+	static int jumpLevel = 0;
+	if ( ImGui::Button("/jumplevel") )
+	{
+		std::string cmd = "/jumplevel ";
+		char num[32];
+		snprintf(num, sizeof(num), "%d", jumpLevel);
+		cmd += num;
+		consoleCommand(cmd.c_str());
+		jumpLevel = 0;
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton("jumplvl--", ImGuiDir_::ImGuiDir_Left) )
+	{
+		jumpLevel -= 5;
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton("jumplvl-", ImGuiDir_::ImGuiDir_Left) )
+	{
+		jumpLevel--;
+	}
+	ImGui::SameLine();
+	ImGui::Text("%d", jumpLevel);
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton("jumplvl+", ImGuiDir_::ImGuiDir_Right) )
+	{
+		jumpLevel++;
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton("jumplvl++", ImGuiDir_::ImGuiDir_Right) )
+	{
+		jumpLevel += 5;
+	}
+
+	static int currentItem = 0;
+	if ( ImGui::Button("/spawnitem") )
+	{
+		std::string cmd = "/spawnitem ";
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		consoleCommand(cmd.c_str());
+	}
+	ImGui::SameLine();
+	const char* combo_preview_value = items[currentItem].name_identified;
+	if ( ImGui::BeginCombo("items", combo_preview_value) )
+	{
+		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
+		{
+			const bool is_selected = (currentItem == n);
+			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+				currentItem = n;
+
+			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+			if ( is_selected )
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	static int currentItem2 = 0;
+	const char* statuses[] = { "Broken", "Decrepit", "Worn", "Servicable", "Excellent" };
+	const char* beatitudes[] = { "-5", "-4", "-3", "-2","-1", "0", "1", "2", "3", "4", "5" };
+	static int spawnItemBeatitudeIndex = 5;
+	static int spawnItemStatusIndex = EXCELLENT;
+	if ( ImGui::Button("/spawnitem2") )
+	{
+		std::string cmd = "/spawnitem2 ";
+		char num[32];
+		snprintf(num, sizeof(num), "%d", spawnItemBeatitudeIndex - 5);
+		cmd += num;
+		cmd += " ";
+		snprintf(num, sizeof(num), "%d", spawnItemStatusIndex);
+		cmd += num;
+		cmd += " ";
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		consoleCommand(cmd.c_str());
+	}
+	ImGui::SameLine();
+	const char* combo_preview_value2 = items[currentItem2].name_identified;
+	if ( ImGui::BeginCombo("items2", combo_preview_value) )
+	{
+		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
+		{
+			const bool is_selected = (currentItem2 == n);
+			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+				currentItem2 = n;
+
+			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+			if ( is_selected )
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	const float windowWidth = ImGui::GetWindowWidth();
+	ImGui::SetNextItemWidth(windowWidth * .25);
+	ImGui::Combo("Blessing", &spawnItemBeatitudeIndex, beatitudes, IM_ARRAYSIZE(beatitudes));
+	ImGui::SetNextItemWidth(windowWidth * .25);
+	ImGui::Combo("Status", &spawnItemStatusIndex, statuses, IM_ARRAYSIZE(statuses));
+
+	ImGui::Separator();
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t9GUI - DebugStats.t8Status).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("GUI ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t4Music - DebugStats.t3SteamCallbacks).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom2", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples2", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Frame Time ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	ImGui::End();
+}
+#endif

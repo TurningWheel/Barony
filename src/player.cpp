@@ -24,6 +24,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Slider.hpp"
 #include "lobbies.hpp"
+#include "ui/MainMenu.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -2972,6 +2973,13 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 
 	Monster playerRace = stats[player]->type;
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
+	if ( targetEntityType == SHOPKEEPER )
+	{
+		if ( monsterally[playerRace][SHOPKEEPER] )
+		{
+			return true;
+		}
+	}
 	if ( targetEntityType != NOTHING )
 	{
 		std::map<Monster, std::vector<Monster>>* allyTable = &Player::SkillSheet_t::skillSheetData.leadershipAllyTableBase;
@@ -3740,6 +3748,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
+	else if ( entity.behavior == &actStatue )
+	{
+		return false;
+	}
 	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
 		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
@@ -3763,25 +3775,38 @@ void Player::WorldUI_t::handleTooltips()
 	//DebugTimers.addTimePoint("tooltip", "tooltip start");
 	for ( int player = 0; player < MAXPLAYERS && !gamePaused; ++player )
 	{
+		players[player]->worldUI.worldTooltipDialogue.update();
 		if ( !players[player]->isLocalPlayerAlive() )
 		{
 			players[player]->worldUI.reset();
 			continue;
 		}
 
-		if ( !players[player]->usingCommand() && players[player]->bControlEnabled
-			&& !gamePaused
-			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
+#ifdef NINTENDO
+		players[player]->worldUI.bEnabled = true;
+#else
+		if ( inputs.hasController(player) )
 		{
-			if ( players[player]->worldUI.bEnabled )
+			players[player]->worldUI.bEnabled = true;
+		}
+		else if ( inputs.bPlayerUsingKeyboardControl(player) )
+		{
+			if ( *MainMenu::cvar_mkb_world_tooltips )
 			{
-				players[player]->worldUI.disable();
+				if ( !players[player]->worldUI.bEnabled )
+				{
+					players[player]->worldUI.enable();
+				}
 			}
 			else
 			{
-				players[player]->worldUI.enable();
+				if ( players[player]->worldUI.bEnabled )
+				{
+					players[player]->worldUI.disable();
+				}
 			}
 		}
+#endif // NINTENDO
 
 		if ( !players[player]->worldUI.bEnabled )
 		{
@@ -3861,8 +3886,8 @@ void Player::WorldUI_t::handleTooltips()
 			hit.entity = ohitentity;
 		}
 
-		bool cycleNext = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipNext");
-		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipPrev");
+		bool cycleNext = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Next");
+		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Prev");
 		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
 			if ( cyclePrev )

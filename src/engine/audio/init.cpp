@@ -40,12 +40,13 @@ bool initSoundEngine()
 			return false;
 		}
 
+		int selected_driver = 0;
 		int numDrivers = 0;
 		fmod_system->getNumDrivers(&numDrivers);
 		for ( int i = 0; i < numDrivers; ++i )
 		{
-			const int driverNameLen = 1024;
-			char driverName[1024] = "";
+			constexpr int driverNameLen = 64;
+			char driverName[driverNameLen] = "";
 			FMOD_GUID guid;
 			fmod_result = fmod_system->getDriverInfo(i, driverName, driverNameLen, &guid, nullptr, nullptr, nullptr);
 			if ( FMODErrorCheck() )
@@ -56,14 +57,22 @@ bool initSoundEngine()
 			{
 				printlog("[FMOD]: Audio device found: %d %s | %08x %04x %04x", i, driverName, guid.Data1, guid.Data2, guid.Data3);
 			}
-			// call fmod_system->setDriver() any time to change the device mid-game - no shutdown/reinit required
-		}
-		// if currentDriver == 0, then we're using the OS 'default' audio driver
+
 #ifndef EDITOR
-		fmod_system->setDriver(MainMenu::current_audio_device);
-		fmod_system->getDriver(&MainMenu::current_audio_device);
-		printlog("[FMOD]: Current audio device: %d", MainMenu::current_audio_device);
+			uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+			uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+			char guid_string[25];
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+			if (!selected_driver && MainMenu::current_audio_device == guid_string)
+			{
+				selected_driver = i;
+			}
 #endif
+		}
+
+		fmod_system->setDriver(selected_driver);
+		fmod_system->getDriver(&selected_driver);
+		printlog("[FMOD]: Current audio device: %d", selected_driver);
 
 		fmod_result = fmod_system->createChannelGroup(nullptr, &sound_group);
 		if (FMODErrorCheck())

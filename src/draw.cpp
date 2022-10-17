@@ -1417,7 +1417,8 @@ void drawEntities3D(view_t* camera, int mode)
 	enum SpriteTypes
 	{
 		SPRITE_ENTITY,
-		SPRITE_HPBAR
+		SPRITE_HPBAR,
+		SPRITE_DIALOGUE
 	};
 	std::vector<std::tuple<real_t, void*, SpriteTypes>> spritesToDraw;
 
@@ -1582,6 +1583,15 @@ void drawEntities3D(view_t* camera, int mode)
 				+ pow(camera->y * 16.0 - enemybar.second.worldY, 2));
 			spritesToDraw.push_back(std::make_tuple(camDist, &enemybar, SPRITE_HPBAR));
 		}
+		if ( players[i]->worldUI.worldTooltipDialogue.init && players[i]->worldUI.worldTooltipDialogue.draw )
+		{
+			if ( (i == currentPlayerViewport) )
+			{
+				real_t camDist = (pow(camera->x * 16.0 - players[i]->worldUI.worldTooltipDialogue.x, 2)
+					+ pow(camera->y * 16.0 - players[i]->worldUI.worldTooltipDialogue.y, 2));
+				spritesToDraw.push_back(std::make_tuple(camDist, &players[i]->worldUI.worldTooltipDialogue, SPRITE_DIALOGUE));
+			}
+		}
 	}
 #endif
 
@@ -1630,6 +1640,13 @@ void drawEntities3D(view_t* camera, int mode)
 #ifndef EDITOR
 			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
 			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
+#endif
+		}
+		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_DIALOGUE )
+		{
+#ifndef EDITOR
+			auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t*)std::get<1>(distSpriteType);
+			glDrawWorldDialogueSprite(camera, dialogue, mode);
 #endif
 		}
 	}

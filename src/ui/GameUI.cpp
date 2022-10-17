@@ -26,6 +26,7 @@
 #include "../classdescriptions.hpp"
 #include "../shops.hpp"
 #include "../colors.hpp"
+#include "../book.hpp"
 
 #include <assert.h>
 
@@ -137,6 +138,11 @@ AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::FollowerBars_t::mpBar;
 AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::PlayerBars_t::hpBar;
 AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::PlayerBars_t::mpBar;
 
+std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
+	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
+real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
+real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity = 0.0;
+
 bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 CustomColors_t hudColors;
@@ -155,6 +161,7 @@ int GAMEUI_FRAMEDATA_ANIMATING_ITEM = 1;
 int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
+int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -5795,6 +5802,10 @@ void updateStatusEffectQueue(const int player)
 	{
 		return;
 	}
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		return;
+	}
 	auto& hud_t = players[player]->hud;
 	SDL_Rect mainFramePos{ 0, 0, players[player]->camera_virtualWidth(), players[player]->camera_virtualHeight() / 2 };
 	mainFramePos.x = hud_t.hpFrame->getSize().x;
@@ -7215,13 +7226,23 @@ void Player::HUD_t::processHUD()
         field->setJustify(Field::justify_t::CENTER);
         field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
         field->setFont(bigfont_outline);
+		if (colorblind) {
         switch (player.playernum) {
-        default: field->setColor(uint32ColorPlayerX); break;
+        case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+		case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+		case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+		case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+        default: field->setColor(uint32ColorPlayerX_colorblind); break;
+        }
+		} else {
+        switch (player.playernum) {
         case 0: field->setColor(uint32ColorPlayer1); break;
 		case 1: field->setColor(uint32ColorPlayer2); break;
 		case 2: field->setColor(uint32ColorPlayer3); break;
 		case 3: field->setColor(uint32ColorPlayer4); break;
+        default: field->setColor(uint32ColorPlayerX); break;
         }
+		}
     }
 
     controllerFrame->setSize(hudSize);
@@ -7478,6 +7499,7 @@ void Player::MessageZone_t::processChatbox()
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
 Frame* minimapFrame = nullptr; // shared minimap
+SDL_Rect Player::Minimap_t::sharedMinimapPos{ 0, 0, 0, 0 };
 
 void doSharedMinimap() {
     if (!minimapFrame) {
@@ -7494,7 +7516,7 @@ void doSharedMinimap() {
 			        ++playercount;
 		        }
 	        }
-            if (intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
+            if (gamePaused || intro || MainMenu::isCutsceneActive() || playercount < 3 || !*shareMinimap) {
 				minimapFrame->setInvisible(true);
             } else {
 				minimapFrame->setInvisible(false);
@@ -7512,6 +7534,7 @@ void doSharedMinimap() {
                     Frame::virtualScreenY / 2,
                     size, size});
             }
+			Player::Minimap_t::sharedMinimapPos = static_cast<Frame*>(&widget)->getSize();
             });
     }
 	minimapFrame->setOwner(clientnum);
@@ -7550,13 +7573,13 @@ static Frame* createMinimap(int player) {
         auto& input = Input::inputs[player];
         if ( !gamePaused && players[player]->bControlEnabled 
 			&& !players[player]->usingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
-            if (minimap.real_scale > 75.0) {
+            if (minimap.scale > 75.0) {
                 minimap.real_scale = 75.0;
             }
-            else if (minimap.real_scale > 50.0) {
+            else if (minimap.scale > 50.0) {
                 minimap.real_scale = 50.0;
             }
-            else if (minimap.real_scale > 25.0) {
+            else if (minimap.scale > 25.0) {
                 minimap.real_scale = 25.0;
             }
             else {
@@ -7589,8 +7612,8 @@ static Frame* createMinimap(int player) {
 
 		{
 			real_t scale = factor0 * scale_small;
-			minotaurWarning[player].minimapPos.w = (int)(scale * 4);
-			minotaurWarning[player].minimapPos.h = (int)(scale * 4);
+			players[player]->minimap.minimapPos.w = (int)(scale * 4);
+			players[player]->minimap.minimapPos.h = (int)(scale * 4);
 		}
 
         scale = factor0 * scale_small + factor1 * scale_big;
@@ -14852,6 +14875,19 @@ void Player::CharacterSheet_t::updateAttributes()
 
 void Player::Hotbar_t::processHotbar()
 {
+#ifndef NINTENDO
+	if ( inputs.hasController(player.playernum) )
+	{
+		useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+	{
+		useHotbarFaceMenu = *MainMenu::cvar_mkb_facehotbar;
+	}
+#else
+	useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+#endif // NINTENDO
+
 	if ( !hotbarFrame )
 	{
 		char name[32];
@@ -15550,7 +15586,8 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	if ( slotFrame->getUserData() )
 	{
 		slotType = (int*)slotFrame->getUserData();
-		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM || *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
+		if ( *slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM 
+			|| *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT )
 		{
 			disableBackgrounds = true;
 		}
@@ -15744,7 +15781,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				}
 				if ( !beatitudeFrame->isDisabled() )
 				{
-					if ( isHotbarIcon )
+					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
 						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
@@ -15798,7 +15835,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					brokenStatusFrame->setDisabled(false);
 					auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
-					if ( isHotbarIcon )
+					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
 						brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
 					}
@@ -15816,7 +15853,11 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		bool greyedOut = forceUnusable;
 		unusableFrame->setDisabled(true);
 
-		if ( !disableBackgrounds )
+		if ( (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
+		{
+			// no grey out
+		}
+		else if ( !disableBackgrounds )
 		{
 			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
 			{
@@ -17658,6 +17699,91 @@ void loadHUDSettingsJSON()
 					if ( d["action_prompts"].HasMember("prompt_img_100") )
 					{
 						actionPromptBackingIconPath100 = d["action_prompts"]["prompt_img_100"].GetString();
+					}
+				}
+				if ( d.HasMember("world_items") )
+				{
+					if ( d["world_items"].HasMember("scale_modifier") )
+					{
+						Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = d["world_items"]["scale_modifier"].GetDouble();
+					}
+					if ( d["world_items"].HasMember("tooltip_opacity") )
+					{
+						Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity = d["world_items"]["tooltip_opacity"].GetDouble();
+					}
+				}
+				if ( d.HasMember("world_dialogue") )
+				{
+					if ( d["world_dialogue"].HasMember("types") )
+					{
+						for ( rapidjson::Value::ConstMemberIterator itr = d["world_dialogue"]["types"].MemberBegin();
+							itr != d["world_dialogue"]["types"].MemberEnd(); ++itr )
+						{
+							std::string type = itr->name.GetString();
+							auto dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NONE;
+							if ( type == "default" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NONE;
+							}
+							else if ( type == "grave" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE;
+							}
+							else if ( type == "human_npc" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC;
+							}
+							else
+							{
+								continue;
+							}
+
+							auto& settings = Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings[dialogueType];
+							if ( itr->value.HasMember("z_offset") )
+							{
+								settings.offsetZ = itr->value["z_offset"].GetDouble();
+							}
+							if ( itr->value.HasMember("text_delay") )
+							{
+								settings.textDelay = itr->value["text_delay"].GetInt();
+							}
+							if ( itr->value.HasMember("follow_entity") )
+							{
+								settings.followEntity = itr->value["follow_entity"].GetBool();
+							}
+							if ( itr->value.HasMember("fade_dist") )
+							{
+								settings.fadeDist = itr->value["fade_dist"].GetDouble();
+							}
+							if ( itr->value.HasMember("base_ticks_to_display") )
+							{
+								settings.baseTicksToDisplay = itr->value["base_ticks_to_display"].GetUint();
+							}
+							if ( itr->value.HasMember("extra_ticks_per_line") )
+							{
+								settings.extraTicksPerLine = itr->value["extra_ticks_per_line"].GetUint();
+							}
+							if ( itr->value.HasMember("max_width") )
+							{
+								settings.maxWidth = itr->value["max_width"].GetInt();
+							}
+							if ( itr->value.HasMember("padx") )
+							{
+								settings.padx = itr->value["padx"].GetInt();
+							}
+							if ( itr->value.HasMember("pady") )
+							{
+								settings.pady = itr->value["pady"].GetInt();
+							}
+							if ( itr->value.HasMember("pad_after_first_line") )
+							{
+								settings.padAfterFirstLine = itr->value["pad_after_first_line"].GetInt();
+							}
+							if ( itr->value.HasMember("scale_modifier") )
+							{
+								settings.scaleMod = itr->value["scale_modifier"].GetDouble();
+							}
+						}
 					}
 				}
 				if ( d.HasMember("enemy_hp_bars") )
@@ -23208,6 +23334,8 @@ void Player::Hotbar_t::updateHotbar()
 	auto highlightSlot = hotbarFrame->findFrame("hotbar highlight");
 	auto highlightSlotImg = highlightSlot->findImage("highlight img");
 	highlightSlotImg->disabled = true;
+	auto highlightNumText = highlightSlot->findField("slot num text");
+	highlightNumText->setDisabled(true);
 
 	auto shootmodeSelectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor");
 	if ( shootmodeSelectedSlotCursor )
@@ -23519,7 +23647,6 @@ void Player::Hotbar_t::updateHotbar()
 			if ( showHighlightedSlot )
 			{
 				auto slotNumText = slot->findField("slot num text");
-				auto highlightNumText = highlightSlot->findField("slot num text");
 
 				highlightNumText->setText(slotNumText->getText());
 				highlightNumText->setDisabled(slotNumText->isDisabled());
@@ -26776,11 +26903,11 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 				auto& input = Input::inputs[player.playernum];
 				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 				{
-					if ( input.consumeBinaryToggle("MenuMouseWheelDown") )
+					if ( input.binaryToggle("MenuMouseWheelDown") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
 					}
-					if ( input.consumeBinaryToggle("MenuMouseWheelUp") )
+					if ( input.binaryToggle("MenuMouseWheelUp") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
 					}
@@ -27531,6 +27658,15 @@ void Player::HUD_t::updateMinotaurWarning()
 {
 	auto& m = minotaurWarning[player.playernum];
 
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		if ( minotaurFrame )
+		{
+			minotaurFrame->setDisabled(true);
+		}
+		return;
+	}
+
 	static ConsoleVariable<bool> cvar_minoanimdebug("/minoanimdebug", false);
 	if ( *cvar_minoanimdebug && player.playernum == clientnum )
 	{
@@ -27623,7 +27759,7 @@ void Player::HUD_t::updateMinotaurWarning()
 	minotaurImgBg->disabled = true;
 	auto minotaurImgFg = minotaurFrame->findImage("mino img fg");
 	minotaurImgFg->disabled = true;
-	minotaurFrame->setDisabled(false);
+	minotaurFrame->setDisabled(player.hud.hudFrame->isDisabled());
 	int imgSizeX = 60;
 	int imgSizeY = 66;
 	if ( auto imgGet = Image::get(minotaurImgBg->path.c_str()) )
@@ -27637,15 +27773,18 @@ void Player::HUD_t::updateMinotaurWarning()
 	std::string minimapFrameName = "minimap";
 	minimapFrameName.append(std::to_string(player.playernum));
 	SDL_Rect sharedminimapPos{ 0, 0, 0, 0 };
+	SDL_Rect minimapPos{ 0, 0, 0, 0 };
 	Frame* minimap = nullptr;
 	if ( minimap = player.hud.hudFrame->findFrame(minimapFrameName.c_str()) )
 	{
-		m.minimapPos.x = minotaurFrame->getSize().w - m.minimapPos.w;
-		m.minimapPos.y = minotaurFrame->getSize().h - m.minimapPos.h;
+		minimapPos.x = minotaurFrame->getSize().w - player.minimap.minimapPos.w;
+		minimapPos.y = minotaurFrame->getSize().h - player.minimap.minimapPos.h;
 	}
+	minimapPos.w = player.minimap.minimapPos.w;
+	minimapPos.h = player.minimap.minimapPos.h;
 	if ( ::minimapFrame )
 	{
-		sharedminimapPos = ::minimapFrame->getSize();
+		sharedminimapPos = Player::Minimap_t::sharedMinimapPos;
 	}
 
 	{
@@ -27883,11 +28022,11 @@ void Player::HUD_t::updateMinotaurWarning()
 					midY - imgSizeY / 2 - movementAmount,
 					imgSizeX, imgSizeY);
 			}
-			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && minimapPos.x > 0 )
 			{
 				m.setAnimatePosition(
-					m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
-					m.minimapPos.y - imgSizeY - 16 - movementAmount,
+					minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+					minimapPos.y - imgSizeY - 16 - movementAmount,
 					imgSizeX, imgSizeY);
 			}
 			else
@@ -28012,12 +28151,12 @@ void Player::HUD_t::updateMinotaurWarning()
 				}
 			}
 		}
-		else if ( minotaurDisplay && minimap && !minimap->isInvisible() && m.minimapPos.x > 0 )
+		else if ( minotaurDisplay && minimap && !minimap->isInvisible() && minimapPos.x > 0 )
 		{
 			minotaurDisplay->setDisabled(flash);
 			minotaurDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
-			minotaurDisplay->setSize(SDL_Rect{ m.minimapPos.x + m.minimapPos.w - imgSizeX - 16 - movementAmount,
-				m.minimapPos.y - imgSizeY - 16 - movementAmount,
+			minotaurDisplay->setSize(SDL_Rect{ minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+				minimapPos.y - imgSizeY - 16 - movementAmount,
 				imgSizeX, imgSizeY });
 		}
 		else
@@ -28063,4 +28202,959 @@ void Player::HUD_t::updateMinotaurWarning()
 
 	m.animBg -= fpsScale * 0.2 / animspeed;
 	m.animBg = std::max(0.0, m.animBg);
+}
+
+bool Player::WorldUI_t::WorldTooltipItem_t::isItemSameAsCurrent(Item* item)
+{
+	if ( !item ) 
+	{
+		return false;
+	}
+	if ( item->type == type
+		&& item->status == status
+		&& item->beatitude == beatitude
+		&& item->count == count
+		&& item->appearance == appearance
+		&& item->identified == identified )
+	{
+		return true;
+	}
+	return false;
+}
+
+
+SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* item)
+{
+	if ( !item )
+	{
+		return nullptr;
+	}
+
+	if ( itemWorldTooltipSurface && isItemSameAsCurrent(item) )
+	{
+		return itemWorldTooltipSurface;
+	}
+
+	type = item->type;
+	status = item->status;
+	beatitude = item->beatitude;
+	count = item->count;
+	appearance = item->appearance;
+	identified = item->identified;
+
+	SDL_Rect tooltip;
+	char buf[1024] = "";
+	char buf2[1024] = "";
+	int numHeaderLines = 1;
+	int numDescLines = 3;
+	Font* font = Font::get("fonts/pixel_maz.ttf#32#2");
+	int headerSize = 16;
+
+	if ( !itemFrame )
+	{
+		itemFrame = new Frame("world tooltip frame");
+		itemFrame->setSize(SDL_Rect{ 0, 0, player.hotbar.getSlotSize() - 4, player.hotbar.getSlotSize() - 4 });
+		itemFrame->setUserData(&GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM);
+		createPlayerInventorySlotFrameElements(itemFrame);
+		itemFrame->setSize(SDL_Rect{ 0, 0, player.hotbar.getSlotSize(), player.hotbar.getSlotSize() });
+	}
+
+	updateSlotFrameFromItem(itemFrame, item);
+
+	// get tooltip name and background
+	{
+		if ( !item->identified )
+		{
+			if ( itemCategory(item) == BOOK )
+			{
+				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					language[4214]); // brand new copy of
+				snprintf(buf2, sizeof(buf), "%s (?)", getBookNameFromIndex(item->appearance % numbooks).c_str());
+			}
+			else if ( itemCategory(item) == SCROLL )
+			{
+				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					items[item->type].name_unidentified);
+				snprintf(buf2, sizeof(buf), "%s %s (?)", language[4215], item->getScrollLabel());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+			}
+		}
+		else
+		{
+			if ( (item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT
+				|| item->type == TOOL_GYROBOT) )
+			{
+				int health = 100;
+				if ( !item->tinkeringBotIsMaxHealth() )
+				{
+					health = 25 * (item->appearance % 10);
+					if ( health == 0 && item->status != BROKEN )
+					{
+						health = 5;
+					}
+				}
+				snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+			}
+			else if ( item->type == ENCHANTED_FEATHER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else if ( itemCategory(item) == BOOK )
+			{
+				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					language[4214]); // brand new copy of
+				snprintf(buf2, sizeof(buf), "%s (%+d)", getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			}
+		}
+
+		if ( strcmp(buf2, "") )
+		{
+			numHeaderLines += 1;
+		}
+
+		size_t longestLine = 200;
+		if ( auto textGet = Text::get(buf, font->getName(), 0xFFFFFFFF, 0) )
+		{
+			if ( numHeaderLines == 1 && textGet->getWidth() > 300 )
+			{
+				Field* f = new Field(1024);
+				f->setText(buf);
+				f->setSize(SDL_Rect{ 0, 0, 300, 0 });
+				f->reflowTextToFit(0);
+				strcpy(buf, f->getText());
+				delete f;
+				f = nullptr;
+				for ( size_t c = 0; c < strlen(buf); ++c )
+				{
+					if ( buf[c] == '\n' )
+					{
+						buf[c] = '\0';
+						strcpy(buf2, buf + c + 1);
+						break;
+					}
+				}
+				textGet = Text::get(buf, font->getName(), 0xFFFFFFFF, 0);
+				numHeaderLines++;
+			}
+			longestLine = std::max(longestLine, (size_t)textGet->getWidth());
+		}
+		if ( numHeaderLines > 1 )
+		{
+			if ( auto textGet = Text::get(buf2, font->getName(), 0xFFFFFFFF, 0) )
+			{
+				longestLine = std::max(longestLine, (size_t)textGet->getWidth());
+			}
+		}
+		tooltip.w = 16 + 16 + 8 + longestLine;
+
+		if ( numHeaderLines > 1 )
+		{
+			headerSize = 42;
+		}
+		else
+		{
+			headerSize = 28;
+		}
+		itemFrame->setSize(SDL_Rect{
+			tooltip.w - itemFrame->getSize().w - 16,
+			headerSize + 4,
+			itemFrame->getSize().w,
+			itemFrame->getSize().h });
+		tooltip.h = itemFrame->getSize().h + 8 + headerSize;
+
+		if ( itemWorldTooltipSurface )
+		{
+			SDL_FreeSurface(itemWorldTooltipSurface);
+			itemWorldTooltipSurface = nullptr;
+		}
+		itemWorldTooltipSurface = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+
+		SDL_Rect imgPos{ 0, 0, 0, 0 };
+		if ( numHeaderLines == 1 )
+		{
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_TL00.png") )
+			{
+				imgPos.w = img->getWidth();
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+			imgPos.x += imgPos.w;
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_T00.png") )
+			{
+				imgPos.w = tooltip.w - imgPos.w * 2;
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+			imgPos.x += imgPos.w;
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_TR00.png") )
+			{
+				imgPos.w = img->getWidth();
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+		}
+		else
+		{
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_TL00_2x.png") )
+			{
+				imgPos.w = img->getWidth();
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+			imgPos.x += imgPos.w;
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_T00_2x.png") )
+			{
+				imgPos.w = tooltip.w - imgPos.w * 2;
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+			imgPos.x += imgPos.w;
+			if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_TR00_2x.png") )
+			{
+				imgPos.w = img->getWidth();
+				imgPos.h = img->getHeight();
+				SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+				SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+			}
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_L00.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = tooltip.h - imgPos.h - 26;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_C00.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_R00.png") )
+		{
+			imgPos.w = img->getWidth();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/Inventory/tooltips/Hover_BR01_NoPrompt.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+	}
+
+	{
+		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get("images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_02.png")->getSurf());
+		SDL_Rect pos = SDL_Rect{ itemFrame->getSize().x, itemFrame->getSize().y, 
+			player.hotbar.getSlotSize(), player.hotbar.getSlotSize()};
+		SDL_BlitSurface(srcSurf, nullptr, itemWorldTooltipSurface, &pos);
+	}
+
+	for ( auto& f : itemFrame->getFrames() )
+	{
+		SDL_Rect pos = itemFrame->getSize();
+		pos.x += f->getSize().x;
+		pos.y += f->getSize().y;
+
+		if ( f->isDisabled() ) { continue; }
+		for ( auto& img : f->getImages() )
+		{
+			if ( img->disabled ) { continue; }
+			if ( img->path == "" ) { continue; }
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+			Uint8 r, g, b, a;
+			getColor(img->color, &r, &g, &b, &a);
+			SDL_SetSurfaceAlphaMod(srcSurf, a);
+			SDL_Rect imgPos = pos;
+			imgPos.x += img->pos.x;
+			imgPos.y += img->pos.y;
+			imgPos.w = img->pos.w;
+			imgPos.h = img->pos.h;
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &imgPos);
+		}
+		for ( auto& field : f->getFields() )
+		{
+			if ( field->isDisabled() ) { continue; }
+			SDL_Rect txtPos = pos;
+			auto textGet = field->getTextObject();
+			int x = field->getSize().x;
+			int y = field->getSize().y;
+			if ( field->getHJustify() == Field::justify_t::RIGHT
+				|| field->getHJustify() == Field::justify_t::BOTTOM )
+			{
+				x = field->getSize().x + field->getSize().w - textGet->getWidth();
+			}
+			if ( field->getVJustify() == Field::justify_t::BOTTOM
+				|| field->getVJustify() == Field::justify_t::RIGHT )
+			{
+				y = field->getSize().y + field->getSize().h - font->height();
+			}
+			txtPos.x += x;
+			txtPos.y += y;
+			txtPos.w = field->getSize().w;
+			txtPos.h = field->getSize().h;
+			SDL_BlitSurface(const_cast<SDL_Surface*>(textGet->getSurf()), nullptr, itemWorldTooltipSurface, &txtPos);
+		}
+	}
+
+	GLuint itemTexid = 0;
+	//SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
+	SDL_Rect pos;
+	if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(buf, font->getName(),
+		makeColor(67, 195, 157, 255), 0)->getSurf()) )
+	{
+		pos.x = 16 + 4;
+		pos.y = 2;
+		if ( numHeaderLines > 1 )
+		{
+			pos.y = -2;
+		}
+		SDL_BlitSurface(textSurf, nullptr, itemWorldTooltipSurface, &pos);
+	}
+	if ( numHeaderLines > 1 )
+	{
+		if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(buf2, font->getName(),
+			hudColors.characterSheetHeadingText, 0)->getSurf()) )
+		{
+			pos.x = 16 + 4;
+			pos.y = (font->height() - 8);
+			SDL_BlitSurface(textSurf, nullptr, itemWorldTooltipSurface, &pos);
+		}
+	}
+
+	{
+		SDL_Rect identifyPos = pos;
+		std::string identifyStr = ItemTooltips.adjectives["item_identified_status"]["unidentified"];
+		if ( item->identified )
+		{
+			if ( item->beatitude > 0 )
+			{
+				identifyStr = ItemTooltips.adjectives["item_identified_status"]["blessed"];
+			}
+			else if ( item->beatitude < 0 )
+			{
+				identifyStr = ItemTooltips.adjectives["item_identified_status"]["cursed"];
+			}
+			else
+			{
+				identifyStr = ItemTooltips.adjectives["item_identified_status"]["uncursed"];
+			}
+		}
+		identifyPos.y = headerSize;
+		if ( auto textGet = Text::get(identifyStr.c_str(), font->getName(),
+			hudColors.characterSheetNeutral, 0) )
+		{
+			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(textGet->getSurf()) )
+			{
+				SDL_BlitSurface(textSurf, nullptr, itemWorldTooltipSurface, &identifyPos);
+			}
+			identifyPos.w = textGet->getWidth();
+			identifyPos.h = textGet->getHeight();
+		}
+
+		SDL_Rect wgtPos = pos;
+		wgtPos.y = identifyPos.y + identifyPos.h + 2;
+		wgtPos.x = identifyPos.x;
+		const char* wgtImg = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
+		if ( auto imgGet = Image::get(wgtImg) )
+		{
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(imgGet->getSurf());
+			wgtPos.w = imgGet->getWidth();
+			wgtPos.h = imgGet->getHeight();
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &wgtPos);
+
+			char wgtBuf[32];
+			snprintf(wgtBuf, 255, "%d", item->getWeight());
+			if ( auto textGet = Text::get(wgtBuf, font->getName(),
+				hudColors.characterSheetNeutral, 0) )
+			{
+				SDL_Surface* textSurf = const_cast<SDL_Surface*>(textGet->getSurf());
+				wgtPos.x += wgtPos.w + 4;
+				wgtPos.y = wgtPos.y + wgtPos.h / 2 - font->height() / 2;
+				if ( wgtPos.y % 2 == 1 )
+				{
+					++wgtPos.y;
+				}
+				SDL_BlitSurface(textSurf, nullptr, itemWorldTooltipSurface, &wgtPos);
+				wgtPos.x += textGet->getWidth() + 8;
+			}
+		}
+
+		SDL_Rect goldPos = wgtPos;
+		goldPos.y = identifyPos.y + identifyPos.h;
+		const char* goldImg = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
+		if ( auto imgGet = Image::get(goldImg) )
+		{
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(imgGet->getSurf());
+			goldPos.w = imgGet->getWidth();
+			goldPos.h = imgGet->getHeight();
+			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
+
+			char goldBuf[32];
+			snprintf(goldBuf, 255, "%d", item->sellValue(player.playernum));
+			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(goldBuf, font->getName(),
+				hudColors.characterSheetNeutral, 0)->getSurf()) )
+			{
+				goldPos.x += goldPos.w + 4;
+				goldPos.y = goldPos.y + goldPos.h / 2 - font->height() / 2;
+				if ( goldPos.y % 2 == 1 )
+				{
+					++goldPos.y;
+				}
+				SDL_BlitSurface(textSurf, nullptr, itemWorldTooltipSurface, &goldPos);
+			}
+		}
+	}
+	return itemWorldTooltipSurface;
+}
+
+void Player::WorldUI_t::WorldTooltipDialogue_t::deactivate()
+{
+	parent = 0;
+	x = 0.0;
+	y = 0.0;
+	z = 0.0;
+	active = false;
+	init = false;
+	draw = false;
+	alpha = 0.0;
+	spawnTick = 0;
+	updatedThisTick = 0;
+	expiryTicks = 0;
+	dialogueStringLength = 0;
+	dialogueStrFull = "";
+	dialogueStrCurrent = "";
+	int langEntry = 0;
+	DialogueType_t dialogueType = DIALOGUE_NONE;
+	if ( dialogueTooltipSurface )
+	{
+		SDL_FreeSurface(dialogueTooltipSurface);
+		dialogueTooltipSurface = nullptr;
+	}
+}
+
+void Player::WorldUI_t::WorldTooltipDialogue_t::update()
+{
+	if ( !init )
+	{
+		return;
+	}
+
+	if ( !players[player.playernum]->entity || client_disconnected[player.playernum] )
+	{
+		active = false;
+	}
+
+	Entity* parentEnt = uidToEntity(parent);
+	if ( !parentEnt )
+	{
+		active = false;
+	}
+	else if ( ticks - spawnTick >= expiryTicks )
+	{
+		active = false;
+	}
+
+
+	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	if ( active && parentEnt && setting.followEntity )
+	{
+		x = parentEnt->x;
+		y = parentEnt->y;
+		z = parentEnt->z + setting.offsetZ;
+	}
+
+	real_t dx, dy;
+	if ( players[player.playernum]->entity )
+	{
+		dx = x - players[player.playernum]->entity->x;
+		dy = y - players[player.playernum]->entity->y;
+		if ( sqrt(dx * dx + dy * dy) > setting.fadeDist )
+		{
+			active = false;
+		}
+	}
+
+	if ( ticks != updatedThisTick )
+	{
+		if ( active )
+		{
+			alpha = std::min(1.0, alpha + .15);
+			animZ -= animZ * 0.25;
+			animZ = std::max(0.1, animZ);
+		}
+		else
+		{
+			alpha = std::max(0.0, alpha - .12);
+			animZ += 0.05;
+			animZ = std::min(1.5, animZ);
+			if ( alpha <= 0.0 )
+			{
+				deactivate();
+				return;
+			}
+		}
+	}
+
+	if ( setting.textDelay <= 0 )
+	{
+		dialogueStrCurrent = dialogueStrFull;
+		dialogueStringLength = dialogueStrFull.size();
+	}
+	else if ( ticks - updatedThisTick > (Uint32)(setting.textDelay - 1) )
+	{
+		size_t fullLen = dialogueStrFull.size();
+		if ( dialogueStringLength < fullLen )
+		{
+			if ( dialogueStringLength + 1 == fullLen )
+			{
+				dialogueStrCurrent = dialogueStrFull;
+			}
+			else
+			{
+				dialogueStrCurrent = dialogueStrFull.substr(0U, dialogueStringLength + 1);
+				++dialogueStringLength;
+			}
+		}
+		else if ( dialogueStringLength > fullLen )
+		{
+			dialogueStringLength = fullLen;
+		}
+	}
+	draw = true;
+
+	if ( ticks != updatedThisTick )
+	{
+		blitDialogueTooltip();
+	}
+	updatedThisTick = ticks;
+}
+
+void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid, 
+	Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t type, char const * const message, ...)
+{
+	if ( multiplayer == SERVER )
+	{
+		if ( player.playernum != clientnum )
+		{
+			char buf[1024] = { 0 };
+
+			va_list argptr;
+			va_start(argptr, message);
+			vsnprintf(buf, sizeof(buf), message, argptr);
+			va_end(argptr);
+
+			strcpy((char*)net_packet->data, "BUBL");
+			SDLNet_Write32(uid, &net_packet->data[4]);
+			net_packet->data[8] = Uint8(type);
+			strcpy((char*)(&net_packet->data[9]), buf);
+			net_packet->address.host = net_clients[player.playernum - 1].host;
+			net_packet->address.port = net_clients[player.playernum - 1].port;
+			net_packet->len = 9 + strlen(buf) + 1;
+			sendPacketSafe(net_sock, -1, net_packet, player.playernum - 1);
+			return;
+		}
+	}
+
+	Uint32 oldUid = parent;
+	real_t oldAlpha = alpha;
+	real_t oldAnimZ = animZ;
+	deactivate();
+	Entity* parentEnt = uidToEntity(uid);
+	if ( !parentEnt )
+	{
+		return;
+	}
+	parent = uid;
+
+	char buf[1024] = { 0 };
+
+	va_list argptr;
+	va_start(argptr, message);
+	vsnprintf(buf, sizeof(buf), message, argptr);
+	va_end(argptr);
+
+	dialogueStrFull = buf;
+	spawnTick = ticks;
+	updatedThisTick = 0;
+	dialogueType = type;
+
+	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+
+	x = parentEnt->x;
+	y = parentEnt->y;
+	z = parentEnt->z + setting.offsetZ;
+	animZ = 1.5;
+	drawScale = 0.1 + setting.scaleMod;
+
+	active = true;
+	init = true;
+	alpha = 0.0;
+
+	if ( parent == oldUid )
+	{
+		alpha = oldAlpha;
+		animZ = oldAnimZ;
+	}
+
+	if ( !dialogueField )
+	{
+		dialogueField = new Field(1024);
+		dialogueField->setFont("fonts/pixel_maz_multiline.ttf#16");
+	}
+	dialogueField->setText(dialogueStrFull.c_str());
+	int maxWidth = setting.maxWidth;
+	dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, 0 });
+	dialogueField->reflowTextToFit(0);
+	int numLines = dialogueField->getNumTextLines();
+	if ( Font* actualFont = Font::get(dialogueField->getFont()) )
+	{
+		auto textHeight = numLines * actualFont->height(true) + 16;
+		if ( auto textGet = Text::get(dialogueField->getLongestLine().c_str(),
+			dialogueField->getFont(), dialogueField->getTextColor(),
+			dialogueField->getOutlineColor()) )
+		{
+			dialogueField->setSize(SDL_Rect{ 0, 0, (int)textGet->getWidth() + 16, textHeight });
+		}
+		else
+		{
+			dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, textHeight });
+		}
+	}
+	expiryTicks = setting.baseTicksToDisplay;
+	if ( numLines > 1 )
+	{
+		expiryTicks += (numLines - 1) * setting.extraTicksPerLine;
+	}
+	dialogueStrFull = dialogueField->getText();
+
+	if ( dialogueType == DIALOGUE_NPC )
+	{
+		// insta-show the first line (e.g The NPC:)
+		size_t found = dialogueStrFull.find('\n');
+		if ( found != std::string::npos )
+		{
+			dialogueStringLength = found;
+
+			while ( found != std::string::npos )
+			{
+				if ( found + 1 < dialogueStrFull.length() )
+				{
+					if ( dialogueStrFull[found + 1] != ' ' )
+					{
+						dialogueStrFull.insert(found + 1, 1, ' ');
+						++found;
+					}
+				}
+				found = dialogueStrFull.find('\n', found + 1);
+			}
+		}
+		dialogueField->setText(dialogueStrFull.c_str());
+	}
+}
+
+SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
+{
+	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	const int pointerExtraHeight = 16;
+	SDL_Rect tooltip{ 0, 0, dialogueField->getSize().w, dialogueField->getSize().h };
+	tooltip.h += 16 + setting.padx * 2 + pointerExtraHeight;
+	tooltip.w += 16 + setting.pady * 2;
+	const int numLines = dialogueField->getNumTextLines();
+	if ( numLines > 1 )
+	{
+		tooltip.h += setting.padAfterFirstLine;
+	}
+
+	if ( dialogueTooltipSurface )
+	{
+		SDL_FreeSurface(dialogueTooltipSurface);
+		dialogueTooltipSurface = nullptr;
+	}
+
+	dialogueTooltipSurface = SDL_CreateRGBSurface(0, tooltip.w, tooltip.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+
+	SDL_Rect imgPos{ 0, 0, 0, 0 };
+	if ( dialogueType == DIALOGUE_GRAVE )
+	{
+		dialogueField->setTextColor(makeColor(51, 45, 59, 255));
+		dialogueField->setOutlineColor(makeColor(115, 127, 134, 255));
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_TL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_T.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_TR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_L.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = tooltip.h - imgPos.h - 26 - pointerExtraHeight;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_Color.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_R.png") )
+		{
+			imgPos.w = img->getWidth();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_BL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_B.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_BR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_Pointer.png") )
+		{
+			imgPos.x = tooltip.w / 2;
+			if ( imgPos.x % 2 == 1 )
+			{
+				++imgPos.x;
+			}
+			imgPos.y += imgPos.h - 6;
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+	}
+	else if ( dialogueType == DIALOGUE_NPC )
+	{
+		dialogueField->setTextColor(makeColor(29, 16, 11, 255));
+		dialogueField->setOutlineColor(makeColor(186, 169, 128, 255));
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_TL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_T.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_TR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_L.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = tooltip.h - imgPos.h - 26 - pointerExtraHeight;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_Color.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_R.png") )
+		{
+			imgPos.w = img->getWidth();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_BL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_B.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_BR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_NPC_Pointer.png") )
+		{
+			imgPos.x = tooltip.w / 2;
+			if ( imgPos.x % 2 == 1 )
+			{
+				++imgPos.x;
+			}
+			imgPos.y += imgPos.h - 6;
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+	}
+
+	SDL_Rect txtPos{ 16 + setting.padx, 9 + setting.pady, 0, 0 };
+	int fontHeight = Font::get(dialogueField->getFont())->height(true);
+	std::string buf;
+	int linesDone = 0;
+	for ( size_t i = 0; i < dialogueStrCurrent.length(); ++i )
+	{
+		if ( dialogueStrCurrent[i] == '\n' || i == dialogueStrCurrent.length() - 1 )
+		{
+			if ( i == dialogueStrCurrent.length() - 1 
+				&& dialogueStrCurrent[i] != '\r'
+				&& dialogueStrCurrent[i] != '\n' )
+			{
+				buf += dialogueStrCurrent[i];
+			}
+			if ( auto textGet = Text::get(buf.c_str(), dialogueField->getFont(),
+				dialogueField->getTextColor(), dialogueField->getOutlineColor()) )
+			{
+				bool quoteOffsetY = 0;
+				size_t foundEOL = dialogueStrCurrent.find('\0', i + 1);
+				size_t foundNewLine = dialogueStrCurrent.find('\n', i + 1);
+				size_t foundQuote = dialogueStrCurrent.find('\"', i + 1);
+				if ( foundNewLine != std::string::npos && foundEOL != std::string::npos
+					&& foundNewLine < foundEOL )
+				{
+					if ( foundQuote < foundNewLine )
+					{
+						// this line has a quote after first char
+						// adjust line spacing to account for offset quote introduces
+						quoteOffsetY = -2; 
+					}
+				}
+				else if ( foundEOL != std::string::npos )
+				{
+					if ( foundQuote < foundEOL )
+					{
+						// this line has a quote after first char
+						// adjust line spacing to account for offset quote introduces
+						quoteOffsetY = -2;
+					}
+				}
+				txtPos.y += quoteOffsetY;
+				SDL_BlitSurface(const_cast<SDL_Surface*>(textGet->getSurf()), nullptr, dialogueTooltipSurface, &txtPos);
+				txtPos.y -= quoteOffsetY;
+				txtPos.y += fontHeight;
+				if ( linesDone == 0 )
+				{
+					txtPos.y += setting.padAfterFirstLine;
+				}
+			}
+			buf = "";
+			++linesDone;
+			continue;
+		}
+		else if ( dialogueStrCurrent[i] != '\r' )
+		{
+			buf += dialogueStrCurrent[i];
+		}
+	}
+	return dialogueTooltipSurface;
 }

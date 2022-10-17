@@ -402,11 +402,7 @@ public:
 	}
 	const bool bPlayerUsingKeyboardControl(const int player) const
 	{
-		if ( !splitscreen )
-		{
-			return true;
-		}
-		return player == playerUsingKeyboardControl;
+		return player == playerUsingKeyboardControl || multiplayer != SINGLE;
 	}
 	void controllerHandleMouse(const int player);
 	const bool bControllerInputPressed(const int player, const unsigned controllerImpulse) const;
@@ -1736,7 +1732,116 @@ public:
 			TOOLTIP_VIEW_RESCAN
 		};
 	public:
-		WorldUI_t(Player& p) : player(p)
+		struct WorldTooltipItem_t
+		{
+			Player& player;
+			WorldTooltipItem_t(Player& p) : player(p)
+			{};
+			~WorldTooltipItem_t() 
+			{
+				if ( itemFrame )
+				{
+					delete itemFrame;
+					itemFrame = nullptr;
+				}
+				if ( itemWorldTooltipSurface )
+				{
+					SDL_FreeSurface(itemWorldTooltipSurface);
+					itemWorldTooltipSurface = nullptr;
+				}
+			};
+			Uint32 type = WOODEN_SHIELD;
+			int status = 0;
+			int beatitude = -99;
+			int count = 0;
+			Uint32 appearance = 0;
+			bool identified = false;
+			bool isItemSameAsCurrent(Item* item);
+			SDL_Surface* blitItemWorldTooltip(Item* item);
+			SDL_Surface* itemWorldTooltipSurface = nullptr;
+			Frame* itemFrame = nullptr;
+
+			struct WorldItemSettings_t
+			{
+				static real_t scaleMod;
+				static real_t opacity;
+			};
+		} worldTooltipItem;
+
+		struct WorldTooltipDialogue_t
+		{
+			Player& player;
+			Uint32 parent = 0;
+			real_t x = 0.0;
+			real_t y = 0.0;
+			real_t z = 0.0;
+			bool active = false;
+			bool draw = false;
+			bool init = false;
+			real_t animZ = 0.0;
+			real_t alpha = 0.0;
+			real_t drawScale = 0.0;
+			Uint32 spawnTick = 0;
+			Uint32 updatedThisTick = 0;
+			Uint32 expiryTicks = 0;
+			Field* dialogueField = nullptr;
+			size_t dialogueStringLength = 0;
+			std::string dialogueStrFull = "";
+			std::string dialogueStrCurrent = "";
+			int langEntry = 0;
+			std::string variables[10];
+			int getPlayerNum() { return player.playernum; }
+			WorldTooltipDialogue_t(Player& p) : player(p)
+			{};
+			~WorldTooltipDialogue_t()
+			{
+				if ( dialogueField )
+				{
+					delete dialogueField;
+					dialogueField = nullptr;
+				}
+				if ( dialogueTooltipSurface )
+				{
+					SDL_FreeSurface(dialogueTooltipSurface);
+					dialogueTooltipSurface = nullptr;
+				}
+			};
+			enum DialogueType_t
+			{
+				DIALOGUE_NONE,
+				DIALOGUE_NPC,
+				DIALOGUE_GRAVE
+			};
+			DialogueType_t dialogueType = DIALOGUE_NONE;
+			void deactivate();
+			void update();
+			void createDialogueTooltip(Uint32 uid, DialogueType_t type, char const * const message, ...);
+			SDL_Surface* blitDialogueTooltip();
+			SDL_Surface* dialogueTooltipSurface = nullptr;
+			struct WorldDialogueSettings_t
+			{
+				struct Setting_t
+				{
+					real_t offsetZ = 0.0;
+					int textDelay = 0;
+					bool followEntity = false;
+					real_t fadeDist = STRIKERANGE;
+					Uint32 baseTicksToDisplay = TICKS_PER_SECOND * 3;
+					Uint32 extraTicksPerLine = TICKS_PER_SECOND * 2;
+					int maxWidth = 300;
+					int padx = 8;
+					int pady = 8;
+					int padAfterFirstLine = 0;
+					real_t scaleMod = 0.0;
+				};
+				static std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, Setting_t> settings;
+			};
+		} worldTooltipDialogue;
+
+		WorldUI_t(Player& p) : 
+			player(p),
+			worldTooltipItem(p),
+			worldTooltipDialogue(p)
 		{};
 		~WorldUI_t() {};
 		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
@@ -1761,6 +1866,7 @@ public:
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
+
 	} worldUI;
 
 	class PaperDoll_t
@@ -1972,6 +2078,8 @@ public:
 		real_t real_scale = 0.0;    // canonical scale
 		real_t scale = 0.0;         // momentary scale
 		real_t scale_ang = 0.0;     // used to interpolate
+		SDL_Rect minimapPos;
+		static SDL_Rect sharedMinimapPos;
 	} minimap;
 };
 

@@ -106,8 +106,7 @@ void Input::defaultBindings() {
 
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("InventoryTooltipPromptAppraise", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Expand Inventory Tooltip", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
-		inputs[c].gamepad_system_bindings.insert(std::make_pair("CycleWorldTooltipNext", (std::string("Pad") + std::to_string(c) + std::string("DpadX+")).c_str()));
-		inputs[c].gamepad_system_bindings.insert(std::make_pair("CycleWorldTooltipPrev", (std::string("Pad") + std::to_string(c) + std::string("DpadX-")).c_str()));
+
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavRightBumper", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("UINavLeftTrigger", (std::string("Pad") + std::to_string(c) + std::string("LeftTrigger")).c_str()));
@@ -282,6 +281,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD )
 	{
+		printlog("keyboard bindings for player %d", player);
 	    for (auto& binding : getKeyboardBindings() )
 	    {
 		    bind(binding.first.c_str(), binding.second.c_str());
@@ -289,6 +289,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_CONTROLLER )
 	{
+		printlog("controller bindings for player %d", player);
 		for ( auto& binding : gamepad_system_bindings )
 		{
 			bind(binding.first.c_str(), binding.second.c_str());
@@ -312,6 +313,7 @@ void Input::refresh() {
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_JOYSTICK )
 	{
+		printlog("joystick bindings for player %d", player);
 		for ( auto& binding : joystick_system_bindings )
 		{
 			bind(binding.first.c_str(), binding.second.c_str());
