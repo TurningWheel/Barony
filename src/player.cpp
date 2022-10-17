@@ -24,6 +24,7 @@
 #include "ui/Frame.hpp"
 #include "ui/Slider.hpp"
 #include "lobbies.hpp"
+#include "ui/MainMenu.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -3781,19 +3782,31 @@ void Player::WorldUI_t::handleTooltips()
 			continue;
 		}
 
-		if ( !players[player]->usingCommand() && players[player]->bControlEnabled
-			&& !gamePaused
-			&& Input::inputs[player].consumeBinaryToggle("Interact Tooltip Toggle") && players[player]->shootmode )
+#ifdef NINTENDO
+		players[player]->worldUI.bEnabled = true;
+#else
+		if ( inputs.hasController(player) )
 		{
-			if ( players[player]->worldUI.bEnabled )
+			players[player]->worldUI.bEnabled = true;
+		}
+		else if ( inputs.bPlayerUsingKeyboardControl(player) )
+		{
+			if ( *MainMenu::cvar_mkb_world_tooltips )
 			{
-				players[player]->worldUI.disable();
+				if ( !players[player]->worldUI.bEnabled )
+				{
+					players[player]->worldUI.enable();
+				}
 			}
 			else
 			{
-				players[player]->worldUI.enable();
+				if ( players[player]->worldUI.bEnabled )
+				{
+					players[player]->worldUI.disable();
+				}
 			}
 		}
+#endif // NINTENDO
 
 		if ( !players[player]->worldUI.bEnabled )
 		{
@@ -3873,8 +3886,8 @@ void Player::WorldUI_t::handleTooltips()
 			hit.entity = ohitentity;
 		}
 
-		bool cycleNext = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipNext");
-		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("CycleWorldTooltipPrev");
+		bool cycleNext = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Next");
+		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Prev");
 		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
 			if ( cyclePrev )

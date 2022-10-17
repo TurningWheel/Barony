@@ -14875,6 +14875,19 @@ void Player::CharacterSheet_t::updateAttributes()
 
 void Player::Hotbar_t::processHotbar()
 {
+#ifndef NINTENDO
+	if ( inputs.hasController(player.playernum) )
+	{
+		useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+	}
+	else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+	{
+		useHotbarFaceMenu = *MainMenu::cvar_mkb_facehotbar;
+	}
+#else
+	useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+#endif // NINTENDO
+
 	if ( !hotbarFrame )
 	{
 		char name[32];
@@ -23321,6 +23334,8 @@ void Player::Hotbar_t::updateHotbar()
 	auto highlightSlot = hotbarFrame->findFrame("hotbar highlight");
 	auto highlightSlotImg = highlightSlot->findImage("highlight img");
 	highlightSlotImg->disabled = true;
+	auto highlightNumText = highlightSlot->findField("slot num text");
+	highlightNumText->setDisabled(true);
 
 	auto shootmodeSelectedSlotCursor = hotbarFrame->findFrame("shootmode selected item cursor");
 	if ( shootmodeSelectedSlotCursor )
@@ -23632,7 +23647,6 @@ void Player::Hotbar_t::updateHotbar()
 			if ( showHighlightedSlot )
 			{
 				auto slotNumText = slot->findField("slot num text");
-				auto highlightNumText = highlightSlot->findField("slot num text");
 
 				highlightNumText->setText(slotNumText->getText());
 				highlightNumText->setDisabled(slotNumText->isDisabled());

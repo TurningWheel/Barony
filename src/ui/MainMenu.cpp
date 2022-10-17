@@ -51,6 +51,11 @@ namespace MainMenu {
     ConsoleVariable<bool> clipped_splitscreen("/split_clipped", true);
     static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
     ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false, "if true, game restarts 1 second after last player death");
+	ConsoleVariable<bool> cvar_mkb_world_tooltips("/mkb_world_tooltips", true);
+	ConsoleVariable<bool> cvar_mkb_facehotbar("/mkb_facehotbar", false);
+	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
+	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
+	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -85,7 +90,8 @@ namespace MainMenu {
 		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
 		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
 		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
-		{"Interact Tooltip Toggle", "T", "ButtonLeftStick", emptyBinding},
+		{"Interact Tooltip Next", "R", "DpadX+", emptyBinding },
+		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
 		{"Quick Turn", emptyBinding, "ButtonLeftBumper", emptyBinding },
 		{"Chat", "Return", hiddenBinding, emptyBinding},
@@ -238,6 +244,8 @@ namespace MainMenu {
 	    std::vector<std::pair<std::string, std::string>> mods;
 	    bool crossplay_enabled;
 	    bool fast_restart;
+		float world_tooltip_scale = 100.f;
+		float world_tooltip_scale_splitscreen = 150.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
@@ -270,6 +278,9 @@ namespace MainMenu {
 		bool out_of_focus_audio_enabled;
 		Bindings bindings;
 		bool numkeys_in_inventory_enabled;
+		bool mkb_world_tooltips_enabled = true;
+		bool mkb_facehotbar = false;
+		bool gamepad_facehotbar = true;
 		float mouse_sensitivity;
 		bool reverse_mouse_enabled;
 		bool smooth_mouse_enabled;
@@ -1745,6 +1756,8 @@ namespace MainMenu {
 	inline bool AllSettings::save() {
         gamemods_mountedFilepaths = mods;
 		*cvar_fastRestart = fast_restart;
+		*cvar_worldtooltip_scale = world_tooltip_scale;
+		*cvar_worldtooltip_scale_splitscreen = world_tooltip_scale_splitscreen;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
@@ -1776,6 +1789,9 @@ namespace MainMenu {
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
 		bindings.save();
+		*cvar_mkb_world_tooltips = mkb_world_tooltips_enabled;
+		*cvar_mkb_facehotbar = mkb_facehotbar;
+		*cvar_gamepad_facehotbar = gamepad_facehotbar;
 		hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
 		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
 		reversemouse = reverse_mouse_enabled;
@@ -1819,6 +1835,8 @@ namespace MainMenu {
 		settings.mods = gamemods_mountedFilepaths;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.fast_restart = *cvar_fastRestart;
+		settings.world_tooltip_scale = *cvar_worldtooltip_scale;
+		settings.world_tooltip_scale_splitscreen = *cvar_worldtooltip_scale_splitscreen;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
@@ -1850,6 +1868,9 @@ namespace MainMenu {
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
 		settings.bindings = Bindings::load();
+		settings.mkb_world_tooltips_enabled = *cvar_mkb_world_tooltips;
+		settings.mkb_facehotbar = *cvar_mkb_facehotbar;
+		settings.gamepad_facehotbar = *cvar_gamepad_facehotbar;
 		settings.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
 		settings.mouse_sensitivity = mousespeed;
 		settings.reverse_mouse_enabled = reversemouse;
@@ -1876,6 +1897,8 @@ namespace MainMenu {
 		settings.mods = gamemods_mountedFilepaths;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.fast_restart = false;
+		settings.world_tooltip_scale = 100.f;
+		settings.world_tooltip_scale_splitscreen = 150.f;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.use_on_release_enabled = true;
@@ -1907,6 +1930,9 @@ namespace MainMenu {
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
 		settings.bindings = Bindings::reset();
+		settings.mkb_facehotbar = false;
+		settings.gamepad_facehotbar = true;
+		settings.mkb_world_tooltips_enabled = true;
 		settings.numkeys_in_inventory_enabled = true;
 		settings.mouse_sensitivity = 32.f;
 		settings.reverse_mouse_enabled = false;
@@ -1929,7 +1955,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 4;
+	    int version = 5;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -1997,6 +2023,25 @@ namespace MainMenu {
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
 		file->property("bindings", bindings);
+		if ( file->isReading() )
+		{
+			if ( version >= 5 )
+			{
+				file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
+				file->property("mkb_facehotbar", mkb_facehotbar);
+				file->property("gamepad_facehotbar", gamepad_facehotbar);
+				file->property("world_tooltip_scale", world_tooltip_scale);
+				file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
+			}
+		}
+		else
+		{
+			file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
+			file->property("mkb_facehotbar", mkb_facehotbar);
+			file->property("gamepad_facehotbar", gamepad_facehotbar);
+			file->property("world_tooltip_scale", world_tooltip_scale);
+			file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
+		}
 		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
@@ -3045,6 +3090,7 @@ namespace MainMenu {
 		Normal,
 		Short,
 		Wide,
+		Short_2Slot
 	};
 
 	static void settingsOpenDropdown(Button& button, const char* name, DropdownType type, void(*entry_func)(Frame::entry_t&)) {
@@ -3055,7 +3101,7 @@ namespace MainMenu {
 			button.getSize().x,
 			button.getSize().y,
 			type == DropdownType::Wide ? 640 : 174,
-			type == DropdownType::Short ? 181 : 362
+			(type == DropdownType::Short) ? 181 : ((type == DropdownType::Short_2Slot) ? 84 : 362)
 			});
 		dropdown->setActualSize(SDL_Rect{0, 0, dropdown->getSize().w, dropdown->getSize().h});
 		dropdown->setColor(0);
@@ -3068,6 +3114,7 @@ namespace MainMenu {
 		case DropdownType::Normal: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG00.png"; break;
 		case DropdownType::Short: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG01.png"; break;
 		case DropdownType::Wide: background_img = "*images/ui/Main Menus/Settings/Settings_WideDrop_ScrollBG01.png"; break;
+		case DropdownType::Short_2Slot: background_img = "*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG03_2Slot.png"; break;
 		}
 		auto background = dropdown->addImage(
 			dropdown->getActualSize(),
@@ -3257,6 +3304,48 @@ namespace MainMenu {
 			});
 	}
 #endif
+
+	static void settingsMkbHotbarLayout(Button& button) {
+		settingsOpenDropdown(button, "mkb_facehotbar", DropdownType::Short_2Slot, [](Frame::entry_t& entry) {
+			soundActivate();
+			if ( entry.name == "Classic" )
+			{
+				allSettings.mkb_facehotbar = false;
+			}
+			else
+			{
+				allSettings.mkb_facehotbar = true;
+			}
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_mkb_facehotbar_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_mkb_facehotbar_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+		});
+	}
+
+	static void settingsGamepadHotbarLayout(Button& button) {
+		settingsOpenDropdown(button, "gamepad_facehotbar", DropdownType::Short_2Slot, [](Frame::entry_t& entry) {
+			soundActivate();
+			if ( entry.name == "Classic" )
+			{
+				allSettings.gamepad_facehotbar = false;
+			}
+			else
+			{
+				allSettings.gamepad_facehotbar = true;
+			}
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_gamepad_facehotbar_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_gamepad_facehotbar_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+		});
+	}
 
 	static void settingsWindowMode(Button& button) {
 		settingsOpenDropdown(button, "window_mode", DropdownType::Short, [](Frame::entry_t& entry){
@@ -4502,12 +4591,18 @@ bind_failed:
                     // fix a bug where this wasn't always cleared...
                     mousestatus[SDL_BUTTON_LEFT] = 0;
 #ifdef NINTENDO
-					if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
-						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+					if ( Input::lastInputOfAnyKind.size() >= 4 )
+					{
+						if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
+							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+						}
 					}
 #else
-					if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
-						Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+					if ( Input::lastInputOfAnyKind.size() >= 4 )
+					{
+						if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
+							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
+						}
 					}
 #endif
 				}
@@ -4716,6 +4811,12 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
 			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
 			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
+			"Control size of in-world popups for items, gravestones and NPC dialogue.",
+			allSettings.world_tooltip_scale, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
+			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
+			allSettings.world_tooltip_scale_splitscreen, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
@@ -4743,6 +4844,8 @@ bind_failed:
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
 			{Setting::Type::Boolean, "arachnophobia_filter"},
+			{Setting::Type::Slider, "world_tooltip_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Boolean, "shaking"},
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
@@ -4912,6 +5015,10 @@ bind_failed:
 			    });
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
+		std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
+		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
+			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
+			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
 			"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
@@ -4927,6 +5034,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
 			"Limit how fast the player can rotate by moving the mouse.",
 			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
+			"Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
+			allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
 #endif
 
 #ifdef NINTENDO
@@ -4941,6 +5051,10 @@ bind_failed:
 #else
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
 #endif
+		std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
+		y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
+			"Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
+			gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
 			allSettings.turn_sensitivity_x, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
@@ -4951,16 +5065,21 @@ bind_failed:
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
+			{Setting::Type::Dropdown, "mkb_facehotbar"},
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
 			{Setting::Type::Slider, "mouse_sensitivity"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},
 			{Setting::Type::Boolean, "rotation_speed_limit"},
+			{Setting::Type::Boolean, "mkb_world_tooltips"},
+			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"}});
+			{Setting::Type::Slider, "turn_sensitivity_y"},
+		});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
+			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
 			{Setting::Type::Slider, "turn_sensitivity_y"}});
 #endif

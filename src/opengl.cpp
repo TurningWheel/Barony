@@ -20,6 +20,7 @@
 #include "interface/consolecommand.hpp"
 #include "mod_tools.hpp"
 #include "player.hpp"
+#include "ui/MainMenu.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -1254,7 +1255,15 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
 	glRotatef(tangent2, 0, 0, 1);
 
-	const float scale = static_cast<float>(dialogue->drawScale);
+	float scale = static_cast<float>(dialogue->drawScale);
+	if ( splitscreen )
+	{
+		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+	}
+	else
+	{
+		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+	}
 	glScalef(scale, scale, scale);
 
 	glDepthRange(0, .6);
@@ -1442,6 +1451,14 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	}
 
 	float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
+	if ( splitscreen )
+	{
+		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+	}
+	else
+	{
+		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+	}
 	glScalef(static_cast<GLfloat>(entity->scalex + scale), 
 		static_cast<GLfloat>(entity->scalez + scale), 
 		static_cast<GLfloat>(entity->scaley + scale));

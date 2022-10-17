@@ -4875,8 +4875,8 @@ void ingameHud()
 		if ( worldUIBlocksFollowerCycle )
 		{
 			std::string cycleNPCbinding = input.binding("Cycle NPCs");
-			if ( cycleNPCbinding != input.binding("CycleWorldTooltipNext")
-				&& cycleNPCbinding != input.binding("CycleWorldTooltipPrev") )
+			if ( cycleNPCbinding != input.binding("Interact Tooltip Next")
+				&& cycleNPCbinding != input.binding("Interact Tooltip Prev") )
 			{
 				worldUIBlocksFollowerCycle = false;
 			}

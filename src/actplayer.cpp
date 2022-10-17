@@ -4636,15 +4636,15 @@ void actPlayer(Entity* my)
 				if ( players[PLAYER_NUM]->worldUI.bTooltipInView && players[PLAYER_NUM]->worldUI.tooltipsInRange.size() > 1 )
 				{
 					if ( showNPCCommandsOnGamepad &&
-						(showNPCCommandsInputStr == input.binding("CycleWorldTooltipNext")
-							|| showNPCCommandsInputStr == input.binding("CycleWorldTooltipPrev")) )
+						(showNPCCommandsInputStr == input.binding("Interact Tooltip Next")
+							|| showNPCCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 					{
 						input.consumeBinaryToggle("Show NPC Commands");
 						players[PLAYER_NUM]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
 					}
 					if ( lastNPCCommandOnGamepad &&
-						(lastNPCCommandInputStr == input.binding("CycleWorldTooltipNext")
-							|| lastNPCCommandInputStr == input.binding("CycleWorldTooltipPrev")) )
+						(lastNPCCommandInputStr == input.binding("Interact Tooltip Next")
+							|| lastNPCCommandInputStr == input.binding("Interact Tooltip Prev")) )
 					{
 						input.consumeBinaryToggle("Command NPC");
 						players[PLAYER_NUM]->hud.followerDisplay.bCommandNPCDisabled = true;
