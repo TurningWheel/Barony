@@ -3271,7 +3271,7 @@ namespace MainMenu {
 
 #if defined(USE_FMOD)
 	struct AudioDriver {
-		char name[40];
+		char name[64];
 		FMOD_GUID guid;
 		int system_rate;
 		FMOD_SPEAKERMODE speaker_mode;
@@ -3292,6 +3292,7 @@ namespace MainMenu {
 				char guid_string[25];
 				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
 				allSettings.audio_device = guid_string;
+				fmod_system->setDriver(index);
 			}
 
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -3955,6 +3956,20 @@ namespace MainMenu {
 		slider->setMaxValue(height - size.h);
 		auto names = getFullSettingNames(setting);
 		slider->setWidgetLeft(names.first.c_str());
+
+		// rescues focus if it is lost somehow
+		static std::string rescueSetting;
+		rescueSetting = names.first;
+		frame.setTickCallback([](Widget& widget){
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(getMenuOwner());
+			if (!selectedWidget) {
+				auto rescue = widget.findWidget(rescueSetting.c_str(), true);
+				if (rescue) {
+					rescue->select();
+				}
+			}
+			});
 	}
 
 	static void hookSettingToSetting(Frame& frame, const Setting& setting1, const Setting& setting2) {
@@ -4897,7 +4912,7 @@ bind_failed:
 			AudioDriver d;
 			(void)fmod_system->getDriverInfo(c, d.name, sizeof(d.name), &d.guid,
 				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels);
-			memcpy(d.name + 32, "...", 4); // long names get truncated
+			memcpy(d.name + 48, "...", 4); // long names get truncated
 			audio_drivers.push_back(d);
 
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
