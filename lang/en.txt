@@ -825,27 +825,27 @@ thou makest use of them.#
 513 The %s says:#
 514 The %s doesn't respond.#
 515 %s doesn't respond.#
-516 %s I shall have thy head!#
-517 %s Thou art mine!#
-518 %s En Guarde!#
-519 %s Prepare thyself!#
-520 %s I shall be with thee shortly!#
-521 %s I am somewhat busy now.#
-522 %s I shall talk with thee in a bit!#
-523 %s Bid thy pardon, I speak with someone else.#
-524 %s Bother somebody else!#
-525 %s I shall gladly follow thee, %s!#
-526 %s Lead the way, %s!#
-527 %s I shall follow thee, %s!#
-528 %s Show me the way, %s!#
+516 I shall have thy head!#
+517 Thou art mine!#
+518 En Guarde!#
+519 Prepare thyself!#
+520 I shall be with thee shortly!#
+521 I am somewhat busy now.#
+522 I shall talk with thee in a bit!#
+523 Bid thy pardon, I speak with someone else.#
+524 Bother somebody else!#
+525 I shall gladly follow thee, %s!#
+526 Lead the way, %s!#
+527 I shall follow thee, %s!#
+528 Show me the way, %s!#
 529 The %s decides to follow you!#
-530 %s Excuse me.#
-531 %s Pardon me.#
-532 %s Good day.#
-533 %s I bid thy pardon.#
-534 %s *grunt*#
-535 %s Pardon me, %s.#
-536 %s Sorry, %s. I follow another.#
+530 Excuse me.#
+531 Pardon me.#
+532 Good day.#
+533 I bid thy pardon.#
+534 *grunt*#
+535 Pardon me, %s.#
+536 Sorry, %s. I follow another.#
 
 # sharur lines
 
@@ -3992,29 +3992,29 @@ for this option. (Required: %s, Current: %s)#
 3068 %2d / %2d  multiplayer slots used#
 
 # Follower responses.
-3069 %s I'll stand ground here, %s.#
-3070 %s I'll sit tight.#
-3071 %s My %s cursed!#
-3072 %s This would suit you well, %s!#
-3073 %s I'll try find something better.#
-3074 %s I have no use for this.#
-3075 %s That hit the spot!#
-3076 %s Oof. I'm really full now.#
-3077 %s I cannot reach that.#
-3078 %s There's something in the way.#
-3079 %s Advancing to point!#
-3080 %s Cover my retreat, %s!#
-3081 %s These may be due for repairs.#
-3082 %s Nothing's irreplacable here!#
-3083 %s You can really feel the breeze down here.#
-3084 %s I can't betray my allies like that.#
-3085 %s You have to keep what few friends you have down here.#
-3086 %s Hmm.#
-3087 %s Mm.#
-3088 %s That one was a little mouldy.#
-3089 %s I couldn't possibly eat any more.#
-3090 %s I'm not hungry now.#
-3091 %s Blecch! Rotten food!#
+3069 I'll stand ground here, %s.#
+3070 I'll sit tight.#
+3071 My %s cursed!#
+3072 This would suit you well, %s!#
+3073 I'll try find something better.#
+3074 I have no use for this.#
+3075 That hit the spot!#
+3076 Oof. I'm really full now.#
+3077 I cannot reach that.#
+3078 There's something in the way.#
+3079 Advancing to point!#
+3080 Cover my retreat, %s!#
+3081 These may be due for repairs.#
+3082 Nothing's irreplacable here!#
+3083 You can really feel the breeze down here.#
+3084 I can't betray my allies like that.#
+3085 You have to keep what few friends you have down here.#
+3086 Hmm.#
+3087 Mm.#
+3088 That one was a little mouldy.#
+3089 I couldn't possibly eat any more.#
+3090 I'm not hungry now.#
+3091 Blecch! Rotten food!#
 3092 You may only use this command once per floor.#
 3093 Tinker with #
 3094 No interaction available.#
@@ -4063,7 +4063,7 @@ for this option. (Required: %s, Current: %s)#
 3132 %s can't reach that from here.#
 3133 There's something in the way of the %s.#
 3134 There's something in the way of %s.#
-3135 %s Apologies %s, but I won't let go of my keepsakes.#
+3135 Apologies %s, but I won't let go of my keepsakes.#
 
 # Misc
 3136 Hide Player Nametags#
@@ -4216,7 +4216,7 @@ Difficulty: Hard#
 3240 Your appraisal is not high enough to identify "%s".#
 3241 You feel the curse lift as you incant the spell...#
 3242 The tomes' knowledge grants you control over the curse!#
-3243 %s Begone from my shop, foul %s!#
+3243 Begone from my shop, foul %s!#
 3244 learns about the "no %s allowed" policy of %s's shop.#
 3245 %d potions dropped from the fountain!#
 3246 A potion dropped from the fountain!#
@@ -5827,12 +5827,9 @@ Unable to attack#
 3886 Polymorphs the caster into a different creature for a duration
 Non-humans are always polymorphed into a human#
 3887 You are not skilled enough to empty the trap.#
-3888 The %s says: Oh! I must pay a visit to the goldsmith with this jewel!
- Though I'm not sure if green is really my color.#
-3889 The %s says: Hmm. They say these were artificed from centuries of knowledge.
- Would you believe most wizards lose their marbles?#
-3890 The %s says: Aha! A magnificent crimson specimen... if slightly damp.
- Have you been jogging with this?#
+3888 Oh! I must pay a visit to the goldsmith with this jewel! Though I'm not sure if green is really my color.#
+3889 Hmm. They say these were artificed from centuries of knowledge. Would you believe most wizards lose their marbles?#
+3890 Aha! A magnificent crimson specimen... if slightly damp. Have you been jogging with this?#
 3891 %s has no use for that.#
 3892 The %s has no use for that.#
 3893 Hm. You've made the right

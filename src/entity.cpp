@@ -14645,13 +14645,18 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			if ( targetStats->type != HUMAN )
 			{
-				messagePlayer(target.skill[2], MESSAGE_WORLD, language[3243],
-					namesays, getMonsterLocalizedName(targetStats->type).c_str());
+				//messagePlayer(target.skill[2], MESSAGE_WORLD, language[3243],
+				//	namesays, getMonsterLocalizedName(targetStats->type).c_str());
+				players[target.skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
+					getMonsterLocalizedName(targetStats->type).c_str());
 				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 			}
 			else
 			{
-				messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + local_rng.rand() % 4], namesays);
+				//messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + local_rng.rand() % 4], namesays);
+				players[target.skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.rand() % 4]);
 			}
 
 			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
@@ -15012,14 +15017,20 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					{
 						switch ( item->type )
 						{
+							case ARTIFACT_ORB_GREEN:
+								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
+								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3888]);
+								break;
 							case ARTIFACT_ORB_BLUE:
-								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
+								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
+								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3889]);
 								break;
 							case ARTIFACT_ORB_RED:
-								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
-								break;
-							case ARTIFACT_ORB_GREEN:
-								messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
+								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
+								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3890]);
 								break;
 							default:
 								break;

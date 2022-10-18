@@ -566,14 +566,20 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 
 			switch ( this->type )
 			{
+				case ARTIFACT_ORB_GREEN:
+					//messagePlayer(player, MESSAGE_WORLD, language[3888], entity.getStats()->name);
+					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3888]);
+					break;
 				case ARTIFACT_ORB_BLUE:
-					messagePlayer(player, MESSAGE_WORLD, language[3889], entity.getStats()->name);
+					//messagePlayer(player, MESSAGE_WORLD, language[3889], entity.getStats()->name);
+					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3889]);
 					break;
 				case ARTIFACT_ORB_RED:
-					messagePlayer(player, MESSAGE_WORLD, language[3890], entity.getStats()->name);
-					break;
-				case ARTIFACT_ORB_GREEN:
-					messagePlayer(player, MESSAGE_WORLD, language[3888], entity.getStats()->name);
+					//messagePlayer(player, MESSAGE_WORLD, language[3890], entity.getStats()->name);
+					players[player]->worldUI.worldTooltipDialogue.createDialogueTooltip(entity.getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3890]);
 					break;
 				default:
 					break;
