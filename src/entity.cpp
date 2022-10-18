@@ -14629,53 +14629,60 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		monsterState = state;
 	}
 
-	if ( myStats->type == SHOPKEEPER && monsterTarget != target.getUID() && target.behavior == &actPlayer )
+	if ( (myStats->type == SHOPKEEPER || myStats->type == HUMAN) && monsterTarget != target.getUID() )
 	{
 		Stat* targetStats = target.getStats();
 		if ( targetStats )
 		{
-			char namesays[32];
-			if ( !strcmp(myStats->name, "") )
+			if ( myStats->type == SHOPKEEPER )
 			{
-				snprintf(namesays, 31, language[513], SHOPKEEPER);
+				for (int c = 0; c < MAXPLAYERS; ++c)
+				{
+					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
+						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+				}
+				if (target.behavior == &actPlayer)
+				{
+					steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
+				}
 			}
 			else
 			{
-				snprintf(namesays, 31, language[1302], myStats->name);
-			}
-			if ( targetStats->type != HUMAN )
-			{
-				//messagePlayer(target.skill[2], MESSAGE_WORLD, language[3243],
-				//	namesays, getMonsterLocalizedName(targetStats->type).c_str());
-				players[target.skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
-					getMonsterLocalizedName(targetStats->type).c_str());
-				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
-			}
-			else
-			{
-				//messagePlayer(target.skill[2], MESSAGE_WORLD, language[516 + local_rng.rand() % 4], namesays);
-				players[target.skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.rand() % 4]);
+				for (int c = 0; c < MAXPLAYERS; ++c)
+				{
+					if (local_rng.getU8() % 2) {
+						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
+							language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+					} else {
+						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
+							language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+					}
+				}
 			}
 
-			if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
+			if ( myStats->type == SHOPKEEPER && target.behavior == &actPlayer )
 			{
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
 				{
-					if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
-					}
-					else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
-					{
-						// inform client of abandonment
-						strcpy((char*)net_packet->data, "SHPC");
-						SDLNet_Write32(getUID(), &net_packet->data[4]);
-						net_packet->address.host = net_clients[i - 1].host;
-						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 8;
-						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+						if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+						{
+							players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+						}
+						else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
+						{
+							// inform client of abandonment
+							strcpy((char*)net_packet->data, "SHPC");
+							SDLNet_Write32(getUID(), &net_packet->data[4]);
+							net_packet->address.host = net_clients[i - 1].host;
+							net_packet->address.port = net_clients[i - 1].port;
+							net_packet->len = 8;
+							sendPacketSafe(net_sock, -1, net_packet, i - 1);
+						}
 					}
 				}
 			}

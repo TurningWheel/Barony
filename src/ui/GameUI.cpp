@@ -28602,7 +28602,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &wgtPos);
 
 			char wgtBuf[32];
-			snprintf(wgtBuf, 255, "%d", item->getWeight());
+			snprintf(wgtBuf, sizeof(wgtBuf), "%d", item->getWeight());
 			if ( auto textGet = Text::get(wgtBuf, font->getName(),
 				hudColors.characterSheetNeutral, 0) )
 			{
@@ -28629,7 +28629,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
 
 			char goldBuf[32];
-			snprintf(goldBuf, 255, "%d", item->sellValue(player.playernum));
+			snprintf(goldBuf, sizeof(goldBuf), "%d", item->sellValue(player.playernum));
 			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(goldBuf, font->getName(),
 				hudColors.characterSheetNeutral, 0)->getSurf()) )
 			{
@@ -28707,7 +28707,7 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 	{
 		dx = x - players[player.playernum]->entity->x;
 		dy = y - players[player.playernum]->entity->y;
-		if ( sqrt(dx * dx + dy * dy) > setting.fadeDist )
+		if ( dx * dx + dy * dy > setting.fadeDist * setting.fadeDist )
 		{
 			active = false;
 		}

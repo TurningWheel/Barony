@@ -825,10 +825,10 @@ thou makest use of them.#
 513 The %s says:#
 514 The %s doesn't respond.#
 515 %s doesn't respond.#
-516 I shall have thy head!#
-517 Thou art mine!#
-518 En Guarde!#
-519 Prepare thyself!#
+516 %s %s! I shall have thy head!#
+517 %s %s! En Guarde!#
+518 Thou art mine, %s %s!#
+519 Prepare thyself, %s %s!#
 520 I shall be with thee shortly!#
 521 I am somewhat busy now.#
 522 I shall talk with thee in a bit!#
@@ -4216,7 +4216,7 @@ Difficulty: Hard#
 3240 Your appraisal is not high enough to identify "%s".#
 3241 You feel the curse lift as you incant the spell...#
 3242 The tomes' knowledge grants you control over the curse!#
-3243 Begone from my shop, foul %s!#
+3243 Begone from my shop, %s %s!#
 3244 learns about the "no %s allowed" policy of %s's shop.#
 3245 %d potions dropped from the fountain!#
 3246 A potion dropped from the fountain!#
@@ -6269,4 +6269,42 @@ Combination!#
 4215 labelled#
 4216 %s:#
 
-4249 end#
+# NPC insults
+
+4217 damned#
+4218 dreadful#
+4219 lowborn#
+4220 foul#
+4221 ignoble#
+4222 wicked#
+4223 stinking#
+4224 awful#
+4225 beastly#
+4226 filthy#
+4227 monstrous#
+4228 evil#
+4229 vicious#
+4230 vile#
+4231 villainous#
+4232 unlawful#
+4233 nefarious#
+
+4234 Damned#
+4235 Dreadful#
+4236 Lowborn#
+4237 Foul#
+4238 Ignoble#
+4239 Wicked#
+4240 Stinking#
+4241 Awful#
+4242 Beastly#
+4243 Filthy#
+4244 Monstrous#
+4245 Evil#
+4246 Vicious#
+4247 Vile#
+4248 Villainous#
+4249 Unlawful#
+4250 Nefarious#
+
+4299 end#

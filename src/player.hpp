@@ -1826,7 +1826,7 @@ public:
 					real_t offsetZ = 0.0;
 					int textDelay = 0;
 					bool followEntity = false;
-					real_t fadeDist = STRIKERANGE;
+					real_t fadeDist = 32.0; // 2 tiles radius
 					Uint32 baseTicksToDisplay = TICKS_PER_SECOND * 3;
 					Uint32 extraTicksPerLine = TICKS_PER_SECOND * 2;
 					int maxWidth = 300;
