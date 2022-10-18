@@ -707,6 +707,9 @@ void actFloorDecoration(Entity* my)
 				}
 
 				const bool signpost = output[0] == '#';
+				if (signpost) {
+					output.erase(0, 1);
+				}
 
 				size_t foundInputTag = output.find("@in=");
 				while ( foundInputTag != std::string::npos )
