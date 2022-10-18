@@ -3826,11 +3826,6 @@ namespace MainMenu {
 		settings_subwindow->setActualSize(SDL_Rect{0, 0, 547 * 2, 223 * 2});
 		settings_subwindow->setColor(0);
 		settings_subwindow->setBorder(0);
-		settings_subwindow->setTickCallback([](Widget& widget){
-			auto frame = static_cast<Frame*>(&widget);
-			updateSettingSelection(*frame);
-			updateSliderArrows(*frame);
-			});
 		auto rock_background = settings_subwindow->addImage(
 			settings_subwindow->getActualSize(),
 			makeColor(255, 255, 255, 255),
@@ -3969,6 +3964,9 @@ namespace MainMenu {
 					rescue->select();
 				}
 			}
+			auto frame = static_cast<Frame*>(&widget);
+			updateSettingSelection(*frame);
+			updateSliderArrows(*frame);
 			});
 	}
 
@@ -4059,11 +4057,6 @@ namespace MainMenu {
 		subwindow->setScrollBarsEnabled(false);
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
-		subwindow->setTickCallback([](Widget& widget){
-			auto frame = static_cast<Frame*>(&widget);
-			updateSettingSelection(*frame);
-			updateSliderArrows(*frame);
-			});
 
 		auto rocks = subwindow->addImage(
 			subwindow->getActualSize(),
