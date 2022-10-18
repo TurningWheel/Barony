@@ -706,14 +706,7 @@ void actFloorDecoration(Entity* my)
 					}
 				}
 
-
-				size_t foundSignpostCharacter = output.find("#");
-				if ( foundSignpostCharacter == 0 )
-				{
-					output.erase(0, 1);
-					output.insert(0, "The sign says:\n \"");
-					output += "\"";
-				}
+				const bool signpost = output[0] == '#';
 
 				size_t foundInputTag = output.find("@in=");
 				while ( foundInputTag != std::string::npos )
@@ -750,7 +743,13 @@ void actFloorDecoration(Entity* my)
 					found = output.find("\\n");
 				}
 				strcpy(buf, output.c_str());
-				messagePlayer(i, MESSAGE_INSPECTION, buf);
+
+				if (signpost) {
+					players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_SIGNPOST, buf);
+				} else {
+					messagePlayer(i, MESSAGE_INSPECTION, buf);
+				}
 			}
 		}
 	}

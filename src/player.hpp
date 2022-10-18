@@ -1811,7 +1811,8 @@ public:
 			{
 				DIALOGUE_NONE,
 				DIALOGUE_NPC,
-				DIALOGUE_GRAVE
+				DIALOGUE_GRAVE,
+				DIALOGUE_SIGNPOST
 			};
 			DialogueType_t dialogueType = DIALOGUE_NONE;
 			void deactivate();

@@ -17729,6 +17729,10 @@ void loadHUDSettingsJSON()
 							{
 								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE;
 							}
+							else if ( type == "signpost" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_SIGNPOST;
+							}
 							else if ( type == "human_npc" )
 							{
 								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC;
@@ -28812,6 +28816,11 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	vsnprintf(buf, sizeof(buf), message, argptr);
 	va_end(argptr);
 
+	if (player.playernum == clientnum)
+	{
+		messagePlayer(player.playernum, MESSAGE_CHATTER, buf);
+	}
+
 	dialogueStrFull = buf;
 	spawnTick = ticks;
 	updatedThisTick = 0;
@@ -28992,6 +29001,98 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
 		}
 
 		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Grave_Pointer.png") )
+		{
+			imgPos.x = tooltip.w / 2;
+			if ( imgPos.x % 2 == 1 )
+			{
+				++imgPos.x;
+			}
+			imgPos.y += imgPos.h - 6;
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+	}
+	else if ( dialogueType == DIALOGUE_SIGNPOST )
+	{
+		dialogueField->setTextColor(makeColor(29, 16, 11, 255));
+		dialogueField->setOutlineColor(makeColor(82, 66, 60, 255));
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_TL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_T.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_TR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_L.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = tooltip.h - imgPos.h - 26 - pointerExtraHeight;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_Color.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_R.png") )
+		{
+			imgPos.w = img->getWidth();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		imgPos.x = 0;
+		imgPos.y += imgPos.h;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_BL.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_B.png") )
+		{
+			imgPos.w = tooltip.w - imgPos.w * 2;
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+		imgPos.x += imgPos.w;
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_BR.png") )
+		{
+			imgPos.w = img->getWidth();
+			imgPos.h = img->getHeight();
+			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(img->getSurf());
+			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
+		}
+
+		if ( auto img = Image::get("*#images/ui/TextBubbles/Textbox_Sign_Pointer.png") )
 		{
 			imgPos.x = tooltip.w / 2;
 			if ( imgPos.x % 2 == 1 )

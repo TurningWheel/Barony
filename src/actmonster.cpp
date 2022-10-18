@@ -924,7 +924,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	else
 	{
 		//This one can't speak, so generic "The %s decides to follow you!" message.
-		messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[529], language[529], MSG_COMBAT);
+		messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[529], language[3128], MSG_COMBAT);
 	}
 	spawnMagicEffectParticles(my->x, my->y, my->z, 685);
 	monsterMoveAside(my, players[monsterclicked]->entity);

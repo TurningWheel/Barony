@@ -4693,9 +4693,12 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
 			"Display the name of each player character above their avatar.",
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
+
+#ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
 			allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
+#endif
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
@@ -4714,8 +4717,7 @@ bind_failed:
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
-			{Setting::Type::Boolean, "show_player_nametags"},
-			{Setting::Type::Boolean, "show_hud"}});
+			{Setting::Type::Boolean, "show_player_nametags"}});
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "fast_restart"});
@@ -5031,15 +5033,15 @@ bind_failed:
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
 		std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
+		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
+			"Control the speed by which mouse movement affects camera movement.",
+			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
 			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
 			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
 			"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
-		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
-			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
 			"Reverse mouse up and down movement for controlling the orientation of the player.",
 			allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
@@ -5080,9 +5082,9 @@ bind_failed:
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
+			{Setting::Type::Slider, "mouse_sensitivity"},
 			{Setting::Type::Dropdown, "mkb_facehotbar"},
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
-			{Setting::Type::Slider, "mouse_sensitivity"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},
 			{Setting::Type::Boolean, "rotation_speed_limit"},
@@ -15069,6 +15071,7 @@ bind_failed:
 		continue_button->setWidgetBack("back_button");
 		continue_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		continue_button->setButtonsOffset(SDL_Rect{0, 29, 0, 0,});
+		continue_button->setSelectorOffset(SDL_Rect{-1, -1, 1, 1});
 
 		auto new_button = window->addButton("new");
 		new_button->setSize(SDL_Rect{114 * 2, 36 * 2, 68 * 2, 56 * 2});
@@ -15085,6 +15088,7 @@ bind_failed:
 		new_button->setWidgetBack("back_button");
 		new_button->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		new_button->setButtonsOffset(SDL_Rect{0, 29, 0, 0,});
+		new_button->setSelectorOffset(SDL_Rect{-1, -1, -3, -11});
 
 		if (!gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt) {
 			if (continueAvailable) {

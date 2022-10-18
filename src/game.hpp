@@ -126,6 +126,7 @@ enum MessageType : Uint32 {
 	MESSAGE_INSPECTION = 1u << 8, // player inspections of world objects
 	MESSAGE_HINT = 1u << 9, // special text cues and descriptive messages
 	MESSAGE_OBITUARY = 1u << 10, // character death announcement
+	MESSAGE_CHATTER = 1u << 11, // NPC chatter
 	MESSAGE_DEBUG = 1u << 30, // debug only messages
 	MESSAGE_MISC = 1u << 31, // miscellaneous messages
 };

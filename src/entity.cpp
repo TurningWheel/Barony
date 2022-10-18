@@ -16981,8 +16981,15 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	if ( !strcmp(monsterStats.name, "") )
 	{
 		// use generic racial name and grammar. "You hit the skeleton"
-		if ( detailType == MSG_OBITUARY )
+		switch (detailType)
 		{
+		case MSG_DESCRIPTION:
+			messagePlayerColor(player, MESSAGE_INSPECTION, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			break;
+		case MSG_COMBAT:
+			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			break;
+		case MSG_OBITUARY:
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
 				if ( client_disconnected[c] )
@@ -16998,38 +17005,37 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 					messagePlayerColor(c, MESSAGE_OBITUARY, color, msgGeneric, stats[player]->name, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
 			}
-		}
-		else if ( detailType == MSG_ATTACKS )
-		{
-			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(),
+			break;
+		default:
+		case MSG_GENERIC:
+			messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			break;
+		case MSG_ATTACKS:
+			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric,
+				getMonsterLocalizedName((Monster)monsterType).c_str(),
 				getMonsterLocalizedInjury((Monster)monsterType).c_str());
-		}
-		else if ( detailType == MSG_STEAL_WEAPON )
-		{
+			break;
+		case MSG_STEAL_WEAPON:
 			if ( monsterStats.weapon )
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.weapon->getName());
 			}
-		}
-		else if ( detailType == MSG_TOOL_BOMB )
-		{
-			int itemType = WOODEN_SHIELD;
+			break;
+		case MSG_TOOL_BOMB:
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
-				itemType = optionalEntity->skill[21];
+				const int itemType = optionalEntity->skill[21];
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 			}
-		}
-		else
-		{
-			messagePlayerColor(player, MESSAGE_MISC, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			break;
 		}
 	}
 	else
 	{
 		// use monster's "name" and pronoun grammar. "You hit Funny Bones!"
-		if ( detailType == MSG_DESCRIPTION )
+		switch (detailType)
 		{
+		case MSG_DESCRIPTION:
 			if ( namedMonsterAsGeneric )
 			{
 				messagePlayerColor(player, MESSAGE_INSPECTION, color, msgGeneric, monsterStats.name);
@@ -17038,9 +17044,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, MESSAGE_INSPECTION, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.name);
 			}
-		}
-		else if ( detailType == MSG_COMBAT )
-		{
+			break;
+		case MSG_COMBAT:
 			if ( namedMonsterAsGeneric )
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name);
@@ -17053,9 +17058,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
 			}
-		}
-		else if ( detailType == MSG_OBITUARY )
-		{
+			break;
+		case MSG_OBITUARY:
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
 				if ( client_disconnected[c] )
@@ -17078,9 +17082,9 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 					messagePlayerColor(c, MESSAGE_OBITUARY, color, "%s %s", monsterStats.name, monsterStats.obituary);
 				}
 			}
-		}
-		else if ( detailType == MSG_GENERIC )
-		{
+			break;
+		default:
+		case MSG_GENERIC:
 			if ( namedMonsterAsGeneric || monsterType == HUMAN || (optionalEntity && optionalEntity->behavior == &actPlayer) )
 			{
 				messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, monsterStats.name);
@@ -17089,9 +17093,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 			}
-		}
-		else if ( detailType == MSG_ATTACKS )
-		{
+			break;
+		case MSG_ATTACKS:
 			if ( namedMonsterAsGeneric )
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
@@ -17100,9 +17103,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
-		}
-		else if ( detailType == MSG_STEAL_WEAPON )
-		{
+			break;
+		case MSG_STEAL_WEAPON:
 			if ( monsterStats.weapon )
 			{
 				if ( namedMonsterAsGeneric )
@@ -17118,9 +17120,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 					messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
 				}
 			}
-		}
-		else if ( detailType == MSG_TOOL_BOMB )
-		{
+			break;
+		case MSG_TOOL_BOMB:
 			int itemType = WOODEN_SHIELD;
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
@@ -17134,6 +17135,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
 				}
 			}
+			break;
 		}
 	}
 }

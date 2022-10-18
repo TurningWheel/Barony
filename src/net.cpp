@@ -3383,22 +3383,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Uint32 color = SDLNet_Read32(&net_packet->data[4]);
 		MessageType type = (MessageType)SDLNet_Read32(&net_packet->data[8]);
 		const char* msg = (const char*)(&net_packet->data[12]);
+
 		if ( ticks != 1 )
 		{
-			messagePlayerColor(clientnum, type, color, msg);
-		}
-		if (!disable_messages && (messagesEnabled & MESSAGE_CHAT))
-		{
-		    for ( int c = 0; c < MAXPLAYERS; c++ )
-		    {
-			    if ( !strncmp( msg, stats[c]->name, std::min<size_t>(strlen(stats[c]->name), (size_t)10) ) )
-			    {
-				    if ( msg[std::min<size_t>(strlen(stats[c]->name), (size_t)10)] == ':' )
-				    {
-					    playSound(238, 64);
-				    }
-			    }
-		    }
+			const bool printed = messagePlayerColor(clientnum, type, color, msg);
+			if (type == MESSAGE_CHAT && printed)
+			{
+				playSound(238, 64);
+			}
 		}
 		
 		if ( !strcmp(msg, language[1109]) )
