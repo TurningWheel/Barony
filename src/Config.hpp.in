@@ -35,6 +35,10 @@
 	#endif
 #endif
 
+#if @IMGUI@
+	#define USE_IMGUI
+#endif
+
 #if @FMOD@
 	#define USE_FMOD
 #endif

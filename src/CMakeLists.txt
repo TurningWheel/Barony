@@ -134,6 +134,7 @@ add_subdirectory(magic)
 add_subdirectory(interface)
 add_subdirectory(ui)
 add_subdirectory(engine)
+add_subdirectory(imgui)
 
 set(GAME_SOURCES ${GAME_SOURCES} PARENT_SCOPE)
 set(EDITOR_SOURCES ${EDITOR_SOURCES} PARENT_SCOPE)

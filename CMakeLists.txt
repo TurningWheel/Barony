@@ -288,6 +288,8 @@ if (OPENAL_ENABLED)
   endif()
 endif()
 
+set(IMGUI 1)
+
 find_package(Threads REQUIRED)
 if (FMOD_ENABLED)
 	find_package(FMOD REQUIRED)

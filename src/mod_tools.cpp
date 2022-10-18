@@ -5003,6 +5003,7 @@ void MonsterData_t::loadMonsterDataJSON()
 }
 #endif
 
+#ifndef EDITOR
 #ifdef USE_IMGUI
 ImVec4 ImGui_t::colorOn = (ImVec4)ImColor::HSV(2 / 7.0f, 0.6f, 0.6f);
 ImVec4 ImGui_t::colorOnHovered = (ImVec4)ImColor::HSV(2 / 7.0f, 0.7f, 0.7f);
@@ -5329,4 +5330,5 @@ void ImGui_t::showConsoleCommands()
 
 	ImGui::End();
 }
+#endif
 #endif
