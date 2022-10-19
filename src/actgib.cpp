@@ -243,6 +243,12 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 				case 4:
 					gibsprite = 683;
 					break;
+				case 5:
+					if (parentstats->HP > 0) {
+						return nullptr;
+					}
+					gibsprite = 688;
+					break;
 				//TODO: Gear gibs for automatons, and crystal gibs for golem.
 				default:
 					gibsprite = 5;

@@ -5128,15 +5128,29 @@ void actPlayer(Entity* my)
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
 						Entity* gib = spawnGib(my);
-						gib->skill[5] = 1; // poof
-						gib->sprite = my->sprite;
+						if (gib) {
+							gib->skill[5] = 1; // poof
+							gib->sprite = my->sprite;
+						}
 						serverSpawnGibForClient(gib);
 						for ( int c = 0; c < 8; c++ )
 						{
 							Entity* gib = spawnGib(my);
 							serverSpawnGibForClient(gib);
 						}
-						my->spawnBlood();
+						switch (stats[PLAYER_NUM]->type)
+						{
+						default:
+						case HUMAN:
+							my->spawnBlood();
+							break;
+						case SKELETON:
+							break;
+						case SPIDER:
+						case INSECTOID:
+							my->spawnBlood(212);
+							break;
+						}
 						node_t* spellnode;
 						spellnode = stats[PLAYER_NUM]->magic_effects.first;
 						while ( spellnode )

@@ -383,7 +383,7 @@ static char gibtype[NUMMONSTERS] =
 	1,	//OCTOPUS,
 	2,	//SPIDER,
 	2,	//GHOUL,
-	0,	//SKELETON,
+	5,	//SKELETON,
 	2,	//SCORPION,
 	1,	//CREATURE_IMP
 	2,	//CRAB,
