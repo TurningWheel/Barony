@@ -20142,7 +20142,10 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 						{
 							result = ITEMFX_ACTION_OK;
 						}
-						result = ITEMFX_ACTION_INVALID_ITEM;
+						else
+						{
+							result = ITEMFX_ACTION_INVALID_ITEM;
+						}
 						break;
 					case TOOL:
 						switch ( item->type )
