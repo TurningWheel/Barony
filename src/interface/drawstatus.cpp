@@ -2737,6 +2737,14 @@ void drawStatusNew(const int player)
 						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
+						if ( tooltipPos.x < 0 )
+						{
+							tooltipPos.x = 0;
+						}
+						else if ( tooltipPos.x + tooltipPos.w > players[player]->inventoryUI.tooltipContainerFrame->getSize().w )
+						{
+							tooltipPos.x -= (tooltipPos.x + tooltipPos.w) - players[player]->inventoryUI.tooltipContainerFrame->getSize().w;
+						}
 						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
 							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
