@@ -5974,6 +5974,7 @@ void Player::clearGUIPointers()
 	GUI.dropdownMenu.dropdownBlockClickFrame = nullptr;
 	GUI.dropdownMenu.dropdownFrame = nullptr;
 
+	inventoryUI.tooltipContainerFrame = nullptr;
 	inventoryUI.frame = nullptr;
 	inventoryUI.tooltipFrame = nullptr;
 	inventoryUI.interactFrame = nullptr;

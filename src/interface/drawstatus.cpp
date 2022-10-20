@@ -2731,8 +2731,6 @@ void drawStatusNew(const int player)
 					{
 						src.x = hotbarSlotFrame->getSize().x + hotbarSlotFrame->getSize().w / 2;
 						src.y = hotbarSlotFrame->getSize().y - 16;
-						src.x += players[player]->camera_virtualx1();
-						src.y += players[player]->camera_virtualy1();
 						tooltipOpen = true;
 						tooltipSlotFrame = hotbarSlotFrame;
 						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);

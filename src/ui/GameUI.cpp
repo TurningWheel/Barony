@@ -7263,9 +7263,13 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
-	if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+	static ConsoleVariable<bool> cvar_disable_controller_reconnect("/disable_controller_reconnect", false);
+	if ( !*cvar_disable_controller_reconnect )
 	{
-		checkControllerState(player.playernum);
+		if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+		{
+			checkControllerState(player.playernum);
+		}
 	}
 
     if ( !minimapFrame )
@@ -10156,7 +10160,7 @@ void Player::GUIDropdown_t::process()
 	{
 		frameSize.x -= frameSize.w;
 	}
-	if ( frameSize.y + frameSize.h > player.camera_virtualHeight() )
+	if ( frameSize.y + frameSize.h > player.camera_virtualy2() )
 	{
 		frameSize.y -= (frameSize.y + frameSize.h) - player.camera_virtualy2();
 	}
@@ -16011,11 +16015,23 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	char name[32];
+	snprintf(name, sizeof(name), "player tooltip container %d", player);
+	if ( !players[player]->inventoryUI.tooltipContainerFrame )
+	{
+		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
+		players[player]->inventoryUI.tooltipContainerFrame->setSize(
+			SDL_Rect{ players[player]->camera_virtualx1(),
+			players[player]->camera_virtualy1(), 
+			players[player]->camera_virtualWidth(),
+			players[player]->camera_virtualHeight() });
+		players[player]->inventoryUI.tooltipContainerFrame->setHollow(true);
+		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
+		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
+	}
 	snprintf(name, sizeof(name), "player tooltip %d", player);
-
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
-		players[player]->inventoryUI.tooltipFrame = gameUIFrame[player]->addFrame(name);
+		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
@@ -16476,7 +16492,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = gameUIFrame[player]->addFrame(name) )
+	if ( auto promptFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name) )
 	{
 		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
@@ -19549,6 +19565,17 @@ void Player::Inventory_t::updateItemContextMenu()
 			else
 			{
 				alignRight = true;
+			}
+		}
+		else if ( isItemFromChest(item) )
+		{
+			if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = true;
+			}
+			else
+			{
+				alignRight = false;
 			}
 		}
 		else

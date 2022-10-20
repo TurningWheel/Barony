@@ -789,6 +789,7 @@ public:
 		int selectedSpellY = 0;
 	public:
 		Frame* frame = nullptr;
+		Frame* tooltipContainerFrame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* interactBlockClickFrame = nullptr;
