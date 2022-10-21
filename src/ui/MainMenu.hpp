@@ -73,6 +73,7 @@ namespace MainMenu {
 		HallOfTrials,
 	};
 
+	int getMenuOwner();					// get current pause menu owner
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot
     bool isCutsceneActive();            // checks whether we are playing a cutscene
 	void beginFade(FadeDestination);    // begins a fade transition to a specific destination

@@ -1743,20 +1743,18 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 	}
 	else {
 		// try reload from your other savefiles since this didn't match the default savegameIndex.
-		if (savegamesList.empty()) {
-			reloadSavegamesList(false);
-		}
 		bool foundSave = false;
-		for (auto it = savegamesList.begin(); it != savegamesList.end(); ++it) {
-			auto entry = *it;
-			savegameCurrentFileIndex = std::get<2>(entry);
-			gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
-			if (std::get<1>(entry) != SINGLE && saveGameKey == gameKey) {
-				foundSave = true;
-				break;
+		for (int c = 0; c < SAVE_GAMES_MAX; ++c) {
+			auto info = getSaveGameInfo(false, c);
+			if (info.game_version != -1) {
+				if (info.gamekey == gameKey) {
+					savegameCurrentFileIndex = c;
+					foundSave = true;
+					break;
+				}
 			}
 		}
-		if (foundSave ) {
+		if (foundSave) {
 			loadingsavegame = saveGameKey;
 		} else {
 			printlog("warning: received invitation to lobby with which you have no compatible save game.\n");
@@ -1766,7 +1764,7 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 
 	if (loadingsavegame) {
 	    auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
-	    loadGame(info.player_num);
+	    loadGame(info.player_num, info);
 	}
 
 	return true;

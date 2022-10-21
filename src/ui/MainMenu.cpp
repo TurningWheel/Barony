@@ -304,7 +304,7 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
-	static inline int getMenuOwner() {
+	int getMenuOwner() {
 	    return intro ? clientnum : pause_menu_owner;
 	}
 
@@ -7873,7 +7873,8 @@ bind_failed:
 	    clientnum = 0;
 	    multiplayer = SERVER;
 	    if (loadingsavegame) {
-		    loadGame(clientnum);
+			auto info = getSaveGameInfo(false);
+		    loadGame(clientnum, info);
 	    }
 	}
 
@@ -7912,8 +7913,10 @@ bind_failed:
     static void sendJoinRequest() {
 	    printlog("sending join request...\n");
 
+		auto info = getSaveGameInfo(false);
+
 	    const Uint32 index = loadingsavegame ?
-	        std::min(getSaveGameClientnum(false), MAXPLAYERS - 1) : 0;
+	        std::min(getSaveGameClientnum(info), MAXPLAYERS - 1) : 0;
 
 	    // construct packet
 	    memcpy(net_packet->data, "JOIN", 4);
@@ -7927,7 +7930,7 @@ bind_failed:
 	    net_packet->data[56] = index;
 	    if (loadingsavegame) {
 		    // send over the map seed being used
-		    SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[57]);
+		    SDLNet_Write32(getSaveGameMapSeed(info), &net_packet->data[57]);
 	    } else {
 		    SDLNet_Write32(0, &net_packet->data[57]);
 	    }
@@ -8061,7 +8064,8 @@ bind_failed:
         // setup game state
 	    multiplayer = CLIENT;
 	    if (loadingsavegame) {
-		    loadGame(getSaveGameClientnum(false));
+			auto info = getSaveGameInfo(false);
+		    loadGame(info.player_num, info);
 	    }
 
 	    // close any existing net interfaces
@@ -15526,12 +15530,12 @@ bind_failed:
 
         // extract savegame info
         auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
-        const std::string& player_name = saveGameInfo.player_name;
+        const std::string& game_name = saveGameInfo.gamename;
 
         // create shortened player name
         char shortened_name[20] = { '\0' };
-        int len = (int)player_name.size();
-        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        int len = (int)game_name.size();
+        strncpy(shortened_name, game_name.c_str(), std::min(len, 16));
         if (len > 16) {
             strcat(shortened_name, "...");
         }
@@ -15602,12 +15606,12 @@ bind_failed:
 
         // extract savegame info
         auto saveGameInfo = getSaveGameInfo(singleplayer, save_index);
-        const std::string& player_name = saveGameInfo.player_name;
+        const std::string& game_name = saveGameInfo.gamename;
 
         // create shortened player name
         char shortened_name[20] = { '\0' };
-        int len = (int)player_name.size();
-        strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+        int len = (int)game_name.size();
+        strncpy(shortened_name, game_name.c_str(), std::min(len, 16));
         if (len > 16) {
             strcat(shortened_name, "...");
         }
@@ -15624,8 +15628,8 @@ bind_failed:
                 destroyMainMenu();
 
                 savegameCurrentFileIndex = load_save_index;
-                loadingsavegame = getSaveGameUniqueGameKey(load_singleplayer);
                 auto info = getSaveGameInfo(load_singleplayer, savegameCurrentFileIndex);
+                loadingsavegame = getSaveGameUniqueGameKey(info);
 
                 if (info.multiplayer_type == SPLITSCREEN || info.multiplayer_type == SINGLE) {
                     multiplayer = SINGLE;
@@ -15634,7 +15638,7 @@ bind_failed:
                         if (info.players_connected[c]) {
                             clientnum = clientnum == -1 ? c : clientnum;
                             playerSlotsLocked[c] = false;
-                            loadGame(c);
+                            loadGame(c, info);
                         } else {
                             playerSlotsLocked[c] = true;
                         }
@@ -15654,7 +15658,7 @@ bind_failed:
                             playerSlotsLocked[c] = true;
                         }
                     }
-                    loadGame(info.player_num);
+                    loadGame(info.player_num, info);
                     if (info.multiplayer_type == SERVERCROSSPLAY) {
 #ifdef STEAMWORKS
 			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
@@ -15673,7 +15677,7 @@ bind_failed:
 #endif
                         createLobby(LobbyType::LobbyOnline);
                     } else if (info.multiplayer_type == SERVER) {
-			            if ( getSaveGameVersionNum(false) <= 335 )
+			            if ( getSaveGameVersionNum(info) <= 335 )
 			            {
 				            // legacy support for steam ver not remembering if crossplay or not. no action.
 				            // starting with v3.3.6, (mul == SERVERCROSSPLAY) detects from the savefile.
@@ -15690,7 +15694,7 @@ bind_failed:
                         createLobby(LobbyType::LobbyLAN);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
-                    loadGame(info.player_num);
+                    loadGame(info.player_num, info);
                     for (int c = 0; c < MAXPLAYERS; ++c) {
                         if (info.players_connected[c]) {
                             playerSlotsLocked[c] = false;
@@ -15829,17 +15833,17 @@ bind_failed:
 		            auto saveGameInfo = getSaveGameInfo(singleplayer, i);
 
                     // extract savegame info
-                    const std::string& player_name = saveGameInfo.player_name;
-                    const std::string& class_name = saveGameInfo.player_class;
+                    const std::string& game_name = saveGameInfo.gamename;
+                    const std::string class_name = playerClassLangEntry(saveGameInfo.players[saveGameInfo.player_num].char_class, 0);
                     char* class_name_c = const_cast<char*>(class_name.c_str());
                     class_name_c[0] = (char)toupper((int)class_name[0]);
-                    int dungeon_lvl = saveGameInfo.dungeon_lvl;
-                    int player_lvl = saveGameInfo.player_lvl;
+                    const int dungeon_lvl = saveGameInfo.dungeon_lvl;
+                    const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.lvl;
 
                     // create shortened player name
                     char shortened_name[20] = { '\0' };
-                    int len = (int)player_name.size();
-                    strncpy(shortened_name, player_name.c_str(), std::min(len, 16));
+                    int len = (int)game_name.size();
+                    strncpy(shortened_name, game_name.c_str(), std::min(len, 16));
                     if (len > 16) {
                         strcat(shortened_name, "...");
                     }
@@ -15874,7 +15878,7 @@ bind_failed:
 
 					// add savegame picture
 					std::string screenshot_path = "images/ui/Main Menus/ContinueGame/savescreens/";
-					if (saveGameInfo.secretlevel) {
+					if (saveGameInfo.level_track == 1) {
 						switch (saveGameInfo.dungeon_lvl) {
 						default: screenshot_path += "save_unknown00.png"; break;
 						case 3: screenshot_path += "save_gnome00.png"; break;
@@ -17396,14 +17400,9 @@ bind_failed:
         }
 
 		// hide mouse if we're driving around with a controller
-		auto vmouse = inputs.getVirtualMouse(getMenuOwner());
-		auto cmouse = inputs.getVirtualMouse(clientnum);
-		if (vmouse->lastMovementFromController && cmouse->draw_cursor) {
-			cmouse->draw_cursor = false;
-		}
-		if (vmouse->lastMovementFromController && vmouse->draw_cursor) {
-			vmouse->draw_cursor = false;
-		}
+		auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
+		auto vmouse = intro ? cmouse : inputs.getVirtualMouse(getMenuOwner());
+		cmouse->draw_cursor = !vmouse->lastMovementFromController;
 
 		if (fadeout && fadealpha >= 255) {
             handleFadeFinished(ingame);
@@ -17444,6 +17443,9 @@ bind_failed:
 	}
 
 	void createTitleScreen() {
+		clientnum = 0;
+		inputs.setPlayerIDAllowedKeyboard(clientnum);
+
 		main_menu_frame = gui->addFrame("main_menu");
 
         main_menu_frame->setOwner(getMenuOwner());
@@ -17650,6 +17652,11 @@ bind_failed:
 #endif
 
 	void createMainMenu(bool ingame) {
+		if (!ingame) {
+			clientnum = 0;
+			inputs.setPlayerIDAllowedKeyboard(clientnum);
+		}
+
 		main_menu_frame = gui->addFrame("main_menu");
 
         main_menu_frame->setOwner(getMenuOwner());

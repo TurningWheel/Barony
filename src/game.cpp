@@ -3826,22 +3826,10 @@ bool handleEvents(void)
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
+						inputs.getVirtualMouse(i)->lastMovementFromController = false;
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
-							if ( !inputs.getVirtualMouse(i)->draw_cursor && !inputs.getVirtualMouse(i)->lastMovementFromController )
-							{
-								inputs.getVirtualMouse(i)->draw_cursor = true;
-							}
-							if ( event.user.code == 0 ) 
-							{
-								// we use SDL_pushEvent() to push a event.user.code == 1 on a gamepad manipulating a mouse event
-								// default 0 for normal mouse events
-								inputs.getVirtualMouse(i)->lastMovementFromController = false;
-							}
-						}
-						else if (multiplayer == SINGLE)
-						{
-							inputs.getVirtualMouse(i)->draw_cursor = false;
+							inputs.getVirtualMouse(i)->draw_cursor = true;
 						}
 					}
 				}
@@ -6601,13 +6589,9 @@ int main(int argc, char** argv)
 				ImGui_t::render();
 #endif
 
+#ifndef NINTENDO
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !MainMenu::isPlayerSignedIn(i) || !players[i]->isLocalPlayer() ) {
-						continue;
-					}
-
-#ifndef NINTENDO
 					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) && inputs.getVirtualMouse(i)->draw_cursor )
@@ -6623,8 +6607,8 @@ int main(int argc, char** argv)
 						}
 						continue;
 					}
-#endif
 				}
+#endif
 			}
 
 			// fade in/out effect

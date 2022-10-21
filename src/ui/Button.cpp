@@ -9,6 +9,10 @@
 #include "Text.hpp"
 #include <cassert>
 
+#ifndef EDITOR
+#include "MainMenu.hpp"
+#endif
+
 Button::Button() {
 	size.x = 0; size.w = 32;
 	size.y = 0; size.h = 32;
@@ -75,19 +79,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 #if defined(EDITOR) || defined(NINTENDO)
 	const bool focused = (fingerdown && highlighted) || selected;
 #else
-	int mouseowner_pausemenu = clientnum;
-	if ( gamePaused )
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				mouseowner_pausemenu = i;
-				break;
-			}
-		}
-	}
-	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	const bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
 #endif
 
@@ -364,21 +356,6 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 		return result;
 	}
 
-	int mouseowner_pausemenu = clientnum;
-#ifndef EDITOR
-	if ( gamePaused )
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				mouseowner_pausemenu = i;
-				break;
-			}
-		}
-	}
-#endif
-
 #if defined(NINTENDO)
 	const bool clicking = fingerdown;
 	Sint32 mousex = (::fingerx / (float)xres) * (float)Frame::virtualScreenX;
@@ -393,7 +370,7 @@ Button::result_t Button::process(SDL_Rect _size, SDL_Rect _actualSize, const boo
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 #else
 	const bool clicking = mousestatus[SDL_BUTTON_LEFT];
-	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
