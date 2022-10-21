@@ -1101,6 +1101,7 @@ public:
 		real_t animNoDeal = 0.0;
 		Uint32 animNoDealTicks = 0;
 
+		int lastTooltipModule = Player::GUI_t::MODULE_NONE;
 		int selectedShopSlotX = -1;
 		int selectedShopSlotY = -1;
 		static const int MAX_SHOP_X;

@@ -18685,14 +18685,9 @@ void createShopGUI(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Shop/Shop_Window_03C.png", "shop base img");
-		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214},
+		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214 },
 			makeColor(255, 255, 255, 64),
 			"*#images/ui/Shop/Shop_ItemSlots_Areas03.png", "shop grid img");
-
-		auto bottomEdgeCover = bgFrame->addImage(SDL_Rect{ 0, basePos.h - 10, 316, 10 },
-			makeColor(255, 255, 255, 255),
-			"*#images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
-		bottomEdgeCover->ontop = true;
 
 		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 		Uint32 titleColor = makeColor(219, 157, 20, 255);
@@ -18737,62 +18732,6 @@ void createShopGUI(const int player)
 		closeBtn->setCallback([](Button& button) {
 			closeShopGUIAction(button.getOwner());
 		});
-
-		auto buyTooltipFrame = bgFrame->addFrame("buy tooltip frame");
-		buyTooltipFrame->setHollow(true);
-		buyTooltipFrame->setBorder(0);
-		buyTooltipFrame->setSize(SDL_Rect{ 4, basePos.h - 66, 310, 66 });
-		buyTooltipFrame->setDisabled(true);
-
-		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
-			"*#images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
-
-		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
-			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
-
-		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
-			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
-
-		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
-			"", "orb img");
-		orbImg->disabled = true;
-
-		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
-		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
-		slotFrame->setSize(slotPos);
-		slotFrame->setDisabled(true);
-		createPlayerInventorySlotFrameElements(slotFrame);
-
-		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
-		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
-		itemNameText->setFont(itemFont);
-		itemNameText->setText("");
-		itemNameText->setHJustify(Field::justify_t::LEFT);
-		itemNameText->setVJustify(Field::justify_t::TOP);
-		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemNameText->setColor(makeColor(201, 162, 100, 255));
-		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
-		itemValueText->setFont(itemFont);
-		itemValueText->setText("");
-		itemValueText->setHJustify(Field::justify_t::LEFT);
-		itemValueText->setVJustify(Field::justify_t::TOP);
-		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemValueText->setColor(makeColor(201, 162, 100, 255));
-
-		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
-		buyPromptText->setFont(itemFont);
-		buyPromptText->setText("");
-		buyPromptText->setHJustify(Field::justify_t::LEFT);
-		buyPromptText->setVJustify(Field::justify_t::TOP);
-		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		buyPromptText->setColor(makeColor(255, 255, 255, 255));
-		auto buyPromptFrame = buyTooltipFrame->addFrame("buy prompt frame");
-		buyPromptFrame->setHollow(true);
-		buyPromptFrame->setBorder(0);
-		buyPromptFrame->setSize(SDL_Rect{0, 0, 0, 0});
-		buyPromptFrame->setDisabled(true);
-		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-			"", "buy prompt glyph");
 
 		auto discountFrame = bgFrame->addFrame("discount frame");
 		discountFrame->setHollow(true);
@@ -18984,6 +18923,74 @@ void createShopGUI(const int player)
 				accumulateSlotOffsetX += 4;
 			}
 		}
+	}
+
+	{
+		auto buyTooltipFrame = frame->addFrame("buy tooltip frame");
+		buyTooltipFrame->setHollow(true);
+		buyTooltipFrame->setBorder(0);
+		buyTooltipFrame->setSize(SDL_Rect{ 4, basePos.h - 66, 310, 66 });
+		buyTooltipFrame->setDisabled(true);
+
+		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
+			"*#images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
+
+		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
+
+		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
+			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
+
+		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
+			"", "orb img");
+		orbImg->disabled = true;
+
+		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
+		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		createPlayerInventorySlotFrameElements(slotFrame);
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
+		itemNameText->setFont(itemFont);
+		itemNameText->setText("");
+		itemNameText->setHJustify(Field::justify_t::LEFT);
+		itemNameText->setVJustify(Field::justify_t::TOP);
+		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemNameText->setColor(makeColor(201, 162, 100, 255));
+		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
+		itemValueText->setFont(itemFont);
+		itemValueText->setText("");
+		itemValueText->setHJustify(Field::justify_t::LEFT);
+		itemValueText->setVJustify(Field::justify_t::TOP);
+		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemValueText->setColor(makeColor(201, 162, 100, 255));
+
+		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
+		buyPromptText->setFont(itemFont);
+		buyPromptText->setText("");
+		buyPromptText->setHJustify(Field::justify_t::LEFT);
+		buyPromptText->setVJustify(Field::justify_t::TOP);
+		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		buyPromptText->setColor(makeColor(255, 255, 255, 255));
+		auto buyPromptFrame = buyTooltipFrame->addFrame("buy prompt frame");
+		buyPromptFrame->setHollow(true);
+		buyPromptFrame->setBorder(0);
+		buyPromptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		buyPromptFrame->setDisabled(true);
+		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"", "buy prompt glyph");
+	}
+
+	if ( auto buttomEdgeCoverFrame = frame->addFrame("shop bottom edge frame") )
+	{
+		buttomEdgeCoverFrame->setSize(SDL_Rect{ 0, basePos.h - 10, basePos.w, 10 });
+		buttomEdgeCoverFrame->setHollow(true);
+		buttomEdgeCoverFrame->setBorder(0);
+		auto bottomEdgeCover = buttomEdgeCoverFrame->addImage(SDL_Rect{ 0, 0, basePos.w, 10 },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
 	}
 }
 
