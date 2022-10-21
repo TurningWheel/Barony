@@ -2979,6 +2979,7 @@ public:
 	static bool queueInit;
 	static bool queueDeinit;
 	static bool disablePlayerControl;
+	static SDL_Rect debugRect;
 	ImGui_t() {};
 	~ImGui_t()
 	{

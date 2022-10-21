@@ -5016,6 +5016,7 @@ bool ImGui_t::queueInit = false;
 bool ImGui_t::queueDeinit = false;
 bool ImGui_t::show_demo_window = false;
 bool ImGui_t::disablePlayerControl = false;
+SDL_Rect ImGui_t::debugRect{ 0, 0, 0, 0 };
 
 void ImGui_t::init()
 {
@@ -5108,6 +5109,11 @@ void ImGui_t::update()
 		ImGui::Checkbox("Disable Player Control", &ImGui_t::disablePlayerControl);
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		ImGui::SliderInt("debug x", &debugRect.x, -300, 300);
+		ImGui::SliderInt("debug y", &debugRect.y, -300, 300);
+		ImGui::SliderInt("debug w", &debugRect.w, -300, 300);
+		ImGui::SliderInt("debug h", &debugRect.h, -300, 300);
 
 		lastWindowSize = ImGui::GetWindowSize();
 		lastWindowPos = ImGui::GetWindowPos();
