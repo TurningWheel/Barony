@@ -67,12 +67,8 @@ public:
 	virtual bool value(bool& value) override {
 		return writer.Bool(value);
 	}
-	virtual bool value(std::string& value, Uint32 maxLength) override {
-		if (maxLength == 0 || value.size() <= maxLength) {
-		    return writer.String(value.c_str());
-		} else {
-		    return false;
-		}
+	virtual bool value(std::string& value) override {
+		return writer.String(value.c_str());
 	}
 
 private:
@@ -197,15 +193,11 @@ public:
 		    return false;
 		}
 	}
-	virtual bool value(std::string& value, Uint32 maxLength) override {
+	virtual bool value(std::string& value) override {
 		auto cv = GetCurrentValue();
 		if (cv && cv->IsString()) {
-		    if (maxLength == 0 || cv->GetStringLength() <= maxLength) {
-		        value = cv->GetString();
-		        return true;
-		    } else {
-		        return false;
-		    }
+			value = cv->GetString();
+			return true;
 		} else {
 		    return false;
 		}
@@ -343,12 +335,8 @@ public:
 	virtual bool value(bool& v) override {
 		return fp->write(&v, sizeof(v), 1) == 1;
 	}
-	virtual bool value(std::string& v, Uint32 maxLength) override {
-		if (maxLength == 0 || v.size() <= maxLength) {
-		    return writeStringInternal(v);
-		} else {
-		    return false;
-		}
+	virtual bool value(std::string& v) override {
+		return writeStringInternal(v);
 	}
 
 private:
@@ -432,9 +420,8 @@ public:
 		size_t read = fp->read(&v, sizeof(v), 1);
 		return read == 1;
 	}
-	virtual bool value(std::string& v, Uint32 maxLength) override {
+	virtual bool value(std::string& v) override {
 		bool result = readStringInternal(v);
-		result = (maxLength == 0 || v.size() <= maxLength) ? result : false;
 		return result;
 	}
 

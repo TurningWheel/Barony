@@ -20,6 +20,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 enum class EFileFormat {
 	Json,
@@ -59,8 +60,7 @@ public:
 	// @param v the value to serialize
 	virtual bool value(bool& v) = 0;
 	// @param v the value to serialize
-	// @param maxLength maximum length of the string allowed, 0 is no limit
-	virtual bool value(std::string& v, Uint32 maxLength = 0) = 0;
+	virtual bool value(std::string& v) = 0;
 
 	// Serialize a vector with a max length
 	// @param v the value to serialize

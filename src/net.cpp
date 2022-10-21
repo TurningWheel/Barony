@@ -1442,7 +1442,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		{
 			result = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
 		}
-		else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
+		auto savegameinfo = getSaveGameInfo(false);
+		if ( loadingsavegame && savegameinfo.mapseed != clientms )
 		{
 			result = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 		}

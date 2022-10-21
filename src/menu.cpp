@@ -9787,7 +9787,7 @@ void doNewGame(bool makeHighscore) {
 				}
 			}
 
-			list_t* followers = loadGameFollowers();
+			list_t* followers = loadGameFollowers(saveGameInfo);
 			if ( followers )
 			{
 				int c;
@@ -9844,9 +9844,6 @@ void doNewGame(bool makeHighscore) {
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
 									monster->flags[USERFLAG2] = true;
-									/*if ( !monsterally[HUMAN][monsterStats->type] )
-									{
-									}*/
 									monster->monsterAllyIndex = c;
 									if ( multiplayer == SERVER )
 									{

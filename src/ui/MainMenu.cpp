@@ -15838,7 +15838,7 @@ bind_failed:
                     char* class_name_c = const_cast<char*>(class_name.c_str());
                     class_name_c[0] = (char)toupper((int)class_name[0]);
                     const int dungeon_lvl = saveGameInfo.dungeon_lvl;
-                    const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.lvl;
+                    const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.LVL;
 
                     // create shortened player name
                     char shortened_name[20] = { '\0' };

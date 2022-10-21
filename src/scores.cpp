@@ -5315,14 +5315,17 @@ int saveGame(int saveIndex) {
 
 	info.dungeon_lvl = currentlevel;
 	info.level_track = secretlevel ? 1 : 0;
+	info.players_connected.resize(MAXPLAYERS);
+	info.players.resize(MAXPLAYERS);
 	for (int c = 0; c < MAXPLAYERS; ++c) {
-		info.players_connected[c] = !client_disconnected[c];
+		info.players_connected[c] = client_disconnected[c] ? 0 : 1;
 		if (info.players_connected[c]) {
 			auto& player = info.players[c];
 			player.char_class = client_classes[c];
 			player.race = stats[c]->playerRace;
 
 			// the following player info is shared by all players currently
+			player.kills.resize(NUMMONSTERS);
 			for (int i = 0; i < NUMMONSTERS; ++i) {
 				player.kills[i] = kills[i];
 			}
@@ -5370,50 +5373,52 @@ int saveGame(int saveIndex) {
 			player.stats.LVL = stats[c]->LVL;
 			player.stats.GOLD = stats[c]->GOLD;
 			player.stats.HUNGER = stats[c]->HUNGER;
+			player.stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
 			for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
 				player.stats.PROFICIENCIES[i] = stats[c]->PROFICIENCIES[i];
 			}
+			player.stats.EFFECTS.resize(NUMEFFECTS);
+			player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
 			for (int i = 0 ; i < NUMEFFECTS; ++i) {
 				player.stats.EFFECTS[i] = stats[c]->EFFECTS[i];
 				player.stats.EFFECTS_TIMERS[i] = stats[c]->EFFECTS_TIMERS[i];
 			}
-			for (int i = 0 ; i < 32; ++i) {
+			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+			player.stats.MISC_FLAGS.resize(NUMMISCFLAGS);
+			for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
 				player.stats.MISC_FLAGS[i] = stats[c]->MISC_FLAGS[i];
 			}
 			//player.stats.attributes = ; // players have no key/value table
 
 			// equipment slots
-			player.stats.player_equipment.push_back(std::make_pair("helmet", stats[c]->helmet ?
-				list_Index(stats[c]->helmet->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("breastplate", stats[c]->breastplate ?
-				list_Index(stats[c]->breastplate->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("gloves", stats[c]->gloves ?
-				list_Index(stats[c]->gloves->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("shoes", stats[c]->shoes ?
-				list_Index(stats[c]->shoes->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("shield", stats[c]->shield ?
-				list_Index(stats[c]->shield->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("weapon", stats[c]->weapon ?
-				list_Index(stats[c]->weapon->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("cloak", stats[c]->cloak ?
-				list_Index(stats[c]->cloak->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("amulet", stats[c]->amulet ?
-				list_Index(stats[c]->amulet->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("ring", stats[c]->ring ?
-				list_Index(stats[c]->ring->node) : UINT32_MAX));
-			player.stats.player_equipment.push_back(std::make_pair("mask", stats[c]->mask ?
-				list_Index(stats[c]->mask->node) : UINT32_MAX));
+			const std::vector<std::pair<std::string, Item*>> player_slots = {
+				{"helmet", stats[c]->helmet},
+				{"breastplate", stats[c]->breastplate},
+				{"gloves", stats[c]->gloves},
+				{"shoes", stats[c]->shoes},
+				{"shield", stats[c]->shield},
+				{"weapon", stats[c]->weapon},
+				{"cloak", stats[c]->cloak},
+				{"amulet", stats[c]->amulet},
+				{"ring", stats[c]->ring},
+				{"mask", stats[c]->mask},
+			};
+			for (auto& slot : player_slots) {
+				player.stats.player_equipment.push_back(std::make_pair(slot.first,
+					slot.second ? list_Index(slot.second->node) : UINT32_MAX));
+			}
 
 			// inventory
 			for (node_t* node = stats[c]->inventory.first;
 				node != nullptr; node = node->next) {
 				auto item = (Item*)node->element;
-				player.stats.inventory.push_back({
+				player.stats.inventory.push_back(
+					SaveGameInfo::Player::stat_t::item_t{
 					item->type,
 					item->status,
+					item->appearance,
 					item->beatitude,
 					item->count,
-					item->appearance,
 					item->identified,
 					item->x,
 					item->y,
@@ -5445,14 +5450,18 @@ int saveGame(int saveIndex) {
 					stats.LVL = follower->LVL;
 					stats.GOLD = follower->GOLD;
 					stats.HUNGER = follower->HUNGER;
+					stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
 					for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
 						stats.PROFICIENCIES[i] = follower->PROFICIENCIES[i];
 					}
+					stats.EFFECTS.resize(NUMEFFECTS);
+					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
 					for (int i = 0 ; i < NUMEFFECTS; ++i) {
 						stats.EFFECTS[i] = follower->EFFECTS[i];
 						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
 					}
-					for (int i = 0 ; i < 32; ++i) {
+					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
+					for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
 						stats.MISC_FLAGS[i] = follower->MISC_FLAGS[i];
 					}
 					for (auto& attribute : follower->attributes) {
@@ -5460,127 +5469,43 @@ int saveGame(int saveIndex) {
 					}
 
 					// equipment slots
-					if (follower->helmet) {
-						stats.npc_equipment.emplace("helmet",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->helmet->type,
-								follower->helmet->status,
-								follower->helmet->beatitude,
-								follower->helmet->count,
-								follower->helmet->appearance,
-								follower->helmet->identified,
-							});
-					}
-					if (follower->breastplate) {
-						stats.npc_equipment.emplace("breastplate",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->breastplate->type,
-								follower->breastplate->status,
-								follower->breastplate->beatitude,
-								follower->breastplate->count,
-								follower->breastplate->appearance,
-								follower->breastplate->identified,
-							});
-					}
-					if (follower->gloves) {
-						stats.npc_equipment.emplace("gloves",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->gloves->type,
-								follower->gloves->status,
-								follower->gloves->beatitude,
-								follower->gloves->count,
-								follower->gloves->appearance,
-								follower->gloves->identified,
-							});
-					}
-					if (follower->shoes) {
-						stats.npc_equipment.emplace("shoes",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->shoes->type,
-								follower->shoes->status,
-								follower->shoes->beatitude,
-								follower->shoes->count,
-								follower->shoes->appearance,
-								follower->shoes->identified,
-							});
-					}
-					if (follower->shield) {
-						stats.npc_equipment.emplace("shield",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->shield->type,
-								follower->shield->status,
-								follower->shield->beatitude,
-								follower->shield->count,
-								follower->shield->appearance,
-								follower->shield->identified,
-							});
-					}
-					if (follower->weapon) {
-						stats.npc_equipment.emplace("weapon",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->weapon->type,
-								follower->weapon->status,
-								follower->weapon->beatitude,
-								follower->weapon->count,
-								follower->weapon->appearance,
-								follower->weapon->identified,
-							});
-					}
-					if (follower->cloak) {
-						stats.npc_equipment.emplace("cloak",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->cloak->type,
-								follower->cloak->status,
-								follower->cloak->beatitude,
-								follower->cloak->count,
-								follower->cloak->appearance,
-								follower->cloak->identified,
-							});
-					}
-					if (follower->amulet) {
-						stats.npc_equipment.emplace("amulet",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->amulet->type,
-								follower->amulet->status,
-								follower->amulet->beatitude,
-								follower->amulet->count,
-								follower->amulet->appearance,
-								follower->amulet->identified,
-							});
-					}
-					if (follower->ring) {
-						stats.npc_equipment.emplace("ring",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->ring->type,
-								follower->ring->status,
-								follower->ring->beatitude,
-								follower->ring->count,
-								follower->ring->appearance,
-								follower->ring->identified,
-							});
-					}
-					if (follower->mask) {
-						stats.npc_equipment.emplace("mask",
-							SaveGameInfo::Player::stat_t::item_t{
-								follower->mask->type,
-								follower->mask->status,
-								follower->mask->beatitude,
-								follower->mask->count,
-								follower->mask->appearance,
-								follower->mask->identified,
-							});
+					const std::vector<std::pair<std::string, Item*>> npc_slots = {
+						{"helmet", follower->helmet},
+						{"breastplate", follower->breastplate},
+						{"gloves", follower->gloves},
+						{"shoes", follower->shoes},
+						{"shield", follower->shield},
+						{"weapon", follower->weapon},
+						{"cloak", follower->cloak},
+						{"amulet", follower->amulet},
+						{"ring", follower->ring},
+						{"mask", follower->mask},
+					};
+					for (auto& slot : npc_slots) {
+						if (slot.second) {
+							stats.npc_equipment.push_back(std::make_pair(
+								slot.first, SaveGameInfo::Player::stat_t::item_t{
+									slot.second->type,
+									slot.second->status,
+									slot.second->appearance,
+									slot.second->beatitude,
+									slot.second->count,
+									slot.second->identified,
+								}));
+						}
 					}
 
 					// inventory
 					for (node_t* node = follower->inventory.first;
 						node != nullptr; node = node->next) {
 						auto item = (Item*)node->element;
-						stats.inventory.push_back({
+						stats.inventory.push_back(
+							SaveGameInfo::Player::stat_t::item_t{
 							item->type,
 							item->status,
+							item->appearance,
 							item->beatitude,
 							item->count,
-							item->appearance,
 							item->identified,
 							item->x,
 							item->y,
@@ -5614,16 +5539,17 @@ int loadGame(int player, const SaveGameInfo& info) {
 		return 1;
 	}
 
-	if (!info.hash) {
-		printlog("loadGame() failed: hash check failed");
-		return 1;
-	}
-
 	if (!info.players_connected[player]) {
 		printlog("loadGame() failed: given player is not connected");
 		return 1;
 	}
 
+	if (!info.hash) {
+		printlog("loadGame() warning: hash check failed");
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
+
+	// load game info
 	uniqueGameKey = info.gamekey;
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
@@ -5642,7 +5568,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 	currentlevel = info.dungeon_lvl;
 	secretlevel = info.level_track != 0;
 
-	for (int c = 0; c < NUMMONSTERS; ++c) {
+	// load player data
+	client_classes[player] = info.players[player].char_class;
+	stats[player]->playerRace = info.players[player].race;
+	for (int c = 0; c < NUMMONSTERS && c < info.players[player].kills.size(); ++c) {
 		kills[c] = info.players[player].kills[c];
 	}
 	conductPenniless = info.players[player].conductPenniless;
@@ -5653,12 +5582,274 @@ int loadGame(int player, const SaveGameInfo& info) {
 		conductGameChallenges[c] = info.players[player].additionalConducts[c];
 	}
 
-	client_classes[player] = info.players[player].char_class;
-	stats[player]->playerRace = info.players[player].race;
+	// read spells
+	list_FreeAll(&players[player]->magic.spellList);
+	for (auto& s : info.players[player].spells) {
+		spell_t* spell = copySpell(getSpellFromID(s));
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->deconstructor = &spellDeconstructor;
+		node->size = sizeof(spell);
+	}
+
+	// read alchemy recipes
+	clientLearnedAlchemyRecipes[player].clear();
+	for (auto& r : info.players[player].known_recipes) {
+		clientLearnedAlchemyRecipes[player].push_back(r);
+	}
+
+	// read scroll labels
+	clientLearnedScrollLabels[player].clear();
+	for (auto& s : info.players[player].known_scrolls) {
+		clientLearnedScrollLabels[player].insert(s);
+	}
+
+	// player stats
+	auto& p = info.players[player].stats;
+	stringCopy(stats[player]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
+	stats[player]->sex = p.sex;
+	stats[player]->appearance = p.appearance;
+	stats[player]->HP = p.HP;
+	stats[player]->MAXHP = p.maxHP;
+	stats[player]->MP = p.MP;
+	stats[player]->MAXMP = p.maxMP;
+	stats[player]->STR = p.STR;
+	stats[player]->DEX = p.DEX;
+	stats[player]->CON = p.CON;
+	stats[player]->INT = p.INT;
+	stats[player]->PER = p.PER;
+	stats[player]->CHR = p.CHR;
+	stats[player]->EXP = p.EXP;
+	stats[player]->LVL = p.LVL;
+	stats[player]->GOLD = p.GOLD;
+	stats[player]->HUNGER = p.HUNGER;
+	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
+		stats[player]->PROFICIENCIES[c] = p.PROFICIENCIES[c];
+	}
+	for (int c = 0; c < NUMEFFECTS && c < p.EFFECTS.size(); ++c) {
+		stats[player]->EFFECTS[c] = p.EFFECTS[c];
+		stats[player]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+	}
+	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
+		stats[player]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
+	}
+	//stats[player]->attributes = p.attributes; // skip attributes for now
+
+	// inventory
+	list_FreeAll(&stats[player]->inventory);
+	for (auto& item : p.inventory) {
+		ItemType type = item.type;
+		Status status = item.status;
+		Sint16 beatitude = item.beatitude;
+		Sint16 count = item.count;
+		Uint32 appearance = item.appearance;
+		bool identified = item.identified;
+		Item* i = newItem(type, status, beatitude, count,
+			appearance, identified, &stats[player]->inventory);
+		i->x = item.x;
+		i->y = item.y;
+	}
+
+	// equipment
+	const std::unordered_map<std::string, Item**> slots = {
+		{"helmet", &stats[player]->helmet},
+		{"breastplate", &stats[player]->breastplate},
+		{"gloves", &stats[player]->gloves},
+		{"shoes", &stats[player]->shoes},
+		{"shield", &stats[player]->shield},
+		{"weapon", &stats[player]->weapon},
+		{"cloak", &stats[player]->cloak},
+		{"amulet", &stats[player]->amulet},
+		{"ring", &stats[player]->ring},
+		{"mask", &stats[player]->mask},
+	};
+	for (auto& item : p.player_equipment) {
+		auto find = slots.find(item.first);
+		if (find != slots.end()) {
+			auto node = list_Node(&stats[player]->inventory, item.second);
+			*find->second = (Item*)node->element;
+		}
+	}
+
+	// assign hotbar items
+	auto& hotbar = players[player]->hotbar.slots();
+	auto& hotbar_alternate = players[player]->hotbar.slotsAlternate();
+	for (int c = 0; c < NUM_HOTBAR_SLOTS; ++c) {
+		node_t* node = list_Node(&stats[player]->inventory,
+			info.players[player].hotbar[c]);
+		if (node) {
+			Item* item = (Item*)node->element;
+			hotbar[c].item = item->uid;
+		} else {
+			hotbar[c].item = 0;
+			hotbar[c].lastItemUid = 0;
+			hotbar[c].lastItemCategory = -1;
+			hotbar[c].lastItemType = -1;
+			for (int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d) {
+				hotbar_alternate[d][c].item = 0;
+				hotbar_alternate[d][c].lastItemUid = 0;
+				hotbar_alternate[d][c].lastItemCategory = -1;
+				hotbar_alternate[d][c].lastItemType = -1;
+			}
+		}
+	}
+
+	// reset certain variables
+	list_FreeAll(&stats[player]->FOLLOWERS);
+	stats[player]->monster_sound = nullptr;
+	stats[player]->monster_idlevar = 0;
+	stats[player]->leader_uid = 0;
+	stats[player]->stache_x1 = 0;
+	stats[player]->stache_x2 = 0;
+	stats[player]->stache_y1 = 0;
+	stats[player]->stache_y2 = 0;
+
+	// shuffle enchanted feather list
+    {
+	    enchantedFeatherScrollsShuffled.clear();
+	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
+	    auto shuffle = enchantedFeatherScrollsFixedList;
+		BaronyRNG feather_rng;
+		feather_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	    while (!shuffle.empty()) {
+	        int index = feather_rng.getU8() % shuffle.size();
+	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
+	        shuffle.erase(shuffle.begin() + index);
+	    }
+	}
 
 	return 0;
 }
 
-int loadGameFollowers(const SaveGameInfo& info) {
-	return 0;
+list_t* loadGameFollowers(const SaveGameInfo& info) {
+	if (info.magic_cookie != "BARONYJSONSAVE") {
+		printlog("loadGameFollowers() failed: magic cookie is incorrect");
+		return nullptr;
+	}
+
+	if (info.game_version != getSavegameVersion(VERSION)) {
+		printlog("loadGameFollowers() failed: game version mismatch");
+		return nullptr;
+	}
+
+	if (info.players_connected.size() != info.players.size()) {
+		printlog("loadGameFollowers() failed: player data is malformed");
+		return nullptr;
+	}
+
+	// create followers list
+	list_t* followers = (list_t*) malloc(sizeof(list_t));
+	followers->first = NULL;
+	followers->last = NULL;
+
+	// read the follower data
+	for (auto& player : info.players) {
+		list_t* followerList = (list_t*) malloc(sizeof(list_t));
+		followerList->first = nullptr;
+		followerList->last = nullptr;
+		node_t* node = list_AddNodeLast(followers);
+		node->element = followerList;
+		node->deconstructor = &listDeconstructor;
+		node->size = sizeof(list_t);
+
+		// number of followers for this player
+		for (auto& follower : player.followers) {
+			// Stat init to 0 as monster type not needed,
+			// values will be overwritten by the saved follower data
+			Stat* stats = new Stat(0);
+
+			node_t* node = list_AddNodeLast(followerList);
+			node->element = stats;
+			node->deconstructor = &statDeconstructor;
+			node->size = sizeof(*stats);
+
+			// read follower stats
+			stringCopy(stats->name, follower.name.c_str(),
+				sizeof(Stat::name), follower.name.size());
+			stats->type = follower.type;
+			stats->sex = follower.sex;
+			stats->appearance = follower.appearance;
+			stats->HP = follower.HP;
+			stats->MAXHP = follower.maxHP;
+			stats->MP = follower.MP;
+			stats->MAXMP = follower.maxMP;
+			stats->STR = follower.STR;
+			stats->DEX = follower.DEX;
+			stats->CON = follower.CON;
+			stats->INT = follower.INT;
+			stats->PER = follower.PER;
+			stats->CHR = follower.CHR;
+			stats->EXP = follower.EXP;
+			stats->LVL = follower.LVL;
+			stats->GOLD = follower.GOLD;
+			stats->HUNGER = follower.HUNGER;
+			for (int c = 0; c < NUMPROFICIENCIES && c < follower.PROFICIENCIES.size(); ++c) {
+				stats->PROFICIENCIES[c] = follower.PROFICIENCIES[c];
+			}
+			for (int c = 0; c < NUMEFFECTS && c < follower.EFFECTS.size(); ++c) {
+				stats->EFFECTS[c] = follower.EFFECTS[c];
+				stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
+			}
+			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+			for (int c = 0; c < NUMMISCFLAGS && c < follower.MISC_FLAGS.size(); ++c) {
+				stats->MISC_FLAGS[c] = follower.MISC_FLAGS[c];
+			}
+
+			// read follower attributes
+			for (auto& attr : follower.attributes) {
+				char key[32];
+				char value[32];
+				stringCopy(key, attr.first.c_str(), sizeof(key), attr.first.size());
+				stringCopy(value, attr.first.c_str(), sizeof(value), attr.first.size());
+				stats->attributes.emplace(std::make_pair(key, value));
+			}
+
+			// read follower inventory
+			for (auto& item : follower.inventory) {
+				ItemType type = item.type;
+				Status status = item.status;
+				Sint16 beatitude = item.beatitude;
+				Sint16 count = item.count;
+				Uint32 appearance = item.appearance;
+				bool identified = item.identified;
+				Item* i = newItem(type, status, beatitude, count,
+					appearance, identified, &stats->inventory);
+				i->x = item.x;
+				i->y = item.y;
+			}
+
+			// equipment
+			const std::unordered_map<std::string, Item**> slots = {
+				{"helmet", &stats->helmet},
+				{"breastplate", &stats->breastplate},
+				{"gloves", &stats->gloves},
+				{"shoes", &stats->shoes},
+				{"shield", &stats->shield},
+				{"weapon", &stats->weapon},
+				{"cloak", &stats->cloak},
+				{"amulet", &stats->amulet},
+				{"ring", &stats->ring},
+				{"mask", &stats->mask},
+			};
+			for (auto& item : follower.npc_equipment) {
+				auto find = slots.find(item.first);
+				if (find != slots.end()) {
+					ItemType type = item.second.type;
+					Status status = item.second.status;
+					Sint16 beatitude = item.second.beatitude;
+					Sint16 count = item.second.count;
+					Uint32 appearance = item.second.appearance;
+					bool identified = item.second.identified;
+					Item* i = newItem(type, status, beatitude, count,
+						appearance, identified, &stats->inventory);
+					i->x = item.second.x;
+					i->y = item.second.y;
+					*find->second = i;
+				}
+			}
+		}
+	}
+
+	return followers;
 } 

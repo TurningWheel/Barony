@@ -11,6 +11,8 @@
 
 #pragma once
 #include "monster.hpp"
+#include "json.hpp"
+#include "player.hpp"
 
 #define SCORESFILE "scores.dat"
 #define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"
@@ -302,10 +304,6 @@ int saveGameOld(int saveIndex = savegameCurrentFileIndex);
 int loadGameOld(int player, int saveIndex = savegameCurrentFileIndex);
 list_t* loadGameFollowersOld(int saveIndex = savegameCurrentFileIndex);
 
-int saveGame(int saveIndex = savegameCurrentFileIndex);
-int loadGame(int player, const SaveGameInfo& info);
-int loadGameFollowers(const SaveGameInfo& info);
-
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 bool anySaveFileExists(bool singleplayer);
@@ -325,12 +323,12 @@ struct SaveGameInfo {
     int multiplayer_type = SINGLE;
     int dungeon_lvl = 0;
 	int level_track = 0;
-    bool players_connected[MAXPLAYERS] = { false };
+    std::vector<int> players_connected;
 
 	struct Player {
 		Uint32 char_class = 0;
 		Uint32 race = PlayerRaces::RACE_HUMAN;
-		int kills[NUMMONSTERS] = { 0 };
+		std::vector<int> kills;
 
 		bool conductPenniless = false;
 		bool conductFoodless = false;
@@ -349,9 +347,9 @@ struct SaveGameInfo {
 			struct item_t {
 				ItemType type = ItemType::WOODEN_SHIELD;
 				Status status = Status::EXCELLENT;
-				Sint16 beatitude = 0;
-				Sint16 count = 1;
 				Uint32 appearance = 0;
+				int beatitude = 0;
+				int count = 1;
 				bool identified = false;
 				int x = 0;
 				int y = 0;
@@ -385,13 +383,13 @@ struct SaveGameInfo {
 			int LVL = 0;
 			int GOLD = 0;
 			int HUNGER = 0;
-			int PROFICIENCIES[NUMPROFICIENCIES] = { 0 };
-			int EFFECTS[NUMEFFECTS] = { 0 };
-			int EFFECTS_TIMERS[NUMEFFECTS] = { 0 };
-			int MISC_FLAGS[32] = { 0 };
+			std::vector<int> PROFICIENCIES;
+			std::vector<int> EFFECTS;
+			std::vector<int> EFFECTS_TIMERS;
+			std::vector<int> MISC_FLAGS;
 			std::vector<std::pair<std::string, std::string>> attributes;
 			std::vector<std::pair<std::string, Uint32>> player_equipment;
-			std::unordered_map<std::string, item_t> npc_equipment;
+			std::vector<std::pair<std::string, item_t>> npc_equipment;
 			std::vector<item_t> inventory;
 
 			bool serialize(FileInterface* fp) {
@@ -446,7 +444,8 @@ struct SaveGameInfo {
 			return true;
 		};
 	};
-	Player players[MAXPLAYERS];
+	std::vector<Player> players;
+	std::vector<std::pair<std::string, std::string>> additional_data;
 	
 	bool serialize(FileInterface* fp) {
 		fp->property("magic_cookie", magic_cookie);
@@ -464,9 +463,14 @@ struct SaveGameInfo {
 		fp->property("level_track", level_track);
 		fp->property("players_connected", players_connected);
 		fp->property("players", players);
+		fp->property("additional_data", additional_data);
 		return true;
 	};
 };
+
+int saveGame(int saveIndex = savegameCurrentFileIndex);
+int loadGame(int player, const SaveGameInfo& info);
+list_t* loadGameFollowers(const SaveGameInfo& info);
 
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 const char* getSaveGameName(const SaveGameInfo& info);
