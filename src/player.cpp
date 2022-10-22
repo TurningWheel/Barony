@@ -493,7 +493,7 @@ void GameController::handleAnalog(int player)
 			floaty = getRawRightYMove();
 
 			const real_t maxInputVector = 32767 * sqrt(2);
-			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
+			const real_t magnitude = std::min(32767.0, sqrt(pow(floatx, 2) + pow(floaty, 2)));
 			const real_t normalised = magnitude / (maxInputVector);
 			real_t deadzone = rightStickDeadzone / maxInputVector;
 			if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
