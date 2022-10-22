@@ -444,9 +444,6 @@ public:
 	}
 	UIStatus* getUIInteraction(int player)
 	{
-		if (multiplayer != SINGLE && player != 0) {
-			return getUIInteraction(0);
-		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
