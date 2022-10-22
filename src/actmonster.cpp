@@ -8161,6 +8161,58 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case SPIDER:
+					// spray web
+					if ( dist < STRIKERANGE * 2 )
+					{
+						specialRoll = local_rng.rand() % 20;
+						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+						//messagePlayer(0, "spider roll %d", specialRoll);
+						if ( myStats->getAttribute("special_npc") != "" )
+						{
+							if ( myStats->HP <= myStats->MAXHP * 0.4 )
+							{
+								bonusFromHP = 20; // +100% chance
+							}
+							else if ( myStats->HP <= myStats->MAXHP * 1.0 )
+							{
+								bonusFromHP = 10; // +50% chance
+							}
+						}
+						else 
+						{
+							if ( myStats->HP <= myStats->MAXHP * 0.4 )
+							{
+								bonusFromHP = 8; // +40% chance
+							}
+							else if ( myStats->HP <= myStats->MAXHP * 0.8 )
+							{
+								bonusFromHP = 4; // +20% chance
+							}
+						}
+						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+						{
+							node = itemNodeInInventory(myStats, -1, SPELLBOOK);
+							if ( node != nullptr )
+							{
+								monsterSpecialState = SPIDER_CAST;
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SPIDER_CAST;
+								serverUpdateEntitySkill(this, 33); // for clients to handle animation
+							}
+							else
+							{
+								if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+								{
+									monsterSpecialState = SPIDER_CAST;
+									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SPIDER_CAST;
+									serverUpdateEntitySkill(this, 33); // for clients to handle animation
+								}
+							}
+							break;
+						}
+					}
+					break;
 				case INSECTOID:
 					if ( monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST || monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
@@ -8326,6 +8378,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+					}
+					break;
+				case SPIDER:
+					if ( monsterSpecialState == SPIDER_CAST )
+					{
+						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						shouldAttack = false;
 					}
 					break;
 				case INSECTOID:
