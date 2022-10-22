@@ -12747,6 +12747,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
 				|| myStats->type == GNOME || myStats->type == SUCCUBUS
+				|| myStats->type == SPIDER
+				|| myStats->type == CRAB
 				|| myStats->type == SHOPKEEPER || myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
@@ -12871,7 +12873,7 @@ int Entity::getAttackPose() const
 			type == GNOME || type == DEMON ||
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
-			type == SHADOW || type == RAT ||
+			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -15897,6 +15899,22 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	else if ( myStats.type == SPIDER )
+	{
+		if ( monsterTarget != 0 )
+		{
+			if ( Entity* target = uidToEntity(monsterTarget) )
+			{
+				if ( Stat* targetStats = target->getStats() )
+				{
+					if ( targetStats->EFFECTS[EFF_WEBBED] )
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
 	if ( monsterAllySummonRank != 0 )
 	{
 		return false;
@@ -15964,6 +15982,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 		return false;
 	}
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+	if ( myStats.type == SPIDER && monsterSpecialState > 0 )
 	{
 		return false;
 	}
