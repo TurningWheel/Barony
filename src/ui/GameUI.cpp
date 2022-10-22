@@ -17753,6 +17753,18 @@ void loadHUDSettingsJSON()
 							{
 								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC;
 							}
+							else if ( type == "follower_cmd" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD;
+							}
+							else if ( type == "broadcast" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST;
+							}
+							else if ( type == "attack" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK;
+							}
 							else
 							{
 								continue;
@@ -28684,7 +28696,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	return itemWorldTooltipSurface;
 }
 
-void Player::WorldUI_t::WorldTooltipDialogue_t::deactivate()
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::deactivate()
 {
 	parent = 0;
 	x = 0.0;
@@ -28711,44 +28723,84 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::deactivate()
 
 void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 {
+	playerDialogue.update();
+	for ( auto& d : sharedDialogues )
+	{
+		d.second.update();
+	}
+	for ( auto it = sharedDialogues.cbegin(); it != sharedDialogues.cend(); )
+	{
+		if ( !it->second.active && it->second.alpha <= 0.0
+			&& (ticks - it->second.spawnTick >= it->second.expiryTicks) )
+		{
+			it = sharedDialogues.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
+{
 	if ( !init )
 	{
 		return;
 	}
-
-	if ( !players[player.playernum]->entity || client_disconnected[player.playernum] )
+	if ( player == -1 )
+	{
+		deactivate();
+		return;
+	}
+	bool singleDisplayDialogue = (this == &players[player]->worldUI.worldTooltipDialogue.playerDialogue);
+	if ( client_disconnected[player] )
 	{
 		active = false;
 	}
 
 	Entity* parentEnt = uidToEntity(parent);
+	bool expired = false;
 	if ( !parentEnt )
 	{
 		active = false;
+		expired = true;
 	}
 	else if ( ticks - spawnTick >= expiryTicks )
 	{
 		active = false;
+		expired = true;
 	}
 
 
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
-	if ( active && parentEnt && setting.followEntity )
+	if ( parentEnt && setting.followEntity )
 	{
-		x = parentEnt->x;
-		y = parentEnt->y;
-		z = parentEnt->z + setting.offsetZ;
+		/*if ( parentEnt->bUseRenderInterpolation )
+		{
+			x = parentEnt->lerpRenderState.x.position * 16.0;
+			y = parentEnt->lerpRenderState.y.position * 16.0;
+			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+		}
+		else*/
+		{
+			x = parentEnt->x;
+			y = parentEnt->y;
+			z = parentEnt->z + setting.offsetZ;
+		}
 	}
 
 	real_t dx, dy;
-	if ( players[player.playernum]->entity )
+	auto& camera = cameras[player];
+	dx = x - camera.x * 16.0;
+	dy = y - camera.y * 16.0;
+	if ( dx * dx + dy * dy > setting.fadeDist * setting.fadeDist )
 	{
-		dx = x - players[player.playernum]->entity->x;
-		dy = y - players[player.playernum]->entity->y;
-		if ( dx * dx + dy * dy > setting.fadeDist * setting.fadeDist )
-		{
-			active = false;
-		}
+		active = false;
+	}
+	else if ( !singleDisplayDialogue && !expired )
+	{
+		active = true;
 	}
 
 	if ( ticks != updatedThisTick )
@@ -28766,7 +28818,10 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 			animZ = std::min(1.5, animZ);
 			if ( alpha <= 0.0 )
 			{
-				deactivate();
+				if ( expired || singleDisplayDialogue )
+				{
+					deactivate();
+				}
 				return;
 			}
 		}
@@ -28813,6 +28868,10 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	{
 		if ( player.playernum != clientnum )
 		{
+			if ( client_disconnected[player.playernum] )
+			{
+				return;
+			}
 			char buf[1024] = { 0 };
 
 			va_list argptr;
@@ -28832,16 +28891,30 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 		}
 	}
 
-	Uint32 oldUid = parent;
-	real_t oldAlpha = alpha;
-	real_t oldAnimZ = animZ;
-	deactivate();
+	Dialogue_t* d = &playerDialogue;
+	if ( !(type == DIALOGUE_GRAVE || type == DIALOGUE_SIGNPOST
+		|| type == DIALOGUE_NPC) )
+	{
+		if ( type == DIALOGUE_ATTACK && (sharedDialogues.find(uid) != sharedDialogues.end()) )
+		{
+			if ( sharedDialogues[uid].dialogueType == DIALOGUE_ATTACK )
+			{
+				return; // don't process combat taunts unless previous finished
+			}
+		}
+		d = &sharedDialogues[uid];
+	}
+	d->player = player.playernum;
+	Uint32 oldUid = d->parent;
+	real_t oldAlpha = d->alpha;
+	real_t oldAnimZ = d->animZ;
+	d->deactivate();
 	Entity* parentEnt = uidToEntity(uid);
 	if ( !parentEnt )
 	{
 		return;
 	}
-	parent = uid;
+	d->parent = uid;
 
 	char buf[1024] = { 0 };
 
@@ -28855,86 +28928,100 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 		messagePlayer(player.playernum, MESSAGE_CHATTER, buf);
 	}
 
-	dialogueStrFull = buf;
-	spawnTick = ticks;
-	updatedThisTick = 0;
-	dialogueType = type;
+	d->dialogueStrFull = buf;
+	d->spawnTick = ticks;
+	d->updatedThisTick = 0;
+	d->dialogueType = type;
 
-	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	auto& setting = WorldDialogueSettings_t::settings[d->dialogueType];
 
-	x = parentEnt->x;
-	y = parentEnt->y;
-	z = parentEnt->z + setting.offsetZ;
-	animZ = 1.5;
-	drawScale = 0.1 + setting.scaleMod;
-
-	active = true;
-	init = true;
-	alpha = 0.0;
-
-	if ( parent == oldUid )
+	/*if ( parentEnt->bUseRenderInterpolation )
 	{
-		alpha = oldAlpha;
-		animZ = oldAnimZ;
+		d->x = parentEnt->lerpRenderState.x.position * 16.0;
+		d->y = parentEnt->lerpRenderState.y.position * 16.0;
+		d->z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+	}
+	else*/
+	{
+		d->x = parentEnt->x;
+		d->y = parentEnt->y;
+		d->z = parentEnt->z + setting.offsetZ;
+	}
+	d->animZ = 1.5;
+	d->drawScale = 0.1 + setting.scaleMod;
+
+	d->active = true;
+	d->init = true;
+	d->alpha = 0.0;
+
+	if ( d->parent == oldUid )
+	{
+		d->alpha = oldAlpha;
+		d->animZ = oldAnimZ;
 	}
 
-	if ( !dialogueField )
+	if ( !d->dialogueField )
 	{
-		dialogueField = new Field(1024);
-		dialogueField->setFont("fonts/pixel_maz_multiline.ttf#16");
+		d->dialogueField = new Field(1024);
+		d->dialogueField->setFont("fonts/pixel_maz_multiline.ttf#16");
 	}
-	dialogueField->setText(dialogueStrFull.c_str());
+	d->dialogueField->setText(d->dialogueStrFull.c_str());
 	int maxWidth = setting.maxWidth;
-	dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, 0 });
-	dialogueField->reflowTextToFit(0);
-	int numLines = dialogueField->getNumTextLines();
-	if ( Font* actualFont = Font::get(dialogueField->getFont()) )
+	d->dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, 0 });
+	d->dialogueField->reflowTextToFit(0);
+	int numLines = d->dialogueField->getNumTextLines();
+	if ( Font* actualFont = Font::get(d->dialogueField->getFont()) )
 	{
 		auto textHeight = numLines * actualFont->height(true) + 16;
-		if ( auto textGet = Text::get(dialogueField->getLongestLine().c_str(),
-			dialogueField->getFont(), dialogueField->getTextColor(),
-			dialogueField->getOutlineColor()) )
+		if ( auto textGet = Text::get(d->dialogueField->getLongestLine().c_str(),
+			d->dialogueField->getFont(), d->dialogueField->getTextColor(),
+			d->dialogueField->getOutlineColor()) )
 		{
-			dialogueField->setSize(SDL_Rect{ 0, 0, (int)textGet->getWidth() + 16, textHeight });
+			d->dialogueField->setSize(SDL_Rect{ 0, 0, (int)textGet->getWidth() + 16, textHeight });
 		}
 		else
 		{
-			dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, textHeight });
+			d->dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, textHeight });
 		}
 	}
-	expiryTicks = setting.baseTicksToDisplay;
+	d->expiryTicks = setting.baseTicksToDisplay;
 	if ( numLines > 1 )
 	{
-		expiryTicks += (numLines - 1) * setting.extraTicksPerLine;
+		d->expiryTicks += (numLines - 1) * setting.extraTicksPerLine;
 	}
-	dialogueStrFull = dialogueField->getText();
+	d->dialogueStrFull = d->dialogueField->getText();
 
-	if ( dialogueType == DIALOGUE_NPC )
+	if ( d->dialogueType == DIALOGUE_NPC )
 	{
 		// insta-show the first line (e.g The NPC:)
-		size_t found = dialogueStrFull.find('\n');
+		size_t found = d->dialogueStrFull.find('\n');
 		if ( found != std::string::npos )
 		{
-			dialogueStringLength = found;
-
-			while ( found != std::string::npos )
+			size_t foundColon = d->dialogueStrFull.find(':');
+			if ( foundColon != std::string::npos
+				&& foundColon < found )
 			{
-				if ( found + 1 < dialogueStrFull.length() )
+				d->dialogueStringLength = found;
+
+				while ( found != std::string::npos )
 				{
-					if ( dialogueStrFull[found + 1] != ' ' )
+					if ( found + 1 < d->dialogueStrFull.length() )
 					{
-						dialogueStrFull.insert(found + 1, 1, ' ');
-						++found;
+						if ( d->dialogueStrFull[found + 1] != ' ' )
+						{
+							d->dialogueStrFull.insert(found + 1, 1, ' ');
+							++found;
+						}
 					}
+					found = d->dialogueStrFull.find('\n', found + 1);
 				}
-				found = dialogueStrFull.find('\n', found + 1);
 			}
 		}
-		dialogueField->setText(dialogueStrFull.c_str());
+		d->dialogueField->setText(d->dialogueStrFull.c_str());
 	}
 }
 
-SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
+SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::blitDialogueTooltip()
 {
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
 	const int pointerExtraHeight = 16;
@@ -29140,7 +29227,10 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
 			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
 		}
 	}
-	else if ( dialogueType == DIALOGUE_NPC )
+	else if ( dialogueType == DIALOGUE_NPC
+		|| dialogueType == DIALOGUE_FOLLOWER_CMD
+		|| dialogueType == DIALOGUE_BROADCAST
+		|| dialogueType == DIALOGUE_ATTACK )
 	{
 		dialogueField->setTextColor(makeColor(29, 16, 11, 255));
 		dialogueField->setOutlineColor(makeColor(186, 169, 128, 255));

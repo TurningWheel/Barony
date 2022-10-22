@@ -1583,13 +1583,26 @@ void drawEntities3D(view_t* camera, int mode)
 				+ pow(camera->y * 16.0 - enemybar.second.worldY, 2));
 			spritesToDraw.push_back(std::make_tuple(camDist, &enemybar, SPRITE_HPBAR));
 		}
-		if ( players[i]->worldUI.worldTooltipDialogue.init && players[i]->worldUI.worldTooltipDialogue.draw )
+		if ( players[i]->worldUI.worldTooltipDialogue.playerDialogue.init && players[i]->worldUI.worldTooltipDialogue.playerDialogue.draw )
 		{
-			if ( (i == currentPlayerViewport) )
+			if ( i == currentPlayerViewport )
 			{
-				real_t camDist = (pow(camera->x * 16.0 - players[i]->worldUI.worldTooltipDialogue.x, 2)
-					+ pow(camera->y * 16.0 - players[i]->worldUI.worldTooltipDialogue.y, 2));
-				spritesToDraw.push_back(std::make_tuple(camDist, &players[i]->worldUI.worldTooltipDialogue, SPRITE_DIALOGUE));
+				real_t camDist = (pow(camera->x * 16.0 - players[i]->worldUI.worldTooltipDialogue.playerDialogue.x, 2)
+					+ pow(camera->y * 16.0 - players[i]->worldUI.worldTooltipDialogue.playerDialogue.y, 2));
+				spritesToDraw.push_back(std::make_tuple(camDist, &players[i]->worldUI.worldTooltipDialogue.playerDialogue, SPRITE_DIALOGUE));
+			}
+		}
+		for ( auto it = players[i]->worldUI.worldTooltipDialogue.sharedDialogues.begin();
+			it != players[i]->worldUI.worldTooltipDialogue.sharedDialogues.end(); ++it )
+		{
+			if ( it->second.init && it->second.draw )
+			{
+				if ( i == currentPlayerViewport )
+				{
+					real_t camDist = (pow(camera->x * 16.0 - it->second.x, 2)
+						+ pow(camera->y * 16.0 - it->second.y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, &it->second, SPRITE_DIALOGUE));
+				}
 			}
 		}
 	}
@@ -1645,7 +1658,7 @@ void drawEntities3D(view_t* camera, int mode)
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_DIALOGUE )
 		{
 #ifndef EDITOR
-			auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t*)std::get<1>(distSpriteType);
+			auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)std::get<1>(distSpriteType);
 			glDrawWorldDialogueSprite(camera, dialogue, mode);
 #endif
 		}

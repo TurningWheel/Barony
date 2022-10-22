@@ -14641,7 +14641,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 				for (int c = 0; c < MAXPLAYERS; ++c)
 				{
 					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
 						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
 				}
 				if (target.behavior == &actPlayer)
@@ -14651,16 +14651,19 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			else
 			{
-				for (int c = 0; c < MAXPLAYERS; ++c)
+				if ( monsterAllyIndex < 0 || (monsterAllyIndex >= 0 && local_rng.getU8() % 8 == 0) )
 				{
-					if (local_rng.getU8() % 2) {
-						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
-							language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
-					} else {
-						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
-							language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+					for (int c = 0; c < MAXPLAYERS; ++c)
+					{
+						if (local_rng.getU8() % 2) {
+							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
+								language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+						} else {
+							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
+								language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+						}
 					}
 				}
 			}
@@ -15024,25 +15027,28 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					Entity* owner = uidToEntity(item->ownerUid);
 					if ( owner && owner->behavior == &actPlayer )
 					{
-						switch ( item->type )
+						for ( int c = 0; c < MAXPLAYERS; ++c )
 						{
-							case ARTIFACT_ORB_GREEN:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3888]);
-								break;
-							case ARTIFACT_ORB_BLUE:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3889]);
-								break;
-							case ARTIFACT_ORB_RED:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3890]);
-								break;
-							default:
-								break;
+							switch ( item->type )
+							{
+								case ARTIFACT_ORB_GREEN:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3888]);
+									break;
+								case ARTIFACT_ORB_BLUE:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3889]);
+									break;
+								case ARTIFACT_ORB_RED:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3890]);
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					playSoundEntity(this, 35 + local_rng.rand() % 3, 64);

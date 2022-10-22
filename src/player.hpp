@@ -1771,54 +1771,68 @@ public:
 		struct WorldTooltipDialogue_t
 		{
 			Player& player;
-			Uint32 parent = 0;
-			real_t x = 0.0;
-			real_t y = 0.0;
-			real_t z = 0.0;
-			bool active = false;
-			bool draw = false;
-			bool init = false;
-			real_t animZ = 0.0;
-			real_t alpha = 0.0;
-			real_t drawScale = 0.0;
-			Uint32 spawnTick = 0;
-			Uint32 updatedThisTick = 0;
-			Uint32 expiryTicks = 0;
-			Field* dialogueField = nullptr;
-			size_t dialogueStringLength = 0;
-			std::string dialogueStrFull = "";
-			std::string dialogueStrCurrent = "";
-			int langEntry = 0;
-			std::string variables[10];
-			int getPlayerNum() { return player.playernum; }
-			WorldTooltipDialogue_t(Player& p) : player(p)
-			{};
-			~WorldTooltipDialogue_t()
-			{
-				if ( dialogueField )
-				{
-					delete dialogueField;
-					dialogueField = nullptr;
-				}
-				if ( dialogueTooltipSurface )
-				{
-					SDL_FreeSurface(dialogueTooltipSurface);
-					dialogueTooltipSurface = nullptr;
-				}
-			};
 			enum DialogueType_t
 			{
 				DIALOGUE_NONE,
 				DIALOGUE_NPC,
 				DIALOGUE_GRAVE,
-				DIALOGUE_SIGNPOST
+				DIALOGUE_SIGNPOST,
+				DIALOGUE_FOLLOWER_CMD,
+				DIALOGUE_BROADCAST,
+				DIALOGUE_ATTACK
 			};
-			DialogueType_t dialogueType = DIALOGUE_NONE;
-			void deactivate();
+			struct Dialogue_t
+			{
+				int player = -1;
+				Uint32 parent = 0;
+				real_t x = 0.0;
+				real_t y = 0.0;
+				real_t z = 0.0;
+				bool active = false;
+				bool draw = false;
+				bool init = false;
+				real_t animZ = 0.0;
+				real_t alpha = 0.0;
+				real_t drawScale = 0.0;
+				Uint32 spawnTick = 0;
+				Uint32 updatedThisTick = 0;
+				Uint32 expiryTicks = 0;
+				Field* dialogueField = nullptr;
+				size_t dialogueStringLength = 0;
+				std::string dialogueStrFull = "";
+				std::string dialogueStrCurrent = "";
+				void deactivate();
+				void update();
+				DialogueType_t dialogueType = DIALOGUE_NONE;
+				SDL_Surface* blitDialogueTooltip();
+				SDL_Surface* dialogueTooltipSurface = nullptr;
+				Dialogue_t() {};
+				Dialogue_t(int player)
+				{
+					this->player = player;
+				};
+				~Dialogue_t() 
+				{
+					if ( dialogueField )
+					{
+						delete dialogueField;
+						dialogueField = nullptr;
+					}
+					if ( dialogueTooltipSurface )
+					{
+						SDL_FreeSurface(dialogueTooltipSurface);
+						dialogueTooltipSurface = nullptr;
+					}
+				};
+			};
+			Dialogue_t playerDialogue;
+			std::map<Uint32, Dialogue_t> sharedDialogues;
+			int getPlayerNum() { return player.playernum; }
+			WorldTooltipDialogue_t(Player& p) : player(p)
+			{};
+			~WorldTooltipDialogue_t() {};
 			void update();
 			void createDialogueTooltip(Uint32 uid, DialogueType_t type, char const * const message, ...);
-			SDL_Surface* blitDialogueTooltip();
-			SDL_Surface* dialogueTooltipSurface = nullptr;
 			struct WorldDialogueSettings_t
 			{
 				struct Setting_t
