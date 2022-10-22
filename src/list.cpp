@@ -455,6 +455,9 @@ list_t* list_CopyNew(list_t* srclist)
 
 Uint32 list_Index(node_t* node)
 {
+	if (node == nullptr) {
+		return UINT32_MAX;
+	}
 	node_t* tempnode;
 	int i;
 
