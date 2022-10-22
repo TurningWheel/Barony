@@ -3199,11 +3199,13 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	if (tm) {
 		hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
 	}
-	auto& stats = info.players[info.player_num].stats;
-	hash += stats.STR + stats.LVL + stats.DEX * stats.INT;
-	hash += stats.CON * stats.PER + std::min(stats.GOLD, 5000) - stats.CON;
-	hash += stats.HP - stats.MP;
-	hash += info.dungeon_lvl;
+	if (info.players.size() >= info.player_num) {
+		auto& stats = info.players[info.player_num].stats;
+		hash += stats.STR + stats.LVL + stats.DEX * stats.INT;
+		hash += stats.CON * stats.PER + std::min(stats.GOLD, 5000) - stats.CON;
+		hash += stats.HP - stats.MP;
+		hash += info.dungeon_lvl;
+	}
 	if (hash != info.hash) {
 		info.hash = 0;
 	}

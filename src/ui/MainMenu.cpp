@@ -7913,10 +7913,13 @@ bind_failed:
     static void sendJoinRequest() {
 	    printlog("sending join request...\n");
 
-		auto info = getSaveGameInfo(false);
+		SaveGameInfo info;
+		if (loadingsavegame) {
+			info = getSaveGameInfo(false);
+		}
 
 	    const Uint32 index = loadingsavegame ?
-	        std::min(getSaveGameClientnum(info), MAXPLAYERS - 1) : 0;
+	        std::min(info.player_num, MAXPLAYERS - 1) : 0;
 
 	    // construct packet
 	    memcpy(net_packet->data, "JOIN", 4);
@@ -7930,7 +7933,7 @@ bind_failed:
 	    net_packet->data[56] = index;
 	    if (loadingsavegame) {
 		    // send over the map seed being used
-		    SDLNet_Write32(getSaveGameMapSeed(info), &net_packet->data[57]);
+		    SDLNet_Write32(info.mapseed, &net_packet->data[57]);
 	    } else {
 		    SDLNet_Write32(0, &net_packet->data[57]);
 	    }
