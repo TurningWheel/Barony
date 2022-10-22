@@ -4445,6 +4445,8 @@ timeToGoAgain:
 								}
 							}*/
 
+							hasrangedweapon = my->hasRangedWeapon(); // re-update this status check if weapon was consumed/stowed away
+
 							// rotate monster
 							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
