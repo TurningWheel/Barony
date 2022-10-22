@@ -5268,6 +5268,10 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 }
 
 int saveGame(int saveIndex) {
+	if (!intro) {
+		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
+	}
+	
 	SaveGameInfo info;
 	
 	time_t t = time(nullptr);
@@ -5338,7 +5342,12 @@ int saveGame(int saveIndex) {
 
 			// hotbar
 			for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
-				player.hotbar[i] = players[c]->hotbar.slots()[i].item;
+				auto item = uidToItem(players[c]->hotbar.slots()[i].item);
+				if (item) {
+					player.hotbar[i] = list_Index(item->node);
+				} else {
+					player.hotbar[i] = UINT32_MAX;
+				}
 			}
 
 			// spells
@@ -5414,8 +5423,8 @@ int saveGame(int saveIndex) {
 				auto item = (Item*)node->element;
 				player.stats.inventory.push_back(
 					SaveGameInfo::Player::stat_t::item_t{
-					item->type,
-					item->status,
+					(Uint32)item->type,
+					(Uint32)item->status,
 					item->appearance,
 					item->beatitude,
 					item->count,
@@ -5485,12 +5494,14 @@ int saveGame(int saveIndex) {
 						if (slot.second) {
 							stats.npc_equipment.push_back(std::make_pair(
 								slot.first, SaveGameInfo::Player::stat_t::item_t{
-									slot.second->type,
-									slot.second->status,
+									(Uint32)slot.second->type,
+									(Uint32)slot.second->status,
 									slot.second->appearance,
 									slot.second->beatitude,
 									slot.second->count,
 									slot.second->identified,
+									slot.second->x,
+									slot.second->y,
 								}));
 						}
 					}
@@ -5501,8 +5512,8 @@ int saveGame(int saveIndex) {
 						auto item = (Item*)node->element;
 						stats.inventory.push_back(
 							SaveGameInfo::Player::stat_t::item_t{
-							item->type,
-							item->status,
+							(Uint32)item->type,
+							(Uint32)item->status,
 							item->appearance,
 							item->beatitude,
 							item->count,
@@ -5511,15 +5522,20 @@ int saveGame(int saveIndex) {
 							item->y,
 							});
 					}
+
+					// finally, add follower to list
+					player.followers.push_back(stats);
 				}
 			}
 		}
 	}
 
+	static ConsoleVariable<bool> cvar_saveText("/save_text_format", true);
+
 	char path[PATH_MAX] = "";
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
 	completePath(path, savefile.c_str(), outputdir);
-	auto result = FileHelper::writeObject(path, EFileFormat::Binary, info);
+	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json : EFileFormat::Binary, info);
 	return result == true ? 0 : 1;
 }
 
@@ -5607,7 +5623,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// player stats
 	auto& p = info.players[player].stats;
 	stringCopy(stats[player]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
-	stats[player]->sex = p.sex;
+	stats[player]->sex = static_cast<sex_t>(p.sex);
 	stats[player]->appearance = p.appearance;
 	stats[player]->HP = p.HP;
 	stats[player]->MAXHP = p.maxHP;
@@ -5639,8 +5655,8 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// inventory
 	list_FreeAll(&stats[player]->inventory);
 	for (auto& item : p.inventory) {
-		ItemType type = item.type;
-		Status status = item.status;
+		ItemType type = static_cast<ItemType>(item.type);
+		Status status = static_cast<Status>(item.status);
 		Sint16 beatitude = item.beatitude;
 		Sint16 count = item.count;
 		Uint32 appearance = item.appearance;
@@ -5652,23 +5668,28 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	// equipment
-	const std::unordered_map<std::string, Item**> slots = {
-		{"helmet", &stats[player]->helmet},
-		{"breastplate", &stats[player]->breastplate},
-		{"gloves", &stats[player]->gloves},
-		{"shoes", &stats[player]->shoes},
-		{"shield", &stats[player]->shield},
-		{"weapon", &stats[player]->weapon},
-		{"cloak", &stats[player]->cloak},
-		{"amulet", &stats[player]->amulet},
-		{"ring", &stats[player]->ring},
-		{"mask", &stats[player]->mask},
+	const std::unordered_map<std::string, Item*&> slots = {
+		{"helmet", stats[player]->helmet},
+		{"breastplate", stats[player]->breastplate},
+		{"gloves", stats[player]->gloves},
+		{"shoes", stats[player]->shoes},
+		{"shield", stats[player]->shield},
+		{"weapon", stats[player]->weapon},
+		{"cloak", stats[player]->cloak},
+		{"amulet", stats[player]->amulet},
+		{"ring", stats[player]->ring},
+		{"mask", stats[player]->mask},
 	};
 	for (auto& item : p.player_equipment) {
 		auto find = slots.find(item.first);
 		if (find != slots.end()) {
+			auto& slot = find->second;
 			auto node = list_Node(&stats[player]->inventory, item.second);
-			*find->second = (Item*)node->element;
+			if (node) {
+				slot = (Item*)node->element;
+			} else {
+				slot = nullptr;
+			}
 		}
 	}
 
@@ -5767,8 +5788,8 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 			// read follower stats
 			stringCopy(stats->name, follower.name.c_str(),
 				sizeof(Stat::name), follower.name.size());
-			stats->type = follower.type;
-			stats->sex = follower.sex;
+			stats->type = (Monster)follower.type;
+			stats->sex = (sex_t)follower.sex;
 			stats->appearance = follower.appearance;
 			stats->HP = follower.HP;
 			stats->MAXHP = follower.maxHP;
@@ -5807,8 +5828,8 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 
 			// read follower inventory
 			for (auto& item : follower.inventory) {
-				ItemType type = item.type;
-				Status status = item.status;
+				ItemType type = (ItemType)item.type;
+				Status status = (Status)item.status;
 				Sint16 beatitude = item.beatitude;
 				Sint16 count = item.count;
 				Uint32 appearance = item.appearance;
@@ -5820,23 +5841,24 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 			}
 
 			// equipment
-			const std::unordered_map<std::string, Item**> slots = {
-				{"helmet", &stats->helmet},
-				{"breastplate", &stats->breastplate},
-				{"gloves", &stats->gloves},
-				{"shoes", &stats->shoes},
-				{"shield", &stats->shield},
-				{"weapon", &stats->weapon},
-				{"cloak", &stats->cloak},
-				{"amulet", &stats->amulet},
-				{"ring", &stats->ring},
-				{"mask", &stats->mask},
+			const std::unordered_map<std::string, Item*&> slots = {
+				{"helmet", stats->helmet},
+				{"breastplate", stats->breastplate},
+				{"gloves", stats->gloves},
+				{"shoes", stats->shoes},
+				{"shield", stats->shield},
+				{"weapon", stats->weapon},
+				{"cloak", stats->cloak},
+				{"amulet", stats->amulet},
+				{"ring", stats->ring},
+				{"mask", stats->mask},
 			};
 			for (auto& item : follower.npc_equipment) {
 				auto find = slots.find(item.first);
 				if (find != slots.end()) {
-					ItemType type = item.second.type;
-					Status status = item.second.status;
+					auto& slot = find->second;
+					ItemType type = (ItemType)item.second.type;
+					Status status = (Status)item.second.status;
 					Sint16 beatitude = item.second.beatitude;
 					Sint16 count = item.second.count;
 					Uint32 appearance = item.second.appearance;
@@ -5845,7 +5867,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 						appearance, identified, &stats->inventory);
 					i->x = item.second.x;
 					i->y = item.second.y;
-					*find->second = i;
+					slot = i;
 				}
 			}
 		}

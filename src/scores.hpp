@@ -327,7 +327,7 @@ struct SaveGameInfo {
 
 	struct Player {
 		Uint32 char_class = 0;
-		Uint32 race = PlayerRaces::RACE_HUMAN;
+		Uint32 race = 0;
 		std::vector<int> kills;
 
 		bool conductPenniless = false;
@@ -345,8 +345,8 @@ struct SaveGameInfo {
 
 		struct stat_t {
 			struct item_t {
-				ItemType type = ItemType::WOODEN_SHIELD;
-				Status status = Status::EXCELLENT;
+				Uint32 type = 0;
+				Uint32 status = 0;
 				Uint32 appearance = 0;
 				int beatitude = 0;
 				int count = 1;
@@ -357,17 +357,19 @@ struct SaveGameInfo {
 				bool serialize(FileInterface* fp) {
 					fp->property("type", type);
 					fp->property("status", status);
+					fp->property("appearance", appearance);
 					fp->property("beatitude", beatitude);
 					fp->property("count", count);
-					fp->property("appearance", appearance);
 					fp->property("identified", identified);
+					fp->property("x", x);
+					fp->property("y", y);
 					return true;
-				};
+				}
 			};
 
 			std::string name;
-			Monster type = Monster::HUMAN;
-			sex_t sex = FEMALE;
+			Uint32 type = Monster::HUMAN;
+			Uint32 sex = 0;
 			Uint32 appearance = 0;
 			int HP = 0;
 			int maxHP = 0;
@@ -442,7 +444,7 @@ struct SaveGameInfo {
 			fp->property("stats", stats);
 			fp->property("followers", followers);
 			return true;
-		};
+		}
 	};
 	std::vector<Player> players;
 	std::vector<std::pair<std::string, std::string>> additional_data;
@@ -465,7 +467,7 @@ struct SaveGameInfo {
 		fp->property("players", players);
 		fp->property("additional_data", additional_data);
 		return true;
-	};
+	}
 };
 
 int saveGame(int saveIndex = savegameCurrentFileIndex);

@@ -28,8 +28,6 @@ char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size)
     // verify input
     assert(dest);
     assert(src);
-    assert(dest_size);
-    assert(src_size);
     if (!dest || !src || !dest_size || !src_size) {
 	    return dest;
     }
@@ -50,7 +48,6 @@ char* stringCopyUnsafe(char* dest, const char* src, size_t size) {
     // verify input
     assert(dest);
     assert(src);
-    assert(size);
     if (!dest || !src || !size) {
 	    return dest;
     }
@@ -70,8 +67,6 @@ char* stringCat(char* dest, const char* src, size_t dest_size, size_t src_size) 
     // verify input
     assert(dest);
     assert(src);
-    assert(dest_size);
-    assert(src_size);
     if (!dest || !src || !dest_size || !src_size) {
 	    return dest;
     }
@@ -101,8 +96,6 @@ int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_
     // verify input
     assert(str1);
     assert(str2);
-    assert(str1_size);
-    assert(str2_size);
     if (!str1 || !str2 || !str1_size || !str2_size) {
 	    return 0;
     }
@@ -158,8 +151,6 @@ const char* stringStr(const char* str1, const char* str2, size_t str1_size, size
     // verify input
     assert(str1);
     assert(str2);
-    assert(str1_size);
-    assert(str2_size);
     if (!str1 || !str2 || !str1_size || !str2_size) {
 	    return nullptr;
     }
@@ -180,8 +171,6 @@ char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size
     // verify input
     assert(str1);
     assert(str2);
-    assert(str1_size);
-    assert(str2_size);
     if (!str1 || !str2 || !str1_size || !str2_size) {
 	    return nullptr;
     }
