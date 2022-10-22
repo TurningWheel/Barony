@@ -5627,6 +5627,11 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		return;
 	}
 
+	if ( multiplayer == CLIENT && !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
 	if ( checkInventorySpaceForPaperDoll )
 	{
 		if ( players[player]->isLocalPlayer() 
