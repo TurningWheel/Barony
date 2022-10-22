@@ -1430,6 +1430,10 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 				result = MAXPLAYERS;  // client wants to fill a space that is already filled
 			}
 		}
+		SaveGameInfo savegameinfo;
+		if (loadingsavegame) {
+			savegameinfo = getSaveGameInfo(false);
+		}
 		if ( clientlsg != loadingsavegame && loadingsavegame == 0 )
 		{
 			result = MAXPLAYERS + 2;  // client shouldn't load save game
@@ -1442,8 +1446,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		{
 			result = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
 		}
-		auto savegameinfo = getSaveGameInfo(false);
-		if ( loadingsavegame && savegameinfo.mapseed != clientms )
+		else if ( loadingsavegame && savegameinfo.mapseed != clientms )
 		{
 			result = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 		}

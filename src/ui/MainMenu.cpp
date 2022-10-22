@@ -15047,9 +15047,14 @@ bind_failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			assert(main_menu_frame);
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-			auto play_button = buttons->findButton("Play Game"); assert(play_button);
-			play_button->select();
+			auto buttons = main_menu_frame->findFrame("buttons");
+			if (!buttons) {
+				destroyMainMenu();
+				createMainMenu(false);
+			} else {
+				auto play_button = buttons->findButton("Play Game"); assert(play_button);
+				play_button->select();
+			}
 			});
 
 		auto continue_button = window->addButton("continue");
@@ -15706,6 +15711,7 @@ bind_failed:
                         }
                     }
                     multiplayer = SINGLE;
+					clientnum = 0;
                     createDummyMainMenu();
                     createLobbyBrowser(button);
                 }
