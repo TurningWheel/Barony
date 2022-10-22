@@ -5414,9 +5414,32 @@ int saveGame(int saveIndex) {
 				{"ring", stats[c]->ring},
 				{"mask", stats[c]->mask},
 			};
-			for (auto& slot : player_slots) {
-				player.stats.player_equipment.push_back(std::make_pair(slot.first,
-					slot.second ? list_Index(slot.second->node) : UINT32_MAX));
+			if (players[c]->isLocalPlayer()) {
+				// if this is a local player, we have their inventory, and can store
+				// item indexes in the player_equipment table
+				for (auto& slot : player_slots) {
+					player.stats.player_equipment.push_back(std::make_pair(slot.first,
+						slot.second ? list_Index(slot.second->node) : UINT32_MAX));
+				}
+			} else {
+				// if this is not a local player, we don't have the inventory.
+				// we must save whole items for each slot which the host will
+				// restore later
+				for (auto& slot : player_slots) {
+					if (slot.second) {
+						player.stats.npc_equipment.push_back(std::make_pair(
+							slot.first, SaveGameInfo::Player::stat_t::item_t{
+								(Uint32)slot.second->type,
+								(Uint32)slot.second->status,
+								slot.second->appearance,
+								slot.second->beatitude,
+								slot.second->count,
+								slot.second->identified,
+								slot.second->x,
+								slot.second->y,
+							}));
+					}
+				}
 			}
 
 			// inventory
@@ -5682,15 +5705,39 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{"ring", stats[player]->ring},
 		{"mask", stats[player]->mask},
 	};
-	for (auto& item : p.player_equipment) {
-		auto find = slots.find(item.first);
-		if (find != slots.end()) {
-			auto& slot = find->second;
-			auto node = list_Node(&stats[player]->inventory, item.second);
-			if (node) {
-				slot = (Item*)node->element;
-			} else {
-				slot = nullptr;
+	if (players[player]->isLocalPlayer()) {
+		// if this is a local player, we have their inventory, and can
+		// restore equipment using item indexes in the player_equipment table
+		for (auto& item : p.player_equipment) {
+			auto find = slots.find(item.first);
+			if (find != slots.end()) {
+				auto& slot = find->second;
+				auto node = list_Node(&stats[player]->inventory, item.second);
+				if (node) {
+					slot = (Item*)node->element;
+				} else {
+					slot = nullptr;
+				}
+			}
+		}
+	} else {
+		// if this is not a local player, we don't have the inventory.
+		// we must restore whole items and assign them directly to each slot
+		for (auto& item : p.npc_equipment) {
+			auto find = slots.find(item.first);
+			if (find != slots.end()) {
+				auto& slot = find->second;
+				ItemType type = (ItemType)item.second.type;
+				Status status = (Status)item.second.status;
+				Sint16 beatitude = item.second.beatitude;
+				Sint16 count = item.second.count;
+				Uint32 appearance = item.second.appearance;
+				bool identified = item.second.identified;
+				Item* i = newItem(type, status, beatitude, count,
+					appearance, identified, nullptr);
+				i->x = item.second.x;
+				i->y = item.second.y;
+				slot = i;
 			}
 		}
 	}
@@ -5866,7 +5913,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 					Uint32 appearance = item.second.appearance;
 					bool identified = item.second.identified;
 					Item* i = newItem(type, status, beatitude, count,
-						appearance, identified, &stats->inventory);
+						appearance, identified, &stats->inventory); // should follower inventory be nullptr? please test
 					i->x = item.second.x;
 					i->y = item.second.y;
 					slot = i;
