@@ -4150,5 +4150,11 @@ namespace ConsoleCommands {
 		}
 #endif
 	});
+
+	static ConsoleCommand ccmd_loadshopkeeperconsumables("/loadshopconsumables", "", []CCMD{
+#ifndef EDITOR
+		ShopkeeperConsumables_t::readFromFile();
+#endif
+	});
 }
 

@@ -837,6 +837,7 @@ void updateShopGUIChatter(const int player, const bool flipped)
 void Player::ShopGUI_t::clearItemDisplayed()
 {
 	itemPrice = -1;
+	itemUnknownPreventPurchase = false;
 }
 
 void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
@@ -855,17 +856,56 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		orbImg->disabled = true;
 		buyOrSellPrompt = buyTooltipFrame->findField("buy prompt txt");
 	}
+	itemUnknownPreventPurchase = false;
 	if ( isItemFromShop(item) )
 	{
 		itemPrice = item->buyValue(player.playernum);
 		char buf[1024];
-		if ( !item->identified )
+
+		bool hiddenItemInGUI = false;
+		int itemSkillReq = 0;
+		if ( item->itemSpecialShopConsumable )
+		{
+			itemSkillReq = ((int)item->itemRequireTradingSkillInShop) * 20;
+			if ( stats[player.playernum]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player.playernum], players[player.playernum]->entity) < itemSkillReq )
+			{
+				hiddenItemInGUI = true;
+				itemUnknownPreventPurchase = true;
+			}
+		}
+		if ( hiddenItemInGUI )
+		{
+			snprintf(buf, sizeof(buf), language[4251], itemSkillReq);
+		}
+		else if ( !item->identified )
 		{
 			snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
 		}
 		else
 		{
-			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			if ( (item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT
+				|| item->type == TOOL_GYROBOT) )
+			{
+				int health = 100;
+				if ( !item->tinkeringBotIsMaxHealth() )
+				{
+					health = 25 * (item->appearance % 10);
+					if ( health == 0 && item->status != BROKEN )
+					{
+						health = 5;
+					}
+				}
+				snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+			}
+			else if ( item->type == ENCHANTED_FEATHER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			}
 		}
 		if ( itemDesc != buf )
 		{
@@ -902,7 +942,29 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		}
 		else
 		{
-			snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			if ( (item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT
+				|| item->type == TOOL_GYROBOT) )
+			{
+				int health = 100;
+				if ( !item->tinkeringBotIsMaxHealth() )
+				{
+					health = 25 * (item->appearance % 10);
+					if ( health == 0 && item->status != BROKEN )
+					{
+						health = 5;
+					}
+				}
+				snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+			}
+			else if ( item->type == ENCHANTED_FEATHER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+			}
 		}
 		if ( itemDesc != buf )
 		{
@@ -1411,6 +1473,14 @@ void Player::ShopGUI_t::updateShop()
 
 		SDL_Rect namePos{ 76, 0, 208, 24 };
 		displayItemName->setSize(namePos);
+		if ( itemUnknownPreventPurchase )
+		{
+			displayItemName->setColor(hudColors.characterSheetRed);
+		}
+		else
+		{
+			displayItemName->setColor(hudColors.characterSheetLightNeutral);
+		}
 		if ( itemRequiresTitleReflow )
 		{
 			displayItemName->setText(itemDesc.c_str());
@@ -1465,7 +1535,14 @@ void Player::ShopGUI_t::updateShop()
 		itemSlotFrame->setSize(slotFramePos);
 
 		char priceFormat[64];
-		snprintf(priceFormat, sizeof(priceFormat), "%d gold", itemPrice);
+		if ( itemUnknownPreventPurchase )
+		{
+			snprintf(priceFormat, sizeof(priceFormat), language[4261]); // ??? gold
+		}
+		else
+		{
+			snprintf(priceFormat, sizeof(priceFormat), language[4260], itemPrice);
+		}
 
 		SDL_Rect valuePos = namePos;
 		valuePos.x = 102;
@@ -1475,11 +1552,14 @@ void Player::ShopGUI_t::updateShop()
 		displayItemValue->setText(priceFormat);
 
 		displayItemValue->setColor(hudColors.characterSheetLightNeutral);
-		if ( itemPrice > 0 && itemPrice > stats[player.playernum]->GOLD )
+		if ( !itemUnknownPreventPurchase )
 		{
-			if ( !strcmp(buyPromptText->getText(), language[4113]) ) // buy prompt
+			if ( itemPrice > 0 && itemPrice > stats[player.playernum]->GOLD )
 			{
-				displayItemValue->setColor(hudColors.characterSheetRed);
+				if ( !strcmp(buyPromptText->getText(), language[4113]) ) // buy prompt
+				{
+					displayItemValue->setColor(hudColors.characterSheetRed);
+				}
 			}
 		}
 

@@ -24,6 +24,7 @@
 #include "scores.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "mod_tools.hpp"
 
 #include <assert.h>
 
@@ -82,6 +83,9 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->isDroppable = true;
 	item->playerSoldItemToShop = false;
 	item->itemHiddenFromShop = false;
+	item->itemRequireTradingSkillInShop = 0;
+	item->itemSpecialShopConsumable = false;
+	item->interactNPCUid = 0;
 	item->notifyIcon = false;
 	if ( inventory )
 	{
@@ -4327,6 +4331,12 @@ int Item::buyValue(const int player) const
 	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
 	{
 		value *= 2;
+	}
+	if ( itemSpecialShopConsumable )
+	{
+		real_t valueMult = std::max(1.0, ShopkeeperConsumables_t::consumableBuyValueMult / 100.0);
+		valueMult *= value;
+		value = valueMult;
 	}
 
 	if ( itemTypeIsQuiver(type) )

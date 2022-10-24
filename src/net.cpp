@@ -3212,7 +3212,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Sint16 count = (unsigned char)net_packet->data[10];
 		Uint32 appearance = SDLNet_Read32(&net_packet->data[11]);
 		bool identified = (bool)(net_packet->data[15] & 1);
-		bool buybackItem = (bool)((net_packet->data[15] >> 4) & 1);
+		bool buybackItem = (bool)((net_packet->data[15] >> 1) & 1);
+		bool extraConsumable = (bool)((net_packet->data[15] >> 2) & 1);
+		Uint8 requireTradingSkill = (Uint8)((net_packet->data[15] >> 4) & 0xF);
 		int x = (char)net_packet->data[16];
 		int y = (char)net_packet->data[17];
 		if ( Item* item = newItem(type, status, beatitude, count, appearance, identified, shopInv[clientnum]) )
@@ -3220,6 +3222,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			item->x = x;
 			item->y = y;
 			item->playerSoldItemToShop = buybackItem;
+			item->itemSpecialShopConsumable = extraConsumable;
+			item->itemRequireTradingSkillInShop = requireTradingSkill;
 		}
 	}},
 

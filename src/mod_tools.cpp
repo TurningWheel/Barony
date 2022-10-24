@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "ui/Image.hpp"
 #ifndef EDITOR
 #include "ui/MainMenu.hpp"
+#include "shops.hpp"
 #endif
 
 MonsterStatCustomManager monsterStatCustomManager;
@@ -5338,3 +5339,289 @@ void ImGui_t::showConsoleCommands()
 }
 #endif
 #endif
+
+#ifndef EDITOR
+std::map<int, std::vector<ShopkeeperConsumables_t::StoreSlots_t>> ShopkeeperConsumables_t::entries;
+int ShopkeeperConsumables_t::consumableBuyValueMult = 100;
+void ShopkeeperConsumables_t::readFromFile()
+{
+	const std::string filename = "data/shop_consumables.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("store_types") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	consumableBuyValueMult = 100;
+	if ( d.HasMember("consumable_buy_value_multiplier") )
+	{
+		consumableBuyValueMult = d["consumable_buy_value_multiplier"].GetInt();
+	}
+
+	entries.clear();
+	for ( auto shoptypes = d["store_types"].MemberBegin(); shoptypes != d["store_types"].MemberEnd(); ++shoptypes )
+	{
+		int shoptype = -1;
+		const std::string shopname = shoptypes->name.GetString();
+		if ( shopname == "arms_armor" )
+		{
+			shoptype = SHOP_TYPE_ARMS_ARMOR;
+		}
+		else if ( shopname == "hats" )
+		{
+			shoptype = SHOP_TYPE_HAT;
+		}
+		else if ( shopname == "jewelry" )
+		{
+			shoptype = SHOP_TYPE_JEWELRY;
+		}
+		else if ( shopname == "books" )
+		{
+			shoptype = SHOP_TYPE_BOOKS;
+		}
+		else if ( shopname == "potions" )
+		{
+			shoptype = SHOP_TYPE_POTIONS;
+		}
+		else if ( shopname == "staffs" )
+		{
+			shoptype = SHOP_TYPE_STAFFS;
+		}
+		else if ( shopname == "food" )
+		{
+			shoptype = SHOP_TYPE_FOOD;
+		}
+		else if ( shopname == "hardware" )
+		{
+			shoptype = SHOP_TYPE_HARDWARE;
+		}
+		else if ( shopname == "hunting" )
+		{
+			shoptype = SHOP_TYPE_HUNTING;
+		}
+		else if ( shopname == "general" )
+		{
+			shoptype = SHOP_TYPE_GENERAL;
+		}
+		if ( shoptype == -1 )
+		{
+			continue;
+		}
+
+		if ( !shoptypes->value.HasMember("slots") )
+		{
+			continue;
+		}
+
+		for ( auto slots = shoptypes->value["slots"].MemberBegin(); slots != shoptypes->value["slots"].MemberEnd(); ++slots )
+		{
+			auto& slot = slots->value;
+			int tradeRequirement = slot["trading_req"].GetInt();
+
+			auto& slotItems = slot["items"];
+
+			entries[shoptype].push_back(StoreSlots_t());
+			auto& storeSlotData = entries[shoptype].at(entries[shoptype].size() - 1);
+
+			storeSlotData.slotTradingReq = tradeRequirement;
+			for ( auto slot_itr = slotItems.Begin(); slot_itr != slotItems.End(); ++slot_itr )
+			{
+				storeSlotData.itemEntries.push_back(ItemEntry());
+				auto& itemEntry = storeSlotData.itemEntries.at(storeSlotData.itemEntries.size() - 1);
+
+				{
+					auto& member = (*slot_itr)["type"];
+					bool isArr = member.IsArray();
+					std::vector<std::string> strings;
+					if ( !isArr )
+					{
+						strings.push_back(member.GetString());
+					}
+					else
+					{
+						for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+						{
+							strings.push_back(arr->GetString());
+						}
+					}
+					for ( auto& s : strings )
+					{
+						if ( s == "empty" )
+						{
+							itemEntry.type.clear();
+							break;
+						}
+						bool found = false;
+						for ( int i = 0; i < NUMITEMS; ++i )
+						{
+							if ( s.compare(itemNameStrings[i + 2]) == 0 )
+							{
+								itemEntry.type.push_back(static_cast<ItemType>(i));
+								found = true;
+								break;
+							}
+						}
+						assert(found);
+					}
+				}
+				if ( itemEntry.type.empty() )
+				{
+					itemEntry.emptyItemEntry = true;
+				}
+				{
+					auto& member = (*slot_itr)["status"];
+					bool isArr = member.IsArray();
+					std::vector<std::string> strings;
+					if ( !isArr )
+					{
+						strings.push_back(member.GetString());
+					}
+					else
+					{
+						for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+						{
+							strings.push_back(arr->GetString());
+						}
+					}
+					for ( auto& s : strings )
+					{
+						if ( s == "broken" )
+						{
+							itemEntry.status.push_back(BROKEN);
+						}
+						else if ( s == "decrepit" )
+						{
+							itemEntry.status.push_back(DECREPIT);
+						}
+						else if ( s == "worn" )
+						{
+							itemEntry.status.push_back(WORN);
+						}
+						else if ( s == "serviceable" )
+						{
+							itemEntry.status.push_back(SERVICABLE);
+						}
+						else if ( s == "excellent" )
+						{
+							itemEntry.status.push_back(EXCELLENT);
+						}
+					}
+				}
+				{
+					auto& member = (*slot_itr)["beatitude"];
+					bool isArr = member.IsArray();
+					std::vector<int> ints;
+					if ( !isArr )
+					{
+						ints.push_back(member.GetInt());
+					}
+					else
+					{
+						for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+						{
+							ints.push_back(arr->GetInt());
+						}
+					}
+					for ( auto& i : ints )
+					{
+						itemEntry.beatitude.push_back(i);
+					}
+				}
+				{
+					auto& member = (*slot_itr)["count"];
+					bool isArr = member.IsArray();
+					std::vector<int> ints;
+					if ( !isArr )
+					{
+						ints.push_back(member.GetInt());
+					}
+					else
+					{
+						for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+						{
+							ints.push_back(arr->GetInt());
+						}
+					}
+					for ( auto& i : ints )
+					{
+						itemEntry.count.push_back(i);
+					}
+				}
+				{
+					auto& member = (*slot_itr)["appearance"];
+					bool isArr = member.IsArray();
+					std::vector<Uint32> ints;
+					if ( !member.IsString() )
+					{
+						if ( !isArr )
+						{
+							ints.push_back(member.GetUint());
+						}
+						else
+						{
+							for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+							{
+								ints.push_back(arr->GetUint());
+							}
+						}
+						for ( auto& i : ints )
+						{
+							itemEntry.appearance.push_back(i);
+						}
+					}
+				}
+				{
+					auto& member = (*slot_itr)["identified"];
+					bool isArr = member.IsArray();
+					std::vector<bool> bools;
+					if ( !isArr )
+					{
+						bools.push_back(member.GetBool());
+					}
+					else
+					{
+						for ( auto arr = member.Begin(); arr != member.End(); ++arr )
+						{
+							bools.push_back(arr->GetBool());
+						}
+					}
+					for ( auto& b : bools )
+					{
+						itemEntry.identified.push_back(b);
+					}
+				}
+				itemEntry.percentChance = (*slot_itr)["spawn_percent_chance"].GetInt();
+				itemEntry.dropChance = (*slot_itr)["drop_percent_chance"].GetInt();
+				itemEntry.weightedChance = (*slot_itr)["slot_weighted_chance"].GetInt();
+			}
+		}
+	}
+
+	printlog("[JSON]: Successfully read json file %s, processed %d shop consumables", inputPath.c_str(), entries.size());
+}
+#endif // !EDITOR

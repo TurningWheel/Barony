@@ -3548,7 +3548,7 @@ int main(int argc, char** argv)
 													strcpy(shopTypeText, "Hardware Store");
 													break;
 												case 9:
-													strcpy(shopTypeText, "Lighting Store");
+													strcpy(shopTypeText, "Hunting Store");
 													break;
 												case 10:
 													strcpy(shopTypeText, "General Store");

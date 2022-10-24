@@ -24,6 +24,92 @@
 #include "mod_tools.hpp"
 #include "prng.hpp"
 
+std::vector<Item*> generateShopkeeperConsumables(Entity& my, Stat& myStats, int storetype)
+{
+	std::vector<Item*> itemsGenerated;
+	if ( ShopkeeperConsumables_t::entries.find(storetype) == ShopkeeperConsumables_t::entries.end() )
+	{
+		return itemsGenerated;
+	}
+
+	for ( auto& slots : ShopkeeperConsumables_t::entries[storetype] )
+	{
+		const int tradingReq = slots.slotTradingReq;
+
+		std::vector<unsigned int> chances;
+		for ( auto& slot : slots.itemEntries )
+		{
+			chances.push_back(slot.weightedChance);
+		}
+		int result = local_rng.discrete(chances.data(), chances.size());
+		auto& slot = slots.itemEntries.at(result);
+
+		if ( local_rng.rand() % 100 >= slot.percentChance )
+		{
+			continue; // no spawn
+		}
+		if ( slot.emptyItemEntry )
+		{
+			continue;
+		}
+
+		ItemType type = slot.type[local_rng.uniform(0, slot.type.size() - 1)];
+		Status status = slot.status[local_rng.uniform(0, slot.status.size() - 1)];
+		Sint16 beatitude = slot.beatitude[local_rng.uniform(0, slot.beatitude.size() - 1)];
+		Sint16 count = slot.count[local_rng.uniform(0, slot.count.size() - 1)];
+		Uint32 appearance = 0;
+		if ( slot.appearance.empty() )
+		{
+			appearance = rand();
+		}
+		else
+		{
+			appearance = slot.appearance[local_rng.uniform(0, slot.appearance.size() - 1)];
+		}
+		bool identified = slot.identified[local_rng.uniform(0, slot.identified.size() - 1)];
+		
+		if ( Item* item = newItem(type, status, beatitude, count, appearance, identified, &myStats.inventory) )
+		{
+			item->itemRequireTradingSkillInShop = tradingReq;
+			item->itemSpecialShopConsumable = true;
+			if ( local_rng.rand() % 100 >= slot.dropChance )
+			{
+				// no drop
+				item->isDroppable = false;
+			}
+			else
+			{
+				item->isDroppable = true;
+			}
+			itemsGenerated.push_back(item);
+		}
+	}
+	std::vector<Item*> shuffled;
+	while ( !itemsGenerated.empty() )
+	{
+		size_t index = local_rng.rand() % itemsGenerated.size();
+		shuffled.push_back(itemsGenerated[index]);
+		itemsGenerated.erase(itemsGenerated.begin() + index);
+	}
+	std::sort(shuffled.begin(), shuffled.end(), [](const Item* lhs, const Item* rhs) {
+		return lhs->itemRequireTradingSkillInShop < rhs->itemRequireTradingSkillInShop;
+	});
+	int previousReq = -1;
+	for ( auto it = shuffled.begin(); it != shuffled.end(); ++it )
+	{
+		if ( (*it)->itemRequireTradingSkillInShop <= previousReq )
+		{
+			(*it)->itemRequireTradingSkillInShop = std::min(previousReq + 1, 5);
+		}
+		previousReq = (*it)->itemRequireTradingSkillInShop;
+		(*it)->itemRequireTradingSkillInShop = std::min((*it)->itemRequireTradingSkillInShop, (Uint8)5);
+	}
+	std::sort(shuffled.begin(), shuffled.end(), [](const Item* lhs, const Item* rhs) {
+		return lhs->itemRequireTradingSkillInShop < rhs->itemRequireTradingSkillInShop;
+	});
+	return shuffled;
+}
+
 void initShopkeeper(Entity* my, Stat* myStats)
 {
 	int c;
@@ -792,16 +878,64 @@ void initShopkeeper(Entity* my, Stat* myStats)
 
 			int slotx = 0;
 			int sloty = 0;
+			std::set<int> takenSlots;
 			for ( auto& v : priceAndItems )
 			{
 				Item* item = v.second;
 				item->x = slotx;
 				item->y = sloty;
+				takenSlots.insert(slotx + sloty * 100);
 				++slotx;
 				if ( slotx >= Player::ShopGUI_t::MAX_SHOP_X )
 				{
 					slotx = 0;
 					++sloty;
+				}
+				if ( sloty >= Player::ShopGUI_t::MAX_SHOP_Y )
+				{
+					break;
+				}
+			}
+
+			slotx = Player::ShopGUI_t::MAX_SHOP_X - 1;
+			sloty = Player::ShopGUI_t::MAX_SHOP_Y - 1;
+			auto generatedItems = generateShopkeeperConsumables(*my, *myStats, my->monsterStoreType);
+			for ( auto it = generatedItems.rbegin(); it != generatedItems.rend(); ++it )
+			{
+				if ( takenSlots.find(slotx + sloty * 100) != takenSlots.end() )
+				{
+					break; // too many items
+				}
+				(*it)->x = slotx;
+				(*it)->y = sloty;
+				--slotx;
+				if ( slotx < 0 )
+				{
+					slotx = Player::ShopGUI_t::MAX_SHOP_X - 1;
+					--sloty;
+				}
+				if ( sloty < 0 )
+				{
+					break;
+				}
+			}
+		}
+
+		for ( node_t* node = myStats->inventory.first; node != nullptr; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( !item ) { continue; }
+
+			if ( itemCategory(item) == POTION )
+			{
+				// convert potion appearances into standard types
+				for ( size_t p = 0; p < potionStandardAppearanceMap.size(); ++p )
+				{
+					if ( potionStandardAppearanceMap[p].first == item->type )
+					{
+						item->appearance = potionStandardAppearanceMap[p].second;
+					}
 				}
 			}
 		}

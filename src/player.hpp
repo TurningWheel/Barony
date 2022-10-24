@@ -1087,6 +1087,7 @@ public:
 		size_t chatStringLength = 0;
 		std::string chatStrFull = "";
 		Sint32 itemPrice = -1;
+		bool itemUnknownPreventPurchase = false;
 		std::string itemDesc = "";
 		bool itemRequiresTitleReflow = true;
 		Sint32 playerCurrentGold = 0;

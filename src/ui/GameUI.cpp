@@ -15574,12 +15574,28 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	int player = slotFrame->getOwner();
 
+	bool hiddenItemInGUI = false;
+	if ( item->itemSpecialShopConsumable )
+	{
+		if ( stats[player]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * 20) )
+		{
+			hiddenItemInGUI = true;
+		}
+	}
+
 	slotFrame->setDisabled(false);
 
 	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
 
-	spriteImage->path = getItemSpritePath(player, *item);
+	if ( hiddenItemInGUI )
+	{
+		spriteImage->path = ("*#images/system/unknownitem.png");
+	}
+	else
+	{
+		spriteImage->path = getItemSpritePath(player, *item);
+	}
 	bool disableBackgrounds = false;
 	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
 	{
@@ -15650,7 +15666,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
-				iconLabelImg->disabled = !item->identified;
+				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
 			}
 			iconLabelImg->color = spriteImage->color;
 			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
@@ -15854,7 +15870,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
 	{
-		bool greyedOut = forceUnusable;
+		bool greyedOut = forceUnusable || hiddenItemInGUI;
 		unusableFrame->setDisabled(true);
 
 		if ( (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
@@ -18970,7 +18986,7 @@ void createShopGUI(const int player)
 		itemNameText->setHJustify(Field::justify_t::LEFT);
 		itemNameText->setVJustify(Field::justify_t::TOP);
 		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemNameText->setColor(makeColor(201, 162, 100, 255));
+		itemNameText->setColor(hudColors.characterSheetLightNeutral);
 		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
 		itemValueText->setFont(itemFont);
 		itemValueText->setText("");

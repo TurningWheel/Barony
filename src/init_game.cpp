@@ -218,6 +218,7 @@ int initGame()
 	FollowerRadialMenu::loadFollowerJSON();
 	MonsterData_t::loadMonsterDataJSON();
 	ScriptTextParser.readAllScripts();
+	ShopkeeperConsumables_t::readFromFile();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
