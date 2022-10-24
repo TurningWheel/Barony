@@ -236,18 +236,16 @@ void actDeathCam(Entity* my)
 		DEATHCAM_ROTY = 0;
 	}
 
-	const bool clicked =
-		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack") ||
-		Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm");
-
 	if ( players[DEATHCAM_PLAYERNUM] && players[DEATHCAM_PLAYERNUM]->entity )
 	{
 		// do nothing if still alive
 	}
-	else if (clicked && shootmode
+	else if ( shootmode
 		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
 		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
-		&& !gamePaused )
+		&& !gamePaused
+		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
+			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
 		DEATHCAM_PLAYERTARGET++;
 		if (DEATHCAM_PLAYERTARGET >= MAXPLAYERS)
