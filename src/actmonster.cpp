@@ -2241,6 +2241,14 @@ void actMonster(Entity* my)
 			Item* item = (Item*)node->element;
 			for ( c = item->count; c > 0; c-- )
 			{
+				bool wasDroppable = item->isDroppable;
+				if ( myStats->type == SHOPKEEPER )
+				{
+					if ( local_rng.rand() % 2 )
+					{
+						item->isDroppable = false; // sometimes don't drop inventory
+					}
+				}
 				bool wasQuiver = itemTypeIsQuiver(item->type);
 				entity = dropItemMonster(item, my, myStats); // returns nullptr on "undroppables"
 				if ( entity )
@@ -2250,6 +2258,10 @@ void actMonster(Entity* my)
 				if ( wasQuiver )
 				{
 					break; // always drop the whole stack.
+				}
+				if ( c > 1 )
+				{
+					item->isDroppable = wasDroppable;
 				}
 			}
 		}
