@@ -6307,4 +6307,26 @@ Combination!#
 4249 Unlawful#
 4250 Nefarious#
 
+4251 Requires %d Trading skill + CHR stat#
+
+# shop try to buy hidden item
+4252 NO_BUY_CONSUMABLE_1!#
+4253 NO_BUY_CONSUMABLE_2!#
+4254 NO_BUY_CONSUMABLE_3!#
+
+# shop buy added consumables
+4255 My personal stock, just for
+thee.#
+4256 I don't let just anyone buy
+that, you know.#
+4257 A little something from my
+limited stock.#
+4258 I see you like my special
+inventory.#
+4259 I keep that on hand for my
+favorite customers.#
+
+4260 %d gold#
+4261 ???#
+
 4299 end#
