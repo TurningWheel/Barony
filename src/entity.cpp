@@ -9476,7 +9476,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// chance of bleeding
 					bool wasBleeding = hitstats->EFFECTS[EFF_BLEEDING]; // check if currently bleeding when this roll occurred.
-					if ( gibtype[(int)hitstats->type] > 0 )
+					if ( gibtype[(int)hitstats->type] > 0 && gibtype[(int)hitstats->type] != 5 )
 					{
 						if ( bleedStatusInflicted || (hitstats->HP > 5 && damage > 0) )
 						{
@@ -14434,7 +14434,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				//}
 				break;
 			case EFF_BLEEDING:
-				if ( gibtype[(int)myStats->type] == 0 )
+				if ( gibtype[(int)myStats->type] == 0 || gibtype[(int)myStats->type] == 5 )
 				{
 					return false;
 				}
@@ -16593,7 +16593,10 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 {
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		return -1;
+		if ( isPlayer )
+		{
+			return -1;
+		}
 	}
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
