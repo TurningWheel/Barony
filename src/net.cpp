@@ -1519,22 +1519,66 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		// send new client their id number + info on other clients
 		memcpy(net_packet->data, "HELO", 4);
 		SDLNet_Write32(c, &net_packet->data[4]);
-		for ( int x = 0; x < MAXPLAYERS; x++ )
-		{
-			net_packet->data[8 + x * (6 + 32) + 0] = client_disconnected[x]; // connectedness
-			net_packet->data[8 + x * (6 + 32) + 1] = lockedSlots[x]; // locked state
-			net_packet->data[8 + x * (6 + 32) + 2] = client_classes[x]; // class
-			net_packet->data[8 + x * (6 + 32) + 3] = stats[x]->sex; // sex
-			net_packet->data[8 + x * (6 + 32) + 4] = (Uint8)stats[x]->appearance; // appearance
-			net_packet->data[8 + x * (6 + 32) + 5] = (Uint8)stats[x]->playerRace; // player race
+		if (loadingsavegame) {
+			constexpr int chunk_size = 6 + 32 + 6 * 10; // 6 bytes for player stats, 32 for name, 60 for equipment
+			for ( int x = 0; x < MAXPLAYERS; x++ )
+			{
+				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness
+				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
+				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
+				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
 
-			char shortname[32];
-			snprintf(shortname, sizeof(shortname), "%s", stats[x]->name);
-			memcpy(net_packet->data + 8 + x * (6 + 32) + 6, shortname, sizeof(shortname)); // name
+				char shortname[32];
+				snprintf(shortname, sizeof(shortname), "%s", stats[x]->name);
+				memcpy(net_packet->data + 8 + x * chunk_size + 6, shortname, sizeof(shortname)); // name
+
+				const Item* player_slots[] = {
+					stats[x]->helmet,
+					stats[x]->breastplate,
+					stats[x]->gloves,
+					stats[x]->shoes,
+					stats[x]->shield,
+					stats[x]->weapon,
+					stats[x]->cloak,
+					stats[x]->amulet,
+					stats[x]->ring,
+					stats[x]->mask,
+				};
+				constexpr int num_slots = sizeof(player_slots) / sizeof(player_slots[0]);
+
+				for (int j = 0; j < num_slots; ++j) {
+					auto slot = player_slots[j];
+					if (slot) {
+						SDLNet_Write16((Uint16)slot->type, net_packet->data + 8 + x * chunk_size + 6 + 32 + j * 6);
+						SDLNet_Write32((Uint32)slot->appearance, net_packet->data + 8 + x * chunk_size + 6 + 32 + j * 6 + 2);
+					} else {
+						SDLNet_Write16(0xffff, net_packet->data + 8 + x * chunk_size + 6 + 32 + j * 6);
+						SDLNet_Write32(0xffffffff, net_packet->data + 8 + x * chunk_size + 6 + 32 + j * 6 + 2);
+					}
+				}
+			}
+			net_packet->len = 8 + MAXPLAYERS * chunk_size;
+		} else {
+			constexpr int chunk_size = 6 + 32; // 6 bytes for player stats, 32 for name
+			for ( int x = 0; x < MAXPLAYERS; x++ )
+			{
+				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness
+				net_packet->data[8 + x * chunk_size + 1] = lockedSlots[x]; // locked state
+				net_packet->data[8 + x * chunk_size + 2] = client_classes[x]; // class
+				net_packet->data[8 + x * chunk_size + 3] = stats[x]->sex; // sex
+				net_packet->data[8 + x * chunk_size + 4] = (Uint8)stats[x]->appearance; // appearance
+				net_packet->data[8 + x * chunk_size + 5] = (Uint8)stats[x]->playerRace; // player race
+
+				char shortname[32];
+				snprintf(shortname, sizeof(shortname), "%s", stats[x]->name);
+				memcpy(net_packet->data + 8 + x * chunk_size + 6, shortname, sizeof(shortname)); // name
+			}
+			net_packet->len = 8 + MAXPLAYERS * chunk_size;
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 8 + MAXPLAYERS * (6 + 32);
 		if ( directConnect )
 		{
 		    sendPacketSafe(net_sock, -1, net_packet, 0);

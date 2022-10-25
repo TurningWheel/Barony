@@ -7131,7 +7131,12 @@ bind_failed:
 				net_packet->address.port = net_clients[i - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
+
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+			if (!loadingsavegame) {
+				stats[player]->clearStats();
+			}
+
 	        stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
 	        client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
 	        stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
@@ -7140,7 +7145,6 @@ bind_failed:
 	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
 
 			if (!loadingsavegame) {
-				stats[player]->clearStats();
 				initClass(player);
 			}
 		}},
@@ -7466,6 +7470,9 @@ bind_failed:
 	    {'PLYR', [](){
 	        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		    if (player != clientnum) {
+				if (!loadingsavegame) {
+					stats[player]->clearStats();
+				}
                 stringCopy(stats[player]->name, (char*)(&net_packet->data[5]), sizeof(Stat::name), 32);
                 client_classes[player] = (int)SDLNet_Read32(&net_packet->data[37]);
                 stats[player]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[41]));
@@ -7473,7 +7480,6 @@ bind_failed:
                 stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
                 stats[player]->playerRace = (raceAndAppearance & 0xFF);
 				if (!loadingsavegame) {
-					stats[player]->clearStats();
 					initClass(player);
 				}
             }
@@ -7692,22 +7698,42 @@ bind_failed:
 
 					// now set up everybody else
 					for (int c = 0; c < MAXPLAYERS; c++) {
-
-						client_disconnected[c] = net_packet->data[8 + c * (6 + 32) + 0]; // connectedness
-						playerSlotsLocked[c] = net_packet->data[8 + c * (6 + 32) + 1]; // locked state
-						client_classes[c] = net_packet->data[8 + c * (6 + 32) + 2]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * (6 + 32) + 3]); // sex
-						stats[c]->appearance = net_packet->data[8 + c * (6 + 32) + 4]; // appearance
-						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
-						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
+						const int chunk_size = loadingsavegame ?
+							6 + 32 + 6 * 10:	// 6 bytes for player stats, 32 for name, 60 for equipment
+							6 + 32;				// 6 bytes for player stats, 32 for name
+							
+						stats[c]->clearStats();
+						client_disconnected[c] = net_packet->data[8 + c * chunk_size + 0]; // connectedness
+						playerSlotsLocked[c] = net_packet->data[8 + c * chunk_size + 1]; // locked state
+						client_classes[c] = net_packet->data[8 + c * chunk_size + 2]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[8 + c * chunk_size + 3]); // sex
+						stats[c]->appearance = net_packet->data[8 + c * chunk_size + 4]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * chunk_size + 5]; // player race
+						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * chunk_size + 6), sizeof(Stat::name), 32); // name
 
 						if (loadingsavegame) {
-							auto info = getSaveGameInfo(false);
-							if (info.players_connected[c]) {
-								loadGame(c, info);
+							Item** player_slots[] = {
+								&stats[c]->helmet,
+								&stats[c]->breastplate,
+								&stats[c]->gloves,
+								&stats[c]->shoes,
+								&stats[c]->shield,
+								&stats[c]->weapon,
+								&stats[c]->cloak,
+								&stats[c]->amulet,
+								&stats[c]->ring,
+								&stats[c]->mask,
+							};
+							constexpr int num_slots = sizeof(player_slots) / sizeof(player_slots[0]);
+							for (int e = 0; e < num_slots; ++e) {
+								auto& slot = *player_slots[e];
+								auto type = SDLNet_Read16(net_packet->data + 8 + c * chunk_size + 6 + 32 + e * 6);
+								auto appearance = SDLNet_Read32(net_packet->data + 8 + c * chunk_size + 6 + 32 + e * 6 + 2);
+								if (type != 0xffff) {
+									slot = newItem((ItemType)type, Status::EXCELLENT, 0, 1, (Uint32)appearance, true, nullptr);
+								}
 							}
 						} else {
-							stats[c]->clearStats();
 							initClass(c);
 						}
 					}

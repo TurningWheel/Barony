@@ -345,6 +345,28 @@ struct SaveGameInfo {
 
 		struct stat_t {
 			struct item_t {
+				item_t() = default;
+				item_t(const item_t&) = default;
+				item_t(item_t&&) = default;
+				item_t(Uint32 _type,
+					Uint32 _status,
+					Uint32 _appearance,
+					int _beatitude,
+					int _count,
+					bool _identified,
+					int _x,
+					int _y)
+				{
+					type = _type;
+					status = _status;
+					appearance = _appearance;
+					beatitude = _beatitude;
+					count = _count;
+					identified = _identified;
+					x = _x;
+					y = _y;
+				}
+
 				Uint32 type = 0;
 				Uint32 status = 0;
 				Uint32 appearance = 0;
