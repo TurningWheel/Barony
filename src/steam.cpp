@@ -1769,7 +1769,11 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 
 	if (loadingsavegame) {
 	    auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
-	    loadGame(info.player_num, info);
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			if (info.players_connected[c]) {
+				loadGame(c, info);
+			}
+		}
 	}
 
 	return true;

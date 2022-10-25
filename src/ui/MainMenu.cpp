@@ -7138,8 +7138,11 @@ bind_failed:
 	        Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
 	        stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
 	        stats[player]->playerRace = (raceAndAppearance & 0xFF);
-	        stats[player]->clearStats();
-	        initClass(player);
+
+			if (!loadingsavegame) {
+				stats[player]->clearStats();
+				initClass(player);
+			}
 		}},
 
 		// update ready status
@@ -7469,8 +7472,10 @@ bind_failed:
                 Uint32 raceAndAppearance = SDLNet_Read32(&net_packet->data[45]);
                 stats[player]->appearance = (raceAndAppearance & 0xFF00) >> 8;
                 stats[player]->playerRace = (raceAndAppearance & 0xFF);
-                stats[player]->clearStats();
-                initClass(player);
+				if (!loadingsavegame) {
+					stats[player]->clearStats();
+					initClass(player);
+				}
             }
             checkReadyStates();
 	    }},
@@ -7696,8 +7701,15 @@ bind_failed:
 						stats[c]->playerRace = net_packet->data[8 + c * (6 + 32) + 5]; // player race
 						stringCopy(stats[c]->name, (char*)(net_packet->data + 8 + c * (6 + 32) + 6), sizeof(Stat::name), 32); // name
 
-		                stats[c]->clearStats();
-		                initClass(c);
+						if (loadingsavegame) {
+							auto info = getSaveGameInfo(false);
+							if (info.players_connected[c]) {
+								loadGame(c, info);
+							}
+						} else {
+							stats[c]->clearStats();
+							initClass(c);
+						}
 					}
 
 					// open lobby
@@ -7874,7 +7886,11 @@ bind_failed:
 	    multiplayer = SERVER;
 	    if (loadingsavegame) {
 			auto info = getSaveGameInfo(false);
-		    loadGame(clientnum, info);
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (info.players_connected[c]) {
+					loadGame(c, info);
+				}
+			}
 	    }
 	}
 
@@ -8068,7 +8084,11 @@ bind_failed:
 	    multiplayer = CLIENT;
 	    if (loadingsavegame) {
 			auto info = getSaveGameInfo(false);
-		    loadGame(info.player_num, info);
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (info.players_connected[c]) {
+					loadGame(c, info);
+				}
+			}
 	    }
 
 	    // close any existing net interfaces
@@ -15659,11 +15679,11 @@ bind_failed:
                         newPlayer[c] = c != 0;
                         if (info.players_connected[c]) {
                             playerSlotsLocked[c] = false;
+                    		loadGame(c, info);
                         } else {
                             playerSlotsLocked[c] = true;
                         }
                     }
-                    loadGame(info.player_num, info);
                     if (info.multiplayer_type == SERVERCROSSPLAY) {
 #ifdef STEAMWORKS
 			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_STEAM;
@@ -15699,13 +15719,13 @@ bind_failed:
                         hostLANLobby(button);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
-                    loadGame(info.player_num, info);
                     for (int c = 0; c < MAXPLAYERS; ++c) {
                         if (info.players_connected[c]) {
                             playerSlotsLocked[c] = false;
+                    		loadGame(c, info);
                         } else {
                             playerSlotsLocked[c] = true;
-                        }
+						}
                     }
                     multiplayer = SINGLE;
 					clientnum = 0;
