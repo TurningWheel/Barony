@@ -9691,9 +9691,8 @@ void doNewGame(bool makeHighscore) {
 		if (loadingsavegame) {
 			for (int c = 0; c < MAXPLAYERS; ++c) {
 				if (!client_disconnected[c]) {
-					if ( players[c]->isLocalPlayer() ) {
-						loadGame(c, saveGameInfo);
-					}
+					stats[c]->clearStats();
+					loadGame(c, saveGameInfo);
 				}
 			}
 		} else {
