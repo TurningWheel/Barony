@@ -3337,6 +3337,7 @@ void assignActions(map_t* map)
 				}
 				entity->itemNotMoving = 1; // so the item retains its position
 				entity->itemNotMovingClient = 1; // so the item retains its position for clients
+				entity->skill[16] = 0; // reset this as we used it for the category, but now skill[16] is ITEM_LIFE
 				itemsdonebefore = true;
 				if ( !strcmp(map->name, "Sokoban") && item->type == ARTIFACT_GLOVES ) // artifact gloves.
 				{
