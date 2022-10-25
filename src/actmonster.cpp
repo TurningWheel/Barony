@@ -540,9 +540,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			}
 			else
 			{
-				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4251 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 		}
 		else
@@ -550,15 +549,13 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			//Follows somebody else.
 			if ( my->getINT() > -2 && race == HUMAN )
 			{
-				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[536], namesays, stats[monsterclicked]->name);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
 					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[536], stats[monsterclicked]->name);
 			}
 			else
 			{
-				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4251 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 
 			if ( my->checkFriend(players[monsterclicked]->entity) )
@@ -887,7 +884,6 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		if ( my->getINT() > -2 && race == HUMAN )
 		{
 			//Human tells off the player.
-			//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[530 + local_rng.rand() % 4], namesays);
 			players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
 				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[530 + local_rng.rand() % 4]);
 
@@ -896,9 +892,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		}
 		else
 		{
-			//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 			players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4251 + (int)myStats->type], stats[monsterclicked]->name);
 		}
 
 		return false;
@@ -9728,7 +9723,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 		{
 			case ALLY_EVENT_MOVEASIDE:
 				players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4251 + (int)myStats.type], stats[monsterAllyIndex]->name);
 				//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 				//	myStats, language[3129], language[3130], MSG_COMBAT);
 				break;

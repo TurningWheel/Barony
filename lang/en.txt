@@ -6311,4 +6311,41 @@ Combination!#
 4249 Unlawful#
 4250 Nefarious#
 
+# NPC greetings
+
+4251 Nevermore.#
+4252 Hello, %s.#
+4253 Peep!#
+4254 Hello %s.#
+4255 *slip slop*#
+4256 *grunt*#
+4257 *burble*#
+4258 *gurgle*#
+4259 *groan*#
+4260 *skitter*#
+4261 Hehehe...#
+4262 *gurgle*#
+4263 Jib jab chip jub.#
+4264 *growl*#
+4265 Wanna dance?#
+4266 *creak*#
+4267 Greetings, mortal.#
+4268 You called?#
+4269 Welcome to hell, weakling.#
+4270 Is there anything you want to buy?#
+4271 Kleeaku.#
+4272 *skitter*#
+4273 *rumble*#
+4274 Wanna play?#
+4275 Bleh!#
+4276 ...#
+4277 Ba-a-a-a-a#
+4278 *choo choo*#
+4279 Hello, worm.#
+4280 Hello, cretin.#
+4281 *whirr*#
+4282 *whizz*#
+4283 *chime*#
+4284 *boing*#
+
 4299 end#
