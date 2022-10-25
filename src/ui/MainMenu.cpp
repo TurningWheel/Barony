@@ -15106,6 +15106,117 @@ bind_failed:
 		}
 	}
 
+	static void hostOnlineLobby(Button&) {
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+		soundError();
+#else
+		soundActivate();
+		closeNetworkInterfaces();
+		directConnect = false;
+		if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+#ifdef USE_EOS
+			EOS.createLobby();
+			textPrompt("host_lobby_prompt", "Creating Epic lobby...",
+				[](Widget&){
+				if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
+					return;
+				} else {
+					if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
+						createLobby(LobbyType::LobbyOnline);
+					} else {
+						closePrompt("host_lobby_prompt");
+						monoPrompt("Failed to host Epic lobby.", "Okay",
+							[](Button&){soundCancel(); closeMono();});
+					}
+				}
+				});
+#endif // USE_EOS
+		}
+		else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+#ifdef STEAMWORKS
+			for ( int c = 0; c < MAXPLAYERS; c++ ) {
+				if ( steamIDRemote[c] ) {
+					cpp_Free_CSteamID(steamIDRemote[c]);
+					steamIDRemote[c] = NULL;
+				}
+			}
+			::currentLobbyType = k_ELobbyTypePublic;
+			cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
+			textPrompt("host_lobby_prompt", "Creating Steam lobby...",
+				[](Widget&){
+				if (steamAwaitingLobbyCreation) {
+					return;
+				} else {
+					if (::currentLobby != nullptr) {
+						createLobby(LobbyType::LobbyOnline);
+					} else {
+						closePrompt("host_lobby_prompt");
+						monoPrompt("Failed to host Steam lobby.", "Okay",
+							[](Button&){soundCancel(); closeMono();});
+					}
+				}
+				});
+#endif // STEAMWORKS
+		}
+#endif
+	}
+
+	static void hostLANLobby(Button&) {
+		soundActivate();
+		closeNetworkInterfaces();
+		directConnect = true;
+
+#ifdef NINTENDO
+		nxConnectToNetwork();
+		textPrompt("host_lobby_prompt", "Creating WiFi lobby...",
+			[](Widget&) {
+				if (nxConnectingToNetwork()) {
+					return;
+				}
+				else {
+					if (nxConnectedToNetwork()) {
+						// resolve localhost address
+						Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+						int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+						assert(resolve != -1);
+
+						// open socket
+						if (!(net_sock = SDLNet_UDP_Open(port))) {
+							char buf[1024];
+							snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+							monoPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
+							return;
+						}
+
+						// create lobby
+						createLobby(LobbyType::LobbyLAN);
+					}
+					else {
+						closePrompt("host_lobby_prompt");
+						monoPrompt("Failed to host WiFi lobby.", "Okay",
+							[](Button&) {soundCancel(); closeMono();});
+					}
+				}
+			});
+#else
+		// resolve localhost address
+		Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+		int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+		assert(resolve != -1);
+
+		// open socket
+		if (!(net_sock = SDLNet_UDP_Open(port))) {
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+			monoPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
+			return;
+		}
+
+		// create lobby
+		createLobby(LobbyType::LobbyLAN);
+#endif
+	}
+
 	static void createLocalOrNetworkMenu() {
 		allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
@@ -15250,62 +15361,6 @@ bind_failed:
 		    "local_image"
 		);
 
-		auto host_lan_fn = [](Button&){
-			soundActivate();
-			closeNetworkInterfaces();
-			directConnect = true;
-
-#ifdef NINTENDO
-			nxConnectToNetwork();
-			textPrompt("host_lobby_prompt", "Creating WiFi lobby...",
-				[](Widget&) {
-					if (nxConnectingToNetwork()) {
-						return;
-					}
-					else {
-						if (nxConnectedToNetwork()) {
-							// resolve localhost address
-							Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
-							int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
-							assert(resolve != -1);
-
-							// open socket
-							if (!(net_sock = SDLNet_UDP_Open(port))) {
-								char buf[1024];
-								snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-								monoPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
-								return;
-							}
-
-							// create lobby
-							createLobby(LobbyType::LobbyLAN);
-						}
-						else {
-							closePrompt("host_lobby_prompt");
-							monoPrompt("Failed to host WiFi lobby.", "Okay",
-								[](Button&) {soundCancel(); closeMono();});
-						}
-					}
-				});
-#else
-	        // resolve localhost address
-			Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
-	        int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
-	        assert(resolve != -1);
-
-	        // open socket
-	        if (!(net_sock = SDLNet_UDP_Open(port))) {
-	            char buf[1024];
-	            snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-                monoPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
-                return;
-	        }
-
-	        // create lobby
-	        createLobby(LobbyType::LobbyLAN);
-#endif
-		    };
-
 		auto host_lan_button = window->addButton("host_lan");
 		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
 		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -15321,7 +15376,7 @@ bind_failed:
 		host_lan_button->setWidgetBack("back_button");
 		host_lan_button->setWidgetUp("local");
 		host_lan_button->setWidgetDown("host_online");
-		host_lan_button->setCallback(host_lan_fn);
+		host_lan_button->setCallback(hostLANLobby);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 170, 126, 50},
@@ -15329,60 +15384,6 @@ bind_failed:
 		    "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00B_Unselected.png",
 		    "host_lan_image"
 		);
-
-		auto host_online_fn = [](Button&){
-	        soundActivate();
-            closeNetworkInterfaces();
-            directConnect = false;
-		    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-#ifdef USE_EOS
-		        EOS.createLobby();
-		        textPrompt("host_lobby_prompt", "Creating Epic lobby...",
-		            [](Widget&){
-                    if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
-                        return;
-                    } else {
-                        if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
-		                    createLobby(LobbyType::LobbyOnline);
-                        } else {
-                            closePrompt("host_lobby_prompt");
-	                        monoPrompt("Failed to host Epic lobby.", "Okay",
-	                            [](Button&){soundCancel(); closeMono();});
-                        }
-                    }
-		            });
-#endif // USE_EOS
-	        }
-		    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-#ifdef STEAMWORKS
-		        for ( int c = 0; c < MAXPLAYERS; c++ ) {
-			        if ( steamIDRemote[c] ) {
-				        cpp_Free_CSteamID(steamIDRemote[c]);
-				        steamIDRemote[c] = NULL;
-			        }
-		        }
-		        ::currentLobbyType = k_ELobbyTypePublic;
-		        cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
-		        textPrompt("host_lobby_prompt", "Creating Steam lobby...",
-		            [](Widget&){
-                    if (steamAwaitingLobbyCreation) {
-                        return;
-                    } else {
-                        if (::currentLobby != nullptr) {
-		                    createLobby(LobbyType::LobbyOnline);
-                        } else {
-                            closePrompt("host_lobby_prompt");
-	                        monoPrompt("Failed to host Steam lobby.", "Okay",
-	                            [](Button&){soundCancel(); closeMono();});
-                        }
-                    }
-		            });
-#endif // STEAMWORKS
-		    }
-#if !defined(STEAMWORKS) && !defined(USE_EOS)
-            soundError();
-#endif
-		    };
 
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
@@ -15404,11 +15405,7 @@ bind_failed:
 		host_online_button->setWidgetBack("back_button");
 		host_online_button->setWidgetUp("host_lan");
 		host_online_button->setWidgetDown("join");
-#if defined(STEAMWORKS) || defined(USE_EOS)
-		host_online_button->setCallback(host_online_fn);
-#else
-		host_online_button->setCallback([](Button&){soundError();});
-#endif
+		host_online_button->setCallback(hostOnlineLobby);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 234, 126, 50},
@@ -15683,7 +15680,7 @@ bind_failed:
 			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
 			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 #endif
-                        createLobby(LobbyType::LobbyOnline);
+                        hostOnlineLobby(button);
                     } else if (info.multiplayer_type == SERVER) {
 			            if ( getSaveGameVersionNum(info) <= 335 )
 			            {
@@ -15697,9 +15694,9 @@ bind_failed:
 				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 #endif
 			            }
-                        createLobby(LobbyType::LobbyOnline);
+                        hostOnlineLobby(button);
                     } else if (info.multiplayer_type == DIRECTSERVER) {
-                        createLobby(LobbyType::LobbyLAN);
+                        hostLANLobby(button);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
                     loadGame(info.player_num, info);

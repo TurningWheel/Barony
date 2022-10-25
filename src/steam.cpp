@@ -1733,8 +1733,13 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 	const char* pchLoadingSaveGame = SteamMatchmaking()->GetLobbyData(*lobby, "loadingsavegame");
 	assert(pchLoadingSaveGame && pchLoadingSaveGame[0]);
 
+	SaveGameInfo savegameinfo;
+	if (loadingsavegame) {
+		savegameinfo = getSaveGameInfo(false);
+	}
+
 	Uint32 saveGameKey = atoi(pchLoadingSaveGame);      // get the savegame key of the server.
-	Uint32 gameKey = getSaveGameUniqueGameKey(false);   // maybe we were already loading a compatible save.
+	Uint32 gameKey = getSaveGameUniqueGameKey(savegameinfo);   // maybe we were already loading a compatible save.
 	if (saveGameKey && saveGameKey == gameKey) {
 		loadingsavegame = saveGameKey; // save game matches! load game.
 	}
