@@ -5590,6 +5590,8 @@ int loadGame(int player, const SaveGameInfo& info) {
 		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
 	}
 
+	stats[player]->clearStats();
+
 	// load game info
 	uniqueGameKey = info.gamekey;
 	mapseed = info.mapseed;
@@ -5678,7 +5680,6 @@ int loadGame(int player, const SaveGameInfo& info) {
 	//stats[player]->attributes = p.attributes; // skip attributes for now
 
 	// inventory
-	list_FreeAll(&stats[player]->inventory);
 	for (auto& item : p.inventory) {
 		ItemType type = static_cast<ItemType>(item.type);
 		Status status = static_cast<Status>(item.status);
