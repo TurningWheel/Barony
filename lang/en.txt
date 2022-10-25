@@ -3077,12 +3077,12 @@ but it retracts beyond your might!#
 2383 A tingle rolls over your body and through each of your footsteps.#
 
 #Equip Effects
-2384 This ring has you feeling quite confident about your appearance.#
-2385 The ring gives you a sense of calm when you wear it.#
-2386 The ring makes your whole body feel scaly.#
-2387 As you don the ring, you feel threads reaching into the darkness from your mind.#
-2388 You feel the ring feeding energy into your arms.#
-2389 You slip on the ring and feel your skin harden slightly.#
+2384 You feel confident about yourself.#
+2385 You feel calm.#
+2386 Your whole body feels scaly.#
+2387 You feel your awareness expanding around you.#
+2388 You feel energy surge into your arms.#
+2389 You feel tough!#
 
 #New spells (2390-2399)
 2390 Conjure Skeleton#
@@ -3114,14 +3114,14 @@ but it retracts beyond your might!#
 
 #Equip Effects
 
-2412 You slip the ring onto your finger and your body vanishes before your eyes.#
-2413 The ring slips on, radiating a fuzzy sensation all over your body.#
-2414 You put on the ring and are overwhelmed with paranoia.#
-2415 A hollow pulse flows from your fingers to your feet and you begin floating.#
-2416 You feel itchy all over when you wear the ring.#
-2417 The ring begins gently yanking at your finger.#
-2418 Your footsteps feel lighter in these boots.#
-2419 The footwear pushes you above the floor. You're levitating!#
+2412 Your body vanishes before your eyes!#
+2413 You feel fuzzy all over your body.#
+2414 You are overwhelmed with paranoia.#
+2415 You begin to float.#
+2416 You feel itchy all over.#
+2417 The ring yanks gently at your finger.#
+2418 These boots feel light.#
+2419 Your footwear pushes you above the floor!#
 
 #New spell effects (2420-2440)
 2420 %s is paralyzed!#
@@ -3178,21 +3178,21 @@ last of your magic is drained!#
 2477 You are imbued with vampiric might!#
 
 # Equip effects
-2478 You feel a sense of great purpose when wearing the amulet.#
-2479 The air beyond the cord of the amulet smells crisp and sweet.#
-2480 The amulet makes your whole body tingle slightly.#
+2478 You feel a sense of great purpose.#
+2479 The air around you smells crisp and sweet.#
+2480 Your whole body tingles slightly.#
 2481 The hat seems to give you ideas.#
 2482 You get the urge to punch something.#
 2483 The hat seems to lift your mood.#
-2484 The inside of the boots are squishy with moisture.#
-2485 The comfortable boots seem to put pep in your step.#
-2486 The cloak whirls around your body and hides your form.#
+2484 The inside of the boots feel squishy.#
+2485 These boots sure are comfy!#
+2486 This is an invisibility cloak!#
 2487 The cloak is firm, but comfortable.#
-2488 The cloak buzzes gently against your body as you put it on.#
-2489 Your fingers feel more nimble as they slip into the gloves.#
-2490 You feel your skin harden slightly when you put the bracers on.#
-2491 The gauntlets are warm. You feel a tingling sensation flow up through to your shoulders.#
-2492 The amulet feels cool and pleasant against the veins of your neck.#
+2488 Your cloak buzzes gently against your body.#
+2489 Your fingers suddenly feel quite nimble.#
+2490 You feel your skin harden slightly.#
+2491 You feel a tingle flowing up your shoulders.#
+2492 The amulet feels cool against your neck.#
 
 # More misc text.
 2493 This is no time for sleep.#
