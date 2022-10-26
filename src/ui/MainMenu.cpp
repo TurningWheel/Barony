@@ -5587,12 +5587,12 @@ bind_failed:
 		        {score->conductIlliterate, "illiterate", u8" \x1E You were illiterate."},
 		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", u8" \x1E You used no weapons."},
 		        {(bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY] &&
-		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", u8" \x1E You only used ranged weapons."},
+		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", u8" \x1E Only used ranged weapons."},
 		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", u8" \x1E You were extremely quick."},
 		        {(bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED] &&
 		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", u8" \x1E You were very quick."},
 		        {(bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
-		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", u8" \x1E You kept items after death."},
+		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", u8" \x1E Kept items after death."},
 		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", u8" \x1E You had an extra life."},
 		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", u8" \x1E You were accursed."},
 		    };
@@ -12807,18 +12807,10 @@ bind_failed:
 						Frame::virtualScreenX / 4,
 						Frame::virtualScreenY * 3 / 4
 						});
-				    auto backdrop = card->findImage("backdrop");
-				    const char* invite_window = "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
-					if (multiplayer != SINGLE) {
-					    if (index != clientnum && !client_disconnected[index]) {
-						    widget.setInvisible(false);
-						} else if (index == clientnum && backdrop && backdrop->path != invite_window) {
-						    widget.setInvisible(false);
-						}
+					if (loadingsavegame) {
+					    widget.setInvisible(playerSlotsLocked[index]);
 					} else {
-					    if (backdrop && backdrop->path != invite_window) {
-						    widget.setInvisible(false);
-					    }
+					    widget.setInvisible(!isPlayerSignedIn(index));
 					}
 				}
 				});
@@ -16115,6 +16107,7 @@ bind_failed:
 		        savegame_selected = first_savegame;
 		    } else {
 		        button.select();
+				savegame_selected = nullptr;
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -16124,7 +16117,6 @@ bind_failed:
 		        slider->setMaxValue(sliderMaxSize);
 	        }
 		    cursor_delete_mode = false;
-			savegame_selected = nullptr;
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
@@ -16169,6 +16161,7 @@ bind_failed:
 		        savegame_selected = first_savegame;
 		    } else {
 		        button.select();
+				savegame_selected = nullptr;
 		    }
 		    auto slider = window->findSlider("slider");
 		    if (slider) {
@@ -16178,7 +16171,6 @@ bind_failed:
 		        slider->setMaxValue(sliderMaxSize);
 		    }
 		    cursor_delete_mode = false;
-			savegame_selected = nullptr;
 		    });
 
 		auto delete_button = window->addButton("delete");

@@ -6436,6 +6436,10 @@ int main(int argc, char** argv)
 							{
 								pauseGame(0, MAXPLAYERS);
 							}
+							else
+							{
+								keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							}
 						}
 						else
 						{
