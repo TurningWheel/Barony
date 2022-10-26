@@ -41,7 +41,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	if (background_image) {
 	    loading_frame->addImage(
 		    fullscreen,
-		    makeColor(127, 127, 127, 255),
+		    makeColor(255, 255, 255, 255),
 		    background_image,
 		    "backdrop"
 	    );
