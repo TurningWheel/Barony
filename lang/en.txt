@@ -6310,9 +6310,12 @@ Combination!#
 4251 Requires %d Trading skill + CHR stat#
 
 # shop try to buy hidden item
-4252 NO_BUY_CONSUMABLE_1!#
-4253 NO_BUY_CONSUMABLE_2!#
-4254 NO_BUY_CONSUMABLE_3!#
+4252 Sorry, I do not sell that to 
+just anyone.#
+4253 That's reserved for another
+buyer, my apologies.#
+4254 That's only for my most
+esteemed clientele.#
 
 # shop buy added consumables
 4255 My personal stock, just for
