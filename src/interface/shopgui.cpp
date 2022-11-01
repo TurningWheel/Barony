@@ -866,7 +866,7 @@ void Player::ShopGUI_t::setItemDisplayNameAndPrice(Item* item)
 		int itemSkillReq = 0;
 		if ( item->itemSpecialShopConsumable )
 		{
-			itemSkillReq = ((int)item->itemRequireTradingSkillInShop) * 20;
+			itemSkillReq = ((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT;
 			if ( stats[player.playernum]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player.playernum], players[player.playernum]->entity) < itemSkillReq )
 			{
 				hiddenItemInGUI = true;

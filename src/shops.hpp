@@ -46,3 +46,4 @@ static const int SHOP_TYPE_FOOD = 6;
 static const int SHOP_TYPE_HARDWARE = 7;
 static const int SHOP_TYPE_HUNTING = 8;
 static const int SHOP_TYPE_GENERAL = 9;
+static const int SHOP_CONSUMABLE_SKILL_REQ_PER_POINT = 10;

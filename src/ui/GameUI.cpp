@@ -15660,7 +15660,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	bool hiddenItemInGUI = false;
 	if ( item->itemSpecialShopConsumable )
 	{
-		if ( stats[player]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * 20) )
+		if ( stats[player]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT) )
 		{
 			hiddenItemInGUI = true;
 		}
