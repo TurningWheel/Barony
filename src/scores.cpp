@@ -1275,14 +1275,14 @@ void loadAllScores(const std::string& scoresfilename)
 
 /*-------------------------------------------------------------------------------
 
-	saveGame
+	saveGameOld
 
 	Saves the player character as they were at the start of the
 	last level
 
 -------------------------------------------------------------------------------*/
 
-int saveGame(int saveIndex)
+int saveGameOld(int saveIndex)
 {
 	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 	{
@@ -2073,13 +2073,13 @@ int saveGame(int saveIndex)
 
 /*-------------------------------------------------------------------------------
 
-	loadGame
+	loadGameOld
 
 	Loads a character savegame stored in SAVEGAMEFILE
 
 -------------------------------------------------------------------------------*/
 
-int loadGame(int player, int saveIndex)
+int loadGameOld(int player, int saveIndex)
 {
 	File* fp;
 
@@ -2113,7 +2113,7 @@ int loadGame(int player, int saveIndex)
 	}
 	fp->read(checkstr, sizeof(char), strlen(VERSION));
 	int versionNumber = getSavegameVersion(checkstr);
-	printlog("loadGame: '%s' version number %d", savefile, versionNumber);
+	printlog("loadGameOld: '%s' version number %d", savefile, versionNumber);
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
@@ -2842,13 +2842,13 @@ int loadGame(int player, int saveIndex)
 
 /*-------------------------------------------------------------------------------
 
-	loadGameFollowers
+	loadGameFollowersOld
 
 	Loads follower data from a save game file
 
 -------------------------------------------------------------------------------*/
 
-list_t* loadGameFollowers(int saveIndex)
+list_t* loadGameFollowersOld(int saveIndex)
 {
 	File* fp;
 	int c;
@@ -2883,7 +2883,7 @@ list_t* loadGameFollowers(int saveIndex)
 	}
 	fp->read(checkstr, sizeof(char), strlen(VERSION));
 	int versionNumber = getSavegameVersion(checkstr);
-	printlog("loadGameFollowers: '%s' version number %d", savefile, versionNumber);
+	printlog("loadGameFollowersOld: '%s' version number %d", savefile, versionNumber);
 	if ( versionNumber == -1 )
 	{
 		// if version number returned is invalid, abort
@@ -3137,38 +3137,26 @@ int deleteSaveGame(int gametype, int saveIndex)
 
 bool saveGameExists(bool singleplayer, int saveIndex)
 {
-	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
+	auto savefile = setSaveGameFileName(singleplayer, SaveFileType::JSON, saveIndex);
+	completePath(path, savefile.c_str(), outputdir);
 
-	if ( access(path, F_OK ) == -1 )
-	{
+	if (access(path, F_OK ) == -1) {
 		return false;
-	}
-	else
-	{
-		File* fp;
-		if ( (fp = FileIO::open(path, "rb")) == NULL )
-		{
+	} else {
+		SaveGameInfo info;
+		if (!FileHelper::readObject(path, info)) {
 			return false;
 		}
-		char checkstr[64];
-		fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-		if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-		{
-			FileIO::close(fp);
+
+		if (info.magic_cookie != "BARONYJSONSAVE") {
 			return false;
 		}
-		fp->read(checkstr, sizeof(char), strlen(VERSION));
-		int versionNumber = getSavegameVersion(checkstr);
-		if ( versionNumber == -1 )
-		{
-			// if getSavegameVersion returned -1, abort.
-			FileIO::close(fp);
+
+		if (info.game_version == -1) {
 			return false;
 		}
-		FileIO::close(fp);
+
 		return true;
 	}
 }
@@ -3183,282 +3171,59 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 
 SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 {
-	File* fp;
-
-	char name[128];
-	int level, class_;
-	int plnum, dungeonlevel;
-
-	char savefile[PATH_MAX] = "";
 	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
+	auto savefile = setSaveGameFileName(singleplayer, SaveFileType::JSON, saveIndex);
+	completePath(path, savefile.c_str(), outputdir);
 
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to check name in '%s'!\n", path);
-		return SaveGameInfo();
+	// read info object, check file read succeeded
+	SaveGameInfo info;
+	bool result = FileHelper::readObject(path, info);
+	if (!result) {
+		info.game_version = -1;
 	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return SaveGameInfo();
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	printlog("getSaveGameName: '%s' version number %d", savefile, versionNumber);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return SaveGameInfo();
-	}
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-
-	Sint16 players_connected;
-	fp->read(&players_connected, sizeof(Sint16), 1);
-	Sint16 mul;
-	fp->read(&mul, sizeof(Sint16), 1);
-
-	if (players_connected == 0) {
-	    if (mul == SINGLE) {
-	        players_connected = 1;
-	    } else {
-	        players_connected =
-	            (1 << 0) |
-	            (1 << 1) |
-	            (1 << 2) |
-	            (1 << 3);
-	    }
-	}
-
-	fp->read(&plnum, sizeof(Uint32), 1);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // mapseed
-	fp->read(&dungeonlevel, sizeof(Uint32), 1);
-	dungeonlevel = dungeonlevel & 0xFF;
-
-	bool secret_lvl;
-	fp->read(&secret_lvl, sizeof(bool), 1);
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // completion time
-	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct penniless
-	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct foodless
-	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct vegetarian
-	fp->seek(sizeof(bool), File::SeekMode::ADD); // conduct illiterate
-	if ( versionNumber >= 310 )
-	{
-		fp->seek(sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, File::SeekMode::ADD);
-	}
-	if ( versionNumber >= 335 )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // svFlags
-	}
-
-    for (int c = 0; c < (mul == SPLITSCREEN ? MAXPLAYERS : 1); ++c)
-    {
-	    fp->seek(sizeof(Uint32) * NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-
-        int numspells = 0;
-        fp->read(&numspells, sizeof(Uint32), 1);
-        for ( int c = 0; c < numspells; c++ )
-        {
-	        fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-        }
-
-		if ( versionNumber >= 381 )
-		{
-			// read alchemy recipes
-			Uint32 numrecipes = 0;
-			fp->read(&numrecipes, sizeof(Uint32), 1);
-			for ( int r = 0; r < numrecipes; ++r )
-			{
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-			}
-		}
-
-		if ( versionNumber >= 382 )
-		{
-			// read alchemy recipes
-			Uint32 numscrolls = 0;
-			fp->read(&numscrolls, sizeof(Uint32), 1);
-			for ( int s = 0; s < numscrolls; ++s )
-			{
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-			}
-		}
-    }
-
-	int monsters = NUMMONSTERS;
-	if ( versionNumber < 325 )
-	{
-		monsters = 33;
-	}
-
-	// skip through other player data until you get to the correct player
-	for ( int c = 0; c < plnum; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // character class
-		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD); // kill count
-		fp->seek(sizeof(Monster), File::SeekMode::ADD); // monster type
-		fp->seek(sizeof(sex_t), File::SeekMode::ADD); // sex
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD); // race and appearance
-		fp->seek(sizeof(char) * 32, File::SeekMode::ADD); // name
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // HP
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MAXHP
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MP
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // MAXMP
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // STR
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // DEX
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // CON
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // INT
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // PER
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // CHR
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // EXP
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // LVL
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // GOLD
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // HUNGER
-
-		// proficiencies (skills)
-		if ( versionNumber >= 323 )
-		{
-			fp->seek(sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
-		}
-
-        // effects
-		if ( versionNumber <= 323 )
-		{
-			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(bool)*NUMEFFECTS, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
-		}
-
-        // statistics
-		if ( versionNumber >= 323 )
-		{
-			fp->seek(sizeof(Sint32) * 32, File::SeekMode::ADD); // stat flags
-		}
-
-        // inventory
-		if (mul == SPLITSCREEN)
-		{
-			int numitems = 0;
-			fp->read(&numitems, sizeof(Uint32), 1);
-
-			for ( int i = 0; i < numitems; i++ )
-			{
-				fp->seek(sizeof(ItemType), File::SeekMode::ADD); // type
-				fp->seek(sizeof(Status), File::SeekMode::ADD); // quality
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD); // beatitude
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD); // count
-				fp->seek(sizeof(Uint32), File::SeekMode::ADD); // appearance
-				fp->seek(sizeof(bool), File::SeekMode::ADD); // identified
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD); // x inventory
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD); // y inventory
-			}
-			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
-		}
-		else
-		{
-			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-		}
-	}
-
-	fp->read(&class_, sizeof(Uint32), 1); // character class
-	for ( int c = 0; c < monsters; c++ )
-	{
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD); // kill count
-	}
-	fp->seek(sizeof(Monster), File::SeekMode::ADD); // monster type
-	fp->seek(sizeof(sex_t), File::SeekMode::ADD); // sex
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD); // race and appearance
-	fp->read(&name, sizeof(char), 32); // name
-	name[32] = 0;
-	fp->seek(sizeof(Sint32) * 11, File::SeekMode::ADD); // a lot of stats...
-	fp->read(&level, sizeof(Sint32), 1); // character level
-
-	// assemble string
-	char timestamp[128] = "";
+	
+	// check hash
+	Uint32 hash = 0;
+	struct tm* tm = nullptr;
 #ifdef WINDOWS
-	struct _stat result;
-	if ( _stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
-		}
+	struct _stat s;
+	if (_stat(path, &s) == 0) {
+		tm = localtime(&s.st_mtime);
 	}
 #else
-	struct stat result;
-	if ( stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
-		}
+	struct stat s;
+	if (stat(path, &s) == 0) {
+		tm = localtime(&s.st_mtime);
 	}
-#endif // WINDOWS
-
-	int plnumTemp = plnum;
-	if ( plnumTemp >= MAXPLAYERS )
-	{
-		plnumTemp = MAXPLAYERS - 1; // fix for loading 16-player savefile in normal Barony. plnum might be out of index for stats[]
+#endif
+	if (tm) {
+		hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+	}
+	if (info.players.size() > info.player_num) {
+		auto& stats = info.players[info.player_num].stats;
+		hash += stats.STR + stats.LVL + stats.DEX * stats.INT;
+		hash += stats.CON * stats.PER + std::min(stats.GOLD, 5000) - stats.CON;
+		hash += stats.HP - stats.MP;
+		hash += info.dungeon_lvl;
+	}
+	if (hash != info.hash) {
+		info.hash = 0;
 	}
 
-	bool players_connected_arr[MAXPLAYERS];
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		players_connected_arr[i] = (bool)(players_connected & (1 << i));
-	}
-    SaveGameInfo saveGameInfo(
-        std::string(name),
-        std::string(playerClassLangEntry(class_, plnumTemp)),
-        dungeonlevel,
-        level,
-        plnum,
-		players_connected_arr,
-        std::string(timestamp),
-        (int)mul,
-		secret_lvl
-    );
-
-	// close file
-	FileIO::close(fp);
-	return saveGameInfo;
+	return info;
 }
 
 /*-------------------------------------------------------------------------------
 
 	getSaveGameName
 
-	Gets the name of the character in the saved game
+	Gets the name of the saved game
 
 -------------------------------------------------------------------------------*/
 
-char* getSaveGameName(bool singleplayer, int saveIndex)
+const char* getSaveGameName(const SaveGameInfo& info)
 {
-    // deprecated
-    return nullptr;
+    return info.gamename.c_str();
 }
 
 /*-------------------------------------------------------------------------------
@@ -3469,46 +3234,9 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
+Uint32 getSaveGameUniqueGameKey(const SaveGameInfo& info)
 {
-	File* fp;
-	Uint32 gameKey;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to get map seed out of '%s'!\n", path);
-		return 0;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-
-	fp->read(&gameKey, sizeof(Uint32), 1);
-
-	// close file
-	FileIO::close(fp);
-	return gameKey;
+	return info.gamekey;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3519,40 +3247,9 @@ Returns the savefile version
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameVersionNum(bool singleplayer, int saveIndex)
+int getSaveGameVersionNum(const SaveGameInfo& info)
 {
-	File* fp;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to get map seed out of '%s'!\n", path);
-		return 0;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	if ( versionNumber == -1 )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-	}
-
-	// close file
-	FileIO::close(fp);
-	return versionNumber;
+	return info.game_version;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3563,47 +3260,9 @@ int getSaveGameVersionNum(bool singleplayer, int saveIndex)
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameType(bool singleplayer, int saveIndex)
+int getSaveGameType(const SaveGameInfo& info)
 {
-	File* fp;
-	int mul;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to get game type out of '%s'!\n", path);
-		return 0;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&mul, sizeof(Uint32), 1);
-
-	// close file
-	FileIO::close(fp);
-	return mul;
+	return info.multiplayer_type;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3614,49 +3273,9 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameClientnum(bool singleplayer, int saveIndex)
+int getSaveGameClientnum(const SaveGameInfo& info)
 {
-	File* fp;
-	int clientnum;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to get clientnum out of '%s'!\n", path);
-		return 0;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
-	fp->read(&clientnum, sizeof(Uint32), 1);
-
-	// close file
-	FileIO::close(fp);
-	return clientnum;
+	return info.player_num;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3667,58 +3286,18 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
+Uint32 getSaveGameMapSeed(const SaveGameInfo& info)
 {
-	File* fp;
-	Uint32 seed;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to get map seed out of '%s'!\n", path);
-		return 0;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 0;
-	}
-
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint16), File::SeekMode::ADD);
-	fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-	fp->read(&seed, sizeof(Uint32), 1);
-
-	// close file
-	FileIO::close(fp);
-	return seed;
+	return info.mapseed;
 }
 
-int getSavegameVersion(char checkstr[64])
+int getSavegameVersion(const char* checkstr)
 {
+	const int maxlen = (int)strlen(VERSION);
 	int versionNumber = 300;
 	char versionStr[4] = "000";
 	int i = 0;
-	for ( int j = 0; j < strlen(VERSION); ++j )
+	for ( int j = 0; checkstr[j] != '\0' && j < maxlen; ++j )
 	{
 		if ( checkstr[j] >= '0' && checkstr[j] <= '9' )
 		{
@@ -4215,6 +3794,32 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		filename.insert(0, "/");
 		filename.insert(0, outputdir);
 	}
+	else if ( type == SaveFileType::JSON )
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append(".baronysave");
+			}
+			else
+			{
+				filename.append("_modded.baronysave");
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				filename.append("_mp.baronysave");
+			}
+			else
+			{
+				filename.append("_mp_modded.baronysave");
+			}
+		}
+	}
+
 	return filename;
 }
 
@@ -5663,3 +5268,660 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 	}
 	return STEAM_GSTAT_INVALID;
 }
+
+int saveGame(int saveIndex) {
+	if (!intro) {
+		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
+	}
+	
+	SaveGameInfo info;
+	
+	time_t t = time(nullptr);
+	struct tm* tm = localtime(&t); assert(tm);
+
+	// save info
+	info.game_version = getSavegameVersion(VERSION);
+	info.timestamp = asctime(tm);
+
+	// savefile hash
+	info.hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+	info.hash += stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT;
+	info.hash += stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON;
+	info.hash += stats[clientnum]->HP - stats[clientnum]->MP;
+	info.hash += currentlevel;
+
+	// game info
+	info.gamename = stats[clientnum]->name;
+	info.gamekey = uniqueGameKey;
+	info.mapseed = mapseed;
+	info.gametimer = completionTime;
+	info.svflags = svFlags;
+	info.player_num = clientnum;
+
+	// multiplayer type
+	if (multiplayer == SINGLE) {
+	    info.multiplayer_type = splitscreen ? SPLITSCREEN : SINGLE;
+	} else {
+		if (directConnect) {
+			info.multiplayer_type = multiplayer == SERVER ? DIRECTSERVER : DIRECTCLIENT;
+		} else {
+			if (multiplayer == SERVER) {
+				info.multiplayer_type = LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ?
+					SERVERCROSSPLAY : SERVER;
+			}
+			else if (multiplayer == CLIENT) {
+				info.multiplayer_type = CLIENT;
+			}
+			else {
+				printlog("saveGame(): failed to save, unknown game type!");
+				return 1;
+			}
+		}
+	}
+
+	info.dungeon_lvl = currentlevel;
+	info.level_track = secretlevel ? 1 : 0;
+	info.players_connected.resize(MAXPLAYERS);
+	info.players.resize(MAXPLAYERS);
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		info.players_connected[c] = client_disconnected[c] ? 0 : 1;
+		if (info.players_connected[c]) {
+			auto& player = info.players[c];
+			player.char_class = client_classes[c];
+			player.race = stats[c]->playerRace;
+
+			// the following player info is shared by all players currently
+			player.kills.resize(NUMMONSTERS);
+			for (int i = 0; i < NUMMONSTERS; ++i) {
+				player.kills[i] = kills[i];
+			}
+			player.conductPenniless = conductPenniless;
+			player.conductFoodless = conductFoodless;
+			player.conductVegetarian = conductVegetarian;
+			for (int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i) {
+				player.additionalConducts[i] = conductGameChallenges[i];
+			}
+
+			// hotbar
+			for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
+				auto item = uidToItem(players[c]->hotbar.slots()[i].item);
+				if (item) {
+					player.hotbar[i] = list_Index(item->node);
+				} else {
+					player.hotbar[i] = UINT32_MAX;
+				}
+			}
+
+			// spells
+	        for (node_t* node = players[c]->magic.spellList.first;
+				node != nullptr; node = node->next) {
+		        auto spell = (spell_t*)node->element;
+				player.spells.push_back(spell->ID);
+	        }
+
+			// known alchemy recipes and known scrolls
+			player.known_recipes = clientLearnedAlchemyRecipes[c];
+			for (auto& entry : clientLearnedScrollLabels[c]) {
+				player.known_scrolls.push_back(entry);
+			}
+
+			// player stats
+			player.stats.name = stats[c]->name;
+			player.stats.type = stats[c]->type;
+			player.stats.sex = stats[c]->sex;
+			player.stats.appearance = stats[c]->appearance;
+			player.stats.HP = stats[c]->HP;
+			player.stats.maxHP = stats[c]->MAXHP;
+			player.stats.MP = stats[c]->MP;
+			player.stats.maxMP = stats[c]->MAXMP;
+			player.stats.STR = stats[c]->STR;
+			player.stats.DEX = stats[c]->DEX;
+			player.stats.CON = stats[c]->CON;
+			player.stats.INT = stats[c]->INT;
+			player.stats.PER = stats[c]->PER;
+			player.stats.CHR = stats[c]->CHR;
+			player.stats.EXP = stats[c]->EXP;
+			player.stats.LVL = stats[c]->LVL;
+			player.stats.GOLD = stats[c]->GOLD;
+			player.stats.HUNGER = stats[c]->HUNGER;
+			player.stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
+			for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
+				player.stats.PROFICIENCIES[i] = stats[c]->PROFICIENCIES[i];
+			}
+			player.stats.EFFECTS.resize(NUMEFFECTS);
+			player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+			for (int i = 0 ; i < NUMEFFECTS; ++i) {
+				player.stats.EFFECTS[i] = stats[c]->EFFECTS[i];
+				player.stats.EFFECTS_TIMERS[i] = stats[c]->EFFECTS_TIMERS[i];
+			}
+			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+			player.stats.MISC_FLAGS.resize(NUMMISCFLAGS);
+			for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
+				player.stats.MISC_FLAGS[i] = stats[c]->MISC_FLAGS[i];
+			}
+			//player.stats.attributes = ; // players have no key/value table
+
+			// equipment slots
+			const std::vector<std::pair<std::string, Item*>> player_slots = {
+				{"helmet", stats[c]->helmet},
+				{"breastplate", stats[c]->breastplate},
+				{"gloves", stats[c]->gloves},
+				{"shoes", stats[c]->shoes},
+				{"shield", stats[c]->shield},
+				{"weapon", stats[c]->weapon},
+				{"cloak", stats[c]->cloak},
+				{"amulet", stats[c]->amulet},
+				{"ring", stats[c]->ring},
+				{"mask", stats[c]->mask},
+			};
+			if (players[c]->isLocalPlayer()) {
+				// if this is a local player, we have their inventory, and can store
+				// item indexes in the player_equipment table
+				for (auto& slot : player_slots) {
+					player.stats.player_equipment.push_back(std::make_pair(slot.first,
+						slot.second ? list_Index(slot.second->node) : UINT32_MAX));
+				}
+			} else {
+				// if this is not a local player, we don't have the inventory.
+				// we must save whole items for each slot which the host will
+				// restore later
+				for (auto& slot : player_slots) {
+					if (slot.second) {
+						player.stats.npc_equipment.push_back(std::make_pair(
+							slot.first, SaveGameInfo::Player::stat_t::item_t{
+								(Uint32)slot.second->type,
+								(Uint32)slot.second->status,
+								slot.second->appearance,
+								slot.second->beatitude,
+								slot.second->count,
+								slot.second->identified,
+								slot.second->x,
+								slot.second->y,
+							}));
+					}
+				}
+			}
+
+			// inventory
+			for (node_t* node = stats[c]->inventory.first;
+				node != nullptr; node = node->next) {
+				auto item = (Item*)node->element;
+				player.stats.inventory.push_back(
+					SaveGameInfo::Player::stat_t::item_t{
+					(Uint32)item->type,
+					(Uint32)item->status,
+					item->appearance,
+					item->beatitude,
+					item->count,
+					item->identified,
+					item->x,
+					item->y,
+					});
+			}
+
+			// followers
+			for (node_t* node = stats[c]->FOLLOWERS.first;
+				node != nullptr; node = node->next) {
+				auto entity = uidToEntity(*((Uint32*)node->element));
+				Stat* follower = entity ? entity->getStats() : nullptr;
+				if (follower) {
+					SaveGameInfo::Player::stat_t stats;
+					stats.name = follower->name;
+					stats.type = follower->type;
+					stats.sex = follower->sex;
+					stats.appearance = follower->appearance;
+					stats.HP = follower->HP;
+					stats.maxHP = follower->MAXHP;
+					stats.MP = follower->MP;
+					stats.maxMP = follower->MAXMP;
+					stats.STR = follower->STR;
+					stats.DEX = follower->DEX;
+					stats.CON = follower->CON;
+					stats.INT = follower->INT;
+					stats.PER = follower->PER;
+					stats.CHR = follower->CHR;
+					stats.EXP = follower->EXP;
+					stats.LVL = follower->LVL;
+					stats.GOLD = follower->GOLD;
+					stats.HUNGER = follower->HUNGER;
+					stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
+					for (int i = 0 ; i < NUMPROFICIENCIES; ++i) {
+						stats.PROFICIENCIES[i] = follower->PROFICIENCIES[i];
+					}
+					stats.EFFECTS.resize(NUMEFFECTS);
+					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+					for (int i = 0 ; i < NUMEFFECTS; ++i) {
+						stats.EFFECTS[i] = follower->EFFECTS[i];
+						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
+					}
+					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
+					for (int i = 0 ; i < NUMMISCFLAGS; ++i) {
+						stats.MISC_FLAGS[i] = follower->MISC_FLAGS[i];
+					}
+					for (auto& attribute : follower->attributes) {
+						stats.attributes.push_back(attribute);
+					}
+
+					// equipment slots
+					const std::vector<std::pair<std::string, Item*>> npc_slots = {
+						{"helmet", follower->helmet},
+						{"breastplate", follower->breastplate},
+						{"gloves", follower->gloves},
+						{"shoes", follower->shoes},
+						{"shield", follower->shield},
+						{"weapon", follower->weapon},
+						{"cloak", follower->cloak},
+						{"amulet", follower->amulet},
+						{"ring", follower->ring},
+						{"mask", follower->mask},
+					};
+					for (auto& slot : npc_slots) {
+						if (slot.second) {
+							stats.npc_equipment.push_back(std::make_pair(
+								slot.first, SaveGameInfo::Player::stat_t::item_t{
+									(Uint32)slot.second->type,
+									(Uint32)slot.second->status,
+									slot.second->appearance,
+									slot.second->beatitude,
+									slot.second->count,
+									slot.second->identified,
+									slot.second->x,
+									slot.second->y,
+								}));
+						}
+					}
+
+					// inventory
+					for (node_t* node = follower->inventory.first;
+						node != nullptr; node = node->next) {
+						auto item = (Item*)node->element;
+						stats.inventory.push_back(
+							SaveGameInfo::Player::stat_t::item_t{
+							(Uint32)item->type,
+							(Uint32)item->status,
+							item->appearance,
+							item->beatitude,
+							item->count,
+							item->identified,
+							item->x,
+							item->y,
+							});
+					}
+
+					// finally, add follower to list
+					player.followers.push_back(stats);
+				}
+			}
+		}
+	}
+
+	static ConsoleVariable<bool> cvar_saveText("/save_text_format", true);
+
+	char path[PATH_MAX] = "";
+	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
+	completePath(path, savefile.c_str(), outputdir);
+	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json : EFileFormat::Binary, info);
+	return result == true ? 0 : 1;
+}
+
+int loadGame(int player, const SaveGameInfo& info) {
+	if (player < 0 || player >= MAXPLAYERS) {
+		printlog("loadGame() failed: invalid player index");
+		return 1;
+	}
+
+	if (info.magic_cookie != "BARONYJSONSAVE") {
+		printlog("loadGame() failed: magic cookie is incorrect");
+		return 1;
+	}
+
+	if (info.game_version != getSavegameVersion(VERSION)) {
+		printlog("loadGame() failed: game version mismatch");
+		return 1;
+	}
+
+	if (!info.players_connected[player]) {
+		printlog("loadGame() failed: given player is not connected");
+		return 1;
+	}
+
+	if (!info.hash) {
+		printlog("loadGame() warning: hash check failed");
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
+
+	stats[player]->clearStats();
+
+	// load game info
+	uniqueGameKey = info.gamekey;
+	mapseed = info.mapseed;
+	completionTime = info.gametimer;
+	svFlags = info.svflags;
+	clientnum = info.player_num;
+	switch (info.multiplayer_type) {
+	default:
+	case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
+	case SERVER: multiplayer = SERVER; splitscreen = false; directConnect = false; break;
+	case CLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = false; break;
+	case DIRECTSERVER: multiplayer = SERVER; splitscreen = false; directConnect = true; break;
+	case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
+	case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
+	case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
+	}
+	currentlevel = info.dungeon_lvl;
+	secretlevel = info.level_track != 0;
+
+	// load player data
+	client_classes[player] = info.players[player].char_class;
+	stats[player]->playerRace = info.players[player].race;
+	for (int c = 0; c < NUMMONSTERS && c < info.players[player].kills.size(); ++c) {
+		kills[c] = info.players[player].kills[c];
+	}
+	conductPenniless = info.players[player].conductPenniless;
+	conductFoodless = info.players[player].conductFoodless;
+	conductVegetarian = info.players[player].conductVegetarian;
+	conductIlliterate = info.players[player].conductIlliterate;
+	for (int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c) {
+		conductGameChallenges[c] = info.players[player].additionalConducts[c];
+	}
+
+	// read spells
+	list_FreeAll(&players[player]->magic.spellList);
+	for (auto& s : info.players[player].spells) {
+		spell_t* spell = copySpell(getSpellFromID(s));
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->deconstructor = &spellDeconstructor;
+		node->size = sizeof(spell);
+	}
+
+	// read alchemy recipes
+	clientLearnedAlchemyRecipes[player].clear();
+	for (auto& r : info.players[player].known_recipes) {
+		clientLearnedAlchemyRecipes[player].push_back(r);
+	}
+
+	// read scroll labels
+	clientLearnedScrollLabels[player].clear();
+	for (auto& s : info.players[player].known_scrolls) {
+		clientLearnedScrollLabels[player].insert(s);
+	}
+
+	// player stats
+	auto& p = info.players[player].stats;
+	stringCopy(stats[player]->name, p.name.c_str(), sizeof(Stat::name), p.name.size());
+	stats[player]->sex = static_cast<sex_t>(p.sex);
+	stats[player]->appearance = p.appearance;
+	stats[player]->HP = p.HP;
+	stats[player]->MAXHP = p.maxHP;
+	stats[player]->MP = p.MP;
+	stats[player]->MAXMP = p.maxMP;
+	stats[player]->STR = p.STR;
+	stats[player]->DEX = p.DEX;
+	stats[player]->CON = p.CON;
+	stats[player]->INT = p.INT;
+	stats[player]->PER = p.PER;
+	stats[player]->CHR = p.CHR;
+	stats[player]->EXP = p.EXP;
+	stats[player]->LVL = p.LVL;
+	stats[player]->GOLD = p.GOLD;
+	stats[player]->HUNGER = p.HUNGER;
+	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
+		stats[player]->PROFICIENCIES[c] = p.PROFICIENCIES[c];
+	}
+	for (int c = 0; c < NUMEFFECTS && c < p.EFFECTS.size(); ++c) {
+		stats[player]->EFFECTS[c] = p.EFFECTS[c];
+		stats[player]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+	}
+	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
+		stats[player]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
+	}
+	//stats[player]->attributes = p.attributes; // skip attributes for now
+
+	// inventory
+	for (auto& item : p.inventory) {
+		ItemType type = static_cast<ItemType>(item.type);
+		Status status = static_cast<Status>(item.status);
+		Sint16 beatitude = item.beatitude;
+		Sint16 count = item.count;
+		Uint32 appearance = item.appearance;
+		bool identified = item.identified;
+		Item* i = newItem(type, status, beatitude, count,
+			appearance, identified, &stats[player]->inventory);
+		i->x = item.x;
+		i->y = item.y;
+	}
+
+	// equipment
+	const std::unordered_map<std::string, Item*&> slots = {
+		{"helmet", stats[player]->helmet},
+		{"breastplate", stats[player]->breastplate},
+		{"gloves", stats[player]->gloves},
+		{"shoes", stats[player]->shoes},
+		{"shield", stats[player]->shield},
+		{"weapon", stats[player]->weapon},
+		{"cloak", stats[player]->cloak},
+		{"amulet", stats[player]->amulet},
+		{"ring", stats[player]->ring},
+		{"mask", stats[player]->mask},
+	};
+	if (players[player]->isLocalPlayer()) {
+		// if this is a local player, we have their inventory, and can
+		// restore equipment using item indexes in the player_equipment table
+		for (auto& item : p.player_equipment) {
+			auto find = slots.find(item.first);
+			if (find != slots.end()) {
+				auto& slot = find->second;
+				auto node = list_Node(&stats[player]->inventory, item.second);
+				if (node) {
+					slot = (Item*)node->element;
+				} else {
+					slot = nullptr;
+				}
+			}
+		}
+	} else {
+		// if this is not a local player, we don't have the inventory.
+		// we must restore whole items and assign them directly to each slot
+		for (auto& item : p.npc_equipment) {
+			auto find = slots.find(item.first);
+			if (find != slots.end()) {
+				auto& slot = find->second;
+				ItemType type = (ItemType)item.second.type;
+				Status status = (Status)item.second.status;
+				Sint16 beatitude = item.second.beatitude;
+				Sint16 count = item.second.count;
+				Uint32 appearance = item.second.appearance;
+				bool identified = item.second.identified;
+				Item* i = newItem(type, status, beatitude, count,
+					appearance, identified, nullptr);
+				i->x = item.second.x;
+				i->y = item.second.y;
+				slot = i;
+			}
+		}
+	}
+
+	// assign hotbar items
+	auto& hotbar = players[player]->hotbar.slots();
+	auto& hotbar_alternate = players[player]->hotbar.slotsAlternate();
+	for (int c = 0; c < NUM_HOTBAR_SLOTS; ++c) {
+		node_t* node = list_Node(&stats[player]->inventory,
+			info.players[player].hotbar[c]);
+		if (node) {
+			Item* item = (Item*)node->element;
+			hotbar[c].item = item->uid;
+		} else {
+			hotbar[c].item = 0;
+			hotbar[c].lastItemUid = 0;
+			hotbar[c].lastItemCategory = -1;
+			hotbar[c].lastItemType = -1;
+			for (int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d) {
+				hotbar_alternate[d][c].item = 0;
+				hotbar_alternate[d][c].lastItemUid = 0;
+				hotbar_alternate[d][c].lastItemCategory = -1;
+				hotbar_alternate[d][c].lastItemType = -1;
+			}
+		}
+	}
+
+	// reset certain variables
+	list_FreeAll(&stats[player]->FOLLOWERS);
+	stats[player]->monster_sound = nullptr;
+	stats[player]->monster_idlevar = 0;
+	stats[player]->leader_uid = 0;
+	stats[player]->stache_x1 = 0;
+	stats[player]->stache_x2 = 0;
+	stats[player]->stache_y1 = 0;
+	stats[player]->stache_y2 = 0;
+
+	// shuffle enchanted feather list
+    {
+	    enchantedFeatherScrollsShuffled.clear();
+	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
+	    auto shuffle = enchantedFeatherScrollsFixedList;
+		BaronyRNG feather_rng;
+		feather_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	    while (!shuffle.empty()) {
+	        int index = feather_rng.getU8() % shuffle.size();
+	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
+	        shuffle.erase(shuffle.begin() + index);
+	    }
+	}
+
+	return 0;
+}
+
+list_t* loadGameFollowers(const SaveGameInfo& info) {
+	if (info.magic_cookie != "BARONYJSONSAVE") {
+		printlog("loadGameFollowers() failed: magic cookie is incorrect");
+		return nullptr;
+	}
+
+	if (info.game_version != getSavegameVersion(VERSION)) {
+		printlog("loadGameFollowers() failed: game version mismatch");
+		return nullptr;
+	}
+
+	if (info.players_connected.size() != info.players.size()) {
+		printlog("loadGameFollowers() failed: player data is malformed");
+		return nullptr;
+	}
+
+	// create followers list
+	list_t* followers = (list_t*) malloc(sizeof(list_t));
+	followers->first = NULL;
+	followers->last = NULL;
+
+	// read the follower data
+	for (auto& player : info.players) {
+		list_t* followerList = (list_t*) malloc(sizeof(list_t));
+		followerList->first = nullptr;
+		followerList->last = nullptr;
+		node_t* node = list_AddNodeLast(followers);
+		node->element = followerList;
+		node->deconstructor = &listDeconstructor;
+		node->size = sizeof(list_t);
+
+		// number of followers for this player
+		for (auto& follower : player.followers) {
+			// Stat init to 0 as monster type not needed,
+			// values will be overwritten by the saved follower data
+			Stat* stats = new Stat(0);
+
+			node_t* node = list_AddNodeLast(followerList);
+			node->element = stats;
+			node->deconstructor = &statDeconstructor;
+			node->size = sizeof(*stats);
+
+			// read follower stats
+			stringCopy(stats->name, follower.name.c_str(),
+				sizeof(Stat::name), follower.name.size());
+			stats->type = (Monster)follower.type;
+			stats->sex = (sex_t)follower.sex;
+			stats->appearance = follower.appearance;
+			stats->HP = follower.HP;
+			stats->MAXHP = follower.maxHP;
+			stats->MP = follower.MP;
+			stats->MAXMP = follower.maxMP;
+			stats->STR = follower.STR;
+			stats->DEX = follower.DEX;
+			stats->CON = follower.CON;
+			stats->INT = follower.INT;
+			stats->PER = follower.PER;
+			stats->CHR = follower.CHR;
+			stats->EXP = follower.EXP;
+			stats->LVL = follower.LVL;
+			stats->GOLD = follower.GOLD;
+			stats->HUNGER = follower.HUNGER;
+			for (int c = 0; c < NUMPROFICIENCIES && c < follower.PROFICIENCIES.size(); ++c) {
+				stats->PROFICIENCIES[c] = follower.PROFICIENCIES[c];
+			}
+			for (int c = 0; c < NUMEFFECTS && c < follower.EFFECTS.size(); ++c) {
+				stats->EFFECTS[c] = follower.EFFECTS[c];
+				stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
+			}
+			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+			for (int c = 0; c < NUMMISCFLAGS && c < follower.MISC_FLAGS.size(); ++c) {
+				stats->MISC_FLAGS[c] = follower.MISC_FLAGS[c];
+			}
+
+			// read follower attributes
+			for (auto& attr : follower.attributes) {
+				char key[32];
+				char value[32];
+				stringCopy(key, attr.first.c_str(), sizeof(key), attr.first.size());
+				stringCopy(value, attr.first.c_str(), sizeof(value), attr.first.size());
+				stats->attributes.emplace(std::make_pair(key, value));
+			}
+
+			// read follower inventory
+			for (auto& item : follower.inventory) {
+				ItemType type = (ItemType)item.type;
+				Status status = (Status)item.status;
+				Sint16 beatitude = item.beatitude;
+				Sint16 count = item.count;
+				Uint32 appearance = item.appearance;
+				bool identified = item.identified;
+				Item* i = newItem(type, status, beatitude, count,
+					appearance, identified, &stats->inventory);
+				i->x = item.x;
+				i->y = item.y;
+			}
+
+			// equipment
+			const std::unordered_map<std::string, Item*&> slots = {
+				{"helmet", stats->helmet},
+				{"breastplate", stats->breastplate},
+				{"gloves", stats->gloves},
+				{"shoes", stats->shoes},
+				{"shield", stats->shield},
+				{"weapon", stats->weapon},
+				{"cloak", stats->cloak},
+				{"amulet", stats->amulet},
+				{"ring", stats->ring},
+				{"mask", stats->mask},
+			};
+			for (auto& item : follower.npc_equipment) {
+				auto find = slots.find(item.first);
+				if (find != slots.end()) {
+					auto& slot = find->second;
+					ItemType type = (ItemType)item.second.type;
+					Status status = (Status)item.second.status;
+					Sint16 beatitude = item.second.beatitude;
+					Sint16 count = item.second.count;
+					Uint32 appearance = item.second.appearance;
+					bool identified = item.second.identified;
+					Item* i = newItem(type, status, beatitude, count,
+						appearance, identified, &stats->inventory); // should follower inventory be nullptr? please test
+					i->x = item.second.x;
+					i->y = item.second.y;
+					slot = i;
+				}
+			}
+		}
+	}
+
+	return followers;
+} 

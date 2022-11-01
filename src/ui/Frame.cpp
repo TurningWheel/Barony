@@ -373,7 +373,7 @@ static bool isMouseActive(int owner) {
 #elif defined(NINTENDO)
 	return fingerdown;
 #else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	return inputs.getVirtualMouse(mouseowner)->draw_cursor || mousexrel || mouseyrel;
 #endif
 }
@@ -452,7 +452,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
@@ -865,7 +865,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousexrel = (::mousexrel / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	const int mouseowner = intro ? clientnum : (gamePaused ? getMouseOwnerPauseMenu() : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;

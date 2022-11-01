@@ -12,6 +12,7 @@
 
 #ifndef EDITOR
 #include "GameUI.hpp"
+#include "MainMenu.hpp"
 #endif
 
 Field::Field(const int _textLen) {
@@ -405,26 +406,11 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 		return result;
 	}
 
-	int mouseowner_pausemenu = clientnum;
-#ifndef EDITOR
-	if ( gamePaused )
-	{
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
-			{
-				mouseowner_pausemenu = i;
-				break;
-			}
-		}
-	}
-#endif
-
 #if defined(EDITOR) || defined(NINTENDO)
 	Sint32 omousex = (::omousex / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (::omousey / (float)yres) * (float)Frame::virtualScreenY;
 #else
-	const int mouseowner = intro ? clientnum : (gamePaused ? mouseowner_pausemenu : owner);
+	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
 #endif

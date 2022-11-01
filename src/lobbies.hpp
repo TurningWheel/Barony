@@ -87,6 +87,10 @@ public:
 		}
 		return joiningType;
 	}
+	void setHostingType(LobbyServiceType type)
+	{
+		hostingType = type;
+	}
 	void setLobbyJoinType(LobbyServiceType type)
 	{
 	    joiningType = type;

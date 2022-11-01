@@ -3826,22 +3826,10 @@ bool handleEvents(void)
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
+						inputs.getVirtualMouse(i)->lastMovementFromController = false;
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
-							if ( !inputs.getVirtualMouse(i)->draw_cursor && !inputs.getVirtualMouse(i)->lastMovementFromController )
-							{
-								inputs.getVirtualMouse(i)->draw_cursor = true;
-							}
-							if ( event.user.code == 0 ) 
-							{
-								// we use SDL_pushEvent() to push a event.user.code == 1 on a gamepad manipulating a mouse event
-								// default 0 for normal mouse events
-								inputs.getVirtualMouse(i)->lastMovementFromController = false;
-							}
-						}
-						else if (multiplayer == SINGLE)
-						{
-							inputs.getVirtualMouse(i)->draw_cursor = false;
+							inputs.getVirtualMouse(i)->draw_cursor = true;
 						}
 					}
 				}
@@ -6321,11 +6309,11 @@ int main(int argc, char** argv)
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
-						if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
+						if ( inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->draw_cursor )
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
-							pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
-							pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+							pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - cursor->getHeight() / 2;
 							pos.x += 4;
 							pos.y += 4;
 							pos.w = cursor->getWidth();
@@ -6447,6 +6435,10 @@ int main(int argc, char** argv)
 							if ( dimmers == 0 )
 							{
 								pauseGame(0, MAXPLAYERS);
+							}
+							else
+							{
+								keystatus[SDL_SCANCODE_ESCAPE] = 0;
 							}
 						}
 						else
@@ -6601,13 +6593,9 @@ int main(int argc, char** argv)
 				ImGui_t::render();
 #endif
 
+#ifndef NINTENDO
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( !MainMenu::isPlayerSignedIn(i) || !players[i]->isLocalPlayer() ) {
-						continue;
-					}
-
-#ifndef NINTENDO
 					if ( gamePaused || players[i]->GUI.isGameoverActive() )
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) && inputs.getVirtualMouse(i)->draw_cursor )
@@ -6623,8 +6611,8 @@ int main(int argc, char** argv)
 						}
 						continue;
 					}
-#endif
 				}
+#endif
 			}
 
 			// fade in/out effect

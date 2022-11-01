@@ -1531,7 +1531,7 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 	void* tempSteamID = cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(pCallback);
 
 	// update current lobby info
-	if ( currentLobby )
+	if (currentLobby && multiplayer != SERVER)
 	{
 	    auto lobby = static_cast<CSteamID*>(currentLobby);
 	    auto newlobby = static_cast<CSteamID*>(tempSteamID);
@@ -1552,13 +1552,15 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			}
 		}
 	}
-	if ( handlingInvite )
+
+	if (handlingInvite)
 	{
 	    // this is where invites are actually processed on steam.
 	    // we do it here to ensure info about the savegame in the lobby is up-to-date.
 		handlingInvite = false;
 		MainMenu::receivedInvite(tempSteamID);
 	}
+	
 	cpp_Free_CSteamID(tempSteamID);
 }
 
@@ -1733,8 +1735,13 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 	const char* pchLoadingSaveGame = SteamMatchmaking()->GetLobbyData(*lobby, "loadingsavegame");
 	assert(pchLoadingSaveGame && pchLoadingSaveGame[0]);
 
+	SaveGameInfo savegameinfo;
+	if (loadingsavegame) {
+		savegameinfo = getSaveGameInfo(false);
+	}
+
 	Uint32 saveGameKey = atoi(pchLoadingSaveGame);      // get the savegame key of the server.
-	Uint32 gameKey = getSaveGameUniqueGameKey(false);   // maybe we were already loading a compatible save.
+	Uint32 gameKey = getSaveGameUniqueGameKey(savegameinfo);   // maybe we were already loading a compatible save.
 	if (saveGameKey && saveGameKey == gameKey) {
 		loadingsavegame = saveGameKey; // save game matches! load game.
 	}
@@ -1743,20 +1750,18 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 	}
 	else {
 		// try reload from your other savefiles since this didn't match the default savegameIndex.
-		if (savegamesList.empty()) {
-			reloadSavegamesList(false);
-		}
 		bool foundSave = false;
-		for (auto it = savegamesList.begin(); it != savegamesList.end(); ++it) {
-			auto entry = *it;
-			savegameCurrentFileIndex = std::get<2>(entry);
-			gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
-			if (std::get<1>(entry) != SINGLE && saveGameKey == gameKey) {
-				foundSave = true;
-				break;
+		for (int c = 0; c < SAVE_GAMES_MAX; ++c) {
+			auto info = getSaveGameInfo(false, c);
+			if (info.game_version != -1) {
+				if (info.gamekey == gameKey) {
+					savegameCurrentFileIndex = c;
+					foundSave = true;
+					break;
+				}
 			}
 		}
-		if (foundSave ) {
+		if (foundSave) {
 			loadingsavegame = saveGameKey;
 		} else {
 			printlog("warning: received invitation to lobby with which you have no compatible save game.\n");
@@ -1766,7 +1771,11 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 
 	if (loadingsavegame) {
 	    auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
-	    loadGame(info.player_num);
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			if (info.players_connected[c]) {
+				loadGame(c, info);
+			}
+		}
 	}
 
 	return true;
@@ -1914,6 +1923,17 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 	}
 	currentLobby = cpp_pCallback_m_ulSteamIDLobby(pCallback); //TODO: More buggery.
 	connectingToLobby = false;
+
+	auto& lobby = *static_cast<CSteamID*>(currentLobby);
+	const char* roomkey = SteamMatchmaking()->GetLobbyData(lobby, "roomkey");
+	if (roomkey) {
+		roomkey_cached = roomkey;
+	}
+
+	const char* svflagsChar = SteamMatchmaking()->GetLobbyData(lobby, "svFlags");
+	if (svflagsChar) {
+		svFlags = atoi(svflagsChar);
+	}
 }
 
 void steam_GameServerPingOnServerResponded(void* steamID)

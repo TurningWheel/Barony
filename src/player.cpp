@@ -547,7 +547,6 @@ void GameController::handleAnalog(int player)
 				e.motion.y = mousey + righty;
 				e.motion.xrel = rightx;
 				e.motion.yrel = righty;
-				e.user.code = 1;
 				SDL_PushEvent(&e);
 			}
 			else
@@ -4911,13 +4910,8 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 	}
 	return 0;
 #else
-	if ( bPlayerUsingKeyboardControl(player) 
-		&& 
-		(!getVirtualMouse(player)->lastMovementFromController 
-			|| (players[player]->shootmode && !gamePaused && !intro)
-			|| gamePaused || intro
-			) 
-		)
+	if ( bPlayerUsingKeyboardControl(player) &&
+		(!getVirtualMouse(player)->lastMovementFromController || (players[player]->shootmode && !gamePaused && !intro) || gamePaused || intro) )
 	{
 		// add controller virtual mouse if applicable, only in shootmode
 		// shootmode has no limits on rotation, but !shootmode is inventory
@@ -4927,22 +4921,22 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 		switch ( input )
 		{
 			case OX:
-				return omousex + ((combineMouseInputs) ? getVirtualMouse(player)->ox : 0);
+				return omousex + (combineMouseInputs ? getVirtualMouse(player)->ox : 0);
 				//return omousex;
 			case OY:
-				return omousey + ((combineMouseInputs) ? getVirtualMouse(player)->oy : 0);
+				return omousey + (combineMouseInputs ? getVirtualMouse(player)->oy : 0);
 				//return omousey;
 			case X:
-				return mousex + ((combineMouseInputs) ? getVirtualMouse(player)->x : 0);
+				return mousex + (combineMouseInputs ? getVirtualMouse(player)->x : 0);
 				//return mousex;
 			case Y:
-				return mousey + ((combineMouseInputs) ? getVirtualMouse(player)->y : 0);
+				return mousey + (combineMouseInputs ? getVirtualMouse(player)->y : 0);
 				//return mousey;
 			case XREL:
-				return mousexrel + ((combineMouseInputs) ? getVirtualMouse(player)->xrel : 0);
+				return mousexrel + (combineMouseInputs ? getVirtualMouse(player)->xrel : 0);
 				//return mousexrel;
 			case YREL:
-				return mouseyrel + ((combineMouseInputs) ? getVirtualMouse(player)->yrel : 0);
+				return mouseyrel + (combineMouseInputs ? getVirtualMouse(player)->yrel : 0);
 				//return mouseyrel;
 			default:
 				return 0;

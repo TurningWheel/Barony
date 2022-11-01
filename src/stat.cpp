@@ -235,17 +235,8 @@ void Stat::clearStats()
 		}
 	}
 
+	freePlayerEquipment();
 	list_FreeAll(&this->inventory);
-	this->helmet = NULL;
-	this->breastplate = NULL;
-	this->gloves = NULL;
-	this->shoes = NULL;
-	this->shield = NULL;
-	this->weapon = NULL;
-	this->cloak = NULL;
-	this->amulet = NULL;
-	this->ring = NULL;
-	this->mask = NULL;
 }
 
 /*-------------------------------------------------------------------------------
