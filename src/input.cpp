@@ -359,456 +359,174 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
     std::string in = input;
 	std::string rootPath = "images/ui/Glyphs/";
 #ifdef NINTENDO
-	if (in == "ButtonA")
-	{
-		return rootPath + "Button_Xbox_DarkA_00.png";
+	if (in == "ButtonA") {
+		return pressed ? rootPath + "Button_Xbox_DarkA_Press_00.png" : rootPath + "Button_Xbox_DarkA_00.png";
     }
-	if (in == "ButtonB")
-	{
-		return rootPath + "Button_Xbox_DarkB_00.png";
+	if (in == "ButtonB") {
+		return pressed ? rootPath + "Button_Xbox_DarkB_Press_00.png" : rootPath + "Button_Xbox_DarkB_00.png";
     }
-	if (in == "ButtonX")
-	{
-		return rootPath + "Button_Xbox_DarkX_00.png";
+	if (in == "ButtonX") {
+		return pressed ? rootPath + "Button_Xbox_DarkX_Press_00.png" : rootPath + "Button_Xbox_DarkX_00.png";
     }
-	if (in == "ButtonY")
-	{
-		return rootPath + "Button_Xbox_DarkY_00.png";
+	if (in == "ButtonY") {
+		return pressed ? rootPath + "Button_Xbox_DarkY_Press_00.png" : rootPath + "Button_Xbox_DarkY_00.png";
     }
-	if (in == "ButtonLeftBumper")
-	{
-		return rootPath + "G_Switch_L00.png";
+	if (in == "ButtonLeftBumper") {
+		return pressed ? rootPath + "G_Switch_L_Press00.png" : rootPath + "G_Switch_L00.png";
     }
-	if (in == "ButtonRightBumper")
-	{
-		return rootPath + "G_Switch_R00.png";
+	if (in == "ButtonRightBumper") {
+		return pressed ? rootPath + "G_Switch_R_Press00.png" : rootPath + "G_Switch_R00.png";
     }
-	if ( in == "ButtonLeftStick" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_L_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_L_00.png";
-		}
+	if ( in == "ButtonLeftStick" ) {
+		return pressed ? rootPath + "Stick_Switch_L_Pressed_00.png" : rootPath + "Stick_Switch_L_00.png";
 	}
-	if ( in == "ButtonRightStick" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_R_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_R_00.png";
-		}
+	if ( in == "ButtonRightStick" ) {
+		return pressed ? rootPath + "Stick_Switch_R_Pressed_00.png" : rootPath + "Stick_Switch_R_00.png";
 	}
-	if (in == "ButtonStart")
-	{
-		return rootPath + "PlusMed00.png";
+	if (in == "ButtonStart") {
+		return pressed ? rootPath + "PlusMed_Press00.png" : rootPath + "PlusMed00.png";
     }
-	if (in == "ButtonBack")
-	{
-		return rootPath + "MinusMed00.png";
+	if (in == "ButtonBack") {
+		return pressed ? rootPath + "MinusMed_Press00.png" : rootPath + "MinusMed00.png";
     }
-	if ( in == "StickLeftX-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_L_Left_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_L_Left_00.png";
-		}
+	if ( in == "StickLeftX-" ) {
+		return pressed ? rootPath + "Stick_Switch_L_Left_Pressed_00.png" : rootPath + "Stick_Switch_L_Left_00.png";
 	}
-	if ( in == "StickLeftX+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_L_Right_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_L_Right_00.png";
-		}
+	if ( in == "StickLeftX+" ) {
+		return pressed ? rootPath + "Stick_Switch_L_Right_Pressed_00.png" : rootPath + "Stick_Switch_L_Right_00.png";
     }
-	if ( in == "StickLeftY-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_L_Up_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_L_Up_00.png";
-		}
+	if ( in == "StickLeftY-" ) {
+		return pressed ? rootPath + "Stick_Switch_L_Up_Pressed_00.png" : rootPath + "Stick_Switch_L_Up_00.png";
 	}
-	if ( in == "StickLeftY+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_L_Down_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_L_Down_00.png";
-		}
+	if ( in == "StickLeftY+" ) {
+		return pressed ? rootPath + "Stick_Switch_L_Down_Pressed_00.png" : rootPath + "Stick_Switch_L_Down_00.png";
 	}
-	if ( in == "StickRightX-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_R_Left_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_R_Left_00.png";
-		}
+	if ( in == "StickRightX-" ) {
+		return pressed ? rootPath + "Stick_Switch_R_Left_Pressed_00.png" : rootPath + "Stick_Switch_R_Left_00.png";
 	}
-	if ( in == "StickRightX+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_R_Right_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_R_Right_00.png";
-		}
-	}
-	if ( in == "StickRightY-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_R_Up_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_R_Up_00.png";
-		}
-	}
-	if ( in == "StickRightY+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Switch_R_Down_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Switch_R_Down_00.png";
-		}
-	}
-	if (in == "LeftTrigger")
-	{
-		return rootPath + "G_Switch_ZL00.png";
-	}
-	if (in == "RightTrigger")
-	{
-		return rootPath + "G_Switch_ZR00.png";
-	}
-	if (in == "DpadY-")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Up_Press00.png";
-		}
+	if ( in == "StickRightX+" ) {
+		return pressed ? rootPath + "Stick_Switch_R_Right_Pressed_00.png" : rootPath + "Stick_Switch_R_Right_00.png";
     }
-	if (in == "DpadX-")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Left_Press00.png";
-		}
+	if ( in == "StickRightY-" ) {
+		return pressed ? rootPath + "Stick_Switch_R_Up_Pressed_00.png" : rootPath + "Stick_Switch_R_Up_00.png";
+	}
+	if ( in == "StickRightY+" ) {
+		return pressed ? rootPath + "Stick_Switch_R_Down_Pressed_00.png" : rootPath + "Stick_Switch_R_Down_00.png";
+	}
+	if (in == "LeftTrigger") {
+		return pressed ? rootPath + "G_Switch_ZL00.png" : rootPath + "G_Switch_ZL_Press00.png";
+	}
+	if (in == "RightTrigger") {
+		return pressed ? rootPath + "G_Switch_ZR00.png" : rootPath + "G_Switch_ZR_Press00.png";
+	}
+	if (in == "DpadY-") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Up_Press00.png";
     }
-	if (in == "DpadY+")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Down_Press00.png";
-		}
+	if (in == "DpadX-") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Left_Press00.png";
     }
-	if (in == "DpadX+")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Right_Press00.png";
-		}
+	if (in == "DpadY+") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Down_Press00.png";
+    }
+	if (in == "DpadX+") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Right_Press00.png";
     }
 #else
-	if (in == "ButtonA")
-	{
-		return rootPath + "Button_Xbox_DarkA_00.png";
+	if (in == "ButtonA") {
+		return pressed ? rootPath + "Button_Xbox_DarkA_Press_00.png" : rootPath + "Button_Xbox_DarkA_00.png";
     }
-	if (in == "ButtonB")
-	{
-		return rootPath + "Button_Xbox_DarkB_00.png";
+	if (in == "ButtonB") {
+		return pressed ? rootPath + "Button_Xbox_DarkB_Press_00.png" : rootPath + "Button_Xbox_DarkB_00.png";
     }
-	if (in == "ButtonX")
-	{
-		return rootPath + "Button_Xbox_DarkX_00.png";
+	if (in == "ButtonX") {
+		return pressed ? rootPath + "Button_Xbox_DarkX_Press_00.png" : rootPath + "Button_Xbox_DarkX_00.png";
     }
-	if (in == "ButtonY")
-	{
-		return rootPath + "Button_Xbox_DarkY_00.png";
+	if (in == "ButtonY") {
+		return pressed ? rootPath + "Button_Xbox_DarkY_Press_00.png" : rootPath + "Button_Xbox_DarkY_00.png";
     }
-	if (in == "ButtonLeftBumper")
-	{
-		return rootPath + "Button_Xbox_LB_00.png";
+	if (in == "ButtonLeftBumper") {
+		return pressed ? rootPath + "Button_Xbox_LB_Press_00.png" : rootPath + "Button_Xbox_LB_00.png";
     }
-	if (in == "ButtonRightBumper")
-	{
-		return rootPath + "Button_Xbox_RB_00.png";
+	if (in == "ButtonRightBumper") {
+		return pressed ? rootPath + "Button_Xbox_RB_Press_00.png" : rootPath + "Button_Xbox_RB_00.png";
     }
-	if (in == "ButtonLeftStick")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_L_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_L_00.png";
-		}
-    }
-	if (in == "ButtonRightStick")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_R_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_R_00.png";
-		}
-    }
-	if (in == "ButtonStart")
-	{
-		return rootPath + "Button_Xbox_Menu_00.png";
-    }
-	if (in == "ButtonBack")
-	{
-		return rootPath + "Button_Xbox_View_00.png";
-    }
-	if ( in == "StickLeftX-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_L_Left_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_L_Left_00.png";
-		}
+	if ( in == "ButtonLeftStick" ) {
+		return pressed ? rootPath + "Stick_Xbox_L_Pressed_00.png" : rootPath + "Stick_Xbox_L_00.png";
 	}
-	if ( in == "StickLeftX+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_L_Right_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_L_Right_00.png";
-		}
+	if ( in == "ButtonRightStick" ) {
+		return pressed ? rootPath + "Stick_Xbox_R_Pressed_00.png" : rootPath + "Stick_Xbox_R_00.png";
+	}
+	if (in == "ButtonStart") {
+		return pressed ? rootPath + "Button_Xbox_Menu_Press_00.png" : rootPath + "Button_Xbox_Menu_00.png";
     }
-	if ( in == "StickLeftY-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_L_Up_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_L_Up_00.png";
-		}
-	}
-	if ( in == "StickLeftY+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_L_Down_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_L_Down_00.png";
-		}
-	}
-	if ( in == "StickRightX-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_R_Left_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_R_Left_00.png";
-		}
-	}
-	if ( in == "StickRightX+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_R_Right_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_R_Right_00.png";
-		}
-	}
-	if ( in == "StickRightY-" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_R_Up_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_R_Up_00.png";
-		}
-	}
-	if ( in == "StickRightY+" )
-	{
-		if ( pressed )
-		{
-			return rootPath + "Stick_Xbox_R_Down_Pressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Stick_Xbox_R_Down_00.png";
-		}
-	}
-	if (in == "LeftTrigger")
-	{
-		return rootPath + "Button_Xbox_LT_00.png";
-	}
-	if (in == "RightTrigger")
-	{
-		return rootPath + "Button_Xbox_RT_00.png";
-	}
-	if (in == "DpadY-")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Up_Press00.png";
-		}
+	if (in == "ButtonBack") {
+		return pressed ? rootPath + "Button_Xbox_View_Press_00.png" : rootPath + "Button_Xbox_View_00.png";
     }
-	if (in == "DpadX-")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Left_Press00.png";
-		}
+	if ( in == "StickLeftX-" ) {
+		return pressed ? rootPath + "Stick_Xbox_L_Left_Pressed_00.png" : rootPath + "Stick_Xbox_L_Left_00.png";
+	}
+	if ( in == "StickLeftX+" ) {
+		return pressed ? rootPath + "Stick_Xbox_L_Right_Pressed_00.png" : rootPath + "Stick_Xbox_L_Right_00.png";
     }
-	if (in == "DpadY+")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Down_Press00.png";
-		}
+	if ( in == "StickLeftY-" ) {
+		return pressed ? rootPath + "Stick_Xbox_L_Up_Pressed_00.png" : rootPath + "Stick_Xbox_L_Up_00.png";
+	}
+	if ( in == "StickLeftY+" ) {
+		return pressed ? rootPath + "Stick_Xbox_L_Down_Pressed_00.png" : rootPath + "Stick_Xbox_L_Down_00.png";
+	}
+	if ( in == "StickRightX-" ) {
+		return pressed ? rootPath + "Stick_Xbox_R_Left_Pressed_00.png" : rootPath + "Stick_Xbox_R_Left_00.png";
+	}
+	if ( in == "StickRightX+" ) {
+		return pressed ? rootPath + "Stick_Xbox_R_Right_Pressed_00.png" : rootPath + "Stick_Xbox_R_Right_00.png";
     }
-	if (in == "DpadX+")
-	{
-		if (pressed)
-		{
-			return rootPath + "G_Direct_00.png";
-		}
-		else
-		{
-			return rootPath + "G_Direct_Right_Press00.png";
-		}
+	if ( in == "StickRightY-" ) {
+		return pressed ? rootPath + "Stick_Xbox_R_Up_Pressed_00.png" : rootPath + "Stick_Xbox_R_Up_00.png";
+	}
+	if ( in == "StickRightY+" ) {
+		return pressed ? rootPath + "Stick_Xbox_R_Down_Pressed_00.png" : rootPath + "Stick_Xbox_R_Down_00.png";
+	}
+	if (in == "LeftTrigger") {
+		return pressed ? rootPath + "Button_Xbox_LT_Press_00.png" : rootPath + "Button_Xbox_LT_00.png";
+	}
+	if (in == "RightTrigger") {
+		return pressed ? rootPath + "Button_Xbox_RT_Press_00.png" : rootPath + "Button_Xbox_RT_00.png";
+	}
+	if (in == "DpadY-") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Up_Press00.png";
+    }
+	if (in == "DpadX-") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Left_Press00.png";
+    }
+	if (in == "DpadY+") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Down_Press00.png";
+    }
+	if (in == "DpadX+") {
+		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Right_Press00.png";
     }
 #endif
-	if (in == "Mouse1")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Mouse/Mouse_LClick_Unpressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
-		}
+
+	// mouse glyphs:
+
+	if (in == "Mouse1") {
+		return pressed ? rootPath + "Mouse/Mouse_LClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
 	}
-	if (in == "Mouse2")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Mouse/Mouse_MClick_Unpressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
-		}
+	if (in == "Mouse2") {
+		return pressed ? rootPath + "Mouse/Mouse_MClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
 	}
-	if (in == "Mouse3")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Mouse/Mouse_RClick_Unpressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
-		}
+	if (in == "Mouse3") {
+		return pressed ? rootPath + "Mouse/Mouse_RClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
 	}
-	if (in == "MouseWheelDown")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
-		}
+	if (in == "MouseWheelDown") {
+		return pressed ? rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png" : rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
 	}
-	if (in == "MouseWheelUp")
-	{
-		if ( pressed )
-		{
-			return rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png";
-		}
-		else
-		{
-			return rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
-		}
+	if (in == "MouseWheelUp") {
+		return pressed ? rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png" : rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
 	}
-	else
-	{
-	    auto scancode = getScancodeFromName(input);
-	    return GlyphHelper.getGlyphPath(scancode, pressed);
-	}
+
+	// if nothing else, its probably a keyboard glyph:
+	auto scancode = getScancodeFromName(input);
+	return GlyphHelper.getGlyphPath(scancode, pressed);
 }
 
 std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) const
@@ -823,326 +541,12 @@ std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) con
 
 std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed)
 {
-	std::string rootPath = "images/ui/Glyphs/";
-	if ( binding.type == binding_t::bindtype_t::CONTROLLER_BUTTON )
-	{
-#ifdef NINTENDO
-		switch ( binding.padButton )
-		{
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "Button_Xbox_DarkB_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-				return rootPath + "Button_Xbox_DarkA_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "Button_Xbox_DarkY_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-				return rootPath + "Button_Xbox_DarkX_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-				return rootPath + "G_Switch_L00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-				return rootPath + "G_Switch_R00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				if ( pressed )
-				{
-					return rootPath + "Stick_Switch_L_Pressed_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_L_00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				if ( pressed )
-				{
-					return rootPath + "Stick_Switch_R_Pressed_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_R_00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
-				return rootPath + "PlusMed00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
-				return rootPath + "MinusMed00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Up_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Left_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Down_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Right_Press00.png";
-				}
-			default:
-				return "";
-		}
-#else
-		switch ( binding.padButton )
-		{
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A:
-				return rootPath + "Button_Xbox_DarkA_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-				return rootPath + "Button_Xbox_DarkB_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-				return rootPath + "Button_Xbox_DarkX_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y:
-				return rootPath + "Button_Xbox_DarkY_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-				return rootPath + "Button_Xbox_LB_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-				return rootPath + "Button_Xbox_RB_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK:
-				if ( pressed )
-				{
-					return rootPath + "Stick_Xbox_L_Pressed_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_L_00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK:
-				if ( pressed )
-				{
-					return rootPath + "Stick_Xbox_R_Pressed_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_R_00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START:
-				return rootPath + "Button_Xbox_Menu_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK:
-				return rootPath + "Button_Xbox_View_00.png";
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Up_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Left_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Down_Press00.png";
-				}
-			case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-				if (pressed)
-				{
-					return rootPath + "G_Direct_00.png";
-				}
-				else
-				{
-					return rootPath + "G_Direct_Right_Press00.png";
-				}
-			default:
-				return "";
-		}
-#endif
+	const auto prefix = binding.input.substr(0, 3);
+	if (prefix == "Pad" || prefix == "Joy") {
+		return getGlyphPathForInput(binding.input.c_str() + 4, pressed);
+	} else {
+		return getGlyphPathForInput(binding.input.c_str(), pressed);
 	}
-	else if ( binding.type == binding_t::bindtype_t::CONTROLLER_AXIS )
-	{
-#ifdef NINTENDO
-		switch ( binding.padAxis )
-		{
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Switch_L_Left_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_L_Right_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Switch_L_Up_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_L_Down_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Switch_R_Left_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_R_Right_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Switch_R_Up_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Switch_R_Down_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-				return rootPath + "G_Switch_ZL00.png";
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-				return rootPath + "G_Switch_ZR00.png";
-			default:
-				return "";
-		}
-#else
-		switch ( binding.padAxis )
-		{
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTX:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Xbox_L_Left_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_L_Right_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_LEFTY:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Xbox_L_Up_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_L_Down_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTX:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Xbox_R_Left_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_R_Right_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_RIGHTY:
-				if ( binding.padAxisNegative )
-				{
-					return rootPath + "Stick_Xbox_R_Up_00.png";
-				}
-				else
-				{
-					return rootPath + "Stick_Xbox_R_Down_00.png";
-				}
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-				return rootPath + "Button_Xbox_LT_00.png";
-			case SDL_GameControllerAxis::SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-				return rootPath + "Button_Xbox_RT_00.png";
-			default:
-				return "";
-		}
-#endif
-	}
-	else if ( binding.type == binding_t::bindtype_t::KEYBOARD )
-	{
-		return GlyphHelper.getGlyphPath(binding.scancode, pressed);
-	}
-	else if ( binding.type == binding_t::bindtype_t::MOUSE_BUTTON )
-	{
-		if ( binding.mouseButton == 1 )
-		{
-			if ( pressed )
-			{
-				return rootPath + "Mouse/Mouse_LClick_Unpressed_00.png";
-			}
-			else
-			{
-				return rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
-			}
-		}
-		else if ( binding.mouseButton == 3 )
-		{
-			if ( pressed )
-			{
-				return rootPath + "Mouse/Mouse_RClick_Unpressed_00.png";
-			}
-			else
-			{
-				return rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
-			}
-		}
-		else if ( binding.mouseButton == 2 )
-		{
-			if ( pressed )
-			{
-				return rootPath + "Mouse/Mouse_MClick_Unpressed_00.png";
-			}
-			else
-			{
-				return rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
-			}
-		}
-		else if ( binding.mouseButton == MOUSE_WHEEL_DOWN )
-		{
-			if ( pressed )
-			{
-				return rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png";
-			}
-			else
-			{
-				return rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
-			}
-		}
-		else if ( binding.mouseButton == MOUSE_WHEEL_UP )
-		{
-			if ( pressed )
-			{
-				return rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png";
-			}
-			else
-			{
-				return rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
-			}
-		}
-		else
-		{
-			return "";
-		}
-	}
-	return "";
 }
 
 void Input::bind(const char* binding, const char* input) {

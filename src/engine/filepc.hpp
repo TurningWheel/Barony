@@ -31,7 +31,7 @@ public:
         const size_t writeSize = size * count;
         (void)data.insert(data.begin() + pos, (const uint8_t*)src, (const uint8_t*)src + writeSize);
         pos += writeSize;
-		return writeSize;
+		return writeSize / size;
 	}
 
 	size_t read(void* buffer, size_t size, size_t count) override
@@ -39,15 +39,15 @@ public:
 		if (0U == FileBase::read(buffer, size, count)) {
 			return 0U;
 		}
-		size_t result = 0U;
+		size_t readSize = 0U;
 		size_t end = std::min(this->size(), pos + size * count);
 		uint8_t* buf = (uint8_t*)buffer;
 		for (size_t c = pos; c < end; ++c) {
 			*buf = data[c]; ++buf;
-			++result;
+			++readSize;
 		}
-		pos += result;
-		return result;
+		pos += readSize;
+		return readSize / size;
 	}
 
 	size_t size()

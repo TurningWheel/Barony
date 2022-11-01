@@ -2155,7 +2155,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 	if ( !bPlayerBars && titleFrame && hud_t.allyFollowerGlyphFrame && !hud_t.allyFollowerGlyphFrame->isDisabled() )
 	{
-		static ConsoleVariable<int> followerMenuCommandGlyphX("/followermenu_cmd_glyph_x", -116);
+		static ConsoleVariable<int> followerMenuCommandGlyphX("/followermenu_cmd_glyph_x", -96);
 		static ConsoleVariable<int> followerMenuCommandGlyphY("/followermenu_cmd_glyph_y", 0);
 		static ConsoleVariable<int> followerMenuRepeatGlyphX("/followermenu_repeat_glyph_x", 0);
 		static ConsoleVariable<int> followerMenuRepeatGlyphY("/followermenu_repeat_glyph_y", 0);
@@ -2163,6 +2163,10 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		auto glyphFrame = hud_t.allyFollowerGlyphFrame;
 		SDL_Rect glyphFramePos{ baseFrame->getSize().x, titleFrame->getSize().y, 150, 80 };
 		glyphFramePos.x += *followerMenuCommandGlyphX;
+		if ( !titleSelectorGlyph->disabled )
+		{
+			glyphFramePos.x -= titleSelectorGlyph->pos.w;
+		}
 		glyphFramePos.y += *followerMenuCommandGlyphY;
 		glyphFrame->setSize(glyphFramePos);
 
@@ -2181,15 +2185,21 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			commandImg->pos.h = imgGet->getHeight();
 			commandImg->pos.x = glyphFramePos.w - commandImg->pos.w;
 			commandImg->pos.y = 0;
-		}
-		commandGlyph->path = Input::inputs[player].getGlyphPathForBinding("Show NPC Commands");
-		if ( auto imgGet = Image::get(commandGlyph->path.c_str()) )
-		{
-			commandGlyph->disabled = commandImg->disabled || followerDisplay.bOpenFollowerMenuDisabled;
-			commandGlyph->pos.w = imgGet->getWidth();
-			commandGlyph->pos.h = imgGet->getHeight();
-			commandGlyph->pos.x = commandImg->pos.x - commandGlyph->pos.w;
-			commandGlyph->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - commandGlyph->pos.h / 2;
+
+			commandGlyph->path = Input::inputs[player].getGlyphPathForBinding("Show NPC Commands");
+			if ( auto imgGet = Image::get(commandGlyph->path.c_str()) )
+			{
+				commandGlyph->disabled = commandImg->disabled || followerDisplay.bOpenFollowerMenuDisabled;
+				commandGlyph->pos.w = imgGet->getWidth();
+				commandGlyph->pos.h = imgGet->getHeight();
+				commandGlyph->pos.x = commandImg->pos.x - commandGlyph->pos.w;
+				commandGlyph->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - commandGlyph->pos.h / 2;
+			}
+			else
+			{
+				commandImg->disabled = true;
+				commandGlyph->disabled = true;
+			}
 		}
 
 		if ( FollowerMenu[player].optionPrevious == -1 )
@@ -2204,7 +2214,14 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				repeatImg->disabled = false;
 				repeatImg->pos.w = imgGet->getWidth();
 				repeatImg->pos.h = imgGet->getHeight();
-				repeatImg->pos.x = commandGlyph->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				if ( commandImg->disabled )
+				{
+					repeatImg->pos.x = commandImg->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				}
+				else
+				{
+					repeatImg->pos.x = commandGlyph->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				}
 				repeatImg->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - repeatImg->pos.h / 2 + *followerMenuRepeatGlyphY;
 			}
 			repeatGlyph->path = Input::inputs[player].getGlyphPathForBinding("Command NPC");
@@ -2215,6 +2232,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				repeatGlyph->pos.h = imgGet->getHeight();
 				repeatGlyph->pos.x = repeatImg->pos.x - repeatGlyph->pos.w;
 				repeatGlyph->pos.y = repeatImg->pos.y + repeatImg->pos.h / 2 - repeatGlyph->pos.h / 2;
+			}
+			else
+			{
+				repeatImg->disabled = true;
+				repeatGlyph->disabled = true;
 			}
 		}
 	}
@@ -7099,10 +7121,44 @@ void createGameTimerFrame(const int player)
 	auto txt = hud_t.gameTimerFrame->addField("timer txt", 64);
 	txt->setText("00:00:00");
 	txt->setSize(SDL_Rect{ 0, 0, hud_t.gameTimerFrame->getSize().w, hud_t.gameTimerFrame->getSize().h });
-	txt->setFont("fonts/pixel_maz.ttf#32#2");
+	txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
 	txt->setVJustify(Field::justify_t::TOP);
 	txt->setHJustify(Field::justify_t::LEFT);
 	txt->setColor(makeColor(255, 255, 255, 255));
+
+	auto seed = hud_t.gameTimerFrame->addField("seed txt", 64);
+	seed->setText("");
+	seed->setSize(SDL_Rect{ 0, 0, hud_t.gameTimerFrame->getSize().w, hud_t.gameTimerFrame->getSize().h });
+	seed->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+	seed->setVJustify(Field::justify_t::TOP);
+	seed->setHJustify(Field::justify_t::RIGHT);
+	seed->setColor(makeColor(255, 255, 255, 255));
+	seed->setDisabled(true);
+}
+
+void createMapPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.mapPromptFrame = hud_t.hudFrame->addFrame("map prompts");
+	hud_t.mapPromptFrame->setHollow(true);
+	hud_t.mapPromptFrame->setDisabled(true);
+	hud_t.mapPromptFrame->setSize(SDL_Rect{ 0, 0, 142, 24 });
+
+	auto promptBg = hud_t.mapPromptFrame->addImage(SDL_Rect{ 0, 0, 280, 40 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_MapPromptBase_00.png", "prompt bg");
+
+	auto imgPromptFrame = hud_t.mapPromptFrame->addFrame("img prompt frame");
+	imgPromptFrame->setHollow(true);
+
+	auto scaleImg = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_Map_Zoom_00.png", "scale img");
+	auto scalePrompt = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/system/white.png", "scale prompt");
+
+	auto expandImg = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_Map_Scale_00.png", "expand img");
+	auto expandPrompt = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/system/white.png", "expand prompt");
 }
 
 static void checkControllerState(int player) {
@@ -7263,15 +7319,23 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
-	if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+	static ConsoleVariable<bool> cvar_disable_controller_reconnect("/disable_controller_reconnect", false);
+	if ( !*cvar_disable_controller_reconnect )
 	{
-		checkControllerState(player.playernum);
+		if ( MainMenu::isPlayerSignedIn(player.playernum) && players[player.playernum]->isLocalPlayer() )
+		{
+			checkControllerState(player.playernum);
+		}
 	}
 
-    if ( !minimapFrame )
+    if ( !this->minimapFrame )
     {
-        minimapFrame = createMinimap(player.playernum);
+		this->minimapFrame = createMinimap(player.playernum);
     }
+	if ( !mapPromptFrame )
+	{
+		createMapPromptFrame(player.playernum);
+	}
 	if ( !gameTimerFrame )
 	{
 		createGameTimerFrame(player.playernum);
@@ -7309,6 +7373,7 @@ void Player::HUD_t::processHUD()
 		createAllyPlayerFrame(player.playernum);
 	}
 
+	updateMinimapPrompts();
 	updateGameTimer();
 	updateAllyFollowerFrame(player.playernum);
 	updateAllyPlayerFrame(player.playernum);
@@ -7506,6 +7571,7 @@ void doSharedMinimap() {
 		minimapFrame = gui->addFrame("shared_minimap");
 		minimapFrame->setColor(0);
 		minimapFrame->setHollow(true);
+		minimapFrame->setInvisible(true);
 		minimapFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect){
             drawMinimap(widget.getOwner(), rect);
             });
@@ -7589,13 +7655,18 @@ static Frame* createMinimap(int player) {
 
         auto& scale_ang = minimap.scale_ang;
         auto& scale = minimap.scale;
-        if (minimap.big) {
+		minimap.animating = true;
+		if (minimap.big) {
             if (scale_ang < PI / 2.0) {
                 scale_ang += (PI / fpsLimit) * 2.0;
                 if (scale_ang > PI / 2.0) {
                     scale_ang = PI / 2.0;
                 }
             }
+			if ( scale_ang >= PI / 2.0 )
+			{
+				minimap.animating = false;
+			}
         } else {
             if (scale_ang > 0.0) {
                 scale_ang -= (PI / fpsLimit) * 2.0;
@@ -7603,6 +7674,10 @@ static Frame* createMinimap(int player) {
                     scale_ang = 0.0;
                 }
             }
+			if ( scale_ang <= 0.0 )
+			{
+				minimap.animating = false;
+			}
         }
 
         real_t factor0 = 1.0 - sin(scale_ang);
@@ -7620,13 +7695,25 @@ static Frame* createMinimap(int player) {
 
         Frame* parent = players[player]->hud.hudFrame;
 
+		int mapHeightOffset = 0;
+		if ( players[player]->hud.mapPromptFrame && !players[player]->hud.mapPromptFrame->isDisabled() )
+		{
+			mapHeightOffset = players[player]->hud.mapPromptFrame->getSize().h;
+		}
+		else if ( players[player]->hud.gameTimerFrame && !players[player]->hud.gameTimerFrame->isDisabled() )
+		{
+			mapHeightOffset = players[player]->hud.gameTimerFrame->getSize().h;
+		}
+
         int x = factor0 * (parent->getSize().w - scale * 4) +
             factor1 * (parent->getSize().w - scale * 4) / 2;
-        int y = factor0 * (parent->getSize().h - scale * 4) +
+        int y = factor0 * (parent->getSize().h - scale * 4 - mapHeightOffset) +
             factor1 * (parent->getSize().h - scale * 4) / 2;
 
         auto frame = static_cast<Frame*>(&widget);
         frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+		players[player]->minimap.minimapPos.x = x;
+		players[player]->minimap.minimapPos.y = y;
 		if ( frame->isInvisible() )
 		{
 			frame->setHollow(true);
@@ -10156,7 +10243,7 @@ void Player::GUIDropdown_t::process()
 	{
 		frameSize.x -= frameSize.w;
 	}
-	if ( frameSize.y + frameSize.h > player.camera_virtualHeight() )
+	if ( frameSize.y + frameSize.h > player.camera_virtualy2() )
 	{
 		frameSize.y -= (frameSize.y + frameSize.h) - player.camera_virtualy2();
 	}
@@ -15570,12 +15657,28 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	int player = slotFrame->getOwner();
 
+	bool hiddenItemInGUI = false;
+	if ( item->itemSpecialShopConsumable )
+	{
+		if ( stats[player]->PROFICIENCIES[PRO_TRADING] + statGetCHR(stats[player], players[player]->entity) < (((int)item->itemRequireTradingSkillInShop) * SHOP_CONSUMABLE_SKILL_REQ_PER_POINT) )
+		{
+			hiddenItemInGUI = true;
+		}
+	}
+
 	slotFrame->setDisabled(false);
 
 	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->findImage("item sprite img");
 
-	spriteImage->path = getItemSpritePath(player, *item);
+	if ( hiddenItemInGUI )
+	{
+		spriteImage->path = ("*#images/system/unknownitem.png");
+	}
+	else
+	{
+		spriteImage->path = getItemSpritePath(player, *item);
+	}
 	bool disableBackgrounds = false;
 	if ( !strcmp(slotFrame->getName(), "dragging inventory item") ) // dragging item, no need for colors
 	{
@@ -15646,7 +15749,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
-				iconLabelImg->disabled = !item->identified;
+				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
 			}
 			iconLabelImg->color = spriteImage->color;
 			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
@@ -15850,7 +15953,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
 	{
-		bool greyedOut = forceUnusable;
+		bool greyedOut = forceUnusable || hiddenItemInGUI;
 		unusableFrame->setDisabled(true);
 
 		if ( (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
@@ -16011,11 +16114,23 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	char name[32];
+	snprintf(name, sizeof(name), "player tooltip container %d", player);
+	if ( !players[player]->inventoryUI.tooltipContainerFrame )
+	{
+		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
+		players[player]->inventoryUI.tooltipContainerFrame->setSize(
+			SDL_Rect{ players[player]->camera_virtualx1(),
+			players[player]->camera_virtualy1(), 
+			players[player]->camera_virtualWidth(),
+			players[player]->camera_virtualHeight() });
+		players[player]->inventoryUI.tooltipContainerFrame->setHollow(true);
+		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
+		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
+	}
 	snprintf(name, sizeof(name), "player tooltip %d", player);
-
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
-		players[player]->inventoryUI.tooltipFrame = gameUIFrame[player]->addFrame(name);
+		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 		tooltipFrame->setHollow(true);
@@ -16476,7 +16591,7 @@ void createInventoryTooltipFrame(const int player)
 	}
 
 	snprintf(name, sizeof(name), "player item prompt %d", player);
-	if ( auto promptFrame = gameUIFrame[player]->addFrame(name) )
+	if ( auto promptFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name) )
 	{
 		players[player]->inventoryUI.tooltipPromptFrame = promptFrame;
 		const int interactWidth = 0;
@@ -17737,6 +17852,18 @@ void loadHUDSettingsJSON()
 							{
 								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC;
 							}
+							else if ( type == "follower_cmd" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD;
+							}
+							else if ( type == "broadcast" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST;
+							}
+							else if ( type == "attack" )
+							{
+								dialogueType = Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK;
+							}
 							else
 							{
 								continue;
@@ -18669,14 +18796,9 @@ void createShopGUI(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Shop/Shop_Window_03C.png", "shop base img");
-		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214},
+		auto bgGrid = bgFrame->addImage(SDL_Rect{ 12, 18, 206, 214 },
 			makeColor(255, 255, 255, 64),
 			"*#images/ui/Shop/Shop_ItemSlots_Areas03.png", "shop grid img");
-
-		auto bottomEdgeCover = bgFrame->addImage(SDL_Rect{ 0, basePos.h - 10, 316, 10 },
-			makeColor(255, 255, 255, 255),
-			"*#images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
-		bottomEdgeCover->ontop = true;
 
 		const char* font = "fonts/pixel_maz_multiline.ttf#16#2";
 		Uint32 titleColor = makeColor(219, 157, 20, 255);
@@ -18721,62 +18843,6 @@ void createShopGUI(const int player)
 		closeBtn->setCallback([](Button& button) {
 			closeShopGUIAction(button.getOwner());
 		});
-
-		auto buyTooltipFrame = bgFrame->addFrame("buy tooltip frame");
-		buyTooltipFrame->setHollow(true);
-		buyTooltipFrame->setBorder(0);
-		buyTooltipFrame->setSize(SDL_Rect{ 4, basePos.h - 66, 310, 66 });
-		buyTooltipFrame->setDisabled(true);
-
-		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
-			"*#images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
-
-		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
-			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
-
-		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
-			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
-
-		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
-			"", "orb img");
-		orbImg->disabled = true;
-
-		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
-		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
-		slotFrame->setSize(slotPos);
-		slotFrame->setDisabled(true);
-		createPlayerInventorySlotFrameElements(slotFrame);
-
-		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
-		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
-		itemNameText->setFont(itemFont);
-		itemNameText->setText("");
-		itemNameText->setHJustify(Field::justify_t::LEFT);
-		itemNameText->setVJustify(Field::justify_t::TOP);
-		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemNameText->setColor(makeColor(201, 162, 100, 255));
-		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
-		itemValueText->setFont(itemFont);
-		itemValueText->setText("");
-		itemValueText->setHJustify(Field::justify_t::LEFT);
-		itemValueText->setVJustify(Field::justify_t::TOP);
-		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		itemValueText->setColor(makeColor(201, 162, 100, 255));
-
-		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
-		buyPromptText->setFont(itemFont);
-		buyPromptText->setText("");
-		buyPromptText->setHJustify(Field::justify_t::LEFT);
-		buyPromptText->setVJustify(Field::justify_t::TOP);
-		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
-		buyPromptText->setColor(makeColor(255, 255, 255, 255));
-		auto buyPromptFrame = buyTooltipFrame->addFrame("buy prompt frame");
-		buyPromptFrame->setHollow(true);
-		buyPromptFrame->setBorder(0);
-		buyPromptFrame->setSize(SDL_Rect{0, 0, 0, 0});
-		buyPromptFrame->setDisabled(true);
-		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
-			"", "buy prompt glyph");
 
 		auto discountFrame = bgFrame->addFrame("discount frame");
 		discountFrame->setHollow(true);
@@ -18968,6 +19034,74 @@ void createShopGUI(const int player)
 				accumulateSlotOffsetX += 4;
 			}
 		}
+	}
+
+	{
+		auto buyTooltipFrame = frame->addFrame("buy tooltip frame");
+		buyTooltipFrame->setHollow(true);
+		buyTooltipFrame->setBorder(0);
+		buyTooltipFrame->setSize(SDL_Rect{ 4, basePos.h - 66, 310, 66 });
+		buyTooltipFrame->setDisabled(true);
+
+		auto itemTooltipImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 310, 66 }, 0xFFFFFFFF,
+			"*#images/ui/Shop/Shop_Tooltip_2Row_00.png", "tooltip img");
+
+		auto itemGoldImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 20, 28 }, 0xFFFFFFFF,
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png", "gold img");
+
+		auto itemBgImg = buyTooltipFrame->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
+			"*images/ui/Shop/Shop_Buy_BGSurround03.png", "item bg img");
+
+		auto orbImg = buyTooltipFrame->addImage(SDL_Rect{ 210 - 8, 38, 16, 16 }, 0xFFFFFFFF,
+			"", "orb img");
+		orbImg->disabled = true;
+
+		auto slotFrame = buyTooltipFrame->addFrame("item slot frame");
+		SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+		slotFrame->setSize(slotPos);
+		slotFrame->setDisabled(true);
+		createPlayerInventorySlotFrameElements(slotFrame);
+
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemNameText = buyTooltipFrame->addField("item display name", 1024);
+		itemNameText->setFont(itemFont);
+		itemNameText->setText("");
+		itemNameText->setHJustify(Field::justify_t::LEFT);
+		itemNameText->setVJustify(Field::justify_t::TOP);
+		itemNameText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemNameText->setColor(hudColors.characterSheetLightNeutral);
+		auto itemValueText = buyTooltipFrame->addField("item display value", 1024);
+		itemValueText->setFont(itemFont);
+		itemValueText->setText("");
+		itemValueText->setHJustify(Field::justify_t::LEFT);
+		itemValueText->setVJustify(Field::justify_t::TOP);
+		itemValueText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		itemValueText->setColor(makeColor(201, 162, 100, 255));
+
+		auto buyPromptText = buyTooltipFrame->addField("buy prompt txt", 128);
+		buyPromptText->setFont(itemFont);
+		buyPromptText->setText("");
+		buyPromptText->setHJustify(Field::justify_t::LEFT);
+		buyPromptText->setVJustify(Field::justify_t::TOP);
+		buyPromptText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		buyPromptText->setColor(makeColor(255, 255, 255, 255));
+		auto buyPromptFrame = buyTooltipFrame->addFrame("buy prompt frame");
+		buyPromptFrame->setHollow(true);
+		buyPromptFrame->setBorder(0);
+		buyPromptFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		buyPromptFrame->setDisabled(true);
+		auto buyPromptGlyph = buyPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+			"", "buy prompt glyph");
+	}
+
+	if ( auto buttomEdgeCoverFrame = frame->addFrame("shop bottom edge frame") )
+	{
+		buttomEdgeCoverFrame->setSize(SDL_Rect{ 0, basePos.h - 10, basePos.w, 10 });
+		buttomEdgeCoverFrame->setHollow(true);
+		buttomEdgeCoverFrame->setBorder(0);
+		auto bottomEdgeCover = buttomEdgeCoverFrame->addImage(SDL_Rect{ 0, 0, basePos.w, 10 },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/Shop/Shop_BottomEdgeCover_00.png", "shop bottom edge img");
 	}
 }
 
@@ -19549,6 +19683,17 @@ void Player::Inventory_t::updateItemContextMenu()
 			else
 			{
 				alignRight = true;
+			}
+		}
+		else if ( isItemFromChest(item) )
+		{
+			if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				alignRight = true;
+			}
+			else
+			{
+				alignRight = false;
 			}
 		}
 		else
@@ -21203,6 +21348,210 @@ void Player::HUD_t::resetBars()
 	}
 }
 
+void Player::HUD_t::updateMinimapPrompts()
+{
+	if ( !mapPromptFrame )
+	{
+		return;
+	}
+
+	if ( /*(!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
+		||*/ 
+		(::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
+		|| gamePaused 
+		|| player.bUseCompactGUIHeight()
+		|| !this->minimapFrame 
+		|| (this->minimapFrame && this->minimapFrame->isInvisible()) )
+	{
+		mapPromptFrame->setDisabled(true);
+		return;
+	}
+
+	int maxHeight1 = 0;
+	int maxHeight2 = 0;
+	auto imgPromptFrame = mapPromptFrame->findFrame("img prompt frame");
+	auto scalePrompt = imgPromptFrame->findImage("scale prompt");
+	scalePrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Minimap Scale");
+	scalePrompt->disabled = true;
+	if ( auto imgGet = Image::get(scalePrompt->path.c_str()) )
+	{
+		scalePrompt->pos.w = imgGet->getWidth();
+		scalePrompt->pos.h = imgGet->getHeight();
+		maxHeight1 = std::max(maxHeight1, scalePrompt->pos.h);
+		scalePrompt->disabled = false;
+	}
+	auto scaleImg = imgPromptFrame->findImage("scale img");
+	scaleImg->disabled = true;
+	if ( !scalePrompt->disabled )
+	{
+		if ( auto imgGet = Image::get(scaleImg->path.c_str()) )
+		{
+			scaleImg->pos.w = imgGet->getWidth();
+			scaleImg->pos.h = imgGet->getHeight();
+			maxHeight1 = std::max(maxHeight1, scaleImg->pos.h);
+			scaleImg->disabled = false;
+		}
+	}
+	auto expandPrompt = imgPromptFrame->findImage("expand prompt");
+	expandPrompt->disabled = true;
+	expandPrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Toggle Minimap");
+	if ( auto imgGet = Image::get(expandPrompt->path.c_str()) )
+	{
+		expandPrompt->pos.w = imgGet->getWidth();
+		expandPrompt->pos.h = imgGet->getHeight();
+		maxHeight2 = std::max(maxHeight2, expandPrompt->pos.h);
+		expandPrompt->disabled = false;
+	}
+	auto expandImg = imgPromptFrame->findImage("expand img");
+	expandImg->disabled = true;
+	if ( !expandPrompt->disabled )
+	{
+		if ( auto imgGet = Image::get(expandImg->path.c_str()) )
+		{
+			expandImg->pos.w = imgGet->getWidth();
+			expandImg->pos.h = imgGet->getHeight();
+			maxHeight2 = std::max(maxHeight2, expandImg->pos.h);
+			expandImg->disabled = false;
+		}
+	}
+	std::vector<Frame::image_t*> imgs;
+	if ( !expandPrompt->disabled )
+	{
+		imgs.push_back(expandPrompt);
+		imgs.push_back(expandImg);
+	}
+	if ( !scalePrompt->disabled )
+	{
+		imgs.push_back(scalePrompt);
+		imgs.push_back(scaleImg);
+	}
+	if ( imgs.empty() )
+	{
+		mapPromptFrame->setDisabled(true);
+		return;
+	}
+
+	bool alignHorizontal = true;
+	int imgX = -2;
+	int index = -1;
+	int lowestY = 0;
+	int rightX = 0;
+
+	for ( auto img : imgs )
+	{
+		++index;
+		if ( img->disabled ) 
+		{
+			continue;
+		}
+		if ( alignHorizontal )
+		{
+			imgX += 2;
+			if ( index == 2 )
+			{
+				imgX += 2;
+			}
+			img->pos.x = imgX;
+			img->pos.y = (std::max(maxHeight1, maxHeight2) / 2) - img->pos.h / 2;
+			if ( img->pos.y % 2 == 1 )
+			{
+				++img->pos.y;
+			}
+			imgX += (img->pos.w);
+			lowestY = std::max(lowestY, img->pos.y + img->pos.h);
+			rightX = std::max(rightX, img->pos.x + img->pos.h);
+		}
+		else
+		{
+			imgX += 2;
+			if ( index == 2 )
+			{
+				imgX = 0;
+			}
+			img->pos.x = imgX;
+			if ( img == scaleImg || img == scalePrompt )
+			{
+				img->pos.y = (maxHeight1 / 2) - img->pos.h / 2;
+			}
+			else
+			{
+				img->pos.y = maxHeight1 + 2 + (maxHeight2 / 2) - img->pos.h / 2;
+			}
+			if ( img->pos.y % 2 == 1 )
+			{
+				++img->pos.y;
+			}
+			imgX += (img->pos.w);
+			lowestY = std::max(lowestY, img->pos.y + img->pos.h);
+			rightX = std::max(rightX, img->pos.x + img->pos.h);
+		}
+	}
+
+	mapPromptFrame->setDisabled(false);
+
+	auto promptBg = mapPromptFrame->findImage("prompt bg");
+	promptBg->disabled = true;
+
+	SDL_Rect pos = mapPromptFrame->getSize();
+	if ( hudFrame )
+	{
+		if ( alignHorizontal )
+		{
+			if ( auto imgGet = Image::get(promptBg->path.c_str()) )
+			{
+				if ( imgs.size() > 2 )
+				{
+					promptBg->path = "*#images/ui/MapAndLog/HUD_MapPromptBase_00.png";
+				}
+				else
+				{
+					promptBg->path = "*#images/ui/MapAndLog/HUD_MapPromptBase_Short_00.png";
+				}
+				promptBg->disabled = false;
+				promptBg->pos.w = imgGet->getWidth();
+				promptBg->pos.h = imgGet->getHeight();
+				pos.w = promptBg->pos.w;
+				pos.h = std::max(promptBg->pos.h, lowestY);
+				
+				SDL_Rect imgPromptFramePos = imgPromptFrame->getSize();
+				imgPromptFramePos.w = rightX;
+				imgPromptFramePos.h = lowestY;
+				imgPromptFramePos.x = pos.w / 2 - imgPromptFramePos.w / 2;
+				if ( imgPromptFramePos.x % 2 == 1 )
+				{
+					++imgPromptFramePos.x;
+				}
+				imgPromptFramePos.y = (pos.h / 2) - imgPromptFramePos.h / 2;
+				if ( imgPromptFramePos.y % 2 == 1 )
+				{
+					++imgPromptFramePos.y;
+				}
+				imgPromptFrame->setSize(imgPromptFramePos);
+			}
+			pos.x = hudFrame->getSize().w - pos.w;
+			pos.y = hudFrame->getSize().h - pos.h;
+		}
+		else
+		{
+
+			SDL_Rect imgPromptFramePos = imgPromptFrame->getSize();
+			imgPromptFramePos.x = 0;
+			imgPromptFramePos.y = 0;
+			imgPromptFramePos.w = rightX + 8;
+			imgPromptFramePos.h = lowestY;
+			imgPromptFrame->setSize(imgPromptFramePos);
+
+			pos.w = imgPromptFramePos.w;
+			pos.h = imgPromptFramePos.h;
+			pos.x = hudFrame->getSize().w - pos.w;
+			pos.y = hudFrame->getSize().h - player.minimap.minimapPos.h - pos.h;
+		}
+	}
+	mapPromptFrame->setSize(pos);
+}
+
+static ConsoleVariable<bool> cvar_showmapseed("/showmapseed", false);
+
 void Player::HUD_t::updateGameTimer()
 {
 	if ( !gameTimerFrame )
@@ -21218,15 +21567,44 @@ void Player::HUD_t::updateGameTimer()
 
 	gameTimerFrame->setDisabled(false);
 	SDL_Rect pos = gameTimerFrame->getSize();
-	pos.x = hudFrame->getSize().w - pos.w - 8 + 76;
-	pos.y = 4;
+	pos.x = hudFrame->getSize().w - pos.w - 6;
+
 	Field* timerText = gameTimerFrame->findField("timer txt");
+	SDL_Rect timerTextPos = timerText->getSize();
+	timerTextPos.x = 72;
+	timerTextPos.y = 1;
+	timerText->setSize(timerTextPos);
 	
 	char buf[64] = "";
 	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
 	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 	Uint32 hour = (((completionTime / TICKS_PER_SECOND) / 60) / 60) % 24;
 	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
+
+	auto seed = gameTimerFrame->findField("seed txt");
+	seed->setDisabled(true);
+	if ( *cvar_showmapseed )
+	{
+		seed->setDisabled(false);
+		pos.h = 44;
+		char seedbuf[32];
+		snprintf(seedbuf, sizeof(seedbuf), "%lu", mapseed);
+		seed->setSize(SDL_Rect{ 0, 21, pos.w, 24 });
+		seed->setText(seedbuf);
+	}
+	else
+	{
+		pos.h = 24;
+	}
+
+	pos.y = gameTimerFrame->getParent()->getSize().h - pos.h;
+
+	if ( player.hud.mapPromptFrame && !player.hud.mapPromptFrame->isDisabled() )
+	{
+		SDL_Rect mapPromptPos = player.hud.mapPromptFrame->getSize();
+		pos.y = mapPromptPos.y + mapPromptPos.h / 2 - pos.h / 2;
+		pos.x = mapPromptPos.x - pos.w - 4;
+	}
 
 	if ( day > 0 )
 	{
@@ -21237,6 +21615,7 @@ void Player::HUD_t::updateGameTimer()
 	{
 		snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hour, min, sec);
 	}
+
 	gameTimerFrame->setSize(pos);
 	timerText->setText(buf);
 }
@@ -27783,6 +28162,16 @@ void Player::HUD_t::updateMinotaurWarning()
 	{
 		minimapPos.x = minotaurFrame->getSize().w - player.minimap.minimapPos.w;
 		minimapPos.y = minotaurFrame->getSize().h - player.minimap.minimapPos.h;
+		int mapHeightOffset = 0;
+		if ( player.hud.mapPromptFrame && !player.hud.mapPromptFrame->isDisabled() )
+		{
+			mapHeightOffset = player.hud.mapPromptFrame->getSize().h;
+		}
+		else if ( player.hud.gameTimerFrame && !player.hud.gameTimerFrame->isDisabled() )
+		{
+			mapHeightOffset = player.hud.gameTimerFrame->getSize().h;
+		}
+		minimapPos.y -= mapHeightOffset;
 	}
 	minimapPos.w = player.minimap.minimapPos.w;
 	minimapPos.h = player.minimap.minimapPos.h;
@@ -28650,7 +29039,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	return itemWorldTooltipSurface;
 }
 
-void Player::WorldUI_t::WorldTooltipDialogue_t::deactivate()
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::deactivate()
 {
 	parent = 0;
 	x = 0.0;
@@ -28677,44 +29066,84 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::deactivate()
 
 void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 {
+	playerDialogue.update();
+	for ( auto& d : sharedDialogues )
+	{
+		d.second.update();
+	}
+	for ( auto it = sharedDialogues.cbegin(); it != sharedDialogues.cend(); )
+	{
+		if ( !it->second.active && it->second.alpha <= 0.0
+			&& (ticks - it->second.spawnTick >= it->second.expiryTicks) )
+		{
+			it = sharedDialogues.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
+{
 	if ( !init )
 	{
 		return;
 	}
-
-	if ( !players[player.playernum]->entity || client_disconnected[player.playernum] )
+	if ( player == -1 )
+	{
+		deactivate();
+		return;
+	}
+	bool singleDisplayDialogue = (this == &players[player]->worldUI.worldTooltipDialogue.playerDialogue);
+	if ( client_disconnected[player] )
 	{
 		active = false;
 	}
 
 	Entity* parentEnt = uidToEntity(parent);
+	bool expired = false;
 	if ( !parentEnt )
 	{
 		active = false;
+		expired = true;
 	}
 	else if ( ticks - spawnTick >= expiryTicks )
 	{
 		active = false;
+		expired = true;
 	}
 
 
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
-	if ( active && parentEnt && setting.followEntity )
+	if ( parentEnt && setting.followEntity )
 	{
-		x = parentEnt->x;
-		y = parentEnt->y;
-		z = parentEnt->z + setting.offsetZ;
+		/*if ( parentEnt->bUseRenderInterpolation )
+		{
+			x = parentEnt->lerpRenderState.x.position * 16.0;
+			y = parentEnt->lerpRenderState.y.position * 16.0;
+			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+		}
+		else*/
+		{
+			x = parentEnt->x;
+			y = parentEnt->y;
+			z = parentEnt->z + setting.offsetZ;
+		}
 	}
 
 	real_t dx, dy;
-	if ( players[player.playernum]->entity )
+	auto& camera = cameras[player];
+	dx = x - camera.x * 16.0;
+	dy = y - camera.y * 16.0;
+	if ( dx * dx + dy * dy > setting.fadeDist * setting.fadeDist )
 	{
-		dx = x - players[player.playernum]->entity->x;
-		dy = y - players[player.playernum]->entity->y;
-		if ( dx * dx + dy * dy > setting.fadeDist * setting.fadeDist )
-		{
-			active = false;
-		}
+		active = false;
+	}
+	else if ( !singleDisplayDialogue && !expired )
+	{
+		active = true;
 	}
 
 	if ( ticks != updatedThisTick )
@@ -28732,7 +29161,10 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 			animZ = std::min(1.5, animZ);
 			if ( alpha <= 0.0 )
 			{
-				deactivate();
+				if ( expired || singleDisplayDialogue )
+				{
+					deactivate();
+				}
 				return;
 			}
 		}
@@ -28779,6 +29211,10 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 	{
 		if ( player.playernum != clientnum )
 		{
+			if ( client_disconnected[player.playernum] )
+			{
+				return;
+			}
 			char buf[1024] = { 0 };
 
 			va_list argptr;
@@ -28798,16 +29234,30 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 		}
 	}
 
-	Uint32 oldUid = parent;
-	real_t oldAlpha = alpha;
-	real_t oldAnimZ = animZ;
-	deactivate();
+	Dialogue_t* d = &playerDialogue;
+	if ( !(type == DIALOGUE_GRAVE || type == DIALOGUE_SIGNPOST
+		|| type == DIALOGUE_NPC) )
+	{
+		if ( type == DIALOGUE_ATTACK && (sharedDialogues.find(uid) != sharedDialogues.end()) )
+		{
+			if ( sharedDialogues[uid].dialogueType == DIALOGUE_ATTACK )
+			{
+				return; // don't process combat taunts unless previous finished
+			}
+		}
+		d = &sharedDialogues[uid];
+	}
+	d->player = player.playernum;
+	Uint32 oldUid = d->parent;
+	real_t oldAlpha = d->alpha;
+	real_t oldAnimZ = d->animZ;
+	d->deactivate();
 	Entity* parentEnt = uidToEntity(uid);
 	if ( !parentEnt )
 	{
 		return;
 	}
-	parent = uid;
+	d->parent = uid;
 
 	char buf[1024] = { 0 };
 
@@ -28821,86 +29271,100 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 		messagePlayer(player.playernum, MESSAGE_CHATTER, buf);
 	}
 
-	dialogueStrFull = buf;
-	spawnTick = ticks;
-	updatedThisTick = 0;
-	dialogueType = type;
+	d->dialogueStrFull = buf;
+	d->spawnTick = ticks;
+	d->updatedThisTick = 0;
+	d->dialogueType = type;
 
-	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	auto& setting = WorldDialogueSettings_t::settings[d->dialogueType];
 
-	x = parentEnt->x;
-	y = parentEnt->y;
-	z = parentEnt->z + setting.offsetZ;
-	animZ = 1.5;
-	drawScale = 0.1 + setting.scaleMod;
-
-	active = true;
-	init = true;
-	alpha = 0.0;
-
-	if ( parent == oldUid )
+	/*if ( parentEnt->bUseRenderInterpolation )
 	{
-		alpha = oldAlpha;
-		animZ = oldAnimZ;
+		d->x = parentEnt->lerpRenderState.x.position * 16.0;
+		d->y = parentEnt->lerpRenderState.y.position * 16.0;
+		d->z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+	}
+	else*/
+	{
+		d->x = parentEnt->x;
+		d->y = parentEnt->y;
+		d->z = parentEnt->z + setting.offsetZ;
+	}
+	d->animZ = 1.5;
+	d->drawScale = 0.1 + setting.scaleMod;
+
+	d->active = true;
+	d->init = true;
+	d->alpha = 0.0;
+
+	if ( d->parent == oldUid )
+	{
+		d->alpha = oldAlpha;
+		d->animZ = oldAnimZ;
 	}
 
-	if ( !dialogueField )
+	if ( !d->dialogueField )
 	{
-		dialogueField = new Field(1024);
-		dialogueField->setFont("fonts/pixel_maz_multiline.ttf#16");
+		d->dialogueField = new Field(1024);
+		d->dialogueField->setFont("fonts/pixel_maz_multiline.ttf#16");
 	}
-	dialogueField->setText(dialogueStrFull.c_str());
+	d->dialogueField->setText(d->dialogueStrFull.c_str());
 	int maxWidth = setting.maxWidth;
-	dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, 0 });
-	dialogueField->reflowTextToFit(0);
-	int numLines = dialogueField->getNumTextLines();
-	if ( Font* actualFont = Font::get(dialogueField->getFont()) )
+	d->dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, 0 });
+	d->dialogueField->reflowTextToFit(0);
+	int numLines = d->dialogueField->getNumTextLines();
+	if ( Font* actualFont = Font::get(d->dialogueField->getFont()) )
 	{
 		auto textHeight = numLines * actualFont->height(true) + 16;
-		if ( auto textGet = Text::get(dialogueField->getLongestLine().c_str(),
-			dialogueField->getFont(), dialogueField->getTextColor(),
-			dialogueField->getOutlineColor()) )
+		if ( auto textGet = Text::get(d->dialogueField->getLongestLine().c_str(),
+			d->dialogueField->getFont(), d->dialogueField->getTextColor(),
+			d->dialogueField->getOutlineColor()) )
 		{
-			dialogueField->setSize(SDL_Rect{ 0, 0, (int)textGet->getWidth() + 16, textHeight });
+			d->dialogueField->setSize(SDL_Rect{ 0, 0, (int)textGet->getWidth() + 16, textHeight });
 		}
 		else
 		{
-			dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, textHeight });
+			d->dialogueField->setSize(SDL_Rect{ 0, 0, maxWidth, textHeight });
 		}
 	}
-	expiryTicks = setting.baseTicksToDisplay;
+	d->expiryTicks = setting.baseTicksToDisplay;
 	if ( numLines > 1 )
 	{
-		expiryTicks += (numLines - 1) * setting.extraTicksPerLine;
+		d->expiryTicks += (numLines - 1) * setting.extraTicksPerLine;
 	}
-	dialogueStrFull = dialogueField->getText();
+	d->dialogueStrFull = d->dialogueField->getText();
 
-	if ( dialogueType == DIALOGUE_NPC )
+	if ( d->dialogueType == DIALOGUE_NPC )
 	{
 		// insta-show the first line (e.g The NPC:)
-		size_t found = dialogueStrFull.find('\n');
+		size_t found = d->dialogueStrFull.find('\n');
 		if ( found != std::string::npos )
 		{
-			dialogueStringLength = found;
-
-			while ( found != std::string::npos )
+			size_t foundColon = d->dialogueStrFull.find(':');
+			if ( foundColon != std::string::npos
+				&& foundColon < found )
 			{
-				if ( found + 1 < dialogueStrFull.length() )
+				d->dialogueStringLength = found;
+
+				while ( found != std::string::npos )
 				{
-					if ( dialogueStrFull[found + 1] != ' ' )
+					if ( found + 1 < d->dialogueStrFull.length() )
 					{
-						dialogueStrFull.insert(found + 1, 1, ' ');
-						++found;
+						if ( d->dialogueStrFull[found + 1] != ' ' )
+						{
+							d->dialogueStrFull.insert(found + 1, 1, ' ');
+							++found;
+						}
 					}
+					found = d->dialogueStrFull.find('\n', found + 1);
 				}
-				found = dialogueStrFull.find('\n', found + 1);
 			}
 		}
-		dialogueField->setText(dialogueStrFull.c_str());
+		d->dialogueField->setText(d->dialogueStrFull.c_str());
 	}
 }
 
-SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
+SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::blitDialogueTooltip()
 {
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
 	const int pointerExtraHeight = 16;
@@ -29106,7 +29570,10 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::blitDialogueTooltip()
 			SDL_BlitScaled(srcSurf, nullptr, dialogueTooltipSurface, &imgPos);
 		}
 	}
-	else if ( dialogueType == DIALOGUE_NPC )
+	else if ( dialogueType == DIALOGUE_NPC
+		|| dialogueType == DIALOGUE_FOLLOWER_CMD
+		|| dialogueType == DIALOGUE_BROADCAST
+		|| dialogueType == DIALOGUE_ATTACK )
 	{
 		dialogueField->setTextColor(makeColor(29, 16, 11, 255));
 		dialogueField->setOutlineColor(makeColor(186, 169, 128, 255));

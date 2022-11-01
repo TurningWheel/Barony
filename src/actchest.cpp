@@ -572,10 +572,13 @@ void Entity::actChest()
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
 					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + local_rng.rand() % 3, 0, true, inventory);
 				}
-				if ( local_rng.rand() % 4 == 0 )
+				else if ( local_rng.rand() % 4 == 0 )
 				{
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
-					newItem(POTION_EMPTY, SERVICABLE, 0, 0 + local_rng.rand() % 3, 0, true, inventory);
+				}
+				if ( local_rng.rand() % 4 == 0 )
+				{
+					newItem(POTION_EMPTY, SERVICABLE, 0, 1 + local_rng.rand() % 3, 0, true, inventory);
 				}
 				break;
 			case 8:

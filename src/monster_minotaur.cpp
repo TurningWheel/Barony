@@ -950,6 +950,10 @@ void actMinotaurCeilingBuster(Entity* my)
 
 void createMinotaurTimer(Entity* entity, map_t* map)
 {
+	if ( !entity )
+	{
+		return;
+	}
 	Entity* childEntity = newEntity(37, 0, map->entities, nullptr); //Timer entity.
 	childEntity->sizex = 2;
 	childEntity->sizey = 2;

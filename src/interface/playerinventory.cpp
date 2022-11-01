@@ -35,7 +35,6 @@
 #endif
 
 //Prototype helper functions for player inventory helper functions.
-void itemContextMenu(const int player);
 bool restrictPaperDollMovement = true;
 SDL_Surface* inventory_mode_item_img = NULL;
 SDL_Surface* inventory_mode_item_highlighted_img = NULL;
@@ -3303,8 +3302,11 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 	// releasing items
 	if ( (!Input::inputs[player].binary("MenuLeftClick") && !toggleclick)
 		|| (Input::inputs[player].binaryToggle("MenuLeftClick") && toggleclick)
-		|| ( Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str()) && toggleclick) )
+		|| ( (Input::inputs[player].binaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str())
+			|| Input::inputs[player].binaryToggle("MenuConfirm")) 
+			&& toggleclick) )
 	{
+		Input::inputs[player].consumeBinaryToggle("MenuConfirm");
 		Input::inputs[player].consumeBinaryToggle(getContextMenuOptionBindingName(player, PROMPT_GRAB).c_str());
 		if ( players[player]->inventoryUI.isItemFromChest(selectedItem) )
 		{
@@ -4337,8 +4339,16 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 
 void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify)
 {
-	const int player = this->player.playernum;
+	if ( player.inventoryUI.tooltipContainerFrame )
+	{
+		player.inventoryUI.tooltipContainerFrame->setSize(
+			SDL_Rect{ player.camera_virtualx1(),
+			player.camera_virtualy1(),
+			player.camera_virtualWidth(),
+			player.camera_virtualHeight() });
+	}
 
+	const int player = this->player.playernum;
 	if ( !item )
 	{
 		return;
@@ -4374,7 +4384,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	}
 
 	static const char* bigfont = "fonts/pixelmix.ttf#18";
-
 
 	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
 	auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
@@ -7965,9 +7974,16 @@ void Player::Inventory_t::updateInventory()
 					auto chestBgFrame = chestFrame->findFrame("chest base");
 					int tooltipCoordX = 0;
 					PanelJustify_t justify = inventoryPanelJustify;
-					if ( bCompactView && justify == PANEL_JUSTIFY_LEFT )
+					if ( bCompactView )
 					{
-						justify = PANEL_JUSTIFY_RIGHT;
+						if ( justify == PANEL_JUSTIFY_LEFT )
+						{
+							justify = PANEL_JUSTIFY_RIGHT;
+						}
+						else if ( justify == PANEL_JUSTIFY_RIGHT )
+						{
+							justify = PANEL_JUSTIFY_LEFT;
+						}
 					}
 					if ( !bCompactView )
 					{
@@ -7999,8 +8015,7 @@ void Player::Inventory_t::updateInventory()
 							tooltipCoordX += compactImg->pos.x;
 						}
 					}
-					int tooltipCoordY = slotFrame->getAbsoluteSize().y;
-					tooltipCoordX += players[player]->camera_virtualx1();
+					int tooltipCoordY = slotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 
 					bool tooltipOpen = false;
 					if ( inventoryControlActive && !bIsTooltipDelayed() )
@@ -8151,7 +8166,7 @@ void Player::Inventory_t::updateInventory()
 						if ( bCompactView )
 						{
 							// normal inventory items
-							if ( inventoryPanelJustify == PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+							if ( inventoryPanelJustify != PanelJustify_t::PANEL_JUSTIFY_RIGHT )
 							{
 								alignRight = true;
 							}
@@ -8360,8 +8375,7 @@ void Player::Inventory_t::updateInventory()
 						tooltipCoordX += compactImg->pos.x;
 					}
 				}
-				int tooltipCoordY = slotFrame->getAbsoluteSize().y;
-				tooltipCoordX += players[player]->camera_virtualx1();
+				int tooltipCoordY = slotFrame->getAbsoluteSize().y - players[player]->camera_virtualy1();
 				if ( !itemOnPaperDoll )
 				{
 				//	tooltipCoordY += invSlotsFrame->getSize().y;

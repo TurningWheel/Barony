@@ -444,9 +444,6 @@ public:
 	}
 	UIStatus* getUIInteraction(int player)
 	{
-		if (multiplayer != SINGLE && player != 0) {
-			return getUIInteraction(0);
-		}
 		if ( player < 0 || player >= MAXPLAYERS )
 		{
 			printlog("[INPUTS]: Warning: player index %d out of range.", player);
@@ -789,6 +786,7 @@ public:
 		int selectedSpellY = 0;
 	public:
 		Frame* frame = nullptr;
+		Frame* tooltipContainerFrame = nullptr;
 		Frame* tooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* interactBlockClickFrame = nullptr;
@@ -1089,6 +1087,7 @@ public:
 		size_t chatStringLength = 0;
 		std::string chatStrFull = "";
 		Sint32 itemPrice = -1;
+		bool itemUnknownPreventPurchase = false;
 		std::string itemDesc = "";
 		bool itemRequiresTitleReflow = true;
 		Sint32 playerCurrentGold = 0;
@@ -1100,6 +1099,7 @@ public:
 		real_t animNoDeal = 0.0;
 		Uint32 animNoDealTicks = 0;
 
+		int lastTooltipModule = Player::GUI_t::MODULE_NONE;
 		int selectedShopSlotX = -1;
 		int selectedShopSlotY = -1;
 		static const int MAX_SHOP_X;
@@ -1389,6 +1389,7 @@ public:
 		Frame* minotaurFrame = nullptr;
 		Frame* minotaurSharedDisplay = nullptr;
 		Frame* minotaurDisplay = nullptr;
+		Frame* mapPromptFrame = nullptr;
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
@@ -1569,6 +1570,7 @@ public:
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		void updateGameTimer();
+		void updateMinimapPrompts();
 		int XP_FRAME_WIDTH = 650;
 		int XP_FRAME_START_Y = 44;
 		int XP_FRAME_HEIGHT = 34;
@@ -1772,54 +1774,68 @@ public:
 		struct WorldTooltipDialogue_t
 		{
 			Player& player;
-			Uint32 parent = 0;
-			real_t x = 0.0;
-			real_t y = 0.0;
-			real_t z = 0.0;
-			bool active = false;
-			bool draw = false;
-			bool init = false;
-			real_t animZ = 0.0;
-			real_t alpha = 0.0;
-			real_t drawScale = 0.0;
-			Uint32 spawnTick = 0;
-			Uint32 updatedThisTick = 0;
-			Uint32 expiryTicks = 0;
-			Field* dialogueField = nullptr;
-			size_t dialogueStringLength = 0;
-			std::string dialogueStrFull = "";
-			std::string dialogueStrCurrent = "";
-			int langEntry = 0;
-			std::string variables[10];
-			int getPlayerNum() { return player.playernum; }
-			WorldTooltipDialogue_t(Player& p) : player(p)
-			{};
-			~WorldTooltipDialogue_t()
-			{
-				if ( dialogueField )
-				{
-					delete dialogueField;
-					dialogueField = nullptr;
-				}
-				if ( dialogueTooltipSurface )
-				{
-					SDL_FreeSurface(dialogueTooltipSurface);
-					dialogueTooltipSurface = nullptr;
-				}
-			};
 			enum DialogueType_t
 			{
 				DIALOGUE_NONE,
 				DIALOGUE_NPC,
 				DIALOGUE_GRAVE,
-				DIALOGUE_SIGNPOST
+				DIALOGUE_SIGNPOST,
+				DIALOGUE_FOLLOWER_CMD,
+				DIALOGUE_BROADCAST,
+				DIALOGUE_ATTACK
 			};
-			DialogueType_t dialogueType = DIALOGUE_NONE;
-			void deactivate();
+			struct Dialogue_t
+			{
+				int player = -1;
+				Uint32 parent = 0;
+				real_t x = 0.0;
+				real_t y = 0.0;
+				real_t z = 0.0;
+				bool active = false;
+				bool draw = false;
+				bool init = false;
+				real_t animZ = 0.0;
+				real_t alpha = 0.0;
+				real_t drawScale = 0.0;
+				Uint32 spawnTick = 0;
+				Uint32 updatedThisTick = 0;
+				Uint32 expiryTicks = 0;
+				Field* dialogueField = nullptr;
+				size_t dialogueStringLength = 0;
+				std::string dialogueStrFull = "";
+				std::string dialogueStrCurrent = "";
+				void deactivate();
+				void update();
+				DialogueType_t dialogueType = DIALOGUE_NONE;
+				SDL_Surface* blitDialogueTooltip();
+				SDL_Surface* dialogueTooltipSurface = nullptr;
+				Dialogue_t() {};
+				Dialogue_t(int player)
+				{
+					this->player = player;
+				};
+				~Dialogue_t() 
+				{
+					if ( dialogueField )
+					{
+						delete dialogueField;
+						dialogueField = nullptr;
+					}
+					if ( dialogueTooltipSurface )
+					{
+						SDL_FreeSurface(dialogueTooltipSurface);
+						dialogueTooltipSurface = nullptr;
+					}
+				};
+			};
+			Dialogue_t playerDialogue;
+			std::map<Uint32, Dialogue_t> sharedDialogues;
+			int getPlayerNum() { return player.playernum; }
+			WorldTooltipDialogue_t(Player& p) : player(p)
+			{};
+			~WorldTooltipDialogue_t() {};
 			void update();
 			void createDialogueTooltip(Uint32 uid, DialogueType_t type, char const * const message, ...);
-			SDL_Surface* blitDialogueTooltip();
-			SDL_Surface* dialogueTooltipSurface = nullptr;
 			struct WorldDialogueSettings_t
 			{
 				struct Setting_t
@@ -2080,6 +2096,7 @@ public:
 		real_t real_scale = 0.0;    // canonical scale
 		real_t scale = 0.0;         // momentary scale
 		real_t scale_ang = 0.0;     // used to interpolate
+		bool animating = false;		// if in the middle of scaling animation
 		SDL_Rect minimapPos;
 		static SDL_Rect sharedMinimapPos;
 	} minimap;

@@ -2979,6 +2979,7 @@ public:
 	static bool queueInit;
 	static bool queueDeinit;
 	static bool disablePlayerControl;
+	static SDL_Rect debugRect;
 	ImGui_t() {};
 	~ImGui_t()
 	{
@@ -3013,3 +3014,32 @@ public:
 };
 #endif
 #endif
+
+#ifndef EDITOR
+struct ShopkeeperConsumables_t
+{
+	struct ItemEntry
+	{
+		std::vector<ItemType> type;
+		std::vector<Status> status;
+		std::vector<Sint16> beatitude;
+		std::vector<Sint16> count;
+		std::vector<Uint32> appearance;
+		std::vector<bool> identified;
+		
+		int percentChance = 100;
+		int weightedChance = 1;
+		int dropChance = 0;
+		bool emptyItemEntry = false;
+		bool dropItemOnDeath = false;
+	};
+	struct StoreSlots_t
+	{
+		int slotTradingReq = 0;
+		std::vector<ItemEntry> itemEntries;
+	};
+	static int consumableBuyValueMult;
+	static std::map<int, std::vector<StoreSlots_t>> entries; // shop type as key
+	static void readFromFile();
+};
+#endif // !EDITOR

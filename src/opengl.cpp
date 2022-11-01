@@ -1183,7 +1183,11 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	{
 		return;
 	}
-	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t*)worldDialogue;
+	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)worldDialogue;
+	if ( dialogue->alpha <= 0.0 )
+	{
+		return;
+	}
 	SDL_Surface* sprite = nullptr;
 	if ( !dialogue->dialogueTooltipSurface )
 	{
@@ -1199,7 +1203,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	}
 	real_t s = 1;
 
-	int player = dialogue->getPlayerNum();
+	int player = dialogue->player;
 
 	// setup projection
 	glMatrixMode(GL_PROJECTION);

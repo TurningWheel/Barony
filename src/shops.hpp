@@ -36,4 +36,14 @@ void buyItemFromMysteriousShopkeepConsumeOrb(const int player, Entity& entity, I
 void closeShop(const int player);
 void shopChangeGoldEvent(const int player, Sint32 amount);
 
-static const int NUM_SHOP_CATEGORIES = 8;
+static const int SHOP_TYPE_ARMS_ARMOR = 0;
+static const int SHOP_TYPE_HAT = 1;
+static const int SHOP_TYPE_JEWELRY = 2;
+static const int SHOP_TYPE_BOOKS = 3;
+static const int SHOP_TYPE_POTIONS = 4;
+static const int SHOP_TYPE_STAFFS = 5;
+static const int SHOP_TYPE_FOOD = 6;
+static const int SHOP_TYPE_HARDWARE = 7;
+static const int SHOP_TYPE_HUNTING = 8;
+static const int SHOP_TYPE_GENERAL = 9;
+static const int SHOP_CONSUMABLE_SKILL_REQ_PER_POINT = 10;

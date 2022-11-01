@@ -542,7 +542,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 		}
 		else
@@ -558,7 +558,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 
 			if ( my->checkFriend(players[monsterclicked]->entity) )
@@ -898,7 +898,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		{
 			//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 			players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 		}
 
 		return false;
@@ -2241,6 +2241,14 @@ void actMonster(Entity* my)
 			Item* item = (Item*)node->element;
 			for ( c = item->count; c > 0; c-- )
 			{
+				bool wasDroppable = item->isDroppable;
+				if ( myStats->type == SHOPKEEPER )
+				{
+					if ( local_rng.rand() % 2 )
+					{
+						item->isDroppable = false; // sometimes don't drop inventory
+					}
+				}
 				bool wasQuiver = itemTypeIsQuiver(item->type);
 				entity = dropItemMonster(item, my, myStats); // returns nullptr on "undroppables"
 				if ( entity )
@@ -2250,6 +2258,10 @@ void actMonster(Entity* my)
 				if ( wasQuiver )
 				{
 					break; // always drop the whole stack.
+				}
+				if ( c > 1 )
+				{
+					item->isDroppable = wasDroppable;
 				}
 			}
 		}
@@ -2818,56 +2830,59 @@ void actMonster(Entity* my)
 			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
 			{
 				// angry at the player, "En Guarde!"
-				switch (myStats->type)
+				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
-					case HUMAN:
-						if (local_rng.getU8() % 2) {
-							players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
-								language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
-						} else {
-							players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
-								language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
-						}
-						break;
-					case SHOPKEEPER:
-						if ( stats[monsterclicked] )
-						{
-							if ( stats[monsterclicked]->type != HUMAN )
-							{
+					switch (myStats->type)
+					{
+						case HUMAN:
+							if (local_rng.getU8() % 2) {
 								players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
+									language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
+							} else {
+								players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
 									language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
+							}
+							break;
+						case SHOPKEEPER:
+							if ( stats[monsterclicked] )
+							{
+								if ( stats[monsterclicked]->type != HUMAN )
+								{
+									players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
+										language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
+								}
+								else
+								{
+									if (local_rng.getU8() % 2) {
+										players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+											Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
+											language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
+									} else {
+										players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+											Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
+											language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
+									}
+								}
 							}
 							else
 							{
 								if (local_rng.getU8() % 2) {
 									players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
 										language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
 								} else {
 									players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
 										language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
 								}
 							}
-						}
-						else
-						{
-							if (local_rng.getU8() % 2) {
-								players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
-									language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
-							} else {
-								players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
-									language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(stats[monsterclicked]->type).c_str());
-							}
-						}
-						break;
-					default:
-						break;
+							break;
+						default:
+							break;
+					}
 				}
 			}
 			else if (my->monsterState == MONSTER_STATE_TALK)
@@ -4444,6 +4459,8 @@ timeToGoAgain:
 										map.tiles[MAPLAYERS+(int)(my->y/16)*MAPLAYERS+(int)(my->x/16)*MAPLAYERS*map.height] = 0;
 								}
 							}*/
+
+							hasrangedweapon = my->hasRangedWeapon(); // re-update this status check if weapon was consumed/stowed away
 
 							// rotate monster
 							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
@@ -8161,6 +8178,58 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case SPIDER:
+					// spray web
+					if ( dist < STRIKERANGE * 2 )
+					{
+						specialRoll = local_rng.rand() % 20;
+						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+						//messagePlayer(0, "spider roll %d", specialRoll);
+						if ( myStats->getAttribute("special_npc") != "" )
+						{
+							if ( myStats->HP <= myStats->MAXHP * 0.4 )
+							{
+								bonusFromHP = 20; // +100% chance
+							}
+							else if ( myStats->HP <= myStats->MAXHP * 1.0 )
+							{
+								bonusFromHP = 10; // +50% chance
+							}
+						}
+						else 
+						{
+							if ( myStats->HP <= myStats->MAXHP * 0.4 )
+							{
+								bonusFromHP = 8; // +40% chance
+							}
+							else if ( myStats->HP <= myStats->MAXHP * 0.8 )
+							{
+								bonusFromHP = 4; // +20% chance
+							}
+						}
+						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+						{
+							node = itemNodeInInventory(myStats, -1, SPELLBOOK);
+							if ( node != nullptr )
+							{
+								monsterSpecialState = SPIDER_CAST;
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SPIDER_CAST;
+								serverUpdateEntitySkill(this, 33); // for clients to handle animation
+							}
+							else
+							{
+								if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+								{
+									monsterSpecialState = SPIDER_CAST;
+									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SPIDER_CAST;
+									serverUpdateEntitySkill(this, 33); // for clients to handle animation
+								}
+							}
+							break;
+						}
+					}
+					break;
 				case INSECTOID:
 					if ( monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST || monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
@@ -8326,6 +8395,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+					}
+					break;
+				case SPIDER:
+					if ( monsterSpecialState == SPIDER_CAST )
+					{
+						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						shouldAttack = false;
 					}
 					break;
 				case INSECTOID:
@@ -9662,6 +9740,10 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				if (!targetstats) {
 					break;
 				}
+				if ( local_rng.getU8() % 2 == 0 )
+				{
+					return; // random to not chat
+				}
 				char fullmsg[256] = "";
 				if (local_rng.getU8() % 2) {
 					snprintf(fullmsg, sizeof(fullmsg), language[516 + local_rng.uniform(0, 1)],
@@ -9715,8 +9797,19 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 		}
 		if (!message.empty())
 		{
-			players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, message.c_str(), stats[monsterAllyIndex]->name);
+			if ( event == ALLY_EVENT_ATTACK || event == ALLY_EVENT_SPOT_ENEMY )
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, message.c_str(), stats[monsterAllyIndex]->name);
+				}
+			}
+			else
+			{
+				players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, message.c_str(), stats[monsterAllyIndex]->name);
+			}
 		}
 	}
 	else
@@ -9727,10 +9820,13 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 		switch ( event )
 		{
 			case ALLY_EVENT_MOVEASIDE:
-				players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
-				//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
-				//	myStats, language[3129], language[3130], MSG_COMBAT);
+				if ( local_rng.getU8() % 8 == 0 ) 
+				{
+					players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, language[4262 + (int)myStats.type], stats[monsterAllyIndex]->name);
+					//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					//	myStats, language[3129], language[3130], MSG_COMBAT);
+				}
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
 				/*if ( local_rng.rand() % 10 == 0 )

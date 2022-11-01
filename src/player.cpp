@@ -493,7 +493,7 @@ void GameController::handleAnalog(int player)
 			floaty = getRawRightYMove();
 
 			const real_t maxInputVector = 32767 * sqrt(2);
-			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
+			const real_t magnitude = std::min(32767.0, sqrt(pow(floatx, 2) + pow(floaty, 2)));
 			const real_t normalised = magnitude / (maxInputVector);
 			real_t deadzone = rightStickDeadzone / maxInputVector;
 			if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
@@ -547,7 +547,6 @@ void GameController::handleAnalog(int player)
 				e.motion.y = mousey + righty;
 				e.motion.xrel = rightx;
 				e.motion.yrel = righty;
-				e.user.code = 1;
 				SDL_PushEvent(&e);
 			}
 			else
@@ -4911,13 +4910,8 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 	}
 	return 0;
 #else
-	if ( bPlayerUsingKeyboardControl(player) 
-		&& 
-		(!getVirtualMouse(player)->lastMovementFromController 
-			|| (players[player]->shootmode && !gamePaused && !intro)
-			|| gamePaused || intro
-			) 
-		)
+	if ( bPlayerUsingKeyboardControl(player) &&
+		(!getVirtualMouse(player)->lastMovementFromController || (players[player]->shootmode && !gamePaused && !intro) || gamePaused || intro) )
 	{
 		// add controller virtual mouse if applicable, only in shootmode
 		// shootmode has no limits on rotation, but !shootmode is inventory
@@ -4927,22 +4921,22 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 		switch ( input )
 		{
 			case OX:
-				return omousex + ((combineMouseInputs) ? getVirtualMouse(player)->ox : 0);
+				return omousex + (combineMouseInputs ? getVirtualMouse(player)->ox : 0);
 				//return omousex;
 			case OY:
-				return omousey + ((combineMouseInputs) ? getVirtualMouse(player)->oy : 0);
+				return omousey + (combineMouseInputs ? getVirtualMouse(player)->oy : 0);
 				//return omousey;
 			case X:
-				return mousex + ((combineMouseInputs) ? getVirtualMouse(player)->x : 0);
+				return mousex + (combineMouseInputs ? getVirtualMouse(player)->x : 0);
 				//return mousex;
 			case Y:
-				return mousey + ((combineMouseInputs) ? getVirtualMouse(player)->y : 0);
+				return mousey + (combineMouseInputs ? getVirtualMouse(player)->y : 0);
 				//return mousey;
 			case XREL:
-				return mousexrel + ((combineMouseInputs) ? getVirtualMouse(player)->xrel : 0);
+				return mousexrel + (combineMouseInputs ? getVirtualMouse(player)->xrel : 0);
 				//return mousexrel;
 			case YREL:
-				return mouseyrel + ((combineMouseInputs) ? getVirtualMouse(player)->yrel : 0);
+				return mouseyrel + (combineMouseInputs ? getVirtualMouse(player)->yrel : 0);
 				//return mouseyrel;
 			default:
 				return 0;
@@ -5974,6 +5968,7 @@ void Player::clearGUIPointers()
 	GUI.dropdownMenu.dropdownBlockClickFrame = nullptr;
 	GUI.dropdownMenu.dropdownFrame = nullptr;
 
+	inventoryUI.tooltipContainerFrame = nullptr;
 	inventoryUI.frame = nullptr;
 	inventoryUI.tooltipFrame = nullptr;
 	inventoryUI.interactFrame = nullptr;
@@ -6012,6 +6007,7 @@ void Player::clearGUIPointers()
 	hud.minotaurFrame = nullptr;
 	hud.minotaurSharedDisplay = nullptr;
 	hud.minotaurDisplay = nullptr;
+	hud.mapPromptFrame = nullptr;
 	hud.allyFollowerFrame = nullptr;
 	hud.allyFollowerTitleFrame = nullptr;
 	hud.allyFollowerGlyphFrame = nullptr;

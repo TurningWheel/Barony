@@ -1871,10 +1871,14 @@ Connection denied:
 
 1378 The server is already full.#
 1379 Game version mismatch.#
-1380 Server is not running a saved game.#
-1381 Server is running a saved game.#
-1382 Client save does not match server save.#
-1383 Client seed does not match server seed.#
+1380 Server is not running
+a saved game.#
+1381 Server is running
+a saved game.#
+1382 Client save does not match
+server save.#
+1383 Client seed does not match
+server seed.#
 1384 Bad response from server.#
 
 1385
@@ -3073,12 +3077,12 @@ but it retracts beyond your might!#
 2383 A tingle rolls over your body and through each of your footsteps.#
 
 #Equip Effects
-2384 This ring has you feeling quite confident about your appearance.#
-2385 The ring gives you a sense of calm when you wear it.#
-2386 The ring makes your whole body feel scaly.#
-2387 As you don the ring, you feel threads reaching into the darkness from your mind.#
-2388 You feel the ring feeding energy into your arms.#
-2389 You slip on the ring and feel your skin harden slightly.#
+2384 You feel confident about yourself.#
+2385 You feel calm.#
+2386 Your whole body feels scaly.#
+2387 You feel your awareness expanding around you.#
+2388 You feel energy surge into your arms.#
+2389 You feel tough!#
 
 #New spells (2390-2399)
 2390 Conjure Skeleton#
@@ -3110,14 +3114,14 @@ but it retracts beyond your might!#
 
 #Equip Effects
 
-2412 You slip the ring onto your finger and your body vanishes before your eyes.#
-2413 The ring slips on, radiating a fuzzy sensation all over your body.#
-2414 You put on the ring and are overwhelmed with paranoia.#
-2415 A hollow pulse flows from your fingers to your feet and you begin floating.#
-2416 You feel itchy all over when you wear the ring.#
-2417 The ring begins gently yanking at your finger.#
-2418 Your footsteps feel lighter in these boots.#
-2419 The footwear pushes you above the floor. You're levitating!#
+2412 Your body vanishes before your eyes!#
+2413 You feel fuzzy all over your body.#
+2414 You are overwhelmed with paranoia.#
+2415 You begin to float.#
+2416 You feel itchy all over.#
+2417 The ring yanks gently at your finger.#
+2418 These boots feel light.#
+2419 Your footwear pushes you above the floor!#
 
 #New spell effects (2420-2440)
 2420 %s is paralyzed!#
@@ -3174,21 +3178,21 @@ last of your magic is drained!#
 2477 You are imbued with vampiric might!#
 
 # Equip effects
-2478 You feel a sense of great purpose when wearing the amulet.#
-2479 The air beyond the cord of the amulet smells crisp and sweet.#
-2480 The amulet makes your whole body tingle slightly.#
+2478 You feel a sense of great purpose.#
+2479 The air around you smells crisp and sweet.#
+2480 Your whole body tingles slightly.#
 2481 The hat seems to give you ideas.#
 2482 You get the urge to punch something.#
 2483 The hat seems to lift your mood.#
-2484 The inside of the boots are squishy with moisture.#
-2485 The comfortable boots seem to put pep in your step.#
-2486 The cloak whirls around your body and hides your form.#
+2484 The inside of the boots feel squishy.#
+2485 These boots sure are comfy!#
+2486 This is an invisibility cloak!#
 2487 The cloak is firm, but comfortable.#
-2488 The cloak buzzes gently against your body as you put it on.#
-2489 Your fingers feel more nimble as they slip into the gloves.#
-2490 You feel your skin harden slightly when you put the bracers on.#
-2491 The gauntlets are warm. You feel a tingling sensation flow up through to your shoulders.#
-2492 The amulet feels cool and pleasant against the veins of your neck.#
+2488 Your cloak buzzes gently against your body.#
+2489 Your fingers suddenly feel quite nimble.#
+2490 You feel your skin harden slightly.#
+2491 You feel a tingle flowing up your shoulders.#
+2492 The amulet feels cool against your neck.#
 
 # More misc text.
 2493 This is no time for sleep.#
@@ -6306,5 +6310,67 @@ Combination!#
 4248 Villainous#
 4249 Unlawful#
 4250 Nefarious#
+
+4251 Requires %d Trading skill + CHR stat#
+
+# shop try to buy hidden item
+4252 Sorry, I do not sell that to 
+just anyone.#
+4253 That's reserved for another
+buyer, my apologies.#
+4254 That's only for my most
+esteemed clientele.#
+
+# shop buy added consumables
+4255 My personal stock, just for
+thee.#
+4256 I don't let just anyone buy
+that, you know.#
+4257 A little something from my
+limited stock.#
+4258 I see you like my special
+inventory.#
+4259 I keep that on hand for my
+favorite customers.#
+
+4260 %d gold#
+4261 ???#
+
+# NPC greetings
+
+4262 Nevermore.#
+4263 Hello, %s.#
+4264 Peep!#
+4265 Hello %s.#
+4266 *slip slop*#
+4267 *grunt*#
+4268 *burble*#
+4269 *gurgle*#
+4270 *groan*#
+4271 *skitter*#
+4272 Hehehe...#
+4273 *gurgle*#
+4274 Jib jab chip jub.#
+4275 *growl*#
+4276 Wanna dance?#
+4277 *creak*#
+4278 Greetings, mortal.#
+4279 You called?#
+4280 Welcome to hell, weakling.#
+4281 Is there anything you want to buy?#
+4282 Kleeaku.#
+4283 *skitter*#
+4284 *rumble*#
+4285 Wanna play?#
+4286 Bleh!#
+4287 ...#
+4288 Ba-a-a-a-a#
+4289 *choo choo*#
+4290 Hello, worm.#
+4291 Hello, cretin.#
+4292 *whirr*#
+4293 *whizz*#
+4294 *chime*#
+4295 *boing*#
 
 4299 end#

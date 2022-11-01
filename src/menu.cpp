@@ -9645,6 +9645,11 @@ void doNewGame(bool makeHighscore) {
 	}
 #endif
 
+	SaveGameInfo saveGameInfo;
+	if (loadingsavegame) {
+		saveGameInfo = getSaveGameInfo(multiplayer == SINGLE);
+	}
+
 	// load dungeon
 	if ( multiplayer != CLIENT )
 	{
@@ -9683,20 +9688,20 @@ void doNewGame(bool makeHighscore) {
 		}
 
 		// reset class loadout
-	    for ( int c = 0; c < MAXPLAYERS; ++c )
-	    {
-	        if ( !client_disconnected[c] )
-	        {
-	            if ( !loadingsavegame )
-	            {
-		            stats[c]->clearStats();
-		            initClass(c);
-	            }
-	            else if ( players[c]->isLocalPlayer() )
-	            {
-		            loadGame(c);
-	            }
-	        }
+		if (loadingsavegame) {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (!client_disconnected[c]) {
+					stats[c]->clearStats();
+					loadGame(c, saveGameInfo);
+				}
+			}
+		} else {
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (!client_disconnected[c]) {
+					stats[c]->clearStats();
+					initClass(c);
+				}
+			}
 		}
 
 		// hack to fix these things from breaking everything...
@@ -9781,7 +9786,7 @@ void doNewGame(bool makeHighscore) {
 				}
 			}
 
-			list_t* followers = loadGameFollowers();
+			list_t* followers = loadGameFollowers(saveGameInfo);
 			if ( followers )
 			{
 				int c;
@@ -9838,9 +9843,6 @@ void doNewGame(bool makeHighscore) {
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
 									monster->flags[USERFLAG2] = true;
-									/*if ( !monsterally[HUMAN][monsterStats->type] )
-									{
-									}*/
 									monster->monsterAllyIndex = c;
 									if ( multiplayer == SERVER )
 									{
@@ -9968,7 +9970,7 @@ void doNewGame(bool makeHighscore) {
 		}
 		else
 		{
-			loadGame(clientnum);
+			loadGame(clientnum, saveGameInfo);
 		}
 
 		// stop all sounds
@@ -11244,499 +11246,55 @@ void openSettingsWindow()
 // opens the wait window for steam lobby (getting lobby list, etc.)
 void openSteamLobbyWaitWindow(button_t* my)
 {
-	button_t* button;
-
-	// close current window
-#ifdef STEAMWORKS
-	bool prevConnectingToLobbyWindow = connectingToLobbyWindow;
-	if ( connectingToLobbyWindow )
-	{
-		// we quit the connection window before joining lobby, but invite was mid-flight.
-		denyLobbyJoinEvent = true;
-	}
-	else if ( joinLobbyWaitingForHostResponse )
-	{
-		// we quit the connection window after lobby join, but before host has accepted us.
-		joinLobbyWaitingForHostResponse = false;
-		buttonDisconnect(nullptr);
-		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
-		return;
-	}
-#endif
-#if defined USE_EOS
-	if ( EOS.bConnectingToLobbyWindow )
-	{
-		// we quit the connection window before joining lobby, but invite was mid-flight.
-		EOS.CurrentLobbyData.bDenyLobbyJoinEvent = true;
-	}
-	else if ( EOS.bJoinLobbyWaitingForHostResponse )
-	{
-		// we quit the connection window after lobby join, but before host has accepted us.
-		EOS.bJoinLobbyWaitingForHostResponse = false;
-		buttonDisconnect(nullptr);
-		openFailedConnectionWindow(CLIENT);
-		strcpy(subtext, LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(LobbyHandler_t::LOBBY_JOIN_CANCELLED)).c_str());
-		return;
-	}
-#endif
-
-
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create new window
-	subwindow = 1;
-#ifdef STEAMWORKS
-	requestingLobbies = true;
-#endif
-#if defined USE_EOS
-	EOS.bRequestingLobbies = true;
-#endif // USE_EOS
-
-	subx1 = xres / 2 - 256;
-	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 64;
-	suby2 = yres / 2 + 64;
-	strcpy(subtext, language[1444]);
-#ifdef STEAMWORKS
-	//c_SteamMatchmaking_RequestLobbyList();
-	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
-	//cpp_SteamMatchmaking_RequestLobbyList();
-#endif
-
-	LobbyHandler.selectedLobbyInList = 0;
-
-#if defined USE_EOS
-#ifdef STEAMWORKS
-	if ( EOS.CurrentUserInfo.bUserLoggedIn )
-	{
-		EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-			EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
-	}
-	else
-	{
-		EOS.bRequestingLobbies = false; // don't attempt search if not logged in
-	}
-#else
-	EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
-		EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_DONT_JOIN, "");
-#endif
-#endif // USE_EOS
-
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+	// deprecated
 }
 
 // "failed to connect" message
 void openFailedConnectionWindow(int mode)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create new window
-	subwindow = 1;
-	subx1 = xres / 2 - 256;
-	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 64;
-	suby2 = yres / 2 + 64;
-	if ( directConnect )
-	{
-		if ( mode == CLIENT )
-		{
-			strcpy(subtext, language[1439]);
-			strcat(subtext, SDLNet_GetError());
-		}
-		else if ( mode == SERVER )
-		{
-			strcpy(subtext, language[1440]);
-			strcat(subtext, SDLNet_GetError());
-		}
-		else
-		{
-			strcpy(subtext, language[1443]);
-		}
-	}
-	else
-	{
-		if ( mode == CLIENT )
-		{
-			strcpy(subtext, language[1441]);
-		}
-		else if ( mode == SERVER )
-		{
-			strcpy(subtext, language[1442]);
-		}
-		else
-		{
-			strcpy(subtext, language[1443]);
-		}
-	}
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// okay button
-	button = newButton();
-	strcpy(button->label, language[732]);
-	button->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
-	button->y = suby2 - 24;
-	button->sizex = strlen(language[732]) * 12 + 8;
-	button->sizey = 20;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-	if ( directConnect )
-	{
-		if ( mode == CLIENT )
-		{
-			button->action = &buttonJoinMultiplayer;
-		}
-		else if ( mode == SERVER )
-		{
-			button->action = &buttonHostMultiplayer;
-		}
-		else
-		{
-			button->action = &buttonCloseSubwindow;
-		}
-	}
-	else
-	{
-		if ( mode == CLIENT )
-		{
-			button->action = &openSteamLobbyWaitWindow;
-		}
-		else if ( mode == SERVER )
-		{
-			button->action = &buttonCloseSubwindow;
-		}
-		else
-		{
-			button->action = &buttonCloseSubwindow;
-		}
-	}
-
-	multiplayer = SINGLE;
-	clientnum = 0;
+	// deprecated
 }
 
 // opens the lobby browser window (steam client only)
 void openSteamLobbyBrowserWindow(button_t* my)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create new window
-	subwindow = 1;
-	subx1 = xres / 2 - 280;
-	subx2 = xres / 2 + 280;
-	suby1 = yres / 2 - 198;
-	suby2 = yres / 2 + 198;
-	strcpy(subtext, language[1334]);
-
-	bool showCrossplayLobbyFilters = false;
-
-	// setup lobby browser
-#ifdef STEAMWORKS //TODO: Should this whole function be ifdeffed?
-	selectedSteamLobby = 0;
-#endif
-#if defined USE_EOS
-	EOS.LobbySearchResults.selectedLobby = 0;
-	showCrossplayLobbyFilters = true;
-#ifdef STEAMWORKS
-	if ( !LobbyHandler.crossplayEnabled )
-	{
-		showCrossplayLobbyFilters = false;
-	}
-#endif
-#endif
-	slidery = 0;
-	oslidery = 0;
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// join button
-	button = newButton();
-	strcpy(button->label, language[1445]);
-	button->x = subx1 + 8;
-	button->y = suby2 - 56;
-	button->sizex = strlen(language[1445]) * 12 + 8;
-	button->sizey = 20;
-#if defined STEAMWORKS || defined USE_EOS
-	button->action = &buttonSteamLobbyBrowserJoinGame;
-#endif 
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-	// refresh button
-	button = newButton();
-	strcpy(button->label, language[1446]);
-	button->x = subx1 + 8;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1446]) * 12 + 8;
-	button->sizey = 20;
-#if defined STEAMWORKS || defined USE_EOS
-	button->action = &buttonSteamLobbyBrowserRefresh;
-#endif
-	button->visible = 1;
-	button->focused = 1;
-	button->joykey = joyimpulses[INJOY_MENU_REFRESH_LOBBY]; //"y" refreshes
-
-	if ( showCrossplayLobbyFilters )
-	{
-		// filter button
-		button = newButton();
-		strcpy(button->label, language[3950]);
-		button->sizex = strlen(language[3950]) * 12 + 8;
-		button->sizey = 20;
-		button->x = subx2 - 8 - button->sizex;
-		button->y = suby2 - 56;
-#if defined STEAMWORKS || defined USE_EOS
-		button->action = &LobbyHandler_t::filterLobbyButton;
-#endif
-		button->visible = 1;
-		button->focused = 1;
-
-		button = newButton();
-		button->x = 0;
-		button->y = 0;
-		button->sizex = 0;
-		button->sizey = 0;
-		button->visible = 0;
-		button->focused = 0;
-		strcpy(button->label, language[3953]);
-		button->action = &LobbyHandler.searchLobbyWithFilter;
-	}
+	// deprecated
 }
 
 // steam lobby browser join game
 void buttonSteamLobbyBrowserJoinGame(button_t* my)
 {
-	LobbyHandler.setLobbyJoinTypeOfCurrentSelection();
-	LobbyHandler.setP2PType(LobbyHandler.getJoiningType());
-	if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
-	{
-#ifdef STEAMWORKS
-		button_t* button;
-		int lobbyIndex = std::min(std::max(0, selectedSteamLobby), MAX_STEAM_LOBBIES - 1);
-		if ( lobbyIDs[lobbyIndex] )
-		{
-			// clear buttons
-			list_FreeAll(&button_l);
-			deleteallbuttons = true;
-
-			// create new window
-			subwindow = 1;
-			subx1 = xres / 2 - 256;
-			subx2 = xres / 2 + 256;
-			suby1 = yres / 2 - 64;
-			suby2 = yres / 2 + 64;
-			strcpy(subtext, language[1447]);
-
-			// close button
-			button = newButton();
-			strcpy(button->label, "x");
-			button->x = subx2 - 20;
-			button->y = suby1;
-			button->sizex = 20;
-			button->sizey = 20;
-			button->action = &openSteamLobbyWaitWindow;
-			button->visible = 1;
-			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
-			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-			// cancel button
-			button = newButton();
-			strcpy(button->label, language[1316]);
-			button->sizex = strlen(language[1316]) * 12 + 8;
-			button->sizey = 20;
-			button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-			button->y = suby2 - 28;
-			button->action = &openSteamLobbyWaitWindow;
-			button->visible = 1;
-			button->focused = 1;
-
-			connectingToLobby = true;
-			connectingToLobbyWindow = true;
-			strncpy(currentLobbyName, lobbyText[lobbyIndex], 31);
-			LobbyHandler.steamValidateAndJoinLobby(*static_cast<CSteamID*>(lobbyIDs[lobbyIndex]));
-		}
-#endif
-	}
-	else if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
-	{
-#if defined USE_EOS
-		button_t* button;
-		int lobbyIndex = std::min(std::max(0, EOS.LobbySearchResults.selectedLobby), EOS.kMaxLobbiesToSearch - 1);
-		if ( !EOS.LobbySearchResults.results.empty() )
-		{
-			// clear buttons
-			list_FreeAll(&button_l);
-			deleteallbuttons = true;
-
-			// create new window
-			subwindow = 1;
-			subx1 = xres / 2 - 256;
-			subx2 = xres / 2 + 256;
-			suby1 = yres / 2 - 64;
-			suby2 = yres / 2 + 64;
-			strcpy(subtext, language[1447]);
-
-			// close button
-			button = newButton();
-			strcpy(button->label, "x");
-			button->x = subx2 - 20;
-			button->y = suby1;
-			button->sizex = 20;
-			button->sizey = 20;
-			button->action = &openSteamLobbyWaitWindow;
-			button->visible = 1;
-			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
-			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-			// cancel button
-			button = newButton();
-			strcpy(button->label, language[1316]);
-			button->sizex = strlen(language[1316]) * 12 + 8;
-			button->sizey = 20;
-			button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-			button->y = suby2 - 28;
-			button->action = &openSteamLobbyWaitWindow;
-			button->visible = 1;
-			button->focused = 1;
-
-			EOS.bConnectingToLobby = true;
-			EOS.bConnectingToLobbyWindow = true;
-			strncpy(EOS.currentLobbyName, EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyAttributes.lobbyName.c_str(), 31);
-			std::string lobbyToJoin = EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyIndex)->LobbyId;
-			EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_BY_LOBBYID,
-				EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
-				lobbyToJoin.c_str());
-		}
-#endif // USE_EOS
-	}
-	else if ( LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_DISABLE )
-	{
-		LobbyHandler_t::logError("Invalid lobby join type from current browser selection: %d, list size %d", LobbyHandler.selectedLobbyInList, LobbyHandler.lobbyDisplayedSearchResults.size());
-	}
-	return;
+	// deprecated
 }
 
 // steam lobby browser refresh
 void buttonSteamLobbyBrowserRefresh(button_t* my)
 {
-#if defined STEAMWORKS || defined USE_EOS
-	LobbyHandler.showLobbyFilters = false;
-	openSteamLobbyWaitWindow(my);
-#endif
+	// deprecated
 }
 
 // quit game button
 void buttonQuitConfirm(button_t* my)
 {
-	subwindow = 0;
-	introstage = 2; // prepares to quit the whole game
-	fadeout = true;
+	// deprecated
 }
 
 // quit game button (no save)
 void buttonQuitNoSaveConfirm(button_t* my)
 {
-	buttonQuitConfirm(my);
-	deleteSaveGame(multiplayer);
-
-	// make a highscore!
-	saveScore();
+	// deprecated
 }
 
 // end game button
 bool savethisgame = false;
 void buttonEndGameConfirm(button_t* my)
 {
-	savethisgame = false;
-	subwindow = 0;
-	introstage = 5; // prepares to end the current game (throws to main menu)
-	fadeout = true;
-	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
-	{
-		list_FreeAll(&channeledSpells[clientnum]);
-	}
-	if ( !intro )
-	{
-		pauseGame(2, false);
-	}
+	// deprecated
 }
 
 void buttonEndGameConfirmSave(button_t* my)
 {
-	subwindow = 0;
-	introstage = 5; // prepares to end the current game (throws to main menu)
-	fadeout = true;
-	savethisgame = true;
-	if ( !intro )
-	{
-		pauseGame(2, false);
-	}
+	// deprecated
 }
 
 // generic close window button
@@ -11747,24 +11305,12 @@ void buttonCloseSubwindow(button_t* my)
 
 void buttonCloseSettingsSubwindow(button_t* my)
 {
-	if ( rebindkey != -1 || rebindaction != -1 )
-	{
-		//Do not close settings subwindow if rebinding a key/gamepad button/whatever.
-		return;
-	}
-
-	buttonCloseSubwindow(my);
+	// deprecated
 }
 
 void buttonCloseAndEndGameConfirm(button_t* my)
 {
-	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
-	{
-		list_FreeAll(&channeledSpells[clientnum]);
-	}
-	buttonCloseSubwindow(my);
-	buttonEndGameConfirmSave(my);
+	// deprecated
 }
 
 Uint32 charcreation_ticks = 0;
@@ -11778,52 +11324,13 @@ void buttonContinue(button_t* my)
 // move player backward through creation dialogue
 void buttonBack(button_t* my)
 {
-	charcreation_step--;
-	if (charcreation_step < 4)
-	{
-		playing_random_char = false;
-	}
-	
-
-	if (charcreation_step == 3)
-	{
-		// If we've backed out, save what name was input for later
-		lastname = (string)inputstr;
-		SDL_StopTextInput();
-		if ( stats[0]->playerRace != RACE_HUMAN )
-		{
-			charcreation_step = 2; // skip appearance window for non-human races.
-		}
-	}
-	else if ( charcreation_step == 1 )
-	{
-		raceSelect = 0; // reset the race selection menu to select sex
-		if ( stats[0]->playerRace != RACE_HUMAN )
-		{
-			stats[0]->clearStats();
-			initClass(0);
-		}
-	}
-	else if ( charcreation_step == 0 )
-	{
-		buttonCloseSubwindow(my);
-	}
+	// deprecated
 }
 
 // start a singleplayer game
 void buttonStartSingleplayer(button_t* my)
 {
-	buttonCloseSubwindow(my);
-	multiplayer = SINGLE;
-	numplayers = 0;
-	introstage = 3;
-	fadeout = true;
-	MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
-	if ( !intro )
-	{
-		// intro is true if starting from main menu, otherwise we're restarting the game.
-		pauseGame(2, false);
-	}
+	// deprecated
 }
 
 // host a multiplayer game
@@ -11835,60 +11342,7 @@ void buttonHostMultiplayer(button_t* my)
 // join a multiplayer game
 void buttonJoinMultiplayer(button_t* my)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(my);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// open port window
-	connect_window = CLIENT;
-	subwindow = 1;
-	subx1 = xres / 2 - 210;
-	subx2 = xres / 2 + 210;
-	suby1 = yres / 2 - 56;
-	suby2 = yres / 2 + 56;
-	strcpy(subtext, language[1450]);
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// join button
-	button = newButton();
-	strcpy(button->label, language[1451]);
-	button->sizex = strlen(language[1451]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - button->sizex - 4;
-	button->y = suby2 - 24;
-	button->action = &buttonJoinLobby;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->x = subx1 + 4;
-	button->y = suby2 - 24;
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-
-	strcpy(connectaddress, last_ip); //Copy the last used IP.
+	// deprecated
 }
 
 // starts a lobby as host
@@ -11904,219 +11358,6 @@ void buttonJoinLobby(button_t* my)
 {
     // deprecated
     return;
-
-	button_t* button;
-	int c;
-
-	// refresh keepalive
-	client_keepalive[0] = ticks;
-
-	// close current window
-	bool temp1 = false;
-	bool temp2 = false;
-	bool temp3 = false;
-	bool temp4 = false;
-#ifdef STEAMWORKS
-	temp1 = connectingToLobby;
-	temp2 = connectingToLobbyWindow;
-	if ( !directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
-	{
-		joinLobbyWaitingForHostResponse = true;
-	}
-#endif
-#if defined USE_EOS
-	temp3 = EOS.bConnectingToLobby;
-	temp4 = EOS.bConnectingToLobbyWindow;
-	if ( !directConnect && LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY)
-	{
-		EOS.bJoinLobbyWaitingForHostResponse = true;
-	}
-#endif
-	if ( directConnect )
-	{
-		buttonCloseSubwindow(my);
-	}
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-#ifdef STEAMWORKS
-	connectingToLobby = temp1;
-	connectingToLobbyWindow = temp2;
-#endif
-#if defined USE_EOS
-	EOS.bConnectingToLobby = temp3;
-	EOS.bConnectingToLobbyWindow = temp4;
-#endif
-
-	multiplayer = CLIENT;
-	if ( loadingsavegame )
-	{
-		loadGame(getSaveGameClientnum(false));
-	}
-
-	// open wait window
-	list_FreeAll(&lobbyChatboxMessages);
-	//newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	subwindow = 1;
-	subx1 = xres / 2 - 256;
-	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 64;
-	suby2 = yres / 2 + 64;
-	strcpy(subtext, language[1459]);
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &openSteamLobbyWaitWindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &openSteamLobbyWaitWindow;
-	button->visible = 1;
-	button->focused = 1;
-
-	if ( directConnect )
-	{
-		for ( c = 0; c < sizeof(connectaddress); c++ )
-		{
-			if ( connectaddress[c] == ':' )
-			{
-				break;
-			}
-		}		
-		char *portnumbererr;
-		strncpy(address, connectaddress, c); // get the address from the text field
-		portnumber = (Uint16)strtol(&connectaddress[c + 1], &portnumbererr, 10); // get the port number from the text field
-		if ( *portnumbererr != '\0' || portnumber < 1024 )
-		{
-			printlog("warning: invalid port number %d.\n", portnumber);
-#ifndef NINTENDO
-			SDLNet_SetError("Invalid address %s.\nExample: 192.168.0.100:12345", connectaddress);
-#endif
-			openFailedConnectionWindow(CLIENT);
-			return;
-		}
-		strcpy(last_ip, connectaddress);
-		saveConfig("default.cfg");
-	}
-
-	// close any existing net interfaces
-	closeNetworkInterfaces();
-
-	if ( directConnect )
-	{
-		// resolve host's address
-		printlog("resolving host's address at %s:%d...\n", address, portnumber);
-		if (SDLNet_ResolveHost(&net_server, address, portnumber) == -1)
-		{
-			printlog( "warning: resolving host at %s:%d has failed.\n", address, portnumber);
-			openFailedConnectionWindow(CLIENT);
-			return;
-		}
-
-		// open sockets
-		printlog("opening TCP and UDP sockets...\n");
-		if (!(net_sock = SDLNet_UDP_Open(0)))
-		{
-			printlog( "warning: SDLNet_UDP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
-			return;
-		}
-		if (!(net_tcpsock = SDLNet_TCP_Open(&net_server)))
-		{
-			printlog( "warning: SDLNet_TCP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
-			return;
-		}
-		tcpset = SDLNet_AllocSocketSet(MAXPLAYERS);
-		SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
-	}
-
-	// allocate packet data
-	if (!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
-	{
-		printlog( "warning: packet allocation failed.\n");
-		openFailedConnectionWindow(CLIENT);
-		return;
-	}
-
-	if ( directConnect )
-	{
-		printlog( "successfully contacted server at %s:%d.\n", address, portnumber);
-	}
-
-	printlog( "submitting join request...\n");
-
-	// send join request
-	strcpy((char*)net_packet->data, "BARONY_JOIN_REQUEST");
-	if ( loadingsavegame )
-	{
-		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
-		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
-		Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
-		appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
-		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
-		strcpy((char*)net_packet->data + 54, VERSION);
-		net_packet->data[62] = 0;
-		net_packet->data[63] = getSaveGameClientnum(false);
-	}
-	else
-	{
-		strncpy((char*)net_packet->data + 19, stats[0]->name, 22);
-		SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[42]);
-		SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[46]);
-		Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
-		appearanceAndRace |= ((Uint8)stats[0]->playerRace);
-		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
-		strcpy((char*)net_packet->data + 54, VERSION);
-		net_packet->data[62] = 0;
-		net_packet->data[63] = 0;
-	}
-	if ( loadingsavegame )
-	{
-		// send over the map seed being used
-		SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[64]);
-	}
-	else
-	{
-		SDLNet_Write32(0, &net_packet->data[64]);
-	}
-	SDLNet_Write32(loadingsavegame, &net_packet->data[68]); // send unique game key
-	net_packet->address.host = net_server.host;
-	net_packet->address.port = net_server.port;
-	net_packet->len = 72;
-	if ( !directConnect )
-	{
-#if (defined STEAMWORKS || defined USE_EOS)
-		sendPacket(net_sock, -1, net_packet, 0);
-		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
-		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
-		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
-		SDL_Delay(5);
-		sendPacket(net_sock, -1, net_packet, 0);
-		SDL_Delay(5);
-#endif
-	}
-	else
-	{
-		sendPacket(net_sock, -1, net_packet, 0);
-	}
 }
 
 // starts the game as server
@@ -12144,67 +11385,7 @@ void buttonInviteFriends(button_t* my)
 // disconnects from whatever lobby the game is connected to
 void buttonDisconnect(button_t* my)
 {
-	int c;
-
-	if ( multiplayer == SERVER )
-	{
-		// send disconnect message to clients
-		for ( c = 1; c < MAXPLAYERS; c++ )
-		{
-			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
-			{
-				continue;
-			}
-			strcpy((char*)net_packet->data, "DISC");
-			net_packet->data[4] = clientnum;
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
-		}
-	}
-	else
-	{
-		// send disconnect message to server
-		strcpy((char*)net_packet->data, "DISC");
-		net_packet->data[4] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 5;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
-	}
-
-	// reset multiplayer status
-	multiplayer = SINGLE;
-	stats[0]->sex = stats[clientnum]->sex;
-	client_classes[0] = client_classes[clientnum];
-	strcpy(stats[0]->name, stats[clientnum]->name);
-	clientnum = 0;
-	client_disconnected[0] = false;
-	for ( c = 1; c < MAXPLAYERS; c++ )
-	{
-		client_disconnected[c] = true;
-	}
-
-	// close any existing net interfaces
-	closeNetworkInterfaces();
-#ifdef STEAMWORKS
-	if ( currentLobby )
-	{
-		SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
-		cpp_Free_CSteamID(currentLobby); //TODO: Bugger this.
-		currentLobby = NULL;
-	}
-#endif
-#if defined USE_EOS
-	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
-	{
-		EOS.leaveLobby();
-	}
-#endif
-
-	// close lobby window
-	buttonCloseSubwindow(my);
+	// deprecated
 }
 
 // open the video tab in the settings window
@@ -12753,400 +11934,22 @@ void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t 
 
 void openLoadGameWindow(button_t* my)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(NULL);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create confirmation window
-	subwindow = 1;
-	subx1 = xres / 2 - 256;
-	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 128;
-	suby2 = yres / 2 + 128;
-	strcpy(subtext, language[1460]);
-	bool singleplayerSave = saveGameExists(true);
-	bool multiplayerSave = saveGameExists(false);
-
-	char saveGameName[1024] = "";
-	if ( singleplayerSave && multiplayerSave )
-	{
-		strncpy(saveGameName, getSaveGameName(true), 1024);
-		strcat(subtext, saveGameName);
-		strcat(subtext, "\n\n");
-		strncpy(saveGameName, getSaveGameName(false), 1024);
-		loadGameSaveShowRectangle = 2;
-
-		suby1 = yres / 2 - 152;
-		suby2 = yres / 2 + 152;
-	}
-	else if ( singleplayerSave )
-	{
-		strncpy(saveGameName, getSaveGameName(true), 1024);
-		loadGameSaveShowRectangle = 1;
-	}
-	else if ( multiplayerSave )
-	{
-		strncpy(saveGameName, getSaveGameName(false), 1024);
-		loadGameSaveShowRectangle = 1;
-	}
-	strcat(subtext, saveGameName);
-	strcat(subtext, language[1461]);
-
-	if ( gamemods_numCurrentModsLoaded >= 0 )
-	{
-		suby1 -= 24;
-		suby2 += 24;
-	}
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// yes solo button
-	button = newButton();
-	if ( multiplayerSave && !singleplayerSave )
-	{
-		strcpy(button->label, language[2959]);
-		button->action = &buttonLoadMultiplayerGame;
-	}
-	else
-	{
-		strcpy(button->label, language[1462]);
-		button->action = &buttonLoadSingleplayerGame;
-	}
-	button->sizex = strlen(language[2959]) * 9 + 16;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 52;
-	if ( singleplayerSave && multiplayerSave )
-	{
-		button->x -= 124;
-	}
-	else
-	{
-		button->sizex = strlen(language[1463]) * 12 + 8; // resize to be wider
-		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2; // resize to match new width
-	}
-	button->visible = 1;
-	button->focused = 1;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
-
-	// yes multiplayer button
-	if ( singleplayerSave && multiplayerSave )
-	{
-		button = newButton();
-		strcpy(button->label, language[2959]);
-		button->sizex = strlen(language[2959]) * 9 + 16;
-		button->sizey = 20;
-		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2 + 124;
-		button->y = suby2 - 52;
-		button->action = &buttonLoadMultiplayerGame;
-		button->visible = 1;
-		button->focused = 1;
-		//button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
-	}
-
-	// no button
-	button = newButton();
-	strcpy(button->label, language[1463]);
-	button->sizex = strlen(language[1463]) * 10 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonOpenCharacterCreationWindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
-
-	// delete savegame button
-	if ( singleplayerSave || multiplayerSave )
-	{
-		button = newButton();
-		strcpy(button->label, language[2961]);
-		button->sizex = strlen(language[2961]) * 12 + 8;
-		button->sizey = 20;
-		button->x = subx2 - button->sizex - 8;
-		button->y = suby1 + TTF12_HEIGHT * 2 + 4;
-		if ( singleplayerSave && multiplayerSave)
-		{
-			button->action = &buttonDeleteSavedSoloGame; // showing 2 entries, single player delete
-		}
-		if ( singleplayerSave && !multiplayerSave ) // showing 1 entry, single player delete
-		{
-			button->action = &buttonDeleteSavedSoloGame;
-		}
-		if ( !singleplayerSave && multiplayerSave ) // showing 1 entry, multi player delete
-		{
-			button->action = &buttonDeleteSavedMultiplayerGame;
-		}
-		button->visible = 1;
-		button->focused = 1;
-	}
-	if ( singleplayerSave && multiplayerSave )
-	{
-		button = newButton();
-		strcpy(button->label, language[2961]);
-		button->sizex = strlen(language[2961]) * 12 + 8;
-		button->sizey = 20;
-		button->x = subx2 - button->sizex - 8;
-		button->y = suby1 + TTF12_HEIGHT * 5 + 6;
-		button->action = &buttonDeleteSavedMultiplayerGame;
-		button->visible = 1;
-		button->focused = 1;
-	}
-}
-
-void reloadSavegamesList(bool showWindow)
-{
-	savegamesList.clear();
-
-	// load single player files
-	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
-	{
-		if ( saveGameExists(true, fileNumber) )
-		{
-			time_t timeNow = std::time(nullptr);
-			struct tm *tm = nullptr;
-			char path[PATH_MAX] = "";
-			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, fileNumber).c_str(), PATH_MAX - 1);
-			completePath(path, savefile, outputdir);
-#ifdef WINDOWS
-			struct _stat result;
-			if ( _stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#else
-			struct stat result;
-			if ( stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#endif
-			if ( tm )
-			{
-				int timeDifference = std::difftime(timeNow, mktime(tm));
-				char* saveGameName = getSaveGameName(true, fileNumber);
-				if ( saveGameName )
-				{
-					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, saveGameName));
-					free(saveGameName);
-				}
-			}
-		}
-	}
-	// load multiplayer files
-	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
-	{
-		if ( saveGameExists(false, fileNumber) )
-		{
-			time_t timeNow = std::time(nullptr);
-			struct tm *tm = nullptr;
-			char path[PATH_MAX] = "";
-			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, fileNumber).c_str(), PATH_MAX - 1);
-			completePath(path, savefile, outputdir);
-#ifdef WINDOWS
-			struct _stat result;
-			if ( _stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#else
-			struct stat result;
-			if ( stat(path, &result) == 0 )
-			{
-				tm = localtime(&result.st_mtime);
-			}
-#endif
-			if ( tm )
-			{
-				int timeDifference = std::difftime(timeNow, mktime(tm));
-				char* saveGameName = getSaveGameName(false, fileNumber);
-				if ( saveGameName )
-				{
-					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, saveGameName));
-					free(saveGameName);
-				}
-			}
-		}
-	}
-	if ( showWindow )
-	{
-		savegames_window = 1;
-	}
-	std::sort(savegamesList.begin(), savegamesList.end());
+	// deprecated
 }
 
 void openNewLoadGameWindow(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create confirmation window
-	subwindow = 1;
-	subx1 = xres / 2 - 380;
-	subx2 = xres / 2 + 380;
-	suby1 = yres / 2 - 210;
-	suby2 = yres / 2 + 210;
-	strcpy(subtext, language[3065]);
-
-	// close button
-	button_t* button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	button = newButton();
-	strcpy(button->label, language[1463]);
-	button->sizex = strlen(language[1463]) * 10 + 8;
-	button->sizey = 36;
-	button->x = subx1 + 16;
-	button->y = suby1 + 42;
-	button->action = &buttonOpenCharacterCreationWindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
-
-	reloadSavegamesList();
+	// deprecated
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	loadGameSaveShowRectangle = 1;
-
-	// create confirmation window
-	subwindow = 1;
-	subx1 = xres / 2 - 288;
-	subx2 = xres / 2 + 288;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
-	char saveGameName[1024];
-	strcpy(subtext, language[2963]);
-	strncpy(saveGameName, getSaveGameName(true), 1024);
-	strcat(subtext, saveGameName);
-	// close button
-	button_t* button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// delete button
-	button = newButton();
-	strcpy(button->label, language[2961]);
-	button->sizex = strlen(language[2961]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 56;
-	button->action = &buttonConfirmDeleteSoloFile;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
-
-	// close button
-	button = newButton();
-	strcpy(button->label, language[2962]);
-	button->sizex = strlen(language[2962]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+	// deprecated
 }
 
 void buttonDeleteSavedMultiplayerGame(button_t* my)
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	loadGameSaveShowRectangle = 1;
-
-	// create confirmation window
-	subwindow = 1;
-	subx1 = xres / 2 - 288;
-	subx2 = xres / 2 + 288;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
-	char saveGameName[1024];
-	strcpy(subtext, language[2964]);
-	strncpy(saveGameName, getSaveGameName(false), 1024);
-	strcat(subtext, saveGameName);
-	// close button
-	button_t* button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// delete button
-	button = newButton();
-	strcpy(button->label, language[2961]);
-	button->sizex = strlen(language[2961]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 56;
-	button->action = &buttonConfirmDeleteMultiplayerFile;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
-
-	// close button
-	button = newButton();
-	strcpy(button->label, language[2962]);
-	button->sizex = strlen(language[2962]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+	// deprecated
 }
 
 void buttonConfirmDeleteSoloFile(button_t* my)

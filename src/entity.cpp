@@ -9476,7 +9476,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// chance of bleeding
 					bool wasBleeding = hitstats->EFFECTS[EFF_BLEEDING]; // check if currently bleeding when this roll occurred.
-					if ( gibtype[(int)hitstats->type] > 0 )
+					if ( gibtype[(int)hitstats->type] > 0 && gibtype[(int)hitstats->type] != 5 )
 					{
 						if ( bleedStatusInflicted || (hitstats->HP > 5 && damage > 0) )
 						{
@@ -12747,6 +12747,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
 				|| myStats->type == GNOME || myStats->type == SUCCUBUS
+				|| myStats->type == SPIDER
+				|| myStats->type == CRAB
 				|| myStats->type == SHOPKEEPER || myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
@@ -12871,7 +12873,7 @@ int Entity::getAttackPose() const
 			type == GNOME || type == DEMON ||
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
-			type == SHADOW || type == RAT ||
+			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -14432,7 +14434,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				//}
 				break;
 			case EFF_BLEEDING:
-				if ( gibtype[(int)myStats->type] == 0 )
+				if ( gibtype[(int)myStats->type] == 0 || gibtype[(int)myStats->type] == 5 )
 				{
 					return false;
 				}
@@ -14639,7 +14641,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 				for (int c = 0; c < MAXPLAYERS; ++c)
 				{
 					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3243],
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
 						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
 				}
 				if (target.behavior == &actPlayer)
@@ -14649,16 +14651,19 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			else
 			{
-				for (int c = 0; c < MAXPLAYERS; ++c)
+				if ( monsterAllyIndex < 0 || (monsterAllyIndex >= 0 && local_rng.getU8() % 8 == 0) )
 				{
-					if (local_rng.getU8() % 2) {
-						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[516 + local_rng.uniform(0, 1)],
-							language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
-					} else {
-						players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-							Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[518 + local_rng.uniform(0, 1)],
-							language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+					for (int c = 0; c < MAXPLAYERS; ++c)
+					{
+						if (local_rng.getU8() % 2) {
+							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
+								language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+						} else {
+							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
+								language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+						}
 					}
 				}
 			}
@@ -15022,25 +15027,28 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					Entity* owner = uidToEntity(item->ownerUid);
 					if ( owner && owner->behavior == &actPlayer )
 					{
-						switch ( item->type )
+						for ( int c = 0; c < MAXPLAYERS; ++c )
 						{
-							case ARTIFACT_ORB_GREEN:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3888]);
-								break;
-							case ARTIFACT_ORB_BLUE:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3889]);
-								break;
-							case ARTIFACT_ORB_RED:
-								//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
-								players[owner->skill[2]]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[3890]);
-								break;
-							default:
-								break;
+							switch ( item->type )
+							{
+								case ARTIFACT_ORB_GREEN:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3888]);
+									break;
+								case ARTIFACT_ORB_BLUE:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3889]);
+									break;
+								case ARTIFACT_ORB_RED:
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
+									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3890]);
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					playSoundEntity(this, 35 + local_rng.rand() % 3, 64);
@@ -15897,6 +15905,22 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	else if ( myStats.type == SPIDER )
+	{
+		if ( monsterTarget != 0 )
+		{
+			if ( Entity* target = uidToEntity(monsterTarget) )
+			{
+				if ( Stat* targetStats = target->getStats() )
+				{
+					if ( targetStats->EFFECTS[EFF_WEBBED] )
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
 	if ( monsterAllySummonRank != 0 )
 	{
 		return false;
@@ -15964,6 +15988,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 		return false;
 	}
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+	if ( myStats.type == SPIDER && monsterSpecialState > 0 )
 	{
 		return false;
 	}
@@ -16565,7 +16593,10 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 {
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		return -1;
+		if ( isPlayer )
+		{
+			return -1;
+		}
 	}
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{

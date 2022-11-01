@@ -128,6 +128,8 @@ void initSpider(Entity* my, Stat* myStats)
 
 			my->setHardcoreStats(*myStats);
 
+			newItem(SPELLBOOK_SPRAY_WEB, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -370,6 +372,7 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	// animate limbs
+	Entity* leftArm = nullptr;
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
 		if ( bodypart < 2 )
@@ -386,8 +389,163 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		entity->pitch = my->pitch;
-		entity->roll = my->roll;
+
+		if ( bodypart == 2 || bodypart == 3 )
+		{
+			bool left = (bodypart == 2);
+			if ( left )
+			{
+				leftArm = entity;
+			}
+
+			if ( !left && leftArm )
+			{
+				entity->roll = -leftArm->roll;
+				entity->pitch = leftArm->pitch;
+			}
+			
+			if ( left )
+			{
+				real_t rollRate = 0.0;
+				real_t pitchMult = arachnophobia_filter ? 0.5 : 1.0; // crab limbs are more expressive so tone it down
+				if ( MONSTER_ATTACK != 0 )
+				{
+					if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+					{
+						if ( MONSTER_ATTACKTIME == 0 )
+						{
+							entity->pitch = 0.0;
+							entity->roll = 0.0;
+							entity->skill[1] = 0;
+							entity->skill[0] = 0;
+							createParticleDot(my);
+						}
+						else
+						{
+							rollRate = 0.1;
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1 * pitchMult, -(20.0 / 180.0) * PI * pitchMult, false, 0.0);
+							if ( entity->skill[0] == 0 )
+							{
+								if ( limbAnimateToLimit(entity, ANIMATE_ROLL, rollRate, PI / 4, false, 0.0) )
+								{
+									entity->skill[0] = 1;
+								}
+							}
+							else
+							{
+								if ( limbAnimateToLimit(entity, ANIMATE_ROLL, -rollRate, 0.0, false, 0.0) )
+								{
+									entity->skill[0] = 0;
+								}
+							}
+							if ( MONSTER_ATTACKTIME >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									// swing the arm after we prepped the spell
+									my->attack(1, 0, nullptr);
+								}
+							}
+						}
+					}
+					else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+					{
+						if ( MONSTER_ATTACKTIME == 0 )
+						{
+							entity->pitch = 0.0;
+							entity->roll = 0.0;
+							entity->skill[1] = 0;
+						}
+						else
+						{
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25 * pitchMult, -(65.0 / 180.0) * PI * pitchMult, false, 0.0);
+							if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									my->attack(1, 0, nullptr);
+								}
+							}
+						}
+					}
+					else if ( MONSTER_ATTACK == 1 )
+					{
+						if ( entity->skill[1] == 0 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4 * pitchMult, pitchMult * PI / 2, false, 0.0) )
+							{
+								entity->skill[1] = 1;
+							}
+						}
+						else if ( entity->skill[1] >= 1 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25 * pitchMult, 0.0, false, 0.0) )
+							{
+								entity->skill[1] = 0;
+								entity->roll = 0;
+								MONSTER_ATTACK = 0;
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( dist > 0.1 )
+					{
+						rollRate = 0.1; // walking/chasing click click click
+					}
+					else if ( my->monsterState == MONSTER_STATE_WAIT )
+					{
+						// idle, waiting
+						rollRate = 0.01;
+					}
+					
+					if ( rollRate > 0.0001 )
+					{
+						if ( entity->skill[0] == 0 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_ROLL, rollRate, PI / 4, false, 0.0) )
+							{
+								entity->skill[0] = 1;
+							}
+						}
+						else
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_ROLL, -rollRate, 0.0, false, 0.0) )
+							{
+								entity->skill[0] = 0;
+							}
+						}
+					}
+				}
+
+				if ( my->monsterState == MONSTER_STATE_WAIT )
+				{
+					entity->fskill[0] = std::max(-PI * 10 / 180.0, entity->fskill[0] - 0.05); // lower the butt
+				}
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+				{
+					entity->fskill[0] = std::max(-PI * 20 / 180.0, entity->fskill[0] - 0.05); // lower the butt more
+				}
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+				{
+					entity->fskill[0] = std::max(-PI * 20 / 180.0, entity->fskill[0] - 0.2); // lower the butt more and fast
+				}
+				else
+				{
+					entity->fskill[0] = std::min(PI * 20 / 180.0, entity->fskill[0] + 0.1); // raise the butt if walking not attacking
+				}
+
+				my->pitch = entity->fskill[0];
+			}
+		}
+
+		if ( bodypart >= 4 )
+		{
+			entity->roll = my->roll;
+			entity->pitch = 0.0;// -my->pitch;
+			entity->pitch = std::max(-PI / 32, std::min(PI / 32, entity->pitch));
+		}
 
 		switch ( bodypart )
 		{
@@ -396,14 +554,14 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->x += cos(my->yaw) * 2 + cos(my->yaw + PI / 2) * 2;
 				entity->y += sin(my->yaw) * 2 + sin(my->yaw + PI / 2) * 2;
 				entity->yaw += PI / 10;
-				entity->pitch -= PI / 8;
+				//entity->pitch -= PI / 8;
 				break;
 			// left pedipalp
 			case 3:
 				entity->x += cos(my->yaw) * 2 - cos(my->yaw + PI / 2) * 2;
 				entity->y += sin(my->yaw) * 2 - sin(my->yaw + PI / 2) * 2;
 				entity->yaw -= PI / 10;
-				entity->pitch -= PI / 8;
+				//entity->pitch -= PI / 8;
 				break;
 
 			// 1st/5th leg:
@@ -593,5 +751,18 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->flags[INVISIBLE] = true; // for debugging
 				break;
 		}
+	}
+
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
+	{
+		MONSTER_ATTACKTIME++;
+	}
+	else if ( MONSTER_ATTACK == 0 )
+	{
+		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }

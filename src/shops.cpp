@@ -162,8 +162,13 @@ void startTradingServer(Entity* entity, int player)
 			}
 			if ( item->playerSoldItemToShop )
 			{
-				net_packet->data[15] |= (1 << 4);
+				net_packet->data[15] |= (1 << 1);
 			}
+			if ( item->itemSpecialShopConsumable )
+			{
+				net_packet->data[15] |= (1 << 2);
+			}
+			net_packet->data[15] |= ((0xF & item->itemRequireTradingSkillInShop) << 4);
 			net_packet->data[16] = (char)item->x;
 			net_packet->data[17] = (char)item->y;
 			net_packet->address.host = net_clients[player - 1].host;
@@ -193,9 +198,19 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		return false;
 	}
 
-	if ( stats[player]->GOLD >= item->buyValue(player) )
+	if ( players[player]->shopGUI.itemUnknownPreventPurchase )
 	{
-		if ( items[item->type].value * 1.5 >= item->buyValue(player) )
+		shopspeech[player] = language[4252 + local_rng.rand() % 3];
+		shoptimer[player] = ticks - 1;
+		playSound(90, 64);
+	}
+	else if ( stats[player]->GOLD >= item->buyValue(player) )
+	{
+		if ( item->itemSpecialShopConsumable )
+		{
+			shopspeech[player] = language[4255 + local_rng.rand() % 5];
+		}
+		else if ( items[item->type].value * 1.5 >= item->buyValue(player) )
 		{
 			shopspeech[player] = language[200 + local_rng.rand() % 3];
 		}

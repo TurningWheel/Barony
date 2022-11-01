@@ -412,6 +412,8 @@ public:
 	bool playerSoldItemToShop = false; // if item was sold to a shopkeeper
 	bool itemHiddenFromShop = false; // if item needs to be hidden in shop view
 	bool notifyIcon = false; // if item draws exclamation as a 'new' untouched item
+	Uint8 itemRequireTradingSkillInShop = 0; // if item hidden in shop view until player has trading req
+	bool itemSpecialShopConsumable = false; // if item is extra non-standard inventory consumable
 
 	// weight, category and other generic info reported by function calls
 
