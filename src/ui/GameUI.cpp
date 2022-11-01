@@ -21355,8 +21355,9 @@ void Player::HUD_t::updateMinimapPrompts()
 		return;
 	}
 
-	if ( (!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
-		|| (::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
+	if ( /*(!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
+		||*/ 
+		(::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
 		|| gamePaused 
 		|| player.bUseCompactGUIHeight()
 		|| !this->minimapFrame 
