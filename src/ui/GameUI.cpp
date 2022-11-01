@@ -21431,7 +21431,7 @@ void Player::HUD_t::updateMinimapPrompts()
 		return;
 	}
 
-	bool alignHorizontal = !keystatus[SDL_SCANCODE_G];
+	bool alignHorizontal = true;
 	int imgX = -2;
 	int index = -1;
 	int lowestY = 0;
