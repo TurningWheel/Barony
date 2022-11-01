@@ -3607,6 +3607,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				interactText += language[4038]; // "Climb ladder";
 			}
 		}
+		else if ( parent->behavior == &::actTeleportShrine /*|| parent->behavior == &::actSpellShrine*/ )
+		{
+			interactText += language[4299]; // "Touch shrine";
+		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
 			char* itemName = items[parent->skill[21]].name_identified;
@@ -3748,6 +3752,10 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		return false;
 	}
 	else if ( entity.behavior == &actStatue )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &::actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
 	{
 		return false;
 	}

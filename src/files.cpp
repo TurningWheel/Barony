@@ -1200,6 +1200,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->statueDir, sizeof(Sint32), 1);
 						fp->read(&entity->statueId, sizeof(Sint32), 1);
 						break;
+					case 25:
+						fp->read(&entity->shrineDir, sizeof(Sint32), 1);
+						fp->read(&entity->shrineZ, sizeof(Sint32), 1);
+						break;
+					case 26:
+						fp->read(&entity->shrineDir, sizeof(Sint32), 1);
+						fp->read(&entity->shrineZ, sizeof(Sint32), 1);
+						break;
 					default:
 						break;
 				}
@@ -1596,6 +1604,14 @@ int saveMap(const char* filename2)
 				case 24:
 					fp->write(&entity->statueDir, sizeof(Sint32), 1);
 					fp->write(&entity->statueId, sizeof(Sint32), 1);
+					break;
+				case 25:
+					fp->write(&entity->shrineDir, sizeof(Sint32), 1);
+					fp->write(&entity->shrineZ, sizeof(Sint32), 1);
+					break;
+				case 26:
+					fp->write(&entity->shrineDir, sizeof(Sint32), 1);
+					fp->write(&entity->shrineZ, sizeof(Sint32), 1);
 					break;
 				default:
 					break;

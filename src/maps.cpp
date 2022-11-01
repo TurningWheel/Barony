@@ -2210,6 +2210,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int numGenGold = 0;
 	int numGenDecorations = 0;
 
+	static ConsoleVariable<bool> cvar_underworldshrinetest("/underworldshrinetest", false);
+
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
@@ -2221,6 +2223,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 		x = 0;
 		y = 0;
+		bool skipPossibleLocationsDecrement = false;
 		while ( 1 )
 		{
 			if ( possiblelocations[y + x * map.height] == true )
@@ -2303,6 +2306,192 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity->skill[5] = nummonsters;
 			++nummonsters;
 			//entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
+		}
+		else if ( *cvar_underworldshrinetest && !strncmp(map.name, "Underworld", 10) 
+			&& (c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7) )
+		{
+			std::set<int> walkableTiles;
+			for ( int isley = 1; isley < map.width - 1; ++isley )
+			{
+				for ( int islex = 1; islex < map.width - 1; ++islex )
+				{
+					if ( !map.tiles[OBSTACLELAYER + isley * MAPLAYERS + (islex) * MAPLAYERS * map.height]
+						&& map.tiles[isley * MAPLAYERS + (islex) * MAPLAYERS * map.height]
+						&& !swimmingtiles[map.tiles[isley * MAPLAYERS + islex * MAPLAYERS * map.height]]
+						&& !lavatiles[map.tiles[isley * MAPLAYERS + islex * MAPLAYERS * map.height]] )
+					{
+						walkableTiles.insert(islex + isley * 1000);
+					}
+				}
+			}
+
+			int numIslands = 0;
+			std::set<int> reachedTiles;
+			struct IslandNode_t
+			{
+				int neighbours = 0;
+			};
+			std::map<int, std::map<int, IslandNode_t>> islands;
+			for ( auto it = walkableTiles.begin(); it != walkableTiles.end(); ++it )
+			{
+				if ( reachedTiles.find(*it) == reachedTiles.end() )
+				{
+					// new island
+					std::queue<int> frontier;
+					frontier.push(*it);
+					reachedTiles.insert(*it);
+					while ( !frontier.empty() )
+					{
+						auto currentKey = frontier.front();
+						frontier.pop();
+
+						const int ix = (currentKey) % 1000;
+						const int iy = (currentKey) / 1000;
+
+						islands[numIslands][currentKey] = IslandNode_t();
+
+						int checkKey = (ix + 1) + ((iy) * 1000);
+						if ( walkableTiles.find(checkKey) != walkableTiles.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix - 1) + ((iy) * 1000);
+						if ( walkableTiles.find(checkKey) != walkableTiles.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix) + ((iy + 1) * 1000);
+						if ( walkableTiles.find(checkKey) != walkableTiles.end() 
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+						checkKey = (ix) + ((iy - 1) * 1000);
+						if ( walkableTiles.find(checkKey) != walkableTiles.end()
+							&& reachedTiles.find(checkKey) == reachedTiles.end() )
+						{
+							frontier.push(checkKey);
+							reachedTiles.insert(checkKey);
+						}
+					}
+					if ( !islands[numIslands].empty() )
+					{
+						++numIslands;
+					}
+				}
+			}
+
+			for ( int isleIndex = 0; isleIndex < numIslands; ++isleIndex )
+			{
+				int min_x = 1000;
+				int max_x = 0;
+				int min_y = 1000;
+				int max_y = 0;
+
+				std::vector<int> locations3x3;
+				for ( auto& isle : islands[isleIndex] )
+				{
+					const int ix = (isle.first) % 1000;
+					const int iy = (isle.first) / 1000;
+
+					max_x = std::max(max_x, ix);
+					min_x = std::min(min_x, ix);
+
+					max_y = std::max(max_y, iy);
+					min_y = std::min(min_y, iy);
+
+					int checkKey = (ix + 1) + ((iy) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix - 1) + ((iy) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix) + ((iy - 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix) + ((iy + 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+
+					checkKey = (ix + 1) + ((iy + 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix - 1) + ((iy + 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix + 1) + ((iy - 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+					checkKey = (ix - 1) + ((iy - 1) * 1000);
+					if ( islands[isleIndex].find(checkKey) != islands[isleIndex].end() )
+					{
+						++isle.second.neighbours;
+					}
+
+					if ( isle.second.neighbours == 8 )
+					{
+						locations3x3.push_back(isle.first);
+					}
+				}
+				printlog("Isle: %d [%d %d] to [%d %d]", isleIndex, min_x, min_y, max_x, max_y);
+
+				if ( !locations3x3.empty() )
+				{
+					int chosenKey = locations3x3.at(map_rng.rand() % locations3x3.size());
+					int dir = map_rng.rand() % 4;
+					entity = newEntity(177, 1, map.entities, nullptr);
+					setSpriteAttributes(entity, nullptr, nullptr);
+					int ix = (chosenKey) % 1000;
+					int iy = (chosenKey) / 1000;
+					entity->shrineDir = dir;
+					if ( dir == 0 )
+					{
+						ix = ix - 1;
+						iy = iy - 1 + map_rng.rand() % 3;
+					}
+					else if ( dir == 2 )
+					{
+						ix = ix + 1;
+						iy = iy - 1 + map_rng.rand() % 3;
+					}
+					else if ( dir == 1 )
+					{
+						ix = ix - 1 + map_rng.rand() % 3;
+						iy = iy - 1;
+					}
+					else if ( dir == 3 )
+					{
+						ix = ix - 1 + map_rng.rand() % 3;
+						iy = iy + 1;
+					}
+					x = ix;
+					y = iy;
+					entity->x = x * 16.0;
+					entity->y = y * 16.0;
+					skipPossibleLocationsDecrement = true;
+					possiblelocations[iy + ix * map.height] = false;
+					--numpossiblelocations;
+				}
+			}
 		}
 		else
 		{
@@ -2657,8 +2846,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			//printlog("9 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 		}
 		// mark this location as inelligible for reselection
-		possiblelocations[y + x * map.height] = false;
-		numpossiblelocations--;
+		if ( !skipPossibleLocationsDecrement )
+		{
+			possiblelocations[y + x * map.height] = false;
+			numpossiblelocations--;
+		}
 	}
 
 	// on hell levels, lava doesn't bubble. helps performance
@@ -5503,6 +5695,28 @@ void assignActions(map_t* map)
 				entity->behavior = &actStatue;
 				entity->sprite = 995;
 				entity->yaw = entity->statueDir * PI / 2;
+				break;
+			case 177:
+				// teleport shrine
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5 - entity->shrineZ * 0.25;
+				entity->behavior = &actTeleportShrine;
+				entity->sprite = 1192;
+				entity->yaw = entity->shrineDir * PI / 2;
+				break;
+			case 178:
+				// spell shrine
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 3.5 - entity->shrineZ * 0.25;
+				//entity->behavior = &actSpellShrine;
+				entity->sprite = 1193;
+				entity->yaw = entity->shrineDir * PI / 2;
 				break;
 			default:
 				break;

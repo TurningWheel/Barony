@@ -241,6 +241,14 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	spellTrapInit(skill[7]),
 	spellTrapCounter(skill[8]),
 	spellTrapReset(skill[9]),
+	shrineSpellEffect(skill[0]),
+	shrineRefire1(skill[1]),
+	shrineRefire2(skill[3]),
+	shrineDir(skill[4]),
+	shrineAmbience(skill[5]),
+	shrineInit(skill[6]),
+	shrineActivateDelay(skill[7]),
+	shrineZ(skill[8]),
 	ceilingTileModel(skill[0]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
@@ -10386,6 +10394,11 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	}
 	int ty = static_cast<int>(std::floor(target->y)) >> 4;
 	int tx = static_cast<int>(std::floor(target->x)) >> 4;
+	if ( target->behavior == &::actTeleportShrine )
+	{
+		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
+		tx = static_cast<int>(std::floor(target->x + 32.0 * cos(target->yaw))) >> 4;
+	}
 
 	if ( behavior == &actPlayer )
 	{
@@ -10403,9 +10416,9 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	std::vector<std::pair<int, int>> goodspots;
 	std::vector<std::pair<int, int>> spotsBehindMonster;
 	bool forceSpot = false;
-	for ( int iy = std::max(1, ty - dist); !forceSpot && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	for ( int iy = std::max(1, ty - dist); !forceSpot && iy <= std::min(ty + dist, static_cast<int>(map.height) - 1); ++iy )
 	{
-		for ( int ix = std::max(1, tx - dist); !forceSpot && ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); !forceSpot && ix <= std::min(tx + dist, static_cast<int>(map.width) - 1); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -10454,6 +10467,28 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 				else
 				{
 					if ( target->behavior == &actBomb && target->skill[22] == 1 && ix == tx && iy == ty ) // teleport receiver.
+					{
+						// directly on top, let's go there.
+						real_t tmpx = x;
+						real_t tmpy = y;
+						x = (ix << 4) + 8;
+						y = (iy << 4) + 8;
+						if ( !entityInsideSomething(this) )
+						{
+							forceSpot = true;
+							goodspots.clear();
+							goodspots.push_back(std::make_pair(ix, iy));
+							numlocations = 1;
+							// restore coordinates.
+							x = tmpx;
+							y = tmpy;
+							break;
+						}
+						// restore coordinates.
+						x = tmpx;
+						y = tmpy;
+					}
+					else if ( target->behavior == &::actTeleportShrine && ix == tx && iy == ty )
 					{
 						// directly on top, let's go there.
 						real_t tmpx = x;
