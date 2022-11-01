@@ -11977,7 +11977,7 @@ bind_failed:
 
 	static bool isControllerAvailable(int player, int num_controllers) {
         for (int c = 0; c < player; ++c) {
-            if (!isPlayerSignedIn(c)) {
+            if (!isPlayerSignedIn(c) && !playerSlotsLocked[c]) {
                 return false;
             }
         }
@@ -11997,6 +11997,7 @@ bind_failed:
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
+		sendReadyOverNet(index, false);
 		auto countdown = lobby->findFrame("countdown");
 		if (countdown) {
 		    countdown->removeSelf();
@@ -12080,7 +12081,7 @@ bind_failed:
 		                            shouldOwnKeyboard = false;
 		                            break;
 		                        }
-		                    } else {
+		                    } else if (!playerSlotsLocked[c]) {
 	                            shouldOwnKeyboard = false;
 	                            break;
 		                    }
@@ -12172,7 +12173,7 @@ bind_failed:
 		                    // skip ourselves
 		                    continue;
 		                }
-		                if (!isPlayerSignedIn(c)) {
+		                if (!isPlayerSignedIn(c) && !playerSlotsLocked[c]) {
 		                    inputs.setPlayerIDAllowedKeyboard(c);
 		                    break;
 		                }
@@ -12769,6 +12770,18 @@ bind_failed:
 			// this clears it.
 			Input::waitingToBindControllerForPlayer = -1;
 #endif
+		}
+
+		// unassign all controllers when entering the lobby.
+		// we do this because any number of slots can be locked
+		// and we need to be able to assign any available controller
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			if (inputs.hasController(c)) {
+				inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+				for (int c = 0; c < 4; ++c) {
+					Input::inputs[c].refresh();
+				}
+			}
 		}
 
 		// reset ALL player stats
@@ -17053,14 +17066,28 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
-	    savethisgame = false;
-	    if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (!client_disconnected[c] && players[c]->entity) {
-		            savethisgame = true;
-		        }
-		    }
+		// count how many players are in the game
+		int currentPlayers = 0;
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+		    if (!client_disconnected[c]) {
+				++currentPlayers;
+			}
 		}
+
+		// check if any players have dropped
+		if (currentPlayers == numplayers) {
+			// if they haven't, we need to delete saves if all players have died
+			savethisgame = false;
+			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				for (int c = 0; c < MAXPLAYERS; ++c) {
+					if (!client_disconnected[c] && players[c]->entity) {
+						// found a living player, don't delete the save game!
+						savethisgame = true;
+					}
+				}
+			}
+		}
+
 	    const char* prompt;
 	    if (savethisgame) {
 	        prompt = "All progress before the current\ndungeon level will be saved.";
@@ -18602,6 +18629,13 @@ bind_failed:
 	    }
 	}
 
+	bool isPlayerSlotLocked(int index) {
+	    if (index < 0 || index >= MAXPLAYERS) {
+	        return true;
+	    }
+		return playerSlotsLocked[index];
+	}
+
 	bool isPlayerSignedIn(int index) {
 	    if (index < 0 || index >= MAXPLAYERS) {
 	        return false;
@@ -18625,6 +18659,7 @@ bind_failed:
 			    }
 			    return backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png";
 			}
+			case LobbyType::LobbyJoined:
 			case LobbyType::LobbyLAN:
 			case LobbyType::LobbyOnline: {
 			    if (index == clientnum) {

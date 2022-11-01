@@ -3897,6 +3897,11 @@ bool handleEvents(void)
 							            // controller is not already bound - bind it to the first player who does not have a controller
 							            for (int player = 0; player < MAXPLAYERS; ++player)
 							            {
+											if (intro && MainMenu::isPlayerSlotLocked(player))
+											{
+												// don't assign the controller to this player if their slot is locked!
+												continue;
+											}
 							                if (intro && multiplayer != SINGLE && player != clientnum)
 							                {
 							                    // only assign the controller to OUR player in net lobbies
@@ -3925,6 +3930,11 @@ bool handleEvents(void)
 							                // didn't find anybody to bind to. try again, but ignore the keyboard restriction
 							                for (int player = 0; player < MAXPLAYERS; ++player)
 							                {
+												if (intro && MainMenu::isPlayerSlotLocked(player))
+												{
+													// don't assign the controller to this player if their slot is locked!
+													continue;
+												}
 							                    if (intro && multiplayer != SINGLE && player != clientnum)
 							                    {
 							                        // only assign the controller to OUR player in net lobbies
