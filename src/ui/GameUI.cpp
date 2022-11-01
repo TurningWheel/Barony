@@ -21588,7 +21588,7 @@ void Player::HUD_t::updateGameTimer()
 		seed->setDisabled(false);
 		pos.h = 44;
 		char seedbuf[32];
-		snprintf(seedbuf, sizeof(seedbuf), "%lu", mapseed);
+		snprintf(seedbuf, sizeof(seedbuf), "%u", mapseed);
 		seed->setSize(SDL_Rect{ 0, 21, pos.w, 24 });
 		seed->setText(seedbuf);
 	}

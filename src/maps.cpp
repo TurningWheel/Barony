@@ -1575,26 +1575,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								/*if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else /*if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
-								}*/
 								if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);

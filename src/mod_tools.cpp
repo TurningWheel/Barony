@@ -5610,7 +5610,7 @@ void ShopkeeperConsumables_t::readFromFile()
 							bools.push_back(arr->GetBool());
 						}
 					}
-					for ( auto& b : bools )
+					for ( auto b : bools )
 					{
 						itemEntry.identified.push_back(b);
 					}
