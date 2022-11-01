@@ -15228,7 +15228,7 @@ bind_failed:
 
 	static void hostOnlineLobby(Button&) {
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
-		errorPrompt("Unable to host lobby\nOnline play is disabled.", "Okay", [](Button&){
+		errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&){
 			soundCancel();
 			closeMono();
 		});

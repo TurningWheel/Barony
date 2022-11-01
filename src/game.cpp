@@ -6309,11 +6309,11 @@ int main(int argc, char** argv)
 #ifndef NINTENDO
 						// draw mouse
 						// only draw 1 cursor in the main menu
-						if ( inputs.getVirtualMouse(clientnum)->draw_cursor )
+						if ( inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->draw_cursor )
 						{
 							auto cursor = Image::get("images/system/cursor_hand.png");
-							pos.x = inputs.getMouse(clientnum, Inputs::X) - cursor->getWidth() / 2;
-							pos.y = inputs.getMouse(clientnum, Inputs::Y) - cursor->getHeight() / 2;
+							pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - cursor->getWidth() / 2;
+							pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - cursor->getHeight() / 2;
 							pos.x += 4;
 							pos.y += 4;
 							pos.w = cursor->getWidth();
