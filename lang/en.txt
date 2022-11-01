@@ -6376,4 +6376,8 @@ favorite customers.#
 4297 *chime*#
 4298 *boing*#
 
-4299 end#
+4299 Touch shrine#
+4300 Your touch falls on inert stone.#
+4301 The shrine responds to your touch!#
+
+4399 end#
