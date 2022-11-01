@@ -4910,7 +4910,8 @@ const Sint32 Inputs::getMouse(const int player, MouseInputs input)
 	}
 	return 0;
 #else
-	if ( bPlayerUsingKeyboardControl(player) )
+	if ( bPlayerUsingKeyboardControl(player) &&
+		(!getVirtualMouse(player)->lastMovementFromController || (players[player]->shootmode && !gamePaused && !intro) || gamePaused || intro) )
 	{
 		// add controller virtual mouse if applicable, only in shootmode
 		// shootmode has no limits on rotation, but !shootmode is inventory
