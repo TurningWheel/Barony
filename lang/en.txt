@@ -6311,41 +6311,66 @@ Combination!#
 4249 Unlawful#
 4250 Nefarious#
 
+4251 Requires %d Trading skill + CHR stat#
+
+# shop try to buy hidden item
+4252 Sorry, I do not sell that to 
+just anyone.#
+4253 That's reserved for another
+buyer, my apologies.#
+4254 That's only for my most
+esteemed clientele.#
+
+# shop buy added consumables
+4255 My personal stock, just for
+thee.#
+4256 I don't let just anyone buy
+that, you know.#
+4257 A little something from my
+limited stock.#
+4258 I see you like my special
+inventory.#
+4259 I keep that on hand for my
+favorite customers.#
+
+4260 %d gold#
+4261 ???#
+
 # NPC greetings
 
-4251 Nevermore.#
-4252 Hello, %s.#
-4253 Peep!#
-4254 Hello %s.#
-4255 *slip slop*#
-4256 *grunt*#
-4257 *burble*#
-4258 *gurgle*#
-4259 *groan*#
-4260 *skitter*#
-4261 Hehehe...#
-4262 *gurgle*#
-4263 Jib jab chip jub.#
-4264 *growl*#
-4265 Wanna dance?#
-4266 *creak*#
-4267 Greetings, mortal.#
-4268 You called?#
-4269 Welcome to hell, weakling.#
-4270 Is there anything you want to buy?#
-4271 Kleeaku.#
-4272 *skitter*#
-4273 *rumble*#
-4274 Wanna play?#
-4275 Bleh!#
-4276 ...#
-4277 Ba-a-a-a-a#
-4278 *choo choo*#
-4279 Hello, worm.#
-4280 Hello, cretin.#
-4281 *whirr*#
-4282 *whizz*#
-4283 *chime*#
-4284 *boing*#
+4262 Nevermore.#
+4263 Hello, %s.#
+4264 Peep!#
+4265 Hello %s.#
+4266 *slip slop*#
+4267 *grunt*#
+4268 *burble*#
+4269 *gurgle*#
+4270 *groan*#
+4271 *skitter*#
+4272 Hehehe...#
+4273 *gurgle*#
+4274 Jib jab chip jub.#
+4275 *growl*#
+4276 Wanna dance?#
+4277 *creak*#
+4278 Greetings, mortal.#
+4279 You called?#
+4280 Welcome to hell, weakling.#
+4281 Is there anything you want to buy?#
+4282 Kleeaku.#
+4283 *skitter*#
+4284 *rumble*#
+4285 Wanna play?#
+4286 Bleh!#
+4287 ...#
+4288 Ba-a-a-a-a#
+4289 *choo choo*#
+4290 Hello, worm.#
+4291 Hello, cretin.#
+4292 *whirr*#
+4293 *whizz*#
+4294 *chime*#
+4295 *boing*#
 
 4299 end#

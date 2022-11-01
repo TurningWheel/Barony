@@ -542,7 +542,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 		}
 		else
@@ -558,7 +558,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			{
 				//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 				players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 			}
 
 			if ( my->checkFriend(players[monsterclicked]->entity) )
@@ -898,7 +898,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		{
 			//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[534], namesays);
 			players[monsterclicked]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
-				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[534]);
+				Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, language[4262 + (int)myStats->type], stats[monsterclicked]->name);
 		}
 
 		return false;
@@ -9823,7 +9823,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				if ( local_rng.getU8() % 8 == 0 ) 
 				{
 					players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, language[534]);
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, language[4262 + (int)myStats.type], stats[monsterAllyIndex]->name);
 					//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 					//	myStats, language[3129], language[3130], MSG_COMBAT);
 				}
