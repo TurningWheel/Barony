@@ -2155,7 +2155,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 	if ( !bPlayerBars && titleFrame && hud_t.allyFollowerGlyphFrame && !hud_t.allyFollowerGlyphFrame->isDisabled() )
 	{
-		static ConsoleVariable<int> followerMenuCommandGlyphX("/followermenu_cmd_glyph_x", -116);
+		static ConsoleVariable<int> followerMenuCommandGlyphX("/followermenu_cmd_glyph_x", -96);
 		static ConsoleVariable<int> followerMenuCommandGlyphY("/followermenu_cmd_glyph_y", 0);
 		static ConsoleVariable<int> followerMenuRepeatGlyphX("/followermenu_repeat_glyph_x", 0);
 		static ConsoleVariable<int> followerMenuRepeatGlyphY("/followermenu_repeat_glyph_y", 0);
@@ -2163,6 +2163,10 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		auto glyphFrame = hud_t.allyFollowerGlyphFrame;
 		SDL_Rect glyphFramePos{ baseFrame->getSize().x, titleFrame->getSize().y, 150, 80 };
 		glyphFramePos.x += *followerMenuCommandGlyphX;
+		if ( !titleSelectorGlyph->disabled )
+		{
+			glyphFramePos.x -= titleSelectorGlyph->pos.w;
+		}
 		glyphFramePos.y += *followerMenuCommandGlyphY;
 		glyphFrame->setSize(glyphFramePos);
 
@@ -2181,15 +2185,21 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			commandImg->pos.h = imgGet->getHeight();
 			commandImg->pos.x = glyphFramePos.w - commandImg->pos.w;
 			commandImg->pos.y = 0;
-		}
-		commandGlyph->path = Input::inputs[player].getGlyphPathForBinding("Show NPC Commands");
-		if ( auto imgGet = Image::get(commandGlyph->path.c_str()) )
-		{
-			commandGlyph->disabled = commandImg->disabled || followerDisplay.bOpenFollowerMenuDisabled;
-			commandGlyph->pos.w = imgGet->getWidth();
-			commandGlyph->pos.h = imgGet->getHeight();
-			commandGlyph->pos.x = commandImg->pos.x - commandGlyph->pos.w;
-			commandGlyph->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - commandGlyph->pos.h / 2;
+
+			commandGlyph->path = Input::inputs[player].getGlyphPathForBinding("Show NPC Commands");
+			if ( auto imgGet = Image::get(commandGlyph->path.c_str()) )
+			{
+				commandGlyph->disabled = commandImg->disabled || followerDisplay.bOpenFollowerMenuDisabled;
+				commandGlyph->pos.w = imgGet->getWidth();
+				commandGlyph->pos.h = imgGet->getHeight();
+				commandGlyph->pos.x = commandImg->pos.x - commandGlyph->pos.w;
+				commandGlyph->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - commandGlyph->pos.h / 2;
+			}
+			else
+			{
+				commandImg->disabled = true;
+				commandGlyph->disabled = true;
+			}
 		}
 
 		if ( FollowerMenu[player].optionPrevious == -1 )
@@ -2204,7 +2214,14 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				repeatImg->disabled = false;
 				repeatImg->pos.w = imgGet->getWidth();
 				repeatImg->pos.h = imgGet->getHeight();
-				repeatImg->pos.x = commandGlyph->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				if ( commandImg->disabled )
+				{
+					repeatImg->pos.x = commandImg->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				}
+				else
+				{
+					repeatImg->pos.x = commandGlyph->pos.x - repeatImg->pos.w + *followerMenuRepeatGlyphX;
+				}
 				repeatImg->pos.y = commandImg->pos.y + commandImg->pos.h / 2 - repeatImg->pos.h / 2 + *followerMenuRepeatGlyphY;
 			}
 			repeatGlyph->path = Input::inputs[player].getGlyphPathForBinding("Command NPC");
@@ -2215,6 +2232,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				repeatGlyph->pos.h = imgGet->getHeight();
 				repeatGlyph->pos.x = repeatImg->pos.x - repeatGlyph->pos.w;
 				repeatGlyph->pos.y = repeatImg->pos.y + repeatImg->pos.h / 2 - repeatGlyph->pos.h / 2;
+			}
+			else
+			{
+				repeatImg->disabled = true;
+				repeatGlyph->disabled = true;
 			}
 		}
 	}
@@ -7099,10 +7121,44 @@ void createGameTimerFrame(const int player)
 	auto txt = hud_t.gameTimerFrame->addField("timer txt", 64);
 	txt->setText("00:00:00");
 	txt->setSize(SDL_Rect{ 0, 0, hud_t.gameTimerFrame->getSize().w, hud_t.gameTimerFrame->getSize().h });
-	txt->setFont("fonts/pixel_maz.ttf#32#2");
+	txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
 	txt->setVJustify(Field::justify_t::TOP);
 	txt->setHJustify(Field::justify_t::LEFT);
 	txt->setColor(makeColor(255, 255, 255, 255));
+
+	auto seed = hud_t.gameTimerFrame->addField("seed txt", 64);
+	seed->setText("");
+	seed->setSize(SDL_Rect{ 0, 0, hud_t.gameTimerFrame->getSize().w, hud_t.gameTimerFrame->getSize().h });
+	seed->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+	seed->setVJustify(Field::justify_t::TOP);
+	seed->setHJustify(Field::justify_t::RIGHT);
+	seed->setColor(makeColor(255, 255, 255, 255));
+	seed->setDisabled(true);
+}
+
+void createMapPromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.mapPromptFrame = hud_t.hudFrame->addFrame("map prompts");
+	hud_t.mapPromptFrame->setHollow(true);
+	hud_t.mapPromptFrame->setDisabled(true);
+	hud_t.mapPromptFrame->setSize(SDL_Rect{ 0, 0, 142, 24 });
+
+	auto promptBg = hud_t.mapPromptFrame->addImage(SDL_Rect{ 0, 0, 280, 40 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_MapPromptBase_00.png", "prompt bg");
+
+	auto imgPromptFrame = hud_t.mapPromptFrame->addFrame("img prompt frame");
+	imgPromptFrame->setHollow(true);
+
+	auto scaleImg = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_Map_Zoom_00.png", "scale img");
+	auto scalePrompt = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/system/white.png", "scale prompt");
+
+	auto expandImg = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/ui/MapAndLog/HUD_Map_Scale_00.png", "expand img");
+	auto expandPrompt = imgPromptFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/system/white.png", "expand prompt");
 }
 
 static void checkControllerState(int player) {
@@ -7272,10 +7328,14 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
-    if ( !minimapFrame )
+    if ( !this->minimapFrame )
     {
-        minimapFrame = createMinimap(player.playernum);
+		this->minimapFrame = createMinimap(player.playernum);
     }
+	if ( !mapPromptFrame )
+	{
+		createMapPromptFrame(player.playernum);
+	}
 	if ( !gameTimerFrame )
 	{
 		createGameTimerFrame(player.playernum);
@@ -7313,6 +7373,7 @@ void Player::HUD_t::processHUD()
 		createAllyPlayerFrame(player.playernum);
 	}
 
+	updateMinimapPrompts();
 	updateGameTimer();
 	updateAllyFollowerFrame(player.playernum);
 	updateAllyPlayerFrame(player.playernum);
@@ -7510,6 +7571,7 @@ void doSharedMinimap() {
 		minimapFrame = gui->addFrame("shared_minimap");
 		minimapFrame->setColor(0);
 		minimapFrame->setHollow(true);
+		minimapFrame->setInvisible(true);
 		minimapFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect){
             drawMinimap(widget.getOwner(), rect);
             });
@@ -7593,13 +7655,18 @@ static Frame* createMinimap(int player) {
 
         auto& scale_ang = minimap.scale_ang;
         auto& scale = minimap.scale;
-        if (minimap.big) {
+		minimap.animating = true;
+		if (minimap.big) {
             if (scale_ang < PI / 2.0) {
                 scale_ang += (PI / fpsLimit) * 2.0;
                 if (scale_ang > PI / 2.0) {
                     scale_ang = PI / 2.0;
                 }
             }
+			if ( scale_ang >= PI / 2.0 )
+			{
+				minimap.animating = false;
+			}
         } else {
             if (scale_ang > 0.0) {
                 scale_ang -= (PI / fpsLimit) * 2.0;
@@ -7607,6 +7674,10 @@ static Frame* createMinimap(int player) {
                     scale_ang = 0.0;
                 }
             }
+			if ( scale_ang <= 0.0 )
+			{
+				minimap.animating = false;
+			}
         }
 
         real_t factor0 = 1.0 - sin(scale_ang);
@@ -7624,13 +7695,25 @@ static Frame* createMinimap(int player) {
 
         Frame* parent = players[player]->hud.hudFrame;
 
+		int mapHeightOffset = 0;
+		if ( players[player]->hud.mapPromptFrame && !players[player]->hud.mapPromptFrame->isDisabled() )
+		{
+			mapHeightOffset = players[player]->hud.mapPromptFrame->getSize().h;
+		}
+		else if ( players[player]->hud.gameTimerFrame && !players[player]->hud.gameTimerFrame->isDisabled() )
+		{
+			mapHeightOffset = players[player]->hud.gameTimerFrame->getSize().h;
+		}
+
         int x = factor0 * (parent->getSize().w - scale * 4) +
             factor1 * (parent->getSize().w - scale * 4) / 2;
-        int y = factor0 * (parent->getSize().h - scale * 4) +
+        int y = factor0 * (parent->getSize().h - scale * 4 - mapHeightOffset) +
             factor1 * (parent->getSize().h - scale * 4) / 2;
 
         auto frame = static_cast<Frame*>(&widget);
         frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+		players[player]->minimap.minimapPos.x = x;
+		players[player]->minimap.minimapPos.y = y;
 		if ( frame->isInvisible() )
 		{
 			frame->setHollow(true);
@@ -21265,6 +21348,209 @@ void Player::HUD_t::resetBars()
 	}
 }
 
+void Player::HUD_t::updateMinimapPrompts()
+{
+	if ( !mapPromptFrame )
+	{
+		return;
+	}
+
+	if ( (!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
+		|| (::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
+		|| gamePaused 
+		|| player.bUseCompactGUIHeight()
+		|| !this->minimapFrame 
+		|| (this->minimapFrame && this->minimapFrame->isInvisible()) )
+	{
+		mapPromptFrame->setDisabled(true);
+		return;
+	}
+
+	int maxHeight1 = 0;
+	int maxHeight2 = 0;
+	auto imgPromptFrame = mapPromptFrame->findFrame("img prompt frame");
+	auto scalePrompt = imgPromptFrame->findImage("scale prompt");
+	scalePrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Minimap Scale");
+	scalePrompt->disabled = true;
+	if ( auto imgGet = Image::get(scalePrompt->path.c_str()) )
+	{
+		scalePrompt->pos.w = imgGet->getWidth();
+		scalePrompt->pos.h = imgGet->getHeight();
+		maxHeight1 = std::max(maxHeight1, scalePrompt->pos.h);
+		scalePrompt->disabled = false;
+	}
+	auto scaleImg = imgPromptFrame->findImage("scale img");
+	scaleImg->disabled = true;
+	if ( !scalePrompt->disabled )
+	{
+		if ( auto imgGet = Image::get(scaleImg->path.c_str()) )
+		{
+			scaleImg->pos.w = imgGet->getWidth();
+			scaleImg->pos.h = imgGet->getHeight();
+			maxHeight1 = std::max(maxHeight1, scaleImg->pos.h);
+			scaleImg->disabled = false;
+		}
+	}
+	auto expandPrompt = imgPromptFrame->findImage("expand prompt");
+	expandPrompt->disabled = true;
+	expandPrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Toggle Minimap");
+	if ( auto imgGet = Image::get(expandPrompt->path.c_str()) )
+	{
+		expandPrompt->pos.w = imgGet->getWidth();
+		expandPrompt->pos.h = imgGet->getHeight();
+		maxHeight2 = std::max(maxHeight2, expandPrompt->pos.h);
+		expandPrompt->disabled = false;
+	}
+	auto expandImg = imgPromptFrame->findImage("expand img");
+	expandImg->disabled = true;
+	if ( !expandPrompt->disabled )
+	{
+		if ( auto imgGet = Image::get(expandImg->path.c_str()) )
+		{
+			expandImg->pos.w = imgGet->getWidth();
+			expandImg->pos.h = imgGet->getHeight();
+			maxHeight2 = std::max(maxHeight2, expandImg->pos.h);
+			expandImg->disabled = false;
+		}
+	}
+	std::vector<Frame::image_t*> imgs;
+	if ( !expandPrompt->disabled )
+	{
+		imgs.push_back(expandPrompt);
+		imgs.push_back(expandImg);
+	}
+	if ( !scalePrompt->disabled )
+	{
+		imgs.push_back(scalePrompt);
+		imgs.push_back(scaleImg);
+	}
+	if ( imgs.empty() )
+	{
+		mapPromptFrame->setDisabled(true);
+		return;
+	}
+
+	bool alignHorizontal = !keystatus[SDL_SCANCODE_G];
+	int imgX = -2;
+	int index = -1;
+	int lowestY = 0;
+	int rightX = 0;
+
+	for ( auto img : imgs )
+	{
+		++index;
+		if ( img->disabled ) 
+		{
+			continue;
+		}
+		if ( alignHorizontal )
+		{
+			imgX += 2;
+			if ( index == 2 )
+			{
+				imgX += 2;
+			}
+			img->pos.x = imgX;
+			img->pos.y = (std::max(maxHeight1, maxHeight2) / 2) - img->pos.h / 2;
+			if ( img->pos.y % 2 == 1 )
+			{
+				++img->pos.y;
+			}
+			imgX += (img->pos.w);
+			lowestY = std::max(lowestY, img->pos.y + img->pos.h);
+			rightX = std::max(rightX, img->pos.x + img->pos.h);
+		}
+		else
+		{
+			imgX += 2;
+			if ( index == 2 )
+			{
+				imgX = 0;
+			}
+			img->pos.x = imgX;
+			if ( img == scaleImg || img == scalePrompt )
+			{
+				img->pos.y = (maxHeight1 / 2) - img->pos.h / 2;
+			}
+			else
+			{
+				img->pos.y = maxHeight1 + 2 + (maxHeight2 / 2) - img->pos.h / 2;
+			}
+			if ( img->pos.y % 2 == 1 )
+			{
+				++img->pos.y;
+			}
+			imgX += (img->pos.w);
+			lowestY = std::max(lowestY, img->pos.y + img->pos.h);
+			rightX = std::max(rightX, img->pos.x + img->pos.h);
+		}
+	}
+
+	mapPromptFrame->setDisabled(false);
+
+	auto promptBg = mapPromptFrame->findImage("prompt bg");
+	promptBg->disabled = true;
+
+	SDL_Rect pos = mapPromptFrame->getSize();
+	if ( hudFrame )
+	{
+		if ( alignHorizontal )
+		{
+			if ( auto imgGet = Image::get(promptBg->path.c_str()) )
+			{
+				if ( imgs.size() > 2 )
+				{
+					promptBg->path = "*#images/ui/MapAndLog/HUD_MapPromptBase_00.png";
+				}
+				else
+				{
+					promptBg->path = "*#images/ui/MapAndLog/HUD_MapPromptBase_Short_00.png";
+				}
+				promptBg->disabled = false;
+				promptBg->pos.w = imgGet->getWidth();
+				promptBg->pos.h = imgGet->getHeight();
+				pos.w = promptBg->pos.w;
+				pos.h = std::max(promptBg->pos.h, lowestY);
+				
+				SDL_Rect imgPromptFramePos = imgPromptFrame->getSize();
+				imgPromptFramePos.w = rightX;
+				imgPromptFramePos.h = lowestY;
+				imgPromptFramePos.x = pos.w / 2 - imgPromptFramePos.w / 2;
+				if ( imgPromptFramePos.x % 2 == 1 )
+				{
+					++imgPromptFramePos.x;
+				}
+				imgPromptFramePos.y = (pos.h / 2) - imgPromptFramePos.h / 2;
+				if ( imgPromptFramePos.y % 2 == 1 )
+				{
+					++imgPromptFramePos.y;
+				}
+				imgPromptFrame->setSize(imgPromptFramePos);
+			}
+			pos.x = hudFrame->getSize().w - pos.w;
+			pos.y = hudFrame->getSize().h - pos.h;
+		}
+		else
+		{
+
+			SDL_Rect imgPromptFramePos = imgPromptFrame->getSize();
+			imgPromptFramePos.x = 0;
+			imgPromptFramePos.y = 0;
+			imgPromptFramePos.w = rightX + 8;
+			imgPromptFramePos.h = lowestY;
+			imgPromptFrame->setSize(imgPromptFramePos);
+
+			pos.w = imgPromptFramePos.w;
+			pos.h = imgPromptFramePos.h;
+			pos.x = hudFrame->getSize().w - pos.w;
+			pos.y = hudFrame->getSize().h - player.minimap.minimapPos.h - pos.h;
+		}
+	}
+	mapPromptFrame->setSize(pos);
+}
+
+static ConsoleVariable<bool> cvar_showmapseed("/showmapseed", false);
+
 void Player::HUD_t::updateGameTimer()
 {
 	if ( !gameTimerFrame )
@@ -21280,15 +21566,44 @@ void Player::HUD_t::updateGameTimer()
 
 	gameTimerFrame->setDisabled(false);
 	SDL_Rect pos = gameTimerFrame->getSize();
-	pos.x = hudFrame->getSize().w - pos.w - 8 + 76;
-	pos.y = 4;
+	pos.x = hudFrame->getSize().w - pos.w - 6;
+
 	Field* timerText = gameTimerFrame->findField("timer txt");
+	SDL_Rect timerTextPos = timerText->getSize();
+	timerTextPos.x = 72;
+	timerTextPos.y = 1;
+	timerText->setSize(timerTextPos);
 	
 	char buf[64] = "";
 	Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
 	Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 	Uint32 hour = (((completionTime / TICKS_PER_SECOND) / 60) / 60) % 24;
 	Uint32 day = ((completionTime / TICKS_PER_SECOND) / 60) / 60 / 24;
+
+	auto seed = gameTimerFrame->findField("seed txt");
+	seed->setDisabled(true);
+	if ( *cvar_showmapseed )
+	{
+		seed->setDisabled(false);
+		pos.h = 44;
+		char seedbuf[32];
+		snprintf(seedbuf, sizeof(seedbuf), "%lu", mapseed);
+		seed->setSize(SDL_Rect{ 0, 21, pos.w, 24 });
+		seed->setText(seedbuf);
+	}
+	else
+	{
+		pos.h = 24;
+	}
+
+	pos.y = gameTimerFrame->getParent()->getSize().h - pos.h;
+
+	if ( player.hud.mapPromptFrame && !player.hud.mapPromptFrame->isDisabled() )
+	{
+		SDL_Rect mapPromptPos = player.hud.mapPromptFrame->getSize();
+		pos.y = mapPromptPos.y + mapPromptPos.h / 2 - pos.h / 2;
+		pos.x = mapPromptPos.x - pos.w - 4;
+	}
 
 	if ( day > 0 )
 	{
@@ -21299,6 +21614,7 @@ void Player::HUD_t::updateGameTimer()
 	{
 		snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hour, min, sec);
 	}
+
 	gameTimerFrame->setSize(pos);
 	timerText->setText(buf);
 }
@@ -27845,6 +28161,16 @@ void Player::HUD_t::updateMinotaurWarning()
 	{
 		minimapPos.x = minotaurFrame->getSize().w - player.minimap.minimapPos.w;
 		minimapPos.y = minotaurFrame->getSize().h - player.minimap.minimapPos.h;
+		int mapHeightOffset = 0;
+		if ( player.hud.mapPromptFrame && !player.hud.mapPromptFrame->isDisabled() )
+		{
+			mapHeightOffset = player.hud.mapPromptFrame->getSize().h;
+		}
+		else if ( player.hud.gameTimerFrame && !player.hud.gameTimerFrame->isDisabled() )
+		{
+			mapHeightOffset = player.hud.gameTimerFrame->getSize().h;
+		}
+		minimapPos.y -= mapHeightOffset;
 	}
 	minimapPos.w = player.minimap.minimapPos.w;
 	minimapPos.h = player.minimap.minimapPos.h;
