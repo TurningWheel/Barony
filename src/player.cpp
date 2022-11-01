@@ -6013,6 +6013,7 @@ void Player::clearGUIPointers()
 	hud.minotaurFrame = nullptr;
 	hud.minotaurSharedDisplay = nullptr;
 	hud.minotaurDisplay = nullptr;
+	hud.mapPromptFrame = nullptr;
 	hud.allyFollowerFrame = nullptr;
 	hud.allyFollowerTitleFrame = nullptr;
 	hud.allyFollowerGlyphFrame = nullptr;

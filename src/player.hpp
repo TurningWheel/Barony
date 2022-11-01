@@ -1389,6 +1389,7 @@ public:
 		Frame* minotaurFrame = nullptr;
 		Frame* minotaurSharedDisplay = nullptr;
 		Frame* minotaurDisplay = nullptr;
+		Frame* mapPromptFrame = nullptr;
 		Frame* mapWindow = nullptr;
 		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
@@ -1569,6 +1570,7 @@ public:
 		const int getActionIconForPlayer(ActionPrompts prompt, std::string& promptString) const;
 		void processHUD();
 		void updateGameTimer();
+		void updateMinimapPrompts();
 		int XP_FRAME_WIDTH = 650;
 		int XP_FRAME_START_Y = 44;
 		int XP_FRAME_HEIGHT = 34;
@@ -2094,6 +2096,7 @@ public:
 		real_t real_scale = 0.0;    // canonical scale
 		real_t scale = 0.0;         // momentary scale
 		real_t scale_ang = 0.0;     // used to interpolate
+		bool animating = false;		// if in the middle of scaling animation
 		SDL_Rect minimapPos;
 		static SDL_Rect sharedMinimapPos;
 	} minimap;
