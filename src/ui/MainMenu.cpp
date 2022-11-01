@@ -1214,7 +1214,7 @@ namespace MainMenu {
 		return frame;
 	}
 
-	static Frame* monoPrompt(
+	static Frame* monoPromptGeneric(
 	    const char* window_text,
 	    const char* okay_text,
 	    void (*okay_callback)(Button&)
@@ -1245,6 +1245,24 @@ namespace MainMenu {
 		okay->select();
 
 		return frame;
+	}
+
+	static Frame* errorPrompt(
+	    const char* window_text,
+	    const char* okay_text,
+	    void (*okay_callback)(Button&)
+	) {
+		soundError();
+		return monoPromptGeneric(window_text, okay_text, okay_callback);
+	}
+
+	static Frame* monoPrompt(
+	    const char* window_text,
+	    const char* okay_text,
+	    void (*okay_callback)(Button&)
+	) {
+		soundActivate();
+		return monoPromptGeneric(window_text, okay_text, okay_callback);
 	}
 
 	static void closeMono() {
@@ -1282,9 +1300,8 @@ namespace MainMenu {
 	}
 
     static void connectionErrorPrompt(const char* str) {
-        soundError();
         resetLobbyJoinFlowState();
-        monoPrompt(str, "Okay",
+        errorPrompt(str, "Okay",
             [](Button& button) {
             soundCancel();
             multiplayer = SINGLE;
@@ -1293,7 +1310,7 @@ namespace MainMenu {
     };
 
     static void disconnectPrompt(const char* text) {
-        monoPrompt(
+        errorPrompt(
             text,
             "Okay",
             [](Button& button){
@@ -1387,9 +1404,14 @@ namespace MainMenu {
                                     FileIO::close(fp);
                                 }
 		                    } else {
-		                        soundError();
 			                    printlog("[LICENSE]: DLC license key invalid.");
-			                    prompt("Invalid license key.");
+		                        errorPrompt("Invalid license key", "Okay", [](Button&){
+		                            soundActivate();
+		                            closeMono();
+                                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+                                    auto play = buttons->findButton("Play Game");
+                                    play->select();
+		                            });
 		                    }
                         }
                         });
@@ -2691,21 +2713,8 @@ namespace MainMenu {
 	    }
 
 		// transmit server flags
-		if ( initialized && !intro && multiplayer == SERVER ) {
-			strcpy((char*)net_packet->data, "SVFL");
-			SDLNet_Write32(svFlags, &net_packet->data[4]);
-			net_packet->len = 8;
-			if (multiplayer == SERVER) {
-			    for ( int c = 1; c < MAXPLAYERS; ++c ) {
-				    if ( client_disconnected[c] ) {
-					    continue;
-				    }
-				    net_packet->address.host = net_clients[c - 1].host;
-				    net_packet->address.port = net_clients[c - 1].port;
-				    sendPacketSafe(net_sock, -1, net_packet, c - 1);
-				    messagePlayer(c, MESSAGE_MISC, language[276]);
-			    }
-			}
+		if (initialized && !intro) {
+			sendSvFlagsOverNet();
 			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
 		}
 
@@ -6248,7 +6257,7 @@ bind_failed:
                 auto scores = boardType == BoardType::LOCAL ?
                     &topscores : &topscoresMultiplayer;
             } else {
-                monoPrompt(
+                errorPrompt(
                     "Please select a score\nto delete first", "Okay",
                     [](Button& button){
 		                soundCancel();
@@ -6997,6 +7006,13 @@ bind_failed:
 				net_packet->address.port = net_clients[c - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
+#ifdef STEAMWORKS
+			if (!directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+				char svFlagsChar[16];
+				snprintf(svFlagsChar, 15, "%d", svFlags);
+				SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar);
+			}
+#endif
 	    } else if (multiplayer == CLIENT) {
 	        memcpy(net_packet->data, "SVFL", 4);
 			net_packet->len = 4;
@@ -12658,7 +12674,7 @@ bind_failed:
 		assert(lobby);
 
 		auto frame = lobby->addFrame("countdown");
-		frame->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 300) / 2, 64, 300, 120});
 		frame->setHollow(true);
 
         static Uint32 countdown_end;
@@ -12668,7 +12684,7 @@ bind_failed:
 		countdown->setHJustify(Field::justify_t::LEFT);
 		countdown->setVJustify(Field::justify_t::TOP);
 		countdown->setFont(timer_font);
-		countdown->setSize(SDL_Rect{(Frame::virtualScreenX - 40) / 2, 64, 300, 200});
+		countdown->setSize(SDL_Rect{frame->getSize().w / 2 - 20, 0, frame->getSize().w, frame->getSize().h});
 		countdown->setTickCallback([](Widget& widget){
 		    auto countdown = static_cast<Field*>(&widget);
 		    if (ticks >= countdown_end) {
@@ -12719,6 +12735,24 @@ bind_failed:
 		        }
 		    }
 		    });
+		
+		auto achievements = frame->addField("achievements", 256);
+		achievements->setSize(SDL_Rect{0, frame->getSize().h - 32, frame->getSize().w, 32});
+		achievements->setFont(smallfont_outline);
+		achievements->setJustify(Field::justify_t::CENTER);
+		achievements->setTickCallback([](Widget& widget){
+			Field* achievements = static_cast<Field*>(&widget);
+			if ((svFlags & SV_FLAG_CHEATS) ||
+				(svFlags & SV_FLAG_LIFESAVING) ||
+				gamemods_disableSteamAchievements) {
+				achievements->setColor(makeColor(180, 37, 37, 255));
+				achievements->setText("ACHIEVEMENTS DISABLED");
+			} else {
+				achievements->setColor(makeColor(37, 90, 255, 255));
+				achievements->setText("ACHIEVEMENTS ENABLED");
+			}
+			});
+		(*achievements->getTickCallback())(*achievements);
 	}
 
 	static void createLobby(LobbyType type) {
@@ -14344,7 +14378,7 @@ bind_failed:
                     soundWarning();
                 }
             } else {
-	            monoPrompt("Select a lobby to join first.",
+	            errorPrompt("Select a lobby to join first.",
 	                "Okay",
 	                [](Button&){
 		                soundCancel();
@@ -15010,7 +15044,7 @@ bind_failed:
 		        createDummyMainMenu();
 		        beginFade(MainMenu::FadeDestination::HallOfTrials);
 		    } else {
-                monoPrompt(
+                errorPrompt(
 	                "Select a level to start first.",
 	                "Okay",
 	                [](Button& button){
@@ -15144,13 +15178,7 @@ bind_failed:
 		}
 	}
 
-	static void hostOnlineLobby(Button&) {
-#if !defined(STEAMWORKS) && !defined(USE_EOS)
-		soundError();
-#else
-		soundActivate();
-		closeNetworkInterfaces();
-		directConnect = false;
+	static void createOnlineLobby() {
 		if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
 			EOS.createLobby();
@@ -15163,7 +15191,7 @@ bind_failed:
 						createLobby(LobbyType::LobbyOnline);
 					} else {
 						closePrompt("host_lobby_prompt");
-						monoPrompt("Failed to host Epic lobby.", "Okay",
+						errorPrompt("Failed to host Epic lobby.", "Okay",
 							[](Button&){soundCancel(); closeMono();});
 					}
 				}
@@ -15189,13 +15217,45 @@ bind_failed:
 						createLobby(LobbyType::LobbyOnline);
 					} else {
 						closePrompt("host_lobby_prompt");
-						monoPrompt("Failed to host Steam lobby.", "Okay",
+						errorPrompt("Failed to host Steam lobby.", "Okay",
 							[](Button&){soundCancel(); closeMono();});
 					}
 				}
 				});
 #endif // STEAMWORKS
 		}
+	}
+
+	static void hostOnlineLobby(Button&) {
+#if !defined(STEAMWORKS) && !defined(USE_EOS)
+		errorPrompt("Unable to host lobby\nOnline play is disabled.", "Okay", [](Button&){
+			soundCancel();
+			closeMono();
+		});
+#else
+		closeNetworkInterfaces();
+		directConnect = false;
+#if defined(STEAMWORKS) && defined(USE_EOS)
+		if (LobbyHandler.crossplayEnabled) {
+			const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
+			binaryPrompt(prompt, "Yes", "No",
+			[](Button&){ // yes
+				closeBinary();
+				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+				createOnlineLobby();
+			},
+			[](Button&){ // no
+				closeBinary();
+				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+				createOnlineLobby();
+			}, false, false);
+		} else {
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			createOnlineLobby();
+		}
+#else
+		createOnlineLobby();
+#endif
 #endif
 	}
 
@@ -15222,7 +15282,7 @@ bind_failed:
 						if (!(net_sock = SDLNet_UDP_Open(port))) {
 							char buf[1024];
 							snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-							monoPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
+							errorPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
 							return;
 						}
 
@@ -15231,7 +15291,7 @@ bind_failed:
 					}
 					else {
 						closePrompt("host_lobby_prompt");
-						monoPrompt("Failed to host WiFi lobby.", "Okay",
+						errorPrompt("Failed to host WiFi lobby.", "Okay",
 							[](Button&) {soundCancel(); closeMono();});
 					}
 				}
@@ -15246,7 +15306,7 @@ bind_failed:
 		if (!(net_sock = SDLNet_UDP_Open(port))) {
 			char buf[1024];
 			snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-			monoPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
+			errorPrompt(buf, "Okay", [](Button&){soundCancel(); closeMono();});
 			return;
 		}
 
@@ -15469,7 +15529,7 @@ bind_failed:
 						}
 						else {
 							closePrompt("lobby_browser_wait_prompt");
-							monoPrompt("Network connection failed.", "Okay",
+							errorPrompt("Network connection failed.", "Okay",
 								[](Button&) {soundCancel(); closeMono(); });
 						}
 					}
@@ -16198,7 +16258,7 @@ bind_failed:
 	        if (save_index >= 0) {
 	            deleteSavePrompt(continueSingleplayer, save_index);
 	        } else {
-	            monoPrompt(
+	            errorPrompt(
 	                "Select a savegame to delete first.",
 	                "Okay",
 	                [](Button& button){
@@ -16247,7 +16307,7 @@ bind_failed:
 	        if (save_index >= 0) {
 	            loadSavePrompt(continueSingleplayer, save_index);
 	        } else {
-                monoPrompt(
+                errorPrompt(
                     "Select a savegame to load first.",
                     "Okay",
                     [](Button& button){
@@ -17741,44 +17801,65 @@ bind_failed:
 			widget.setInvisible(dimmer != nullptr);
 			});
 
-		if (ingame && splitscreen) {
-			const int player = getMenuOwner();
-			const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
-				Input::getControllerGlyph() : Input::getKeyboardGlyph();
-			auto image = Image::get(path);
-			const int w = image->getWidth();
-			const int h = image->getHeight();
-			const int space = 100;
-			const int x = (notification->getSize().w - w) / 2;
-			const int y = (notification->getSize().h - h) / 2;
-			const std::string name = std::string("player") + std::to_string(player);
-			notification->addImage(
-				SDL_Rect{x, y, w, h},
-				makeColor(255, 255, 255, 255),
-				path, name.c_str());
+		if (ingame) {
+			if (splitscreen) {
+				const int player = getMenuOwner();
+				const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
+					Input::getControllerGlyph() : Input::getKeyboardGlyph();
+				auto image = Image::get(path);
+				const int w = image->getWidth();
+				const int h = image->getHeight();
+				const int space = 100;
+				const int x = (notification->getSize().w - w) / 2;
+				const int y = (notification->getSize().h - h) / 2;
+				const std::string name = std::string("player") + std::to_string(player);
+				notification->addImage(
+					SDL_Rect{x, y, w, h},
+					makeColor(255, 255, 255, 255),
+					path, name.c_str());
 
-			auto field = notification->addField(name.c_str(), 16);
-			field->setSize(SDL_Rect{x, y, w, h});
-			field->setJustify(Field::justify_t::CENTER);
-			field->setText((std::string("P") + std::to_string(player + 1)).c_str());
-			field->setFont(bigfont_outline);
-			if (colorblind) {
-				switch (player) {
-				default: field->setColor(uint32ColorPlayerX_colorblind); break;
-				case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
-				case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
-				case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
-				case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
-				}
-			} else {
-				switch (player) {
-				default: field->setColor(uint32ColorPlayerX); break;
-				case 0: field->setColor(uint32ColorPlayer1); break;
-				case 1: field->setColor(uint32ColorPlayer2); break;
-				case 2: field->setColor(uint32ColorPlayer3); break;
-				case 3: field->setColor(uint32ColorPlayer4); break;
+				auto field = notification->addField(name.c_str(), 16);
+				field->setSize(SDL_Rect{x, y, w, h});
+				field->setJustify(Field::justify_t::CENTER);
+				field->setText((std::string("P") + std::to_string(player + 1)).c_str());
+				field->setFont(bigfont_outline);
+				if (colorblind) {
+					switch (player) {
+					default: field->setColor(uint32ColorPlayerX_colorblind); break;
+					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
+					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
+					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
+					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
+					}
+				} else {
+					switch (player) {
+					default: field->setColor(uint32ColorPlayerX); break;
+					case 0: field->setColor(uint32ColorPlayer1); break;
+					case 1: field->setColor(uint32ColorPlayer2); break;
+					case 2: field->setColor(uint32ColorPlayer3); break;
+					case 3: field->setColor(uint32ColorPlayer4); break;
+					}
 				}
 			}
+		
+			auto achievements = notification->addField("achievements", 256);
+			achievements->setSize(SDL_Rect{0, notification->getSize().h - 32, notification->getSize().w, 32});
+			achievements->setFont(smallfont_outline);
+			achievements->setHJustify(Field::justify_t::CENTER);
+			achievements->setVJustify(Field::justify_t::TOP);
+			achievements->setTickCallback([](Widget& widget){
+				Field* achievements = static_cast<Field*>(&widget);
+				if ((svFlags & SV_FLAG_CHEATS) ||
+					(svFlags & SV_FLAG_LIFESAVING) ||
+					gamemods_disableSteamAchievements) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED");
+				} else {
+					achievements->setColor(makeColor(37, 90, 255, 255));
+					achievements->setText(""); // "ACHIEVEMENTS ENABLED"
+				}
+				});
+			(*achievements->getTickCallback())(*achievements);
 		}
 
 		y += notification->getSize().h;
@@ -17983,6 +18064,8 @@ bind_failed:
 				banner->setBackgroundHighlighted(banner_images[c][1]);
 				banner->setCallback(banner_funcs[c]);
 		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
+				banner->setColor(uint32ColorWhite);
+				banner->setHighlightColor(uint32ColorWhite);
 				//banner->setHideSelectors(true);
 
 				if (c == 0) {
@@ -18500,7 +18583,7 @@ bind_failed:
             } else {
                 const auto error = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
                 const auto str = LobbyHandler.getLobbyJoinFailedConnectString(error);
-                monoPrompt(str.c_str(), "Okay",
+                errorPrompt(str.c_str(), "Okay",
                 [](Button&){
                 soundCancel();
                 closeMono();

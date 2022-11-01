@@ -1531,7 +1531,7 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 	void* tempSteamID = cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(pCallback);
 
 	// update current lobby info
-	if ( currentLobby )
+	if (currentLobby && multiplayer != SERVER)
 	{
 	    auto lobby = static_cast<CSteamID*>(currentLobby);
 	    auto newlobby = static_cast<CSteamID*>(tempSteamID);
@@ -1552,13 +1552,15 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			}
 		}
 	}
-	if ( handlingInvite )
+
+	if (handlingInvite)
 	{
 	    // this is where invites are actually processed on steam.
 	    // we do it here to ensure info about the savegame in the lobby is up-to-date.
 		handlingInvite = false;
 		MainMenu::receivedInvite(tempSteamID);
 	}
+	
 	cpp_Free_CSteamID(tempSteamID);
 }
 
@@ -1921,6 +1923,17 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 	}
 	currentLobby = cpp_pCallback_m_ulSteamIDLobby(pCallback); //TODO: More buggery.
 	connectingToLobby = false;
+
+	auto& lobby = *static_cast<CSteamID*>(currentLobby);
+	const char* roomkey = SteamMatchmaking()->GetLobbyData(lobby, "roomkey");
+	if (roomkey) {
+		roomkey_cached = roomkey;
+	}
+
+	const char* svflagsChar = SteamMatchmaking()->GetLobbyData(lobby, "svFlags");
+	if (svflagsChar) {
+		svFlags = atoi(svflagsChar);
+	}
 }
 
 void steam_GameServerPingOnServerResponded(void* steamID)

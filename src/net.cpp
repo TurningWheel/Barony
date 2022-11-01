@@ -3434,7 +3434,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 		if ( ticks != 1 )
 		{
-			const bool printed = messagePlayerColor(clientnum, type, color, msg);
+			const bool printed = messagePlayerColor(clientnum, type, color, "%s", msg);
 			if (type == MESSAGE_CHAT && printed)
 			{
 				playSound(238, 64);
