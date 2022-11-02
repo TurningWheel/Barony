@@ -17066,17 +17066,9 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
-		// count how many players are in the game
-		int currentPlayers = 0;
-		for (int c = 0; c < MAXPLAYERS; ++c) {
-		    if (!client_disconnected[c]) {
-				++currentPlayers;
-			}
-		}
-
-		// check if any players have dropped
-		if (currentPlayers == numplayers) {
-			// if they haven't, we need to delete saves if all players have died
+		if (multiplayer == SERVER) {
+			savethisgame = true;
+		} else {
 			savethisgame = false;
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
 				for (int c = 0; c < MAXPLAYERS; ++c) {
