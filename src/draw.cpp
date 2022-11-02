@@ -29,6 +29,191 @@
 
 #include "ui/Image.hpp"
 
+Mesh framebuffer::mesh{
+	{ // positions
+		-1.f, -1.f,  0.f,
+		 1.f, -1.f,  0.f,
+		 1.f,  1.f,  0.f,
+		-1.f,  1.f,  0.f,
+	},
+	{ // texcoords
+		0.f,  0.f,
+		1.f,  0.f,
+		1.f,  1.f,
+		0.f,  1.f,
+	},
+	{ // colors
+		1.f, 1.f, 1.f, 1.f,
+		1.f, 1.f, 1.f, 1.f,
+		1.f, 1.f, 1.f, 1.f,
+		1.f, 1.f, 1.f, 1.f,
+	},
+	{ // indices
+		0, 1, 2,
+		0, 2, 3,
+	}
+};
+
+Shader framebuffer::shader;
+
+void createCommonDrawResources() {
+	static const char vertex_glsl[] =
+		"#version 330\n"
+		"layout(location=0) in vec3 iPosition;\n"
+		"layout(location=1) in vec2 iTexCoord;\n"
+		"out vec2 TexCoord;\n"
+		"void main() {\n"
+		"gl_Position = vec4(iPosition, 1.0);\n"
+		"TexCoord = iTexCoord;\n"
+		"}";
+
+	static const char fragment_glsl[] =
+		"#version 330\n"
+		"in vec2 TexCoord;\n"
+		"out vec4 Color;\n"
+		"uniform sampler2D uTexture;\n"
+		"uniform float uGamma;\n"
+		"void main() {\n"
+		"Color = texture(uTexture, TexCoord) * uGamma;\n"
+		"}";
+
+	framebuffer::mesh.init();
+	framebuffer::shader.init();
+	framebuffer::shader.compile(vertex_glsl, sizeof(vertex_glsl), Shader::Type::Vertex);
+	framebuffer::shader.compile(fragment_glsl, sizeof(fragment_glsl), Shader::Type::Fragment);
+	framebuffer::shader.link();
+	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+}
+
+void destroyCommonDrawResources() {
+	framebuffer::mesh.destroy();
+	framebuffer::shader.destroy();
+}
+
+void Mesh::init() {
+	if (vao) {
+		return;
+	}
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	// data buffers
+	glGenBuffers((GLsizei)BufferType::Max, vbo);
+	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
+		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(c, ElementsPerVBO[c], GL_FLOAT, GL_FALSE, 0, nullptr);
+		glEnableVertexAttribArray(c);
+	}
+
+	// index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index.size() * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
+	glBindVertexArray(0);
+
+	printlog("initialized mesh with %llu vertices", index.size());
+}
+
+void Mesh::destroy() {
+	for (int c = 0; c < (int)BufferType::Max; ++c) {
+		if (vbo[c]) {
+			glDeleteBuffers(1, &vbo[c]);
+			vbo[c] = 0;
+		}
+	}
+	if (vao) {
+		glDeleteVertexArrays(1, &vao);
+		vao = 0;
+	}
+}
+
+void Mesh::draw() const {
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLES, index.size(), GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
+}
+
+void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
+	xsize = _xsize;
+	ysize = _ysize;
+
+	SDL_glGenFramebuffers(1, &fbo);
+	SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glGenTextures(1, &fbo_color);
+	glBindTexture(GL_TEXTURE_2D, fbo_color);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
+	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glGenTextures(1, &fbo_depth);
+	glBindTexture(GL_TEXTURE_2D, fbo_depth);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
+	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
+	SDL_glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
+	glReadBuffer(GL_NONE);
+
+	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void framebuffer::destroy() {
+	if (fbo) {
+		SDL_glDeleteFramebuffers(1, &fbo);
+		fbo = 0;
+	}
+	if (fbo_color) {
+		glDeleteTextures(1, &fbo_color);
+		fbo_color = 0;
+	}
+	if (fbo_depth) {
+		glDeleteTextures(1, &fbo_depth);
+		fbo_depth = 0;
+	}
+}
+
+void framebuffer::bindForWriting() {
+	SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+	glViewport(0, 0, xsize, ysize);
+}
+
+void framebuffer::bindForReading() const {
+	glBindTexture(GL_TEXTURE_2D, fbo_color);
+}
+
+void framebuffer::blit(float gamma) {
+	shader.bind();
+	glUniform1f(shader.uniform("uGamma"), gamma);
+	mesh.draw();
+	shader.unbind();
+}
+
+void framebuffer::unbindForWriting() {
+	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void framebuffer::unbindForReading() {
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void framebuffer::unbindAll() {
+	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glViewport(0, 0, xres, yres);
+}
+
 /*-------------------------------------------------------------------------------
 
 	getPixel
