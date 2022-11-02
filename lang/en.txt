@@ -6347,30 +6347,33 @@ favorite customers.#
 4268 *burble*#
 4269 *gurgle*#
 4270 *groan*#
-4271 *skitter*#
-4272 Hehehe...#
-4273 *gurgle*#
-4274 Jib jab chip jub.#
-4275 *growl*#
-4276 Wanna dance?#
-4277 *creak*#
-4278 Greetings, mortal.#
-4279 You called?#
-4280 Welcome to hell, weakling.#
-4281 Is there anything you want to buy?#
-4282 Kleeaku.#
-4283 *skitter*#
-4284 *rumble*#
-4285 Wanna play?#
-4286 Bleh!#
-4287 ...#
-4288 Ba-a-a-a-a#
-4289 *choo choo*#
-4290 Hello, worm.#
-4291 Hello, cretin.#
-4292 *whirr*#
-4293 *whizz*#
-4294 *chime*#
-4295 *boing*#
+4271 *rattle*#
+4272 *skitter*#
+4273 Hehehe...#
+4274 *gurgle*#
+4275 Jib jab chip jub.#
+4276 *growl*#
+4277 Wanna dance?#
+4278 *creak*#
+4279 Greetings, mortal.#
+4280 You called?#
+4281 Welcome to hell, weakling.#
+4282 Is there anything you want to buy?#
+4283 Kleeaku.#
+4284 *chirp*#
+4285 *rumble*#
+4286 Wanna play?#
+4287 Bleh!#
+4288 ...#
+4289 *screech*#
+4290 *buzz*#
+4291 Ba-a-a-a-a.#
+4292 *choo choo*#
+4293 Hello, worm.#
+4294 Hello, cretin.#
+4295 *whirr*#
+4296 *whizz*#
+4297 *chime*#
+4298 *boing*#
 
 4299 end#
