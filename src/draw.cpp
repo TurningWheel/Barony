@@ -29,6 +29,8 @@
 
 #include "ui/Image.hpp"
 
+framebuffer main_framebuffer;
+
 Mesh framebuffer::mesh{
 	{ // positions
 		-1.f, -1.f,  0.f,
@@ -1374,7 +1376,7 @@ void drawForeground(long camx, long camy)
 void drawClearBuffers()
 {
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	drawRect(NULL, 0, 255);
+	//drawRect(NULL, 0, 255);
 }
 
 /*-------------------------------------------------------------------------------

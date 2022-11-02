@@ -129,6 +129,7 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/eos_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/mod_tools.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/prng.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp"
 )
 
 add_subdirectory(magic)

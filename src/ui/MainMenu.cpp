@@ -1728,7 +1728,6 @@ namespace MainMenu {
 		    yres != resolution_y ||
 		    ::display_id != display_id ||
 		    verticalSync != vsync_enabled ||
-		    vidgamma != gamma / 100.f ||
 		    new_fullscreen != fullscreen ||
 		    new_borderless != borderless) {
 		    result = true;
@@ -4800,11 +4799,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
 			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
 			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
-#ifndef NINTENDO
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
 			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
-#endif
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
 			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
@@ -4877,6 +4874,7 @@ bind_failed:
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
+			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},

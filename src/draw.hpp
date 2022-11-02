@@ -189,5 +189,7 @@ struct framebuffer {
 	static Shader shader;
 };
 
+extern framebuffer main_framebuffer;
+
 void createCommonDrawResources();
 void destroyCommonDrawResources();
