@@ -10360,16 +10360,6 @@ void doEndgame() {
 		}
 	}
 
-	// delete save game
-	if ( !savethisgame && !endTutorial )
-	{
-		deleteSaveGame(multiplayer);
-	}
-	else
-	{
-		savethisgame = false;
-	}
-
 	if ( victory )
 	{
 		// conduct achievements
@@ -11286,7 +11276,6 @@ void buttonQuitNoSaveConfirm(button_t* my)
 }
 
 // end game button
-bool savethisgame = false;
 void buttonEndGameConfirm(button_t* my)
 {
 	// deprecated

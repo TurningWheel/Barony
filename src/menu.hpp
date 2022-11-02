@@ -11,8 +11,6 @@
 
 #pragma once
 
-extern bool savethisgame;
-
 // main menu code
 void handleMainMenu(bool mode);
 
