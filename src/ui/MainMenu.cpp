@@ -17066,30 +17066,8 @@ bind_failed:
 	}
 
 	static void mainQuitToMainMenu(Button& button) {
-		// count how many players are in the game
-		int currentPlayers = 0;
-		for (int c = 0; c < MAXPLAYERS; ++c) {
-		    if (!client_disconnected[c]) {
-				++currentPlayers;
-			}
-		}
-
-		// check if any players have dropped
-		if (currentPlayers == numplayers) {
-			// if they haven't, we need to delete saves if all players have died
-			savethisgame = false;
-			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
-				for (int c = 0; c < MAXPLAYERS; ++c) {
-					if (!client_disconnected[c] && players[c]->entity) {
-						// found a living player, don't delete the save game!
-						savethisgame = true;
-					}
-				}
-			}
-		}
-
 	    const char* prompt;
-	    if (savethisgame) {
+	    if (saveGameExists(multiplayer == SINGLE)) {
 	        prompt = "All progress before the current\ndungeon level will be saved.";
 	    } else {
 	        prompt = "Are you sure you want to return\nto the main menu?";
@@ -18515,7 +18493,7 @@ bind_failed:
                     //auto frame = static_cast<Frame*>(window->getParent());
                     //frame->removeSelf();
 
-	                savethisgame = false;
+					deleteSaveGame(multiplayer);
 				    pauseGame(2, 0);
 				    destroyMainMenu();
 				    createDummyMainMenu();

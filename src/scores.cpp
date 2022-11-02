@@ -5270,6 +5270,9 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 }
 
 int saveGame(int saveIndex) {
+	if (gameModeManager.getMode() != GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+		return 1; // can't save tutorial games
+	}
 	if (!intro) {
 		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
 	}
