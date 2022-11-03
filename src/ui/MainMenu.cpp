@@ -10704,6 +10704,20 @@ bind_failed:
 		disable_abilities_text->setText("Disable monster\nrace abilities");
 		disable_abilities_text->setHJustify(Field::justify_t::LEFT);
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
+		disable_abilities_text->setTickCallback([](Widget& widget){
+			auto field = static_cast<Field*>(&widget); assert(field);
+			auto parent = static_cast<Frame*>(widget.getParent()); assert(parent);
+			auto button = parent->findButton("disable_abilities"); assert(button);
+			const auto player = widget.getOwner();
+			if (stats[player]->playerRace == RACE_HUMAN) {
+				field->setTextColor(makeColor(127, 96, 81, 255));
+				button->setDisabled(true);
+				button->setPressed(false);
+			} else {
+				field->setTextColor(makeColor(255, 191, 127, 255));
+				button->setDisabled(false);
+			}
+			});
 
 		auto disable_abilities = bottom->addButton("disable_abilities");
 		disable_abilities->setSize(SDL_Rect{194, 2, 44, 44});
@@ -10712,6 +10726,7 @@ bind_failed:
 		disable_abilities->setBorderColor(0);
 		disable_abilities->setBorder(0);
 		disable_abilities->setHighlightColor(0);
+		disable_abilities->setDisabled(true); // the above tick function will clear this if it can be used
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
 		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
@@ -13026,6 +13041,10 @@ bind_failed:
             destroyMainMenu();
             createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
+
+			if (!intro && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				deleteSaveGame(multiplayer);
+			}
 
 	        // set unique game key
 	        local_rng.seedTime();
@@ -17431,6 +17450,7 @@ bind_failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					deleteSaveGame(multiplayer);
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
@@ -18971,6 +18991,7 @@ bind_failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					deleteSaveGame(multiplayer);
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
