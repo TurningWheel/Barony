@@ -107,7 +107,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	    loading_fb.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    drawAllPlayerCameras();
-	    framebuffer::unbind();
+	    main_framebuffer.bindForWriting();
 #endif
 
 		// spinning widget
@@ -212,11 +212,11 @@ void doLoadingScreen() {
 		}
 
 		// render
+		main_framebuffer.bindForWriting();
 		drawClearBuffers();
 		if (loading_fb.fbo) {
 		    loading_fb.bindForReading();
 		    framebuffer::blit();
-		    framebuffer::unbind();
 		}
 		gui->predraw();
 		gui->draw();

@@ -119,6 +119,51 @@ public:
 	}
 };
 
+#include <initializer_list>
+#include <cassert>
+
+struct Mesh {
+	enum class BufferType : unsigned int {
+		Position,	// vec3 float
+		TexCoord,	// vec2 float
+		Color,		// vec4 float
+		Index,		// uint
+		Max
+	};
+	static const std::unordered_map<BufferType, int> ElementsPerVBO;
+
+	Mesh(
+		std::initializer_list<float>&& positions,
+		std::initializer_list<float>&& texcoords,
+		std::initializer_list<float>&& colors,
+		std::initializer_list<unsigned int>&& indices) :
+		data{{positions}, {texcoords}, {colors}},
+		index(indices)
+		{}
+
+	Mesh(
+		const std::initializer_list<float>& positions,
+		const std::initializer_list<float>& texcoords,
+		const std::initializer_list<float>& colors,
+		const std::initializer_list<unsigned int>& indices) :
+		data{{positions}, {texcoords}, {colors}},
+		index(indices)
+		{}
+
+	const std::vector<float> data[(int)BufferType::Index];
+	const std::vector<unsigned int> index;
+
+	void init();
+	void destroy();
+	void draw() const;
+
+private:
+	unsigned int vao = 0; // vertex array object (mesh handle)
+	unsigned int vbo[(int)BufferType::Max]; // vertex buffer objects
+};
+
+#include "shader.hpp"
+
 struct framebuffer {
     unsigned int fbo = 0;
     unsigned int fbo_color = 0;
@@ -126,90 +171,21 @@ struct framebuffer {
     unsigned int xsize = 1280;
     unsigned int ysize = 720;
 
-    void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
-        xsize = _xsize;
-        ysize = _ysize;
+    void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
+    void destroy();
+    void bindForWriting();
+    void bindForReading() const;
 
-	    SDL_glGenFramebuffers(1, &fbo);
-	    SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    static void blit(float gamma = 1.f);
+    static void unbindForWriting();
+    static void unbindForReading();
+    static void unbindAll();
 
-	    glGenTextures(1, &fbo_color);
-	    glBindTexture(GL_TEXTURE_2D, fbo_color);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-	    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
-	    SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	    glBindTexture(GL_TEXTURE_2D, 0);
-
-	    glGenTextures(1, &fbo_depth);
-	    glBindTexture(GL_TEXTURE_2D, fbo_depth);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-	    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
-	    SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
-	    glBindTexture(GL_TEXTURE_2D, 0);
-
-	    static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
-	    SDL_glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
-	    glReadBuffer(GL_NONE);
-
-	    SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    void destroy() {
-	    if (fbo) {
-		    SDL_glDeleteFramebuffers(1, &fbo);
-		    fbo = 0;
-	    }
-	    if (fbo_color) {
-		    glDeleteTextures(1, &fbo_color);
-		    fbo_color = 0;
-	    }
-	    if (fbo_depth) {
-		    glDeleteTextures(1, &fbo_depth);
-		    fbo_depth = 0;
-	    }
-    }
-
-    void bindForWriting() {
-	    SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	    SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	    SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
-	    glViewport(0, 0, xsize, ysize);
-    }
-
-    void bindForReading() {
-	    glBindTexture(GL_TEXTURE_2D, fbo_color);
-    }
-
-    static void blit() {
-	    glDisable(GL_DEPTH_TEST);
-	    glDisable(GL_LIGHTING);
-	    glColor4f(1.f, 1.f, 1.f, 1.f);
-	    glMatrixMode(GL_PROJECTION);
-	    glPushMatrix();
-	    glLoadIdentity();
-	    glMatrixMode(GL_MODELVIEW);
-	    glPushMatrix();
-	    glLoadIdentity();
-	    glBegin(GL_QUADS);
-	    glTexCoord2f(0.f, 0.f); glVertex2f(-1.f, -1.f);
-	    glTexCoord2f(1.f, 0.f); glVertex2f( 1.f, -1.f);
-	    glTexCoord2f(1.f, 1.f); glVertex2f( 1.f,  1.f);
-	    glTexCoord2f(0.f, 1.f); glVertex2f(-1.f,  1.f);
-	    glEnd();
-	    glPopMatrix();
-	    glPopMatrix();
-    }
-
-    static void unbind() {
-	    SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	    glBindTexture(GL_TEXTURE_2D, 0);
-	    glViewport(0, 0, xres, yres);
-    }
+	static Mesh mesh;
+	static Shader shader;
 };
 
+extern framebuffer main_framebuffer;
+
+void createCommonDrawResources();
+void destroyCommonDrawResources();

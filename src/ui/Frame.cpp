@@ -241,8 +241,9 @@ void Frame::predraw() {
     }
     gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+ 
+	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Frame::postdraw() {
@@ -254,17 +255,17 @@ void Frame::postdraw() {
     if (!*ui_scale) {
         return;
     }
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     if (*ui_downscale) {
 	    gui_fb.bindForReading();
         gui_fb_downscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
 
-        framebuffer::unbind();
+        main_framebuffer.bindForWriting();
         gui_fb_downscaled.bindForReading();
         framebuffer::blit();
-        framebuffer::unbind();
+        framebuffer::unbindForReading();
     }
     else if (*ui_upscale) {
 	    gui_fb.bindForReading();
@@ -272,17 +273,18 @@ void Frame::postdraw() {
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
 
-        framebuffer::unbind();
+        main_framebuffer.bindForWriting();
         gui_fb_upscaled.bindForReading();
         framebuffer::blit();
-        framebuffer::unbind();
+        framebuffer::unbindForReading();
     }
     else {
-        framebuffer::unbind();
+        main_framebuffer.bindForWriting();
 	    gui_fb.bindForReading();
 	    framebuffer::blit();
-        framebuffer::unbind();
+        framebuffer::unbindForReading();
     }
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 #else
 // EDITOR ONLY DEFINITIONS:
@@ -292,18 +294,19 @@ void Frame::predraw() {
     }
     gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+	//SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
 
 void Frame::postdraw() {
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    framebuffer::unbind();
+    SDL_glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
+    main_framebuffer.bindForWriting();
     gui_fb.bindForReading();
     framebuffer::blit();
-    framebuffer::unbind();
+    framebuffer::unbindForReading();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 #endif
 

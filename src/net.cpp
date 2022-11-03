@@ -4437,6 +4437,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	    if (net_packet->data[12] == 0) {
 		    loadingsavegame = 0;
 	    }
+		deleteSaveGame(multiplayer);
 		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
 		pauseGame(2, 0);
 	}},

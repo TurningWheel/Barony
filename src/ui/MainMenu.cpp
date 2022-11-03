@@ -842,20 +842,20 @@ namespace MainMenu {
 
 	static Button* createBackWidget(Frame* parent, void (*callback)(Button&), SDL_Rect offset = SDL_Rect{4, 4, 0, 0}) {
 		auto back = parent->addFrame("back");
-		back->setSize(SDL_Rect{offset.x, offset.y, 66, 36});
-		back->setActualSize(SDL_Rect{0, 0, 66, 36});
+		back->setSize(SDL_Rect{offset.x, offset.y, 78, 36});
+		back->setActualSize(SDL_Rect{0, 0, 78, 36});
 		back->setColor(0);
 		back->setBorderColor(0);
 		back->setBorder(0);
 		auto backdrop = back->addImage(
 			back->getActualSize(),
 			0xffffffff,
-			"images/ui/BackButton/UI_ButtonBack_00.png",
+			"images/ui/BackButton/UI_ButtonBack_base.png",
 			"backdrop"
 		);
 
 		auto back_button = back->addButton("back_button");
-		back_button->setSize(SDL_Rect{0, 0, 66, 36});
+		back_button->setSize(SDL_Rect{6, 0, 66, 36});
 		back_button->setTextOffset(SDL_Rect{10, 12, 0, 0});
 		back_button->setColor(0);
 		back_button->setBorderColor(0);
@@ -873,6 +873,19 @@ namespace MainMenu {
 			    widget.setButtonsOffset(SDL_Rect{23, 4, 0, 0,});
 			} else {
 			    widget.setButtonsOffset(SDL_Rect{1, 4, 0, 0,});
+			}
+
+			auto button = static_cast<Button*>(&widget); assert(button);
+			auto parent = static_cast<Frame*>(widget.getParent()); assert(parent);
+			auto image = parent->findImage("backdrop"); assert(image);
+			if (button->isCurrentlyPressed()) {
+				image->path = "images/ui/BackButton/UI_ButtonBack_press.png";
+			} else {
+				if (button->isHighlighted()) {
+					image->path = "images/ui/BackButton/UI_ButtonBack_high.png";
+				} else {
+					image->path = "images/ui/BackButton/UI_ButtonBack_base.png";
+				}
 			}
 			});
 
@@ -995,6 +1008,8 @@ namespace MainMenu {
 
 		auto okay = frame->addButton("okay");
 		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
 		okay->setSize(SDL_Rect{58, 78, 108, 52});
 		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -1010,6 +1025,8 @@ namespace MainMenu {
 
 		auto cancel = frame->addButton("cancel");
 		cancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		cancel->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
+		cancel->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
 		cancel->setSize(SDL_Rect{174, 78, 130, 52});
 		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -1062,6 +1079,12 @@ namespace MainMenu {
 		okay->setBackground(leftRed ?
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted(leftRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated(leftRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
 		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setTextColor(makeColor(255, 255, 255, 255));
@@ -1079,6 +1102,12 @@ namespace MainMenu {
 		cancel->setBackground(rightRed ?
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
 		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setBackgroundHighlighted(rightRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		cancel->setBackgroundActivated(rightRed ?
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+		    "*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
 		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setTextColor(makeColor(255, 255, 255, 255));
@@ -1139,9 +1168,13 @@ namespace MainMenu {
 		    if (c == 1) {
 		        button->setSize(SDL_Rect{offx + x, offy, 156, 52});
 		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack01.png");
+		        button->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh01.png");
+		        button->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress01.png");
 		    } else {
 		        button->setSize(SDL_Rect{offx + x, offy, 108, 52});
 		        button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		        button->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		        button->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
 		    }
 		    button->setColor(makeColor(255, 255, 255, 255));
 		    button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -1201,6 +1234,8 @@ namespace MainMenu {
 		auto cancel = frame->addButton("cancel");
 		cancel->setSize(SDL_Rect{(frame->getActualSize().w - 130) / 2, 82, 130, 52});
 		cancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+		cancel->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
+		cancel->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
 		cancel->setColor(makeColor(255, 255, 255, 255));
 		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
 		cancel->setTextColor(makeColor(255, 255, 255, 255));
@@ -1235,6 +1270,8 @@ namespace MainMenu {
 		auto okay = frame->addButton("okay");
 		okay->setSize(SDL_Rect{(frame->getActualSize().w - 108) / 2, 78, 108, 52});
 		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
 		okay->setColor(makeColor(255, 255, 255, 255));
 		okay->setHighlightColor(makeColor(255, 255, 255, 255));
 		okay->setTextColor(makeColor(255, 255, 255, 255));
@@ -1321,8 +1358,17 @@ namespace MainMenu {
         );
     }
 
-#if !defined(STEAMWORKS) && !defined(USE_EOS)
     static void openDLCPrompt() {
+#if defined(STEAMWORKS)
+		soundActivate();
+		openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
+#elif defined(NINTENDO)
+		// TODO open e-Shop for Nintendo?
+		soundError();
+#elif defined(USE_EOS)
+		soundActivate();
+		openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+#else
         textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
             [](Button& button){ // okay
                 soundActivate();
@@ -1420,12 +1466,9 @@ namespace MainMenu {
             [](Button&){ // cancel
                 soundCancel();
                 closeTextField();
-                auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-                auto play = buttons->findButton("Play Game");
-                play->select();
             });
-    }
 #endif
+    }
 
 /******************************************************************************/
 
@@ -1728,7 +1771,6 @@ namespace MainMenu {
 		    yres != resolution_y ||
 		    ::display_id != display_id ||
 		    verticalSync != vsync_enabled ||
-		    vidgamma != gamma / 100.f ||
 		    new_fullscreen != fullscreen ||
 		    new_borderless != borderless) {
 		    result = true;
@@ -2271,8 +2313,8 @@ namespace MainMenu {
 		if (!story.press_a_to_advance) {
 		    textbox1->setHideSelectors(true);
 		    textbox1->setHideGlyphs(true);
-		    textbox1->select();
 		    textbox1->setWidgetBack("back");
+			textbox1->select();
 		} else {
 		    auto next = main_menu_frame->addButton("next");
 		    next->setHideSelectors(true);
@@ -2620,14 +2662,7 @@ namespace MainMenu {
 			u8" \n"
 		);
 
-		// entries
-		auto text2 = credits->addField("text2", 1024);
-		text2->setFont(bigfont_outline);
-		text2->setColor(0xffffffff);
-		text2->setHJustify(Field::justify_t::CENTER);
-		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
-		text2->setText(
+		const char text2_str[] =
 			u8" \n"
 			u8"Sheridan Rathbun\n"
 			u8" \n \n \n \n \n"
@@ -2662,7 +2697,7 @@ namespace MainMenu {
 			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Copyright \u00A9 2022, all rights reserved\n"
+			u8"Copyright \u00A9 %s, all rights reserved\n"
 #ifdef USE_FMOD
 			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
 #endif
@@ -2671,8 +2706,21 @@ namespace MainMenu {
 			u8" \n"
 			u8" \n"
 			u8" \n"
-			u8"Thank you!\n"
-		);
+			u8"Thank you!\n";
+		
+		char buf[1024];
+		const char date[] = __DATE__;
+		const char* year = (const char*)date + sizeof(date) - 5;
+		snprintf(buf, sizeof(buf), text2_str, year);
+
+		// entries
+		auto text2 = credits->addField("text2", 1024);
+		text2->setFont(bigfont_outline);
+		text2->setColor(0xffffffff);
+		text2->setHJustify(Field::justify_t::CENTER);
+		text2->setVJustify(Field::justify_t::TOP);
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
+		text2->setText(buf);
 	}
 
 /******************************************************************************/
@@ -2892,6 +2940,8 @@ namespace MainMenu {
 			auto button = window->addButton(options[c].name);
 			button->setSize(SDL_Rect{412 + (582 - 412) * c, 638, 164, 62});
 			button->setBackground("*images/ui/Main Menus/Settings/AutoSort/Button_Basic00.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/AutoSort/Button_BasicHigh00.png");
+			button->setBackgroundActivated("*images/ui/Main Menus/Settings/AutoSort/Button_BasicPress00.png");
 			button->setText(options[c].text);
 			button->setFont(smallfont_outline);
 			button->setColor(makeColor(255, 255, 255, 255));
@@ -3481,6 +3531,8 @@ namespace MainMenu {
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setBackground("*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_Binding00.png");
+		button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_BindingHigh00.png");
+		button->setBackgroundActivated("*images/ui/Main Menus/Settings/GenericWindow/Settings_Button_BindingPress00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -3634,6 +3686,8 @@ namespace MainMenu {
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(customize_callback);
 		button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_CustomizeHigh00.png");
+		button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_CustomizePress00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -3677,6 +3731,8 @@ namespace MainMenu {
 		button->setJustify(Button::justify_t::CENTER);
 		button->setCallback(callback);
 		button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_CustomizeHigh00.png");
+		button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_CustomizePress00.png");
 		button->setHighlightColor(makeColor(255,255,255,255));
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
@@ -4141,6 +4197,8 @@ namespace MainMenu {
 
 		auto defaults = window->addButton("restore_defaults");
 		defaults->setBackground("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		defaults->setBackgroundHighlighted("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardHigh00.png");
+		defaults->setBackgroundActivated("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardPress00.png");
 		defaults->setColor(makeColor(255, 255, 255, 255));
 		defaults->setHighlightColor(makeColor(255, 255, 255, 255));
 		defaults->setTextColor(makeColor(255, 255, 255, 255));
@@ -4158,6 +4216,8 @@ namespace MainMenu {
 
 		auto discard = window->addButton("discard_and_exit");
 		discard->setBackground("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		discard->setBackgroundHighlighted("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardHigh00.png");
+		discard->setBackgroundActivated("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardPress00.png");
 		discard->setColor(makeColor(255, 255, 255, 255));
 		discard->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard->setTextColor(makeColor(255, 255, 255, 255));
@@ -4181,6 +4241,8 @@ namespace MainMenu {
 
 		auto confirm = window->addButton("confirm_and_exit");
 		confirm->setBackground("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
+		confirm->setBackgroundHighlighted("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardHigh00.png");
+		confirm->setBackgroundActivated("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandardPress00.png");
 		confirm->setColor(makeColor(255, 255, 255, 255));
 		confirm->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm->setTextColor(makeColor(255, 255, 255, 255));
@@ -4800,11 +4862,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
 			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
 			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
-#ifndef NINTENDO
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
 			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
-#endif
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
 			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
@@ -4877,6 +4937,7 @@ bind_failed:
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
+			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
@@ -5942,6 +6003,8 @@ bind_failed:
         auto category_left = window->addButton("category_left");
         category_left->setSize(SDL_Rect{panel_pos.x - 24, 646, 20, 30});
 		category_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTiny_00.png");
+		category_left->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTinyHigh_00.png");
+		category_left->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowTinyPress_00.png");
 		category_left->setColor(makeColor(255, 255, 255, 255));
 		category_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		category_left->setWidgetSearchParent(window->getName());
@@ -5971,6 +6034,8 @@ bind_failed:
         auto category_right = window->addButton("category_right");
         category_right->setSize(SDL_Rect{panel_pos.x + panel_pos.w + 4, 646, 20, 30});
 		category_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTiny_00.png");
+		category_right->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTinyHigh_00.png");
+		category_right->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowTinyPress_00.png");
 		category_right->setColor(makeColor(255, 255, 255, 255));
 		category_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		category_right->setTickCallback(disableIfNotOnline);
@@ -6082,7 +6147,8 @@ bind_failed:
             tab->setText(tabs[c].text);
             tab->setFont(bigfont_outline);
 			tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
-			tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+			tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_UnselectedHigh_00.png");
+			tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_UnselectedPress_00.png");
 			tab->setColor(makeColor(255, 255, 255, 255));
 			tab->setHighlightColor(makeColor(255, 255, 255, 255));
 			tab->setCallback(tabs[c].func);
@@ -6096,9 +6162,13 @@ bind_failed:
 			        }
 			    }
 			    if (index == (int)boardType) {
-			        tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+					tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
+					tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedHigh_00.png");
+					tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedPress_00.png");
 			    } else {
-			        tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
+					tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
+					tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_UnselectedHigh_00.png");
+					tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_UnselectedPress_00.png");
 			    }
 			    });
 
@@ -6125,6 +6195,8 @@ bind_failed:
 		auto tab_left = window->addButton("tab_left");
 		tab_left->setSize(SDL_Rect{40, 72, 38, 58});
 		tab_left->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_LArrow_00.png");
+		tab_left->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowHigh_00.png");
+		tab_left->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_LArrowPress_00.png");
 		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_left->setGlyphPosition(Widget::glyph_position_t::BOTTOM_LEFT);
@@ -6148,6 +6220,8 @@ bind_failed:
 		auto tab_right = window->addButton("tab_right");
 		tab_right->setSize(SDL_Rect{914, 72, 38, 58});
 		tab_right->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_RArrow_00.png");
+		tab_right->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowHigh_00.png");
+		tab_right->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_RArrowPress_00.png");
 		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		tab_right->setGlyphPosition(Widget::glyph_position_t::BOTTOM_RIGHT);
@@ -6204,6 +6278,8 @@ bind_failed:
 		auto delete_entry = window->addButton("delete_entry");
 		delete_entry->setSize(SDL_Rect{740, 630, 164, 62});
 		delete_entry->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_00.png");
+		delete_entry->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_ButtonHigh_00.png");
+		delete_entry->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_ButtonPress_00.png");
 		delete_entry->setColor(makeColor(255, 255, 255, 255));
 		delete_entry->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_entry->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
@@ -8322,31 +8398,143 @@ bind_failed:
 		const char* name;
 		DLC dlc;
 		const char* image;
+		const char* image_highlighted;
+		const char* image_locked;
 	};
 
 	static const std::unordered_map<std::string, Class> classes = {
-		{"random", {"Random", DLC::Base, "ClassSelect_Icon_Randomize_00.png"}},
-		{"barbarian", {"Barbarian", DLC::Base, "ClassSelect_Icon_Barbarian_00.png"}},
-		{"warrior", {"Warrior", DLC::Base, "ClassSelect_Icon_Warrior_00.png"}},
-		{"healer", {"Healer", DLC::Base, "ClassSelect_Icon_Healer_00.png"}},
-		{"rogue", {"Rogue", DLC::Base, "ClassSelect_Icon_Rogue_00.png"}},
-		{"wanderer", {"Wanderer", DLC::Base, "ClassSelect_Icon_Wanderer_00.png"}},
-		{"cleric", {"Cleric", DLC::Base, "ClassSelect_Icon_Cleric_00.png"}},
-		{"merchant", {"Merchant", DLC::Base, "ClassSelect_Icon_Merchant_00.png"}},
-		{"wizard", {"Wizard", DLC::Base, "ClassSelect_Icon_Wizard_00.png"}},
-		{"arcanist", {"Arcanist", DLC::Base, "ClassSelect_Icon_Arcanist_00.png"}},
-		{"joker", {"Joker", DLC::Base, "ClassSelect_Icon_Jester_00.png"}},
-		{"sexton", {"Sexton", DLC::Base, "ClassSelect_Icon_Sexton_00.png"}},
-		{"ninja", {"Ninja", DLC::Base, "ClassSelect_Icon_Ninja_00.png"}},
-		{"monk", {"Monk", DLC::Base, "ClassSelect_Icon_Monk_00.png"}},
-		{"conjurer", {"Conjurer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Conjurer_00.png"}},
-		{"accursed", {"Accursed", DLC::MythsAndOutcasts, "ClassSelect_Icon_Accursed_00.png"}},
-		{"mesmer", {"Mesmer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Mesmer_00.png"}},
-		{"brewer", {"Brewer", DLC::MythsAndOutcasts, "ClassSelect_Icon_Brewer_00.png"}},
-		{"mechanist", {"Mechanist", DLC::LegendsAndPariahs, "ClassSelect_Icon_Mechanist_00.png"}},
-		{"punisher", {"Punisher", DLC::LegendsAndPariahs, "ClassSelect_Icon_Punisher_00.png"}},
-		{"shaman", {"Shaman", DLC::LegendsAndPariahs, "ClassSelect_Icon_Shaman_00.png"}},
-		{"hunter", {"Hunter", DLC::LegendsAndPariahs, "ClassSelect_Icon_Hunter_00.png"}},
+		{"random", {
+			"Random", DLC::Base,
+			"ClassSelect_Icon_Randomize_00.png",
+			"ClassSelect_Icon_RandomizeHigh_00.png",
+			"ClassSelect_Icon_Randomize_00.png",
+			}},
+		{"barbarian", {
+			"Barbarian", DLC::Base,
+			"ClassSelect_Icon_Barbarian_00.png",
+			"ClassSelect_Icon_BarbarianOn_00.png",
+			"ClassSelect_Icon_BarbarianLocked_00.png",
+			}},
+		{"warrior", {
+			"Warrior", DLC::Base,
+			"ClassSelect_Icon_Warrior_00.png",
+			"ClassSelect_Icon_WarriorOn_00.png",
+			"ClassSelect_Icon_WarriorLocked_00.png",
+			}},
+		{"healer", {
+			"Healer", DLC::Base,
+			"ClassSelect_Icon_Healer_00.png",
+			"ClassSelect_Icon_HealerOn_00.png",
+			"ClassSelect_Icon_HealerLocked_00.png",
+			}},
+		{"rogue", {
+			"Rogue", DLC::Base,
+			"ClassSelect_Icon_Rogue_00.png",
+			"ClassSelect_Icon_RogueOn_00.png",
+			"ClassSelect_Icon_RogueLocked_00.png",
+			}},
+		{"wanderer", {
+			"Wanderer", DLC::Base,
+			"ClassSelect_Icon_Wanderer_00.png",
+			"ClassSelect_Icon_WandererOn_00.png",
+			"ClassSelect_Icon_WandererLocked_00.png",
+			}},
+		{"cleric", {
+			"Cleric", DLC::Base,
+			"ClassSelect_Icon_Cleric_00.png",
+			"ClassSelect_Icon_ClericOn_00.png",
+			"ClassSelect_Icon_ClericLocked_00.png",
+			}},
+		{"merchant", {
+			"Merchant", DLC::Base,
+			"ClassSelect_Icon_Merchant_00.png",
+			"ClassSelect_Icon_MerchantOn_00.png",
+			"ClassSelect_Icon_MerchantLocked_00.png",
+			}},
+		{"wizard", {
+			"Wizard", DLC::Base,
+			"ClassSelect_Icon_Wizard_00.png",
+			"ClassSelect_Icon_WizardOn_00.png",
+			"ClassSelect_Icon_WizardLocked_00.png",
+			}},
+		{"arcanist", {
+			"Arcanist", DLC::Base,
+			"ClassSelect_Icon_Arcanist_00.png",
+			"ClassSelect_Icon_ArcanistOn_00.png",
+			"ClassSelect_Icon_ArcanistLocked_00.png",
+			}},
+		{"joker", {
+			"Joker", DLC::Base,
+			"ClassSelect_Icon_Jester_00.png",
+			"ClassSelect_Icon_JesterOn_00.png",
+			"ClassSelect_Icon_JesterLocked_00.png",
+			}},
+		{"sexton", {
+			"Sexton", DLC::Base,
+			"ClassSelect_Icon_Sexton_00.png",
+			"ClassSelect_Icon_SextonOn_00.png",
+			"ClassSelect_Icon_SextonLocked_00.png",
+			}},
+		{"ninja", {
+			"Ninja", DLC::Base,
+			"ClassSelect_Icon_Ninja_00.png",
+			"ClassSelect_Icon_NinjaOn_00.png",
+			"ClassSelect_Icon_NinjaLocked_00.png",
+			}},
+		{"monk", {
+			"Monk", DLC::Base,
+			"ClassSelect_Icon_Monk_00.png",
+			"ClassSelect_Icon_MonkOn_00.png",
+			"ClassSelect_Icon_MonkLocked_00.png",
+			}},
+		{"conjurer", {
+			"Conjurer", DLC::MythsAndOutcasts,
+			"ClassSelect_Icon_Conjurer_00.png",
+			"ClassSelect_Icon_ConjurerOn_00.png",
+			"ClassSelect_Icon_ConjurerLocked_00.png",
+			}},
+		{"accursed", {
+			"Accursed", DLC::MythsAndOutcasts,
+			"ClassSelect_Icon_Accursed_00.png",
+			"ClassSelect_Icon_AccursedOn_00.png",
+			"ClassSelect_Icon_AccursedLocked_00.png",
+			}},
+		{"mesmer", {
+			"Mesmer", DLC::MythsAndOutcasts,
+			"ClassSelect_Icon_Mesmer_00.png",
+			"ClassSelect_Icon_MesmerOn_00.png",
+			"ClassSelect_Icon_MesmerLocked_00.png",
+			}},
+		{"brewer", {
+			"Brewer", DLC::MythsAndOutcasts,
+			"ClassSelect_Icon_Brewer_00.png",
+			"ClassSelect_Icon_BrewerOn_00.png",
+			"ClassSelect_Icon_BrewerLocked_00.png",
+			}},
+		{"mechanist", {
+			"Mechanist", DLC::LegendsAndPariahs,
+			"ClassSelect_Icon_Mechanist_00.png",
+			"ClassSelect_Icon_MechanistOn_00.png",
+			"ClassSelect_Icon_MechanistLocked_00.png",
+			}},
+		{"punisher", {
+			"Punisher", DLC::LegendsAndPariahs,
+			"ClassSelect_Icon_Punisher_00.png",
+			"ClassSelect_Icon_PunisherOn_00.png",
+			"ClassSelect_Icon_PunisherLocked_00.png",
+			}},
+		{"shaman", {
+			"Shaman", DLC::LegendsAndPariahs,
+			"ClassSelect_Icon_Shaman_00.png",
+			"ClassSelect_Icon_ShamanOn_00.png",
+			"ClassSelect_Icon_ShamanLocked_00.png",
+			}},
+		{"hunter", {
+			"Hunter", DLC::LegendsAndPariahs,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
 	};
 
 	static const char* classes_in_order[] = {
@@ -8803,52 +8991,69 @@ bind_failed:
 		for (int c = 0; c < num_races; ++c) {
 			auto race = races[c];
 			if (strcmp(button.getName(), race) == 0) {
-				stats[index]->playerRace = c;
-				if (stats[index]->playerRace == RACE_SUCCUBUS) {
-					stats[index]->appearance = 0;
-					stats[index]->sex = FEMALE;
-					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
-					auto bottom = card->findFrame("bottom"); assert(bottom);
-					auto female = bottom->findButton("female");
-					auto male = bottom->findButton("male");
-			        female->setColor(makeColor(255, 255, 255, 255));
-			        female->setHighlightColor(makeColor(255, 255, 255, 255));
-			        male->setColor(makeColor(127, 127, 127, 255));
-			        male->setHighlightColor(makeColor(127, 127, 127, 255));
+				if ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
+					(!enabledDLCPack2 && c >= 5 && c <= 8)) {
+					// this class is not available to the player
+					button.setPressed(false);
+					openDLCPrompt();
+					return;
+				} else {
+					soundToggle();
+					stats[index]->playerRace = c;
+					if (stats[index]->playerRace == RACE_SUCCUBUS) {
+						stats[index]->appearance = 0;
+						stats[index]->sex = FEMALE;
+						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+						auto bottom = card->findFrame("bottom"); assert(bottom);
+						auto female = bottom->findButton("female");
+						auto male = bottom->findButton("male");
+						female->setPressed(stats[index]->sex == FEMALE);
+						female->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						female->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						male->setPressed(stats[index]->sex == MALE);
+						male->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+					}
+					else if (stats[index]->playerRace == RACE_INCUBUS) {
+						stats[index]->appearance = 0;
+						stats[index]->sex = MALE;
+						auto card = static_cast<Frame*>(frame->getParent()); assert(card);
+						auto bottom = card->findFrame("bottom"); assert(bottom);
+						auto female = bottom->findButton("female");
+						auto male = bottom->findButton("male");
+						female->setPressed(stats[index]->sex == FEMALE);
+						female->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						female->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						male->setPressed(stats[index]->sex == MALE);
+						male->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+						male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+					}
+					else if (stats[index]->playerRace == RACE_HUMAN) {
+						stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+						auto appearances = frame->findFrame("appearances");
+						if (appearances) {
+							appearances->setSelection(stats[index]->appearance);
+							appearances->scrollToSelection();
+						}
+					}
+					else {
+						stats[index]->appearance = 0;
+					}
+					if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+						// perhaps the class is not valid for this race.
+						// if so, change the class to the default (Barbarian)
+						client_classes[index] = 0;
+					}
 				}
-				else if (stats[index]->playerRace == RACE_INCUBUS) {
-					stats[index]->appearance = 0;
-					stats[index]->sex = MALE;
-					auto card = static_cast<Frame*>(frame->getParent()); assert(card);
-					auto bottom = card->findFrame("bottom"); assert(bottom);
-					auto female = bottom->findButton("female");
-					auto male = bottom->findButton("male");
-			        female->setColor(makeColor(127, 127, 127, 255));
-			        female->setHighlightColor(makeColor(127, 127, 127, 255));
-			        male->setColor(makeColor(255, 255, 255, 255));
-			        male->setHighlightColor(makeColor(255, 255, 255, 255));
-				}
-				else if (stats[index]->playerRace == RACE_HUMAN) {
-					stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
-		            auto appearances = frame->findFrame("appearances");
-		            if (appearances) {
-		                appearances->setSelection(stats[index]->appearance);
-		                appearances->scrollToSelection();
-		            }
-				}
-				else {
-					stats[index]->appearance = 0;
-				}
-				if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
-					// perhaps the class is not valid for this race.
-					// if so, change the class to the default (Barbarian)
-					client_classes[index] = 0;
-				}
-			} else {
-				auto other_button = frame->findButton(race);
-				if (other_button) {
-				    other_button->setPressed(false);
-				}
+				break;
+			}
+		}
+		for (int c = 0; c < num_races; ++c) {
+			// clear other buttons
+			auto race = races[c];
+			auto other_button = frame->findButton(race);
+			if (other_button != &button) {
+				other_button->setPressed(false);
 			}
 		}
 		auto disable_abilities = frame->findButton("disable_abilities");
@@ -8871,11 +9076,12 @@ bind_failed:
 		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
 		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
 		auto female = bottom->findButton("female");
-		if (female) {
-			female->setColor(makeColor(127, 127, 127, 255));
-			female->setHighlightColor(makeColor(127, 127, 127, 255));
-		}
 		stats[index]->sex = MALE;
+		if (female) {
+			female->setPressed(stats[index]->sex == FEMALE);
+			female->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			female->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		}
 		if (stats[index]->playerRace == RACE_SUCCUBUS) {
 		    auto subframe = card->findFrame("subframe");
 		    auto succubus = subframe ? subframe->findButton("Succubus") : nullptr;
@@ -8925,11 +9131,12 @@ bind_failed:
 		auto bottom = static_cast<Frame*>(button.getParent()); assert(bottom);
 		auto card = static_cast<Frame*>(bottom->getParent()); assert(card);
 		auto male = bottom->findButton("male");
-		if (male) {
-			male->setColor(makeColor(127, 127, 127, 255));
-			male->setHighlightColor(makeColor(127, 127, 127, 255));
-		}
 		stats[index]->sex = FEMALE;
+		if (male) {
+			male->setPressed(stats[index]->sex == MALE);
+			male->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		}
 		if (stats[index]->playerRace == RACE_INCUBUS) {
 		    auto subframe = card->findFrame("subframe");
 			auto incubus = subframe ? subframe->findButton("Incubus") : nullptr;
@@ -9216,6 +9423,8 @@ bind_failed:
 		custom_difficulty->setHighlightColor(makeColor(255, 255, 255, 255));
 		custom_difficulty->setSize(SDL_Rect{102, 68, 120, 48});
 		custom_difficulty->setBackground("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Customize00A.png");
+		custom_difficulty->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizeHigh00A.png");
+		custom_difficulty->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizePress00A.png");
 		custom_difficulty->setFont(smallfont_outline);
 		custom_difficulty->setText("Game Flags");
 		custom_difficulty->setWidgetSearchParent(name.c_str());
@@ -9254,6 +9463,8 @@ bind_failed:
 			auto invite = card->addButton("invite");
 			invite->setSize(SDL_Rect{202, 144, 30, 30});
 			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			invite->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			invite->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
 			invite->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			invite->setStyle(Button::style_t::STYLE_RADIO);
 			invite->setBorder(0);
@@ -9331,6 +9542,8 @@ bind_failed:
 			auto friends = card->addButton("friends");
 			friends->setSize(SDL_Rect{202, 176, 30, 30});
 			friends->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			friends->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			friends->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
 			friends->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			friends->setStyle(Button::style_t::STYLE_RADIO);
 			friends->setBorder(0);
@@ -9414,6 +9627,8 @@ bind_failed:
 			auto open = card->addButton("open");
 			open->setSize(SDL_Rect{202, 208, 30, 30});
 			open->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
+			open->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
+			open->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
 			open->setIcon("*images/ui/Main Menus/sublist_item-picked.png");
 			open->setStyle(Button::style_t::STYLE_RADIO);
 			open->setBorder(0);
@@ -10222,15 +10437,14 @@ bind_failed:
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 		    if (!enabledDLCPack1 && c >= 1 && c <= 4) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
-		        race->setDisabled(true);
 		    }
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
-		        race->setDisabled(true);
 		    }
 		    else {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-unpicked.png");
-		        race->setDisabled(false);
+		        race->setBackgroundHighlighted("*#images/ui/Main Menus/sublist_item-unpickedHigh.png");
+		        race->setBackgroundActivated("*#images/ui/Main Menus/sublist_item-unpickedPress.png");
 		    }
 		    race->setIcon("*#images/ui/Main Menus/sublist_item-picked.png");
 		    race->setStyle(Button::style_t::STYLE_RADIO);
@@ -10261,10 +10475,10 @@ bind_failed:
 		    race->addWidgetAction("MenuAlt1", "disable_abilities");
 		    race->addWidgetAction("MenuAlt2", "show_race_info");
 		    switch (index) {
-		    case 0: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 0);}); break;
-		    case 1: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 1);}); break;
-		    case 2: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 2);}); break;
-		    case 3: race->setCallback([](Button& button){soundToggle(); race_button_fn(button, 3);}); break;
+		    case 0: race->setCallback([](Button& button){race_button_fn(button, 0);}); break;
+		    case 1: race->setCallback([](Button& button){race_button_fn(button, 1);}); break;
+		    case 2: race->setCallback([](Button& button){race_button_fn(button, 2);}); break;
+		    case 3: race->setCallback([](Button& button){race_button_fn(button, 3);}); break;
 		    }
 		    if (stats[index]->playerRace == c) {
 			    race->setPressed(true);
@@ -10369,6 +10583,8 @@ bind_failed:
 		auto appearance_uparrow = subframe->addButton("appearance_uparrow");
 		appearance_uparrow->setSize(SDL_Rect{92, 2, 20, 32});
 		appearance_uparrow->setBackground("*images/ui/Main Menus/sublist_item-pickleft.png");
+		appearance_uparrow->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-pickleftHigh.png");
+		appearance_uparrow->setBackgroundActivated("*images/ui/Main Menus/sublist_item-pickleftPress.png");
 		appearance_uparrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_uparrow->setDisabled(true);
@@ -10404,6 +10620,8 @@ bind_failed:
 		auto appearance_downarrow = subframe->addButton("appearance_downarrow");
 		appearance_downarrow->setSize(SDL_Rect{214, 2, 20, 32});
 		appearance_downarrow->setBackground("*images/ui/Main Menus/sublist_item-pickright.png");
+		appearance_downarrow->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-pickrightHigh.png");
+		appearance_downarrow->setBackgroundActivated("*images/ui/Main Menus/sublist_item-pickrightPress.png");
 		appearance_downarrow->setHighlightColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setColor(makeColor(255, 255, 255, 255));
 		appearance_downarrow->setDisabled(true);
@@ -10486,6 +10704,20 @@ bind_failed:
 		disable_abilities_text->setText("Disable monster\nrace abilities");
 		disable_abilities_text->setHJustify(Field::justify_t::LEFT);
 		disable_abilities_text->setVJustify(Field::justify_t::CENTER);
+		disable_abilities_text->setTickCallback([](Widget& widget){
+			auto field = static_cast<Field*>(&widget); assert(field);
+			auto parent = static_cast<Frame*>(widget.getParent()); assert(parent);
+			auto button = parent->findButton("disable_abilities"); assert(button);
+			const auto player = widget.getOwner();
+			if (stats[player]->playerRace == RACE_HUMAN) {
+				field->setTextColor(makeColor(127, 96, 81, 255));
+				button->setDisabled(true);
+				button->setPressed(false);
+			} else {
+				field->setTextColor(makeColor(255, 191, 127, 255));
+				button->setDisabled(false);
+			}
+			});
 
 		auto disable_abilities = bottom->addButton("disable_abilities");
 		disable_abilities->setSize(SDL_Rect{194, 2, 44, 44});
@@ -10494,6 +10726,7 @@ bind_failed:
 		disable_abilities->setBorderColor(0);
 		disable_abilities->setBorder(0);
 		disable_abilities->setHighlightColor(0);
+		disable_abilities->setDisabled(true); // the above tick function will clear this if it can be used
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
 		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
@@ -10523,14 +10756,21 @@ bind_failed:
 	    disable_abilities->addWidgetAction("MenuAlt2", "show_race_info");
 
 		auto male_button = bottom->addButton("male");
-		if (stats[index]->sex == MALE) {
-			male_button->setColor(makeColor(255, 255, 255, 255));
-			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		male_button->setPressed(stats[index]->sex == MALE);
+		male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		male_button->setStyle(Button::style_t::STYLE_RADIO);
+		if (stats[index]->playerRace == RACE_AUTOMATON) {
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 		} else {
-			male_button->setColor(makeColor(127, 127, 127, 255));
-			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMalePress_00.png");
 		}
-		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
@@ -10550,16 +10790,38 @@ bind_failed:
 	    male_button->addWidgetAction("MenuPageRight", "female");
 	    male_button->addWidgetAction("MenuAlt1", "disable_abilities");
 	    male_button->addWidgetAction("MenuAlt2", "show_race_info");
+		male_button->setTickCallback([](Widget& widget){
+			const int index = widget.getOwner();
+			auto button = static_cast<Button*>(&widget); assert(button);
+			if (stats[index]->playerRace == RACE_AUTOMATON) {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
+			} else {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMalePress_00.png");
+			}
+			});
 
 		auto female_button = bottom->addButton("female");
-		if (stats[index]->sex == FEMALE) {
-			female_button->setColor(makeColor(255, 255, 255, 255));
-			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		female_button->setPressed(stats[index]->sex == FEMALE);
+		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		female_button->setStyle(Button::style_t::STYLE_RADIO);
+		if (stats[index]->playerRace == RACE_AUTOMATON) {
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 		} else {
-			female_button->setColor(makeColor(127, 127, 127, 255));
-			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemalePress_00.png");
 		}
-		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
@@ -10580,6 +10842,21 @@ bind_failed:
 	    female_button->addWidgetAction("MenuPageRight", "female");
 	    female_button->addWidgetAction("MenuAlt1", "disable_abilities");
 	    female_button->addWidgetAction("MenuAlt2", "show_race_info");
+		female_button->setTickCallback([](Widget& widget){
+			const int index = widget.getOwner();
+			auto button = static_cast<Button*>(&widget); assert(button);
+			if (stats[index]->playerRace == RACE_AUTOMATON) {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
+			} else {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemalePress_00.png");
+			}
+			});
 
 		auto show_race_info = bottom->addButton("show_race_info");
 		show_race_info->setFont(smallfont_outline);
@@ -10591,6 +10868,8 @@ bind_failed:
 		show_race_info->setColor(makeColor(255, 255, 255, 255));
 		show_race_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		show_race_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetails_00.png");
+		show_race_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetailsHigh_00.png");
+		show_race_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonShowDetailsPress_00.png");
 		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
@@ -11189,7 +11468,7 @@ bind_failed:
 		    (*class_name->getTickCallback())(*class_name);
 		}
 
-		const int height = std::max(254, 6 + 54 * (int)(reduced_class_list.size() / 4 + ((reduced_class_list.size() % 4) ? 1 : 0)));
+		constexpr int height = std::max(254, 6 + 54 * (int)(num_classes / 4 + ((num_classes % 4) ? 1 : 0)));
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
@@ -11245,6 +11524,8 @@ bind_failed:
 		    class_info->setSize(SDL_Rect{238, 68, 46, 46});
 		}
 		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
+		class_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoHigh_00.png");
+		class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
 		class_info->addWidgetAction("MenuSelect", "chat");
@@ -11272,49 +11553,64 @@ bind_failed:
 		auto current_class_name = classes_in_order[current_class + 1];
 
         bool selected_button = false;
-		const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
-		for (int c = reduced_class_list.size() - 1; c >= 0; --c) {
-			auto name = reduced_class_list[c];
+		static const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+		for (int c = num_classes - 1; c >= 0; --c) {
+			auto name = classes_in_order[c];
 			auto find = classes.find(name);
 			assert(find != classes.end());
 			auto& full_class = find->second;
 			auto button = subframe->addButton(name);
 			switch (full_class.dlc) {
-			case DLC::Base: button->setBackground((prefix + "ClassSelect_IconBGBase_00.png").c_str()); break;
-			case DLC::MythsAndOutcasts: button->setBackground((prefix + "ClassSelect_IconBGMyths_00.png").c_str()); break;
-			case DLC::LegendsAndPariahs: button->setBackground((prefix + "ClassSelect_IconBGLegends_00.png").c_str()); break;
+			case DLC::Base:
+				button->setBackground((prefix + "ClassSelect_IconBGBase_00.png").c_str());
+				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGBaseHigh_00.png").c_str());
+				button->setBackgroundActivated((prefix + "ClassSelect_IconBGBasePress_00.png").c_str());
+				break;
+			case DLC::MythsAndOutcasts:
+				button->setBackground((prefix + "ClassSelect_IconBGMyths_00.png").c_str());
+				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGMythsHigh_00.png").c_str());
+				button->setBackgroundActivated((prefix + "ClassSelect_IconBGMythsPress_00.png").c_str());
+				break;
+			case DLC::LegendsAndPariahs:
+				button->setBackground((prefix + "ClassSelect_IconBGLegends_00.png").c_str());
+				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGLegendsHigh_00.png").c_str());
+				button->setBackgroundActivated((prefix + "ClassSelect_IconBGLegendsPress_00.png").c_str());
+				break;
 			}
-			button->setIconColor(0);
-			button->setIcon((prefix + full_class.image).c_str());
-			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
-			if (!strcmp(name, current_class_name)) {
-			    button->setColor(makeColor(255, 255, 255, 255));
+			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
+				if (strcmp(name, current_class_name) == 0) {
+					button->setIcon((prefix + full_class.image_highlighted).c_str());
+				} else {
+					button->setIcon((prefix + full_class.image).c_str());
+				}
 			} else {
-			    button->setColor(makeColor(127, 127, 127, 255));
+				button->setIcon((prefix + full_class.image_locked).c_str());
 			}
+			button->setColor(makeColor(255, 255, 255, 255));
+			button->setHighlightColor(makeColor(255, 255, 255, 255));
+			button->setSize(SDL_Rect{8 + (c % 4) * 54, 6 + (c / 4) * 54, 54, 54});
 			if ((!selection && !strcmp(name, current_class_name)) ||
 			    (selection && c == selection)) {
 			    button->select();
 			    button->scrollParent();
 			    selected_button = true;
 			}
-			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
-				button->setWidgetLeft(reduced_class_list[c - 1]);
+				button->setWidgetLeft(classes_in_order[c - 1]);
 			}
-			if (c < reduced_class_list.size() - 1) {
-				button->setWidgetRight(reduced_class_list[c + 1]);
+			if (c < num_classes - 1) {
+				button->setWidgetRight(classes_in_order[c + 1]);
 			}
 			if (c > 3) {
-				button->setWidgetUp(reduced_class_list[c - 4]);
+				button->setWidgetUp(classes_in_order[c - 4]);
 			} else {
-				button->setWidgetUp(reduced_class_list[0]);
+				button->setWidgetUp(classes_in_order[0]);
 			}
-			if (c < reduced_class_list.size() - 4) {
-				button->setWidgetDown(reduced_class_list[c + 4]);
+			if (c < num_classes - 4) {
+				button->setWidgetDown(classes_in_order[c + 4]);
 			} else {
-				button->setWidgetDown(reduced_class_list[reduced_class_list.size() - 1]);
+				button->setWidgetDown(classes_in_order[num_classes - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
 			button->addWidgetAction("MenuSelect", "chat");
@@ -11322,8 +11618,19 @@ bind_failed:
 			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
+			// add a lock icon
+			if (isCharacterValidFromDLC(*stats[index], c - 1) != VALID_OK_CHARACTER) {
+				const auto lock_name = std::string(button->getName()) + "lock";
+				auto lock = subframe->addImage(
+					button->getSize(),
+					0xffffffff,
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassLocked_Icon_00.png",
+					lock_name.c_str());
+				lock->ontop = true;
+			}
+
 			static auto button_fn = [](Button& button, int index){
-				soundActivate();
+			    auto frame = static_cast<Frame*>(button.getParent());
 
 				// figure out which class button we clicked based on name
 				int c = 0;
@@ -11333,31 +11640,37 @@ bind_failed:
 					}
 				}
 
-			    // dim all buttons
-			    auto frame = static_cast<Frame*>(button.getParent());
-			    for (auto button : frame->getButtons()) {
-			        button->setColor(makeColor(127, 127, 127, 255));
-			    }
-
 				if (c > 0) {
 				    // when selecting anything but random class...
 					--c; // discount the "random class" option
-					client_classes[index] = c;
-				    button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
+					auto old_class = client_classes[index];
+					auto check = isCharacterValidFromDLC(*stats[index], c);
+					if (check != VALID_OK_CHARACTER) {
+						switch (check) {
+						default:
+						case INVALID_CHARACTER:
+						case INVALID_REQUIRE_ACHIEVEMENT:
+							soundError();
+							break;
+						case INVALID_REQUIREDLC1:
+						case INVALID_REQUIREDLC2:
+							openDLCPrompt();
+							break;
+						}
+					} else {
+						soundActivate();
+				    	button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
+						client_classes[index] = c;
+					}
 				} else {
+					soundActivate();
+
 				    // when selecting random class...
 					auto reduced_class_list = reducedClassList(index);
 					auto random_class = reduced_class_list[RNG.uniform(1, reduced_class_list.size() - 1)];
 					for (int c = 1; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
 							client_classes[index] = c - 1;
-
-				            // highlight selected class button
-				            auto frame = static_cast<Frame*>(button.getParent());
-				            auto button = frame->findButton(random_class);
-				            if (button) {
-				                button->setColor(makeColor(255, 255, 255, 255));
-				            }
 							break;
 						}
 					}
@@ -11377,15 +11690,21 @@ bind_failed:
 
 			button->setTickCallback([](Widget& widget){
 			    auto button = static_cast<Button*>(&widget);
-			    if (button->isSelected()) {
-				    for (int c = 0; c < num_classes; ++c) {
-					    if (strcmp(button->getName(), classes_in_order[c]) == 0) {
-			                class_selection[widget.getOwner()] = c;
-						    break;
-					    }
-				    }
+				const int index = widget.getOwner();
 
-					// you can request a particular class from your party with this hotkey.
+				int class_index_with_random_option = 0;
+				for (int c = 0; c < num_classes; ++c) {
+					if (strcmp(button->getName(), classes_in_order[c]) == 0) {
+						if (button->isSelected()) {
+							class_selection[widget.getOwner()] = c;
+						}
+						class_index_with_random_option = c;
+						break;
+					}
+				}
+
+				// you can request a particular class from your party with a hotkey online
+			    if (button->isSelected()) {
 					if (currentLobbyType != LobbyType::LobbyLocal) {
 						const int player = widget.getOwner();
 						if (inputs.hasController(player)) {
@@ -11409,6 +11728,34 @@ bind_failed:
 						}
 					}
 			    }
+
+				// update highlight state for class icon
+				const auto name = button->getName();
+				const auto find = classes.find(name);
+				if (find != classes.end()) {
+					const auto& full_class = find->second;
+					if (isCharacterValidFromDLC(*stats[index], class_index_with_random_option - 1) == VALID_OK_CHARACTER) {
+						if (button->isHighlighted() || client_classes[index] == class_index_with_random_option - 1) {
+							button->setIcon((prefix + full_class.image_highlighted).c_str());
+						} else {
+							button->setIcon((prefix + full_class.image).c_str());
+						}
+					} else {
+						button->setIcon((prefix + full_class.image_locked).c_str());
+					}
+				}
+
+				// update lock icon
+				auto subframe = static_cast<Frame*>(button->getParent());
+				if (subframe) {
+					const auto lock_name = std::string(button->getName()) + "lock";
+					auto lock = subframe->findImage(lock_name.c_str());
+					if (lock) {
+						lock->path = button->isHighlighted() ?
+							"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassLocked_IconHigh_00.png":
+							"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassLocked_Icon_00.png";
+					}
+				}
 			    });
 		}
 
@@ -11558,6 +11905,8 @@ bind_failed:
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
 		randomize_name->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_name->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
+		randomize_name->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizeHigh_00.png");
+		randomize_name->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizePress_00.png");
 		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
@@ -11588,6 +11937,8 @@ bind_failed:
 		game_settings->setColor(makeColor(255, 255, 255, 255));
 		game_settings->setHighlightColor(makeColor(255, 255, 255, 255));
 		game_settings->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		game_settings->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBaseHigh_00.png");
+		game_settings->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBasePress_00.png");
 		game_settings->setText("View Game Settings");
 		game_settings->setFont(smallfont_outline);
 		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -11610,14 +11961,21 @@ bind_failed:
 		bottom->setColor(0);
 
 		auto male_button = bottom->addButton("male");
-		if (stats[index]->sex == MALE) {
-			male_button->setColor(makeColor(255, 255, 255, 255));
-			male_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		male_button->setPressed(stats[index]->sex == MALE);
+		male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		male_button->setStyle(Button::style_t::STYLE_RADIO);
+		if (stats[index]->playerRace == RACE_AUTOMATON) {
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 		} else {
-			male_button->setColor(makeColor(127, 127, 127, 255));
-			male_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMalePress_00.png");
 		}
-		male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Male_00.png");
 		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
@@ -11633,16 +11991,38 @@ bind_failed:
 		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
 		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
 		}
+		male_button->setTickCallback([](Widget& widget){
+			const int index = widget.getOwner();
+			auto button = static_cast<Button*>(&widget); assert(button);
+			if (stats[index]->playerRace == RACE_AUTOMATON) {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
+			} else {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMalePress_00.png");
+			}
+			});
 
 		auto female_button = bottom->addButton("female");
-		if (stats[index]->sex == FEMALE) {
-			female_button->setColor(makeColor(255, 255, 255, 255));
-			female_button->setHighlightColor(makeColor(255, 255, 255, 255));
+		female_button->setPressed(stats[index]->sex == FEMALE);
+		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+		female_button->setStyle(Button::style_t::STYLE_RADIO);
+		if (stats[index]->playerRace == RACE_AUTOMATON) {
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 		} else {
-			female_button->setColor(makeColor(127, 127, 127, 255));
-			female_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemalePress_00.png");
 		}
-		female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_Female_00.png");
 		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
@@ -11659,6 +12039,21 @@ bind_failed:
 		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
 		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
 		}
+		female_button->setTickCallback([](Widget& widget){
+			const int index = widget.getOwner();
+			auto button = static_cast<Button*>(&widget); assert(button);
+			if (stats[index]->playerRace == RACE_AUTOMATON) {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
+			} else {
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemalePress_00.png");
+			}
+			});
 
 		auto race_button = card->addButton("race");
 		race_button->setColor(makeColor(255, 255, 255, 255));
@@ -11681,6 +12076,8 @@ bind_failed:
 		}
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
+		race_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBaseHigh_00.png");
+		race_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBasePress_00.png");
 		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		race_button->addWidgetAction("MenuStart", "ready");
 		race_button->addWidgetAction("MenuSelect", "chat");
@@ -11752,17 +12149,12 @@ bind_failed:
 			    auto male_button = bottom->findButton("male");
 			    auto female_button = bottom->findButton("female");
 			    if (male_button && female_button) {
-				    if (stats[index]->sex == MALE) {
-					    male_button->setColor(makeColor(255, 255, 255, 255));
-					    male_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					    female_button->setColor(makeColor(127, 127, 127, 255));
-					    female_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				    } else {
-					    female_button->setColor(makeColor(255, 255, 255, 255));
-					    female_button->setHighlightColor(makeColor(255, 255, 255, 255));
-					    male_button->setColor(makeColor(127, 127, 127, 255));
-					    male_button->setHighlightColor(makeColor(127, 127, 127, 255));
-				    }
+					male_button->setPressed(stats[index]->sex == MALE);
+					male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+					male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+					female_button->setPressed(stats[index]->sex == FEMALE);
+					female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+					female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 			    }
 			}
 
@@ -11786,6 +12178,8 @@ bind_failed:
 		randomize_class->setColor(makeColor(255, 255, 255, 255));
 		randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
 		randomize_class->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_Randomize_00.png");
+		randomize_class->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizeHigh_00.png");
+		randomize_class->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Icon_RandomizePress_00.png");
 		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
@@ -11829,15 +12223,21 @@ bind_failed:
 				switch (class_info.dlc) {
 				case DLC::Base:
 					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBase_00.png");
+					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBaseHigh_00.png");
+					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGBasePress_00.png");
 					break;
 				case DLC::MythsAndOutcasts:
 					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGMyths_00.png");
+					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGMythsHigh_00.png");
+					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGMythsPress_00.png");
 					break;
 				case DLC::LegendsAndPariahs:
 					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegends_00.png");
+					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsHigh_00.png");
+					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsPress_00.png");
 					break;
 				}
-				button.setIcon((std::string("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/") + find->second.image).c_str());
+				button.setIcon((std::string("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/") + find->second.image_highlighted).c_str());
 			}
 		};
 
@@ -11896,6 +12296,8 @@ bind_failed:
 		ready_button->setColor(makeColor(255, 255, 255, 255));
 		ready_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		ready_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBase_00.png");
+		ready_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBaseHigh_00.png");
+		ready_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_ReadyBasePress_00.png");
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
@@ -12640,6 +13042,10 @@ bind_failed:
             createDummyMainMenu();
             beginFade(MainMenu::FadeDestination::GameStart);
 
+			if (!intro && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+				deleteSaveGame(multiplayer);
+			}
+
 	        // set unique game key
 	        local_rng.seedTime();
 	        local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
@@ -13188,6 +13594,8 @@ bind_failed:
 		        chat_button->setText("Chat");
 #endif
 		        chat_button->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/Button_Chat00.png");
+		        chat_button->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/Button_ChatHigh00.png");
+		        chat_button->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/Button_ChatPress00.png");
 		        chat_button->setFont(smallfont_outline);
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
@@ -14308,6 +14716,8 @@ bind_failed:
 		auto refresh = window->addButton("refresh");
 		refresh->setSize(SDL_Rect{634, 62, 40, 40});
 		refresh->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
+		refresh->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshHigh00.png");
+		refresh->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshPress00.png");
 		refresh->setHighlightColor(makeColor(255, 255, 255, 255));
 		refresh->setColor(makeColor(255, 255, 255, 255));
 		refresh->setWidgetSearchParent(window->getName());
@@ -14354,6 +14764,8 @@ bind_failed:
 		auto enter_code = window->addButton("enter_code");
 		enter_code->setSize(SDL_Rect{342, 454, 164, 62});
 		enter_code->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		enter_code->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicHigh00.png");
+		enter_code->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
 		enter_code->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_code->setColor(makeColor(255, 255, 255, 255));
 		enter_code->setText("Enter Lobby\nCode");
@@ -14407,6 +14819,8 @@ bind_failed:
 		auto join_lobby = window->addButton("join_lobby");
 		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
 		join_lobby->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
+		join_lobby->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicHigh00.png");
+		join_lobby->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
 		join_lobby->setHighlightColor(makeColor(255, 255, 255, 255));
 		join_lobby->setColor(makeColor(255, 255, 255, 255));
 		join_lobby->setText("Join Lobby");
@@ -14601,6 +15015,8 @@ bind_failed:
 		auto filter_settings = window->addButton("filter_settings");
 		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
 		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
+		filter_settings->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsHigh00.png");
+		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsPress00.png");
 		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
 		filter_settings->setColor(makeColor(255, 255, 255, 255));
 		filter_settings->setText("Filter Settings");
@@ -15003,6 +15419,8 @@ bind_failed:
         reset->setText("Reset Trial\nProgress");
         reset->setSize(SDL_Rect{152, 630, 164, 62});
         reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+        reset->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
         reset->setFont(smallfont_outline);
         reset->setHighlightColor(0xffffffff);
         reset->setColor(0xffffffff);
@@ -15048,6 +15466,8 @@ bind_failed:
         enter->setText("Enter Level");
         enter->setSize(SDL_Rect{902, 630, 164, 62});
         enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+        enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+        enter->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
         enter->setFont(smallfont_outline);
         enter->setHighlightColor(0xffffffff);
         enter->setColor(0xffffffff);
@@ -15109,6 +15529,8 @@ bind_failed:
 		auto hall_of_trials_button = window->addButton("hall_of_trials");
 		hall_of_trials_button->setSize(SDL_Rect{134, 176, 168, 52});
 		hall_of_trials_button->setBackground("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrials00.png");
+		hall_of_trials_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsHigh00.png");
+		hall_of_trials_button->setBackgroundActivated("*images/ui/Main Menus/Play/UI_PlayMenu_Button_HallofTrialsPress00.png");
 		hall_of_trials_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setColor(makeColor(255, 255, 255, 255));
 		hall_of_trials_button->setText("TUTORIALS");
@@ -15443,6 +15865,8 @@ bind_failed:
 		auto local_button = window->addButton("local");
 		local_button->setSize(SDL_Rect{96, 72, 164, 62});
 		local_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		local_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+		local_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		local_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		local_button->setColor(makeColor(255, 255, 255, 255));
 		local_button->setText("Local Adventure");
@@ -15475,6 +15899,8 @@ bind_failed:
 		auto host_lan_button = window->addButton("host_lan");
 		host_lan_button->setSize(SDL_Rect{96, 166, 164, 62});
 		host_lan_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		host_lan_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+		host_lan_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_lan_button->setColor(makeColor(255, 255, 255, 255));
 #ifdef NINTENDO
@@ -15500,6 +15926,8 @@ bind_failed:
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
 #if defined(STEAMWORKS) || defined(USE_EOS)
+		host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+		host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_online_button->setColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
@@ -15555,6 +15983,8 @@ bind_failed:
 		auto join_button = window->addButton("join");
 		join_button->setSize(SDL_Rect{96, 326, 164, 62});
 		join_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
+		join_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+		join_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		join_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		join_button->setColor(makeColor(255, 255, 255, 255));
 		join_button->setText("Lobby Browser");
@@ -16253,6 +16683,8 @@ bind_failed:
 		delete_button->setColor(makeColor(255, 255, 255, 255));
 		delete_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		delete_button->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_Button_Delete_00.png");
+		delete_button->setBackgroundHighlighted("*images/ui/Main Menus/ContinueGame/UI_Cont_Button_DeleteHigh_00.png");
+		delete_button->setBackgroundActivated("*images/ui/Main Menus/ContinueGame/UI_Cont_Button_DeletePress_00.png");
 		delete_button->setWidgetSearchParent("continue_window");
 		delete_button->setWidgetBack("back_button");
 		delete_button->addWidgetAction("MenuAlt1", "delete");
@@ -16302,6 +16734,8 @@ bind_failed:
 		enter_button->setColor(makeColor(255, 255, 255, 255));
 		enter_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		enter_button->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_Button_00.png");
+		enter_button->setBackgroundHighlighted("*images/ui/Main Menus/ContinueGame/UI_Cont_ButtonHigh_00.png");
+		enter_button->setBackgroundActivated("*images/ui/Main Menus/ContinueGame/UI_Cont_ButtonPress_00.png");
 		enter_button->setWidgetSearchParent("continue_window");
 		enter_button->setWidgetBack("back_button");
 		enter_button->addWidgetAction("MenuAlt1", "delete");
@@ -16630,8 +17064,12 @@ bind_failed:
 				if (button) {
 					if (name == settings_tab_name) {
 						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
+						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
 					} else {
 						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleHigh00.png");
+						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
 					}
 				}
 			}
@@ -16667,8 +17105,15 @@ bind_failed:
 			button->setCallback(tabs[c].callback);
 			button->setText(tabs[c].name);
 			button->setFont(banner_font);
-			button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
-			button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+			if (tabs[c].name == settings_tab_name) {
+				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
+			} else {
+				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleHigh00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
+			}
 			button->setSize(SDL_Rect{x + (x * c) - 184 / 2, 64, 184, 64});
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -16705,6 +17150,8 @@ bind_failed:
 
 		auto tab_left = settings->addButton("tab_left");
 		tab_left->setBackground("*images/ui/Main Menus/Settings/Settings_Button_L00.png");
+		tab_left->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_LHigh00.png");
+		tab_left->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_LPress00.png");
 		tab_left->setSize(SDL_Rect{32, 68, 38, 58});
 		tab_left->setColor(makeColor(255, 255, 255, 255));
 		tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -16748,6 +17195,8 @@ bind_failed:
 
 		auto tab_right = settings->addButton("tab_right");
 		tab_right->setBackground("*images/ui/Main Menus/Settings/Settings_Button_R00.png");
+		tab_right->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_RHigh00.png");
+		tab_right->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_RPress00.png");
 		tab_right->setSize(SDL_Rect{1056, 68, 38, 58});
 		tab_right->setColor(makeColor(255, 255, 255, 255));
 		tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -16799,6 +17248,8 @@ bind_failed:
 
 		auto restore_defaults = settings->addButton("restore_defaults");
 		restore_defaults->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+		restore_defaults->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
+		restore_defaults->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		restore_defaults->setSize(SDL_Rect{84, 630, 164, 62});
 		restore_defaults->setText("Restore\nDefaults");
 		restore_defaults->setJustify(Button::justify_t::CENTER);
@@ -16842,6 +17293,8 @@ bind_failed:
 
 		auto discard_and_exit = settings->addButton("discard_and_exit");
 		discard_and_exit->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+		discard_and_exit->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
+		discard_and_exit->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		discard_and_exit->setSize(SDL_Rect{700, 630, 164, 62});
 		discard_and_exit->setText("Discard\n& Exit");
 		discard_and_exit->setJustify(Button::justify_t::CENTER);
@@ -16875,6 +17328,8 @@ bind_failed:
 
 		auto confirm_and_exit = settings->addButton("confirm_and_exit");
 		confirm_and_exit->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Basic00.png");
+		confirm_and_exit->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_BasicHigh00.png");
+		confirm_and_exit->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_BasicPress00.png");
 		confirm_and_exit->setSize(SDL_Rect{880, 630, 164, 62});
 		confirm_and_exit->setText("Confirm\n& Exit");
 		confirm_and_exit->setJustify(Button::justify_t::CENTER);
@@ -16995,6 +17450,7 @@ bind_failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					deleteSaveGame(multiplayer);
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
@@ -17578,9 +18034,14 @@ bind_failed:
 			"title"
 		);
 
+		char buf[64];
+		const char date[] = __DATE__;
+		const char* year = (const char*)date + sizeof(date) - 5;
+		snprintf(buf, sizeof(buf), u8"Copyright \u00A9 %s, Turning Wheel LLC", year);
+
 		auto copyright = main_menu_frame->addField("copyright", 64);
 		copyright->setFont(bigfont_outline);
-		copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+		copyright->setText(buf);
 		copyright->setJustify(Field::justify_t::CENTER);
 		copyright->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 512) / 2,
@@ -17662,7 +18123,8 @@ bind_failed:
 		    auto button = static_cast<Button*>(&widget);
             button->setColor(newColor);
             button->setHighlightColor(newColor);
-			if (!widget.isSelected()) {
+			auto selectedWidget = main_menu_frame->findSelectedWidget(getMenuOwner());
+			if (!selectedWidget) {
 				widget.select();
 			}
 		    });
@@ -18043,15 +18505,9 @@ bind_failed:
 		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){ // banner #1
 		        if (enabledDLCPack1 && enabledDLCPack2) {
-                    openURLTryWithOverlay("http://www.baronygame.com/");
+                    openURLTryWithOverlay("http://turningwheelgames.com/blog/2022/11/qodbeta");
                 } else {
-#if defined(STEAMWORKS)
-                    openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
-#elif defined(USE_EOS)
-                    openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
-#else
-                    openDLCPrompt();
-#endif
+					openDLCPrompt();
                 }
 		        },
 		        [](Button&){ // banner #2
@@ -18098,9 +18554,14 @@ bind_failed:
 				widget.setInvisible(dimmer != nullptr);
 				});
 
+			char buf[64];
+			const char date[] = __DATE__;
+			const char* year = (const char*)date + sizeof(date) - 5;
+			snprintf(buf, sizeof(buf), u8"Copyright \u00A9 %s, Turning Wheel LLC", year);
+
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
-			copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+			copyright->setText(buf);
 			copyright->setJustify(Field::justify_t::CENTER);
 			copyright->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 512) / 2,
@@ -18444,6 +18905,8 @@ bind_failed:
             dismiss->setColor(makeColor(255, 255, 255, 255));
             dismiss->setHighlightColor(makeColor(255, 255, 255, 255));
             dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Dismiss_02.png");
+            dismiss->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_DismissHigh_02.png");
+            dismiss->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_DismissPress_02.png");
             dismiss->setText("Dismiss");
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));
@@ -18462,6 +18925,8 @@ bind_failed:
             quit->setColor(makeColor(255, 255, 255, 255));
             quit->setHighlightColor(makeColor(255, 255, 255, 255));
             quit->setBackground("images/ui/GameOver/UI_GameOver_Button_Quit_02.png");
+            quit->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_QuitHigh_02.png");
+            quit->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_QuitPress_02.png");
             quit->setText(tutorial ? "Back to Hub" : "Quit to Main");
             quit->setFont(smallfont_outline);
             quit->setTextColor(makeColor(170, 134, 102, 255));
@@ -18507,6 +18972,8 @@ bind_failed:
             restart->setColor(makeColor(255, 255, 255, 255));
             restart->setHighlightColor(makeColor(255, 255, 255, 255));
             restart->setBackground("images/ui/GameOver/UI_GameOver_Button_Lobby_02.png");
+            restart->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_LobbyHigh_02.png");
+            restart->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_LobbyPress_02.png");
             restart->setText("Restart");
             restart->setFont(smallfont_outline);
             restart->setTextColor(makeColor(170, 134, 102, 255));
@@ -18524,6 +18991,7 @@ bind_failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
+					deleteSaveGame(multiplayer);
 					beginFade(MainMenu::FadeDestination::GameStart);
 				} else {
 				    tutorial_map_destination = map.filename;
@@ -18560,6 +19028,8 @@ bind_failed:
             dismiss->setColor(makeColor(255, 255, 255, 255));
             dismiss->setHighlightColor(makeColor(255, 255, 255, 255));
             dismiss->setBackground("images/ui/GameOver/UI_GameOver_Button_Restart_02.png");
+            dismiss->setBackgroundHighlighted("images/ui/GameOver/UI_GameOver_Button_RestartHigh_02.png");
+            dismiss->setBackgroundActivated("images/ui/GameOver/UI_GameOver_Button_RestartPress_02.png");
             dismiss->setText("Dismiss");
             dismiss->setFont(smallfont_outline);
             dismiss->setTextColor(makeColor(170, 134, 102, 255));

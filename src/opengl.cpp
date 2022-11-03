@@ -2501,16 +2501,8 @@ void GO_SwapBuffers(SDL_Window* screen)
 {
 	dirty = 1;
 
-#ifndef PANDORA
-#ifndef WINDOWS
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#else
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#endif
-	SDL_GL_SwapWindow(screen);
-#else
+#ifdef PANDORA
 	bool bBlit = !(xres==800 && yres==480);
-
 	int vp_old[4];
 	if(bBlit) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2544,5 +2536,14 @@ void GO_SwapBuffers(SDL_Window* screen)
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
 		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);
 	}
+
+	return;
 #endif
+
+	framebuffer::unbindAll();
+	main_framebuffer.bindForReading();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	main_framebuffer.blit(vidgamma);
+	SDL_GL_SwapWindow(screen);
+	main_framebuffer.bindForWriting();
 }

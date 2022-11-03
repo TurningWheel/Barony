@@ -283,6 +283,10 @@ int initApp(char const * const title, int fullscreen)
 	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
 		glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
 
+	createCommonDrawResources();
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+	main_framebuffer.bindForWriting();
+
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
@@ -2390,6 +2394,8 @@ int deinitApp()
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
 	exitSoundEngine();
+	destroyCommonDrawResources();
+	main_framebuffer.destroy();
 	if ( renderer )
 	{
 		SDL_GL_DeleteContext(renderer);
@@ -2774,13 +2780,6 @@ bool initVideo()
 		SDL_GL_SetSwapInterval(0);
 	}
 
-#ifndef NINTENDO
-	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
-	{
-		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
-	}
-#endif
-
 	printlog("display changed successfully.\n");
 	return true;
 }
@@ -2806,6 +2805,7 @@ bool changeVideoMode(int new_xres, int new_yres)
 	printlog("changing video mode (%d x %d).\n", xres, yres);
 
 	// destroy gui fbo
+	main_framebuffer.destroy();
 	Frame::fboDestroy();
 
 	// set video mode
@@ -2824,6 +2824,8 @@ bool changeVideoMode(int new_xres, int new_yres)
 	}
 
 	// create new frame fbo
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+	main_framebuffer.bindForWriting();
 	Frame::fboInit();
 
 	// success
@@ -2842,7 +2844,8 @@ bool resizeWindow(int new_xres, int new_yres)
 		yres = std::max(100, new_yres);
 	}
 
-	// destroy gui fbo
+	// destroy fbos
+	main_framebuffer.destroy();
 	Frame::fboDestroy();
 
 #ifndef EDITOR
@@ -2852,6 +2855,8 @@ bool resizeWindow(int new_xres, int new_yres)
 #endif
 
 	// create new frame fbo
+	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
+	main_framebuffer.bindForWriting();
 	Frame::fboInit();
 
 	// success
