@@ -130,11 +130,7 @@ struct Mesh {
 		Index,		// uint
 		Max
 	};
-	static constexpr int ElementsPerVBO[] = {
-		3, // Position
-		2, // TexCoord
-		4, // Color
-	};
+	static const std::unordered_map<BufferType, int> ElementsPerVBO;
 
 	Mesh(
 		std::initializer_list<float>&& positions,

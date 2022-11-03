@@ -2662,14 +2662,7 @@ namespace MainMenu {
 			u8" \n"
 		);
 
-		// entries
-		auto text2 = credits->addField("text2", 1024);
-		text2->setFont(bigfont_outline);
-		text2->setColor(0xffffffff);
-		text2->setHJustify(Field::justify_t::CENTER);
-		text2->setVJustify(Field::justify_t::TOP);
-		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
-		text2->setText(
+		const char text2_str[] =
 			u8" \n"
 			u8"Sheridan Rathbun\n"
 			u8" \n \n \n \n \n"
@@ -2704,7 +2697,7 @@ namespace MainMenu {
 			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Copyright \u00A9 2022, all rights reserved\n"
+			u8"Copyright \u00A9 %s, all rights reserved\n"
 #ifdef USE_FMOD
 			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
 #endif
@@ -2713,8 +2706,21 @@ namespace MainMenu {
 			u8" \n"
 			u8" \n"
 			u8" \n"
-			u8"Thank you!\n"
-		);
+			u8"Thank you!\n";
+		
+		char buf[1024];
+		const char date[] = __DATE__;
+		const char* year = (const char*)date + sizeof(date) - 5;
+		snprintf(buf, sizeof(buf), text2_str, year);
+
+		// entries
+		auto text2 = credits->addField("text2", 1024);
+		text2->setFont(bigfont_outline);
+		text2->setColor(0xffffffff);
+		text2->setHJustify(Field::justify_t::CENTER);
+		text2->setVJustify(Field::justify_t::TOP);
+		text2->setSize(SDL_Rect{0, Frame::virtualScreenY, Frame::virtualScreenX, font->height() * num_credits_lines});
+		text2->setText(buf);
 	}
 
 /******************************************************************************/
@@ -18008,9 +18014,14 @@ bind_failed:
 			"title"
 		);
 
+		char buf[64];
+		const char date[] = __DATE__;
+		const char* year = (const char*)date + sizeof(date) - 5;
+		snprintf(buf, sizeof(buf), u8"Copyright \u00A9 %s, Turning Wheel LLC", year);
+
 		auto copyright = main_menu_frame->addField("copyright", 64);
 		copyright->setFont(bigfont_outline);
-		copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+		copyright->setText(buf);
 		copyright->setJustify(Field::justify_t::CENTER);
 		copyright->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 512) / 2,
@@ -18523,9 +18534,14 @@ bind_failed:
 				widget.setInvisible(dimmer != nullptr);
 				});
 
+			char buf[64];
+			const char date[] = __DATE__;
+			const char* year = (const char*)date + sizeof(date) - 5;
+			snprintf(buf, sizeof(buf), u8"Copyright \u00A9 %s, Turning Wheel LLC", year);
+
 			auto copyright = main_menu_frame->addField("copyright", 64);
 			copyright->setFont(bigfont_outline);
-			copyright->setText(u8"Copyright \u00A9 2022, Turning Wheel LLC");
+			copyright->setText(buf);
 			copyright->setJustify(Field::justify_t::CENTER);
 			copyright->setSize(SDL_Rect{
 				(Frame::virtualScreenX - 512) / 2,

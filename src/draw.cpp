@@ -29,6 +29,12 @@
 
 #include "ui/Image.hpp"
 
+const std::unordered_map<Mesh::BufferType, int> Mesh::ElementsPerVBO = {
+	{Mesh::BufferType::Position, 3},
+	{Mesh::BufferType::TexCoord, 2},
+	{Mesh::BufferType::Color, 4},
+};
+
 framebuffer main_framebuffer;
 
 Mesh framebuffer::mesh{
@@ -106,9 +112,11 @@ void Mesh::init() {
 	// data buffers
 	glGenBuffers((GLsizei)BufferType::Max, vbo);
 	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+		const auto& find = ElementsPerVBO.find((BufferType)c);
+		assert(find != ElementsPerVBO.end());
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
 		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(c, ElementsPerVBO[c], GL_FLOAT, GL_FALSE, 0, nullptr);
+		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
 		glEnableVertexAttribArray(c);
 	}
 
