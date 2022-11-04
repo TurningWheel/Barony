@@ -7943,6 +7943,11 @@ bind_failed:
 	}
 
 	static void handleNetwork() {
+		if (!net_packet) {
+			// I don't know why this can happen, but it can,
+			// and it causes the game to crash. So stop it!
+			return;
+		}
 	    if (multiplayer == SERVER) {
 	        handlePacketsAsServer();
 	    } else if (multiplayer == CLIENT) {
@@ -13632,17 +13637,17 @@ bind_failed:
 			createStartButton(2);
 			createStartButton(3);
 		} else if (type == LobbyType::LobbyLAN) {
+			setupNetGameAsServer();
 			createStartButton(0);
 			createWaitingStone(1);
 			createWaitingStone(2);
 			createWaitingStone(3);
-			setupNetGameAsServer();
 		} else if (type == LobbyType::LobbyOnline) {
+			setupNetGameAsServer();
 			createStartButton(0);
 			createInviteButton(1);
 			createInviteButton(2);
 			createInviteButton(3);
-			setupNetGameAsServer();
 		} else if (type == LobbyType::LobbyJoined) {
 		    for (int c = 0; c < 4; ++c) {
 		        if (clientnum == c) {
@@ -16221,6 +16226,7 @@ bind_failed:
 			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
 			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 #endif
+						createDummyMainMenu();
                         hostOnlineLobby(button);
                     } else if (info.multiplayer_type == SERVER) {
 			            if ( getSaveGameVersionNum(info) <= 335 )
@@ -16235,8 +16241,10 @@ bind_failed:
 				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 #endif
 			            }
+						createDummyMainMenu();
                         hostOnlineLobby(button);
                     } else if (info.multiplayer_type == DIRECTSERVER) {
+						createDummyMainMenu();
                         hostLANLobby(button);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
