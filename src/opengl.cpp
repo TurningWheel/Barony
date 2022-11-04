@@ -2462,6 +2462,7 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		}
 #endif
 		// generate object buffer
+		framebuffer::unbindAll();
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
@@ -2474,6 +2475,8 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	if((dirty) && (xres==800) && (yres==480)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+#else
+	main_framebuffer.bindForWriting();
 #endif
 	dirty = 0;
 	return oldpix;
