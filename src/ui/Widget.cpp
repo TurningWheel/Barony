@@ -341,6 +341,9 @@ void Widget::adoptWidget(Widget& widget) {
 void Widget::drawPost(const SDL_Rect size,
     const std::vector<const Widget*>& selectedWidgets,
     const std::vector<const Widget*>& searchParents) const {
+	if (disabled) {
+		return;
+	}
 	const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 	const Widget* selectedWidget = nullptr;
 	const Widget* searchParent = nullptr;
