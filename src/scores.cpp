@@ -5917,7 +5917,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 					Uint32 appearance = item.second.appearance;
 					bool identified = item.second.identified;
 					Item* i = newItem(type, status, beatitude, count,
-						appearance, identified, &stats->inventory); // should follower inventory be nullptr? please test
+						appearance, identified, nullptr);
 					i->x = item.second.x;
 					i->y = item.second.y;
 					slot = i;

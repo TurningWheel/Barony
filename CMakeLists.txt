@@ -11,6 +11,10 @@ endif()
 
 if (NOT DEFINED STEAMWORKS_ENABLED)
 	set (STEAMWORKS_ENABLED 0)
+	option(STEAMWORKS "Enable Steamworks" OFF)
+	if (STEAMWORKS)
+		set (STEAMWORKS_ENABLED 1)
+	endif()
 endif()
 
 if (DEFINED ENV{OPTIMIZATION_LEVEL})
@@ -25,6 +29,16 @@ endif()
 
 if (NOT DEFINED EOS_ENABLED)
 	set (EOS_ENABLED 0)
+	option(EOS "Enable Epic Online Services" OFF)
+	if (EOS)
+		set (EOS_ENABLED 1)
+	endif()
+	set(BUILD_ENV_PR "" CACHE STRING "EOS product id")
+	set(BUILD_ENV_SA "" CACHE STRING "EOS sandbox")
+	set(BUILD_ENV_DE "" CACHE STRING "EOS deployment")
+	set(BUILD_ENV_CC "" CACHE STRING "EOS cc")
+	set(BUILD_ENV_CS "" CACHE STRING "EOS cs")
+	set(BUILD_ENV_GSE "" CACHE STRING "EOS gse")
 endif()
 
 # EOS Tokens

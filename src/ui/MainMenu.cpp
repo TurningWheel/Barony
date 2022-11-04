@@ -2325,13 +2325,13 @@ namespace MainMenu {
 		    next->setTextHighlightColor(0xffffffff);
 		    next->setFont(smallfont_outline);
 		    next->setHJustify(Button::justify_t::CENTER);
-		    next->setVJustify(Button::justify_t::CENTER);
+		    next->setVJustify(Button::justify_t::TOP);
 		    auto font = Font::get(bigfont_outline); assert(font);
 		    next->setSize(SDL_Rect{
 		        (Frame::virtualScreenX - 160) / 2,
-		        (Frame::virtualScreenY - font->height() + 4),
+		        (Frame::virtualScreenY - font->height() - 4),
 		        160,
-		        font->height() - 4,
+		        font->height() + 4,
 		        });
 		    next->setCallback(next_button_func);
 			next->setTickCallback([](Widget& widget){
@@ -2341,7 +2341,9 @@ namespace MainMenu {
 			    });
 		    next->setWidgetBack("back");
 		    next->select();
+
 		    next->setGlyphPosition(Button::glyph_position_t::CENTERED_TOP);
+			next->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
 		    next->setHideKeyboardGlyphs(false);
 		}
 
@@ -2502,9 +2504,11 @@ namespace MainMenu {
 							buf[len] = c;
 							buf[len + 1] = '\0';
 						} else {
-						    auto back = main_menu_frame->findButton("back"); assert(back);
-						    back->setDisabled(true);
-						    back->setInvisible(true);
+						    auto back = main_menu_frame->findButton("back");
+							if (back) {
+								back->setDisabled(true);
+								back->setInvisible(true);
+							}
 							story_text_pause = fpsLimit * 5;
 							story_text_end = true;
 						}
@@ -2518,7 +2522,9 @@ namespace MainMenu {
 		            story_skip_timer = 0.f;
 		            story_skip = 0;
 		            auto back_button = main_menu_frame->findButton("back");
-		            back_button->setText("Skip story");
+					if (back_button) {
+		            	back_button->setText("Skip story");
+					}
 		        }
 		    }
 			});
@@ -16228,7 +16234,7 @@ bind_failed:
 			            LobbyHandler.hostingType = LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY;
 			            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 #endif
-						createDummyMainMenu();
+						createMainMenu(false); // just in-case the lobby hosting fails
                         hostOnlineLobby(button);
                     } else if (info.multiplayer_type == SERVER) {
 			            if ( getSaveGameVersionNum(info) <= 335 )
@@ -16243,10 +16249,10 @@ bind_failed:
 				            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 #endif
 			            }
-						createDummyMainMenu();
+						createMainMenu(false); // just in-case the lobby hosting fails
                         hostOnlineLobby(button);
                     } else if (info.multiplayer_type == DIRECTSERVER) {
-						createDummyMainMenu();
+						createMainMenu(false); // just in-case the lobby hosting fails
                         hostLANLobby(button);
                     }
                 } else if (info.multiplayer_type == CLIENT || info.multiplayer_type == DIRECTCLIENT) {
@@ -16567,21 +16573,6 @@ bind_failed:
 		banner_title->setFont(bigfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
-		auto subwindow = window->addFrame("subwindow");
-		auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
-		if (first_savegame) {
-		    first_savegame->select();
-		    savegame_selected = first_savegame;
-		}
-
-		auto gradient = window->addImage(
-		    subwindow->getSize(),
-		    0xffffffff,
-		    "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Grad_01.png",
-		    "gradient"
-		);
-		gradient->ontop = true;
-
 		auto singleplayer = window->addButton("singleplayer");
 		singleplayer->setText("Local Games");
 		singleplayer->setFont(smallfont_outline);
@@ -16685,6 +16676,29 @@ bind_failed:
 		    }
 		    cursor_delete_mode = false;
 		    });
+
+		auto subwindow = window->addFrame("subwindow");
+		auto first_savegame = populateContinueSubwindow(*subwindow, continueSingleplayer);
+		if (first_savegame) {
+		    first_savegame->select();
+		    savegame_selected = first_savegame;
+		} else {
+			if (continueSingleplayer) {
+				auto b = window->findButton("singleplayer");
+				b->select();
+			} else {
+				auto b = window->findButton("multiplayer");
+				b->select();
+			}
+		}
+
+		auto gradient = window->addImage(
+		    subwindow->getSize(),
+		    0xffffffff,
+		    "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Grad_01.png",
+		    "gradient"
+		);
+		gradient->ontop = true;
 
 		auto delete_button = window->addButton("delete");
 		delete_button->setText("Delete Save");
@@ -17714,8 +17728,8 @@ bind_failed:
 				};
 				auto classicEnding = [](){(void)beginFade(FadeDestination::Victory);};
 				auto fullEnding = [](){(void)beginFade(FadeDestination::Victory); steamAchievement("BARONY_ACH_ALWAYS_WAITING");};
-				auto loadNextLevel = [](){loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);};
-				auto skipHellLevels = [](){loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);};
+				auto loadNextLevel = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 0; pauseGame(1, false);}};
+				auto skipHellLevels = [](){if (multiplayer != CLIENT) {loadnextlevel = true; skipLevelsOnLoad = 5; pauseGame(1, false);}};
 				Scene scenes[] = {
 				    {"data/story/HerxMidpointHuman.json", skipHellLevels},
 				    {"data/story/HerxMidpointAutomaton.json", skipHellLevels},
