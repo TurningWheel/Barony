@@ -106,6 +106,7 @@ Widget* Widget::handleInput() {
 
 		// find search root
 		Frame* root = nullptr;
+		Widget* head = findHead();
 
 		// move to another widget
 		for (auto& move : widgetMovements) {
@@ -114,7 +115,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
 					if (!result) {
-						result = gui ? gui->findWidget(move.second.c_str(), true) : nullptr;
+						result = head ? head->findWidget(move.second.c_str(), true) : nullptr;
 					}
 					//printlog("%s: %p", move.second.c_str(), (void*)result);
 					if (result && !result->disabled && !result->invisible) {
@@ -140,7 +141,7 @@ Widget* Widget::handleInput() {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
 					if (!result) {
-						result = gui ? gui->findWidget(action.second.c_str(), true) : nullptr;
+						result = head ? head->findWidget(action.second.c_str(), true) : nullptr;
 					}
 					//printlog("%s: %p", action.second.c_str(), (void*)result);
 					if (result && !result->disabled) {

@@ -6531,6 +6531,7 @@ bind_failed:
         static ConsoleVariable<Vector4> chatBgColor("/chat_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
 
         frame = lobby->addFrame("chat window");
+		frame->setOwner(clientnum);
         frame->setSize(SDL_Rect{(size.w - w) - 16, 64, w, h});
         frame->setBorderColor(makeColor(51, 33, 26, 255));
         frame->setColor(makeColor(chatBgColor->x, chatBgColor->y, chatBgColor->z, chatBgColor->w));
@@ -11728,9 +11729,9 @@ bind_failed:
 								static Uint32 lastClassRequest = 0;
 								char buf[1024];
 								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
-									snprintf(buf, sizeof(buf), "%s: We need a %s.",
+									int len = snprintf(buf, sizeof(buf), "%s: We need a %s.",
 										players[player]->getAccountName(), widget.getName());
-									sendChatMessageOverNet(0xffffffff, buf, len);
+									sendChatMessageOverNet(0xffffffff, buf, (size_t)len);
 									lastClassRequest = ticks;
 								} else {
 									snprintf(buf, sizeof(buf), "*** Please wait %d seconds before suggesting another class. ***",
@@ -13156,7 +13157,7 @@ bind_failed:
 		    }
 		    });
 		
-		auto achievements = frame->addField("achievements", 256);
+		/*auto achievements = frame->addField("achievements", 256);
 		achievements->setSize(SDL_Rect{0, frame->getSize().h - 32, frame->getSize().w, 32});
 		achievements->setFont(smallfont_outline);
 		achievements->setJustify(Field::justify_t::CENTER);
@@ -13172,7 +13173,7 @@ bind_failed:
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
 			});
-		(*achievements->getTickCallback())(*achievements);
+		(*achievements->getTickCallback())(*achievements);*/
 	}
 
 	static void createLobby(LobbyType type) {
@@ -13238,6 +13239,7 @@ bind_failed:
 		currentLobbyType = type;
 
 		auto lobby = main_menu_frame->addFrame("lobby");
+		lobby->setOwner(clientnum);
 		lobby->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
 		lobby->setHollow(true);
@@ -13568,6 +13570,7 @@ bind_failed:
 
 		        // privacy button
 		        auto privacy = banner->addButton("privacy");
+				privacy->setOwner(clientnum);
 		        privacy->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44, 8, 40, 40});
 		        privacy->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
 		        privacy->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
@@ -13596,6 +13599,7 @@ bind_failed:
 
                 // chat button
 			    auto chat_button = banner->addButton("chat");
+				chat_button->setOwner(clientnum);
 			    chat_button->setSize(SDL_Rect{Frame::virtualScreenX - 212, 8, 134, 40});
 			    chat_button->setHighlightColor(0xffffffff);
 		        chat_button->setColor(0xffffffff);
@@ -13766,7 +13770,7 @@ bind_failed:
         bounce = (real_t)0.0;
         auto prompt_tick_callback = [](Widget& widget){
             auto frame = static_cast<Frame*>(widget.getParent());
-            const int index = frame->getOwner();
+            const int index = multiplayer == CLIENT ? 0 : frame->getOwner();
 			const real_t inc = (PI / fpsLimit) * 0.5f;
             for (int c = 0; c < MAXPLAYERS; ++c) {
 		        bounce += inc;
@@ -13852,7 +13856,9 @@ bind_failed:
                 auto field = prompt->addField(name.c_str(), 16);
                 field->setSize(SDL_Rect{x, y, w, h});
                 field->setJustify(Field::justify_t::CENTER);
-                field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+				if (multiplayer == SINGLE) {
+                	field->setText((std::string("P") + std::to_string(c + 1)).c_str());
+				}
                 field->setFont(bigfont_outline);
 				if (colorblind) {
 					switch (c) {
