@@ -7083,10 +7083,12 @@ bind_failed:
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 #ifdef STEAMWORKS
-			if (!directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-				char svFlagsChar[16];
-				snprintf(svFlagsChar, 15, "%d", svFlags);
-				SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar);
+			if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+				if (!directConnect && currentLobby) {
+					char svFlagsChar[16];
+					snprintf(svFlagsChar, 15, "%d", svFlags);
+					SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar);
+				}
 			}
 #endif
 	    } else if (multiplayer == CLIENT) {
