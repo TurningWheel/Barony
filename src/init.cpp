@@ -2674,7 +2674,9 @@ bool initVideo()
 			return false;
 		}
 
+#ifdef WINDOWS
 		glewInit();
+#endif
 
 #ifdef NINTENDO
 		initNxGL();
