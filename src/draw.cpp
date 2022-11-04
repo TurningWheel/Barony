@@ -151,8 +151,8 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 	xsize = _xsize;
 	ysize = _ysize;
 
-	SDL_glGenFramebuffers(1, &fbo);
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 	glGenTextures(1, &fbo_color);
 	glBindTexture(GL_TEXTURE_2D, fbo_color);
@@ -161,7 +161,7 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
-	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glGenTextures(1, &fbo_depth);
@@ -171,19 +171,19 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
-	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
-	SDL_glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
+	glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
 	glReadBuffer(GL_NONE);
 
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void framebuffer::destroy() {
 	if (fbo) {
-		SDL_glDeleteFramebuffers(1, &fbo);
+		glDeleteFramebuffers(1, &fbo);
 		fbo = 0;
 	}
 	if (fbo_color) {
@@ -197,9 +197,9 @@ void framebuffer::destroy() {
 }
 
 void framebuffer::bindForWriting() {
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	SDL_glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
 	glViewport(0, 0, xsize, ysize);
 }
 
@@ -216,7 +216,7 @@ void framebuffer::blit(float gamma) {
 }
 
 void framebuffer::unbindForWriting() {
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void framebuffer::unbindForReading() {
@@ -224,7 +224,7 @@ void framebuffer::unbindForReading() {
 }
 
 void framebuffer::unbindAll() {
-	SDL_glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glViewport(0, 0, xres, yres);
 }

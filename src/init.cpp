@@ -252,7 +252,9 @@ int initApp(char const * const title, int fullscreen)
 		return 2;
 	}*/
 
+#ifndef EDITOR
 	initSoundEngine(); //Yes, this silently ignores the return value...(which is not good, but not important either)
+#endif
 
 	printlog("initializing SDL_net...\n");
 	if ( SDLNet_Init() < 0 )
@@ -291,79 +293,6 @@ int initApp(char const * const title, int fullscreen)
 	//SDL_WM_SetCaption(title, 0);
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
 
-	// get pointers to opengl extensions
-#ifdef WINDOWS
-	bool noextensions = false;
-	if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glDrawBuffers = (PFNGLDRAWBUFFERSPROC)SDL_GL_GetProcAddress("glDrawBuffers")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)SDL_GL_GetProcAddress("glBlendFuncSeparate")) == NULL )
-	{
-		noextensions = true;
-	}
-/*
-// Unused
-	else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
-	{
-		noextensions = true;
-	}
-	else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
-	{
-		noextensions = true;
-	}
-*/
-	if ( noextensions )
-	{
-		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
-		disablevbos = true;
-	}
-#endif
-
 	// initialize buffers
 	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
@@ -374,8 +303,8 @@ int initApp(char const * const title, int fullscreen)
 		allsurfaces[c] = NULL;
 	}
 	glGenTextures(MAXTEXTURES, texid);
-	//SDL_glGenVertexArrays(MAXBUFFERS, vaoid);
-	//SDL_glGenBuffers(MAXBUFFERS, vboid);
+	//glGenVertexArrays(MAXBUFFERS, vaoid);
+	//glGenBuffers(MAXBUFFERS, vboid);
 
 	// load windows icon
 #ifndef _MSC_VER
@@ -613,12 +542,14 @@ int initApp(char const * const title, int fullscreen)
 		FileIO::close(fp);
 		updateLoadingScreen(60);
 
+#ifndef EDITOR
 		int soundStatus = loadSoundResources(60, 20); // start at 60% loading, progress to 80%
 		if ( 0 != soundStatus )
 		{
 		    loading_done = true;
 			return soundStatus;
 		}
+#endif
 
 		updateLoadingScreen(80);
 		loading_done = true;
@@ -1992,27 +1923,27 @@ void reloadModels(int start, int end) {
 	    {
 		    if ( polymodels[c].vbo )
 		    {
-			    SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+			    glDeleteBuffers(1, &polymodels[c].vbo);
 		    }
 		    if ( polymodels[c].colors )
 		    {
-			    SDL_glDeleteBuffers(1, &polymodels[c].colors);
+			    glDeleteBuffers(1, &polymodels[c].colors);
 		    }
 		    if ( polymodels[c].va )
 		    {
-			    SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+			    glDeleteVertexArrays(1, &polymodels[c].va);
 		    }
 		    if ( polymodels[c].colors_shifted )
 		    {
-			    SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			    glDeleteBuffers(1, &polymodels[c].colors_shifted);
 		    }
 		    if ( polymodels[c].grayscale_colors )
 		    {
-			    SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+			    glDeleteBuffers(1, &polymodels[c].grayscale_colors);
 		    }
 		    if ( polymodels[c].grayscale_colors_shifted )
 		    {
-			    SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+			    glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 		    }
 	    }
     }
@@ -2063,22 +1994,22 @@ void generateVBOs(int start, int end)
 	const int count = end - start;
 
 	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
-	SDL_glGenVertexArrays(count, vas.get());
+	glGenVertexArrays(count, vas.get());
 
 	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
-	SDL_glGenBuffers(count, vbos.get());
+	glGenBuffers(count, vbos.get());
 
 	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, color_buffers.get());
+	glGenBuffers(count, color_buffers.get());
 
 	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, color_shifted_buffers.get());
+	glGenBuffers(count, color_shifted_buffers.get());
 
 	std::unique_ptr<GLuint[]> grayscale_color_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, grayscale_color_buffers.get());
+	glGenBuffers(count, grayscale_color_buffers.get());
 
 	std::unique_ptr<GLuint[]> grayscale_color_shifted_buffers(new GLuint[count]);
-	SDL_glGenBuffers(count, grayscale_color_shifted_buffers.get());
+	glGenBuffers(count, grayscale_color_shifted_buffers.get());
 
 	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
 	{
@@ -2124,28 +2055,28 @@ void generateVBOs(int start, int end)
 		model->colors_shifted = color_shifted_buffers[c - start];
 		model->grayscale_colors = grayscale_color_buffers[c - start];
 		model->grayscale_colors_shifted = grayscale_color_shifted_buffers[c - start];
-		SDL_glBindVertexArray(model->va);
+		glBindVertexArray(model->va);
 
 		// vertex data
 		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
 
 		// color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBindBuffer(GL_ARRAY_BUFFER, model->colors);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
 		// shifted color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
 		// grayscale color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
 		// grayscale shifted color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
         const int current = c - start;
 	    updateLoadingScreen(80 + (10 * current) / count);
@@ -2334,34 +2265,36 @@ int deinitApp()
 			{
 				if ( polymodels[c].vbo )
 				{
-					SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+					glDeleteBuffers(1, &polymodels[c].vbo);
 				}
 				if ( polymodels[c].colors )
 				{
-					SDL_glDeleteBuffers(1, &polymodels[c].colors);
+					glDeleteBuffers(1, &polymodels[c].colors);
 				}
 				if ( polymodels[c].va )
 				{
-					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+					glDeleteVertexArrays(1, &polymodels[c].va);
 				}
 				if ( polymodels[c].colors_shifted )
 				{
-					SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+					glDeleteBuffers(1, &polymodels[c].colors_shifted);
 				}
 				if ( polymodels[c].grayscale_colors )
 				{
-					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors);
+					glDeleteBuffers(1, &polymodels[c].grayscale_colors);
 				}
 				if ( polymodels[c].grayscale_colors_shifted )
 				{
-					SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+					glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 				}
 			}
 		}
 		free(polymodels);
 	}
 
+#ifndef EDITOR
 	freeSoundResources();
+#endif
 
 	// delete opengl buffers
 	if ( allsurfaces != NULL )
@@ -2375,10 +2308,10 @@ int deinitApp()
 	}
 
 	// delete opengl buffers
-	/*SDL_glDeleteBuffers(MAXBUFFERS,vboid);
+	/*glDeleteBuffers(MAXBUFFERS,vboid);
 	if( vboid != NULL )
 		free(vboid);
-	SDL_glDeleteVertexArrays(MAXBUFFERS,vaoid);
+	glDeleteVertexArrays(MAXBUFFERS,vaoid);
 	if( vaoid != NULL )
 		free(vaoid);*/
 
@@ -2393,7 +2326,9 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
+#ifndef EDITOR
 	exitSoundEngine();
+#endif
 	destroyCommonDrawResources();
 	main_framebuffer.destroy();
 	if ( renderer )
@@ -2634,22 +2569,11 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-#ifdef NINTENDO
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-#else
-	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
-	    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-	    SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
-	    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-	    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
-	    //SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-	    //SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
-	    //SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
-#endif
     }
 
 	// desired screen dimensions + position
@@ -2749,6 +2673,8 @@ bool initVideo()
 			printlog("You may need to update your video drivers.\n");
 			return false;
 		}
+
+		glewInit();
 
 #ifdef NINTENDO
 		initNxGL();
