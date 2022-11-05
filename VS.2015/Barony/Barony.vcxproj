@@ -566,7 +566,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;steam_api.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -660,7 +660,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;steam_api64.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;steam_api64.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -692,7 +692,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -755,7 +755,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmodex_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -823,7 +823,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;libtheoraplayer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win32-Shipping.lib;steam_api.lib;libtheoraplayer.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
@@ -1209,6 +1209,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\prng.cpp" />
     <ClCompile Include="..\..\src\savepng.cpp" />
     <ClCompile Include="..\..\src\scores.cpp" />
+    <ClCompile Include="..\..\src\shader.cpp" />
     <ClCompile Include="..\..\src\shops.cpp" />
     <ClCompile Include="..\..\src\stat.cpp" />
     <ClCompile Include="..\..\src\stat_shared.cpp" />
@@ -1268,6 +1269,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\savepng.hpp" />
     <ClInclude Include="..\..\src\scores.hpp" />
     <ClInclude Include="..\..\src\scrolls.hpp" />
+    <ClInclude Include="..\..\src\shader.hpp" />
     <ClInclude Include="..\..\src\shops.hpp" />
     <ClInclude Include="..\..\src\stat.hpp" />
     <ClInclude Include="..\..\src\steam.hpp" />
