@@ -72,10 +72,12 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	}
 
 	// now set all of my data elements
-	item->type = type;
-	item->status = status;
-	item->beatitude = beatitude;
-	item->count = count;
+	// try to sanitize these a bit so that corrupt data doesn't crash the whole game
+	item->type = (type >= 0 && type < NUMITEMS) ? type : ItemType::GEM_ROCK;
+	item->status = (int)status < Status::BROKEN ?
+		Status::BROKEN : ((int)status > EXCELLENT ? EXCELLENT : status);
+	item->beatitude = std::min(std::max((Sint16)-100, beatitude), (Sint16)100);
+	item->count = std::max(count, (Sint16)1);
 	item->appearance = appearance;
 	item->identified = identified;
 	item->uid = itemuids;
@@ -784,7 +786,7 @@ char* Item::description() const
 
 Category itemCategory(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return GEM;
 	}
@@ -847,7 +849,7 @@ char* Item::getName() const
 
 Sint32 itemModel(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
 	}
@@ -864,7 +866,7 @@ Sint32 itemModel(const Item* const item)
 
 Sint32 itemModelFirstperson(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
 	}
@@ -881,7 +883,7 @@ Sint32 itemModelFirstperson(const Item* const item)
 
 SDL_Surface* itemSprite(Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return nullptr;
 	}
@@ -2820,7 +2822,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				}
 			}
 		}
-		if ( !appearancesOfSimilarItems.empty() )
+		if ( !appearancesOfSimilarItems.empty() && item && item->type >= 0 && item->type < NUMITEMS )
 		{
 			Uint32 originalAppearance = item->appearance;
 			int originalVariation = originalAppearance % items[item->type].variations;

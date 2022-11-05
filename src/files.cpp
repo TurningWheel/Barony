@@ -2075,27 +2075,27 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			}
 			if ( polymodels[c].vbo )
 			{
-				SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+				glDeleteBuffers(1, &polymodels[c].vbo);
 			}
 			if ( polymodels[c].colors )
 			{
-				SDL_glDeleteBuffers(1, &polymodels[c].colors);
+				glDeleteBuffers(1, &polymodels[c].colors);
 			}
 			if ( polymodels[c].va )
 			{
-				SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+				glDeleteVertexArrays(1, &polymodels[c].va);
 			}
 			if ( polymodels[c].colors_shifted )
 			{
-				SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+				glDeleteBuffers(1, &polymodels[c].colors_shifted);
 			}
 			if ( polymodels[c].grayscale_colors )
 			{
-				SDL_glDeleteVertexArrays(1, &polymodels[c].grayscale_colors);
+				glDeleteVertexArrays(1, &polymodels[c].grayscale_colors);
 			}
 			if ( polymodels[c].grayscale_colors_shifted )
 			{
-				SDL_glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
+				glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
 			}
 		}
 	}

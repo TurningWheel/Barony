@@ -3897,17 +3897,19 @@ bool handleEvents(void)
 							            // controller is not already bound - bind it to the first player who does not have a controller
 							            for (int player = 0; player < MAXPLAYERS; ++player)
 							            {
-											if (intro && MainMenu::isPlayerSlotLocked(player))
+							                if (multiplayer != SINGLE && player != 0)
+							                {
+							                    // only assign the controller to the first player in net lobbies
+												// do this even for clients: player 1 controls route to other slots
+												// in online multiplayer!
+							                    continue;
+							                }
+											if (intro && multiplayer != CLIENT && MainMenu::isPlayerSlotLocked(player))
 											{
 												// don't assign the controller to this player if their slot is locked!
 												continue;
 											}
-							                if (intro && multiplayer != SINGLE && player != clientnum)
-							                {
-							                    // only assign the controller to OUR player in net lobbies
-							                    continue;
-							                }
-							                if (intro && MainMenu::isPlayerSignedIn(player))
+							                if (intro && multiplayer != CLIENT && MainMenu::isPlayerSignedIn(player))
 							                {
 							                    // in the lobby, don't assign controllers to players who are already signed in...
 							                    continue;
@@ -3930,17 +3932,19 @@ bool handleEvents(void)
 							                // didn't find anybody to bind to. try again, but ignore the keyboard restriction
 							                for (int player = 0; player < MAXPLAYERS; ++player)
 							                {
-												if (intro && MainMenu::isPlayerSlotLocked(player))
+												if (multiplayer != SINGLE && player != 0)
+												{
+													// only assign the controller to the first player in net lobbies
+													// do this even for clients: player 1 controls route to other slots
+													// in online multiplayer!
+													continue;
+												}
+												if (intro && multiplayer != CLIENT && MainMenu::isPlayerSlotLocked(player))
 												{
 													// don't assign the controller to this player if their slot is locked!
 													continue;
 												}
-							                    if (intro && multiplayer != SINGLE && player != clientnum)
-							                    {
-							                        // only assign the controller to OUR player in net lobbies
-							                        continue;
-							                    }
-							                    if (intro && MainMenu::isPlayerSignedIn(player))
+							                    if (intro && multiplayer != CLIENT && MainMenu::isPlayerSignedIn(player))
 							                    {
 							                        // in the lobby, don't assign controllers to players who are already signed in...
 							                        continue;
@@ -4618,6 +4622,10 @@ void ingameHud()
 {
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		if ( !players[player]->isLocalPlayer() )
+		{
+			continue;
+		}
 		if ( players[player]->isLocalPlayerAlive() )
 		{
 			players[player]->bControlEnabled = true;
@@ -4859,13 +4867,6 @@ void ingameHud()
 		}
 		players[player]->magic.resetQuickCastSpell();
 
-		if ( !players[player]->usingCommand() && input.consumeBinaryToggle("Open Log")
-			&& !gamePaused
-			&& bControlEnabled )
-		{
-			// TODO perhaps this should open the new chat log window.
-		}
-
 		bool worldUIBlocksFollowerCycle = (
 				players[player]->worldUI.isEnabled()
 				&& players[player]->worldUI.bTooltipInView
@@ -4971,6 +4972,10 @@ void ingameHud()
 
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
+		if ( !players[player]->isLocalPlayer() )
+		{
+			continue;
+		}
 		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
@@ -4992,10 +4997,6 @@ void ingameHud()
 		players[player]->hotbar.updateCursor();
 		players[player]->hud.updateCursor();
 		players[player]->hud.updateMinotaurWarning();
-		if ( !players[player]->isLocalPlayer() )
-		{
-			continue;
-		}
 		//drawSkillsSheet(player);
 		if ( !gamePaused )
 		{
@@ -6686,7 +6687,9 @@ int main(int argc, char** argv)
 			if (Input::inputs[clientnum].consumeBinaryToggle("Screenshot") ||
 			    (inputs.hasController(clientnum) && Input::inputs[clientnum].consumeBinaryToggle("GamepadScreenshot")))
 			{
+				framebuffer::unbindAll();
 				takeScreenshot();
+				main_framebuffer.bindForWriting();
 			}
 
 			// frame rate limiter
