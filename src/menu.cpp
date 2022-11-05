@@ -9546,6 +9546,7 @@ void doNewGame(bool makeHighscore) {
 	{
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
+	gamemods_disableSteamAchievements = false;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{

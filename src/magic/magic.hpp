@@ -144,6 +144,7 @@ static const int PARTICLE_EFFECT_SPELLBOT_ORBIT = 22;
 static const int PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH = 23;
 static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
 static const int PARTICLE_EFFECT_SHATTERED_GEM = 25;
+static const int PARTICLE_EFFECT_SHRINE_TELEPORT = 26;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

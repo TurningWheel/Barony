@@ -4156,5 +4156,24 @@ namespace ConsoleCommands {
 		ShopkeeperConsumables_t::readFromFile();
 #endif
 	});
+
+	static ConsoleCommand ccmd_maphashcheck("/maphashcheck", "", []CCMD{
+#ifndef NINTENDO
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			if ( PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, &maphash);
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+	});
 }
 

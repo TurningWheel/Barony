@@ -5591,12 +5591,15 @@ static void doConsoleCommands() {
 	else if (command)
 	{
 		int commandPlayer = clientnum;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
+		if ( multiplayer == SINGLE )
 		{
-			if ( inputs.bPlayerUsingKeyboardControl(i) )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				commandPlayer = i;
-				break;
+				if ( inputs.bPlayerUsingKeyboardControl(i) )
+				{
+					commandPlayer = i;
+					break;
+				}
 			}
 		}
 
@@ -5672,10 +5675,11 @@ static void doConsoleCommands() {
 								strcat(chatstring, ": ");
 								strcat(chatstring, command_str);
 								SDLNet_Write32(color, &net_packet->data[4]);
-								strcpy((char*)(&net_packet->data[8]), chatstring);
+								SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
+								strcpy((char*)(&net_packet->data[12]), chatstring);
 								net_packet->address.host = net_clients[c - 1].host;
 								net_packet->address.port = net_clients[c - 1].port;
-								net_packet->len = 8 + strlen(chatstring) + 1;
+								net_packet->len = 12 + strlen(chatstring) + 1;
 								sendPacketSafe(net_sock, -1, net_packet, c - 1);
 							}
 						}

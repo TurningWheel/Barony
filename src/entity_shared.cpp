@@ -145,6 +145,12 @@ int checkSpriteType(Sint32 sprite)
 	case 169:
 		// statue
 		return 24;
+	case 177:
+		// teleport shrine
+		return 25;
+	case 178:
+		// generic spell shrine
+		return 26;
 	default:
 		return 0;
 		break;
@@ -893,7 +899,16 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"GYROBOT",
 	"UNUSED",
 	"STATUE ANIMATOR",
-	"STATUE"
+	"STATUE",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"TELEPORT SHRINE",
+	"SPELL SHRINE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1813,6 +1828,36 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			// set default new entity attributes.
 			entityNew->statueDir = 0;
 			entityNew->statueId = 0;
+		}
+	}
+	else if ( spriteType == 25 ) // teleport shrine
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->shrineDir = entityToCopy->shrineDir;
+			entityNew->shrineZ = entityToCopy->shrineZ;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->shrineDir = 0;
+			entityNew->shrineZ = 0;
+		}
+	}
+	else if ( spriteType == 26 ) // spell shrine
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->shrineDir = entityToCopy->shrineDir;
+			entityNew->shrineZ = entityToCopy->shrineZ;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->shrineDir = 0;
+			entityNew->shrineZ = 0;
 		}
 	}
 
