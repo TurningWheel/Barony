@@ -1552,15 +1552,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	// post-processing:
 
-	// doors
-	for ( node = doorList.first; node != nullptr; node = node->next )
+	// gates
+	for ( node = doorList.first; node != nullptr; node = node->next )  // loop through gates first to delete conflicting gates/doors
 	{
 		door = (door_t*)node->element;
 		for (node2 = map.entities->first; node2 != nullptr; node2 = node2->next)
 		{
 			entity = (Entity*)node2->element;
 			if ( entity->x / 16 == door->x && entity->y / 16 == door->y 
-				&& (entity->sprite == 2 || entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 20
+				&& (/*entity->sprite == 2 || entity->sprite == 3 ||*/ entity->sprite == 19 || entity->sprite == 20
 					|| entity->sprite == 113 || entity->sprite == 114) )
 			{
 				switch ( door->dir )
@@ -1578,7 +1578,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+								{
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
@@ -1593,30 +1600,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								/*if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}*/
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
 								}
 							}
 						}
@@ -1631,30 +1625,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								/*if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y )
+								if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}*/
-								if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
 								}
 							}
 						}
@@ -1669,30 +1650,135 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								/*if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
 								}
 								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
-								}*/
+								}
+							}
+						}
+						break;
+				}
+			}
+		}
+	}
+
+	// doors
+	for ( node = doorList.first; node != nullptr; node = node->next ) // now loop through doors to delete conflicting gates/doors
+	{
+		door = (door_t*)node->element;
+		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+		{
+			entity = (Entity*)node2->element;
+			if ( entity->x / 16 == door->x && entity->y / 16 == door->y
+				&& (entity->sprite == 2 || entity->sprite == 3/* || entity->sprite == 19 || entity->sprite == 20
+															  || entity->sprite == 113 || entity->sprite == 114*/) )
+			{
+				switch ( door->dir )
+				{
+					case 0: // east
+						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						{
+							entity = (Entity*)node3->element;
+							nextnode = node3->next;
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
+							{
+								if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+							}
+						}
+						break;
+					case 1: // south
+						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						{
+							entity = (Entity*)node3->element;
+							nextnode = node3->next;
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
+							{
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+							}
+						}
+						break;
+					case 2: // west
+						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						{
+							entity = (Entity*)node3->element;
+							nextnode = node3->next;
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
+							{
+								if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+							}
+						}
+						break;
+					case 3: // north
+						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						{
+							entity = (Entity*)node3->element;
+							nextnode = node3->next;
+							if ( entity->sprite == 2 || entity->sprite == 3
+								|| entity->sprite == 19 || entity->sprite == 20
+								|| entity->sprite == 113 || entity->sprite == 114 )
+							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
-									break;
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+								{
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
