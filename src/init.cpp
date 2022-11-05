@@ -2569,7 +2569,7 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-		// OpenGL 3.3 required for shaders
+	    // OpenGL 3.3 required for shaders
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);

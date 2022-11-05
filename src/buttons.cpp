@@ -2283,6 +2283,34 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 60;
 				strcpy(subtext, "Statue Properties:");
 				break;
+			case 25: // teleport shrine
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->shrineDir));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->shrineZ));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 30;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Teleport Shrine Properties:");
+				break;
+			case 26: // spell shrine
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->shrineDir));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->shrineZ));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 30;
+				subx1 = xres / 2 - 220;
+				subx2 = xres / 2 + 220;
+				suby1 = yres / 2 - 60;
+				suby2 = yres / 2 + 60;
+				strcpy(subtext, "Spell Shrine Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3361,6 +3389,14 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			case 24: // statue
 				selectedEntity[0]->statueDir = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->statueId = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 25: // teleport shrine
+				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 26: // spell shrine
+				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
 				break;
 			default:
 				break;

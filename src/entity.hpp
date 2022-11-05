@@ -392,6 +392,16 @@ public:
 	Sint32& spellTrapInit; //skill[7]
 	Sint32& spellTrapCounter; //skill[8]
 	Sint32& spellTrapReset; //skill[9]
+
+	//--PUBLIC SPELL SHRINE SKILLS--
+	Sint32& shrineSpellEffect; //skill[0]
+	Sint32& shrineRefire1; //skill[1]
+	Sint32& shrineRefire2; //skill[3]
+	Sint32& shrineDir; //skill[4]
+	Sint32& shrineAmbience; //skill[5]
+	Sint32& shrineInit; //skill[6]
+	Sint32& shrineActivateDelay; //skill[7]
+	Sint32& shrineZ; //skill[8]
 	
 	//--PUBLIC FURNITURE SKILLS--
 	Sint32& furnitureType; //skill[0]
@@ -673,6 +683,8 @@ public:
 	void actExpansionEndGamePortal();
 	void actTeleporter();
 	void actMagicTrapCeiling();
+	void actTeleportShrine();
+	void actSpellShrine();
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
 	void actFurniture();
@@ -1056,7 +1068,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 290;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 170;
+static const int NUM_EDITOR_SPRITES = 179;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

@@ -3959,6 +3959,26 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHRINE_TELEPORT )
+			{
+				// teleport to target spell.
+				Entity* parent = uidToEntity(my->parent);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent && target )
+				{
+					bool teleported = false;
+					teleported = parent->teleportAroundEntity(target, my->particleTimerVariable1);
+					if ( teleported )
+					{
+						createParticleErupt(parent, my->particleTimerEndSprite);
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
 		}
 		my->removeLightField();
 		list_RemoveNode(my->mynode);

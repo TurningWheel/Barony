@@ -2531,6 +2531,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
 				break;
+				case PARTICLE_EFFECT_SHRINE_TELEPORT:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 200, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+					spellTimer->particleTimerPreDelay = 150;
+				}
+				break;
 				case PARTICLE_EFFECT_TELEPORT_PULL:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 40, sprite);

@@ -18346,9 +18346,9 @@ bind_failed:
 			achievements->setVJustify(Field::justify_t::TOP);
 			achievements->setTickCallback([](Widget& widget){
 				Field* achievements = static_cast<Field*>(&widget);
-				if ((svFlags & SV_FLAG_CHEATS) ||
-					(svFlags & SV_FLAG_LIFESAVING) ||
-					gamemods_disableSteamAchievements) {
+				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+					|| conductGameChallenges[CONDUCT_LIFESAVING]
+					|| gamemods_disableSteamAchievements) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText("ACHIEVEMENTS DISABLED");
 				} else {
