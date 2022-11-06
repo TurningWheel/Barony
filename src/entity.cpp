@@ -18274,7 +18274,9 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->z += 2;
 				if ( race == INSECTOID )
 				{
-					if ( limb->sprite != 727 && limb->sprite != 458 && limb->sprite != 761 )
+					if ( limb->sprite != 727 && limb->sprite != 458 
+						&& limb->sprite != 761
+						&& limb->sprite != 1060 )
 					{
 						// wearing armor, offset by 1.
 						limb->z -= 1;
