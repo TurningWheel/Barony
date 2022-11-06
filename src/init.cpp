@@ -2569,8 +2569,9 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	    // OpenGL 3.3 required for shaders
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
