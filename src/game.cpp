@@ -6409,14 +6409,19 @@ int main(int argc, char** argv)
 						{
 							continue;
 						}
-						if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") 
-								|| (inputs.bPlayerUsingKeyboardControl(i) && keystatus[SDL_SCANCODE_ESCAPE] && !Input::inputs[i].isDisabled()))
-							&& !command )
+						const bool escapePressed =
+							inputs.bPlayerUsingKeyboardControl(i) &&
+							keystatus[SDL_SCANCODE_ESCAPE] &&
+							!Input::inputs[i].isDisabled();
+						if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") || escapePressed) && !command )
 						{
 							if ( !players[i]->shootmode )
 							{
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 								players[i]->characterSheet.attributespage = 0;
+								if (escapePressed) {
+									keystatus[SDL_SCANCODE_ESCAPE] = false;
+								}
 							}
 							else
 							{
