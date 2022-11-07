@@ -4330,10 +4330,10 @@ int Item::buyValue(const int player) const
 	// result
 	value = std::max(1, value);
 
-	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
+	/*if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
 	{
 		value *= 2;
-	}
+	}*/
 	if ( itemSpecialShopConsumable )
 	{
 		real_t valueMult = std::max(1.0, ShopkeeperConsumables_t::consumableBuyValueMult / 100.0);
