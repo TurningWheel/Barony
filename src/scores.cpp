@@ -4050,7 +4050,7 @@ bool steamLeaderboardSetScore(score_t* score)
 					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HELL_TIME;
 				}
 			}
-			else if ( score->victory == 3 )
+			else if ( score->victory == 3 || score->victory == 4 || score->victory == 5 )
 			{
 				if ( monster )
 				{
@@ -4075,7 +4075,7 @@ bool steamLeaderboardSetScore(score_t* score)
 		}
 		else if ( score->conductGameChallenges[CONDUCT_HARDCORE] )
 		{
-			if ( score->victory == 3 )
+			if ( score->victory == 3 || score->victory == 4 || score->victory == 5 )
 			{
 				if ( monster )
 				{
@@ -4113,7 +4113,7 @@ bool steamLeaderboardSetScore(score_t* score)
 				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_HELL_TIME;
 			}
 		}
-		else if ( score->victory == 3 )
+		else if ( score->victory == 3 || score->victory == 4 || score->victory == 5 )
 		{
 			if ( monster )
 			{
