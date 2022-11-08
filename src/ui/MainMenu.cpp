@@ -11846,7 +11846,7 @@ bind_failed:
 			"name_box"
 		);
 
-		auto name_field = card->addField("name", 128);
+		auto name_field = card->addField("name", 32);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		name_field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
