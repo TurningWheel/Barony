@@ -5988,7 +5988,7 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
-		if ( score && score->victory == 3 )
+		if ( score && (score->victory == 3 || score->victory == 4 || score->victory == 5) )
 		{
 			foundVictory = true;
 		}
@@ -5996,7 +5996,7 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 	for ( node_t* node = topscoresMultiplayer.first; node != nullptr && !foundVictory; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
-		if ( score && score->victory == 3 )
+		if ( score && (score->victory == 3 || score->victory == 4 || score->victory == 5) )
 		{
 			foundVictory = true;
 		}
