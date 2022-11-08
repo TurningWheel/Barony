@@ -13192,6 +13192,7 @@ bind_failed:
 #endif
 		}
 
+#ifndef NINTENDO
 		// unassign all controllers when entering the lobby.
 		// we do this because any number of slots can be locked
 		// and we need to be able to assign any available controller
@@ -13203,6 +13204,7 @@ bind_failed:
 				}
 			}
 		}
+#endif
 
 		// reset ALL player stats
         if (!loadingsavegame) {
@@ -17663,12 +17665,15 @@ bind_failed:
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
@@ -17687,12 +17692,15 @@ bind_failed:
 				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
 				    saved_invite_lobby = nullptr;
 				}
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
@@ -17705,12 +17713,15 @@ bind_failed:
 				createDummyMainMenu();
 				createCreditsScreen(true);
 	            playMusic(intromusic[0], true, false, false);
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();
