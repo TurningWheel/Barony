@@ -100,6 +100,9 @@ void createCommonDrawResources() {
 void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
+#ifndef EDITOR
+	cleanupMinimapTextures();
+#endif
 }
 
 void Mesh::init() {
