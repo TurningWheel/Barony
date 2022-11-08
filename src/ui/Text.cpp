@@ -336,7 +336,9 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	}
 	size_t len0 = strlen(str);
 	size_t len1 = strlen(font);
-	char textAndFont[65536] = { '\0' }; // better not try to render more than 64kb of text...
+	// NOTE the following static buffer makes this function NOT thread safe!!
+	// better not try to render more than 64kb of text...
+	static char textAndFont[65536] = { '\0' };
 	size_t totalLen =
 		len0 + sizeof(fontBreak) +
 		len1 + sizeof(fontBreak) +

@@ -2033,10 +2033,6 @@ void glDrawWorld(view_t* camera, int mode)
 			{
 			    const real_t rx = (real_t)x + 0.5;
 			    const real_t ry = (real_t)y + 0.5;
-			    if ( behindCamera(*camera, rx, ry) )
-			    {
-			        continue;
-			    }
 				int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 
 				if ( z >= 0 && z < MAPLAYERS )
