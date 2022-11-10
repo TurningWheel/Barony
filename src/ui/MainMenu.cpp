@@ -15771,6 +15771,15 @@ bind_failed:
 			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			createOnlineLobby();
 		}
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			createOnlineLobby();
+		} else {
+			errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&) {
+				soundCancel();
+				closeMono();
+			});
+		}
 #else
 		createOnlineLobby();
 #endif
@@ -16008,13 +16017,27 @@ bind_failed:
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS)
 		host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
 		host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_online_button->setColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+			host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
+			host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
+			host_online_button->setColor(makeColor(255, 255, 255, 255));
+			host_online_button->setTextColor(makeColor(255, 255, 255, 255));
+			host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			host_online_button->setColor(makeColor(127, 127, 127, 255));
+			host_online_button->setTextColor(makeColor(127, 127, 127, 255));
+			host_online_button->setTextHighlightColor(makeColor(127, 127, 127, 255));
+		}
 #else
 		host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		host_online_button->setColor(makeColor(127, 127, 127, 255));
