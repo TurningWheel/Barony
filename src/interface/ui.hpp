@@ -636,4 +636,4 @@ public:
 };
 extern UIToastNotificationManager_t UIToastNotificationManager;
 
-void openURLTryWithOverlay(std::string url, bool forceSystemBrowser = false);
+void openURLTryWithOverlay(const std::string& url, bool forceSystemBrowser = false);

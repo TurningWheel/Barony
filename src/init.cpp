@@ -1896,8 +1896,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 -------------------------------------------------------------------------------*/
 
 void reloadModels(int start, int end) {
-    start = clamp(start, 0, (int)nummodels - 1);
-    end = clamp(end, 0, (int)nummodels);
+    start = std::clamp(start, 0, (int)nummodels - 1);
+    end = std::clamp(end, 0, (int)nummodels);
 
     if (start >= end) {
         return;

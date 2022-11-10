@@ -20,11 +20,6 @@ typedef double real_t;
 #include <stddef.h>
 #include <algorithm>
 
-template<typename T>
-constexpr const T& clamp( const T& v, const T& lo, const T& hi ) {
-    return std::min(std::max(lo, v), hi);
-}
-
 // the following functions are safe variants of C's string library.
 // they include the buffer length of each input as secondary parameters to
 // prevent buffer overruns.

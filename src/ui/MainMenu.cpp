@@ -1878,7 +1878,7 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-#ifdef USE_EOS
+#if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
@@ -5200,7 +5200,7 @@ bind_failed:
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
 		    port_desc, buf, [](Field& field){allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
-#ifdef STEAMWORKS
+#if defined(USE_EOS) && defined(STEAMWORKS)
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
 		    "Enable crossplay through Epic Online Services",
@@ -14335,9 +14335,17 @@ bind_failed:
 			LAN,
 		};
 		static BrowserMode mode;
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS)
 		mode = BrowserMode::Online;
 		directConnect = false;
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			mode = BrowserMode::Online;
+			directConnect = false;
+		} else {
+			mode = BrowserMode::LAN;
+			directConnect = true;
+		}
 #else
         mode = BrowserMode::LAN;
 		directConnect = true;
@@ -14488,10 +14496,14 @@ bind_failed:
 		auto interior = window->addImage(
 			SDL_Rect{330, 70, 358, 380},
 			0xffffffff,
-#if defined(STEAMWORKS) || defined(USE_EOS)
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			mode == BrowserMode::Online ?
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png":
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
 #else
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
+			mode == BrowserMode::Online ?
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png" :
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless02.png",
 #endif
 			"interior"
 		);
@@ -14688,15 +14700,32 @@ bind_failed:
 		online_tab->setWidgetBack("back_button");
 		online_tab->setWidgetRight("lan_tab");
 		online_tab->setWidgetDown("names");
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		online_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
+
 			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
 			mode = BrowserMode::Online;
 			directConnect = false;
 			refresh_fn(button);
 			});
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			online_tab->setCallback([](Button& button) {
+				auto frame = static_cast<Frame*>(button.getParent());
+				auto interior = frame->findImage("interior");
+
+				interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
+				mode = BrowserMode::Online;
+				directConnect = false;
+				refresh_fn(button);
+				});
+		} else {
+			online_tab->setCallback([](Button& button) {soundError(); });
+			online_tab->setTextColor(makeColor(127, 127, 127, 255));
+			online_tab->setTextHighlightColor(makeColor(127, 127, 127, 255));
+		}
 #else
 		online_tab->setCallback([](Button& button){soundError();});
 		online_tab->setTextColor(makeColor(127, 127, 127, 255));
@@ -14728,7 +14757,11 @@ bind_failed:
 		lan_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png";
+#else
+			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless02.png";
+#endif
 			mode = BrowserMode::LAN;
 			directConnect = true;
 			refresh_fn(button);
@@ -14879,8 +14912,13 @@ bind_failed:
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{336, 140, 174, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 174, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 336, 140, 174, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 174, 200 });
+#else
+			list->setSize(SDL_Rect{ 336, 140, 174, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 174, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -14916,8 +14954,13 @@ bind_failed:
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{510, 140, 78, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 78, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 510, 140, 78, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 78, 200 });
+#else
+			list->setSize(SDL_Rect{ 510, 140, 78, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 78, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -14953,8 +14996,13 @@ bind_failed:
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{588, 140, 52, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 52, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 588, 140, 52, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 200 });
+#else
+			list->setSize(SDL_Rect{ 588, 140, 52, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -15033,6 +15081,31 @@ bind_failed:
 			slider->updateHandlePosition();
 			});
 
+		auto filter_settings_fn = [](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+			auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
+			frame_right->setInvisible(frame_right->isInvisible() == false);
+			lobbyFiltersEnabled = !frame_right->isInvisible();
+			clearLobbies();
+			for (auto& lobby : lobbies) {
+				addLobby(lobby);
+			}
+			if (lobbyFiltersEnabled) {
+				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+					auto checkbox = frame_right->findButton("filter_checkbox0");
+					if (checkbox) {
+						checkbox->select();
+					}
+				}
+				soundActivate();
+			}
+			else {
+				soundCancel();
+				button.select();
+			}
+			};
+
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		auto filter_settings = window->addButton("filter_settings");
 		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
 		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
@@ -15051,42 +15124,7 @@ bind_failed:
 		filter_settings->setWidgetBack("back_button");
 		filter_settings->setWidgetDown("crossplay");
 		filter_settings->setWidgetUp("names");
-		filter_settings->setCallback([](Button& button){
-		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
-		    frame_right->setInvisible(frame_right->isInvisible()==false);
-		    lobbyFiltersEnabled = !frame_right->isInvisible();
-            clearLobbies();
-            for (auto& lobby : lobbies) {
-                addLobby(lobby);
-            }
-            if (lobbyFiltersEnabled) {
-                if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-                    auto checkbox = frame_right->findButton("filter_checkbox0");
-                    if (checkbox) {
-                        checkbox->select();
-                    }
-                }
-		        soundActivate();
-            } else {
-                soundCancel();
-                button.select();
-            }
-		    });
-
-		auto crossplay_fn = [](Button& button){
-#if defined(USE_EOS) && defined(STEAMWORKS)
-		    soundToggle();
-		    if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
-			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-	        } else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
-			    LobbyHandler.crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.logOut = true;
-	        }
-#else
-            soundError();
-#endif
-		    };
+		filter_settings->setCallback(filter_settings_fn);
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
 		crossplay_label->setJustify(Field::justify_t::CENTER);
@@ -15116,7 +15154,31 @@ bind_failed:
 		crossplay->setWidgetBack("back_button");
 		crossplay->setWidgetDown("join_lobby");
 		crossplay->setWidgetUp("filter_settings");
-		crossplay->setCallback(crossplay_fn);
+		crossplay->setCallback([](Button& button) {
+			soundToggle();
+			if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
+				EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+			}
+			else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
+				LobbyHandler.crossplayEnabled = false;
+				EOS.CrossplayAccountManager.logOut = true;
+			}
+			});
+#else
+		auto filter_settings = window->addButton("filter_settings");
+		filter_settings->setSize(SDL_Rect{430, 384, 158, 44});
+		filter_settings->setFont(smallfont_outline);
+		filter_settings->setText("Filter Settings");
+		filter_settings->setJustify(Button::justify_t::CENTER);
+		filter_settings->setCallback(filter_settings_fn);
+		filter_settings->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		filter_settings->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_CustomizeHigh00.png");
+		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_CustomizePress00.png");
+		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setColor(makeColor(255, 255, 255, 255));
+		filter_settings->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setTextColor(makeColor(255, 255, 255, 255));
+#endif
 
 #ifdef NDEBUG
 	    // scan for lobbies immediately
@@ -19340,13 +19402,31 @@ bind_failed:
 
     void crossplayPrompt() {
 #ifdef USE_EOS
+#if defined(STEAMWORKS)
         const char* prompt =
-            "Enabling Crossplay allows you to join\n"
-            "lobbies hosted via Epic Games.\n"
+            "Enabling Crossplay allows you to host and join\n"
+            "lobbies via Epic Games, Inc.\n"
             "\n"
             "By clicking Accept, you agree to share public info\n"
             "about your Steam profile with Epic Games, Inc.\n"
             "for the purpose of enabling crossplay.";
+#elif defined(NINTENDO)
+		const char* prompt =
+			"Enabling online play allows you to host and join\n"
+			"online lobbies hosted via Epic Games, Inc.\n"
+			"\n"
+			"By clicking Accept, you agree to share some info\n"
+			"about your Nintendo console with Epic Games, Inc.\n"
+			"for the purpose of enabling online play.";
+#else
+		const char* prompt =
+			"Enabling online play allows you to host and join\n"
+			"online lobbies hosted via Epic Games, Inc.\n"
+			"\n"
+			"By clicking Accept, you agree to share some info\n"
+			"about your device with Epic Games, Inc. for the\n"
+			"purpose of enabling online play.";
+#endif
         trinaryPrompt(
             prompt,
             "Accept", "View\nPrivacy Policy", "Deny",
