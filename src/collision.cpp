@@ -576,7 +576,8 @@ bool entityInsideSomething(Entity* entity)
 	int z;
 	int x, y;
 	#ifdef __ARM_NEON__
-	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
+    float f = entity->x;
+	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&f), 1.0f/16.0f));
 	x = xy[0];
 	y = xy[1];
 	#else

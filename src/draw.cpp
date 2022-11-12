@@ -66,27 +66,23 @@ Shader framebuffer::shader;
 
 void createCommonDrawResources() {
 	static const char vertex_glsl[] =
-		"#version 330\n"
-		"layout(location=0) in vec3 iPosition;"
-		"layout(location=1) in vec2 iTexCoord;"
-		"out vec2 TexCoord;"
-		"out vec3 Position;"
+        "#version 120\n"
+		"attribute vec3 iPosition;"
+		"attribute vec2 iTexCoord;"
+        "varying vec2 TexCoord;"
 		"void main() {"
 		"gl_Position = vec4(iPosition, 1.0);"
-		"TexCoord = iTexCoord;"
-		"Position = iPosition;"
+        "TexCoord = iTexCoord;"
 		"}";
 
 	static const char fragment_glsl[] =
-		"#version 330\n"
-		"in vec2 TexCoord;"
-		"in vec3 Position;"
-		"out vec4 Color;"
+		"#version 120\n"
+        "varying vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
 		"uniform float uGamma;"
 		"uniform int uTicks;"
 		"void main() {"
-		"Color = texture(uTexture, TexCoord) * uGamma * vec4(1.0, 1.0, 1.0, 1.0);"
+		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma * vec4(1.0, 1.0, 1.0, 1.0);"
 		"}";
 
 	framebuffer::mesh.init();
