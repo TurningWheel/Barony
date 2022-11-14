@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: init.cpp
+	File: init_audio.cpp
 	Desc: init, load, exit audio engine stuff.
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.

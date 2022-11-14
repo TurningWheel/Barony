@@ -8,8 +8,8 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
+
 #pragma once
-#include <SDL.h>
 #include "entity.hpp"
 
 #define FLIP_VERTICAL 1

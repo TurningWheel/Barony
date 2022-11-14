@@ -11194,7 +11194,7 @@ void openAchievementsWindow()
 	// up / prev page button
 	{
 		button_t* button = newButton();
-		strcpy(button->label, u8"\u25B2");
+		//strcpy(button->label, u8"\u25B2");
 		button->x = subx2 - 33;
 		button->y = suby1 + 84;
 		button->sizex = 30;
@@ -11209,7 +11209,7 @@ void openAchievementsWindow()
 	// down / next page button
 	{
 		button_t* button = newButton();
-		strcpy(button->label, u8"\u25BC");
+		//strcpy(button->label, u8"\u25BC");
 		button->x = subx2 - 33;
 		button->y = suby2 - 34;
 		button->sizex = 30;

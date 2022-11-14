@@ -1896,8 +1896,8 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 -------------------------------------------------------------------------------*/
 
 void reloadModels(int start, int end) {
-    start = clamp(start, 0, (int)nummodels - 1);
-    end = clamp(end, 0, (int)nummodels);
+    start = std::clamp(start, 0, (int)nummodels - 1);
+    end = std::clamp(end, 0, (int)nummodels);
 
     if (start >= end) {
         return;
@@ -2569,9 +2569,9 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-	    // OpenGL 3.3 required for shaders
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        // the highest supported version on Apple Silicon is 2.1 (!)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
