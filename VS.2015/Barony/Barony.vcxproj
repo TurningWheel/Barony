@@ -1115,7 +1115,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\charclass.cpp" />
     <ClCompile Include="..\..\src\collision.cpp" />
     <ClCompile Include="..\..\src\engine\audio\defines.cpp" />
-    <ClCompile Include="..\..\src\engine\audio\init.cpp" />
+    <ClCompile Include="..\..\src\engine\audio\init_audio.cpp" />
     <ClCompile Include="..\..\src\engine\audio\music.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound_game.cpp" />

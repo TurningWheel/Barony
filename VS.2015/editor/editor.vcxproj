@@ -867,7 +867,7 @@
     <ClCompile Include="..\..\src\draw.cpp" />
     <ClCompile Include="..\..\src\editor.cpp" />
     <ClCompile Include="..\..\src\engine\audio\defines.cpp" />
-    <ClCompile Include="..\..\src\engine\audio\init.cpp" />
+    <ClCompile Include="..\..\src\engine\audio\init_audio.cpp" />
     <ClCompile Include="..\..\src\engine\audio\sound.cpp" />
     <ClCompile Include="..\..\src\entity_editor.cpp" />
     <ClCompile Include="..\..\src\entity_shared.cpp" />
