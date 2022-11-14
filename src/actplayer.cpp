@@ -243,6 +243,7 @@ void actDeathCam(Entity* my)
 	else if ( shootmode
 		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
 		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
+		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
 		&& !gamePaused
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
