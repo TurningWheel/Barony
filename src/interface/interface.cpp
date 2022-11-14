@@ -8439,6 +8439,17 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			}
 		}
 	}
+	if ( outsideInventory )
+	{
+		if ( item->count > 1 )
+		{
+			metal *= item->count;
+			magic *= item->count;
+		}
+		tinkeringBulkSalvage = false;
+		tinkeringBulkSalvageMetalScrap = 0;
+		tinkeringBulkSalvageMagicScrap = 0;
+	}
 	if ( metal > 0 )
 	{
 		metal += bonusMetalScrap;
@@ -12643,6 +12654,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 									}
 								}
 							}
+							parentGUI.tinkeringBulkSalvageMetalScrap = 0;
+							parentGUI.tinkeringBulkSalvageMagicScrap = 0;
 							break;
 						}
 					}

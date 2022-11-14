@@ -4061,6 +4061,15 @@ void Player::WorldUI_t::handleTooltips()
 						return;
 					}
 				}
+				else
+				{
+					if ( foundTinkeringKit )
+					{
+						// rescan, out of date string.
+						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+						return;
+					}
+				}
 			}
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
