@@ -79,7 +79,7 @@ namespace MainMenu {
 		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
-		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+		{"Autosort Inventory", emptyBinding, "ButtonLeftStick", emptyBinding},
 		{"Command NPC", "Q", "DpadX+", emptyBinding},
 		{"Show NPC Commands", "C", "DpadX-", emptyBinding},
 		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
@@ -7369,7 +7369,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue; // junk packet, skip
 					}
 
@@ -7704,7 +7704,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue;
 					}
 
@@ -7909,7 +7909,7 @@ bind_failed:
 						    continue;
 					    }
 					    net_packet->len = packetlen;
-					    if (packetlen < sizeof(DWORD)) {
+					    if (packetlen < sizeof(uint32_t)) {
 						    continue;
 					    }
 

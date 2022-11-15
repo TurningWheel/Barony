@@ -6413,7 +6413,7 @@ int steamPacketThread(void* data)
 			packet = static_cast<Uint8* >(malloc(packetlen));
 			if (SteamNetworking()->ReadP2PPacket(packet, packetlen, &bytes_read, &steam_id_remote, 0))
 			{
-				if (packetlen > sizeof(DWORD) && mySteamID.ConvertToUint64() != steam_id_remote.ConvertToUint64() && net_packet->data[0])
+				if (packetlen > sizeof(uint32_t) && mySteamID.ConvertToUint64() != steam_id_remote.ConvertToUint64() && net_packet->data[0])
 				{
 					//Push packet into queue.
 					//TODO: Use lock-free queues?

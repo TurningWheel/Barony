@@ -161,7 +161,7 @@
 		84C3DB0F291F796A0084EAD5 /* GameUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB04291F79690084EAD5 /* GameUI.cpp */; };
 		84C3DB10291F796A0084EAD5 /* Button.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB05291F79690084EAD5 /* Button.cpp */; };
 		84C3DB11291F796A0084EAD5 /* Frame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB06291F79690084EAD5 /* Frame.cpp */; };
-		84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; platformFilters = (macos, ); };
+		84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		84C3DB24292028630084EAD5 /* items in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1B292028630084EAD5 /* items */; };
 		84C3DB25292028630084EAD5 /* maps in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1C292028630084EAD5 /* maps */; };
 		84C3DB26292028630084EAD5 /* data in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1D292028630084EAD5 /* data */; };
@@ -174,6 +174,19 @@
 		84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2D292028790084EAD5 /* playernames-male.txt */; };
 		84C3DB31292028790084EAD5 /* lang in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2E292028790084EAD5 /* lang */; };
 		84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2F292028790084EAD5 /* playernames-female.txt */; };
+		84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; };
+		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; };
+		84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; };
+		84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; };
+		84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; };
+		84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; };
+		84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84F7109929236B0600AE0D03 /* steam_appid.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -183,13 +196,19 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */,
-				845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */,
-				845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */,
+				84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */,
+				84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */,
+				84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */,
+				84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */,
+				845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */,
+				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */,
 				845F4BC32920302F00D6B9D7 /* SDL2_image.framework in CopyFiles */,
 				845F4BC42920302F00D6B9D7 /* SDL2_net.framework in CopyFiles */,
-				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */,
-				845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */,
+				845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */,
+				845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */,
+				845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */,
+				84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */,
+				84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -358,6 +377,13 @@
 		84C3DB2D292028790084EAD5 /* playernames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-male.txt"; path = "../../playernames-male.txt"; sourceTree = "<group>"; };
 		84C3DB2E292028790084EAD5 /* lang */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lang; path = ../../lang; sourceTree = "<group>"; };
 		84C3DB2F292028790084EAD5 /* playernames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-female.txt"; path = "../../playernames-female.txt"; sourceTree = "<group>"; };
+		84F7105F292327D900AE0D03 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../../../steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib; sourceTree = "<group>"; };
+		84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libEOSSDK-Mac-Shipping.dylib"; path = "../../../eos/EOS-SDK-21924193-v1/SDK/Bin/libEOSSDK-Mac-Shipping.dylib"; sourceTree = "<group>"; };
+		84F71089292350C500AE0D03 /* Vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vorbis.framework; path = ../../../Vorbis.framework; sourceTree = "<group>"; };
+		84F7108A292350C500AE0D03 /* Ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogg.framework; path = ../../../Ogg.framework; sourceTree = "<group>"; };
+		84F7108B292350C500AE0D03 /* Theora.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Theora.framework; path = ../../../Theora.framework; sourceTree = "<group>"; };
+		84F7108C292350C500AE0D03 /* theoraplayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = theoraplayer.framework; path = ../../../theoraplayer.framework; sourceTree = "<group>"; };
+		84F7109929236B0600AE0D03 /* steam_appid.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = steam_appid.txt; path = ../../../baronyupdate/steam_appid.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -365,14 +391,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
-				84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */,
 				84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */,
+				84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */,
+				84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */,
+				84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */,
 				84C3D8F6291F5DEB0084EAD5 /* SDL2_ttf.framework in Frameworks */,
 				84C3D8F7291F5DEB0084EAD5 /* SDL2_image.framework in Frameworks */,
+				84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */,
 				84C3D8F8291F5DEB0084EAD5 /* SDL2_net.framework in Frameworks */,
+				84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */,
+				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
 				845F4BB429202FE600D6B9D7 /* libpng16.16.dylib in Frameworks */,
 				845F4BB629202FF600D6B9D7 /* libphysfs.3.0.2.dylib in Frameworks */,
+				84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
+				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -383,9 +415,10 @@
 			isa = PBXGroup;
 			children = (
 				845F4BCC292051C000D6B9D7 /* Assets.xcassets */,
-				84C3DB2E292028790084EAD5 /* lang */,
+				84F7109929236B0600AE0D03 /* steam_appid.txt */,
 				84C3DB2F292028790084EAD5 /* playernames-female.txt */,
 				84C3DB2D292028790084EAD5 /* playernames-male.txt */,
+				84C3DB2E292028790084EAD5 /* lang */,
 				84C3DB1E292028630084EAD5 /* books */,
 				84C3DB1D292028630084EAD5 /* data */,
 				84C3DB23292028630084EAD5 /* fonts */,
@@ -551,6 +584,12 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				84F7108A292350C500AE0D03 /* Ogg.framework */,
+				84F7108B292350C500AE0D03 /* Theora.framework */,
+				84F7108C292350C500AE0D03 /* theoraplayer.framework */,
+				84F71089292350C500AE0D03 /* Vorbis.framework */,
+				84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */,
+				84F7105F292327D900AE0D03 /* libsteam_api.dylib */,
 				845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */,
 				845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */,
 				84B7E17F2920290E00D1F0C5 /* libfmod.dylib */,
@@ -634,6 +673,7 @@
 				84C3DB2B292028630084EAD5 /* models in Resources */,
 				84C3DB2C292028630084EAD5 /* fonts in Resources */,
 				84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */,
+				84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */,
 				84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -903,6 +943,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -919,6 +960,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -927,6 +969,8 @@
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
 					/opt/homebrew/Cellar/physfs/3.0.2/include,
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -940,13 +984,18 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/**",
 					/opt/homebrew/Cellar/libpng/1.6.38/lib,
 					/opt/homebrew/Cellar/physfs/3.0.2/lib,
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
@@ -954,6 +1003,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = "";
+				STRIP_INSTALLED_PRODUCT = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -967,6 +1017,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -983,14 +1034,19 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
 					/opt/homebrew/Cellar/physfs/3.0.2/include,
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -1004,13 +1060,18 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/**",
 					/opt/homebrew/Cellar/libpng/1.6.38/lib,
 					/opt/homebrew/Cellar/physfs/3.0.2/lib,
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
@@ -1018,6 +1079,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = "";
+				STRIP_INSTALLED_PRODUCT = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
