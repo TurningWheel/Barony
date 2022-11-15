@@ -7767,9 +7767,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 				consumeItem(secondaryPotion, gui_player);
 			}
 		}
-		if ( local_rng.rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+
+		if ( !samePotion )
 		{
-			emptyBottle = true;
+			if ( local_rng.rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+			{
+				emptyBottle = true;
+			}
 		}
 	}
 
