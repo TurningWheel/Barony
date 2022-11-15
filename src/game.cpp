@@ -260,6 +260,7 @@ bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
+void preciseSleep(double seconds);
 
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
@@ -547,8 +548,31 @@ void TimerExperiments::updateClocks()
 		bIsInit = true;
 	}
 
-	static ConsoleVariable<int> cvar_frameTime("/frametimelimit", 250);
+	static ConsoleVariable<bool> cvar_frameLagCheck("/framelagcheck", false);
+	if ( *cvar_frameLagCheck )
+	{
+		static Uint32 doneTick = 0;
+		if ( doneTick != ticks && ticks % (2 * TICKS_PER_SECOND) == 0 )
+		{
+			doneTick = ticks;
+			auto microseconds = std::chrono::microseconds((Uint64)(300000));
+			preciseSleep(microseconds.count() / 1e6);
+		}
+	}
+
+	static ConsoleVariable<int> cvar_frameTime("/frametimelimit", 32);
+	static ConsoleVariable<bool> cvar_frameTimeAutoSet("/frametimeautolimit", true);
 	int frameTimeLimit = (*cvar_frameTime);
+	if ( *cvar_frameTimeAutoSet )
+	{
+		real_t decimal = 0.0;
+		real_t ms = 1000 / fpsLimit;
+		frameTimeLimit = ms;
+		if ( modf(ms, &decimal) > 0.01 )
+		{
+			frameTimeLimit += 1;
+		}
+	}
 
 	static ConsoleVariable<float> cvar_cameraLerpFactor("/cameralerp", 30.0);
 	lerpFactor = (*cvar_cameraLerpFactor);
@@ -4762,7 +4786,7 @@ void ingameHud()
 			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
 				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
-			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Defend")) )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false ) 
@@ -4773,7 +4797,7 @@ void ingameHud()
 						}
 				    }
 
-				    if ( allowCasting && input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && input.binaryToggle("Defend") && hasSpellbook && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -4789,11 +4813,11 @@ void ingameHud()
 
 						if ( FollowerMenu[player].followerMenuIsOpen() )
 						{
-							input.consumeBinaryToggle("Block"); // moveto or interact we can block, but dont cast spell
+							input.consumeBinaryToggle("Defend"); // moveto or interact we can block, but dont cast spell
 							allowCasting = false;
 						}
-					    else if ( input.binaryToggle("Block")
-						    && strcmp(input.binding("Block"), "Mouse3") == 0
+					    else if ( input.binaryToggle("Defend")
+						    && strcmp(input.binding("Defend"), "Mouse3") == 0
 						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 					    {
 						    allowCasting = false;
@@ -4803,7 +4827,7 @@ void ingameHud()
 						    if ( allowCasting && players[player]->entity->isBlind() )
 						    {
 							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, language[3863]); // prevent casting of spell.
-							    input.consumeBinaryToggle("Block");
+							    input.consumeBinaryToggle("Defend");
 							    allowCasting = false;
 						    }
 					    }
@@ -4831,7 +4855,7 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 							}
-							else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
+							else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 							}
@@ -4851,7 +4875,7 @@ void ingameHud()
 						{
 							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 						}
-						else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
+						else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 						{
 							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 						}
@@ -4861,7 +4885,7 @@ void ingameHud()
 						}
 					}
 				}
-				input.consumeBinaryToggle("Block");
+				input.consumeBinaryToggle("Defend");
 			}
 			input.consumeBinaryToggle("Cast Spell");
 		}

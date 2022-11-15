@@ -6252,8 +6252,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
 		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
-		auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", true);
-		auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", false);
+		auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Defend", true);
+		auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Defend", false);
 		if ( ticks % 50 < 25 )
 		{
 			glyph->path = glyphPathPressed;
@@ -6297,7 +6297,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		textPos.x += skillIconToGlyphPadding;
 
-		if ( Input::inputs[player.playernum].binary("Block") )
+		if ( Input::inputs[player.playernum].binary("Defend") )
 		{
 			glyphAdditional->path = glyphAdditionalPathUnpressed;
 			if ( auto imgGet = Image::get(glyphAdditional->path.c_str()) )
@@ -6847,19 +6847,19 @@ void Player::HUD_t::updateActionPrompts()
 	};
 
 	std::vector<PromptInfo> allPrompts;
-	std::string blockBinding = Input::inputs[player.playernum].binding("Block");
+	std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
 	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
 	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
 	if ( sneakingSeparateFromBlock )
 	{
-		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
 		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
 	}
 	else
 	{
-		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
 		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });

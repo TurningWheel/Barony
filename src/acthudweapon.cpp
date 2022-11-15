@@ -690,12 +690,12 @@ void actHudWeapon(Entity* my)
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
-		&& !(input.binaryToggle("Block") && stats[HUDWEAPON_PLAYERNUM]->defending)
+		&& !(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
 		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
 	{
 		swingweapon = true;
 	}
-	else if (shootmode && input.binaryToggle("Attack") && input.binaryToggle("Block") && stats[HUDWEAPON_PLAYERNUM]->defending)
+	else if (shootmode && input.binaryToggle("Attack") && input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
 	{
 		if ( stats[HUDWEAPON_PLAYERNUM]->shield && stats[HUDWEAPON_PLAYERNUM]->shield->type == TOOL_TINKERING_KIT )
 		{
@@ -3418,7 +3418,7 @@ void actHudShield(Entity* my)
 		{
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 			{
-				if (input.binaryToggle("Block"))
+				if (input.binaryToggle("Defend"))
 				{
 				    defending = true;
 			    }

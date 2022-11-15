@@ -2226,7 +2226,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	bool modifierPressed = false;
 	bool modifierActiveForOption = false;
-	if ( input.binary("Block") )
+	if ( input.binary("Defend") )
 	{
 		modifierPressed = true;
 	}
@@ -2438,7 +2438,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 							{
 								if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
 								{
-									input.consumeBinaryToggle("Block"); // don't try cast when menu closes.
+									input.consumeBinaryToggle("Defend"); // don't try cast when menu closes.
 								}
 							}
 						}
@@ -3771,7 +3771,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
 			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
 			bannerGlyphModifier->disabled = true;
-			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Block");
+			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Defend");
 			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
 			{
 				bannerGlyph->pos.w = imgGet->getWidth();
@@ -4168,7 +4168,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			if ( Input::inputs[gui_player].binary("Block") )
+			if ( Input::inputs[gui_player].binary("Defend") )
 			{
 				strcpy(interactText, language[4201]); //"(ALL) "
 				strcat(interactText, language[4043]); // "Attack "
@@ -4233,7 +4233,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			if ( Input::inputs[gui_player].binary("Block") )
+			if ( Input::inputs[gui_player].binary("Defend") )
 			{
 				strcpy(interactText, language[4201]); //"(ALL) "
 				strcat(interactText, language[4043]); // "Attack "
