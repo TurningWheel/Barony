@@ -4632,6 +4632,11 @@ void Entity::handleEffects(Stat* myStats)
 				cured = true;
 				myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
 			}
+			if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
+			{
+				cured = true;
+				myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+			}
 			if ( cured )
 			{
 				playSoundEntity(this, 168, 128);
