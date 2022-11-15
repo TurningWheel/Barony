@@ -130,6 +130,7 @@ public:
 	const char*                 getTooltip() const { return tooltip.c_str(); }
 	const bool					isOntop() const { return ontop; }
 	const bool                  isActivated() const { return activated; }
+	const int					getPaddingPerLine() const { return paddingPerLine; }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
@@ -153,6 +154,7 @@ public:
 	void    reflowTextToFit(const int characterOffset);
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
+	void	setPaddingPerLine(const int _padding) {	paddingPerLine = _padding; }
 
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
@@ -178,4 +180,5 @@ private:
 	bool ontop = false;									//!< whether the field is drawn ontop of others
 	std::map<int, Uint32> wordsToHighlight;				//!< word indexes in the field matching the keys in the map will be colored with the mapped value
 	std::map<int, Uint32> linesToColor;                 //!< lines that have a particular color
+	int paddingPerLine = 0;								//!< +/- pixel padding for multiple lines
 };
