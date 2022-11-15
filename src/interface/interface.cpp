@@ -7174,6 +7174,8 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 		|| (potion1 != POTION_POLYMORPH && potion2 == POTION_POLYMORPH) )
 	{
 		outRandomResult = true;
+		outTryDuplicatePotion = false;
+		outSamePotion = false;
 	}
 	return result;
 }
@@ -16080,17 +16082,17 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 				{
 					isSameResult = true;
 				}
+				else if ( basePotion->identified && basePotion->type == POTION_POLYMORPH
+					|| secondaryPotion->identified && secondaryPotion->type == POTION_POLYMORPH )
+				{
+					isRandomResult = true;
+				}
 				else if ( (basePotion->identified && basePotion->type == POTION_WATER
 					&& secondaryPotion->identified && secondaryPotion->type != POTION_WATER)
 					|| (basePotion->identified && basePotion->type != POTION_WATER
 						&& secondaryPotion->identified && secondaryPotion->type == POTION_WATER) )
 				{
 					isDuplicationResult = true;
-				}
-				else if ( basePotion->identified && basePotion->type == POTION_POLYMORPH
-					|| secondaryPotion->identified && secondaryPotion->type == POTION_POLYMORPH )
-				{
-					isRandomResult = true;
 				}
 			}
 		}
