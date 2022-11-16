@@ -16208,11 +16208,11 @@ void createInventoryTooltipFrame(const int player)
 		attrFrame->setHollow(true);
 		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
-		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
+		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 48, 48 },
 			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
 		spellImageBg->disabled = true;
 		//spellImageBg->color = makeColor( 125, 125, 125, 228);
-		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
+		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 36, 36 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
 		spellImage->disabled = true;
 

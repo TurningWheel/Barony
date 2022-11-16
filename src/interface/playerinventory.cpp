@@ -4527,6 +4527,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			else
 			{
 				item->type = static_cast<ItemType>(item->type - 1);
+				if ( item->type == SPELL_ITEM )
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+				}
 			}
 		}
 		if ( keystatus[SDL_SCANCODE_KP_8] )
@@ -4539,6 +4543,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			else
 			{
 				item->type = static_cast<ItemType>(item->type + 1);
+				if ( item->type == SPELL_ITEM )
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+				}
 			}
 		}
 	}
@@ -4888,10 +4896,13 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			imgSpellIcon->disabled = false;
 			imgSpellIconBg->disabled = false;
 			imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item);
-			imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx;
-			imgSpellIcon->pos.y = 3 * pady;
-			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 6;
-			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 6;
+
+			static ConsoleVariable<int> cvar_spelltooltipIconX("/spell_tooltip_icon_x", 0);
+			static ConsoleVariable<int> cvar_spelltooltipIconY("/spell_tooltip_icon_y", -4);
+			imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx + *cvar_spelltooltipIconX;
+			imgSpellIcon->pos.y = 3 * pady + *cvar_spelltooltipIconY;
+			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 5;
+			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 5;
 		}
 
 		if ( itemTooltip.icons.size() > 0 )
@@ -4952,7 +4963,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					{
 						if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
 						{
-							icon.iconPath = "images/ui/HUD/HUD_CharSheet_RES_00.png";
+							icon.iconPath = "images/ui/HUD/statusfx/magic_effect.png";
 						}
 						else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
 						{
@@ -5517,6 +5528,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				{
 					if ( tag.compare("shield_durability") == 0 )
 					{
+						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+						{
+							continue;
+						}
 						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
 						{
 							continue;
@@ -5524,6 +5539,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					}
 					else if ( tag.compare("shield_legendary_durability") == 0 )
 					{
+						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+						{
+							continue;
+						}
 						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
 						{
 							continue;
@@ -5583,7 +5602,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 			if ( !imgSpellIcon->disabled )
 			{
-				imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.w / 2) - imgPrimaryIcon->pos.h / 2;
+				static ConsoleVariable<int> cvar_spelltooltipIconY2("/spell_tooltip_icon_y2", -2);
+				imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.h / 2) - imgPrimaryIcon->pos.h / 2 + *cvar_spelltooltipIconY2;
 			}
 
 			int iconMultipleLinePadding = 0;
