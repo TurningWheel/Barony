@@ -226,7 +226,7 @@ namespace MainMenu {
 
     // Video options
 	struct Video {
-		int window_mode = 0; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int window_mode = 0; // 0 = windowed, 1 = borderless, 2 = fullscreen
 		int display_id = 0;
 		int resolution_x = 1280;
 		int resolution_y = 720;
@@ -1755,13 +1755,13 @@ namespace MainMenu {
 			new_fullscreen = false;
 			new_borderless = false;
 			break;
-		case 1: // fullscreen
-			new_fullscreen = true;
-			new_borderless = false;
-			break;
-		case 2: // borderless
+		case 1: // borderless
 			new_fullscreen = false;
 			new_borderless = true;
+			break;
+		case 2: // fullscreen
+			new_fullscreen = true;
+			new_borderless = false;
 			break;
 		default:
 			assert("Unknown video mode" && 0);
@@ -1788,7 +1788,7 @@ namespace MainMenu {
 
 	inline Video Video::load() {
 	    Video settings;
-		settings.window_mode = borderless ? 2 : (fullscreen ? 1 : 0);
+		settings.window_mode = fullscreen ? 2 : (borderless ? 1 : 0);
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
@@ -3421,14 +3421,18 @@ namespace MainMenu {
 					allSettings.video.window_mode = 0;
 					break;
 				}
-				if (entry.name == "Fullscreen") {
+                if (entry.name == "Bordered") {
+                    allSettings.video.window_mode = 0;
+                    break;
+                }
+				if (entry.name == "Borderless") {
 					allSettings.video.window_mode = 1;
 					break;
 				}
-				if (entry.name == "Borderless") {
-					allSettings.video.window_mode = 2;
-					break;
-				}
+                if (entry.name == "Fullscreen") {
+                    allSettings.video.window_mode = 2;
+                    break;
+                }
 			} while (0);
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -4842,7 +4846,13 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
+#ifdef WINDOWS
+        const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
+#else
+        const std::vector<const char*> modes = {"Bordered", "Borderless"};
+        const char* selected_mode = borderless ? "Borderless" : "Bordered";
+#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
@@ -4852,8 +4862,7 @@ bind_failed:
 			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			false, {"Windowed", "Fullscreen", "Borderless"}, selected_mode,
-			settingsWindowMode);
+			false, modes, selected_mode, settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});

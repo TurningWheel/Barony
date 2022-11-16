@@ -257,7 +257,7 @@ int rebindkey = -1;
 int rebindaction = -1;
 
 Sint32 gearrot = 0;
-Sint32 gearsize = 20000;
+Sint32 gearsize = 0;
 Uint16 logoalpha = 0;
 int credittime = 0;
 int creditstage = 0;

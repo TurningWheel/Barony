@@ -218,6 +218,7 @@
 		845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../opt/homebrew/Cellar/libpng/1.6.38/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = ../../../../../../opt/homebrew/Cellar/physfs/3.0.2/lib/libphysfs.3.0.2.dylib; sourceTree = "<group>"; };
 		845F4BCC292051C000D6B9D7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		847E18F729239843003BD4E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = Barony/Info.plist; sourceTree = "<group>"; };
 		84B7E17F2920290E00D1F0C5 /* libfmod.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfmod.dylib; path = ../../../fmod/api/core/lib/libfmod.dylib; sourceTree = "<group>"; };
 		84C3D6DF291F429B0084EAD5 /* Barony.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Barony.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84C3D8F1291F5D370084EAD5 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/SDL2.framework; sourceTree = "<group>"; };
@@ -414,6 +415,7 @@
 		84C3D6D6291F429B0084EAD5 = {
 			isa = PBXGroup;
 			children = (
+				847E18F729239843003BD4E9 /* Info.plist */,
 				845F4BCC292051C000D6B9D7 /* Assets.xcassets */,
 				84F7109929236B0600AE0D03 /* steam_appid.txt */,
 				84C3DB2F292028790084EAD5 /* playernames-female.txt */,
@@ -972,6 +974,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
+				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1048,6 +1051,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
+				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

@@ -2557,10 +2557,10 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 #endif
 		}
 		else {
+            //w = std::min(bound.w, w);
+            //h = std::min(bound.h, h);
 			x = bound.x + (bound.w - w) / 2;
 			y = bound.y + (bound.h - h) / 2;
-			w = std::min(bound.w, w);
-			h = std::min(bound.h, h);
 		}
 #endif
 	}
@@ -2611,6 +2611,7 @@ bool initVideo()
 	{
 	    Uint32 flags = SDL_WINDOW_RESIZABLE;
 	    flags |= SDL_WINDOW_OPENGL;
+        flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
@@ -2630,11 +2631,8 @@ bool initVideo()
 #endif
 
 		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
-		xres = screen_width;
-		yres = screen_height;
-		printlog("set window size to %dx%d", xres, yres);
 
-		if ((screen = SDL_CreateWindow( window_title, screen_x, screen_y, screen_width, screen_height, flags )) == NULL)
+		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, flags )) == NULL)
 		{
 			printlog("failed to set video mode.\n");
 			return false;
@@ -2645,14 +2643,13 @@ bool initVideo()
 	    SDL_SetWindowFullscreen(screen, 0);
 
 		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
-		xres = screen_width;
-		yres = screen_height;
-		printlog("set window size to %dx%d", xres, yres);
 
 		SDL_RestoreWindow(screen); // if the window is maximized, we need to un-maximize it.
 		SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
 		SDL_SetWindowPosition(screen, screen_x, screen_y);
 		SDL_SetWindowSize(screen, screen_width, screen_height);
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        printlog("set window size to %dx%d", xres, yres);
 
 #ifdef WINDOWS
 		if (fullscreen) {
@@ -2661,7 +2658,7 @@ bool initVideo()
 			mode.w = xres;
 			mode.h = yres;
 			SDL_SetWindowDisplayMode(screen, &mode);
-			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
+            SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		}
 #endif
 	}
@@ -2686,6 +2683,16 @@ bool initVideo()
 #ifdef PANDORA
 	    GO_InitFBO();
 #endif
+        
+        // do this to fix the window size/position caused by high-dpi scaling
+        int w1, w2, h1, h2;
+        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+        SDL_GetWindowSize(screen, &w2, &h2);
+        const float factorX = (float)w1 / w2;
+        const float factorY = (float)h1 / h2;
+        SDL_SetWindowSize(screen, screen_width / factorX, screen_height / factorY);
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        printlog("set window size to %dx%d", xres, yres);
 
 	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	    glEnable(GL_TEXTURE_2D);
@@ -2725,12 +2732,22 @@ bool initVideo()
 
 bool changeVideoMode(int new_xres, int new_yres)
 {
-	if (new_xres) {
-		xres = std::max(1024, new_xres);
-	}
-	if (new_yres) {
-		yres = std::max(720, new_yres);
-	}
+    float factorX, factorY;
+    {
+        int w1, w2, h1, h2;
+        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+        SDL_GetWindowSize(screen, &w2, &h2);
+        factorX = (float)w1 / w2;
+        factorY = (float)h1 / h2;
+    }
+    if (new_xres) {
+        xres = std::max(1024, new_xres);
+    }
+    if (new_yres) {
+        yres = std::max(720, new_yres);
+    }
+    xres /= factorX;
+    yres /= factorY;
 	printlog("changing video mode (%d x %d).\n", xres, yres);
 
 	// destroy gui fbo
@@ -2766,6 +2783,7 @@ bool resizeWindow(int new_xres, int new_yres)
     if (!screen || !renderer) {
         return false;
     }
+    
 	if (new_xres) {
 		xres = std::max(100, new_xres);
 	}
