@@ -5238,6 +5238,13 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 							continue;
 						}
 					}
+					else if ( tag.compare("gyrobot_info_interact") == 0 )
+					{
+						if ( item->status < SERVICABLE )
+						{
+							continue;
+						}
+					}
 				}
 				else if ( itemCategory(item) == SCROLL )
 				{

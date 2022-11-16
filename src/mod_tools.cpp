@@ -2493,6 +2493,23 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 	{
 		str = getSpellDescriptionText(player, item);
 	}
+	else if ( item.type == TOOL_SENTRYBOT || item.type == TOOL_SPELLBOT
+		|| item.type == TOOL_GYROBOT || item.type == TOOL_DUMMYBOT )
+	{
+		if ( item.status == BROKEN )
+		{
+			str = "";
+			for ( auto it = ItemTooltips.templates["template_tinkerbot_broken_description"].begin();
+				it != ItemTooltips.templates["template_tinkerbot_broken_description"].end(); ++it )
+			{
+				str += *it;
+				if ( std::next(it) != ItemTooltips.templates["template_tinkerbot_broken_description"].end() )
+				{
+					str += '\n';
+				}
+			}
+		}
+	}
 	return;
 }
 
@@ -3259,7 +3276,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
-	else if ( tooltipType.compare("tooltip_tool_spellbot") == 0 || tooltipType.compare("tooltip_tool_sentrybot") == 0 )
+	else if ( tooltipType.compare("tooltip_tool_spellbot") == 0 || tooltipType.compare("tooltip_tool_sentrybot") == 0
+		|| tooltipType.compare("tooltip_tool_gyrobot") == 0 )
 	{
 		if ( detailTag.compare("tinkerbot_status_bonus") == 0 )
 		{
@@ -3311,6 +3329,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 			real_t turnRate = (64.0 / ratio) - 1.0;
 			snprintf(buf, sizeof(buf), str.c_str(), (int)turnRate);
+		}
+		else if ( detailTag.compare("gyrobot_info_interact") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemStatusAdjective(item.type, item.status).c_str());
 		}
 		else
 		{
