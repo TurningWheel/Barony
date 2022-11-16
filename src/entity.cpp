@@ -5225,10 +5225,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( entitystats->EFFECTS[EFF_WEBBED] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		if ( my )
-		{
-			DEX = std::max(std::min(DEX, 2) - 2 * my->creatureWebbedSlowCount, -4);
-		}
+		DEX = std::max(std::min(DEX, 2) - 2 * (my ? my->creatureWebbedSlowCount : 0), -4);
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
@@ -7859,7 +7856,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -7898,7 +7895,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
