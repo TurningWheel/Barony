@@ -2591,9 +2591,9 @@ bool initVideo()
 
 	/*
 
-	2022-10-12
+	2022-11-16
 
-	Fullscreen modes in SDL2 are absolutely broken right now (at least on Linux). We are experiencing:
+	Fullscreen modes in SDL2 are absolutely broken right now on all platforms besides Windows. We are experiencing:
 
 	- display server crashes when changing video mode (must be reset in a desktop properties window)
 	- severe visual glitches when reverting to windowed mode in fullscreen desktop
@@ -2602,6 +2602,7 @@ bool initVideo()
 	- window size sometimes changes but not actual display mode
 	- window position sometimes wrong, mouse stops at wrong place
 	- huge black bars (display mode or window size changes, but not contents)
+    - on macOS 13 "Ventura" SDL_SetWindowFullscreen() crashes to desktop... lovely
 
 	So, "true" fullscreen mode is cancelled on POSIX devices. Thanks SDL.
 
