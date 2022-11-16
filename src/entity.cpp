@@ -15421,6 +15421,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				}
 				else
 				{
+					if ( item.type == ARTIFACT_ORB_BLUE
+						|| item.type == ARTIFACT_ORB_GREEN
+						|| item.type == ARTIFACT_ORB_RED
+						|| item.type == ARTIFACT_ORB_PURPLE )
+					{
+						return false;
+					}
 					return true; //Can pick up all items automaton can't equip, because recycler.
 				}
 			}
@@ -15437,6 +15444,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			}
 			break;
 		case SLIME:
+			if ( item.type == ARTIFACT_ORB_BLUE
+				|| item.type == ARTIFACT_ORB_GREEN
+				|| item.type == ARTIFACT_ORB_RED
+				|| item.type == ARTIFACT_ORB_PURPLE )
+			{
+				return false;
+			}
 			return true; // noms on all items.
 			break;
 		case SHOPKEEPER:
