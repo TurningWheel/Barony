@@ -118,6 +118,10 @@ void actBeartrap(Entity* my)
 				{
 					continue;
 				}
+				if ( stat->type == GYROBOT )
+				{
+					continue;
+				}
 				if ( !parent && BEARTRAP_OWNER >= 0 )
 				{
 					if ( entity->behavior == &actPlayer )
