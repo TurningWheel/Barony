@@ -2226,7 +2226,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	bool modifierPressed = false;
 	bool modifierActiveForOption = false;
-	if ( input.binary("Block") )
+	if ( input.binary("Defend") )
 	{
 		modifierPressed = true;
 	}
@@ -2438,7 +2438,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 							{
 								if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
 								{
-									input.consumeBinaryToggle("Block"); // don't try cast when menu closes.
+									input.consumeBinaryToggle("Defend"); // don't try cast when menu closes.
 								}
 							}
 						}
@@ -3771,7 +3771,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
 			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
 			bannerGlyphModifier->disabled = true;
-			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Block");
+			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Defend");
 			if ( auto imgGet = Image::get(bannerGlyph->path.c_str()) )
 			{
 				bannerGlyph->pos.w = imgGet->getWidth();
@@ -4168,7 +4168,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			if ( Input::inputs[gui_player].binary("Block") )
+			if ( Input::inputs[gui_player].binary("Defend") )
 			{
 				strcpy(interactText, language[4201]); //"(ALL) "
 				strcat(interactText, language[4043]); // "Attack "
@@ -4233,7 +4233,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 	{
 		if ( updateInteractText )
 		{
-			if ( Input::inputs[gui_player].binary("Block") )
+			if ( Input::inputs[gui_player].binary("Defend") )
 			{
 				strcpy(interactText, language[4201]); //"(ALL) "
 				strcat(interactText, language[4043]); // "Attack "
@@ -7174,6 +7174,8 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 		|| (potion1 != POTION_POLYMORPH && potion2 == POTION_POLYMORPH) )
 	{
 		outRandomResult = true;
+		outTryDuplicatePotion = false;
+		outSamePotion = false;
 	}
 	return result;
 }
@@ -7767,9 +7769,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 				consumeItem(secondaryPotion, gui_player);
 			}
 		}
-		if ( local_rng.rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+
+		if ( !samePotion )
 		{
-			emptyBottle = true;
+			if ( local_rng.rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+			{
+				emptyBottle = true;
+			}
 		}
 	}
 
@@ -8438,6 +8444,17 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 			}
 		}
+	}
+	if ( outsideInventory )
+	{
+		if ( item->count > 1 )
+		{
+			metal *= item->count;
+			magic *= item->count;
+		}
+		tinkeringBulkSalvage = false;
+		tinkeringBulkSalvageMetalScrap = 0;
+		tinkeringBulkSalvageMagicScrap = 0;
 	}
 	if ( metal > 0 )
 	{
@@ -12643,6 +12660,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 									}
 								}
 							}
+							parentGUI.tinkeringBulkSalvageMetalScrap = 0;
+							parentGUI.tinkeringBulkSalvageMagicScrap = 0;
 							break;
 						}
 					}
@@ -16063,17 +16082,17 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPrice(Item* item, bool i
 				{
 					isSameResult = true;
 				}
+				else if ( basePotion->identified && basePotion->type == POTION_POLYMORPH
+					|| secondaryPotion->identified && secondaryPotion->type == POTION_POLYMORPH )
+				{
+					isRandomResult = true;
+				}
 				else if ( (basePotion->identified && basePotion->type == POTION_WATER
 					&& secondaryPotion->identified && secondaryPotion->type != POTION_WATER)
 					|| (basePotion->identified && basePotion->type != POTION_WATER
 						&& secondaryPotion->identified && secondaryPotion->type == POTION_WATER) )
 				{
 					isDuplicationResult = true;
-				}
-				else if ( basePotion->identified && basePotion->type == POTION_POLYMORPH
-					|| secondaryPotion->identified && secondaryPotion->type == POTION_POLYMORPH )
-				{
-					isRandomResult = true;
 				}
 			}
 		}

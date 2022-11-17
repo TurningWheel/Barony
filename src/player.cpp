@@ -2974,7 +2974,7 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
 	if ( targetEntityType == SHOPKEEPER )
 	{
-		if ( monsterally[playerRace][SHOPKEEPER] )
+		if ( shopIsMysteriousShopkeeper(&entity) || monsterally[playerRace][SHOPKEEPER] || playerRace == AUTOMATON )
 		{
 			return true;
 		}
@@ -4055,6 +4055,15 @@ void Player::WorldUI_t::handleTooltips()
 				{
 					foundSalvageString = true;
 					if ( !foundTinkeringKit )
+					{
+						// rescan, out of date string.
+						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+						return;
+					}
+				}
+				else
+				{
+					if ( foundTinkeringKit )
 					{
 						// rescan, out of date string.
 						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;

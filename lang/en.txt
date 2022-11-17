@@ -647,7 +647,7 @@ thou makest use of them.#
 404 The spell unlocks the chest!#
 405 Your spell destroys the boulder!#
 406 You have angered the gods of Sokoban!#
-407 Cannot cast spells while blocking!#
+407 Cannot cast spells while defending!#
 408 Unsustaining spell %s.#
 409 You fumble the spell and it fizzles!#
 410 Cannot cast spells while swimming!#
@@ -1836,7 +1836,7 @@ None#
 1361 Character Status#
 1362 Spell List#
 1363 Cast Spell#
-1364 Block / Sneak#
+1364 Defend / Sneak#
 
 1365 Mouse Sensitivity#
 1366 reverse mouse#
@@ -2950,7 +2950,7 @@ been designed to contain them.#
 2259 magicstaff#
 2260 magicstaff of conjure skeleton#
 2261 magicstaff#
-2262 blindfold of focus#
+2262 blindfold of free action#
 2263 blindfold#
 2264 blindfold of telepathy#
 2265 blindfold#
@@ -4294,7 +4294,7 @@ Polearm damage output:         %7.0f - 100%%
 Normal polearm usage degrade chance:    %1.2f%% 
 Degrade chance when 0 damage is dealt: %5.2f%%#
 3268 
-Blocking armor increase:                +%3.0f AC 
+Defending armor increase:                +%3.0f AC 
 Shield normal degrade chance on hit:     %5.2f%%
 Shield degrade chance when defending:    %5.2f%%#
 3269 
@@ -4324,7 +4324,7 @@ Legendary:
 
 
 Legendary: 
- Sneaking (using block key without a shield)
+ Sneaking (using defend key without a shield)
   grants invisibility.
  Backstab bonus damage is doubled#
 3272 
@@ -6113,7 +6113,7 @@ Changing this gameflag is disabled in current game mode.#
 4074 Skills List#
 # Action Prompts
 4075 Attack#
-4076 Block#
+4076 Defend#
 4077 Sneak#
 4078 Cast#
 4079 Spellbook

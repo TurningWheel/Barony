@@ -29,6 +29,7 @@
 #include "../ui/Text.hpp"
 #include "../ui/MainMenu.hpp"
 #include "../mod_tools.hpp"
+#include "../book.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "../steam.hpp"
@@ -4437,6 +4438,25 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
 	auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
 
+	{
+		static ConsoleVariable<int> cvar_item_tooltip_attr_padding("/item_tooltip_attr_padding", -4);
+		txtPrimaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtPrimaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtPrimaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtPrimaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+
+		txtSecondaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtSecondaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtSecondaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtSecondaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+
+		txtThirdValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtThirdValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+		txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+	}
+
+
 	char buf[1024] = "";
 
 	const int padx = 4;
@@ -4507,6 +4527,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			else
 			{
 				item->type = static_cast<ItemType>(item->type - 1);
+				if ( item->type == SPELL_ITEM )
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+				}
 			}
 		}
 		if ( keystatus[SDL_SCANCODE_KP_8] )
@@ -4519,6 +4543,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			else
 			{
 				item->type = static_cast<ItemType>(item->type + 1);
+				if ( item->type == SPELL_ITEM )
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+				}
 			}
 		}
 	}
@@ -4569,6 +4597,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				item->beatitude);
 		}
 		else*/
+
+		bool manuallyInsertedNewline = false;
+
 		if ( item->type == SPELL_ITEM )
 		{
 			spell_t* spell = getSpellFromItem(player, item);
@@ -4619,7 +4650,22 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		{
 			if ( !item->identified )
 			{
-				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+				if ( itemCategory(item) == BOOK )
+				{
+					snprintf(buf, sizeof(buf), "%s %s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str());
+					manuallyInsertedNewline = true;
+				}
+				else if ( itemCategory(item) == SCROLL )
+				{
+					snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						items[item->type].name_unidentified, language[4215], item->getScrollLabel());
+					manuallyInsertedNewline = true;
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+				}
 			}
 			else
 			{
@@ -4641,6 +4687,12 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				{
 					snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 						item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+				}
+				else if ( itemCategory(item) == BOOK )
+				{
+					snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+					manuallyInsertedNewline = true;
 				}
 				else
 				{
@@ -4692,10 +4744,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 
 		bool useDefaultHeaderHeight = true;
-		if ( itemTooltip.headerMaxWidths[headerMaxWidthKey] > 0 && textx > itemTooltip.headerMaxWidths[headerMaxWidthKey] )
+		if ( manuallyInsertedNewline || 
+			(itemTooltip.headerMaxWidths[headerMaxWidthKey] > 0 && textx > itemTooltip.headerMaxWidths[headerMaxWidthKey]) )
 		{
-			txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidths[headerMaxWidthKey], 0 });
-			txtHeader->reflowTextToFit(0);
+			if ( !manuallyInsertedNewline )
+			{
+				txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidths[headerMaxWidthKey], 0 });
+				txtHeader->reflowTextToFit(0);
+			}
 
 			std::string input = txtHeader->getText();
 			size_t offset = 0;
@@ -4734,32 +4790,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
 				useDefaultHeaderHeight = false;
 			}
-
-			//if ( Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
-			//	  makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
-			//{
-
-			//}
-			//if ( textGet )
-			//{
-			//	if ( textGet->getWidth() == textx )
-			//	{
-			//		// no reflow
-			//	}
-			//	else
-			//	{
-			//		textx = textGet->getWidth();
-			//		texty = textGet->getHeight();
-			//		imgTopBackground->pos.h = imgTopBackground2XHeight;
-			//		imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
-			//		imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-			//		imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
-			//		imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-			//		imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
-			//		useDefaultHeaderHeight = false;
-			//	}
-
-			//}
 		}
 
 		if ( useDefaultHeaderHeight )
@@ -4866,10 +4896,13 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			imgSpellIcon->disabled = false;
 			imgSpellIconBg->disabled = false;
 			imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item);
-			imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx;
-			imgSpellIcon->pos.y = 3 * pady;
-			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 6;
-			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 6;
+
+			static ConsoleVariable<int> cvar_spelltooltipIconX("/spell_tooltip_icon_x", 0);
+			static ConsoleVariable<int> cvar_spelltooltipIconY("/spell_tooltip_icon_y", -4);
+			imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx + *cvar_spelltooltipIconX;
+			imgSpellIcon->pos.y = 3 * pady + *cvar_spelltooltipIconY;
+			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 5;
+			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 5;
 		}
 
 		if ( itemTooltip.icons.size() > 0 )
@@ -4900,11 +4933,37 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 							}
 						}
 					}
+					else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+						|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
+					{
+						if ( icon.conditionalAttribute == "TINKERBOT_UPGRADEABLE" )
+						{
+							if ( item->status == EXCELLENT || item->status == BROKEN )
+							{
+								continue;
+							}
+						}
+						else if ( icon.conditionalAttribute == "TINKERBOT_BROKEN" )
+						{
+							if ( item->status != BROKEN )
+							{
+								continue;
+							}
+						}
+						else if ( item->status == BROKEN )
+						{
+							continue;
+						}
+						else if ( icon.conditionalAttribute == "TINKERBOT_MAGICATK" )
+						{
+							icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+						}
+					}
 					else if ( item->type == SPELL_ITEM )
 					{
 						if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
 						{
-							icon.iconPath = "images/ui/HUD/HUD_CharSheet_RES_00.png";
+							icon.iconPath = "images/ui/HUD/statusfx/magic_effect.png";
 						}
 						else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
 						{
@@ -5152,6 +5211,49 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						if ( detailsTextString.compare("") != 0 ) // non-empty
 						{
 							detailsTextString += '\n'; // add a padding newline
+						}
+					}
+				}
+				else if ( item->type == TOOL_BEARTRAP )
+				{
+					if ( tag.compare("beartrap_degrade_on_use_cursed") == 0 )
+					{
+						if ( item->status == BROKEN || item->beatitude >= 0 ) { continue; }
+					}
+					else if ( tag.compare("beartrap_degrade_on_use") == 0 )
+					{
+						if ( item->status == BROKEN || item->beatitude < 0 )
+						{
+							continue;
+						}
+					}
+					else if ( tag.compare("on_use") == 0 )
+					{
+						if ( item->status == BROKEN )
+						{
+							continue;
+						}
+					}
+				}
+				else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+					|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
+				{
+					if ( item->status == BROKEN )
+					{
+						continue;
+					}
+					else if ( tag.compare("tinkerbot_atk_initiative") == 0 )
+					{
+						if ( item->status < SERVICABLE )
+						{
+							continue;
+						}
+					}
+					else if ( tag.compare("gyrobot_info_interact") == 0 )
+					{
+						if ( item->status < SERVICABLE )
+						{
+							continue;
 						}
 					}
 				}
@@ -5426,6 +5528,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				{
 					if ( tag.compare("shield_durability") == 0 )
 					{
+						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+						{
+							continue;
+						}
 						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
 						{
 							continue;
@@ -5433,6 +5539,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					}
 					else if ( tag.compare("shield_legendary_durability") == 0 )
 					{
+						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+						{
+							continue;
+						}
 						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
 						{
 							continue;
@@ -5477,13 +5587,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		{
 			txtSlotName->setDisabled(false);
 			txtSlotName->setColor(itemTooltip.faintTextColor);
-			txtSlotName->setSize(SDL_Rect{padx, pady * 2 + imgToTextOffset, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+			txtSlotName->setSize(SDL_Rect{padx, pady * 2 + imgToTextOffset + 1, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
 			txtSlotName->setText(ItemTooltips.getItemSlotName(items[item->type].item_slot).c_str());
 		}
 
 		const int iconPadx = 8;
 		const int iconTextPadx = 4;
 
+		int numPrimaryLines = 0;
 		if ( !imgPrimaryIcon->disabled )
 		{
 			imgPrimaryIcon->pos.x = iconPadx;
@@ -5491,26 +5602,32 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 			if ( !imgSpellIcon->disabled )
 			{
-				imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.w / 2) - imgPrimaryIcon->pos.h / 2;
+				static ConsoleVariable<int> cvar_spelltooltipIconY2("/spell_tooltip_icon_y2", -2);
+				imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.h / 2) - imgPrimaryIcon->pos.h / 2 + *cvar_spelltooltipIconY2;
 			}
 
 			int iconMultipleLinePadding = 0;
-			int numLines = txtPrimaryValue->getNumTextLines();
-			if ( numLines > 1 )
+			numPrimaryLines = txtPrimaryValue->getNumTextLines();
+			if ( numPrimaryLines > 1 )
 			{
-				imgPrimaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
+				imgPrimaryIcon->pos.y += pady * (std::max(0, numPrimaryLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numPrimaryLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
 			}
 
-			txtPrimaryValue->setSize(SDL_Rect{ 
+			SDL_Rect txtPos {
 				imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx + iconTextPadx,
-				imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2,
-				txtHeader->getSize().w, 
+				imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numPrimaryLines - 1) * txtPrimaryValue->getPaddingPerLine() / 2),
+				txtHeader->getSize().w,
 				imgPrimaryIcon->pos.h + iconMultipleLinePadding
-			});
-			txtPrimaryValueHighlight->setSize(txtPrimaryValue->getSize());
-			txtPrimaryValuePositive->setSize(txtPrimaryValue->getSize());
-			txtPrimaryValueNegative->setSize(txtPrimaryValue->getSize());
+			};
+			if ( txtPos.y % 2 == 0 )
+			{
+				++txtPos.y;
+			}
+			txtPrimaryValue->setSize(txtPos);
+			txtPrimaryValueHighlight->setSize(txtPos);
+			txtPrimaryValuePositive->setSize(txtPos);
+			txtPrimaryValueNegative->setSize(txtPos);
 		}
 	
 		txtSecondaryValue->setDisabled(true);
@@ -5524,6 +5641,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		txtThirdValuePositive->setDisabled(txtThirdValue->isDisabled());
 		txtThirdValueNegative->setDisabled(txtThirdValue->isDisabled());
 		txtThirdValue->setDisabled(imgThirdIcon->disabled);
+
+		int numSecondaryLines = 0;
 		if ( !imgSecondaryIcon->disabled )
 		{
 			imgSecondaryIcon->pos.x = iconPadx;
@@ -5537,23 +5656,30 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 
 			int iconMultipleLinePadding = 0;
-			int numLines = txtSecondaryValue->getNumTextLines();
-			if ( numLines > 1 )
+			numSecondaryLines = txtSecondaryValue->getNumTextLines();
+			if ( numSecondaryLines > 1 )
 			{
-				imgSecondaryIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
+				imgSecondaryIcon->pos.y += pady * (std::max(0, numSecondaryLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numSecondaryLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
 			}
 
-			txtSecondaryValue->setSize(SDL_Rect{ 
+			SDL_Rect txtPos {
 				imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx + iconTextPadx,
-				imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2, 
-				txtHeader->getSize().w, 
-				imgSecondaryIcon->pos.h + iconMultipleLinePadding 
-			});
-			txtSecondaryValueHighlight->setSize(txtSecondaryValue->getSize());
-			txtSecondaryValuePositive->setSize(txtSecondaryValue->getSize());
-			txtSecondaryValueNegative->setSize(txtSecondaryValue->getSize());
+				imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numSecondaryLines - 1) * txtSecondaryValue->getPaddingPerLine() / 2),
+				txtHeader->getSize().w,
+				imgSecondaryIcon->pos.h + iconMultipleLinePadding
+			};
+			if ( txtPos.y % 2 == 0 )
+			{
+				++txtPos.y;
+			}
+			txtSecondaryValue->setSize(txtPos);
+			txtSecondaryValueHighlight->setSize(txtPos);
+			txtSecondaryValuePositive->setSize(txtPos);
+			txtSecondaryValueNegative->setSize(txtPos);
 		}
+
+		int numThirdLines = 0;
 		if ( !imgThirdIcon->disabled )
 		{
 			imgThirdIcon->pos.x = iconPadx;
@@ -5571,21 +5697,27 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 
 			int iconMultipleLinePadding = 0;
-			int numLines = txtThirdValue->getNumTextLines();
-			if ( numLines > 1 )
+			numThirdLines = txtThirdValue->getNumTextLines();
+			if ( numThirdLines > 1 )
 			{
-				imgThirdIcon->pos.y += pady * (std::max(0, numLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
+				imgThirdIcon->pos.y += pady * (std::max(0, numThirdLines - 1)); // for each line > 1 add padding
+				iconMultipleLinePadding = numThirdLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
 			}
 
-			txtThirdValue->setSize(SDL_Rect{ 
+			SDL_Rect txtPos {
 				imgThirdIcon->pos.x + imgThirdIcon->pos.w + padx + iconTextPadx,
-				imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2,
-				txtHeader->getSize().w, 
-				imgThirdIcon->pos.h + iconMultipleLinePadding });
-			txtThirdValueHighlight->setSize(txtThirdValue->getSize());
-			txtThirdValuePositive->setSize(txtThirdValue->getSize());
-			txtThirdValueNegative->setSize(txtThirdValue->getSize());
+				imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numThirdLines - 1) * txtThirdValue->getPaddingPerLine() / 2),
+				txtHeader->getSize().w,
+				imgThirdIcon->pos.h + iconMultipleLinePadding
+			};
+			if ( txtPos.y % 2 == 0 )
+			{
+				++txtPos.y;
+			}
+			txtThirdValue->setSize(txtPos);
+			txtThirdValueHighlight->setSize(txtPos);
+			txtThirdValuePositive->setSize(txtPos);
+			txtThirdValueNegative->setSize(txtPos);
 		}
 
 		bool imagesDisabled = true;
@@ -5604,11 +5736,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		else
 		{
 			// original - int iconHeight1 = imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + std::max(txtPrimaryValue->getSize().h, imgPrimaryIcon->pos.h));
-			int iconHeight1 = imgPrimaryIcon->disabled ? 0 : (std::max(txtPrimaryValue->getSize().y + txtPrimaryValue->getSize().h, 
+			int iconHeight1 = imgPrimaryIcon->disabled ? 0 : 
+				(std::max(txtPrimaryValue->getSize().y + txtPrimaryValue->getSize().h 
+					+ (numPrimaryLines > 1 ? (numPrimaryLines - 1) * (int)(txtPrimaryValue->getPaddingPerLine()) : 0),
 				imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h));
-			int iconHeight2 = imgSecondaryIcon->disabled ? 0 : (std::max(txtSecondaryValue->getSize().y + txtSecondaryValue->getSize().h,
+			int iconHeight2 = imgSecondaryIcon->disabled ? 0 : 
+				(std::max(txtSecondaryValue->getSize().y + txtSecondaryValue->getSize().h
+					+ (numSecondaryLines > 1 ? (numSecondaryLines - 1) * (int)(txtSecondaryValue->getPaddingPerLine()) : 0),
 				imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h));
-			int iconHeight3 = imgThirdIcon->disabled ? 0 : (std::max(txtThirdValue->getSize().y + txtThirdValue->getSize().h,
+			int iconHeight3 = imgThirdIcon->disabled ? 0 : 
+				(std::max(txtThirdValue->getSize().y + txtThirdValue->getSize().h
+					+ (numThirdLines > 1 ? (numThirdLines - 1) * (int)(txtThirdValue->getPaddingPerLine()) : 0),
 				imgThirdIcon->pos.y + imgThirdIcon->pos.h));
 
 			if ( !imgSpellIcon->disabled && txtPrimaryValue->getNumTextLines() <= 1 )

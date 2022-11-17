@@ -6252,8 +6252,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", true);
 		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Use", false);
-		auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", true);
-		auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Block", false);
+		auto glyphAdditionalPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Defend", true);
+		auto glyphAdditionalPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Defend", false);
 		if ( ticks % 50 < 25 )
 		{
 			glyph->path = glyphPathPressed;
@@ -6297,7 +6297,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		textPos.x += skillIconToGlyphPadding;
 
-		if ( Input::inputs[player.playernum].binary("Block") )
+		if ( Input::inputs[player.playernum].binary("Defend") )
 		{
 			glyphAdditional->path = glyphAdditionalPathUnpressed;
 			if ( auto imgGet = Image::get(glyphAdditional->path.c_str()) )
@@ -6847,19 +6847,19 @@ void Player::HUD_t::updateActionPrompts()
 	};
 
 	std::vector<PromptInfo> allPrompts;
-	std::string blockBinding = Input::inputs[player.playernum].binding("Block");
+	std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
 	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
 	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
 	if ( sneakingSeparateFromBlock )
 	{
-		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
 		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
 	}
 	else
 	{
-		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Block" });
+		allPrompts.emplace_back(PromptInfo{ "action offhand", ACTION_PROMPT_OFFHAND, "Defend" });
 		allPrompts.emplace_back(PromptInfo{ "action sneak", ACTION_PROMPT_SNEAK, "Sneak" });
 		allPrompts.emplace_back(PromptInfo{ "action magic", ACTION_PROMPT_MAGIC, "Cast Spell" });
 		allPrompts.emplace_back(PromptInfo{ "action mainhand", ACTION_PROMPT_MAINHAND, "Attack" });
@@ -13630,19 +13630,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
 					Sint32 DEX = statGetDEX(stats[player.playernum], player.entity);
 					real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
-					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
+					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight - goldWeight, STR), DEX); // ignore gold
 					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
-					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
 					real_t maxSpeed = player.movement.getMaximumSpeed();
 
 					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
 					real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
 					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
-					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
 
 					real_t displayValue = (currentSpeedPercent - noWeightSpeedPercent)
-						- (currentEquippedSpeedPercent - noWeightSpeedPercent)
-						- (goldSpeedPercent - noWeightSpeedPercent);
+						- (currentEquippedSpeedPercent - noWeightSpeedPercent);
 					if ( displayValue >= 0.0 )
 					{
 						displayValue = -.000001; // so there is a negative sign
@@ -13812,8 +13809,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_WGT:
 				{
 					int weight = player.movement.getCharacterModifiedWeight();
-					//int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
-					//int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
+					int equippedWeightTotal = player.movement.getCharacterEquippedWeight();
+					int equippedWeight = player.movement.getCharacterModifiedWeight(&equippedWeightTotal);
 					int goldWeightTotal = stats[player.playernum]->GOLD / 100;
 					int goldWeight = player.movement.getCharacterModifiedWeight(&goldWeightTotal);
 					Sint32 STR = statGetSTR(stats[player.playernum], player.entity);
@@ -13821,15 +13818,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					//real_t currentEquippedSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(equippedWeight, STR), DEX);
 					real_t currentSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight, STR), DEX);
 					real_t noWeightSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(0, STR), DEX);
-					real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					//real_t goldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(goldWeight, STR), DEX);
+					real_t noGoldSpeed = player.movement.getSpeedFactor(player.movement.getWeightRatio(weight - goldWeight, STR), DEX);
 					real_t maxSpeed = player.movement.getMaximumSpeed();
 
 					real_t currentSpeedPercent = 100.0 * currentSpeed / std::fmax(.01, maxSpeed);
 					//real_t currentEquippedSpeedPercent = 100.0 * currentEquippedSpeed / std::fmax(.01, maxSpeed);
 					real_t noWeightSpeedPercent = 100.0 * noWeightSpeed / std::fmax(.01, maxSpeed);
-					real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+					//real_t goldSpeedPercent = 100.0 * goldSpeed / std::fmax(.01, maxSpeed);
+					real_t noGoldSpeedPercent = 100.0 * noGoldSpeed / std::fmax(.01, maxSpeed);
 
-					real_t displayValue = (goldSpeedPercent - noWeightSpeedPercent);
+					real_t displayValue = (currentSpeedPercent - noWeightSpeedPercent) 
+						- (noGoldSpeedPercent - noWeightSpeedPercent);
 					if ( displayValue >= 0.0 )
 					{
 						displayValue = -.000001; // so there is a negative sign
@@ -16208,11 +16208,11 @@ void createInventoryTooltipFrame(const int player)
 		attrFrame->setHollow(true);
 		attrFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
-		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 52, 52 },
+		auto spellImageBg = attrFrame->addImage(SDL_Rect{ 0, 0, 48, 48 },
 			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/SpellBorder_00.png", "inventory mouse tooltip spell image bg");
 		spellImageBg->disabled = true;
 		//spellImageBg->color = makeColor( 125, 125, 125, 228);
-		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 40, 40 },
+		auto spellImage = attrFrame->addImage(SDL_Rect{ 0, 0, 36, 36 },
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip spell image");
 		spellImage->disabled = true;
 

@@ -398,5 +398,10 @@ std::string MonsterData_t::getSpecialNPCName(Stat& myStats)
 
 bool MonsterData_t::nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey)
 {
-	return monsterDataEntries[myStats.type].specialNPCs[npcKey].name == myStats.name;
+	auto& specialNPCs = monsterDataEntries[myStats.type].specialNPCs;
+	if ( specialNPCs.find(npcKey) != specialNPCs.end() )
+	{
+		return specialNPCs[npcKey].name == myStats.name;
+	}
+	return false;
 }
