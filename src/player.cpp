@@ -2974,7 +2974,7 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
 	if ( targetEntityType == SHOPKEEPER )
 	{
-		if ( monsterally[playerRace][SHOPKEEPER] )
+		if ( shopIsMysteriousShopkeeper(&entity) || monsterally[playerRace][SHOPKEEPER] || playerRace == AUTOMATON )
 		{
 			return true;
 		}
