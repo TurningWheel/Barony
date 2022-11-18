@@ -12,6 +12,8 @@
 #include "../../main.hpp"
 #include "sound.hpp"
 
+Uint32 numsounds = 0;
+
 #ifdef USE_FMOD
 FMOD::System* fmod_system = nullptr;
 
@@ -21,7 +23,6 @@ int fmod_maxchannels = 100;
 int fmod_flags;
 
 FMOD::Sound** sounds = nullptr;
-Uint32 numsounds = 0;
 FMOD::Sound** minesmusic = nullptr;
 FMOD::Sound** swampmusic = nullptr;
 FMOD::Sound** labyrinthmusic = nullptr;

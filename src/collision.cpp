@@ -109,188 +109,15 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			}
 			return NULL;
 		}
-		if ( openedChest[player] )
-		{
-			// TODO UI: REPLACE
-			//if ( mx > getChestGUIStartX(player)
-			//	&& mx < getChestGUIStartX(player) + inventoryChest_bmp->w
-			//	&& my > getChestGUIStartY(player)
-			//	&& my < getChestGUIStartY(player) + inventoryChest_bmp->h )
-			//{
-			//	if ( clickedOnGUI )
-			//	{
-			//		*clickedOnGUI = true;
-			//	}
-			//	return NULL;    //Click falls inside the chest inventory GUI.
-			//}
-		}
-		SDL_Rect guiBox;
-		GenericGUI[player].getDimensions(guiBox);
-		if ( GenericGUI[player].isGUIOpen() )
-		{
-			if ( mx > guiBox.x
-				&& mx < guiBox.x + guiBox.w
-				&& my > guiBox.y
-				&& my < guiBox.y + guiBox.h )
-			{
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;    //Click falls inside the generic gui.
-			}
-		}
-		if ( players[player]->bookGUI.bBookOpen )
-		{
-			if ( mouseInBounds(player,
-				players[player]->bookGUI.getStartX(),
-				players[player]->bookGUI.getStartX() + players[player]->bookGUI.getBookWidth(),
-				players[player]->bookGUI.getStartY(), players[player]->bookGUI.getStartY() + players[player]->bookGUI.getBookHeight()) )
-			{
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;    //Click falls inside the book GUI.
-			}
-		}
-		if ( players[player]->gui_mode == GUI_MODE_INVENTORY || players[player]->gui_mode == GUI_MODE_SHOP)
-		{
-			if ( players[player]->gui_mode == GUI_MODE_INVENTORY )
-				if (mouseInBounds(player, RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
-				{
-					if ( clickedOnGUI )
-					{
-						*clickedOnGUI = true;
-					}
-					return NULL;    //Click falls inside the right sidebar.
-				}
-			// TODO UI: REPLACE
-			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
-			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
-			//return NULL;
-			//if ( mouseInBounds(player, 
-			//	inventoryUI.getStartX(),
-			//	inventoryUI.getStartX() + inventoryUI.getSizeX() * inventoryUI.getSlotSize(),
-			//	inventoryUI.getStartY(),
-			//	inventoryUI.getStartY() + inventoryUI.getSizeY() * inventoryUI.getSlotSize()) )
-			//{
-			//	// clicked in inventory
-			//	if ( clickedOnGUI )
-			//	{
-			//		*clickedOnGUI = true;
-			//	}
-			//	return NULL;
-			//}
-			if ( players[player]->gui_mode == GUI_MODE_SHOP )
-			{
-				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
-				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
-				if (mouseInBounds(player, x1, x2, y1, y2))
-				{
-					if ( clickedOnGUI )
-					{
-						*clickedOnGUI = true;
-					}
-					return NULL;
-				}
-			}
-		}
-		//else if ( players[player]->gui_mode == GUI_MODE_MAGIC)
-		//{
-		//	if (magic_GUI_state == 0)
-		//	{
-		//		//Right, now calculate the spell list's height (the same way it calculates it for itself).
-		//		int height = spell_list_titlebar_bmp->h;
-		//		int numspells = 0;
-		//		node_t* node;
-		//		for (node = players[player]->magic.spellList.first; node != NULL; node = node->next)
-		//		{
-		//			numspells++;
-		//		}
-		//		int maxSpellsOnscreen = yres / spell_list_gui_slot_bmp->h;
-		//		numspells = std::min(numspells, maxSpellsOnscreen);
-		//		height += numspells * spell_list_gui_slot_bmp->h;
-		//		int spelllist_y = 0 + ((yres / 2) - (height / 2)) + magicspell_list_offset_x;
 
-		//		if (mouseInBounds(player, MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
-		//		{
-		//			if ( clickedOnGUI )
-		//			{
-		//				*clickedOnGUI = true;
-		//			}
-		//			return NULL;
-		//		}
-		//	}
-		//}
-		SDL_Rect& interfaceCharacterSheet = players[player]->characterSheet.characterSheetBox;
-		SDL_Rect& interfaceMessageStatusBar = players[player]->statusBarUI.messageStatusBarBox;
-		SDL_Rect& interfaceSkillsSheet = players[player]->characterSheet.skillsSheetBox;
-		SDL_Rect& interfacePartySheet = players[player]->characterSheet.partySheetBox;
-		SDL_Rect& interfaceStatsSheet = players[player]->characterSheet.statsSheetBox;
-		if ( mouseInBounds(player, interfaceCharacterSheet.x, interfaceCharacterSheet.x + interfaceCharacterSheet.w,
-			interfaceCharacterSheet.y, interfaceCharacterSheet.y + interfaceCharacterSheet.h) )   // character sheet
+		/*if ( mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player) )
 		{
 			if ( clickedOnGUI )
 			{
 				*clickedOnGUI = true;
 			}
 			return NULL;
-		}
-		if ( mouseInBounds(player, interfaceStatsSheet.x, interfaceStatsSheet.x + interfaceStatsSheet.w,
-			interfaceStatsSheet.y, interfaceStatsSheet.y + interfaceStatsSheet.h) )
-		{
-			if ( clickedOnGUI )
-			{
-				*clickedOnGUI = true;
-			}
-			return NULL;
-		}
-		if ( !hide_statusbar &&
-			mouseInBounds(player, interfaceMessageStatusBar.x, interfaceMessageStatusBar.x + interfaceMessageStatusBar.w,
-				interfaceMessageStatusBar.y, interfaceMessageStatusBar.y + interfaceMessageStatusBar.h) ) // bottom message log
-		{
-			if ( clickedOnGUI )
-			{
-				*clickedOnGUI = true;
-			}
-			return NULL;
-		}
-
-		// ui code taken from drawSkillsSheet() and drawPartySheet().
-		if ( players[player]->characterSheet.proficienciesPage == 0 )
-		{
-			if ( mouseInBounds(player, interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
-				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
-			{
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;
-			}
-		}
-		else
-		{
-			if ( mouseInBounds(player, interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
-				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
-			{
-				if ( clickedOnGUI )
-				{
-					*clickedOnGUI = true;
-				}
-				return NULL;
-			}
-		}
-
-		if ( mouseInsidePlayerInventory(player) || mouseInsidePlayerHotbar(player) )
-		{
-			if ( clickedOnGUI )
-			{
-				*clickedOnGUI = true;
-			}
-			return NULL;
-		}
+		}*/
 
 		if ( players[player]->worldUI.isEnabled() )
 		{
@@ -320,31 +147,34 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	if ( players[player]->worldUI.isEnabled() )
 	{
 		bool waitingForInputHeld = false;
-		for ( node_t* node = map.worldUI->first; node; node = node->next )
+		if ( players[player]->worldUI.tooltipsInRange.size() > 0 )
 		{
-			Entity* tooltip = (Entity*)node->element;
-			if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+			for ( node_t* node = map.worldUI->first; node; node = node->next )
 			{
-				continue;
-			}
-			if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
-			{
-				if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
+				Entity* tooltip = (Entity*)node->element;
+				if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
 				{
-					if ( input.binaryHeldToggle("Use") )
+					continue;
+				}
+				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
+				{
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
 					{
-						entity = uidToEntity(tooltip->parent);
+						if ( input.binaryHeldToggle("Use") )
+						{
+							entity = uidToEntity(tooltip->parent);
+						}
+						else
+						{
+							waitingForInputHeld = true;
+						}
 					}
 					else
 					{
-						waitingForInputHeld = true;
+						entity = uidToEntity(tooltip->parent);
 					}
+					break;
 				}
-				else
-				{
-					entity = uidToEntity(tooltip->parent);
-				}
-				break;
 			}
 		}
 		if ( !entity )
@@ -576,7 +406,8 @@ bool entityInsideSomething(Entity* entity)
 	int z;
 	int x, y;
 	#ifdef __ARM_NEON__
-	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
+    float f = entity->x;
+	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&f), 1.0f/16.0f));
 	x = xy[0];
 	y = xy[1];
 	#else

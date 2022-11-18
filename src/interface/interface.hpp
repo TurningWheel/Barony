@@ -1398,3 +1398,4 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem);
 const char* getContextMenuLangEntry(const int player, const ItemContextMenuPrompts prompt, Item& item);
 std::string getContextMenuOptionBindingName(const int player, const ItemContextMenuPrompts prompt);
+void cleanupMinimapTextures();

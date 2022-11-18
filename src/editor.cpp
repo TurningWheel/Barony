@@ -822,8 +822,17 @@ bool handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
-				mousex = event.motion.x;
-				mousey = event.motion.y;
+                float factorX;
+                float factorY;
+                {
+                    int w1, w2, h1, h2;
+                    SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                    SDL_GetWindowSize(screen, &w2, &h2);
+                    factorX = (float)w1 / w2;
+                    factorY = (float)h1 / h2;
+                }
+                mousex = event.motion.x * factorX;
+                mousey = event.motion.y * factorY;
 				mousexrel = event.motion.xrel;
 				mouseyrel = event.motion.yrel;
 				break;
@@ -865,7 +874,17 @@ bool handleEvents(void)
 					{
 						break;
 					}
-					if ( !resizeWindow(event.window.data1, event.window.data2) )
+                    float factorX, factorY;
+                    {
+                        int w1, w2, h1, h2;
+                        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                        SDL_GetWindowSize(screen, &w2, &h2);
+                        factorX = (float)w1 / w2;
+                        factorY = (float)h1 / h2;
+                    }
+                    const int x = event.window.data1 * factorX;
+                    const int y = event.window.data2 * factorY;
+					if ( !resizeWindow(x, y) )
 					{
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;

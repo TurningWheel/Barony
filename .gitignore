@@ -70,3 +70,7 @@ steam_appid.txt
 *ProjectSettings.json
 *FileListAbsolute.txt
 *recipe
+.DS_Store
+xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
+xcode/Barony/Barony.xcodeproj/xcuserdata/*
+*.ps1

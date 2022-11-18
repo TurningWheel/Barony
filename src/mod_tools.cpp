@@ -1491,7 +1491,7 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 				damage = primaryElement->damage;
 			}
 		}
-		if ( players[player] )
+		if ( player >= 0 && players[player] )
 		{
 			int bonus = 0;
 			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF )
@@ -1815,6 +1815,10 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, getSpellIDFromSpellbook(item.type));
 	}
+	else if ( item.type == TOOL_SPELLBOT )
+	{
+		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.status < EXCELLENT ? SPELL_FORCEBOLT : SPELL_MAGICMISSILE);
+	}
 	else if ( item.type == SPELL_ITEM )
 	{
 		spell_t* spell = getSpellFromItem(player, &item);
@@ -2069,7 +2073,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 {
 #ifndef EDITOR
 	auto itemTooltip = tooltips[tooltipType];
-
+	static Stat itemDummyStat(0);
 	char buf[128];
 	memset(buf, 0, sizeof(buf));
 
@@ -2188,6 +2192,72 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		str = buf;
 		return;
 	}
+	else if ( tooltipType.find("tooltip_tool_bomb") != std::string::npos )
+	{
+		if ( conditionalAttribute.find("BOMB_ATK") != std::string::npos )
+		{
+			int baseDamage = items[item.type].attributes["BOMB_ATK"];
+			int baseSpellDamage = 0;
+			if ( item.type == TOOL_FREEZE_BOMB )
+			{
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr);
+			}
+			else if ( item.type == TOOL_BOMB )
+			{
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr);
+			}
+			int bonusFromPER = std::max(0, statGetPER(stats[player], players[player]->entity)) * items[item.type].attributes["BOMB_DMG_PER_MULT"];
+			bonusFromPER /= 100;
+			snprintf(buf, sizeof(buf), str.c_str(), baseDamage + bonusFromPER + baseSpellDamage);
+			str = buf;
+		}
+		return;
+	}
+	else if ( item.type == TOOL_SENTRYBOT || item.type == TOOL_SPELLBOT
+		|| item.type == TOOL_GYROBOT || item.type == TOOL_DUMMYBOT )
+	{
+		switch ( item.type )
+		{
+			case TOOL_SENTRYBOT: itemDummyStat.type = SENTRYBOT; break;
+			case TOOL_SPELLBOT: itemDummyStat.type = SPELLBOT; break;
+			case TOOL_GYROBOT: itemDummyStat.type = GYROBOT; break;
+			case TOOL_DUMMYBOT: itemDummyStat.type = DUMMYBOT; break;
+			default:
+				break;
+		}
+		Entity::tinkerBotSetStats(&itemDummyStat, item.status);
+		if ( conditionalAttribute.find("TINKERBOT_RANGEDATK") != std::string::npos )
+		{
+			int baseDamage = items[CROSSBOW].attributes["ATK"] + 1;
+			int statDMG = itemDummyStat.PER + itemDummyStat.DEX;
+			int skillBonus = SKILL_LEVEL_MASTER / 20;
+			snprintf(buf, sizeof(buf), str.c_str(), baseDamage + statDMG + skillBonus);
+			str = buf;
+		}
+		else if ( conditionalAttribute.find("TINKERBOT_MAGICATK") != std::string::npos )
+		{
+			int spellID = item.status == EXCELLENT ? SPELL_MAGICMISSILE : SPELL_FORCEBOLT;
+			int spellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(spellID), nullptr);
+			snprintf(buf, sizeof(buf), str.c_str(), spellDamage);
+			str = buf;
+		}
+		else if ( conditionalAttribute == "TINKERBOT_HPAC" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), itemDummyStat.MAXHP, itemDummyStat.CON);
+			str = buf;
+		}
+		else if ( conditionalAttribute == "TINKERBOT_HP" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), itemDummyStat.MAXHP);
+			str = buf;
+		}
+		else if ( conditionalAttribute == "TINKERBOT_AC" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), itemDummyStat.CON);
+			str = buf;
+		}
+		return;
+	}
 	else if ( conditionalAttribute.compare("") != 0 && items[item.type].hasAttribute(conditionalAttribute) )
 	{
 		if ( conditionalAttribute == "STR" )
@@ -2222,7 +2292,21 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		else if ( conditionalAttribute.find("EFF_") != std::string::npos )
 		{
-			if ( conditionalAttribute == "EFF_REGENERATION" )
+			if ( conditionalAttribute == "EFF_PARALYZE" )
+			{
+				if ( item.type == TOOL_BEARTRAP )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_PARALYZE"] / TICKS_PER_SECOND);
+				}
+			}
+			else if ( conditionalAttribute == "EFF_BLEEDING" )
+			{
+				if ( item.type == TOOL_BEARTRAP )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_BLEEDING"] / TICKS_PER_SECOND);
+				}
+			}
+			else if ( conditionalAttribute == "EFF_REGENERATION" )
 			{
 				if ( item.type == RING_REGENERATION )
 				{
@@ -2333,13 +2417,25 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		{
 			if ( item.type == POTION_HEALING || item.type == POTION_EXTRAHEALING || item.type == POTION_RESTOREMAGIC )
 			{
-				auto oldStatus = item.status;
-				item.status = DECREPIT;
-				int lowVal = item.potionGetEffectHealth();
-				item.status = EXCELLENT;
-				int highVal = item.potionGetEffectHealth();
-				item.status = oldStatus;
-				snprintf(buf, sizeof(buf), str.c_str(), lowVal, highVal);
+				int healthVal = item.potionGetEffectHealth();
+
+				if ( item.type == POTION_HEALING )
+				{
+					const int statBonus = 2 * std::max(0, statGetCON(stats[player], players[player]->entity));
+					healthVal += statBonus;
+				}
+				else if ( item.type == POTION_EXTRAHEALING )
+				{
+					const int statBonus = 4 * std::max(0, statGetCON(stats[player], players[player]->entity));
+					healthVal += statBonus;
+				}
+				else if ( item.type == POTION_RESTOREMAGIC )
+				{
+					const int statBonus = std::min(30, 2 * std::max(0, statGetINT(stats[player], players[player]->entity)));
+					healthVal += statBonus;
+				}
+
+				snprintf(buf, sizeof(buf), str.c_str(), healthVal);
 			}
 			else if ( item.type == POTION_BOOZE )
 			{
@@ -2379,6 +2475,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			item.beatitude = oldBeatitude;
 		}
 	}
+	else if ( tooltipType.find("tooltip_tool_beartrap") != std::string::npos )
+	{
+		const int atk = 10 + 3 * (item.status + item.beatitude);
+		snprintf(buf, sizeof(buf), str.c_str(), atk);
+	}
 	else if ( tooltipType.find("tooltip_scroll") != std::string::npos )
 	{
 		if ( conditionalAttribute == "SCROLL_LABEL" )
@@ -2403,6 +2504,23 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 	if ( tooltipType.find("tooltip_spell_") != std::string::npos )
 	{
 		str = getSpellDescriptionText(player, item);
+	}
+	else if ( item.type == TOOL_SENTRYBOT || item.type == TOOL_SPELLBOT
+		|| item.type == TOOL_GYROBOT || item.type == TOOL_DUMMYBOT )
+	{
+		if ( item.status == BROKEN )
+		{
+			str = "";
+			for ( auto it = ItemTooltips.templates["template_tinkerbot_broken_description"].begin();
+				it != ItemTooltips.templates["template_tinkerbot_broken_description"].end(); ++it )
+			{
+				str += *it;
+				if ( std::next(it) != ItemTooltips.templates["template_tinkerbot_broken_description"].end() )
+				{
+					str += '\n';
+				}
+			}
+		}
 	}
 	return;
 }
@@ -2601,6 +2719,52 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
+	else if ( tooltipType.find("tooltip_tool_beartrap") != std::string::npos )
+	{
+		if ( detailTag.compare("weapon_base_atk") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				items[item.type].hasAttribute("ATK") ? items[item.type].attributes["ATK"] : 0);
+		}
+		else if ( detailTag.compare("beartrap_degrade_on_use_cursed") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), 100, getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("beartrap_degrade_on_use") == 0 )
+		{
+			int chanceDegrade = 0;
+			switch ( item.status )
+			{
+				case SERVICABLE:
+					chanceDegrade = 4;
+					break;
+				case WORN:
+					chanceDegrade = 10;
+					break;
+				case DECREPIT:
+					chanceDegrade = 25;
+					break;
+				default:
+					break;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(),	chanceDegrade, getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else if ( detailTag.compare("on_bless_or_curse") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(),
+				item.beatitude * 3,
+				getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag.compare("on_degraded") == 0 )
+		{
+			int statusModifier = item.status * 3;
+			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
 	else if ( tooltipType.find("tooltip_thrown") != std::string::npos
 		|| tooltipType.find("tooltip_boomerang") != std::string::npos )
 	{
@@ -2785,7 +2949,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			if ( stats[player] && statGetINT(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * statGetINT(stats[player], players[player]->entity)));
+				snprintf(buf, sizeof(buf), str.c_str(), std::min(30, 2 * std::max(0, statGetINT(stats[player], players[player]->entity))));
 			}
 			else
 			{
@@ -2796,7 +2960,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), 2 * statGetCON(stats[player], players[player]->entity));
+				snprintf(buf, sizeof(buf), str.c_str(), 2 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 			}
 			else
 			{
@@ -2807,7 +2971,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			if ( stats[player] && statGetCON(stats[player], players[player]->entity) > 0 )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), 4 * statGetCON(stats[player], players[player]->entity));
+				snprintf(buf, sizeof(buf), str.c_str(), 4 * std::max(0, statGetCON(stats[player], players[player]->entity)));
 			}
 			else
 			{
@@ -3091,6 +3255,96 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		if ( detailTag.compare("scroll_on_cursed_sideeffect") == 0 )
 		{
 			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.find("tooltip_tool_bomb") != std::string::npos )
+	{
+		if ( detailTag.compare("tool_bomb_base_atk") == 0 )
+		{
+			int baseDmg = (items[item.type].hasAttribute("BOMB_ATK") ? items[item.type].attributes["BOMB_ATK"] : 0);
+			int baseSpellDamage = 0;
+			if ( item.type == TOOL_FREEZE_BOMB )
+			{
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_COLD), nullptr);
+			}
+			else if ( item.type == TOOL_BOMB )
+			{
+				baseSpellDamage = getSpellDamageOrHealAmount(-1, getSpellFromID(SPELL_FIREBALL), nullptr);
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseDmg + baseSpellDamage);
+		}
+		else if ( detailTag.compare("tool_bomb_per_atk") == 0 )
+		{
+			int perMult = (items[item.type].hasAttribute("BOMB_DMG_PER_MULT") ? items[item.type].attributes["BOMB_DMG_PER_MULT"] : 0);
+			int perDmg = std::max(0, statGetPER(stats[player], players[player]->entity)) * perMult / 100.0;
+			snprintf(buf, sizeof(buf), str.c_str(), perDmg, perMult);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_tool_spellbot") == 0 || tooltipType.compare("tooltip_tool_sentrybot") == 0
+		|| tooltipType.compare("tooltip_tool_gyrobot") == 0 )
+	{
+		if ( detailTag.compare("tinkerbot_status_bonus") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else if ( detailTag.compare("spellbot_rate_of_fire") == 0 )
+		{
+			real_t bow = 2.0;
+			if ( item.type == TOOL_SPELLBOT )
+			{
+				if ( item.status >= EXCELLENT )
+				{
+					bow = 1.2;
+				}
+				else if ( item.status >= SERVICABLE )
+				{
+					bow = 1.5;
+				}
+				else if ( item.status >= WORN )
+				{
+					bow = 1.8;
+				}
+				else
+				{
+					bow = 2;
+				}
+			}
+			real_t rof = fabs((1.0 - (2 / bow)) * 100);
+			snprintf(buf, sizeof(buf), str.c_str(), (int)rof);
+		}
+		else if ( detailTag.compare("tinkerbot_turn_rate") == 0 )
+		{
+			real_t ratio = 64.0;
+			if ( item.status >= EXCELLENT )
+			{
+				ratio = 2.0;
+			}
+			else if ( item.status >= SERVICABLE )
+			{
+				ratio = 4.0;
+			}
+			else if ( item.status >= WORN )
+			{
+				ratio = 16.0;
+			}
+			else
+			{
+				ratio = 64.0;
+			}
+			real_t turnRate = (64.0 / ratio) - 1.0;
+			snprintf(buf, sizeof(buf), str.c_str(), (int)turnRate);
+		}
+		else if ( detailTag.compare("gyrobot_info_interact") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemStatusAdjective(item.type, item.status).c_str());
 		}
 		else
 		{

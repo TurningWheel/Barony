@@ -6,9 +6,13 @@
  */
 #include "Config.hpp"
 #ifndef NINTENDO
+#ifdef APPLE
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 #include <stdlib.h>
-#include "png.h"
+#include <png.h>
 
 #include "savepng.hpp"
 

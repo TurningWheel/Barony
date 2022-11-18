@@ -73,7 +73,7 @@ namespace MainMenu {
 		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
 		{"Use", "Mouse3", "ButtonA", emptyBinding},
 		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
-		{"Block", "Space", "LeftTrigger", emptyBinding},
+		{"Defend", "Space", "LeftTrigger", emptyBinding},
 		{"Sneak", "Space", "LeftTrigger", emptyBinding},
 		{"Character Status", "Tab", "ButtonBack", emptyBinding},
 		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
@@ -226,7 +226,7 @@ namespace MainMenu {
 
     // Video options
 	struct Video {
-		int window_mode = 0; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int window_mode = 0; // 0 = windowed, 1 = borderless, 2 = fullscreen
 		int display_id = 0;
 		int resolution_x = 1280;
 		int resolution_y = 720;
@@ -1755,13 +1755,13 @@ namespace MainMenu {
 			new_fullscreen = false;
 			new_borderless = false;
 			break;
-		case 1: // fullscreen
-			new_fullscreen = true;
-			new_borderless = false;
-			break;
-		case 2: // borderless
+		case 1: // borderless
 			new_fullscreen = false;
 			new_borderless = true;
+			break;
+		case 2: // fullscreen
+			new_fullscreen = true;
+			new_borderless = false;
 			break;
 		default:
 			assert("Unknown video mode" && 0);
@@ -1788,7 +1788,7 @@ namespace MainMenu {
 
 	inline Video Video::load() {
 	    Video settings;
-		settings.window_mode = borderless ? 2 : (fullscreen ? 1 : 0);
+		settings.window_mode = fullscreen ? 2 : (borderless ? 1 : 0);
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
@@ -1878,7 +1878,7 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-#ifdef USE_EOS
+#if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
@@ -3421,14 +3421,18 @@ namespace MainMenu {
 					allSettings.video.window_mode = 0;
 					break;
 				}
-				if (entry.name == "Fullscreen") {
+                if (entry.name == "Bordered") {
+                    allSettings.video.window_mode = 0;
+                    break;
+                }
+				if (entry.name == "Borderless") {
 					allSettings.video.window_mode = 1;
 					break;
 				}
-				if (entry.name == "Borderless") {
-					allSettings.video.window_mode = 2;
-					break;
-				}
+                if (entry.name == "Fullscreen") {
+                    allSettings.video.window_mode = 2;
+                    break;
+                }
 			} while (0);
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -4842,7 +4846,13 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
+#ifdef WINDOWS
+        const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
+#else
+        const std::vector<const char*> modes = {"Bordered", "Borderless"};
+        const char* selected_mode = borderless ? "Borderless" : "Bordered";
+#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
@@ -4852,8 +4862,7 @@ bind_failed:
 			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			false, {"Windowed", "Fullscreen", "Borderless"}, selected_mode,
-			settingsWindowMode);
+			false, modes, selected_mode, settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
@@ -5200,7 +5209,7 @@ bind_failed:
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
 		    port_desc, buf, [](Field& field){allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
-#ifdef STEAMWORKS
+#if defined(USE_EOS) && defined(STEAMWORKS)
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
 		    "Enable crossplay through Epic Online Services",
@@ -7369,7 +7378,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue; // junk packet, skip
 					}
 
@@ -7704,7 +7713,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue;
 					}
 
@@ -7909,7 +7918,7 @@ bind_failed:
 						    continue;
 					    }
 					    net_packet->len = packetlen;
-					    if (packetlen < sizeof(DWORD)) {
+					    if (packetlen < sizeof(uint32_t)) {
 						    continue;
 					    }
 
@@ -11846,7 +11855,7 @@ bind_failed:
 			"name_box"
 		);
 
-		auto name_field = card->addField("name", 128);
+		auto name_field = card->addField("name", 32);
 		name_field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		name_field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		name_field->setButtonsOffset(SDL_Rect{11, 0, 0, 0});
@@ -13192,6 +13201,7 @@ bind_failed:
 #endif
 		}
 
+#ifndef NINTENDO
 		// unassign all controllers when entering the lobby.
 		// we do this because any number of slots can be locked
 		// and we need to be able to assign any available controller
@@ -13203,6 +13213,7 @@ bind_failed:
 				}
 			}
 		}
+#endif
 
 		// reset ALL player stats
         if (!loadingsavegame) {
@@ -14333,9 +14344,17 @@ bind_failed:
 			LAN,
 		};
 		static BrowserMode mode;
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS)
 		mode = BrowserMode::Online;
 		directConnect = false;
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			mode = BrowserMode::Online;
+			directConnect = false;
+		} else {
+			mode = BrowserMode::LAN;
+			directConnect = true;
+		}
 #else
         mode = BrowserMode::LAN;
 		directConnect = true;
@@ -14486,10 +14505,14 @@ bind_failed:
 		auto interior = window->addImage(
 			SDL_Rect{330, 70, 358, 380},
 			0xffffffff,
-#if defined(STEAMWORKS) || defined(USE_EOS)
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png",
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			mode == BrowserMode::Online ?
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png":
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
 #else
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png",
+			mode == BrowserMode::Online ?
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png" :
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless02.png",
 #endif
 			"interior"
 		);
@@ -14686,15 +14709,32 @@ bind_failed:
 		online_tab->setWidgetBack("back_button");
 		online_tab->setWidgetRight("lan_tab");
 		online_tab->setWidgetDown("names");
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		online_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
+
 			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
 			mode = BrowserMode::Online;
 			directConnect = false;
 			refresh_fn(button);
 			});
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			online_tab->setCallback([](Button& button) {
+				auto frame = static_cast<Frame*>(button.getParent());
+				auto interior = frame->findImage("interior");
+
+				interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
+				mode = BrowserMode::Online;
+				directConnect = false;
+				refresh_fn(button);
+				});
+		} else {
+			online_tab->setCallback([](Button& button) {soundError(); });
+			online_tab->setTextColor(makeColor(127, 127, 127, 255));
+			online_tab->setTextHighlightColor(makeColor(127, 127, 127, 255));
+		}
 #else
 		online_tab->setCallback([](Button& button){soundError();});
 		online_tab->setTextColor(makeColor(127, 127, 127, 255));
@@ -14726,7 +14766,11 @@ bind_failed:
 		lan_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless01.png";
+#else
+			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless02.png";
+#endif
 			mode = BrowserMode::LAN;
 			directConnect = true;
 			refresh_fn(button);
@@ -14877,8 +14921,13 @@ bind_failed:
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{336, 140, 174, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 174, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 336, 140, 174, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 174, 200 });
+#else
+			list->setSize(SDL_Rect{ 336, 140, 174, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 174, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -14914,8 +14963,13 @@ bind_failed:
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{510, 140, 78, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 78, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 510, 140, 78, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 78, 200 });
+#else
+			list->setSize(SDL_Rect{ 510, 140, 78, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 78, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -14951,8 +15005,13 @@ bind_failed:
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
-		    list->setSize(SDL_Rect{588, 140, 52, 200});
-		    list->setActualSize(SDL_Rect{0, 0, 52, 200});
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ 588, 140, 52, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 200 });
+#else
+			list->setSize(SDL_Rect{ 588, 140, 52, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 234 });
+#endif
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -15031,6 +15090,31 @@ bind_failed:
 			slider->updateHandlePosition();
 			});
 
+		auto filter_settings_fn = [](Button& button){
+			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+			auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
+			frame_right->setInvisible(frame_right->isInvisible() == false);
+			lobbyFiltersEnabled = !frame_right->isInvisible();
+			clearLobbies();
+			for (auto& lobby : lobbies) {
+				addLobby(lobby);
+			}
+			if (lobbyFiltersEnabled) {
+				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+					auto checkbox = frame_right->findButton("filter_checkbox0");
+					if (checkbox) {
+						checkbox->select();
+					}
+				}
+				soundActivate();
+			}
+			else {
+				soundCancel();
+				button.select();
+			}
+			};
+
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		auto filter_settings = window->addButton("filter_settings");
 		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
 		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
@@ -15049,42 +15133,7 @@ bind_failed:
 		filter_settings->setWidgetBack("back_button");
 		filter_settings->setWidgetDown("crossplay");
 		filter_settings->setWidgetUp("names");
-		filter_settings->setCallback([](Button& button){
-		    auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-		    auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
-		    frame_right->setInvisible(frame_right->isInvisible()==false);
-		    lobbyFiltersEnabled = !frame_right->isInvisible();
-            clearLobbies();
-            for (auto& lobby : lobbies) {
-                addLobby(lobby);
-            }
-            if (lobbyFiltersEnabled) {
-                if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-                    auto checkbox = frame_right->findButton("filter_checkbox0");
-                    if (checkbox) {
-                        checkbox->select();
-                    }
-                }
-		        soundActivate();
-            } else {
-                soundCancel();
-                button.select();
-            }
-		    });
-
-		auto crossplay_fn = [](Button& button){
-#if defined(USE_EOS) && defined(STEAMWORKS)
-		    soundToggle();
-		    if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
-			    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-	        } else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
-			    LobbyHandler.crossplayEnabled = false;
-			    EOS.CrossplayAccountManager.logOut = true;
-	        }
-#else
-            soundError();
-#endif
-		    };
+		filter_settings->setCallback(filter_settings_fn);
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
 		crossplay_label->setJustify(Field::justify_t::CENTER);
@@ -15114,7 +15163,31 @@ bind_failed:
 		crossplay->setWidgetBack("back_button");
 		crossplay->setWidgetDown("join_lobby");
 		crossplay->setWidgetUp("filter_settings");
-		crossplay->setCallback(crossplay_fn);
+		crossplay->setCallback([](Button& button) {
+			soundToggle();
+			if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
+				EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+			}
+			else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
+				LobbyHandler.crossplayEnabled = false;
+				EOS.CrossplayAccountManager.logOut = true;
+			}
+			});
+#else
+		auto filter_settings = window->addButton("filter_settings");
+		filter_settings->setSize(SDL_Rect{430, 384, 158, 44});
+		filter_settings->setFont(smallfont_outline);
+		filter_settings->setText("Filter Settings");
+		filter_settings->setJustify(Button::justify_t::CENTER);
+		filter_settings->setCallback(filter_settings_fn);
+		filter_settings->setBackground("*images/ui/Main Menus/Settings/Settings_Button_Customize00.png");
+		filter_settings->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_CustomizeHigh00.png");
+		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_CustomizePress00.png");
+		filter_settings->setHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setColor(makeColor(255, 255, 255, 255));
+		filter_settings->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		filter_settings->setTextColor(makeColor(255, 255, 255, 255));
+#endif
 
 #ifdef NDEBUG
 	    // scan for lobbies immediately
@@ -15707,6 +15780,15 @@ bind_failed:
 			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			createOnlineLobby();
 		}
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			createOnlineLobby();
+		} else {
+			errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&) {
+				soundCancel();
+				closeMono();
+			});
+		}
 #else
 		createOnlineLobby();
 #endif
@@ -15944,13 +16026,27 @@ bind_failed:
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-#if defined(STEAMWORKS) || defined(USE_EOS)
+#if defined(STEAMWORKS)
 		host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
 		host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_online_button->setColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+#elif defined(USE_EOS)
+		if (EOS.CurrentUserInfo.isLoggedIn()) {
+			host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
+			host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
+			host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
+			host_online_button->setColor(makeColor(255, 255, 255, 255));
+			host_online_button->setTextColor(makeColor(255, 255, 255, 255));
+			host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		} else {
+			host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
+			host_online_button->setColor(makeColor(127, 127, 127, 255));
+			host_online_button->setTextColor(makeColor(127, 127, 127, 255));
+			host_online_button->setTextHighlightColor(makeColor(127, 127, 127, 255));
+		}
 #else
 		host_online_button->setHighlightColor(makeColor(127, 127, 127, 255));
 		host_online_button->setColor(makeColor(127, 127, 127, 255));
@@ -17663,12 +17759,15 @@ bind_failed:
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
 				destroyMainMenu();
@@ -17687,12 +17786,15 @@ bind_failed:
 				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
 				    saved_invite_lobby = nullptr;
 				}
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
@@ -17705,12 +17807,15 @@ bind_failed:
 				createDummyMainMenu();
 				createCreditsScreen(true);
 	            playMusic(intromusic[0], true, false, false);
+
+#ifndef NINTENDO
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
 					}
 				}
+#endif
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreen) {
 				destroyMainMenu();
@@ -19329,13 +19434,31 @@ bind_failed:
 
     void crossplayPrompt() {
 #ifdef USE_EOS
+#if defined(STEAMWORKS)
         const char* prompt =
-            "Enabling Crossplay allows you to join\n"
-            "lobbies hosted via Epic Games.\n"
+            "Enabling Crossplay allows you to host and join\n"
+            "lobbies via Epic Games, Inc.\n"
             "\n"
             "By clicking Accept, you agree to share public info\n"
             "about your Steam profile with Epic Games, Inc.\n"
             "for the purpose of enabling crossplay.";
+#elif defined(NINTENDO)
+		const char* prompt =
+			"Enabling online play allows you to host and join\n"
+			"online lobbies hosted via Epic Games, Inc.\n"
+			"\n"
+			"By clicking Accept, you agree to share some info\n"
+			"about your Nintendo console with Epic Games, Inc.\n"
+			"for the purpose of enabling online play.";
+#else
+		const char* prompt =
+			"Enabling online play allows you to host and join\n"
+			"online lobbies hosted via Epic Games, Inc.\n"
+			"\n"
+			"By clicking Accept, you agree to share some info\n"
+			"about your device with Epic Games, Inc. for the\n"
+			"purpose of enabling online play.";
+#endif
         trinaryPrompt(
             prompt,
             "Accept", "View\nPrivacy Policy", "Deny",

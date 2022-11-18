@@ -4632,6 +4632,16 @@ void Entity::handleEffects(Stat* myStats)
 				cured = true;
 				myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
 			}
+			if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
+			{
+				cured = true;
+				myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+			}
+			if ( myStats->EFFECTS_TIMERS[EFF_WEBBED] > 0 )
+			{
+				cured = true;
+				myStats->EFFECTS_TIMERS[EFF_WEBBED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+			}
 			if ( cured )
 			{
 				playSoundEntity(this, 168, 128);
@@ -5215,7 +5225,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( entitystats->EFFECTS[EFF_WEBBED] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		DEX = std::max(std::min(DEX, 2) - 2 * my->creatureWebbedSlowCount, -4);
+		DEX = std::max(std::min(DEX, 2) - 2 * (my ? my->creatureWebbedSlowCount : 0), -4);
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
@@ -7846,7 +7856,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -7885,7 +7895,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -15411,6 +15421,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				}
 				else
 				{
+					if ( item.type == ARTIFACT_ORB_BLUE
+						|| item.type == ARTIFACT_ORB_GREEN
+						|| item.type == ARTIFACT_ORB_RED
+						|| item.type == ARTIFACT_ORB_PURPLE )
+					{
+						return false;
+					}
 					return true; //Can pick up all items automaton can't equip, because recycler.
 				}
 			}
@@ -15427,6 +15444,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			}
 			break;
 		case SLIME:
+			if ( item.type == ARTIFACT_ORB_BLUE
+				|| item.type == ARTIFACT_ORB_GREEN
+				|| item.type == ARTIFACT_ORB_RED
+				|| item.type == ARTIFACT_ORB_PURPLE )
+			{
+				return false;
+			}
 			return true; // noms on all items.
 			break;
 		case SHOPKEEPER:
@@ -18274,7 +18298,9 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->z += 2;
 				if ( race == INSECTOID )
 				{
-					if ( limb->sprite != 727 && limb->sprite != 458 && limb->sprite != 761 )
+					if ( limb->sprite != 727 && limb->sprite != 458 
+						&& limb->sprite != 761
+						&& limb->sprite != 1060 )
 					{
 						// wearing armor, offset by 1.
 						limb->z -= 1;

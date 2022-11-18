@@ -20,7 +20,6 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
-#include <SDL_thread.h>
 #include "player.hpp"
 #include "mod_tools.hpp"
 #include "interface/ui.hpp"

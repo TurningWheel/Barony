@@ -14,10 +14,6 @@
 #include <string>
 #include <map>
 
-#ifndef WIN32
-#include "../Config.hpp"
-#endif // WINDOWS
-
 
 const char* FindConsoleCommand(const char* str, int index);
 

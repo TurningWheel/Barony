@@ -17,13 +17,9 @@ typedef float real_t;
 typedef double real_t;
 #endif
 
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 #include <algorithm>
-
-template<typename T>
-constexpr const T& clamp( const T& v, const T& lo, const T& hi ) {
-    return std::min(std::max(lo, v), hi);
-}
 
 // the following functions are safe variants of C's string library.
 // they include the buffer length of each input as secondary parameters to
@@ -126,7 +122,7 @@ extern bool autoLimbReload;
 #endif
 
 #ifdef APPLE
- #include <Cocoa/Cocoa.h>
+ //#include <Cocoa/Cocoa.h>
  //#include <OpenGL/OpenGL.h>
  #define GL_GLEXT_PROTOTYPES
  #include <OpenGL/gl3ext.h>

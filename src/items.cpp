@@ -2604,9 +2604,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				break;
 			case TOOL_BLINDFOLD:
 				break;
-			case TOOL_BLINDFOLD_FOCUS:
-				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2907]);
-				break;
 			case TOOL_BLINDFOLD_TELEPATHY:
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, language[2908]);
 				break;
@@ -4330,10 +4327,10 @@ int Item::buyValue(const int player) const
 	// result
 	value = std::max(1, value);
 
-	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
+	/*if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper[player])) )
 	{
 		value *= 2;
-	}
+	}*/
 	if ( itemSpecialShopConsumable )
 	{
 		real_t valueMult = std::max(1.0, ShopkeeperConsumables_t::consumableBuyValueMult / 100.0);

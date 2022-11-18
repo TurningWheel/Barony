@@ -25,6 +25,8 @@
 #endif
 #endif
 
+extern Uint32 numsounds;
+
 //Pointer to the FMOD system.
 #ifdef USE_FMOD
 
@@ -48,7 +50,6 @@ extern bool devilmusicplaying;
 extern bool olddarkmap;
 
 extern FMOD::Sound** sounds;
-extern Uint32 numsounds;
 extern FMOD::Sound** minesmusic;
 #define NUMMINESMUSIC 5
 extern FMOD::Sound** swampmusic;
@@ -146,7 +147,6 @@ struct FMOD_VECTOR {
 };
 
 extern OPENAL_BUFFER** sounds;
-extern Uint32 numsounds;
 extern OPENAL_BUFFER** minesmusic;
 #define NUMMINESMUSIC 5
 extern OPENAL_BUFFER** swampmusic;

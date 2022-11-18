@@ -257,7 +257,7 @@ int rebindkey = -1;
 int rebindaction = -1;
 
 Sint32 gearrot = 0;
-Sint32 gearsize = 20000;
+Sint32 gearsize = 0;
 Uint16 logoalpha = 0;
 int credittime = 0;
 int creditstage = 0;
@@ -6777,7 +6777,7 @@ void handleMainMenu(bool mode)
 						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
 					}
 				}
-				else if ( victory == 3 )
+				else if ( victory == 3 || victory == 4 || victory == 5 )
 				{
 					if ( creature != HUMAN )
 					{
@@ -10207,7 +10207,7 @@ void doEndgame() {
 
 		if ( (victory == 1 && currentlevel >= 20)
 			|| (victory == 2 && currentlevel >= 24)
-			|| (victory == 3 && currentlevel >= 35) )
+			|| ((victory == 3 || victory == 4 || victory == 5) && currentlevel >= 35) )
 		{
 			if ( client_classes[clientnum] == CLASS_ACCURSED )
 			{
@@ -10247,7 +10247,7 @@ void doEndgame() {
 				// baphomet defeat by monsters.
 				movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
 			}
-			else if ( victory == 3 )
+			else if ( victory == 3 || victory == 4 || victory == 5 )
 			{
 				switch ( epilogueHostRace )
 				{
@@ -10366,7 +10366,7 @@ void doEndgame() {
 		// conduct achievements
 		if ( (victory == 1 && currentlevel >= 20)
 			|| (victory == 2 && currentlevel >= 24)
-			|| (victory == 3 && currentlevel >= 35) )
+			|| ((victory == 3 || victory == 4 || victory == 5) && currentlevel >= 35) )
 		{
 			if ( conductPenniless )
 			{
@@ -10411,7 +10411,7 @@ void doEndgame() {
 				}
 			}
 		}
-		else if ( victory == 3 )
+		else if ( victory == 3 || victory == 4 || victory == 5 )
 		{
 			if ( currentlevel >= 35 )
 			{
@@ -10608,7 +10608,7 @@ void doEndgame() {
 
 	// load menu level
 	int menuMapType = 0;
-	if ( victory == 3 )
+	if ( victory == 3 || victory == 4 || victory == 5 )
 	{
 		menuMapType = loadMainMenuMap(true, true);
 	}
@@ -10648,7 +10648,7 @@ void doEndgame() {
 		{
 			introstage = 8;
 		}
-		else if ( victory == 3 )
+		else if ( victory == 3 || victory == 4 || victory == 5 )
 		{
 			introstage = 10;
 		}
@@ -11194,7 +11194,7 @@ void openAchievementsWindow()
 	// up / prev page button
 	{
 		button_t* button = newButton();
-		strcpy(button->label, u8"\u25B2");
+		//strcpy(button->label, u8"\u25B2");
 		button->x = subx2 - 33;
 		button->y = suby1 + 84;
 		button->sizex = 30;
@@ -11209,7 +11209,7 @@ void openAchievementsWindow()
 	// down / next page button
 	{
 		button_t* button = newButton();
-		strcpy(button->label, u8"\u25BC");
+		//strcpy(button->label, u8"\u25BC");
 		button->x = subx2 - 33;
 		button->y = suby2 - 34;
 		button->sizex = 30;

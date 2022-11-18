@@ -38,6 +38,22 @@ int minimapPingGimpTimer[MAXPLAYERS] = { 0 };
 Uint32 lastMapTick = 0;
 SDL_Rect minimaps[MAXPLAYERS];
 
+static TempTexture* minimapTextures[MAXPLAYERS] = { nullptr };
+static SDL_Surface* minimapSurfaces[MAXPLAYERS] = { nullptr };
+
+void cleanupMinimapTextures() {
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		if (minimapTextures[c]) {
+			delete minimapTextures[c];
+			minimapTextures[c] = nullptr;
+		}
+		if (minimapSurfaces[c]) {
+			SDL_FreeSurface(minimapSurfaces[c]);
+			minimapSurfaces[c] = nullptr;
+		}
+	}
+}
+
 void drawMinimap(const int player, SDL_Rect rect)
 {
 	if (gameplayCustomManager.inUse()) {
@@ -73,17 +89,17 @@ void drawMinimap(const int player, SDL_Rect rect)
 	glPushMatrix();
 	glLoadIdentity();
 
-	// create a new minimap texture
-	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, mapGCD, mapGCD, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	TempTexture* minimapTexture = new TempTexture();
+	// create a new minimap image
+	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, mapGCD, mapGCD, 32,
+		0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	assert(minimapSurface);
 	SDL_LockSurface(minimapSurface);
-
 	const int xmin = ((int)map.width - mapGCD) / 2;
 	const int xmax = map.width - xmin;
 	const int ymin = ((int)map.height - mapGCD) / 2;
 	const int ymax = map.height - ymin;
-	for ( int x = xmin; x < xmax; ++x ) {
-		for ( int y = ymin; y < ymax; ++y ) {
+	for (int x = xmin; x < xmax; ++x) {
+		for (int y = ymin; y < ymax; ++y) {
 		    Uint32 color = 0;
 		    Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
 		    Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
@@ -121,10 +137,36 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 	}
 
-	SDL_UnlockSurface(minimapSurface);
-	minimapTexture->load(minimapSurface, false, true);
+	// upload minimap image to an OpenGL texture, if it is different
+	if (minimapSurfaces[player]) {
+		SDL_LockSurface(minimapSurfaces[player]);
+	}
+	auto m1 = minimapSurface;
+	auto m2 = minimapSurfaces[player];
+	const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
+	const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
+	if (size1 != size2 || memcmp(m1, m2, size2)) {
+		if (minimapTextures[player]) {
+			delete minimapTextures[player];
+		}
+		minimapTextures[player] = new TempTexture();
+		minimapTextures[player]->load(minimapSurface, false, true);
+		if (minimapSurfaces[player]) {
+			SDL_UnlockSurface(minimapSurfaces[player]);
+			SDL_FreeSurface(minimapSurfaces[player]);
+		}
+		SDL_UnlockSurface(minimapSurface);
+		minimapSurfaces[player] = minimapSurface;
+	} else {
+		if (minimapSurfaces[player]) {
+			SDL_UnlockSurface(minimapSurfaces[player]);
+		}
+		SDL_UnlockSurface(minimapSurface);
+		SDL_FreeSurface(minimapSurface);
+		minimapSurface = nullptr;
+	}
+	minimapTextures[player]->bind();
 
-	minimapTexture->bind();
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
@@ -136,14 +178,6 @@ void drawMinimap(const int player, SDL_Rect rect)
 	glTexCoord2f(1, 0);
 	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
 	glEnd();
-	if (minimapTexture) {
-		delete minimapTexture;
-		minimapTexture = nullptr;
-	}
-	if (minimapSurface) {
-		SDL_FreeSurface(minimapSurface);
-		minimapSurface = nullptr;
-	}
 
 	// bind a solid white texture
 	auto white = Image::get("images/system/white.png");

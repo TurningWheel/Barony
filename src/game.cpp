@@ -260,6 +260,7 @@ bool TimerExperiments::bUseTimerInterpolation = true;
 bool TimerExperiments::bIsInit = false;
 bool TimerExperiments::bDebug = false;
 real_t TimerExperiments::lerpFactor = 30.0;
+void preciseSleep(double seconds);
 
 void TimerExperiments::integrate(TimerExperiments::State& state,
 	std::chrono::time_point<Clock, std::chrono::duration<double>>,
@@ -547,8 +548,31 @@ void TimerExperiments::updateClocks()
 		bIsInit = true;
 	}
 
-	static ConsoleVariable<int> cvar_frameTime("/frametimelimit", 250);
+	static ConsoleVariable<bool> cvar_frameLagCheck("/framelagcheck", false);
+	if ( *cvar_frameLagCheck )
+	{
+		static Uint32 doneTick = 0;
+		if ( doneTick != ticks && ticks % (2 * TICKS_PER_SECOND) == 0 )
+		{
+			doneTick = ticks;
+			auto microseconds = std::chrono::microseconds((Uint64)(300000));
+			preciseSleep(microseconds.count() / 1e6);
+		}
+	}
+
+	static ConsoleVariable<int> cvar_frameTime("/frametimelimit", 32);
+	static ConsoleVariable<bool> cvar_frameTimeAutoSet("/frametimeautolimit", true);
 	int frameTimeLimit = (*cvar_frameTime);
+	if ( *cvar_frameTimeAutoSet )
+	{
+		real_t decimal = 0.0;
+		real_t ms = 1000 / fpsLimit;
+		frameTimeLimit = ms;
+		if ( modf(ms, &decimal) > 0.01 )
+		{
+			frameTimeLimit += 1;
+		}
+	}
 
 	static ConsoleVariable<float> cvar_cameraLerpFactor("/cameralerp", 30.0);
 	lerpFactor = (*cvar_cameraLerpFactor);
@@ -1147,6 +1171,11 @@ void gameLogic(void)
 
 	if ( intro == true )
 	{
+        if (gearsize == 0) {
+            // initialize
+            gearsize = 40000 * (xres / 1280.f);
+        }
+        
 		// rotate gear
 		gearrot += 1;
 		if ( gearrot >= 360 )
@@ -1154,9 +1183,10 @@ void gameLogic(void)
 			gearrot -= 360;
 		}
 		gearsize -= std::max<double>(2, gearsize / 20);
-		if ( gearsize < 70 )
+        const float smallest_size = 70 * (xres / 1280.f);
+		if ( gearsize < smallest_size )
 		{
-			gearsize = 70;
+			gearsize = smallest_size;
 			logoalpha += 2;
 		}
 
@@ -3811,8 +3841,17 @@ bool handleEvents(void)
 					break;
 				}
 				menuselect = 0;
-				mousex = event.motion.x;
-				mousey = event.motion.y;
+                float factorX;
+                float factorY;
+                {
+                    int w1, w2, h1, h2;
+                    SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                    SDL_GetWindowSize(screen, &w2, &h2);
+                    factorX = (float)w1 / w2;
+                    factorY = (float)h1 / h2;
+                }
+				mousex = event.motion.x * factorX;
+				mousey = event.motion.y * factorY;
 #ifdef PANDORA
 				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
 					mousex = (mousex*xres) / 800;
@@ -4291,7 +4330,17 @@ bool handleEvents(void)
 						MainMenu::setupSplitscreen();
 					}
 #else
-					if (!resizeWindow(event.window.data1, event.window.data2))
+                    float factorX, factorY;
+                    {
+                        int w1, w2, h1, h2;
+                        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+                        SDL_GetWindowSize(screen, &w2, &h2);
+                        factorX = (float)w1 / w2;
+                        factorY = (float)h1 / h2;
+                    }
+                    const int x = event.window.data1 * factorX;
+                    const int y = event.window.data2 * factorY;
+					if (!resizeWindow(x, y))
 					{
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
@@ -4762,7 +4811,7 @@ void ingameHud()
 			else if ( !players[player]->usingCommand() && shootmode && bControlEnabled )
 			{
 				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
-			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Block")) )
+			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Defend")) )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false ) 
@@ -4773,7 +4822,7 @@ void ingameHud()
 						}
 				    }
 
-				    if ( allowCasting && input.binaryToggle("Block") && hasSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && input.binaryToggle("Defend") && hasSpellbook && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -4789,11 +4838,11 @@ void ingameHud()
 
 						if ( FollowerMenu[player].followerMenuIsOpen() )
 						{
-							input.consumeBinaryToggle("Block"); // moveto or interact we can block, but dont cast spell
+							input.consumeBinaryToggle("Defend"); // moveto or interact we can block, but dont cast spell
 							allowCasting = false;
 						}
-					    else if ( input.binaryToggle("Block")
-						    && strcmp(input.binding("Block"), "Mouse3") == 0
+					    else if ( input.binaryToggle("Defend")
+						    && strcmp(input.binding("Defend"), "Mouse3") == 0
 						    && inputs.getUIInteraction(player)->itemMenuOpen ) // bound to right click, has context menu open.
 					    {
 						    allowCasting = false;
@@ -4803,7 +4852,7 @@ void ingameHud()
 						    if ( allowCasting && players[player]->entity->isBlind() )
 						    {
 							    messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_STATUS, language[3863]); // prevent casting of spell.
-							    input.consumeBinaryToggle("Block");
+							    input.consumeBinaryToggle("Defend");
 							    allowCasting = false;
 						    }
 					    }
@@ -4831,7 +4880,7 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 							}
-							else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
+							else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 							}
@@ -4851,7 +4900,7 @@ void ingameHud()
 						{
 							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
 						}
-						else if ( hasSpellbook && input.consumeBinaryToggle("Block") )
+						else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 						{
 							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
 						}
@@ -4861,7 +4910,7 @@ void ingameHud()
 						}
 					}
 				}
-				input.consumeBinaryToggle("Block");
+				input.consumeBinaryToggle("Defend");
 			}
 			input.consumeBinaryToggle("Cast Spell");
 		}
@@ -5076,6 +5125,7 @@ void ingameHud()
 	DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 	UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursors
+    static ConsoleVariable<bool> cvar_debugVMouse("/debug_virtual_mouse", false);
 
 	// pointer in inventory screen
 	for ( int player = 0; player < MAXPLAYERS; ++player )
@@ -5186,25 +5236,28 @@ void ingameHud()
 							draggingItemFrame->setSize(SDL_Rect{ pos.x, pos.y, draggingItemFrame->getSize().w, draggingItemFrame->getSize().h });
 						}
 					}
-#ifndef NDEBUG
-					if ( enableDebugKeys )
+                    
+					if ( *cvar_debugVMouse )
 					{
 						// debug for controllers
-						auto cursor = Image::get("images/system/cursor_hand.png");
-						if ( keystatus[SDL_SCANCODE_J] )
+                        const float factorX = (float)xres / Frame::virtualScreenX;
+                        const float factorY = (float)yres / Frame::virtualScreenY;
+						auto cursor = Image::get("*#images/system/cursor_hand.png");
+						if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
 						{
-							cursor = Image::get("images/system/cursor.png");
+							cursor = Image::get("*#images/system/cursor.png");
 						}
 
-						pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
-						pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
+                        const int w = cursor->getWidth() * factorX;
+                        const int h = cursor->getHeight() * factorY;
+						pos.x = inputs.getVirtualMouse(player)->x - (w / 7) - w / 2;
+						pos.y = inputs.getVirtualMouse(player)->y - (h / 7) - h / 2;
 						pos.x += 4;
 						pos.y += 4;
-						pos.w = cursor->getWidth();
-						pos.h = cursor->getHeight();
+						pos.w = w;
+						pos.h = h;
 						cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 					}
-#endif // !NDEBUG
 				}
 				else
 				{
@@ -5249,7 +5302,7 @@ void ingameHud()
 					|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 			{
 				// note this currently does not get hit, moveto_select etc is shootmode
-				auto cursor = Image::get("images/system/cursor_hand.png");
+				/*auto cursor = Image::get("images/system/cursor_hand.png");
 				pos.x = inputs.getMouse(player, Inputs::X) - cursor->getWidth() / 2;
 				pos.y = inputs.getMouse(player, Inputs::Y) - cursor->getHeight() / 2;
 				pos.x += 4;
@@ -5299,12 +5352,14 @@ void ingameHud()
 					{
 						ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", followerMenu.interactText);
 					}
-				}
+				}*/
 			}
 			else if ( inputs.getVirtualMouse(player)->draw_cursor )
 			{
 #ifndef NINTENDO
-				auto cursor = Image::get("images/system/cursor_hand.png");
+                const float factorX = (float)xres / Frame::virtualScreenX;
+                const float factorY = (float)yres / Frame::virtualScreenY;
+				auto cursor = Image::get("*#images/system/cursor_hand.png");
 				real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -5312,7 +5367,7 @@ void ingameHud()
 				}
 				if ( mouseAnim > .25 )
 				{
-					cursor = Image::get("images/system/cursor_hand2.png");
+					cursor = Image::get("*#images/system/cursor_hand2.png");
 				}
 				if ( mouseAnim > 0.0 )
 				{
@@ -5320,14 +5375,16 @@ void ingameHud()
 				}
 				if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
 				{
-					cursor = Image::get("images/system/cursor.png");
+					cursor = Image::get("*#images/system/cursor.png");
 				}
-				pos.x = inputs.getMouse(player, Inputs::X) - (mouseAnim * cursor->getWidth() / 7) - cursor->getWidth() / 2;
-				pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * cursor->getHeight() / 7) - cursor->getHeight() / 2;
-				pos.x += 4;
-				pos.y += 4;
-				pos.w = cursor->getWidth();
-				pos.h = cursor->getHeight();
+                const int w = cursor->getWidth() * factorX;
+                const int h = cursor->getHeight() * factorY;
+                pos.x = inputs.getMouse(player, Inputs::X) - (mouseAnim * w / 7) - w / 2;
+                pos.y = inputs.getMouse(player, Inputs::Y) - (mouseAnim * h / 7) - h / 2;
+                pos.x += 4;
+                pos.y += 4;
+                pos.w = w;
+                pos.h = h;
 				if ( inputs.getUIInteraction(player)->itemMenuOpen && inputs.getUIInteraction(player)->itemMenuFromHotbar )
 				{
 					// adjust cursor to match selection
@@ -5340,19 +5397,23 @@ void ingameHud()
 			{
 #ifndef NDEBUG
 				// debug for controllers
-				if ( enableDebugKeys )
+				if ( *cvar_debugVMouse )
 				{
-					auto cursor = Image::get("images/system/cursor_hand.png");
-					if ( keystatus[SDL_SCANCODE_J] )
+                    const float factorX = (float)xres / Frame::virtualScreenX;
+                    const float factorY = (float)yres / Frame::virtualScreenY;
+					auto cursor = Image::get("*#images/system/cursor_hand.png");
+					if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
 					{
-						cursor = Image::get("images/system/cursor.png");
+						cursor = Image::get("*#images/system/cursor.png");
 					}
-					pos.x = inputs.getVirtualMouse(player)->x - (cursor->getWidth() / 7) - cursor->getWidth() / 2;
-					pos.y = inputs.getVirtualMouse(player)->y - (cursor->getHeight() / 7) - cursor->getHeight() / 2;
-					pos.x += 4;
-					pos.y += 4;
-					pos.w = cursor->getWidth();
-					pos.h = cursor->getHeight();
+                    const int w = cursor->getWidth() * factorX;
+                    const int h = cursor->getHeight() * factorY;
+                    pos.x = inputs.getVirtualMouse(player)->x - (w / 7) - w / 2;
+                    pos.y = inputs.getVirtualMouse(player)->y - (h / 7) - h / 2;
+                    pos.x += 4;
+                    pos.y += 4;
+                    pos.w = w;
+                    pos.h = h;
 					cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 				}
 #endif
@@ -6196,9 +6257,16 @@ int main(int argc, char** argv)
 #endif
 
 					// team splash
+                    const float factor = xres / 1280.f;
 					drawGear(xres / 2, yres / 2, gearsize, gearrot);
-					drawLine(xres / 2 - 160, yres / 2 + 112, xres / 2 + 160, yres / 2 + 112, makeColorRGB(255, 32, 0), std::min<Uint16>(logoalpha, 255));
-					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
+					drawLine(xres / 2 - 160 * factor, yres / 2 + 112 * factor, xres / 2 + 160 * factor, yres / 2 + 112 * factor, makeColorRGB(255, 32, 0), std::min<Uint16>(logoalpha, 255));
+                    auto text = Text::get("Turning Wheel", "fonts/pixel_maz.ttf#32#2", makeColorRGB(255, 255, 255), makeColorRGB(0, 0, 0));
+                    const SDL_Rect r{
+                        (int)(xres - text->getWidth() * factor) / 2,
+                        (int)(yres / 2 + 128 * factor),
+                        (int)(text->getWidth() * factor),
+                        (int)(text->getHeight() * factor)};
+                    text->drawColor(SDL_Rect{0,0,0,0}, r, SDL_Rect{0, 0, xres, yres}, makeColor(255, 255, 255, std::min(logoalpha, (Uint16)255)));
 					if ( logoalpha >= 255 && !fadeout )
 					{
 						fadeout = true;
@@ -6326,18 +6394,22 @@ int main(int argc, char** argv)
 						// only draw 1 cursor in the main menu
 						if ( inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->draw_cursor )
 						{
-							auto cursor = Image::get("images/system/cursor_hand.png");
-							pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - cursor->getWidth() / 2;
-							pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - cursor->getHeight() / 2;
-							pos.x += 4;
-							pos.y += 4;
-							pos.w = cursor->getWidth();
-							pos.h = cursor->getHeight();
+                            const float factorX = (float)xres / Frame::virtualScreenX;
+                            const float factorY = (float)yres / Frame::virtualScreenY;
+							auto cursor = Image::get("*#images/system/cursor_hand.png");
+                            const int w = cursor->getWidth() * factorX;
+                            const int h = cursor->getHeight() * factorY;
+                            pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - w / 2;
+                            pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - h / 2;
+                            pos.x += 4;
+                            pos.y += 4;
+                            pos.w = w;
+                            pos.h = h;
 							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 
 							if (MainMenu::cursor_delete_mode)
 							{
-							    auto icon = Image::get("images/system/Broken.png");
+							    auto icon = Image::get("*#images/system/Broken.png");
 							    pos.x = pos.x + pos.w;
 							    pos.y = pos.y + pos.h;
 							    pos.w = icon->getWidth() * 2;
@@ -6620,13 +6692,17 @@ int main(int argc, char** argv)
 					{
 						if ( inputs.bPlayerUsingKeyboardControl(i) && inputs.getVirtualMouse(i)->draw_cursor )
 						{
-							auto cursor = Image::get("images/system/cursor_hand.png");
-							pos.x = inputs.getMouse(i, Inputs::X) - cursor->getWidth() / 2;
-							pos.y = inputs.getMouse(i, Inputs::Y) - cursor->getHeight() / 2;
-							pos.x += 4;
-							pos.y += 4;
-							pos.w = cursor->getWidth();
-							pos.h = cursor->getHeight();
+                            const float factorX = (float)xres / Frame::virtualScreenX;
+                            const float factorY = (float)yres / Frame::virtualScreenY;
+							auto cursor = Image::get("*#images/system/cursor_hand.png");
+                            const int w = cursor->getWidth() * factorX;
+                            const int h = cursor->getHeight() * factorY;
+                            pos.x = inputs.getMouse(i, Inputs::X) - w / 2;
+                            pos.y = inputs.getMouse(i, Inputs::Y) - h / 2;
+                            pos.x += 4;
+                            pos.y += 4;
+                            pos.w = w;
+                            pos.h = h;
 							cursor->draw(nullptr, pos, SDL_Rect{ 0, 0, xres, yres });
 						}
 						continue;

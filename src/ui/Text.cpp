@@ -327,6 +327,14 @@ static std::unordered_map<std::string, Text*> hashed_text;
 static const size_t TEXT_BUDGET = 1 * 1024 * 1024 * 128; // in bytes
 static size_t TEXT_VOLUME = 0; // in bytes
 
+static inline void uint32tox(uint32_t value, char* out) {
+	for (int i = 28; i >= 0; i -= 4) {
+		uint8_t shift = (value >> i) & 0x0F;
+		*out = (shift < 10u) ? shift + '0' : shift - 10 + 'a';
+		++out;
+	}
+}
+
 Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
 	if (!str) {
 		return nullptr;
@@ -334,10 +342,12 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	if (font == nullptr || font[0] == '\0') {
 		font = Font::defaultFont;
 	}
-	size_t len0 = strlen(str);
-	size_t len1 = strlen(font);
-	char textAndFont[65536] = { '\0' }; // better not try to render more than 64kb of text...
-	size_t totalLen =
+	// NOTE the following static buffer makes this function NOT thread safe!!
+	// better not try to render more than 64kb of text...
+	static char textAndFont[65536] = { '\0' };
+	const size_t len0 = strlen(str);
+	const size_t len1 = strlen(font);
+	const size_t totalLen =
 		len0 + sizeof(fontBreak) +
 		len1 + sizeof(fontBreak) +
 		10 + sizeof(fontBreak) +
@@ -347,11 +357,27 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 		assert(0 && "Trying to render > 64kb of ttf text");
 		return nullptr;
 	}
-	snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x%c",
+
+	char* ptr = textAndFont;
+	memcpy(ptr, str, len0); ptr += len0;
+	*ptr = fontBreak; ++ptr;
+	memcpy(ptr, font, len1); ptr += len1;
+	*ptr = fontBreak; ++ptr;
+	*ptr = '0'; ++ptr;
+	*ptr = 'x'; ++ptr;
+	uint32tox(textColor, ptr); ptr += 8;
+	*ptr = fontBreak; ++ptr;
+	*ptr = '0'; ++ptr;
+	*ptr = 'x'; ++ptr;
+	uint32tox(outlineColor, ptr); ptr += 8;
+	*ptr = fontBreak; ++ptr;
+	*ptr = '\0'; ++ptr;
+
+	/*snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x%c",
 		str, Text::fontBreak,
 		font, Text::fontBreak,
 		textColor, Text::fontBreak,
-		outlineColor, Text::fontBreak);
+		outlineColor, Text::fontBreak);*/
 
 	Text* text = nullptr;
 	auto search = hashed_text.find(textAndFont);
