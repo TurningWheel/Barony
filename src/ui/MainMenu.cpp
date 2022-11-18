@@ -79,7 +79,7 @@ namespace MainMenu {
 		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
-		{"Autosort Inventory", emptyBinding, "ButtonLeftStick", emptyBinding},
+		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
 		{"Command NPC", "Q", "DpadX+", emptyBinding},
 		{"Show NPC Commands", "C", "DpadX-", emptyBinding},
 		{"Cycle NPCs", "E", "DpadY+", emptyBinding},

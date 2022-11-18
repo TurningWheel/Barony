@@ -2612,7 +2612,9 @@ bool initVideo()
 	{
 	    Uint32 flags = SDL_WINDOW_RESIZABLE;
 	    flags |= SDL_WINDOW_OPENGL;
+#ifndef EDITOR
         flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
