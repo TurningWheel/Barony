@@ -1896,8 +1896,13 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 -------------------------------------------------------------------------------*/
 
 void reloadModels(int start, int end) {
+#ifdef WINDOWS
+	start = std::min((int)nummodels - 1, std::max(start, 0));
+	end = std::min((int)nummodels, std::max(end, 0));
+#else
     start = std::clamp(start, 0, (int)nummodels - 1);
     end = std::clamp(end, 0, (int)nummodels);
+#endif
 
     if (start >= end) {
         return;

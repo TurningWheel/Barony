@@ -181,11 +181,15 @@ void openURLTryWithOverlay(const std::string& url, bool forceSystemBrowser)
 	if ( useSystemBrowser )
 	{
 #ifdef WINDOWS
+#ifdef _UNICODE
 		const int len = MultiByteToWideChar(CP_ACP, 0, url.c_str(), url.size() + 1, 0, 0);
 		auto buf = new wchar_t[len];
 		MultiByteToWideChar(CP_ACP, 0, url.c_str(), url.size() + 1, buf, len);
 		ShellExecute(NULL, TEXT("open"), buf, NULL, NULL, 0);
 		delete[] buf;
+#else
+		ShellExecute(NULL, TEXT("open"), TEXT(url.c_str()), NULL, NULL, 0);
+#endif
 #endif // WINDOWS
 #ifdef APPLE
 		//TODO: Mac equivalent.

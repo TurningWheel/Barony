@@ -604,7 +604,7 @@ void actArrow(Entity* my)
 						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 						{
 							if ( hitstats->type != DUMMYBOT 
-								|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < 20) )
+								|| (hitstats->type == DUMMYBOT && parent->getStats()->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_BASIC) )
 							{
 								parent->increaseSkill(PRO_RANGED);
 							}

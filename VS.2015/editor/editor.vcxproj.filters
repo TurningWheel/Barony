@@ -173,9 +173,6 @@
     <ClCompile Include="..\..\src\engine\audio\defines.cpp">
       <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\engine\audio\init.cpp">
-      <Filter>Source Files\engine\audio</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\engine\audio\sound.cpp">
       <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
@@ -205,6 +202,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\shader.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\engine\audio\init_audio.cpp">
+      <Filter>Source Files\engine\audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

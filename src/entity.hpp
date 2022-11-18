@@ -874,7 +874,7 @@ public:
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
-	void tinkerBotSetStats(Stat* myStats, int rank);
+	static void tinkerBotSetStats(Stat* myStats, int rank);
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
