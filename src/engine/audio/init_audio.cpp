@@ -109,6 +109,9 @@ bool initSoundEngine()
 	}
 #endif
 
+	// saves your ears getting blasted if the game starts without window focus.
+	setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
+
 	return !no_sound; //No double negatives pls
 }
 

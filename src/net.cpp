@@ -1365,7 +1365,7 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
 				net_packet->len = 7;
-				sendPacket(net_sock, -1, net_packet, c - 1);
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
 	}
