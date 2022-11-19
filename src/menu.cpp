@@ -9965,8 +9965,10 @@ void doNewGame(bool makeHighscore) {
 		// initialize class
 		if ( !loadingsavegame )
 		{
-			stats[clientnum]->clearStats();
-			initClass(clientnum);
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				stats[c]->clearStats();
+				initClass(c);
+			}
 			mapseed = 0;
 		}
 		else

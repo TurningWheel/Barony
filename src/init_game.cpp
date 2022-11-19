@@ -418,10 +418,7 @@ int initGame()
 			stats[c]->clearStats();
 			entitiesToDelete[c].first = nullptr;
 			entitiesToDelete[c].last = nullptr;
-			if ( c == 0 )
-			{
-				initClass(c);
-			}
+			initClass(c);
 			GenericGUI[c].setPlayer(c);
 			FollowerMenu[c].setPlayer(c);
 			cameras[c].winx = 0;
