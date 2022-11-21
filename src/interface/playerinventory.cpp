@@ -4492,9 +4492,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 
 	if ( ItemTooltips.itemDebug )
 	{
-		if ( keystatus[SDL_SCANCODE_KP_PLUS] )
+		if ( keystatus[SDLK_KP_PLUS] )
 		{
-			keystatus[SDL_SCANCODE_KP_PLUS] = 0;
+			keystatus[SDLK_KP_PLUS] = 0;
 			item->beatitude += 1;
 			/*for ( int i = 0; i < 100; ++i )
 			{
@@ -4502,24 +4502,24 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				printlog("%d %d %d", (r >> 8 & 0xF), (r >> 4 & 0xF), (r & 0xF));
 			}*/
 		}
-		if ( keystatus[SDL_SCANCODE_KP_MINUS] )
+		if ( keystatus[SDLK_KP_MINUS] )
 		{
-			keystatus[SDL_SCANCODE_KP_MINUS] = 0;
+			keystatus[SDLK_KP_MINUS] = 0;
 			item->beatitude -= 1;
 		}
-		if ( keystatus[SDL_SCANCODE_KP_6] )
+		if ( keystatus[SDLK_KP_6] )
 		{
-			keystatus[SDL_SCANCODE_KP_6] = 0;
+			keystatus[SDLK_KP_6] = 0;
 			item->status = std::min(EXCELLENT, static_cast<Status>(item->status + 1));
 		}
-		if ( keystatus[SDL_SCANCODE_KP_4] )
+		if ( keystatus[SDLK_KP_4] )
 		{
-			keystatus[SDL_SCANCODE_KP_4] = 0;
+			keystatus[SDLK_KP_4] = 0;
 			item->status = std::max(BROKEN, static_cast<Status>(item->status - 1));
 		}
-		if ( keystatus[SDL_SCANCODE_KP_5] )
+		if ( keystatus[SDLK_KP_5] )
 		{
-			keystatus[SDL_SCANCODE_KP_5] = 0;
+			keystatus[SDLK_KP_5] = 0;
 			if ( item->type == WOODEN_SHIELD )
 			{
 				item->type = static_cast<ItemType>(NUMITEMS - 1);
@@ -4533,9 +4533,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 			}
 		}
-		if ( keystatus[SDL_SCANCODE_KP_8] )
+		if ( keystatus[SDLK_KP_8] )
 		{
-			keystatus[SDL_SCANCODE_KP_8] = 0;
+			keystatus[SDLK_KP_8] = 0;
 			if ( item->type == NUMITEMS - 1 )
 			{
 				item->type = WOODEN_SHIELD;
@@ -6409,7 +6409,7 @@ void Player::Inventory_t::setCompactView(bool bCompact)
 				invertJustification = true;
 			}
 		}
-		if ( keystatus[SDL_SCANCODE_T] && enableDebugKeys )
+		if ( keystatus[SDLK_t] && enableDebugKeys )
 		{
 			invertJustification = !invertJustification;
 		}
@@ -6739,7 +6739,7 @@ void Player::Inventory_t::updateInventory()
 	appraisal.updateAppraisalAnim();
 
 	bool bCompactView = false;
-	if ( (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
+	if ( (keystatus[SDLK_y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
 	{
 		bCompactView = true;
 	}
@@ -6930,7 +6930,7 @@ void Player::Inventory_t::updateInventory()
 	{
 		autosortInventory(player);
 		//quickStackItems();
-		*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
+		//*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
 		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 		playSound(139, 64);
 	}
@@ -8723,11 +8723,11 @@ void Player::Inventory_t::updateInventory()
 				// handle clicking
 				if ( Input::inputs[player].binaryToggle("MenuLeftClick") && !selectedItem && inventoryControlActive && inputs.bPlayerUsingKeyboardControl(player) )
 				{
-					if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+					if ( (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( true /*keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]*/ )
+							if ( true /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -8781,7 +8781,7 @@ void Player::Inventory_t::updateInventory()
 				else if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) //TODO: selected shop slot, identify, remove curse?
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] ) //TODO: selected shop slot, identify, remove curse?
 					{
 						if ( guiAllowDefaultRightClick() )
 						{
@@ -8792,7 +8792,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					else if ( !disableItemUsage
 						&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
-						(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+						(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
 					{
 						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						if ( guiAllowDefaultRightClick() )

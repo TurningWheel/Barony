@@ -53,7 +53,7 @@ public:
 		bindtype_t type = INVALID;
 
 		//! keyboard binding info
-		SDL_Scancode scancode = SDL_Scancode::SDL_SCANCODE_UNKNOWN;
+		SDL_Keycode keycode = SDLK_UNKNOWN;
 
 		//! gamepad binding info
 		int padIndex = -1;
@@ -179,7 +179,7 @@ public:
 	static int waitingToBindControllerForPlayer;
 	static std::unordered_map<int, SDL_GameController*> gameControllers;
 	static std::unordered_map<int, SDL_Joystick*> joysticks;
-	static bool keys[SDL_NUM_SCANCODES];
+    static std::unordered_map<SDL_Keycode, bool> keys;
 	static bool mouseButtons[18];
 	static const int MOUSE_WHEEL_UP;
 	static const int MOUSE_WHEEL_DOWN;
@@ -225,8 +225,8 @@ private:
 	static const float analogToggleThreshold;
 
 	//! map of scancodes to input names
-	static std::unordered_map<std::string, SDL_Scancode> scancodeNames;
-	static SDL_Scancode getScancodeFromName(const char* name);
+	static std::unordered_map<std::string, SDL_Keycode> keycodeNames;
+	static SDL_Keycode getKeycodeFromName(const char* name);
 
 	//! number of game ticks to consider a button 'held' for long-press actions
 	static const Uint32 BUTTON_HELD_TICKS;

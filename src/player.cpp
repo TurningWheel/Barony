@@ -459,19 +459,19 @@ void GameController::handleAnalog(int player)
 	{
 		if ( enableDebugKeys )
 		{
-			if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_EQUALS] )
+			if ( keystatus[SDLK_F1] && keystatus[SDLK_EQUALS] )
 			{
 				leftStickDeadzone = std::min(leftStickDeadzone + 100, 32767);
 			}
-			else if ( keystatus[SDL_SCANCODE_F1] && keystatus[SDL_SCANCODE_MINUS] )
+			else if ( keystatus[SDLK_F1] && keystatus[SDLK_MINUS] )
 			{
 				leftStickDeadzone = std::max(leftStickDeadzone - 100, 0);
 			}
-			if ( keystatus[SDL_SCANCODE_F2] && keystatus[SDL_SCANCODE_EQUALS] )
+			if ( keystatus[SDLK_F2] && keystatus[SDLK_EQUALS] )
 			{
 				rightStickDeadzone = std::min(rightStickDeadzone + 100, 32767);
 			}
-			else if ( keystatus[SDL_SCANCODE_F2] && keystatus[SDL_SCANCODE_MINUS] )
+			else if ( keystatus[SDLK_F2] && keystatus[SDLK_MINUS] )
 			{
 				rightStickDeadzone = std::max(rightStickDeadzone - 100, 0);
 			}

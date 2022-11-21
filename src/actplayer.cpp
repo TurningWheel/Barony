@@ -63,10 +63,10 @@ bool partymode = false;
 
 void actDeathCam(Entity* my)
 {
-	/*if ( keystatus[SDL_SCANCODE_F4] )
+	/*if ( keystatus[SDLK_F4] )
 	{
 		buttonStartSingleplayer(nullptr);
-		keystatus[SDL_SCANCODE_F4] = 0;
+		keystatus[SDLK_F4] = 0;
 	}*/
 	DEATHCAM_TIME++;
 
@@ -1190,7 +1190,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
 					if ( noclip )
 					{
-						if ( keystatus[SDL_SCANCODE_LSHIFT] )
+						if ( keystatus[SDLK_LSHIFT] )
 						{
 							x_force = x_force * 0.5;
 							y_force = y_force * 0.5;
@@ -1290,7 +1290,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(0.75, refreshRateDelta);
 	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	//if ( keystatus[SDL_SCANCODE_G] )
+	//if ( keystatus[SDLK_G] )
 	//{
 		//messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
 		//messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
@@ -1560,39 +1560,39 @@ void doStatueEditor(int player)
 		if ( Entity* limb = uidToEntity(StatueManager.lastEntityUnderMouse) )
 		{
 			limb->highlightForUI = 1.0;
-			if ( keystatus[SDL_SCANCODE_O] )
+			if ( keystatus[SDLK_o] )
 			{
-				keystatus[SDL_SCANCODE_O] = 0;
+				keystatus[SDLK_o] = 0;
 				Input::inputs[player].refresh();
 				limb->pitch += PI / 32;
 			}
-			if ( keystatus[SDL_SCANCODE_P] )
+			if ( keystatus[SDLK_p] )
 			{
-				keystatus[SDL_SCANCODE_P] = 0;
+				keystatus[SDLK_p] = 0;
 				Input::inputs[player].refresh();
 				limb->pitch -= PI / 32;
 			}
-			if ( keystatus[SDL_SCANCODE_K] )
+			if ( keystatus[SDLK_k] )
 			{
-				keystatus[SDL_SCANCODE_K] = 0;
+				keystatus[SDLK_k] = 0;
 				Input::inputs[player].refresh();
 				limb->roll += PI / 32;
 			}
-			if ( keystatus[SDL_SCANCODE_L] )
+			if ( keystatus[SDLK_l] )
 			{
-				keystatus[SDL_SCANCODE_L] = 0;
+				keystatus[SDLK_l] = 0;
 				Input::inputs[player].refresh();
 				limb->roll -= PI / 32;
 			}
-			if ( keystatus[SDL_SCANCODE_COMMA] )
+			if ( keystatus[SDLK_COMMA] )
 			{
-				keystatus[SDL_SCANCODE_COMMA] = 0;
+				keystatus[SDLK_COMMA] = 0;
 				Input::inputs[player].refresh();
 				limb->yaw += PI / 32;
 			}
-			if ( keystatus[SDL_SCANCODE_PERIOD] )
+			if ( keystatus[SDLK_PERIOD] )
 			{
-				keystatus[SDL_SCANCODE_PERIOD] = 0;
+				keystatus[SDLK_PERIOD] = 0;
 				Input::inputs[player].refresh();
 				limb->yaw -= PI / 32;
 			}
@@ -1602,22 +1602,22 @@ void doStatueEditor(int player)
 		{
 			Stat* stats = playerEntity->getStats();
 
-			if ( keystatus[SDL_SCANCODE_LEFTBRACKET] )
+			if ( keystatus[SDLK_LEFTBRACKET] )
 			{
-				keystatus[SDL_SCANCODE_LEFTBRACKET] = 0;
+				keystatus[SDLK_LEFTBRACKET] = 0;
 				Input::inputs[player].refresh();
 				StatueManager.statueEditorHeightOffset -= .25;
 			}
-			if ( keystatus[SDL_SCANCODE_RIGHTBRACKET] )
+			if ( keystatus[SDLK_RIGHTBRACKET] )
 			{
-				keystatus[SDL_SCANCODE_RIGHTBRACKET] = 0;
+				keystatus[SDLK_RIGHTBRACKET] = 0;
 				Input::inputs[player].refresh();
 				StatueManager.statueEditorHeightOffset += .25;
 			}
 
-			if ( keystatus[SDL_SCANCODE_F1] )
+			if ( keystatus[SDLK_F1] )
 			{
-				keystatus[SDL_SCANCODE_F1] = 0;
+				keystatus[SDLK_F1] = 0;
 
 				++stats->playerRace;
 				if ( playerEntity->getMonsterFromPlayerRace(stats->playerRace) == HUMAN && stats->playerRace > 0 )
@@ -1629,9 +1629,9 @@ void doStatueEditor(int player)
 					stats->appearance = 0;
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_F2] )
+			if ( keystatus[SDLK_F2] )
 			{
-				keystatus[SDL_SCANCODE_F2] = 0;
+				keystatus[SDLK_F2] = 0;
 
 				++stats->appearance;
 				if ( stats->appearance >= NUMAPPEARANCES )
@@ -1639,9 +1639,9 @@ void doStatueEditor(int player)
 					stats->appearance = 0;
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_F3] )
+			if ( keystatus[SDLK_F3] )
 			{
-				keystatus[SDL_SCANCODE_F3] = 0;
+				keystatus[SDLK_F3] = 0;
 				if ( stats->sex == MALE )
 				{
 					stats->sex = FEMALE;
@@ -1651,17 +1651,17 @@ void doStatueEditor(int player)
 					stats->sex = MALE;
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_F4] )
+			if ( keystatus[SDLK_F4] )
 			{
-				keystatus[SDL_SCANCODE_F4] = 0;
+				keystatus[SDLK_F4] = 0;
 				StatueManager.drawGreyscale = !StatueManager.drawGreyscale;
 			}
 
-			if ( keystatus[SDL_SCANCODE_1] )
+			if ( keystatus[SDLK_1] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_1] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_1] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->helmet )
 					{
@@ -1675,7 +1675,7 @@ void doStatueEditor(int player)
 					{
 						stats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->helmet, false);
 					}
@@ -1685,11 +1685,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_2] )
+			if ( keystatus[SDLK_2] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_2] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_2] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->breastplate )
 					{
@@ -1703,7 +1703,7 @@ void doStatueEditor(int player)
 					{
 						stats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->breastplate, false);
 					}
@@ -1713,11 +1713,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_3] )
+			if ( keystatus[SDLK_3] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_3] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_3] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->gloves )
 					{
@@ -1731,7 +1731,7 @@ void doStatueEditor(int player)
 					{
 						stats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->gloves, false);
 					}
@@ -1741,11 +1741,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_4] )
+			if ( keystatus[SDLK_4] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_4] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_4] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->shoes )
 					{
@@ -1759,7 +1759,7 @@ void doStatueEditor(int player)
 					{
 						stats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->shoes, false);
 					}
@@ -1769,11 +1769,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_5] )
+			if ( keystatus[SDLK_5] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_5] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_5] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->weapon )
 					{
@@ -1787,7 +1787,7 @@ void doStatueEditor(int player)
 					{
 						stats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->weapon, false);
 					}
@@ -1797,11 +1797,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_6] )
+			if ( keystatus[SDLK_6] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_6] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_6] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->shield )
 					{
@@ -1815,7 +1815,7 @@ void doStatueEditor(int player)
 					{
 						stats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->shield, false);
 					}
@@ -1825,11 +1825,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_7] )
+			if ( keystatus[SDLK_7] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_7] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_7] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->mask )
 					{
@@ -1843,7 +1843,7 @@ void doStatueEditor(int player)
 					{
 						stats->mask = newItem(TOOL_GLASSES, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->mask, false);
 					}
@@ -1853,11 +1853,11 @@ void doStatueEditor(int player)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_8] )
+			if ( keystatus[SDLK_8] )
 			{
 				Input::inputs[player].refresh();
-				keystatus[SDL_SCANCODE_8] = 0;
-				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
+				keystatus[SDLK_8] = 0;
+				if ( keystatus[SDLK_LALT] || keystatus[SDLK_RALT] )
 				{
 					if ( stats->cloak )
 					{
@@ -1871,7 +1871,7 @@ void doStatueEditor(int player)
 					{
 						stats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, local_rng.rand(), true, &stats->inventory);
 					}
-					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						statueCycleItem(*stats->cloak, false);
 					}
@@ -2863,10 +2863,10 @@ void actPlayer(Entity* my)
 	}
 
 	// debug stuff
-	/*if ( !command && keystatus[SDL_SCANCODE_O] )
+	/*if ( !command && keystatus[SDLK_O] )
 	{
 		consoleCommand("/facebaralternate");
-		keystatus[SDL_SCANCODE_O] = 0;
+		keystatus[SDLK_O] = 0;
 	}*/
 	if (enableDebugKeys)
 	{
@@ -2875,38 +2875,38 @@ void actPlayer(Entity* my)
 		{
 			consoleCommand("/jumplevel -1");
 		}
-		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_1] )
+		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_1] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 0;
-		    keystatus[SDL_SCANCODE_KP_1] = 0;
+		    keystatus[SDLK_KP_1] = 0;
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 0");
 	    }
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_2] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_2] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 1;
-		    keystatus[SDL_SCANCODE_KP_2] = 0;
+		    keystatus[SDLK_KP_2] = 0;
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 1");
 	    }
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_3] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_3] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 2;
-		    keystatus[SDL_SCANCODE_KP_3] = 0;
+		    keystatus[SDLK_KP_3] = 0;
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 2");
 	    }
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_4] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_4] )
 	    {
 		    Input::waitingToBindControllerForPlayer = 3;
-		    keystatus[SDL_SCANCODE_KP_4] = 0;
+		    keystatus[SDLK_KP_4] = 0;
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Waiting to bind controller for player: 3");
 	    }
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_5] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_5] )
 	    {
-		    keystatus[SDL_SCANCODE_KP_5] = 0;
+		    keystatus[SDLK_KP_5] = 0;
 		    consoleCommand("/cyclekeyboard");
 	    }
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_0] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_0] )
 	    {
-		    keystatus[SDL_SCANCODE_KP_0] = 0;
+		    keystatus[SDLK_KP_0] = 0;
 		    inputs.setPlayerIDAllowedKeyboard(-1);
 	        for ( int i = 0; i < MAXPLAYERS; ++i )
 	        {
@@ -2914,14 +2914,14 @@ void actPlayer(Entity* my)
 	        }
 		    messagePlayer(PLAYER_NUM, MESSAGE_DEBUG, "Removed keyboard for any player");
 	    }
-		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_7] )
+		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_7] )
 		{
-			keystatus[SDL_SCANCODE_KP_7] = 0;
+			keystatus[SDLK_KP_7] = 0;
 			consoleCommand("/splitscreen");
 		}
-		if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_8] )
+		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_8] )
 		{
-			keystatus[SDL_SCANCODE_KP_8] = 0;
+			keystatus[SDLK_KP_8] = 0;
 			if ( !players[PLAYER_NUM]->inventoryUI.chestGUI.bOpen )
 			{
 				players[PLAYER_NUM]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
@@ -2932,9 +2932,9 @@ void actPlayer(Entity* my)
 				players[PLAYER_NUM]->inventoryUI.chestGUI.closeChest();
 			}
 		}
-	    if ( keystatus[SDL_SCANCODE_LCTRL] && keystatus[SDL_SCANCODE_KP_9] )
+	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_9] )
 	    {
-		    keystatus[SDL_SCANCODE_KP_9] = 0;
+		    keystatus[SDLK_KP_9] = 0;
 		    for ( int i = 0; i < MAXPLAYERS; ++i )
 		    {
 			    if ( inputs.hasController(i) )
@@ -2951,36 +2951,36 @@ void actPlayer(Entity* my)
 	}
 	if ( inputs.hasController(PLAYER_NUM) )
 	{
-		//if ( keystatus[SDL_SCANCODE_KP_1] )
+		//if ( keystatus[SDLK_KP_1] )
 		//{
-		//	keystatus[SDL_SCANCODE_KP_1] = 0;
+		//	keystatus[SDLK_KP_1] = 0;
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_NORMAL, 1000, 1000, 1 * TICKS_PER_SECOND, 0);
 		//}
-		//if ( keystatus[SDL_SCANCODE_KP_2] )
+		//if ( keystatus[SDLK_KP_2] )
 		//{
-		//	keystatus[SDL_SCANCODE_KP_2] = 0;
+		//	keystatus[SDLK_KP_2] = 0;
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_DEATH, 30000, 30000, 2 * TICKS_PER_SECOND, 0);
 		//	//SDL_HapticRumblePlay(inputs.getController(PLAYER_NUM)->getHaptic(), 0.5, 2000);
 		//}
-		//if ( keystatus[SDL_SCANCODE_KP_3] )
+		//if ( keystatus[SDLK_KP_3] )
 		//{
-		//	keystatus[SDL_SCANCODE_KP_3] = 0;
+		//	keystatus[SDLK_KP_3] = 0;
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_BOULDER, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
 		//}
-		//if ( keystatus[SDL_SCANCODE_KP_4] )
+		//if ( keystatus[SDLK_KP_4] )
 		//{
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 1 * TICKS_PER_SECOND, 0);
-		//	keystatus[SDL_SCANCODE_KP_4] = 0;
+		//	keystatus[SDLK_KP_4] = 0;
 		//}
-		//if ( keystatus[SDL_SCANCODE_KP_5] )
+		//if ( keystatus[SDLK_KP_5] )
 		//{
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 3 * TICKS_PER_SECOND, 0);
-		//	keystatus[SDL_SCANCODE_KP_5] = 0;
+		//	keystatus[SDLK_KP_5] = 0;
 		//}
-		//if ( keystatus[SDL_SCANCODE_KP_6] )
+		//if ( keystatus[SDLK_KP_6] )
 		//{
 		//	inputs.rumble(PLAYER_NUM, GameController::Haptic_t::RUMBLE_TMP, 30000, 30000, 10 * TICKS_PER_SECOND, 0);
-		//	keystatus[SDL_SCANCODE_KP_6] = 0;
+		//	keystatus[SDLK_KP_6] = 0;
 		//}
 		/*if ( inputs.bControllerInputPressed(PLAYER_NUM, INJOY_GAME_ATTACK) )
 		{
@@ -2992,16 +2992,16 @@ void actPlayer(Entity* my)
 		//	inputs.getController(PLAYER_NUM)->haptics.playerOnHit.largeMagnitude, inputs.getController(PLAYER_NUM)->haptics.playerOnHit.length);
 	}
 
-	//if ( keystatus[SDL_SCANCODE_F1] )
+	//if ( keystatus[SDLK_F1] )
 	//{
-	//	keystatus[SDL_SCANCODE_F1] = 0;
+	//	keystatus[SDLK_F1] = 0;
 	//	auto potion = potionStandardAppearanceMap[local_rng.rand() % 3];
 	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + local_rng.rand() % 3, 1, 0, false, NULL);
 	//	useItem(item, PLAYER_NUM, my);
 	//}
-	//if ( keystatus[SDL_SCANCODE_F2] )
+	//if ( keystatus[SDLK_F2] )
 	//{
-	//	keystatus[SDL_SCANCODE_F2] = 0;
+	//	keystatus[SDLK_F2] = 0;
 	//	auto potion = potionStandardAppearanceMap[local_rng.rand() % potionStandardAppearanceMap.size()];
 	//	if ( potion.first >= POTION_FIRESTORM && potion.first <= POTION_ICESTORM && local_rng.rand() % 10 <= 7 )
 	//	{
@@ -3010,9 +3010,9 @@ void actPlayer(Entity* my)
 	//	Item* item = newItem(static_cast<ItemType>(potion.first), static_cast<Status>(4), -1 + local_rng.rand() % 3, 1, 0, false, NULL);
 	//	useItem(item, PLAYER_NUM, my);
 	//}
-	//if ( keystatus[SDL_SCANCODE_F3] )
+	//if ( keystatus[SDLK_F3] )
 	//{
-	//	keystatus[SDL_SCANCODE_F3] = 0;
+	//	keystatus[SDLK_F3] = 0;
 	//	int limitX = map.width;
 	//	int limitY = map.height;
 	//	if ( !strncmp(map.name, "Mages Guild", 11) )
@@ -3105,9 +3105,9 @@ void actPlayer(Entity* my)
 	//		}
 	//	}
 	//}
-	//if ( keystatus[SDL_SCANCODE_F4] )
+	//if ( keystatus[SDLK_F4] )
 	//{
-	//	keystatus[SDL_SCANCODE_F4] = 0;
+	//	keystatus[SDLK_F4] = 0;
 	//	everybodyfriendly = true;
 	//	buddhamode = true;
 	//	std::vector<std::pair<int, int>> goodspots;
@@ -3192,14 +3192,14 @@ void actPlayer(Entity* my)
 	//		goodspots.erase(iter);
 	//	}
 	//}
-	//if ( keystatus[SDL_SCANCODE_F5] )
+	//if ( keystatus[SDLK_F5] )
 	//{
-	//	keystatus[SDL_SCANCODE_F5] = 0;
+	//	keystatus[SDLK_F5] = 0;
 	//	partymode = !partymode;
 	//}
-	//if ( keystatus[SDL_SCANCODE_F7] )
+	//if ( keystatus[SDLK_F7] )
 	//{
-	//	keystatus[SDL_SCANCODE_F7] = 0;
+	//	keystatus[SDLK_F7] = 0;
 	//	//playmusic(endgamemusic, true, false, false);
 	//	for ( node_t* node = map.entities->first; node; )
 	//	{
@@ -3226,15 +3226,15 @@ void actPlayer(Entity* my)
 	//		}
 	//	}
 	//}
-	//if ( keystatus[SDL_SCANCODE_F8] )
+	//if ( keystatus[SDLK_F8] )
 	//{
-	//	keystatus[SDL_SCANCODE_F8] = 0;
+	//	keystatus[SDLK_F8] = 0;
 	//	playmusic(librarymusic, true, false, false);
 	//	FMOD_ChannelGroup_SetVolume(music_group, (musvolume + 20) / 128.f);
 	//}
-	//if ( keystatus[SDL_SCANCODE_F9] )
+	//if ( keystatus[SDLK_F9] )
 	//{
-	//	keystatus[SDL_SCANCODE_F9] = 0;
+	//	keystatus[SDLK_F9] = 0;
 	//	everybodyfriendly = true;
 	//	buddhamode = true;
 	//	real_t x = my->x - 32.0 * cos(my->yaw);
@@ -3297,41 +3297,41 @@ void actPlayer(Entity* my)
 	//		goodspots.erase(iter);
 	//	}
 	//}
-	//if ( keystatus[SDL_SCANCODE_F1] )
+	//if ( keystatus[SDLK_F1] )
 	//{
 	//	//gameloopFreezeEntities = !gameloopFreezeEntities;
 	//	cpp_SteamMatchmaking_RequestAppTicket();
-	//	keystatus[SDL_SCANCODE_F1] = 0;
+	//	keystatus[SDLK_F1] = 0;
 	//}
 	/*if ( my->ticks % 50 == 0 )
 	{
 		messagePlayer(PLAYER_NUM, "%d", stats[PLAYER_NUM]->HUNGER);
 	}*/
 	/*
-	if ( keystatus[SDL_SCANCODE_F2] )
+	if ( keystatus[SDLK_F2] )
 	{
 		if ( players[PLAYER_NUM] != nullptr && players[PLAYER_NUM]->entity != nullptr )
 		{
 			lightSphereShadow(players[PLAYER_NUM]->entity->x / 16, players[PLAYER_NUM]->entity->y / 16, 8, 150);
 		}
-		keystatus[SDL_SCANCODE_F2] = 0;
+		keystatus[SDLK_F2] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_F3] )
+	if ( keystatus[SDLK_F3] )
 	{
 		if ( players[PLAYER_NUM] != nullptr && players[PLAYER_NUM]->entity != nullptr )
 		{
 			players[PLAYER_NUM]->entity->skill[3] = (players[PLAYER_NUM]->entity->skill[3] == 0);
 		}
-		keystatus[SDL_SCANCODE_F3] = 0;
+		keystatus[SDLK_F3] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_F4] )
+	if ( keystatus[SDLK_F4] )
 	{
 		buttonStartSingleplayer(nullptr);
-		keystatus[SDL_SCANCODE_F4] = 0;
+		keystatus[SDLK_F4] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_F4] )
+	if ( keystatus[SDLK_F4] )
 	{
-		keystatus[SDL_SCANCODE_F4] = 0;
+		keystatus[SDLK_F4] = 0;
 
 		SteamUserStats()->SetAchievement("BARONY_ACH_BONY_BARON");
 		SteamUserStats()->SetAchievement("BARONY_ACH_BUCKTOOTH_BARON");
@@ -3343,9 +3343,9 @@ void actPlayer(Entity* my)
 		SteamUserStats()->SetAchievement("BARONY_ACH_BUGGAR_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_F5] )
+	if ( keystatus[SDLK_F5] )
 	{
-		keystatus[SDL_SCANCODE_F5] = 0;
+		keystatus[SDLK_F5] = 0;
 		SteamUserStats()->ClearAchievement("BARONY_ACH_BONY_BARON");
 		SteamUserStats()->ClearAchievement("BARONY_ACH_BUCKTOOTH_BARON");
 		SteamUserStats()->ClearAchievement("BARONY_ACH_BOMBSHELL_BARON");
@@ -3356,51 +3356,51 @@ void actPlayer(Entity* my)
 		SteamUserStats()->ClearAchievement("BARONY_ACH_BUGGAR_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_1] )
+	if ( keystatus[SDLK_KP_1] )
 	{
-		keystatus[SDL_SCANCODE_KP_1] = 0;
+		keystatus[SDLK_KP_1] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BONY_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_2] )
+	if ( keystatus[SDLK_KP_2] )
 	{
-		keystatus[SDL_SCANCODE_KP_2] = 0;
+		keystatus[SDLK_KP_2] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BUCKTOOTH_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_3] )
+	if ( keystatus[SDLK_KP_3] )
 	{
-		keystatus[SDL_SCANCODE_KP_3] = 0;
+		keystatus[SDLK_KP_3] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BOMBSHELL_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_4] )
+	if ( keystatus[SDLK_KP_4] )
 	{
-		keystatus[SDL_SCANCODE_KP_4] = 0;
+		keystatus[SDLK_KP_4] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BLEATING_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_5] )
+	if ( keystatus[SDLK_KP_5] )
 	{
-		keystatus[SDL_SCANCODE_KP_5] = 0;
+		keystatus[SDLK_KP_5] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BOILERPLATE_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_6] )
+	if ( keystatus[SDLK_KP_6] )
 	{
-		keystatus[SDL_SCANCODE_KP_6] = 0;
+		keystatus[SDLK_KP_6] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BAD_BOY_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_7] )
+	if ( keystatus[SDLK_KP_7] )
 	{
-		keystatus[SDL_SCANCODE_KP_7] = 0;
+		keystatus[SDLK_KP_7] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BAYOU_BARON");
 		SteamUserStats()->StoreStats();
 	}
-	if ( keystatus[SDL_SCANCODE_KP_8] )
+	if ( keystatus[SDLK_KP_8] )
 	{
-		keystatus[SDL_SCANCODE_KP_8] = 0;
+		keystatus[SDLK_KP_8] = 0;
 		SteamUserStats()->SetAchievement("BARONY_ACH_BUGGAR_BARON");
 		SteamUserStats()->StoreStats();
 	}*/

@@ -806,7 +806,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		}
 		if ( buttonRefresh )
 		{
-			buttonRefresh->key = SDL_SCANCODE_RETURN;
+			buttonRefresh->key = SDLK_RETURN;
 		}
 		return;
 	}
@@ -834,7 +834,7 @@ void LobbyHandler_t::drawLobbyFilters()
 		buttonFilterSearch->sizey = 20;
 		buttonFilterSearch->visible = 1;
 		buttonFilterSearch->focused = 1;
-		buttonFilterSearch->key = SDL_SCANCODE_RETURN;
+		buttonFilterSearch->key = SDLK_RETURN;
 		strcpy(buttonFilterSearch->label, language[3953]);
 		buttonFilterSearch->action = &LobbyHandler.searchLobbyWithFilter;
 	}
