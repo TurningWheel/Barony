@@ -5,7 +5,10 @@
 
 #ifdef USE_EOS
 
+#include "main.hpp"
 #include "eos.hpp"
+
+EOSFuncs EOS;
 
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
