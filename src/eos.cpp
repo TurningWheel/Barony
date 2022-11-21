@@ -3167,10 +3167,10 @@ void EOSFuncs::Accounts_t::handleLogin()
 		if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
 		{
 			UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
-			n->setHeaderText(std::string("Account Status"));
-			n->setMainText(std::string("Logging in..."));
-			n->setSecondaryText(std::string("An error has occurred!"));
-			n->setActionText(std::string("Retry"));
+			n->setHeaderText("Account Status");
+			n->setMainText("Logging in...");
+			n->setSecondaryText("An error has occurred!");
+			n->setActionText("Retry");
 			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
 			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 			n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
@@ -3193,7 +3193,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 				{
 					n->showMainCard();
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-					n->setSecondaryText(std::string("Logged in successfully!"));
+					n->setSecondaryText("Logged in successfully!");
 					n->updateCardEvent(false, true);
 					n->setIdleSeconds(5);
 				}
@@ -3218,9 +3218,9 @@ void EOSFuncs::Accounts_t::handleLogin()
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 					char buf[128] = "";
-					snprintf(buf, 128 - 1, "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
+					snprintf(buf, sizeof(buf), "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
 					n->showMainCard();
-					n->setSecondaryText(std::string(buf));
+					n->setSecondaryText(buf);
 					n->updateCardEvent(false, true);
 					n->setIdleSeconds(10);
 				}
@@ -3235,10 +3235,10 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT) )
 	{
 		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
-		n->setHeaderText(std::string("Crossplay Status"));
-		n->setMainText(std::string("Initializing..."));
-		n->setSecondaryText(std::string("An error has occurred!"));
-		n->setActionText(std::string("Retry"));
+		n->setHeaderText("Crossplay Status");
+		n->setMainText("Initializing...");
+		n->setSecondaryText("An error has occurred!");
+		n->setActionText("Retry");
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
@@ -3340,7 +3340,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 				n->showMainCard();
-				n->setMainText(std::string("Steam account linked.\nCrossplay enabled."));
+				n->setMainText("Steam account linked.\nCrossplay enabled.");
 				n->updateCardEvent(true, false);
 				n->setIdleSeconds(5);
 			}
@@ -3363,7 +3363,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 			{
 				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->showMainCard();
-				n->setSecondaryText(std::string("New Steam user.\nAccept EULA to proceed."));
+				n->setSecondaryText("New Steam user.\nAccept EULA to proceed.");
 				n->updateCardEvent(false, true);
 				n->setIdleSeconds(10);
 			}
@@ -3379,9 +3379,9 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 				char buf[128] = "";
-				snprintf(buf, 128 - 1, "Setup has failed.\nError code: %d", static_cast<int>(connectLoginStatus));
+				snprintf(buf, sizeof(buf), "Setup has failed.\nError code: %d", static_cast<int>(connectLoginStatus));
 				n->showMainCard();
-				n->setSecondaryText(std::string(buf));
+				n->setSecondaryText(buf);
 				n->updateCardEvent(false, true);
 				n->buttonAction = &EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure;
 				n->setIdleSeconds(10);

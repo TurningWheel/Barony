@@ -1618,14 +1618,8 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 		if ( mode )
 		{
-			// print community links
 			if ( SteamUser()->BLoggedOn() )
 			{
-				if ( ticks % 50 == 0 )
-				{
-					UIToastNotificationManager.createCommunityNotification();
-				}
-
 				// upgrade steam achievement for existing hunters
 				if ( ticks % 250 == 0 )
 				{
@@ -1638,24 +1632,6 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-			}
-		}
-#elif defined USE_EOS
-		if ( mode )
-		{
-			if ( ticks % 50 == 0 )
-			{
-				UIToastNotificationManager.createCommunityNotification();
-			}
-		}
-#endif
-
-#ifdef USE_EOS
-		if ( mode && EOS.StatGlobalManager.bPromoEnabled )
-		{
-			if ( ticks % 100 == 0 )
-			{
-				UIToastNotificationManager.createPromoNotification();
 			}
 		}
 #endif
@@ -12651,9 +12627,16 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			}
 			gamemods_workshopSetPropertyReturn[1] = SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, gamemods_uploadDescription);
 #ifdef WINDOWS
-			char pathbuffer[PATH_MAX];
-			GetFullPathName(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
-			std::string fullpath = pathbuffer;
+			wchar_t pathbuffer[PATH_MAX];
+			const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
+			auto buf1 = new wchar_t[len1];
+			MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, buf1, len1);
+			const int pathlen = GetFullPathName(buf1, PATH_MAX, pathbuffer, NULL);
+			delete[] buf1;
+			const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
+			auto buf2 = new char[len2];
+			WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
+			std::string fullpath = buf2;
 #else
 			char pathbuffer[PATH_MAX];
 			realpath(directoryToUpload.c_str(), pathbuffer);
@@ -12753,9 +12736,16 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 			if ( !directoryFilesListToUpload.empty() )
 			{
 #ifdef WINDOWS
-				char pathbuffer[PATH_MAX];
-				GetFullPathName(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
-				std::string fullpath = pathbuffer;
+				wchar_t pathbuffer[PATH_MAX];
+				const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
+				auto buf1 = new wchar_t[len1];
+				MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, buf1, len1);
+				const int pathlen = GetFullPathName(buf1, PATH_MAX, pathbuffer, NULL);
+				delete[] buf1;
+				const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
+				auto buf2 = new char[len2];
+				WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
+				std::string fullpath = buf2;
 #else
 				char pathbuffer[PATH_MAX];
 				realpath(directoryToUpload.c_str(), pathbuffer);

@@ -128,6 +128,10 @@ void Frame::fboDestroy() {
 #endif
 }
 
+#ifndef EDITOR
+#include "../interface/ui.hpp"
+#endif
+
 void Frame::guiInit() {
 	if ( _virtualScreenX == 0 && _virtualScreenY == 0 ) {
 		const int defaultWidth = _virtualScreenDefaultWidth;
@@ -160,6 +164,7 @@ void Frame::guiInit() {
 		gameUIFrame[i]->setOwner(i);
 		gameUIFrame[i]->setDisabled(true);
 	}
+	UIToastNotificationManager.init();
 #endif
 }
 
@@ -178,6 +183,8 @@ void Frame::guiDestroy() {
 		MainMenu::destroyMainMenu();
 	}
 	minimapFrame = nullptr; // shared minimap
+
+	UIToastNotificationManager.term();
 #endif
 
 	if (gui) {
@@ -1614,38 +1621,38 @@ void Frame::removeSelf() {
 void Frame::clear() {
 	// delete frames
 	while (frames.size()) {
-		delete frames.front();
-		frames.erase(frames.begin());
+		delete frames.back();
+		frames.pop_back();
 	}
 
 	// delete buttons
 	while (buttons.size()) {
-		delete buttons.front();
-		buttons.erase(buttons.begin());
+		delete buttons.back();
+		buttons.pop_back();
 	}
 
 	// delete fields
 	while (fields.size()) {
-		delete fields.front();
-		fields.erase(fields.begin());
+		delete fields.back();
+		fields.pop_back();
 	}
 
 	// delete images
 	while (images.size()) {
-		delete images.front();
-		images.erase(images.begin());
+		delete images.back();
+		images.pop_back();
 	}
 
 	// delete sliders
 	while (sliders.size()) {
-		delete sliders.front();
-		sliders.erase(sliders.begin());
+		delete sliders.back();
+		sliders.pop_back();
 	}
 
 	// delete list
 	while (list.size()) {
-		delete list.front();
-		list.erase(list.begin());
+		delete list.back();
+		list.pop_back();
 	}
 	selection = -1;
 }
@@ -2563,6 +2570,7 @@ void Frame::bringToTop() {
         if (*it == this) {
             frames.erase(it);
             frames.push_back(this);
+			return;
         }
     }
 }
