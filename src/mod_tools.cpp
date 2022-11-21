@@ -4045,25 +4045,27 @@ bool GlyphRenderer_t::readFromFile()
 		for ( auto& keyValue : allGlyphs )
 		{
 			auto& glyphData = keyValue.second;
-			std::string tmpPath = basePath;
-			tmpPath += glyphData.folder;
-			tmpPath += '/';
-			tmpPath += glyphData.filename;
+            glyphData.fullpath = "";
+            glyphData.pressedRenderedFullpath = "";
+            glyphData.unpressedRenderedFullpath = "";
+            
+            glyphData.fullpath = basePath;
+            glyphData.fullpath += glyphData.folder;
+            glyphData.fullpath += '/';
+            glyphData.fullpath += glyphData.filename;
 
-			if ( !PHYSFS_getRealDir(tmpPath.c_str()) ) // you need single forward '/' slashes for getRealDir to report true
+			if ( !PHYSFS_getRealDir(glyphData.fullpath.c_str()) ) // you need single forward '/' slashes for getRealDir to report true
 			{
-				printlog("[JSON]: Glyph path: %s not detected, skipping...", tmpPath.c_str());
-				glyphData.fullpath = "";
-				glyphData.pressedRenderedFullpath = "";
-				glyphData.unpressedRenderedFullpath = "";
-				continue;
+				printlog("[JSON]: Glyph path: %s not detected; won't be able to render!", glyphData.fullpath.c_str());
+                glyphData.fullpath = "";
 			}
+            
+            SDL_SCANCODE_PRINTSCREEN;
+            SDL_SCANCODE_F13;
+            SDLK_PRINTSCREEN;
+            SDLK_F13;
 
-			glyphData.fullpath = tmpPath;
-
-			std::string renderedPath = baseRenderedPath;
-			renderedPath += glyphData.folder;
-			renderedPath += '/';
+			const std::string renderedPath = baseRenderedPath + glyphData.folder + '/';
 
 			glyphData.unpressedRenderedFullpath = renderedPath;
 			glyphData.unpressedRenderedFullpath += unpressedRenderedPrefix;
@@ -4072,6 +4074,12 @@ bool GlyphRenderer_t::readFromFile()
 			{
 				glyphData.unpressedRenderedFullpath.erase((size_t)0, (size_t)1);
 			}
+            if ( !PHYSFS_getRealDir(glyphData.unpressedRenderedFullpath.c_str()) )
+            {
+                printlog("[JSON]: Glyph path: %s not detected, skipping...", glyphData.unpressedRenderedFullpath.c_str());
+                glyphData.unpressedRenderedFullpath = "";
+                continue;
+            }
 
 			glyphData.pressedRenderedFullpath = renderedPath;
 			glyphData.pressedRenderedFullpath += pressedRenderedPrefix;
@@ -4080,6 +4088,12 @@ bool GlyphRenderer_t::readFromFile()
 			{
 				glyphData.pressedRenderedFullpath.erase((size_t)0, (size_t)1);
 			}
+            if ( !PHYSFS_getRealDir(glyphData.pressedRenderedFullpath.c_str()) )
+            {
+                printlog("[JSON]: Glyph path: %s not detected, skipping...", glyphData.pressedRenderedFullpath.c_str());
+                glyphData.pressedRenderedFullpath = "";
+                continue;
+            }
 		}
 
 		printlog("[JSON]: Successfully read json file %s, processed %d glyphs", inputPath.c_str(), allGlyphs.size());
