@@ -62,8 +62,6 @@ void initSuccubus(Entity* my, Stat* myStats)
 				myStats->setAttribute("special_npc", "lilith");
 				strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
 				my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
-			    my->focalz = -3;
-			    my->focalx = 1;
 				myStats->DEX = 10;
 				for ( c = 0; c < 2; c++ )
 				{
@@ -120,6 +118,13 @@ void initSuccubus(Entity* my, Stat* myStats)
 			}
 		}
 	}
+
+	if ( my->sprite == MonsterData_t::monsterDataEntries[SUCCUBUS].specialNPCs["lilith"].baseModel )
+	{
+		my->focalz = -3;
+		my->focalx = 1;
+	}
+
 
 	// torso
 	Entity* entity = newEntity(my->sprite == 1126 ? 1129 : 191, 1, map.entities, nullptr); //Limb entity.
