@@ -10408,8 +10408,15 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	int tx = static_cast<int>(std::floor(target->x)) >> 4;
 	if ( target->behavior == &::actTeleportShrine )
 	{
-		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
 		tx = static_cast<int>(std::floor(target->x + 32.0 * cos(target->yaw))) >> 4;
+		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
+
+		if ( target->shrineDestXOffset != 0 || target->shrineDestYOffset != 0 )
+		{
+			// default both to ontop of the shrine
+			tx = static_cast<int>(std::floor(target->x)) >> 4;
+			ty = static_cast<int>(std::floor(target->y)) >> 4;
+		}
 		if ( target->shrineDestXOffset != 0 )
 		{
 			tx = (static_cast<int>(std::floor(target->x)) >> 4) + target->shrineDestXOffset;

@@ -1562,28 +1562,29 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 			if ( !useTileEntityList )
 			{
 				// for map generation to detect if decorations have obstacles without entities being assigned actions
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				std::vector<list_t*> entLists{ map.entities };
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
-					entity = (Entity*)node->element;
-					if ( !entity ) { continue; }
-					if ( entity->flags[PASSABLE] 
-						|| entity == my 
-						|| entity == target 
-						|| entity->sprite == 8 // items
-						|| entity->sprite == 9 // gold
-						|| entity->behavior == &actDoor )
+					list_t* currentList = *it;
+					for ( node = currentList->first; node != nullptr; node = node->next )
 					{
-						continue;
-					}
-					if ( my && entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
-					{
-						continue;
-					}
-					if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
-					{
-						if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+						entity = (Entity*)node->element;
+						if ( !entity ) { continue; }
+						if ( entity->flags[PASSABLE]
+							|| entity == my
+							|| entity == target
+							|| entity->sprite == 8 // items
+							|| entity->sprite == 9 // gold
+							|| entity->behavior == &actDoor )
 						{
-							return 1;
+							continue;
+						}
+						if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+						{
+							if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+							{
+								return 1;
+							}
 						}
 					}
 				}
