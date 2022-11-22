@@ -2832,7 +2832,7 @@ public:
 		std::string pressedGlyphPath = "";
 		int render_offsetx = 0;
 		int render_offsety = 0;
-		int scancode = SDL_SCANCODE_UNKNOWN;
+		int keycode = SDLK_UNKNOWN;
 	};
 	std::map<int, GlyphData_t> allGlyphs;
 

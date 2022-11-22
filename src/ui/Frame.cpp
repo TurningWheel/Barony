@@ -2079,7 +2079,7 @@ void Frame::scrollToSelection(bool scroll_to_top) {
 
 void Frame::activateEntry(entry_t& entry) {
 	activation = &entry;
-	if (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) {
+	if (keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]) {
 		if (entry.ctrlClick) {
 			(*entry.ctrlClick)(entry);
 		}

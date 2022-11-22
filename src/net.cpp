@@ -1365,7 +1365,7 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
 				net_packet->len = 7;
-				sendPacket(net_sock, -1, net_packet, c - 1);
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
 	}
@@ -4203,7 +4203,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		button->action = &buttonCloseAndEndGameConfirm;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_RETURN;
+		button->key = SDLK_RETURN;
 
 		client_disconnected[0] = true;
 	}},
@@ -6413,7 +6413,7 @@ int steamPacketThread(void* data)
 			packet = static_cast<Uint8* >(malloc(packetlen));
 			if (SteamNetworking()->ReadP2PPacket(packet, packetlen, &bytes_read, &steam_id_remote, 0))
 			{
-				if (packetlen > sizeof(DWORD) && mySteamID.ConvertToUint64() != steam_id_remote.ConvertToUint64() && net_packet->data[0])
+				if (packetlen > sizeof(uint32_t) && mySteamID.ConvertToUint64() != steam_id_remote.ConvertToUint64() && net_packet->data[0])
 				{
 					//Push packet into queue.
 					//TODO: Use lock-free queues?

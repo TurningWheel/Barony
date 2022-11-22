@@ -569,7 +569,7 @@ extern Sint32 yres;
 extern int mainloop;
 extern Uint32 ticks;
 extern Uint32 lastkeypressed;
-extern Sint8 keystatus[512];
+extern std::unordered_map<SDL_Keycode, bool> keystatus;
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
 extern Sint32 mousexrel, mouseyrel;

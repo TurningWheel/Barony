@@ -1599,14 +1599,12 @@ void drawEntities3D(view_t* camera, int mode)
 	Entity* entity;
 	long x, y;
 
-	static bool draw_ents = true;
-	if (keystatus[SDL_SCANCODE_P] && !command && enableDebugKeys) {
-	    keystatus[SDL_SCANCODE_P] = 0;
-	    draw_ents = (draw_ents==false);
-	}
-	if (!draw_ents) {
+#ifndef EDITOR
+    static ConsoleVariable<bool> cvar_drawEnts("/draw_entities", true);
+	if (!*cvar_drawEnts) {
 	    return;
 	}
+#endif
 
 	if ( map.entities->first == nullptr )
 	{
@@ -2678,21 +2676,29 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
             filename = "lang/en.ttf#22#0";
         }
     }
-    char buf[1024];
+	int w = 0;
+	int h = 0;
+	char buf[1024] = { '\0' };
     char* ptr = buf;
     snprintf(buf, sizeof(buf), str);
-    for (int c = 0; ptr[c] != '\0'; ++c) {
+    for (int c = 0; c < sizeof(buf) && ptr[c] != '\0'; ++c) {
         if (ptr[c] == '\n') {
             ptr[c] = '\0';
             auto text = Text::get(ptr, filename, uint32ColorWhite, uint32ColorBlack);
             text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{x, y, 0, 0}, SDL_Rect{0, 0, xres, yres}, color);
+			w = std::max(w, (int)text->getWidth());
+			h = std::max(h, (int)text->getHeight());
             y += text->getHeight();
             ptr += c + 1;
         }
     }
-    auto text = Text::get(ptr, filename, uint32ColorWhite, uint32ColorBlack);
-    text->drawColor(SDL_Rect{0, 0, 0, 0}, SDL_Rect{x, y, 0, 0}, SDL_Rect{0, 0, xres, yres}, color);
-    return SDL_Rect{x, y, (int)text->getWidth(), (int)text->getHeight()};
+	if (ptr < buf + sizeof(buf)) {
+		auto text = Text::get(ptr, filename, uint32ColorWhite, uint32ColorBlack);
+		text->drawColor(SDL_Rect{ 0, 0, 0, 0 }, SDL_Rect{ x, y, 0, 0 }, SDL_Rect{ 0, 0, xres, yres }, color);
+		w = std::max(w, (int)text->getWidth());
+		h = std::max(h, (int)text->getHeight());
+	}
+    return SDL_Rect{x, y, w, h};
 }
 
 static SDL_Rect errorRect = { 0 };

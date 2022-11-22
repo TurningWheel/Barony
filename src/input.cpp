@@ -20,10 +20,10 @@ const float Input::rebinding_deadzone = 0.5f;
 const float Input::analogToggleThreshold = .5f;
 const Uint32 Input::BUTTON_HELD_TICKS = TICKS_PER_SECOND / 4;
 const Uint32 Input::BUTTON_ANALOG_REPEAT_TICKS = TICKS_PER_SECOND / 4;
-std::unordered_map<std::string, SDL_Scancode> Input::scancodeNames;
+std::unordered_map<std::string, SDL_Keycode> Input::keycodeNames;
 std::unordered_map<int, SDL_GameController*> Input::gameControllers;
 std::unordered_map<int, SDL_Joystick*> Input::joysticks;
-bool Input::keys[SDL_NUM_SCANCODES] = { false };
+std::unordered_map<SDL_Keycode, bool> Input::keys;
 bool Input::mouseButtons[18] = { false };
 const int Input::MOUSE_WHEEL_UP = 16;
 const int Input::MOUSE_WHEEL_DOWN = 17;
@@ -525,8 +525,8 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed)
 	}
 
 	// if nothing else, its probably a keyboard glyph:
-	auto scancode = getScancodeFromName(input);
-	return GlyphHelper.getGlyphPath(scancode, pressed);
+	auto keycode = getKeycodeFromName(input);
+	return GlyphHelper.getGlyphPath(keycode, pressed);
 }
 
 std::string Input::getGlyphPathForBinding(const char* binding, bool pressed) const
@@ -816,7 +816,7 @@ void Input::bind(const char* binding, const char* input) {
 	} else {
 		// keyboard
 		(*b).second.type = binding_t::KEYBOARD;
-		(*b).second.scancode = getScancodeFromName(input);
+		(*b).second.keycode = getKeycodeFromName(input);
 		return;
 	}
 }
@@ -929,8 +929,8 @@ bool Input::binaryOf(binding_t& binding) {
 	} else if (binding.type == binding_t::MOUSE_BUTTON) {
 		return mouseButtons[binding.mouseButton];
 	} else if (binding.type == binding_t::KEYBOARD) {
-		SDL_Scancode key = binding.scancode;
-		if (key != SDL_SCANCODE_UNKNOWN) {
+		SDL_Keycode key = binding.keycode;
+		if (key != SDLK_UNKNOWN) {
 			return keys[(int)key];
 		}
 	}
@@ -1028,8 +1028,8 @@ float Input::analogOf(binding_t& binding) {
 	} else if (binding.type == binding_t::MOUSE_BUTTON) {
 		return mouseButtons[binding.mouseButton] ? 1.f : 0.f;
 	} else if (binding.type == binding_t::KEYBOARD) {
-		SDL_Scancode key = binding.scancode;
-		if (key != SDL_SCANCODE_UNKNOWN) {
+		SDL_Keycode key = binding.keycode;
+		if (key != SDLK_UNKNOWN) {
 			return keys[(int)key] ? 1.f : 0.f;
 		}
 	}
@@ -1037,14 +1037,14 @@ float Input::analogOf(binding_t& binding) {
 	return 0.f;
 }
 
-SDL_Scancode Input::getScancodeFromName(const char* name) {
-	auto search = scancodeNames.find(name);
-	if (search == scancodeNames.end()) {
-		SDL_Scancode scancode = SDL_GetScancodeFromName(name);
-		if (scancode != SDL_SCANCODE_UNKNOWN) {
-			scancodeNames.emplace(name, scancode);
+SDL_Keycode Input::getKeycodeFromName(const char* name) {
+	auto search = keycodeNames.find(name);
+	if (search == keycodeNames.end()) {
+		SDL_Keycode keycode = SDL_GetKeyFromName(name);
+		if (keycode != SDLK_UNKNOWN) {
+            keycodeNames.emplace(name, keycode);
 		}
-		return scancode;
+		return keycode;
 	} else {
 		return (*search).second;
 	}
@@ -1151,7 +1151,7 @@ void Input::consumeBindingsSharedWithBinding(const char* binding)
 			}
 			else if ( b.second.type == binding_t::KEYBOARD )
 			{
-				if ( b.second.scancode == checkBinding.second.scancode )
+				if ( b.second.keycode == checkBinding.second.keycode )
 				{
 					b.second.consumed = true;
 				}
@@ -1257,7 +1257,7 @@ void Input::consumeBindingsSharedWithFaceHotbar()
 						}
 						else if ( b.second.type == binding_t::KEYBOARD ) 
 						{
-							if ( b.second.scancode == faceMenuBinding.second.scancode )
+							if ( b.second.keycode == faceMenuBinding.second.keycode )
 							{
 								b.second.consumed = true;
 							}

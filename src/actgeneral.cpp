@@ -69,9 +69,9 @@ void actRotate(Entity* my)
 	my->flags[PASSABLE] = true; // this entity should always be passable
 
 #ifdef TESTSPRITES
-	if ( keystatus[SDL_SCANCODE_HOME] )
+	if ( keystatus[SDLK_HOME] )
 	{
-		keystatus[SDL_SCANCODE_HOME] = 0;
+		keystatus[SDLK_HOME] = 0;
 		my->sprite++;
 		if ( my->sprite >= nummodels )
 		{
@@ -79,9 +79,9 @@ void actRotate(Entity* my)
 		}
 		messagePlayer(clientnum, MESSAGE_MISC, "test sprite: %d", my->sprite);
 	}
-	if ( keystatus[SDL_SCANCODE_END] )
+	if ( keystatus[SDLK_END] )
 	{
-		keystatus[SDL_SCANCODE_END] = 0;
+		keystatus[SDLK_END] = 0;
 		my->sprite += 10;
 		if ( my->sprite >= nummodels )
 		{

@@ -219,7 +219,7 @@ real_t mousespeed = 32;
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
-Sint8 keystatus[512];
+std::unordered_map<SDL_Keycode, bool> keystatus;
 char* inputstr = nullptr;
 int inputlen = 0;
 bool fingerdown = false;

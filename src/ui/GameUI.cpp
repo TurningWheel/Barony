@@ -949,9 +949,9 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 	}
 
 	auto& infiniteScrolling = Player::HUD_t::FollowerDisplay_t::infiniteScrolling;
-	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_F] )
+	/*if ( enableDebugKeys && keystatus[SDLK_F] )
 	{
-		keystatus[SDL_SCANCODE_F] = 0;
+		keystatus[SDLK_F] = 0;
 		infiniteScrolling = !infiniteScrolling;
 	}*/
 
@@ -975,7 +975,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 	bool doneTitleFrame = false;
 	barIndex = -1;
 	bool halfWidthBars = (splitscreen && players[player]->bUseCompactGUIWidth()) 
-		/*|| (enableDebugKeys && keystatus[SDL_SCANCODE_G])*/;
+		/*|| (enableDebugKeys && keystatus[SDLK_G])*/;
 
 	std::set<Uint32> followerUids;
 	for ( node_t* node = stats[player]->FOLLOWERS.first; node != nullptr; node = node->next )
@@ -2292,15 +2292,15 @@ void updateAllyFollowerFrame(const int player)
 		titleFrame->setDisabled(false);
 	}
 
-	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
+	/*if ( enableDebugKeys && keystatus[SDLK_H] )
 	{
-		keystatus[SDL_SCANCODE_H] = 0;
+		keystatus[SDLK_H] = 0;
 		hud_t.followerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
 	}
 
-	if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
+	if ( enableDebugKeys && keystatus[SDLK_J] )
 	{
-		keystatus[SDL_SCANCODE_J] = 0;
+		keystatus[SDLK_J] = 0;
 		if ( hud_t.followerBars.size() > 0 )
 		{
 			auto it = hud_t.followerBars.begin() + local_rng.rand() % hud_t.followerBars.size();
@@ -2793,15 +2793,15 @@ void updateAllyPlayerFrame(const int player)
 	baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY;
 	baseFrame->setSize(baseFramePos);
 
-	/*if ( enableDebugKeys && keystatus[SDL_SCANCODE_H] )
+	/*if ( enableDebugKeys && keystatus[SDLK_H] )
 	{
-		keystatus[SDL_SCANCODE_H] = 0;
+		keystatus[SDLK_H] = 0;
 		hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
 	}
 
-	if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
+	if ( enableDebugKeys && keystatus[SDLK_J] )
 	{
-		keystatus[SDL_SCANCODE_J] = 0;
+		keystatus[SDLK_J] = 0;
 		if ( hud_t.playerBars.size() > 0 )
 		{
 			auto it = hud_t.playerBars.begin() + local_rng.rand() % hud_t.playerBars.size();
@@ -3370,7 +3370,7 @@ void Player::HUD_t::updateUINavigation()
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
-		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDL_SCANCODE_Y] && enableDebugKeys) )
+		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDLK_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
 		}*/
@@ -7929,9 +7929,6 @@ void openMapWindow(int player) {
                     const int y = (mouse_position.y * size) / mouse_position.h - ydiff;
                     if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
                         MinimapPing newPing(ticks, player, x, y);
-		                if ( multiplayer != CLIENT ) {
-			                minimapPingAdd(player, player, newPing);
-		                }
 		                sendMinimapPing(player, newPing.x, newPing.y);
 
                         // can also issue move commands via minimap
@@ -9539,7 +9536,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	}
 
 	bool bCompactView = false;
-	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIHeight() )
+	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIHeight() )
 	{
 		bCompactView = true;
 	}
@@ -12251,16 +12248,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		Sint32 attackPower = displayAttackPower(player.playernum, attackHoverTextInfo);
 
 //#ifndef NDEBUG
-//		if ( keystatus[SDL_SCANCODE_V] )
+//		if ( keystatus[SDLK_V] )
 //		{
-//			keystatus[SDL_SCANCODE_V] = 0;
+//			keystatus[SDLK_V] = 0;
 //			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
 //			stats[player.playernum]->playerRace = RACE_AUTOMATON;
 //			stats[player.playernum]->appearance = 0;
 //		}
-//		if ( keystatus[SDL_SCANCODE_B] )
+//		if ( keystatus[SDLK_B] )
 //		{
-//			keystatus[SDL_SCANCODE_B] = 0;
+//			keystatus[SDLK_B] = 0;
 //			messagePlayer(player.playernum, MESSAGE_DEBUG, "Remove this");
 //			stats[player.playernum]->playerRace = RACE_INSECTOID;
 //			stats[player.playernum]->appearance = 0;
@@ -14580,7 +14577,7 @@ void Player::CharacterSheet_t::updateStats()
 	const int leftAlignPosX = 10;
 	auto statsInnerPos = statsInnerFrame->getSize();
 	statsInnerPos.x = rightAlignPosX;
-	/*if ( keystatus[SDL_SCANCODE_I] && enableDebugKeys )
+	/*if ( keystatus[SDLK_I] && enableDebugKeys )
 	{
 		statsInnerPos.x = leftAlignPosX;
 	}*/
@@ -14806,7 +14803,7 @@ void Player::CharacterSheet_t::updateAttributes()
 	const int leftAlignPosX = 10;
 	auto attributesInnerPos = attributesInnerFrame->getSize();
 	attributesInnerPos.x = rightAlignPosX;
-	/*if ( keystatus[SDL_SCANCODE_I] )
+	/*if ( keystatus[SDLK_I] )
 	{
 		attributesInnerPos.x = leftAlignPosX;
 	}*/
@@ -21628,7 +21625,7 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -22924,7 +22921,7 @@ void Player::HUD_t::updateHPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -23264,7 +23261,7 @@ void Player::HUD_t::updateMPBar()
 	}
 
 	bool bCompact = false;
-	if ( player.bUseCompactGUIWidth() || (keystatus[SDL_SCANCODE_T] && enableDebugKeys) )
+	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
 		bCompact = true;
 	}
@@ -23662,7 +23659,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
-	if ( (keystatus[SDL_SCANCODE_U] && enableDebugKeys) || player.bUseCompactGUIWidth() )
+	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}

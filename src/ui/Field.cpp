@@ -361,14 +361,14 @@ Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool 
 	    if (!editable || inputstr != text) {
 			deactivate();
 		} else if (editable) {
-		    if (Input::keys[SDL_SCANCODE_RETURN] || Input::keys[SDL_SCANCODE_KP_ENTER]) {
-			    Input::keys[SDL_SCANCODE_RETURN] = 0;
-			    Input::keys[SDL_SCANCODE_KP_ENTER] = 0;
+		    if (Input::keys[SDLK_RETURN] || Input::keys[SDLK_KP_ENTER]) {
+			    Input::keys[SDLK_RETURN] = 0;
+			    Input::keys[SDLK_KP_ENTER] = 0;
 			    result.entered = true;
 			    deactivate();
 		    }
-		    if (Input::keys[SDL_SCANCODE_ESCAPE]) {
-			    Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+		    if (Input::keys[SDLK_ESCAPE]) {
+			    Input::keys[SDLK_ESCAPE] = 0;
 			    deactivate();
 		    }
 	    }

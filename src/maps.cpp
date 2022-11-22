@@ -63,7 +63,7 @@ Sint32 doorFrameSprite() {
     if (stringStr(map.name, "Bram", sizeof(map_t::name), 4)) {
         return 1169;
     }
-    if (stringStr(map.name, "Underworld", sizeof(map_t::name), 5)) {
+    if (stringStr(map.name, "Underworld", sizeof(map_t::name), 10)) {
         return 1169;
     }
     return 1; // default door frame

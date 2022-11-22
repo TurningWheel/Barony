@@ -7,6 +7,58 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		844D4A262925E64C005907BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844D4A252925E64C005907BA /* Assets.xcassets */; };
+		844D4A32292724C8005907BA /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; };
+		844D4A33292724C8005907BA /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		844D4A35292724D4005907BA /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; };
+		844D4A36292724D4005907BA /* libphysfs.3.0.2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
+		844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; };
+		844D4A3D292724FE005907BA /* SDL2.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		844D4A3E292724FE005907BA /* SDL2_ttf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A39292724FE005907BA /* SDL2_ttf.framework */; };
+		844D4A3F292724FE005907BA /* SDL2_ttf.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 844D4A39292724FE005907BA /* SDL2_ttf.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		844D4A40292724FE005907BA /* SDL2_net.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A3A292724FE005907BA /* SDL2_net.framework */; };
+		844D4A41292724FF005907BA /* SDL2_net.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 844D4A3A292724FE005907BA /* SDL2_net.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		844D4A42292724FF005907BA /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A3B292724FE005907BA /* SDL2_image.framework */; };
+		844D4A43292724FF005907BA /* SDL2_image.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 844D4A3B292724FE005907BA /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		844D4A4529272835005907BA /* Config.hpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB12291F799D0084EAD5 /* Config.hpp */; };
+		844D4A4629272835005907BA /* Button.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB05291F79690084EAD5 /* Button.cpp */; };
+		844D4A4729272835005907BA /* Field.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB03291F79690084EAD5 /* Field.cpp */; };
+		844D4A4829272835005907BA /* Font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB00291F79690084EAD5 /* Font.cpp */; };
+		844D4A4929272835005907BA /* Frame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB06291F79690084EAD5 /* Frame.cpp */; };
+		844D4A4A29272835005907BA /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAFF291F79690084EAD5 /* Image.cpp */; };
+		844D4A4B29272835005907BA /* LoadingScreen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAFD291F79690084EAD5 /* LoadingScreen.cpp */; };
+		844D4A4C29272835005907BA /* Slider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB01291F79690084EAD5 /* Slider.cpp */; };
+		844D4A4D29272835005907BA /* Text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB02291F79690084EAD5 /* Text.cpp */; };
+		844D4A4E29272835005907BA /* Widget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAFE291F79690084EAD5 /* Widget.cpp */; };
+		844D4A4F29272835005907BA /* defines.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAC8291F79310084EAD5 /* defines.cpp */; };
+		844D4A5029272835005907BA /* init_audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAC9291F79310084EAD5 /* init_audio.cpp */; };
+		844D4A5129272835005907BA /* sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAC7291F79310084EAD5 /* sound.cpp */; };
+		844D4A5229272835005907BA /* objects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAAB291F79150084EAD5 /* objects.cpp */; };
+		844D4A5329272835005907BA /* opengl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAB7291F79150084EAD5 /* opengl.cpp */; };
+		844D4A5429272835005907BA /* prng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAB3291F79150084EAD5 /* prng.cpp */; };
+		844D4A5529272835005907BA /* savepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAAE291F79150084EAD5 /* savepng.cpp */; };
+		844D4A5629272835005907BA /* shader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAAD291F79150084EAD5 /* shader.cpp */; };
+		844D4A5729272835005907BA /* stat_shared.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAB4291F79150084EAD5 /* stat_shared.cpp */; };
+		844D4A5829272836005907BA /* steam_shared.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DAAA291F79150084EAD5 /* steam_shared.cpp */; };
+		844D4A5929272836005907BA /* files.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA4B291F78CD0084EAD5 /* files.cpp */; };
+		844D4A5A29272836005907BA /* hash.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA51291F78CD0084EAD5 /* hash.cpp */; };
+		844D4A5B29272836005907BA /* init.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA50291F78CD0084EAD5 /* init.cpp */; };
+		844D4A5D29272836005907BA /* json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA4C291F78CD0084EAD5 /* json.cpp */; };
+		844D4A5E29272836005907BA /* light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA46291F78CD0084EAD5 /* light.cpp */; };
+		844D4A5F29272836005907BA /* list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA4F291F78CD0084EAD5 /* list.cpp */; };
+		844D4A6029272836005907BA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA49291F78CD0084EAD5 /* main.cpp */; };
+		844D4A6129272836005907BA /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA3E291F78A20084EAD5 /* draw.cpp */; };
+		844D4A6229272836005907BA /* entity_shared.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA3C291F78A20084EAD5 /* entity_shared.cpp */; };
+		844D4A6A292728A1005907BA /* entity_editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A63292728A1005907BA /* entity_editor.cpp */; };
+		844D4A6B292728A1005907BA /* stat_editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A64292728A1005907BA /* stat_editor.cpp */; };
+		844D4A6C292728A1005907BA /* items_editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A65292728A1005907BA /* items_editor.cpp */; };
+		844D4A6D292728A1005907BA /* eos_editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A66292728A1005907BA /* eos_editor.cpp */; };
+		844D4A6E292728A1005907BA /* cursors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A67292728A1005907BA /* cursors.cpp */; };
+		844D4A6F292728A1005907BA /* editor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A68292728A1005907BA /* editor.cpp */; };
+		844D4A70292728A1005907BA /* buttons.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A69292728A1005907BA /* buttons.cpp */; };
+		844D4A7129272AE7005907BA /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA4D291F78CD0084EAD5 /* input.cpp */; };
+		844D4A7229272B06005907BA /* mod_tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA84291F78F10084EAD5 /* mod_tools.cpp */; };
 		845F4BB429202FE600D6B9D7 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; };
 		845F4BB629202FF600D6B9D7 /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; };
 		845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -161,7 +213,7 @@
 		84C3DB0F291F796A0084EAD5 /* GameUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB04291F79690084EAD5 /* GameUI.cpp */; };
 		84C3DB10291F796A0084EAD5 /* Button.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB05291F79690084EAD5 /* Button.cpp */; };
 		84C3DB11291F796A0084EAD5 /* Frame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DB06291F79690084EAD5 /* Frame.cpp */; };
-		84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; platformFilters = (macos, ); };
+		84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		84C3DB24292028630084EAD5 /* items in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1B292028630084EAD5 /* items */; };
 		84C3DB25292028630084EAD5 /* maps in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1C292028630084EAD5 /* maps */; };
 		84C3DB26292028630084EAD5 /* data in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB1D292028630084EAD5 /* data */; };
@@ -174,31 +226,91 @@
 		84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2D292028790084EAD5 /* playernames-male.txt */; };
 		84C3DB31292028790084EAD5 /* lang in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2E292028790084EAD5 /* lang */; };
 		84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2F292028790084EAD5 /* playernames-female.txt */; };
+		84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; };
+		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; };
+		84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; };
+		84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; };
+		84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; };
+		84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; };
+		84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84F7109929236B0600AE0D03 /* steam_appid.txt */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		844D4A3029272462005907BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84C3D6D7291F429B0084EAD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 84C3D6DE291F429B0084EAD5;
+			remoteInfo = Barony;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
+		844D4A34292724C8005907BA /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				844D4A3F292724FE005907BA /* SDL2_ttf.framework in Embed Libraries */,
+				844D4A3D292724FE005907BA /* SDL2.framework in Embed Libraries */,
+				844D4A36292724D4005907BA /* libphysfs.3.0.2.dylib in Embed Libraries */,
+				844D4A43292724FF005907BA /* SDL2_image.framework in Embed Libraries */,
+				844D4A33292724C8005907BA /* libpng16.16.dylib in Embed Libraries */,
+				844D4A41292724FF005907BA /* SDL2_net.framework in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84B7FB4F29202F9200D1F0C5 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */,
-				845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */,
-				845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */,
+				84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */,
+				84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */,
+				84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */,
+				84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */,
+				845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */,
+				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */,
 				845F4BC32920302F00D6B9D7 /* SDL2_image.framework in CopyFiles */,
 				845F4BC42920302F00D6B9D7 /* SDL2_net.framework in CopyFiles */,
-				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */,
-				845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */,
+				845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */,
+				845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */,
+				845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */,
+				84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */,
+				84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		844D4A1F2925E64C005907BA /* Barony Editor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Barony Editor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		844D4A252925E64C005907BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		844D4A38292724FE005907BA /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
+		844D4A39292724FE005907BA /* SDL2_ttf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_ttf.framework; path = ../../../../../../Library/Frameworks/SDL2_ttf.framework; sourceTree = "<group>"; };
+		844D4A3A292724FE005907BA /* SDL2_net.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_net.framework; path = ../../../../../../Library/Frameworks/SDL2_net.framework; sourceTree = "<group>"; };
+		844D4A3B292724FE005907BA /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../../../../../../Library/Frameworks/SDL2_image.framework; sourceTree = "<group>"; };
+		844D4A4429272566005907BA /* Barony-Editor-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Barony-Editor-Info.plist"; sourceTree = SOURCE_ROOT; };
+		844D4A63292728A1005907BA /* entity_editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = entity_editor.cpp; path = ../../src/entity_editor.cpp; sourceTree = "<group>"; };
+		844D4A64292728A1005907BA /* stat_editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = stat_editor.cpp; path = ../../src/stat_editor.cpp; sourceTree = "<group>"; };
+		844D4A65292728A1005907BA /* items_editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = items_editor.cpp; path = ../../src/items_editor.cpp; sourceTree = "<group>"; };
+		844D4A66292728A1005907BA /* eos_editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = eos_editor.cpp; path = ../../src/eos_editor.cpp; sourceTree = "<group>"; };
+		844D4A67292728A1005907BA /* cursors.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = cursors.cpp; path = ../../src/cursors.cpp; sourceTree = "<group>"; };
+		844D4A68292728A1005907BA /* editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = editor.cpp; path = ../../src/editor.cpp; sourceTree = "<group>"; };
+		844D4A69292728A1005907BA /* buttons.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = buttons.cpp; path = ../../src/buttons.cpp; sourceTree = "<group>"; };
 		845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../opt/homebrew/Cellar/libpng/1.6.38/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = ../../../../../../opt/homebrew/Cellar/physfs/3.0.2/lib/libphysfs.3.0.2.dylib; sourceTree = "<group>"; };
 		845F4BCC292051C000D6B9D7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		847E18F729239843003BD4E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = Barony/Info.plist; sourceTree = "<group>"; };
 		84B7E17F2920290E00D1F0C5 /* libfmod.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfmod.dylib; path = ../../../fmod/api/core/lib/libfmod.dylib; sourceTree = "<group>"; };
 		84C3D6DF291F429B0084EAD5 /* Barony.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Barony.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84C3D8F1291F5D370084EAD5 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/SDL2.framework; sourceTree = "<group>"; };
@@ -358,34 +470,79 @@
 		84C3DB2D292028790084EAD5 /* playernames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-male.txt"; path = "../../playernames-male.txt"; sourceTree = "<group>"; };
 		84C3DB2E292028790084EAD5 /* lang */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lang; path = ../../lang; sourceTree = "<group>"; };
 		84C3DB2F292028790084EAD5 /* playernames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "playernames-female.txt"; path = "../../playernames-female.txt"; sourceTree = "<group>"; };
+		84F7105F292327D900AE0D03 /* libsteam_api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsteam_api.dylib; path = ../../../steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib; sourceTree = "<group>"; };
+		84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libEOSSDK-Mac-Shipping.dylib"; path = "../../../eos/EOS-SDK-21924193-v1/SDK/Bin/libEOSSDK-Mac-Shipping.dylib"; sourceTree = "<group>"; };
+		84F71089292350C500AE0D03 /* Vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vorbis.framework; path = ../../../Vorbis.framework; sourceTree = "<group>"; };
+		84F7108A292350C500AE0D03 /* Ogg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogg.framework; path = ../../../Ogg.framework; sourceTree = "<group>"; };
+		84F7108B292350C500AE0D03 /* Theora.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Theora.framework; path = ../../../Theora.framework; sourceTree = "<group>"; };
+		84F7108C292350C500AE0D03 /* theoraplayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = theoraplayer.framework; path = ../../../theoraplayer.framework; sourceTree = "<group>"; };
+		84F7109929236B0600AE0D03 /* steam_appid.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = steam_appid.txt; path = ../../../baronyupdate/steam_appid.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		844D4A1C2925E64C005907BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				844D4A35292724D4005907BA /* libphysfs.3.0.2.dylib in Frameworks */,
+				844D4A32292724C8005907BA /* libpng16.16.dylib in Frameworks */,
+				844D4A42292724FF005907BA /* SDL2_image.framework in Frameworks */,
+				844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */,
+				844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */,
+				844D4A3E292724FE005907BA /* SDL2_ttf.framework in Frameworks */,
+				844D4A40292724FE005907BA /* SDL2_net.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84C3D6DC291F429B0084EAD5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
-				84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */,
 				84C3DB1A291F8A1C0084EAD5 /* OpenGL.framework in Frameworks */,
+				84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */,
+				84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */,
+				84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */,
 				84C3D8F6291F5DEB0084EAD5 /* SDL2_ttf.framework in Frameworks */,
 				84C3D8F7291F5DEB0084EAD5 /* SDL2_image.framework in Frameworks */,
+				84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */,
 				84C3D8F8291F5DEB0084EAD5 /* SDL2_net.framework in Frameworks */,
+				84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */,
+				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
 				845F4BB429202FE600D6B9D7 /* libpng16.16.dylib in Frameworks */,
 				845F4BB629202FF600D6B9D7 /* libphysfs.3.0.2.dylib in Frameworks */,
+				84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
+				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		844D4A202925E64C005907BA /* Barony Editor */ = {
+			isa = PBXGroup;
+			children = (
+				844D4A4429272566005907BA /* Barony-Editor-Info.plist */,
+				844D4A252925E64C005907BA /* Assets.xcassets */,
+			);
+			path = "Barony Editor";
+			sourceTree = "<group>";
+		};
 		84C3D6D6291F429B0084EAD5 = {
 			isa = PBXGroup;
 			children = (
+				844D4A69292728A1005907BA /* buttons.cpp */,
+				844D4A67292728A1005907BA /* cursors.cpp */,
+				844D4A68292728A1005907BA /* editor.cpp */,
+				844D4A63292728A1005907BA /* entity_editor.cpp */,
+				844D4A66292728A1005907BA /* eos_editor.cpp */,
+				844D4A65292728A1005907BA /* items_editor.cpp */,
+				844D4A64292728A1005907BA /* stat_editor.cpp */,
+				847E18F729239843003BD4E9 /* Info.plist */,
 				845F4BCC292051C000D6B9D7 /* Assets.xcassets */,
-				84C3DB2E292028790084EAD5 /* lang */,
+				84F7109929236B0600AE0D03 /* steam_appid.txt */,
 				84C3DB2F292028790084EAD5 /* playernames-female.txt */,
 				84C3DB2D292028790084EAD5 /* playernames-male.txt */,
+				84C3DB2E292028790084EAD5 /* lang */,
 				84C3DB1E292028630084EAD5 /* books */,
 				84C3DB1D292028630084EAD5 /* data */,
 				84C3DB23292028630084EAD5 /* fonts */,
@@ -535,6 +692,7 @@
 				84C3DA10291F787E0084EAD5 /* acttorch.cpp */,
 				84C3DA09291F787D0084EAD5 /* actwallbuster.cpp */,
 				84C3D9FC291F78570084EAD5 /* actarrow.cpp */,
+				844D4A202925E64C005907BA /* Barony Editor */,
 				84C3D6E0291F429B0084EAD5 /* Products */,
 				84C3D8F0291F5D370084EAD5 /* Frameworks */,
 			);
@@ -544,6 +702,7 @@
 			isa = PBXGroup;
 			children = (
 				84C3D6DF291F429B0084EAD5 /* Barony.app */,
+				844D4A1F2925E64C005907BA /* Barony Editor.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -551,6 +710,16 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				844D4A3B292724FE005907BA /* SDL2_image.framework */,
+				844D4A3A292724FE005907BA /* SDL2_net.framework */,
+				844D4A39292724FE005907BA /* SDL2_ttf.framework */,
+				844D4A38292724FE005907BA /* SDL2.framework */,
+				84F7108A292350C500AE0D03 /* Ogg.framework */,
+				84F7108B292350C500AE0D03 /* Theora.framework */,
+				84F7108C292350C500AE0D03 /* theoraplayer.framework */,
+				84F71089292350C500AE0D03 /* Vorbis.framework */,
+				84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */,
+				84F7105F292327D900AE0D03 /* libsteam_api.dylib */,
 				845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */,
 				845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */,
 				84B7E17F2920290E00D1F0C5 /* libfmod.dylib */,
@@ -566,6 +735,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		844D4A1E2925E64C005907BA /* Barony Editor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 844D4A2D2925E64C005907BA /* Build configuration list for PBXNativeTarget "Barony Editor" */;
+			buildPhases = (
+				844D4A1B2925E64C005907BA /* Sources */,
+				844D4A1C2925E64C005907BA /* Frameworks */,
+				844D4A1D2925E64C005907BA /* Resources */,
+				844D4A34292724C8005907BA /* Embed Libraries */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				844D4A3129272462005907BA /* PBXTargetDependency */,
+			);
+			name = "Barony Editor";
+			productName = "Barony Editor";
+			productReference = 844D4A1F2925E64C005907BA /* Barony Editor.app */;
+			productType = "com.apple.product-type.application";
+		};
 		84C3D6DE291F429B0084EAD5 /* Barony */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 84C3D6EE291F429C0084EAD5 /* Build configuration list for PBXNativeTarget "Barony" */;
@@ -594,6 +782,9 @@
 				LastSwiftUpdateCheck = 1410;
 				LastUpgradeCheck = 1410;
 				TargetAttributes = {
+					844D4A1E2925E64C005907BA = {
+						CreatedOnToolsVersion = 14.1;
+					};
 					84C3D6DE291F429B0084EAD5 = {
 						CreatedOnToolsVersion = 14.1;
 					};
@@ -613,11 +804,20 @@
 			projectRoot = "";
 			targets = (
 				84C3D6DE291F429B0084EAD5 /* Barony */,
+				844D4A1E2925E64C005907BA /* Barony Editor */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		844D4A1D2925E64C005907BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				844D4A262925E64C005907BA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84C3D6DD291F429B0084EAD5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -634,6 +834,7 @@
 				84C3DB2B292028630084EAD5 /* models in Resources */,
 				84C3DB2C292028630084EAD5 /* fonts in Resources */,
 				84C3DB30292028790084EAD5 /* playernames-male.txt in Resources */,
+				84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */,
 				84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -641,6 +842,51 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		844D4A1B2925E64C005907BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				844D4A7229272B06005907BA /* mod_tools.cpp in Sources */,
+				844D4A7129272AE7005907BA /* input.cpp in Sources */,
+				844D4A6A292728A1005907BA /* entity_editor.cpp in Sources */,
+				844D4A6B292728A1005907BA /* stat_editor.cpp in Sources */,
+				844D4A6C292728A1005907BA /* items_editor.cpp in Sources */,
+				844D4A6D292728A1005907BA /* eos_editor.cpp in Sources */,
+				844D4A6E292728A1005907BA /* cursors.cpp in Sources */,
+				844D4A6F292728A1005907BA /* editor.cpp in Sources */,
+				844D4A70292728A1005907BA /* buttons.cpp in Sources */,
+				844D4A4529272835005907BA /* Config.hpp in Sources */,
+				844D4A4629272835005907BA /* Button.cpp in Sources */,
+				844D4A4729272835005907BA /* Field.cpp in Sources */,
+				844D4A4829272835005907BA /* Font.cpp in Sources */,
+				844D4A4929272835005907BA /* Frame.cpp in Sources */,
+				844D4A4A29272835005907BA /* Image.cpp in Sources */,
+				844D4A4B29272835005907BA /* LoadingScreen.cpp in Sources */,
+				844D4A4C29272835005907BA /* Slider.cpp in Sources */,
+				844D4A4D29272835005907BA /* Text.cpp in Sources */,
+				844D4A4E29272835005907BA /* Widget.cpp in Sources */,
+				844D4A4F29272835005907BA /* defines.cpp in Sources */,
+				844D4A5029272835005907BA /* init_audio.cpp in Sources */,
+				844D4A5129272835005907BA /* sound.cpp in Sources */,
+				844D4A5229272835005907BA /* objects.cpp in Sources */,
+				844D4A5329272835005907BA /* opengl.cpp in Sources */,
+				844D4A5429272835005907BA /* prng.cpp in Sources */,
+				844D4A5529272835005907BA /* savepng.cpp in Sources */,
+				844D4A5629272835005907BA /* shader.cpp in Sources */,
+				844D4A5729272835005907BA /* stat_shared.cpp in Sources */,
+				844D4A5829272836005907BA /* steam_shared.cpp in Sources */,
+				844D4A5929272836005907BA /* files.cpp in Sources */,
+				844D4A5A29272836005907BA /* hash.cpp in Sources */,
+				844D4A5B29272836005907BA /* init.cpp in Sources */,
+				844D4A5D29272836005907BA /* json.cpp in Sources */,
+				844D4A5E29272836005907BA /* light.cpp in Sources */,
+				844D4A5F29272836005907BA /* list.cpp in Sources */,
+				844D4A6029272836005907BA /* main.cpp in Sources */,
+				844D4A6129272836005907BA /* draw.cpp in Sources */,
+				844D4A6229272836005907BA /* entity_shared.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84C3D6DB291F429B0084EAD5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -789,7 +1035,127 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		844D4A3129272462005907BA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 84C3D6DE291F429B0084EAD5 /* Barony */;
+			targetProxy = 844D4A3029272462005907BA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		844D4A2B2925E64C005907BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CODE_SIGN_ENTITLEMENTS = "Barony Editor/Barony_Editor.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = ../../../baronyupdate/;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					EDITOR,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					/opt/homebrew/Cellar/libpng/1.6.38/include,
+					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
+					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+				);
+				INFOPLIST_FILE = "Barony-Editor-Info.plist";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/**",
+					/opt/homebrew/Cellar/libpng/1.6.38/lib,
+					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		844D4A2C2925E64C005907BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CODE_SIGN_ENTITLEMENTS = "Barony Editor/Barony_Editor.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = ../../../baronyupdate/;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					NDEBUG,
+					EDITOR,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					/opt/homebrew/Cellar/libpng/1.6.38/include,
+					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
+					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
+				);
+				INFOPLIST_FILE = "Barony-Editor-Info.plist";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"/opt/homebrew/Cellar/**",
+					/opt/homebrew/Cellar/libpng/1.6.38/lib,
+					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		84C3D6EC291F429C0084EAD5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -902,7 +1268,8 @@
 		84C3D6EF291F429C0084EAD5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -919,6 +1286,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -927,7 +1295,10 @@
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
 					/opt/homebrew/Cellar/physfs/3.0.2/include,
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
+				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -938,22 +1309,27 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/**",
 					/opt/homebrew/Cellar/libpng/1.6.38/lib,
 					/opt/homebrew/Cellar/physfs/3.0.2/lib,
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SDKROOT = "";
+				SDKROOT = macosx;
+				STRIP_INSTALLED_PRODUCT = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -966,7 +1342,8 @@
 		84C3D6F0291F429C0084EAD5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -983,15 +1360,21 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(LOCAL_LIBRARY_DIR)",
+					"\"$(SRCROOT)/../../../\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
 					/opt/homebrew/Cellar/physfs/3.0.2/include,
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
 				);
+				INFOPLIST_FILE = Barony/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1002,22 +1385,27 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/**",
 					/opt/homebrew/Cellar/libpng/1.6.38/lib,
 					/opt/homebrew/Cellar/physfs/3.0.2/lib,
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
+					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
+					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SDKROOT = "";
+				SDKROOT = macosx;
+				STRIP_INSTALLED_PRODUCT = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -1030,6 +1418,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		844D4A2D2925E64C005907BA /* Build configuration list for PBXNativeTarget "Barony Editor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				844D4A2B2925E64C005907BA /* Debug */,
+				844D4A2C2925E64C005907BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		84C3D6DA291F429B0084EAD5 /* Build configuration list for PBXProject "Barony" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

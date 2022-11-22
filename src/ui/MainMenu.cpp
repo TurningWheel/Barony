@@ -226,7 +226,7 @@ namespace MainMenu {
 
     // Video options
 	struct Video {
-		int window_mode = 0; // 0 = windowed, 1 = fullscreen, 2 = borderless
+		int window_mode = 0; // 0 = windowed, 1 = borderless, 2 = fullscreen
 		int display_id = 0;
 		int resolution_x = 1280;
 		int resolution_y = 720;
@@ -1359,15 +1359,29 @@ namespace MainMenu {
     }
 
     static void openDLCPrompt() {
+#if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
+		const char* window_text = "Would you like to browse this\nDLC in the online store?";
+		binaryPrompt(window_text, "Yes", "No",
+			[](Button& button){
 #if defined(STEAMWORKS)
-		soundActivate();
-		openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
+				soundActivate();
+				openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
 #elif defined(NINTENDO)
-		// TODO open e-Shop for Nintendo?
-		soundError();
+				// TODO open e-Shop for Nintendo?
+				soundError();
 #elif defined(USE_EOS)
-		soundActivate();
-		openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+				soundActivate();
+				openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
+#endif
+				// fixes a bug where you could get spammed with 100s of browser tabs...
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				Input::mouseButtons[SDL_BUTTON_LEFT] = 0;
+				closeBinary();
+			},
+			[](Button& button){
+				soundCancel();
+				closeBinary();
+			}, false);
 #else
         textFieldPrompt("", "Enter DLC Key...", "Enter DLC Serial Key", "Confirm", "Cancel",
             [](Button& button){ // okay
@@ -1755,13 +1769,13 @@ namespace MainMenu {
 			new_fullscreen = false;
 			new_borderless = false;
 			break;
-		case 1: // fullscreen
-			new_fullscreen = true;
-			new_borderless = false;
-			break;
-		case 2: // borderless
+		case 1: // borderless
 			new_fullscreen = false;
 			new_borderless = true;
+			break;
+		case 2: // fullscreen
+			new_fullscreen = true;
+			new_borderless = false;
 			break;
 		default:
 			assert("Unknown video mode" && 0);
@@ -1788,7 +1802,7 @@ namespace MainMenu {
 
 	inline Video Video::load() {
 	    Video settings;
-		settings.window_mode = borderless ? 2 : (fullscreen ? 1 : 0);
+		settings.window_mode = fullscreen ? 2 : (borderless ? 1 : 0);
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
@@ -2834,15 +2848,17 @@ namespace MainMenu {
 
 	static void inventorySortingDiscard(Button& button) {
 		soundCancel();
-		auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
-		window->removeSelf();
-		auto settings = main_menu_frame->findFrame("settings");
-		if (settings) {
-			auto settings_subwindow = settings->findFrame("settings_subwindow");
-			if (settings_subwindow) {
-				auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button");
-				if (inventory_sorting_customize) {
-					inventory_sorting_customize->select();
+		if (main_menu_frame) {
+			auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
+			window->removeSelf();
+			auto settings = main_menu_frame->findFrame("settings");
+			if (settings) {
+				auto settings_subwindow = settings->findFrame("settings_subwindow");
+				if (settings_subwindow) {
+					auto inventory_sorting_customize = settings_subwindow->findButton("setting_inventory_sorting_customize_button");
+					if (inventory_sorting_customize) {
+						inventory_sorting_customize->select();
+					}
 				}
 			}
 		}
@@ -3421,14 +3437,18 @@ namespace MainMenu {
 					allSettings.video.window_mode = 0;
 					break;
 				}
-				if (entry.name == "Fullscreen") {
+                if (entry.name == "Bordered") {
+                    allSettings.video.window_mode = 0;
+                    break;
+                }
+				if (entry.name == "Borderless") {
 					allSettings.video.window_mode = 1;
 					break;
 				}
-				if (entry.name == "Borderless") {
-					allSettings.video.window_mode = 2;
-					break;
-				}
+                if (entry.name == "Fullscreen") {
+                    allSettings.video.window_mode = 2;
+                    break;
+                }
 			} while (0);
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -3877,9 +3897,9 @@ namespace MainMenu {
 	}
 
 	static Frame* settingsSubwindowSetup(Button& button) {
-		if (settings_tab_name == button.getName()) {
+		/*if (settings_tab_name == button.getName()) {
 			return nullptr;
-		}
+		}*/
 		if (!resolution_changed) {
 		    soundActivate();
 		}
@@ -4842,7 +4862,13 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
+#ifdef WINDOWS
+        const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
+#else
+        const std::vector<const char*> modes = {"Bordered", "Borderless"};
+        const char* selected_mode = borderless ? "Borderless" : "Bordered";
+#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
@@ -4852,8 +4878,7 @@ bind_failed:
 			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
 			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
 		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			false, {"Windowed", "Fullscreen", "Borderless"}, selected_mode,
-			settingsWindowMode);
+			false, modes, selected_mode, settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
@@ -6137,11 +6162,7 @@ bind_failed:
         };
         static const Tab tabs[] = {
             {"local", "Your Top 100\nLocal Scores", TAB_FN(BoardType::LOCAL)},
-#ifdef NINTENDO
-			{"lan", "Your Top 100\nWiFi Scores", TAB_FN(BoardType::LAN)},
-#else
-            {"lan", "Your Top 100\nLAN Scores", TAB_FN(BoardType::LAN)},
-#endif
+            {"lan", "Your Top 100\nNet Scores", TAB_FN(BoardType::LAN)},
 #ifdef STEAMWORKS
             {"friends", "Friends\nLeaderboard", TAB_FN(BoardType::FRIENDS)},
             {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
@@ -7266,7 +7287,7 @@ bind_failed:
 		    createReadyStone((int)player, false, status ? true : false);
 		}},
 
-		// got a chat message
+		// got a chat message from client
 		{'CMSG', [](){
 		    // forward to other players
 			for (int i = 1; i < MAXPLAYERS; i++ ) {
@@ -7281,7 +7302,23 @@ bind_failed:
 			addLobbyChatMessage(color, (char*)(&net_packet->data[8]));
 		}},
 
-			// player disconnected
+		// received client ping
+		{'PING', [](){
+			const int j = net_packet->data[4];
+			if (j <= 0 || j >= MAXPLAYERS ) {
+				return;
+			}
+			if (client_disconnected[j] || players[j]->isLocalPlayer()) {
+				return;
+			}
+			memcpy((char*)net_packet->data, "PING", 4);
+			net_packet->address.host = net_clients[j - 1].host;
+			net_packet->address.port = net_clients[j - 1].port;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, j - 1);
+		}},
+
+		// player disconnected
 		{'DISC', [](){
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
             if (player == 0) {
@@ -7369,7 +7406,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue; // junk packet, skip
 					}
 
@@ -7596,6 +7633,13 @@ bind_failed:
 	        }
 	    }},
 
+		// received ping back from server
+		{'PING', [](){
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "*** ping time = %4d ms ***", (SDL_GetTicks() - pingtime));
+			addLobbyChatMessage(uint32ColorBaronyBlue, buf);
+		}},
+
 		// player disconnect
 	    {'DISC', [](){
 		    const int playerDisconnected = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -7704,7 +7748,7 @@ bind_failed:
 						continue;
 					}
 					net_packet->len = packetlen;
-					if (packetlen < sizeof(DWORD)) {
+					if (packetlen < sizeof(uint32_t)) {
 						continue;
 					}
 
@@ -7909,7 +7953,7 @@ bind_failed:
 						    continue;
 					    }
 					    net_packet->len = packetlen;
-					    if (packetlen < sizeof(DWORD)) {
+					    if (packetlen < sizeof(uint32_t)) {
 						    continue;
 					    }
 
@@ -9250,12 +9294,7 @@ bind_failed:
 			button->select();
 		};
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -9320,6 +9359,7 @@ bind_failed:
 				setting->select();
 			}
 
+			setting->setDisabled(index != 0);
 			switch (c) {
 			case 0:
 				setting->setPressed(!allSettings.hunger_enabled);
@@ -9389,12 +9429,7 @@ bind_failed:
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp((std::string("setting") + std::to_string(num_settings - 1)).c_str());
-		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}*/
+		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
 	static void characterCardLobbySettingsMenu(int index) {
@@ -9412,12 +9447,7 @@ bind_failed:
 			button->select();
 		};
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -9449,12 +9479,15 @@ bind_failed:
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
 		custom_difficulty->setWidgetRight("custom");
-		switch (index) {
-		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(0);}); break;
-		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(1);}); break;
-		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(2);}); break;
-		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(3);}); break;
-		}
+		custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(button.getOwner());});
+		custom_difficulty->setTickCallback([](Widget& widget){
+			// rescue player selection
+			assert(main_menu_frame);
+			auto selected_widget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selected_widget) {
+				widget.select();
+			}
+			});
 		custom_difficulty->select();
 
 		auto invite_label = card->addField("invite_label", 64);
@@ -9734,102 +9767,105 @@ bind_failed:
 		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
 		    player_count->setWidgetRight((std::string("player_count_") + std::to_string(c + 3)).c_str());
 		    player_count->setWidgetDown((std::string("kick_player_") + std::to_string(c + 2)).c_str());
-		    switch (c) {
-		    default: soundError(); break;
-		    case 0:
-		        player_count->setCallback([](Button&){
-		            if (client_disconnected[2] && client_disconnected[3]) {
-	                    lockSlot(1, false);
-	                    lockSlot(2, true);
-	                    lockSlot(3, true);
-		                soundActivate();
-		            } else {
-		                if (!client_disconnected[2] && !client_disconnected[3]) {
-		                    char prompt[1024];
-		                    snprintf(prompt, sizeof(prompt), "This will kick %s\nand %s!",
-		                        players[2]->getAccountName(), players[3]->getAccountName());
-		                    binaryPrompt(prompt, "Okay", "Go Back",
-		                        [](Button&){ // okay
-	                                lockSlot(1, false);
-	                                lockSlot(2, true);
-	                                lockSlot(3, true);
-		                            soundActivate();
-		                            closeBinary();
-		                            },
-		                        [](Button&){ // go back
-	                                soundCancel();
-	                                closeBinary();
-		                            });
-		                }
-		                else if (!client_disconnected[2]) {
-		                    char prompt[1024];
-		                    snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[2]->getAccountName());
-		                    binaryPrompt(prompt, "Okay", "Go Back",
-		                        [](Button&){ // okay
-	                                lockSlot(1, false);
-	                                lockSlot(2, true);
-	                                lockSlot(3, true);
-		                            soundActivate();
-		                            closeBinary();
-		                            },
-		                        [](Button&){ // go back
-	                                soundCancel();
-	                                closeBinary();
-		                            });
-		                }
-		                else if (!client_disconnected[3]) {
-		                    char prompt[1024];
-		                    snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
-		                    binaryPrompt(prompt, "Okay", "Go Back",
-		                        [](Button&){ // okay
-	                                lockSlot(1, false);
-	                                lockSlot(2, true);
-	                                lockSlot(3, true);
-		                            soundActivate();
-		                            closeBinary();
-		                            },
-		                        [](Button&){ // go back
-	                                soundCancel();
-	                                closeBinary();
-		                            });
-		                }
-	                }
-	                });
-	            break;
-		    case 1:
-		        player_count->setCallback([](Button&){
-		            if (client_disconnected[3]) {
-	                    lockSlot(1, false);
-	                    lockSlot(2, false);
-	                    lockSlot(3, true);
-		                soundActivate();
-		            } else {
-		                char prompt[1024];
-		                snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
-		                binaryPrompt(prompt, "Yes", "No",
-		                    [](Button&){ // yes
-                                lockSlot(1, false);
-                                lockSlot(2, false);
-                                lockSlot(3, true);
-	                            soundActivate();
-	                            closeBinary();
-		                        },
-		                    [](Button&){ // no
-	                            soundCancel();
-	                            closeBinary();
-		                        });
-	                }
-	                });
-	            break;
-		    case 2:
-		        player_count->setCallback([](Button&){
-	                lockSlot(1, false);
-	                lockSlot(2, false);
-	                lockSlot(3, false);
-	                soundActivate();
-	                });
-	            break;
-		    }
+			if (index != 0) {
+				player_count->setCallback([](Button&){soundError();});
+			} else {
+				switch (c) {
+				case 0:
+					player_count->setCallback([](Button&){
+						if (client_disconnected[2] && client_disconnected[3]) {
+							lockSlot(1, false);
+							lockSlot(2, true);
+							lockSlot(3, true);
+							soundActivate();
+						} else {
+							if (!client_disconnected[2] && !client_disconnected[3]) {
+								char prompt[1024];
+								snprintf(prompt, sizeof(prompt), "This will kick %s\nand %s!",
+									players[2]->getAccountName(), players[3]->getAccountName());
+								binaryPrompt(prompt, "Okay", "Go Back",
+									[](Button&){ // okay
+										lockSlot(1, false);
+										lockSlot(2, true);
+										lockSlot(3, true);
+										soundActivate();
+										closeBinary();
+										},
+									[](Button&){ // go back
+										soundCancel();
+										closeBinary();
+										});
+							}
+							else if (!client_disconnected[2]) {
+								char prompt[1024];
+								snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[2]->getAccountName());
+								binaryPrompt(prompt, "Okay", "Go Back",
+									[](Button&){ // okay
+										lockSlot(1, false);
+										lockSlot(2, true);
+										lockSlot(3, true);
+										soundActivate();
+										closeBinary();
+										},
+									[](Button&){ // go back
+										soundCancel();
+										closeBinary();
+										});
+							}
+							else if (!client_disconnected[3]) {
+								char prompt[1024];
+								snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
+								binaryPrompt(prompt, "Okay", "Go Back",
+									[](Button&){ // okay
+										lockSlot(1, false);
+										lockSlot(2, true);
+										lockSlot(3, true);
+										soundActivate();
+										closeBinary();
+										},
+									[](Button&){ // go back
+										soundCancel();
+										closeBinary();
+										});
+							}
+						}
+						});
+					break;
+				case 1:
+					player_count->setCallback([](Button&){
+						if (client_disconnected[3]) {
+							lockSlot(1, false);
+							lockSlot(2, false);
+							lockSlot(3, true);
+							soundActivate();
+						} else {
+							char prompt[1024];
+							snprintf(prompt, sizeof(prompt), "This will kick %s.\nAre you sure?", players[3]->getAccountName());
+							binaryPrompt(prompt, "Yes", "No",
+								[](Button&){ // yes
+									lockSlot(1, false);
+									lockSlot(2, false);
+									lockSlot(3, true);
+									soundActivate();
+									closeBinary();
+									},
+								[](Button&){ // no
+									soundCancel();
+									closeBinary();
+									});
+						}
+						});
+					break;
+				case 2:
+					player_count->setCallback([](Button&){
+						lockSlot(1, false);
+						lockSlot(2, false);
+						lockSlot(3, false);
+						soundActivate();
+						});
+					break;
+				}
+			}
         }
 
 		auto kick_player_label = card->addField("kick_player_label", 64);
@@ -9859,69 +9895,72 @@ bind_failed:
 		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
 		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
 		    kick_player->setWidgetUp((std::string("player_count_") + std::to_string(c + 2)).c_str());
-		    switch (c) {
-		    default: soundError(); break;
-		    case 0:
-		        kick_player->setCallback([](Button&){
-		            if (client_disconnected[1]) {
-		                soundError();
-		                return;
-		            }
-		            char prompt[1024];
-		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[1]->getAccountName());
-		            binaryPrompt(prompt, "Yes", "No",
-		                [](Button&){ // yes
-	                        soundActivate();
-	                        closeBinary();
-	                        kickPlayer(1);
-		                    },
-		                [](Button&){ // no
-	                        soundCancel();
-	                        closeBinary();
-		                    });
-		            });
-		        break;
-		    case 1:
-		        kick_player->setCallback([](Button&){
-		            if (client_disconnected[2]) {
-		                soundError();
-		                return;
-		            }
-		            char prompt[1024];
-		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[2]->getAccountName());
-		            binaryPrompt(prompt, "Yes", "No",
-		                [](Button&){ // yes
-	                        soundActivate();
-	                        closeBinary();
-	                        kickPlayer(2);
-		                    },
-		                [](Button&){ // no
-		                    soundCancel();
-		                    closeBinary();
-		                    });
-		            });
-		        break;
-		    case 2:
-		        kick_player->setCallback([](Button&){
-		            if (client_disconnected[3]) {
-		                soundError();
-		                return;
-		            }
-		            char prompt[1024];
-		            snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[3]->getAccountName());
-		            binaryPrompt(prompt, "Yes", "No",
-		                [](Button&){ // yes
-		                    soundActivate();
-		                    closeBinary();
-		                    kickPlayer(3);
-		                    },
-		                [](Button&){ // no
-		                    soundCancel();
-		                    closeBinary();
-		                    });
-		            });
-		        break;
-		    }
+			if (index != 0) {
+				kick_player->setCallback([](Button&){soundError();});
+			} else {
+				switch (c) {
+				case 0:
+					kick_player->setCallback([](Button&){
+						if (client_disconnected[1]) {
+							soundError();
+							return;
+						}
+						char prompt[1024];
+						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[1]->getAccountName());
+						binaryPrompt(prompt, "Yes", "No",
+							[](Button&){ // yes
+								soundActivate();
+								closeBinary();
+								kickPlayer(1);
+								},
+							[](Button&){ // no
+								soundCancel();
+								closeBinary();
+								});
+						});
+					break;
+				case 1:
+					kick_player->setCallback([](Button&){
+						if (client_disconnected[2]) {
+							soundError();
+							return;
+						}
+						char prompt[1024];
+						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[2]->getAccountName());
+						binaryPrompt(prompt, "Yes", "No",
+							[](Button&){ // yes
+								soundActivate();
+								closeBinary();
+								kickPlayer(2);
+								},
+							[](Button&){ // no
+								soundCancel();
+								closeBinary();
+								});
+						});
+					break;
+				case 2:
+					kick_player->setCallback([](Button&){
+						if (client_disconnected[3]) {
+							soundError();
+							return;
+						}
+						char prompt[1024];
+						snprintf(prompt, sizeof(prompt), "Are you sure you want\nto kick %s?", players[3]->getAccountName());
+						binaryPrompt(prompt, "Yes", "No",
+							[](Button&){ // yes
+								soundActivate();
+								closeBinary();
+								kickPlayer(3);
+								},
+							[](Button&){ // no
+								soundCancel();
+								closeBinary();
+								});
+						});
+					break;
+				}
+			}
         }
 
         // can't lock slots in local games or saved games
@@ -9952,6 +9991,7 @@ bind_failed:
 	}
 
 	static void characterCardLobbySettingsMenuOLD(int index) {
+#if 0
 	    /*
 	     * NOTE: This is the old lobby settings menu that includes
 	     * Difficulty options. It is disabled for now!
@@ -9969,12 +10009,7 @@ bind_failed:
 			button->select();
 		};
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -10131,12 +10166,7 @@ bind_failed:
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown("invite");
 		custom_difficulty->setWidgetRight("custom");
-		switch (index) {
-		case 0: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(0);}); break;
-		case 1: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(1);}); break;
-		case 2: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(2);}); break;
-		case 3: custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(3);}); break;
-		}
+		custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(button.getOwner());});
 
 		auto custom = card->addButton("custom");
 		custom->setSize(SDL_Rect{210, 216, 30, 30});
@@ -10323,12 +10353,8 @@ bind_failed:
 		} else {
 			confirm->setWidgetUp("open");
 		}
-		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}*/
+		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
+#endif
 	}
 
 	static void characterCardRaceMenu(int index, bool details, int selection) {
@@ -10344,12 +10370,7 @@ bind_failed:
 			button->select();
 		};
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -10488,12 +10509,7 @@ bind_failed:
 		    race->addWidgetAction("MenuPageRight", "female");
 		    race->addWidgetAction("MenuAlt1", "disable_abilities");
 		    race->addWidgetAction("MenuAlt2", "show_race_info");
-		    switch (index) {
-		    case 0: race->setCallback([](Button& button){race_button_fn(button, 0);}); break;
-		    case 1: race->setCallback([](Button& button){race_button_fn(button, 1);}); break;
-		    case 2: race->setCallback([](Button& button){race_button_fn(button, 2);}); break;
-		    case 3: race->setCallback([](Button& button){race_button_fn(button, 3);}); break;
-		    }
+		    race->setCallback([](Button& button){race_button_fn(button, button.getOwner());});
 		    if (stats[index]->playerRace == c) {
 			    race->setPressed(true);
 		    }
@@ -10510,6 +10526,13 @@ bind_failed:
 		            hover->pos.y = button->getSize().y;
 		            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
 		        }
+
+				// rescue this player's focus
+				assert(main_menu_frame);
+				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+				if (!selectedWidget) {
+					widget.select();
+				}
 		        });
 
 		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
@@ -10691,12 +10714,7 @@ bind_failed:
 			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
 			entry->color = color_dlc0;
 			entry->text = name;
-			switch (index) {
-			case 0: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 0); entry.parent.activate();}; break;
-			case 1: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 1); entry.parent.activate();}; break;
-			case 2: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 2); entry.parent.activate();}; break;
-			case 3: entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, 3); entry.parent.activate();}; break;
-			}
+			entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, entry.parent.getOwner()); entry.parent.activate();};
 			entry->selected = entry->click;
 			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
@@ -10753,17 +10771,25 @@ bind_failed:
 			disable_abilities->setPressed(stats[index]->appearance != 0);
 		}
 		static auto disable_abilities_fn = [](Button& button, int index){
-			soundCheckmark();
-			if (stats[index]->playerRace != RACE_HUMAN) {
+			if (stats[index]->playerRace == RACE_HUMAN) {
+				soundError();
+			} else {
 				stats[index]->appearance = button.isPressed() ? 1 : 0;
+				auto check = isCharacterValidFromDLC(*stats[index], client_classes[index]);
+				if (check != VALID_OK_CHARACTER) {
+					// player tried to play a class they haven't unlocked for this race
+					// revert them to a barbarian.
+					soundError();
+					client_classes[index] = CLASS_BARBARIAN;
+					stats[index]->clearStats();
+					initClass(index);
+					sendPlayerOverNet();
+				} else {
+					soundCheckmark();
+				}
 			}
 		};
-		switch (index) {
-		case 0: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 0);}); break;
-		case 1: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 1);}); break;
-		case 2: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 2);}); break;
-		case 3: disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, 3);}); break;
-		}
+		disable_abilities->setCallback([](Button& button){disable_abilities_fn(button, button.getOwner());});
 	    disable_abilities->addWidgetAction("MenuPageLeft", "male");
 	    disable_abilities->addWidgetAction("MenuPageRight", "female");
 	    disable_abilities->addWidgetAction("MenuAlt1", "disable_abilities");
@@ -10794,12 +10820,7 @@ bind_failed:
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
 		male_button->setWidgetRight("female");
-		switch (index) {
-		case 0: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 0);}); break;
-		case 1: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 1);}); break;
-		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
-		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
-		}
+		male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, button.getOwner());});
 	    male_button->addWidgetAction("MenuPageLeft", "male");
 	    male_button->addWidgetAction("MenuPageRight", "female");
 	    male_button->addWidgetAction("MenuAlt1", "disable_abilities");
@@ -10846,12 +10867,7 @@ bind_failed:
 		female_button->setWidgetDown("confirm");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("show_race_info");
-		switch (index) {
-		case 0: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 0);}); break;
-		case 1: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 1);}); break;
-		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
-		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
-		}
+		female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, button.getOwner());});
 	    female_button->addWidgetAction("MenuPageLeft", "male");
 	    female_button->addWidgetAction("MenuPageRight", "female");
 	    female_button->addWidgetAction("MenuAlt1", "disable_abilities");
@@ -10894,19 +10910,15 @@ bind_failed:
 		show_race_info->setWidgetDown("confirm");
 		show_race_info->setWidgetLeft("female");
 		if (details) {
-		    switch (index) {
-		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, race_selection[0]);}); break;
-		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, race_selection[1]);}); break;
-		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, race_selection[2]);}); break;
-		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, race_selection[3]);}); break;
-	        }
+		    show_race_info->setCallback([](Button& button){
+				characterCardRaceMenu(button.getOwner(), false, race_selection[button.getOwner()]);
+				soundActivate();
+				});
 	    } else {
-		    switch (index) {
-		    case 0: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, true, race_selection[0]);}); break;
-		    case 1: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, true, race_selection[1]);}); break;
-		    case 2: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, true, race_selection[2]);}); break;
-		    case 3: show_race_info->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, true, race_selection[3]);}); break;
-	        }
+		    show_race_info->setCallback([](Button& button){
+				characterCardRaceMenu(button.getOwner(), true, race_selection[button.getOwner()]);
+				soundActivate();
+				});
 	    }
 	    show_race_info->addWidgetAction("MenuPageLeft", "male");
 	    show_race_info->addWidgetAction("MenuPageRight", "female");
@@ -10924,12 +10936,7 @@ bind_failed:
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->setWidgetBack("back_button");
 		confirm->setWidgetUp("female");
-		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}*/
+		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
 	static void characterCardClassMenu(int index, bool details, int selection) {
@@ -10946,12 +10953,7 @@ bind_failed:
 			button->select();
 		};
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(0);}); break;
-		case 1: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(1);}); break;
-		case 2: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(2);}); break;
-		case 3: (void)createBackWidget(card,[](Button&){soundCancel(); back_fn(3);}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -11316,12 +11318,7 @@ bind_failed:
 		    auto class_desc = card->addField("class_desc", 1024);
 		    class_desc->setSize(SDL_Rect{42, 68, 240, 218});
 		    class_desc->setFont(smallfont_no_outline);
-		    switch (index) {
-		    case 0: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 0);}); break;
-		    case 1: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 1);}); break;
-		    case 2: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 2);}); break;
-		    case 3: class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), 3);}); break;
-		    }
+		    class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		    (*class_desc->getTickCallback())(*class_desc);
 
             // stats definitions
@@ -11402,12 +11399,7 @@ bind_failed:
 		        class_stat->setVJustify(Field::justify_t::TOP);
 		        class_stat->setFont(smallfont_outline);
 		        class_stat->setText(class_stats_text[c]);
-		        switch (index) {
-		        case 0: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 0);}); break;
-		        case 1: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 1);}); break;
-		        case 2: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 2);}); break;
-		        case 3: class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), 3);}); break;
-		        }
+		        class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		        (*class_stat->getTickCallback())(*class_stat);
 		    }
 
@@ -11445,12 +11437,7 @@ bind_failed:
 		    difficulty_stars->setHJustify(Field::justify_t::RIGHT);
 		    difficulty_stars->setVJustify(Field::justify_t::BOTTOM);
 		    difficulty_stars->setSize(difficulty_size);
-	        switch (index) {
-	        case 0: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 0);}); break;
-	        case 1: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 1);}); break;
-	        case 2: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 2);}); break;
-	        case 3: difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), 3);}); break;
-	        }
+	        difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 	        (*difficulty_stars->getTickCallback())(*difficulty_stars);
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
@@ -11473,12 +11460,7 @@ bind_failed:
 		    class_name->setHJustify(Field::justify_t::CENTER);
 		    class_name->setVJustify(Field::justify_t::CENTER);
 		    class_name->setFont(smallfont_outline);
-		    switch (index) {
-		    case 0: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 0);}); break;
-		    case 1: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 1);}); break;
-		    case 2: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 2);}); break;
-		    case 3: class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), 3);}); break;
-		    }
+		    class_name->setTickCallback([](Widget& widget){class_name_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		    (*class_name->getTickCallback())(*class_name);
 		}
 
@@ -11548,19 +11530,15 @@ bind_failed:
 		class_info->setWidgetBack("back_button");
 		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		if (details) {
-		    switch (index) {
-		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, false, class_selection[0]);}); break;
-		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, false, class_selection[1]);}); break;
-		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, false, class_selection[2]);}); break;
-		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, false, class_selection[3]);}); break;
-		    }
+		    class_info->setCallback([](Button& button){
+				characterCardClassMenu(button.getOwner(), false, class_selection[button.getOwner()]);
+				soundActivate();
+				});
 		} else {
-		    switch (index) {
-		    case 0: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(0, true, class_selection[0]);}); break;
-		    case 1: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(1, true, class_selection[1]);}); break;
-		    case 2: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(2, true, class_selection[2]);}); break;
-		    case 3: class_info->setCallback([](Button& button){soundActivate(); characterCardClassMenu(3, true, class_selection[3]);}); break;
-		    }
+		    class_info->setCallback([](Button& button){
+				characterCardClassMenu(button.getOwner(), true, class_selection[button.getOwner()]);
+				soundActivate();
+				});
 		}
 
 		const int current_class = std::min(std::max(0, client_classes[index]), num_classes - 1);
@@ -11657,7 +11635,6 @@ bind_failed:
 				if (c > 0) {
 				    // when selecting anything but random class...
 					--c; // discount the "random class" option
-					auto old_class = client_classes[index];
 					auto check = isCharacterValidFromDLC(*stats[index], c);
 					if (check != VALID_OK_CHARACTER) {
 						switch (check) {
@@ -11695,13 +11672,7 @@ bind_failed:
 				sendPlayerOverNet();
 			};
 
-			switch (index) {
-			case 0: button->setCallback([](Button& button){button_fn(button, 0);}); break;
-			case 1: button->setCallback([](Button& button){button_fn(button, 1);}); break;
-			case 2: button->setCallback([](Button& button){button_fn(button, 2);}); break;
-			case 3: button->setCallback([](Button& button){button_fn(button, 3);}); break;
-			}
-
+			button->setCallback([](Button& button){button_fn(button, button.getOwner());});
 			button->setTickCallback([](Widget& widget){
 			    auto button = static_cast<Button*>(&widget);
 				const int index = widget.getOwner();
@@ -11770,6 +11741,13 @@ bind_failed:
 							"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassLocked_Icon_00.png";
 					}
 				}
+
+				// rescue this player's focus
+				assert(main_menu_frame);
+				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+				if (!selectedWidget) {
+					widget.select();
+				}
 			    });
 		}
 
@@ -11790,12 +11768,7 @@ bind_failed:
 		confirm->addWidgetAction("MenuStart", "confirm");
 		confirm->addWidgetAction("MenuAlt2", "class_info");
 		confirm->setWidgetBack("back_button");
-		switch (index) {
-		case 0: confirm->setCallback([](Button&){soundActivate(); back_fn(0);}); break;
-		case 1: confirm->setCallback([](Button&){soundActivate(); back_fn(1);}); break;
-		case 2: confirm->setCallback([](Button&){soundActivate(); back_fn(2);}); break;
-		case 3: confirm->setCallback([](Button&){soundActivate(); back_fn(3);}); break;
-		}*/
+		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
 	static void createCharacterCard(int index) {
@@ -11817,12 +11790,11 @@ bind_failed:
 
 		auto card = initCharacterCard(index, 346);
 
-		switch (index) {
-		case 0: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(0); checkReadyStates();}); break;
-		case 1: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(1); checkReadyStates();}); break;
-		case 2: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(2); checkReadyStates();}); break;
-		case 3: (void)createBackWidget(card,[](Button& button){soundCancel(); createStartButton(3); checkReadyStates();}); break;
-		}
+		(void)createBackWidget(card,[](Button& button){
+			createStartButton(button.getOwner());
+			checkReadyStates();
+			soundCancel();
+			});
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -11884,36 +11856,18 @@ bind_failed:
 			    sendPlayerOverNet();
 			}
 		};
-		switch (index) {
-		case 0:
-			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 0);});
-			name_field->setTickCallback([](Widget& widget){
-				Field* field = static_cast<Field*>(&widget);
-				name_field_fn(field->getText(), 0);
-				});
-			break;
-		case 1:
-			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 1);});
-			name_field->setTickCallback([](Widget& widget){
-				Field* field = static_cast<Field*>(&widget);
-				name_field_fn(field->getText(), 1);
-				});
-			break;
-		case 2:
-			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 2);});
-			name_field->setTickCallback([](Widget& widget){
-				Field* field = static_cast<Field*>(&widget);
-				name_field_fn(field->getText(), 2);
-				});
-			break;
-		case 3:
-			name_field->setCallback([](Field& field){name_field_fn(field.getText(), 3);});
-			name_field->setTickCallback([](Widget& widget){
-				Field* field = static_cast<Field*>(&widget);
-				name_field_fn(field->getText(), 3);
-				});
-			break;
-		}
+		name_field->setCallback([](Field& field){name_field_fn(field.getText(), field.getOwner());});
+		name_field->setTickCallback([](Widget& widget){
+			Field* field = static_cast<Field*>(&widget);
+			name_field_fn(field->getText(), field->getOwner());
+
+			// rescue this player's focus
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selectedWidget) {
+				widget.select();
+			}
+			});
 
 		auto randomize_name = card->addButton("randomize_name");
 		randomize_name->setColor(makeColor(255, 255, 255, 255));
@@ -11939,12 +11893,7 @@ bind_failed:
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);
 		};
-		switch (index) {
-		case 0: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 0);}); break;
-		case 1: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 1);}); break;
-		case 2: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 2);}); break;
-		case 3: randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, 3);}); break;
-		}
+		randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, button.getOwner());});
 		
 		auto game_settings = card->addButton("game_settings");
 		game_settings->setSize(SDL_Rect{62, 76, 202, 52});
@@ -11962,12 +11911,7 @@ bind_failed:
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
-		switch (index) {
-		case 0: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(0);}); break;
-		case 1: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(1);}); break;
-		case 2: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(2);}); break;
-		case 3: game_settings->setCallback([](Button&){soundActivate(); characterCardLobbySettingsMenu(3);}); break;
-		}
+		game_settings->setCallback([](Button& button){soundActivate(); characterCardLobbySettingsMenu(button.getOwner());});
 
 		auto bottom = card->addFrame("bottom");
 		bottom->setSize(SDL_Rect{42, 166, 120, 52});
@@ -11999,12 +11943,7 @@ bind_failed:
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
 		male_button->setWidgetDown("class");
-		switch (index) {
-		case 0: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 0);}); break;
-		case 1: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 1);}); break;
-		case 2: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 2);}); break;
-		case 3: male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, 3);}); break;
-		}
+		male_button->setCallback([](Button& button){soundActivate(); male_button_fn(button, button.getOwner());});
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
@@ -12047,12 +11986,7 @@ bind_failed:
 		female_button->setWidgetRight("race");
 		female_button->setWidgetUp("game_settings");
 		female_button->setWidgetDown("class");
-		switch (index) {
-		case 0: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 0);}); break;
-		case 1: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 1);}); break;
-		case 2: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 2);}); break;
-		case 3: female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, 3);}); break;
-		}
+		female_button->setCallback([](Button& button){soundActivate(); female_button_fn(button, button.getOwner());});
 		female_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
@@ -12100,12 +12034,7 @@ bind_failed:
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
-		switch (index) {
-		case 0: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(0, false, -1);}); break;
-		case 1: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(1, false, -1);}); break;
-		case 2: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(2, false, -1);}); break;
-		case 3: race_button->setCallback([](Button&){soundActivate(); characterCardRaceMenu(3, false, -1);}); break;
-		}
+		race_button->setCallback([](Button& button){soundActivate(); characterCardRaceMenu(button.getOwner(), false, -1);});
 
 		static auto randomize_class_fn = [](Button& button, int index){
 			soundActivate();
@@ -12203,12 +12132,7 @@ bind_failed:
 		randomize_class->setWidgetLeft("class");
 		randomize_class->setWidgetDown("ready");
 		randomize_class->setWidgetUp("race");
-		switch (index) {
-		case 0: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 0);}); break;
-		case 1: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 1);}); break;
-		case 2: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 2);}); break;
-		case 3: randomize_class->setCallback([](Button& button){randomize_class_fn(button, 3);}); break;
-		}
+		randomize_class->setCallback([](Button& button){randomize_class_fn(button, button.getOwner());});
 
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
@@ -12221,12 +12145,7 @@ bind_failed:
 		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
-		switch (index) {
-		case 0: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 0);}); break;
-		case 1: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 1);}); break;
-		case 2: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 2);}); break;
-		case 3: class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), 3);}); break;
-		}
+		class_text->setTickCallback([](Widget& widget){class_text_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_tick_fn = [](Button& button, int index) {
@@ -12280,24 +12199,8 @@ bind_failed:
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
 		class_button->setWidgetDown("ready");
-		switch (index) {
-		case 0:
-			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 0);});
-			class_button->setCallback([](Button&){class_button_fn(0);});
-			break;
-		case 1:
-			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 1);});
-			class_button->setCallback([](Button&){class_button_fn(1);});
-			break;
-		case 2:
-			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 2);});
-			class_button->setCallback([](Button&){class_button_fn(2);});
-			break;
-		case 3:
-			class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), 3);});
-			class_button->setCallback([](Button&){class_button_fn(3);});
-			break;
-		}
+		class_button->setTickCallback([](Widget& widget){class_button_tick_fn(*static_cast<Button*>(&widget), widget.getOwner());});
+		class_button->setCallback([](Button& button){class_button_fn(button.getOwner());});
 		(*class_button->getTickCallback())(*class_button);
 
 		static auto ready_button_fn = [](Button& button, int index) {
@@ -12319,12 +12222,7 @@ bind_failed:
 		ready_button->addWidgetAction("MenuAlt2", "privacy");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
-		switch (index) {
-	    case 0: ready_button->setCallback([](Button& button){ready_button_fn(button, 0);}); break;
-	    case 1: ready_button->setCallback([](Button& button){ready_button_fn(button, 1);}); break;
-	    case 2: ready_button->setCallback([](Button& button){ready_button_fn(button, 2);}); break;
-	    case 3: ready_button->setCallback([](Button& button){ready_button_fn(button, 3);}); break;
-		}
+		ready_button->setCallback([](Button& button){ready_button_fn(button, button.getOwner());});
 		ready_button->select();
 	}
 
@@ -13011,19 +12909,9 @@ bind_failed:
 		    button->setWidgetSearchParent(card->getName());
 		    button->addWidgetAction("MenuConfirm", "FraggleMaggleStiggleWortz"); // some garbage so that this glyph isn't auto-bound
 		    if (ready) {
-		        switch (index) {
-		        case 0: button->setCallback([](Button&){cancel_fn(0);}); break;
-		        case 1: button->setCallback([](Button&){cancel_fn(1);}); break;
-		        case 2: button->setCallback([](Button&){cancel_fn(2);}); break;
-		        case 3: button->setCallback([](Button&){cancel_fn(3);}); break;
-		        }
+		        button->setCallback([](Button& button){cancel_fn(button.getOwner());});
 		    } else {
-		        switch (index) {
-		        case 0: button->setCallback([](Button&){ready_fn(0);}); break;
-		        case 1: button->setCallback([](Button&){ready_fn(1);}); break;
-		        case 2: button->setCallback([](Button&){ready_fn(2);}); break;
-		        case 3: button->setCallback([](Button&){ready_fn(3);}); break;
-		        }
+		        button->setCallback([](Button& button){ready_fn(button.getOwner());}); 
 		    }
 		    button->select();
 		} else {
@@ -16128,7 +16016,7 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				tutorial_map_destination = "tutorial_hub";
+				tutorial_map_destination = "tutorial1";
 				beginFade(MainMenu::FadeDestination::HallOfTrials);
 			},
 			[](Button& button) { // No
@@ -17383,7 +17271,6 @@ bind_failed:
 		restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
 		restore_defaults->setHideKeyboardGlyphs(false);
 		restore_defaults->setCallback([](Button& button){
-			soundActivate();
 			settingsReset();
 			auto settings = static_cast<Frame*>(button.getParent()); assert(settings);
 			std::vector<const char*> tabs = {

@@ -257,7 +257,7 @@ int rebindkey = -1;
 int rebindaction = -1;
 
 Sint32 gearrot = 0;
-Sint32 gearsize = 20000;
+Sint32 gearsize = 0;
 Uint16 logoalpha = 0;
 int credittime = 0;
 int creditstage = 0;
@@ -457,9 +457,9 @@ void navigateMainMenuItems(bool mode)
 	if (menuselect == 0)
 	{
 		//No menu item selected.
-		if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+		if ( keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 		{
-			keystatus[SDL_SCANCODE_UP] = 0;
+			keystatus[SDLK_UP] = 0;
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -473,9 +473,9 @@ void navigateMainMenuItems(bool mode)
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 			inputs.warpMouse(clientnum, warpx, warpy, flags);
 		}
-		else if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+		else if ( keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 		{
-			keystatus[SDL_SCANCODE_DOWN] = 0;
+			keystatus[SDLK_DOWN] = 0;
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -491,9 +491,9 @@ void navigateMainMenuItems(bool mode)
 	}
 	else
 	{
-		if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+		if ( keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 		{
-			keystatus[SDL_SCANCODE_UP] = 0;
+			keystatus[SDLK_UP] = 0;
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -518,9 +518,9 @@ void navigateMainMenuItems(bool mode)
 			Uint32 flags = (Inputs::SET_MOUSE | Inputs::SET_CONTROLLER);
 			inputs.warpMouse(clientnum, warpx, warpy, flags);
 		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+		else if (keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 		{
-			keystatus[SDL_SCANCODE_DOWN] = 0;
+			keystatus[SDLK_DOWN] = 0;
 			if ( rebindaction == -1 )
 			{
 				inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -800,7 +800,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 void inline pauseMenuOnInputPressed()
 {
 	inputs.mouseClearLeft(clientnum);
-	keystatus[SDL_SCANCODE_RETURN] = 0;
+	keystatus[SDLK_RETURN] = 0;
 	playSound(139, 64);
 	if ( rebindaction == -1 )
 	{
@@ -816,7 +816,7 @@ void handleInGamePauseMenu()
 	Sint32 mousey = inputs.getMouse(clientnum, Inputs::MouseInputs::Y);
 	Sint32 omousex = inputs.getMouse(clientnum, Inputs::MouseInputs::OX);
 	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
-	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDLK_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1023,7 +1023,7 @@ void handleInGamePauseMenu()
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
+			button->key = SDLK_ESCAPE;
 			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 			// yes button
@@ -1050,7 +1050,7 @@ void handleInGamePauseMenu()
 			}
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_RETURN;
+			button->key = SDLK_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 			if ( multiplayer == SINGLE && singleplayerAliveEndGameAndSave )
@@ -1108,7 +1108,7 @@ void handleInGamePauseMenu()
 				button->action = &buttonCloseSubwindow;
 				button->visible = 1;
 				button->focused = 1;
-				button->key = SDL_SCANCODE_ESCAPE;
+				button->key = SDLK_ESCAPE;
 				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 				// yes button
@@ -1128,7 +1128,7 @@ void handleInGamePauseMenu()
 				}
 				button->visible = 1;
 				button->focused = 1;
-				button->key = SDL_SCANCODE_RETURN;
+				button->key = SDLK_RETURN;
 				button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 				// no button
@@ -1203,7 +1203,7 @@ void handleInGamePauseMenu()
 			button->action = &buttonQuitConfirm;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_RETURN;
+			button->key = SDLK_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
 
 			// no button
@@ -1238,7 +1238,7 @@ void handleInGamePauseMenu()
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
+			button->key = SDLK_ESCAPE;
 			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 		}
 	}
@@ -1256,7 +1256,7 @@ void handleTutorialPauseMenu()
 	Sint32 omousey = inputs.getMouse(clientnum, Inputs::MouseInputs::OY);
 
 	const Uint32 colorGray = uint32ColorGray;
-	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+	const bool inputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDLK_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 	SDL_Rect text;
 	text.x = 50;
 	text.h = 18;
@@ -1404,7 +1404,7 @@ void handleTutorialPauseMenu()
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
+			button->key = SDLK_ESCAPE;
 			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 			// yes button
@@ -1417,7 +1417,7 @@ void handleTutorialPauseMenu()
 			button->action = &gameModeManager.Tutorial.buttonReturnToTutorialHub;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_RETURN;
+			button->key = SDLK_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT];
 		}
 	}
@@ -1468,7 +1468,7 @@ void handleTutorialPauseMenu()
 				button->action = &buttonCloseSubwindow;
 				button->visible = 1;
 				button->focused = 1;
-				button->key = SDL_SCANCODE_ESCAPE;
+				button->key = SDLK_ESCAPE;
 				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 				// yes button
@@ -1481,7 +1481,7 @@ void handleTutorialPauseMenu()
 				button->action = &gameModeManager.Tutorial.buttonRestartTrial;
 				button->visible = 1;
 				button->focused = 1;
-				button->key = SDL_SCANCODE_RETURN;
+				button->key = SDLK_RETURN;
 				button->joykey = joyimpulses[INJOY_MENU_NEXT];
 			}
 		}
@@ -1521,7 +1521,7 @@ void handleTutorialPauseMenu()
 			button->action = &buttonEndGameConfirm;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_RETURN;
+			button->key = SDLK_RETURN;
 			button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
 
 			// cancel button
@@ -1545,7 +1545,7 @@ void handleTutorialPauseMenu()
 			button->action = &buttonCloseSubwindow;
 			button->visible = 1;
 			button->focused = 1;
-			button->key = SDL_SCANCODE_ESCAPE;
+			button->key = SDLK_ESCAPE;
 			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 		}
 	}
@@ -1846,7 +1846,7 @@ void handleMainMenu(bool mode)
 			/*
 			 * Mouse menu item select/highlight implicitly handled here.
 			 */
-			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			if ( keystatus[SDLK_l] && (keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
 				client_classes[clientnum] = CLASS_BARBARIAN;
@@ -1854,9 +1854,9 @@ void handleMainMenu(bool mode)
 				stats[0]->playerRace = RACE_HUMAN;
 				initClass(0);
 				strcpy(stats[0]->name, "The Server");
-				keystatus[SDL_SCANCODE_L] = 0;
-				keystatus[SDL_SCANCODE_LCTRL] = 0;
-				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				keystatus[SDLK_l] = 0;
+				keystatus[SDLK_LCTRL] = 0;
+				keystatus[SDLK_RCTRL] = 0;
 				multiplayerselect = SERVER;
 				charcreation_step = 6;
 				camera_charsheet_offsetyaw = (330) * PI / 180;
@@ -1865,7 +1865,7 @@ void handleMainMenu(bool mode)
 				buttonHostLobby(nullptr);
 			}
 
-			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			if ( keystatus[SDLK_m] && (keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
 				client_classes[clientnum] = CLASS_BARBARIAN;
@@ -1873,9 +1873,9 @@ void handleMainMenu(bool mode)
 				stats[0]->playerRace = RACE_HUMAN;
 				initClass(0);
 				strcpy(stats[0]->name, "The Client");
-				keystatus[SDL_SCANCODE_M] = 0;
-				keystatus[SDL_SCANCODE_LCTRL] = 0;
-				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				keystatus[SDLK_m] = 0;
+				keystatus[SDLK_LCTRL] = 0;
+				keystatus[SDLK_RCTRL] = 0;
 				multiplayerselect = CLIENT;
 				charcreation_step = 6;
 				camera_charsheet_offsetyaw = (330) * PI / 180;
@@ -1884,7 +1884,7 @@ void handleMainMenu(bool mode)
 				buttonJoinLobby(nullptr);
 			}
 
-			bool mainMenuSelectInputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
+			bool mainMenuSelectInputIsPressed = (inputs.bMouseLeft(clientnum) || keystatus[SDLK_RETURN] || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1));
 
 			//"Start Game" button.
 			SDL_Rect text;
@@ -2298,7 +2298,7 @@ void handleMainMenu(bool mode)
 					button->action = &buttonCloseSubwindow;
 					button->visible = 1;
 					button->focused = 1;
-					button->key = SDL_SCANCODE_ESCAPE;
+					button->key = SDLK_ESCAPE;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 					// yes button
@@ -2311,7 +2311,7 @@ void handleMainMenu(bool mode)
 					button->action = &buttonQuitConfirm;
 					button->visible = 1;
 					button->focused = 1;
-					button->key = SDL_SCANCODE_RETURN;
+					button->key = SDLK_RETURN;
 					button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 					// no button
@@ -3100,9 +3100,9 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+			if ( keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_UP] = 0;
+				keystatus[SDLK_UP] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -3224,9 +3224,9 @@ void handleMainMenu(bool mode)
 					initClass(0);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+			if ( keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_DOWN] = 0;
+				keystatus[SDLK_DOWN] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -3363,9 +3363,9 @@ void handleMainMenu(bool mode)
 					initClass(0);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_RIGHT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_RIGHT) && rebindaction == -1) )
+			if ( keystatus[SDLK_RIGHT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_RIGHT) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_RIGHT] = 0;
+				keystatus[SDLK_RIGHT] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_RIGHT);
@@ -3384,9 +3384,9 @@ void handleMainMenu(bool mode)
 					raceSelect = 0;
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_LEFT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_LEFT) && rebindaction == -1) )
+			if ( keystatus[SDLK_LEFT] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_LEFT) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_LEFT] = 0;
+				keystatus[SDLK_LEFT] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_LEFT);
@@ -3525,9 +3525,9 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+				if ( keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 				{
-					keystatus[SDL_SCANCODE_UP] = 0;
+					keystatus[SDLK_UP] = 0;
 					if ( rebindaction == -1 )
 					{
 						inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -3559,9 +3559,9 @@ void handleMainMenu(bool mode)
 						initClass(0);
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+				if ( keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 				{
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+					keystatus[SDLK_DOWN] = 0;
 					if ( rebindaction == -1 )
 					{
 						inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -3633,9 +3633,9 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+				if ( keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 				{
-					keystatus[SDL_SCANCODE_UP] = 0;
+					keystatus[SDLK_UP] = 0;
 					if ( rebindaction == -1 )
 					{
 						inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -3647,9 +3647,9 @@ void handleMainMenu(bool mode)
 						stats[0]->appearance = NUMAPPEARANCES - 1;
 					}
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+				if ( keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 				{
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+					keystatus[SDLK_DOWN] = 0;
 					if ( rebindaction == -1 )
 					{
 						inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -3804,9 +3804,9 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-			if (keystatus[SDL_SCANCODE_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
+			if (keystatus[SDLK_UP] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_UP) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_UP] = 0;
+				keystatus[SDLK_UP] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_UP);
@@ -3831,9 +3831,9 @@ void handleMainMenu(bool mode)
 					multiplayerselect = displayedOptionToGamemode.at(nummodes - 1);
 				}
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
+			if ( keystatus[SDLK_DOWN] || (inputs.bControllerInputPressed(clientnum, INJOY_DPAD_DOWN) && rebindaction == -1) )
 			{
-				keystatus[SDL_SCANCODE_DOWN] = 0;
+				keystatus[SDLK_DOWN] = 0;
 				if ( rebindaction == -1 )
 				{
 					inputs.controllerClearInput(clientnum, INJOY_DPAD_DOWN);
@@ -4388,9 +4388,9 @@ void handleMainMenu(bool mode)
 
 			if ( rebindkey != -1 && lastkeypressed )
 			{
-				if ( lastkeypressed == SDL_SCANCODE_ESCAPE )
+				if ( lastkeypressed == SDLK_ESCAPE )
 				{
-					keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					keystatus[SDLK_ESCAPE] = 0;
 					lastkeypressed = 0;
 					rebindkey = -1;
 				}
@@ -4508,14 +4508,14 @@ void handleMainMenu(bool mode)
 				if (lastkeypressed >= 299)   /* Is a joybutton. */
 				{
 					settings_joyimpulses[rebindaction] = lastkeypressed;
-					*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
+					//*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
 					rebindaction = -1;
 				}
 				else
 				{
-					if (lastkeypressed == SDL_SCANCODE_ESCAPE)
+					if (lastkeypressed == SDLK_ESCAPE)
 					{
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
+						keystatus[SDLK_ESCAPE] = 0;
 					}
 					lastkeypressed = 0;
 					rebindaction = -1;
@@ -5775,9 +5775,9 @@ void handleMainMenu(bool mode)
 		// switch textboxes with TAB
 		if ( multiplayer == SERVER )
 		{
-			if ( keystatus[SDL_SCANCODE_TAB] )
+			if ( keystatus[SDLK_TAB] )
 			{
-				keystatus[SDL_SCANCODE_TAB] = 0;
+				keystatus[SDLK_TAB] = 0;
 				if ( !directConnect && LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
 				{
 #ifdef STEAMWORKS
@@ -6060,9 +6060,9 @@ void handleMainMenu(bool mode)
 			inputlen = LOBBY_CHATBOX_LENGTH - 1;
 			SDL_StartTextInput();
 		}
-		if ( keystatus[SDL_SCANCODE_RETURN] && strlen(lobbyChatbox) > 0 )
+		if ( keystatus[SDLK_RETURN] && strlen(lobbyChatbox) > 0 )
 		{
-			keystatus[SDL_SCANCODE_RETURN] = 0;
+			keystatus[SDLK_RETURN] = 0;
 			if ( multiplayer != CLIENT )
 			{
 				playSound(238, 64);
@@ -6503,15 +6503,15 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( keystatus[SDL_SCANCODE_UP] )
+				if ( keystatus[SDLK_UP] )
 				{
 					g_SteamLeaderboards->LeaderboardView.scrollIndex = std::max(g_SteamLeaderboards->LeaderboardView.scrollIndex - 1, 0);
-					keystatus[SDL_SCANCODE_UP] = 0;
+					keystatus[SDLK_UP] = 0;
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] )
+				if ( keystatus[SDLK_DOWN] )
 				{
 					g_SteamLeaderboards->LeaderboardView.scrollIndex = std::min(g_SteamLeaderboards->LeaderboardView.scrollIndex + 1, entriesToScroll);
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+					keystatus[SDLK_DOWN] = 0;
 				}
 				slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
 				slider.y += slider.h * savegames_window_scroll;
@@ -7021,15 +7021,15 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			if ( keystatus[SDL_SCANCODE_UP] )
+			if ( keystatus[SDLK_UP] )
 			{
 				savegames_window_scroll = std::max(savegames_window_scroll - 1, 0);
-				keystatus[SDL_SCANCODE_UP] = 0;
+				keystatus[SDLK_UP] = 0;
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] )
+			if ( keystatus[SDLK_DOWN] )
 			{
 				savegames_window_scroll = std::min(savegames_window_scroll + 1, entriesToScroll);
-				keystatus[SDL_SCANCODE_DOWN] = 0;
+				keystatus[SDLK_DOWN] = 0;
 			}
 			slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
 			slider.y += slider.h * savegames_window_scroll;
@@ -7645,15 +7645,15 @@ void handleMainMenu(bool mode)
 						}
 					}
 				
-					if ( keystatus[SDL_SCANCODE_UP] )
+					if ( keystatus[SDLK_UP] )
 					{
 						gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
-						keystatus[SDL_SCANCODE_UP] = 0;
+						keystatus[SDLK_UP] = 0;
 					}
-					if ( keystatus[SDL_SCANCODE_DOWN] )
+					if ( keystatus[SDLK_DOWN] )
 					{
 						gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
-						keystatus[SDL_SCANCODE_DOWN] = 0;
+						keystatus[SDLK_DOWN] = 0;
 					}
 					slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
 					slider.y += slider.h * gamemods_window_scroll;
@@ -8061,15 +8061,15 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( keystatus[SDL_SCANCODE_UP] )
+				if ( keystatus[SDLK_UP] )
 				{
 					gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
-					keystatus[SDL_SCANCODE_UP] = 0;
+					keystatus[SDLK_UP] = 0;
 				}
-				if ( keystatus[SDL_SCANCODE_DOWN] )
+				if ( keystatus[SDLK_DOWN] )
 				{
 					gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
-					keystatus[SDL_SCANCODE_DOWN] = 0;
+					keystatus[SDLK_DOWN] = 0;
 				}
 				slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
 				slider.y += slider.h * gamemods_window_scroll;
@@ -8221,15 +8221,15 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			if ( keystatus[SDL_SCANCODE_UP] )
+			if ( keystatus[SDLK_UP] )
 			{
 				menu.windowScroll = std::max(menu.windowScroll - 1, 0);
-				keystatus[SDL_SCANCODE_UP] = 0;
+				keystatus[SDLK_UP] = 0;
 			}
-			if ( keystatus[SDL_SCANCODE_DOWN] )
+			if ( keystatus[SDLK_DOWN] )
 			{
 				menu.windowScroll = std::min(menu.windowScroll + 1, entriesToScroll);
-				keystatus[SDL_SCANCODE_DOWN] = 0;
+				keystatus[SDLK_DOWN] = 0;
 			}
 			slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
 			slider.y += slider.h * menu.windowScroll;
@@ -8525,8 +8525,8 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( intromovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
-		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
+		if ( intromovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDLK_ESCAPE] ||
+		        keystatus[SDLK_SPACE] || keystatus[SDLK_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
 		{
 			intromovietime = 0;
 			inputs.mouseClearLeft(clientnum);
@@ -8620,8 +8620,8 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( firstendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
-		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
+		if ( firstendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDLK_ESCAPE] ||
+		        keystatus[SDLK_SPACE] || keystatus[SDLK_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
 		{
 			firstendmovietime = 0;
 			inputs.mouseClearLeft(clientnum);
@@ -8698,8 +8698,8 @@ void handleMainMenu(bool mode)
 		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( secondendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
-		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
+		if ( secondendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDLK_ESCAPE] ||
+		        keystatus[SDLK_SPACE] || keystatus[SDLK_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
 		{
 			secondendmovietime = 0;
 			inputs.mouseClearLeft(clientnum);
@@ -8790,8 +8790,8 @@ void handleMainMenu(bool mode)
 		drawRect(&pos, 0, 255);
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( thirdendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
-			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
+		if ( thirdendmovietime >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDLK_ESCAPE] ||
+			keystatus[SDLK_SPACE] || keystatus[SDLK_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
 		{
 			thirdendmovietime = 0;
 			inputs.mouseClearLeft(clientnum);
@@ -9086,8 +9086,8 @@ void handleMainMenu(bool mode)
 		drawRect(&pos, 0, 255);
 		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
-		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDL_SCANCODE_ESCAPE] ||
-			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || inputs.bMouseLeft(clientnum) || keystatus[SDLK_ESCAPE] ||
+			keystatus[SDLK_SPACE] || keystatus[SDLK_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
 		{
 			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
 			inputs.mouseClearLeft(clientnum);
@@ -9965,8 +9965,10 @@ void doNewGame(bool makeHighscore) {
 		// initialize class
 		if ( !loadingsavegame )
 		{
-			stats[clientnum]->clearStats();
-			initClass(clientnum);
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				stats[c]->clearStats();
+				initClass(c);
+			}
 			mapseed = 0;
 		}
 		else
@@ -11098,7 +11100,7 @@ void openGameoverWindow()
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
@@ -11187,7 +11189,7 @@ void openAchievementsWindow()
 		button->action = &closeAchievementsWindow;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_ESCAPE;
+		button->key = SDLK_ESCAPE;
 		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	}
 
@@ -11202,7 +11204,7 @@ void openAchievementsWindow()
 		button->action = &buttonAchievementsUp;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_UP;
+		button->key = SDLK_UP;
 		button->joykey = joyimpulses[INJOY_MENU_SETTINGS_PREV];
 	}
 
@@ -11217,7 +11219,7 @@ void openAchievementsWindow()
 		button->action = &buttonAchievementsDown;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_DOWN;
+		button->key = SDLK_DOWN;
 		button->joykey = joyimpulses[INJOY_MENU_SETTINGS_NEXT];
 	}
 }
@@ -11428,7 +11430,7 @@ void applySettings()
 void openConfirmResolutionWindow()
 {
 	inputs.mouseClearLeft(clientnum);
-	keystatus[SDL_SCANCODE_RETURN] = 0;
+	keystatus[SDLK_RETURN] = 0;
 	inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
 	playSound(139, 64);
 
@@ -11450,7 +11452,7 @@ void openConfirmResolutionWindow()
 	button->action = &buttonAcceptResolution;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
+	button->key = SDLK_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 	//Revert button
@@ -11463,7 +11465,7 @@ void openConfirmResolutionWindow()
 	button->action = &buttonRevertResolution;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	revertResolutionButton = button;
 
@@ -11660,7 +11662,7 @@ void buttonOpenSteamLeaderboards(button_t* my)
 		button->action = &buttonCloseSubwindow;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_ESCAPE;
+		button->key = SDLK_ESCAPE;
 		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 		// next button
@@ -11673,7 +11675,7 @@ void buttonOpenSteamLeaderboards(button_t* my)
 		button->action = &buttonLeaderboardNextCategory;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_RIGHT;
+		button->key = SDLK_RIGHT;
 		button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
 
 		// previous button
@@ -11686,7 +11688,7 @@ void buttonOpenSteamLeaderboards(button_t* my)
 		button->action = &buttonLeaderboardPrevCategory;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_LEFT;
+		button->key = SDLK_LEFT;
 		button->joykey = joyimpulses[INJOY_DPAD_LEFT];
 
 		// fetch leaderboards
@@ -11743,7 +11745,7 @@ void buttonOpenScoresWindow(button_t* my)
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// next button
@@ -11756,7 +11758,7 @@ void buttonOpenScoresWindow(button_t* my)
 	button->action = &buttonScoreNext;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_RIGHT;
+	button->key = SDLK_RIGHT;
 	button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
 
 	// previous button
@@ -11769,7 +11771,7 @@ void buttonOpenScoresWindow(button_t* my)
 	button->action = &buttonScorePrev;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_LEFT;
+	button->key = SDLK_LEFT;
 	button->joykey = joyimpulses[INJOY_DPAD_LEFT];
 
 	// multiplayer scores toggle button
@@ -12023,7 +12025,7 @@ void buttonDeleteScoreWindow(button_t* my)
 	button->action = &buttonDeleteScoreCancel;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// delete button
@@ -12036,7 +12038,7 @@ void buttonDeleteScoreWindow(button_t* my)
 	button->action = &buttonDeleteScoreConfirm;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
+	button->key = SDLK_RETURN;
 
 	// close button
 	button = newButton();
@@ -12124,7 +12126,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->action = &buttonContinue;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
+	button->key = SDLK_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 	// Back ...
@@ -12137,7 +12139,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->action = &buttonBack;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	int button_back_x = button->x;
 	int button_back_width = button->sizex;
@@ -12152,7 +12154,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->action = &buttonRandomCharacter;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
+	button->key = SDLK_r; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
 
 	//Random Name.
@@ -12550,7 +12552,7 @@ void buttonGamemodsCreateNewModTemplate(button_t* my)
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// create button
@@ -12883,7 +12885,7 @@ void gamemodsWindowUploadInit(bool creatingNewItem)
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// subscribed items window button
@@ -13013,7 +13015,7 @@ void gamemodsSubscribedItemsInit()
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// upload window button
@@ -13651,7 +13653,7 @@ void gamemodsCustomContentInit()
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// fetch local mods button
@@ -13914,7 +13916,7 @@ void windowSerialResult(int success)
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	if ( success > 0 )
@@ -13958,7 +13960,7 @@ void windowEnterSerialPrompt()
 	button->action = &buttonConfirmSerial;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
+	button->key = SDLK_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
 
 	// cancel button
@@ -13982,7 +13984,7 @@ void windowEnterSerialPrompt()
 	button->action = &buttonCloseSubwindow;
 	button->visible = 1;
 	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
+	button->key = SDLK_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 #endif // STEAMWORKS

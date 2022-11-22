@@ -577,14 +577,22 @@ void drawMinimap(const int player, SDL_Rect rect)
 
 void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing)
 {
-	int numPlayerPings = 0;
-
-	if ( !players[destPlayer]->isLocalPlayer() )
-	{
+	if (srcPlayer < 0 || srcPlayer >= MAXPLAYERS) {
 		return;
 	}
+	if (destPlayer < 0 || destPlayer >= MAXPLAYERS) {
+		return;
+	}
+	if (newPing.player < 0 || newPing.player >= MAXPLAYERS) {
+		return;
+	}
+	if (!players[destPlayer]->isLocalPlayer()) {
+		return;
+	}
+
 	if ( !minimapPings[destPlayer].empty() )
 	{
+		int numPlayerPings = 0;
 		for ( std::vector<MinimapPing>::iterator it = minimapPings[destPlayer].begin(); it != minimapPings[destPlayer].end();)
 		{
 			MinimapPing ping = *it;
