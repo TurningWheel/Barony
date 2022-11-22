@@ -3689,9 +3689,19 @@ bool handleEvents(void)
 #endif
 				{
 					lastkeypressed = event.key.keysym.sym;
-					keystatus[event.key.keysym.sym] = 1; // set this key's index to 1
-					Input::keys[event.key.keysym.sym] = 1;
-					Input::lastInputOfAnyKind = SDL_GetKeyName(event.key.keysym.sym);
+#ifdef APPLE
+                    switch (lastkeypressed)
+                    {
+                        default: break;
+                        case SDLK_NUMLOCKCLEAR: lastkeypressed = SDLK_KP_CLEAR; break;
+                        case SDLK_PRINTSCREEN: lastkeypressed = SDLK_F13; break;
+                        case SDLK_SCROLLLOCK: lastkeypressed = SDLK_F14; break;
+                        case SDLK_PAUSE: lastkeypressed = SDLK_F15; break;
+                    }
+#endif
+					keystatus[lastkeypressed] = true;
+					Input::keys[lastkeypressed] = true;
+					Input::lastInputOfAnyKind = SDL_GetKeyName(lastkeypressed);
 				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
@@ -3710,8 +3720,19 @@ bool handleEvents(void)
 				else
 #endif
 				{
-					keystatus[event.key.keysym.sym] = 0; // set this key's index to 0
-					Input::keys[event.key.keysym.sym] = 0;
+                    SDL_Keycode key = event.key.keysym.sym;
+#ifdef APPLE
+                    switch (key)
+                    {
+                        default: break;
+                        case SDLK_NUMLOCKCLEAR: key = SDLK_KP_CLEAR; break;
+                        case SDLK_PRINTSCREEN: key = SDLK_F13; break;
+                        case SDLK_SCROLLLOCK: key = SDLK_F14; break;
+                        case SDLK_PAUSE: key = SDLK_F15; break;
+                    }
+#endif
+					keystatus[key] = false;
+					Input::keys[key] = false;
 				}
 				break;
 			case SDL_TEXTINPUT:
