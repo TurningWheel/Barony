@@ -2394,7 +2394,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			//entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
 		}
 		else if ( *cvar_underworldshrinetest && !strncmp(map.name, "Underworld", 10) 
-			&& (c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7) )
+			&& ((c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7)) )
 		{
 			std::set<int> walkableTiles;
 			for ( int isley = 1; isley < map.width - 1; ++isley )
@@ -2588,7 +2588,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			{
 				for ( y2 = -1; y2 <= 1; y2++ )
 				{
-					if ( checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL) )
+					if ( checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL, false) )
 					{
 						obstacles++;
 						if ( obstacles > 1 )

@@ -1509,7 +1509,7 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 
 -------------------------------------------------------------------------------*/
 
-int checkObstacle(long x, long y, Entity* my, Entity* target)
+int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList)
 {
 	node_t* node;
 	Entity* entity;
@@ -1559,19 +1559,23 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
 			}
 
-			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(x) >> 4, static_cast<int>(y) >> 4, 2);
-			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			if ( !useTileEntityList )
 			{
-				list_t* currentList = *it;
-				for ( node = currentList->first; node != nullptr; node = node->next )
+				// for map generation to detect if decorations have obstacles without entities being assigned actions
+				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
-					//++entCheck;
-					if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+					if ( !entity ) { continue; }
+					if ( entity->flags[PASSABLE] 
+						|| entity == my 
+						|| entity == target 
+						|| entity->sprite == 8 // items
+						|| entity->sprite == 9 // gold
+						|| entity->behavior == &actDoor )
 					{
 						continue;
 					}
-					if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+					if ( my && entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
 					{
 						continue;
 					}
@@ -1580,6 +1584,35 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 						if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
 						{
 							return 1;
+						}
+					}
+				}
+			}
+			else
+			{
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(x) >> 4, static_cast<int>(y) >> 4, 2);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+				{
+					list_t* currentList = *it;
+					for ( node = currentList->first; node != nullptr; node = node->next )
+					{
+						entity = (Entity*)node->element;
+						//++entCheck;
+						if ( !entity ) { continue; }
+						if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+						{
+							continue;
+						}
+						if ( my && entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+						{
+							continue;
+						}
+						if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+						{
+							if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+							{
+								return 1;
+							}
 						}
 					}
 				}
