@@ -3328,7 +3328,7 @@ Difficulty: Normal#
 2594 Dropped %d gold pieces.#
 2595 The spellbook deteriorates.#
 2596 The spellbook deteriorates and crumbles to ash!#
-2597 The doublet seems to tug your mind toward an ethereal force, and away from your mortal body.#
+2597 You feel your mind detaching from your mortal body.#
 2598 keep right sidebar active#
 2599 You feel refreshed!#
 
@@ -3870,9 +3870,9 @@ NOTE: Enabling this will disable Achievements on your save files! #
 2971 The gods of Sokoban were less than impressed.#
 2972 The armor is warm against your heart.#
 2973 The helmet fills your mind with arcane whispers.#
-2974 Vibrations pulse through the earth from all around your feet when you wear the boots.#
-2975 The cape carries you above the ground and you feel its power surging through your body.#
-2976 The gauntlets fill you with otherworldly defiance.#
+2974 Vibrations pulse from the earth through your feet.#
+2975 The cape's power surges through your body.#
+2976 You're filled with otherworldly defiance.#
 2977 Cost: %d + ?? MP#
 2978 Custom Content#
 2979 Workshop#
