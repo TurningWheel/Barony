@@ -10510,9 +10510,14 @@ void doEndgame() {
 		}
 	}
 
+	if ( !endTutorial && victory > 0 )
+	{
+		deleteSaveGame(multiplayer);
+	}
+
 	// reset game
 	darkmap = false;
-	multiplayer = 0;
+	multiplayer = SINGLE;
 	currentlevel = 0;
 	secretlevel = false;
 	clientnum = 0;

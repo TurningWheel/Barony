@@ -222,6 +222,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	shrineInit(skill[6]),
 	shrineActivateDelay(skill[7]),
 	shrineZ(skill[8]),
+	shrineDestXOffset(skill[9]),
+	shrineDestYOffset(skill[10]),
 	ceilingTileModel(skill[0]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),

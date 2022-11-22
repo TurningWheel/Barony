@@ -249,6 +249,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	shrineInit(skill[6]),
 	shrineActivateDelay(skill[7]),
 	shrineZ(skill[8]),
+	shrineDestXOffset(skill[9]),
+	shrineDestYOffset(skill[10]),
 	ceilingTileModel(skill[0]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
@@ -10408,6 +10410,14 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	{
 		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
 		tx = static_cast<int>(std::floor(target->x + 32.0 * cos(target->yaw))) >> 4;
+		if ( target->shrineDestXOffset != 0 )
+		{
+			tx = (static_cast<int>(std::floor(target->x)) >> 4) + target->shrineDestXOffset;
+		}
+		if ( target->shrineDestYOffset != 0 )
+		{
+			ty = (static_cast<int>(std::floor(target->y)) >> 4) + target->shrineDestYOffset;
+		}
 	}
 
 	if ( behavior == &actPlayer )

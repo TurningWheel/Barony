@@ -211,10 +211,12 @@ char spellTrapPropertyNames[5][38] =
 	"Trap refire rate (1-999s)",
 };
 
-char shrineTeleportPropertyNames[2][48] =
+char shrineTeleportPropertyNames[4][48] =
 {
 	"Direction (-1 - 3)",
-	"Height Offset (Qtrs of a voxel, +ive is higher)"
+	"Height Offset (Qtrs of a voxel, +ive is higher)",
+	"Destination X Offset",
+	"Destination Y Offset"
 };
 
 char furniturePropertyNames[1][19] =
@@ -7655,7 +7657,7 @@ int main(int argc, char** argv)
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}
 								}
-								else if ( i == 1 )
+								else if ( i == 1 || i == 2 || i == 3 )
 								{
 									if ( propertyInt > 999 || propertyInt < -999 )
 									{

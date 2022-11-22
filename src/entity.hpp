@@ -402,6 +402,8 @@ public:
 	Sint32& shrineInit; //skill[6]
 	Sint32& shrineActivateDelay; //skill[7]
 	Sint32& shrineZ; //skill[8]
+	Sint32& shrineDestXOffset; //skill[9]
+	Sint32& shrineDestYOffset; //skill[10]
 	
 	//--PUBLIC FURNITURE SKILLS--
 	Sint32& furnitureType; //skill[0]
