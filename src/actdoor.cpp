@@ -220,7 +220,15 @@ void actDoor(Entity* my)
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
 			bool somebodyinside = false;
-			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			std::vector<list_t*> entLists;
+			if ( multiplayer == CLIENT )
+			{
+				entLists.push_back(map.entities); // clients use old map.entities method
+			}
+			else
+			{
+				entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			}
 			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 			{
 				list_t* currentList = *it;
