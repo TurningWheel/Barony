@@ -87,6 +87,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 20;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -185,6 +190,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 50;
 		stats[player]->PROFICIENCIES[PRO_SHIELD] = 50;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// iron spear
 		item = newItem(IRON_SPEAR, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -298,6 +308,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -418,6 +433,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// bronze sword
 		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -525,6 +545,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, nullptr);
@@ -642,6 +667,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// iron mace
 		item = newItem(IRON_MACE, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -755,6 +785,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// bronze axe
 		item = newItem(BRONZE_AXE, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -857,6 +892,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -989,6 +1029,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// iron sword
 		item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1108,6 +1153,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// jester hat
 		item = newItem(HAT_JESTER, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1192,6 +1242,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// bronze mace
 		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
@@ -1312,6 +1367,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 60;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 40;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// katana
 		item = newItem(CRYSTAL_SWORD, DECREPIT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1431,6 +1491,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// knuckles
 		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1501,6 +1566,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// weapon
 		item = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1591,6 +1661,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		// doublet
 		item = newItem(SILVER_DOUBLET, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -1671,6 +1746,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 20;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// ring
 		item = newItem(RING_PROTECTION, EXCELLENT, curseItems ? -2 : 2, 1, 0, true, nullptr);
@@ -1784,6 +1864,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 10;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 25;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 50;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		// booze
 		item = newItem(IRON_AXE, EXCELLENT, 0, 1, 0, true, nullptr);
@@ -1921,6 +2006,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;*/
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		item = newItem(MAGICSTAFF_POISON, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
@@ -2002,6 +2092,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
 		item = newItem(TOOL_WHIP, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
@@ -2078,6 +2173,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 50;
 		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 10;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(LONGBOW, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -2223,6 +2323,11 @@ void initClass(const int player)
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
+
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
 
 		item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )

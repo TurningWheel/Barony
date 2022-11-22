@@ -7929,9 +7929,6 @@ void openMapWindow(int player) {
                     const int y = (mouse_position.y * size) / mouse_position.h - ydiff;
                     if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
                         MinimapPing newPing(ticks, player, x, y);
-		                if ( multiplayer != CLIENT ) {
-			                minimapPingAdd(player, player, newPing);
-		                }
 		                sendMinimapPing(player, newPing.x, newPing.y);
 
                         // can also issue move commands via minimap
