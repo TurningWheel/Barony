@@ -3987,15 +3987,15 @@ bool GlyphRenderer_t::readFromFile()
 				continue;
 			}
 			std::string keyname = attributes["keyname"].GetString();
-			int scancode = SDL_GetScancodeFromName(keyname.c_str());
-			if ( scancode == SDL_SCANCODE_UNKNOWN )
+			int keycode = SDL_GetKeyFromName(keyname.c_str());
+			if ( keycode == SDLK_UNKNOWN )
 			{
-				printlog("[JSON]: Glyph name: %s could not find a scancode, skipping...", keyname.c_str());
+				printlog("[JSON]: Glyph name: %s could not find a keycode, skipping...", keyname.c_str());
 				continue;
 			}
-			allGlyphs[scancode] = GlyphData_t();
-			auto& glyphData = allGlyphs[scancode];
-			glyphData.scancode = scancode;
+			allGlyphs[keycode] = GlyphData_t();
+			auto& glyphData = allGlyphs[keycode];
+			glyphData.keycode = keycode;
 			glyphData.keyname = keyname;
 			if ( !attributes.HasMember("folder") )
 			{

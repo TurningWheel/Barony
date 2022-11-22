@@ -383,7 +383,7 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 				printTextFormatted(font8x8_bmp, 8, 20, "new: %.4f old: %.4f | current: %.4f | prev: %.4f",
 					players[player]->entity->lerpRenderState.yaw.position, camera.ang, curStateYaw, prevStateYaw);
 			}
-			if ( bDebug && keystatus[SDL_SCANCODE_I] )
+			if ( bDebug && keystatus[SDLK_i] )
 			{
 				camera.x = players[player]->entity->x / 16.0;
 				camera.y = players[player]->entity->y / 16.0;
@@ -3688,10 +3688,20 @@ bool handleEvents(void)
 				else
 #endif
 				{
-					lastkeypressed = event.key.keysym.scancode;
-					keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
-					Input::keys[event.key.keysym.scancode] = 1;
-					Input::lastInputOfAnyKind = SDL_GetKeyName(SDL_GetKeyFromScancode(event.key.keysym.scancode));
+					lastkeypressed = event.key.keysym.sym;
+#ifdef APPLE
+                    switch (lastkeypressed)
+                    {
+                        default: break;
+                        case SDLK_NUMLOCKCLEAR: lastkeypressed = SDLK_KP_CLEAR; break;
+                        case SDLK_PRINTSCREEN: lastkeypressed = SDLK_F13; break;
+                        case SDLK_SCROLLLOCK: lastkeypressed = SDLK_F14; break;
+                        case SDLK_PAUSE: lastkeypressed = SDLK_F15; break;
+                    }
+#endif
+					keystatus[lastkeypressed] = true;
+					Input::keys[lastkeypressed] = true;
+					Input::lastInputOfAnyKind = SDL_GetKeyName(lastkeypressed);
 				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
@@ -3710,8 +3720,19 @@ bool handleEvents(void)
 				else
 #endif
 				{
-					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
-					Input::keys[event.key.keysym.scancode] = 0;
+                    SDL_Keycode key = event.key.keysym.sym;
+#ifdef APPLE
+                    switch (key)
+                    {
+                        default: break;
+                        case SDLK_NUMLOCKCLEAR: key = SDLK_KP_CLEAR; break;
+                        case SDLK_PRINTSCREEN: key = SDLK_F13; break;
+                        case SDLK_SCROLLLOCK: key = SDLK_F14; break;
+                        case SDLK_PAUSE: key = SDLK_F15; break;
+                    }
+#endif
+					keystatus[key] = false;
+					Input::keys[key] = false;
 				}
 				break;
 			case SDL_TEXTINPUT:
@@ -4458,20 +4479,20 @@ void pauseGame(int mode, int ignoreplayer)
 		        noOneUsingKeyboard = false;
 		    }
 		    auto& input = Input::inputs[c];
-			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDL_SCANCODE_ESCAPE] && !input.isDisabled())) {
+			if (input.binary("Pause Game") || (inputs.bPlayerUsingKeyboardControl(c) && keystatus[SDLK_ESCAPE] && !input.isDisabled())) {
 			    MainMenu::pause_menu_owner = c;
 			    break;
 			}
 		}
-		if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+		if (noOneUsingKeyboard && keystatus[SDLK_ESCAPE]) {
 		    MainMenu::pause_menu_owner = clientnum;
 		}
 		if ( SDL_GetRelativeMouseMode() )
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
-		if (keystatus[SDL_SCANCODE_ESCAPE]) {
-			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+		if (keystatus[SDLK_ESCAPE]) {
+			keystatus[SDLK_ESCAPE] = 0;
 		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
@@ -4508,8 +4529,8 @@ void pauseGame(int mode, int ignoreplayer)
 		{
 			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
-		if (keystatus[SDL_SCANCODE_ESCAPE]) {
-			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+		if (keystatus[SDLK_ESCAPE]) {
+			keystatus[SDLK_ESCAPE] = 0;
 		}
 		return; // doesn't disable the game in multiplayer anymore
 		if ( multiplayer == SERVER )
@@ -5243,7 +5264,7 @@ void ingameHud()
                         const float factorX = (float)xres / Frame::virtualScreenX;
                         const float factorY = (float)yres / Frame::virtualScreenY;
 						auto cursor = Image::get("*#images/system/cursor_hand.png");
-						if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
+						if ( enableDebugKeys && keystatus[SDLK_j] )
 						{
 							cursor = Image::get("*#images/system/cursor.png");
 						}
@@ -5373,7 +5394,7 @@ void ingameHud()
 				{
 					mouseAnim -= .05;
 				}
-				if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
+				if ( enableDebugKeys && keystatus[SDLK_j] )
 				{
 					cursor = Image::get("*#images/system/cursor.png");
 				}
@@ -5402,7 +5423,7 @@ void ingameHud()
                     const float factorX = (float)xres / Frame::virtualScreenX;
                     const float factorY = (float)yres / Frame::virtualScreenY;
 					auto cursor = Image::get("*#images/system/cursor_hand.png");
-					if ( enableDebugKeys && keystatus[SDL_SCANCODE_J] )
+					if ( enableDebugKeys && keystatus[SDLK_j] )
 					{
 						cursor = Image::get("*#images/system/cursor.png");
 					}
@@ -5635,8 +5656,8 @@ static void doConsoleCommands() {
 			input.consumeBindingsSharedWithBinding("Console Command");
 		}
 
-		keystatus[SDL_SCANCODE_RETURN] = 0;
-		Input::keys[SDL_SCANCODE_RETURN] = 0;
+		keystatus[SDLK_RETURN] = 0;
+		Input::keys[SDLK_RETURN] = 0;
 
 		SDL_StartTextInput();
 
@@ -5671,9 +5692,9 @@ static void doConsoleCommands() {
 		}
 		//strncpy(command_str,inputstr,127);
 		inputlen = 127;
-		if ( keystatus[SDL_SCANCODE_ESCAPE] )   // escape
+		if ( keystatus[SDLK_ESCAPE] )   // escape
 		{
-			keystatus[SDL_SCANCODE_ESCAPE] = 0;
+			keystatus[SDLK_ESCAPE] = 0;
 			chosen_command = NULL;
 			command = false;
 		}
@@ -5682,7 +5703,7 @@ static void doConsoleCommands() {
 			chosen_command = NULL;
 			command = false;
 		}
-		else if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
+		else if ( keystatus[SDLK_RETURN] )   // enter
 		{
 			if (input.consumeBinaryToggle("Chat")) {
 				input.consumeBindingsSharedWithBinding("Chat");
@@ -5690,8 +5711,8 @@ static void doConsoleCommands() {
 			if (input.consumeBinaryToggle("Console Command")) {
 				input.consumeBindingsSharedWithBinding("Console Command");
 			}
-		    keystatus[SDL_SCANCODE_RETURN] = 0;
-		    Input::keys[SDL_SCANCODE_RETURN] = 0;
+		    keystatus[SDLK_RETURN] = 0;
+		    Input::keys[SDLK_RETURN] = 0;
 			command = false;
 
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
@@ -6285,9 +6306,9 @@ int main(int argc, char** argv)
 							skipButtonPressed = true;
 						}
 					}
-					if ( Input::keys[SDL_SCANCODE_ESCAPE] )
+					if ( Input::keys[SDLK_ESCAPE] )
 					{
-						Input::keys[SDL_SCANCODE_ESCAPE] = 0;
+						Input::keys[SDLK_ESCAPE] = 0;
 						skipButtonPressed = true;
 					}
 
@@ -6483,7 +6504,7 @@ int main(int argc, char** argv)
 						}
 						const bool escapePressed =
 							inputs.bPlayerUsingKeyboardControl(i) &&
-							keystatus[SDL_SCANCODE_ESCAPE] &&
+							keystatus[SDLK_ESCAPE] &&
 							!Input::inputs[i].isDisabled();
 						if ( (Input::inputs[i].consumeBinaryToggle("Pause Game") || escapePressed) && !command )
 						{
@@ -6492,7 +6513,7 @@ int main(int argc, char** argv)
 								players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 								players[i]->characterSheet.attributespage = 0;
 								if (escapePressed) {
-									keystatus[SDL_SCANCODE_ESCAPE] = false;
+									keystatus[SDLK_ESCAPE] = false;
 								}
 							}
 							else
@@ -6502,7 +6523,7 @@ int main(int argc, char** argv)
 							break;
 						}
 					}
-					if (noOneUsingKeyboard && keystatus[SDL_SCANCODE_ESCAPE]) {
+					if (noOneUsingKeyboard && keystatus[SDLK_ESCAPE]) {
 					    doPause = true;
 					}
 				}
@@ -6530,7 +6551,7 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								keystatus[SDL_SCANCODE_ESCAPE] = 0;
+								keystatus[SDLK_ESCAPE] = 0;
 							}
 						}
 						else

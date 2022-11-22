@@ -1599,14 +1599,12 @@ void drawEntities3D(view_t* camera, int mode)
 	Entity* entity;
 	long x, y;
 
-	static bool draw_ents = true;
-	if (keystatus[SDL_SCANCODE_P] && !command && enableDebugKeys) {
-	    keystatus[SDL_SCANCODE_P] = 0;
-	    draw_ents = (draw_ents==false);
-	}
-	if (!draw_ents) {
+#ifndef EDITOR
+    static ConsoleVariable<bool> cvar_drawEnts("/draw_entities", true);
+	if (!*cvar_drawEnts) {
 	    return;
 	}
+#endif
 
 	if ( map.entities->first == nullptr )
 	{

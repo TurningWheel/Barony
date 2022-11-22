@@ -1103,7 +1103,7 @@ void drawStatus(int player)
 						&& !selectedItem )
 					{
 						inputs.getUIInteraction(player)->toggleclick = false;
-						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+						if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 						{
 							hotbar[num].item = 0;
 						}
@@ -1152,14 +1152,14 @@ void drawStatus(int player)
 							learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 						}
 
-						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+						if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 						{
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
 						}
 						else
 						{
 							if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE )
-								&& (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+								&& (keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
 							{
 								badpotion = true;
 								learnedSpell = true;
@@ -1679,72 +1679,72 @@ void drawStatus(int player)
 					if ( !drawHotBarTooltipOnCycle && hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
-						if ( keystatus[SDL_SCANCODE_1] )
+						if ( keystatus[SDLK_1] )
 						{
-							keystatus[SDL_SCANCODE_1] = 0;
+							keystatus[SDLK_1] = 0;
 							swapItem = hotbar[0].item;
 							hotbar[0].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_2] )
+						if ( keystatus[SDLK_2] )
 						{
-							keystatus[SDL_SCANCODE_2] = 0;
+							keystatus[SDLK_2] = 0;
 							swapItem = hotbar[1].item;
 							hotbar[1].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_3] )
+						if ( keystatus[SDLK_3] )
 						{
-							keystatus[SDL_SCANCODE_3] = 0;
+							keystatus[SDLK_3] = 0;
 							swapItem = hotbar[2].item;
 							hotbar[2].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_4] )
+						if ( keystatus[SDLK_4] )
 						{
-							keystatus[SDL_SCANCODE_4] = 0;
+							keystatus[SDLK_4] = 0;
 							swapItem = hotbar[3].item;
 							hotbar[3].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_5] )
+						if ( keystatus[SDLK_5] )
 						{
-							keystatus[SDL_SCANCODE_5] = 0;
+							keystatus[SDLK_5] = 0;
 							swapItem = hotbar[4].item;
 							hotbar[4].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_6] )
+						if ( keystatus[SDLK_6] )
 						{
-							keystatus[SDL_SCANCODE_6] = 0;
+							keystatus[SDLK_6] = 0;
 							swapItem = hotbar[5].item;
 							hotbar[5].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_7] )
+						if ( keystatus[SDLK_7] )
 						{
-							keystatus[SDL_SCANCODE_7] = 0;
+							keystatus[SDLK_7] = 0;
 							swapItem = hotbar[6].item;
 							hotbar[6].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_8] )
+						if ( keystatus[SDLK_8] )
 						{
-							keystatus[SDL_SCANCODE_8] = 0;
+							keystatus[SDLK_8] = 0;
 							swapItem = hotbar[7].item;
 							hotbar[7].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_9] )
+						if ( keystatus[SDLK_9] )
 						{
-							keystatus[SDL_SCANCODE_9] = 0;
+							keystatus[SDLK_9] = 0;
 							swapItem = hotbar[8].item;
 							hotbar[8].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
 						}
-						if ( keystatus[SDL_SCANCODE_0] )
+						if ( keystatus[SDLK_0] )
 						{
-							keystatus[SDL_SCANCODE_0] = 0;
+							keystatus[SDLK_0] = 0;
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -1781,63 +1781,63 @@ void drawStatus(int player)
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
 			if ( inputs.bPlayerUsingKeyboardControl(player) && !StatueManager.activeEditing )
 			{
-				if ( keystatus[SDL_SCANCODE_1] )
+				if ( keystatus[SDLK_1] )
 				{
-					keystatus[SDL_SCANCODE_1] = 0;
+					keystatus[SDLK_1] = 0;
 					item = uidToItem(hotbar[0].item);
 					hotbar_t.current_hotbar = 0;
 				}
-				if ( keystatus[SDL_SCANCODE_2] )
+				if ( keystatus[SDLK_2] )
 				{
-					keystatus[SDL_SCANCODE_2] = 0;
+					keystatus[SDLK_2] = 0;
 					item = uidToItem(hotbar[1].item);
 					hotbar_t.current_hotbar = 1;
 				}
-				if ( keystatus[SDL_SCANCODE_3] )
+				if ( keystatus[SDLK_3] )
 				{
-					keystatus[SDL_SCANCODE_3] = 0;
+					keystatus[SDLK_3] = 0;
 					item = uidToItem(hotbar[2].item);
 					hotbar_t.current_hotbar = 2;
 				}
-				if ( keystatus[SDL_SCANCODE_4] )
+				if ( keystatus[SDLK_4] )
 				{
-					keystatus[SDL_SCANCODE_4] = 0;
+					keystatus[SDLK_4] = 0;
 					item = uidToItem(hotbar[3].item);
 					hotbar_t.current_hotbar = 3;
 				}
-				if ( keystatus[SDL_SCANCODE_5] )
+				if ( keystatus[SDLK_5] )
 				{
-					keystatus[SDL_SCANCODE_5] = 0;
+					keystatus[SDLK_5] = 0;
 					item = uidToItem(hotbar[4].item);
 					hotbar_t.current_hotbar = 4;
 				}
-				if ( keystatus[SDL_SCANCODE_6] )
+				if ( keystatus[SDLK_6] )
 				{
-					keystatus[SDL_SCANCODE_6] = 0;
+					keystatus[SDLK_6] = 0;
 					item = uidToItem(hotbar[5].item);
 					hotbar_t.current_hotbar = 5;
 				}
-				if ( keystatus[SDL_SCANCODE_7] )
+				if ( keystatus[SDLK_7] )
 				{
-					keystatus[SDL_SCANCODE_7] = 0;
+					keystatus[SDLK_7] = 0;
 					item = uidToItem(hotbar[6].item);
 					hotbar_t.current_hotbar = 6;
 				}
-				if ( keystatus[SDL_SCANCODE_8] )
+				if ( keystatus[SDLK_8] )
 				{
-					keystatus[SDL_SCANCODE_8] = 0;
+					keystatus[SDLK_8] = 0;
 					item = uidToItem(hotbar[7].item);
 					hotbar_t.current_hotbar = 7;
 				}
-				if ( keystatus[SDL_SCANCODE_9] )
+				if ( keystatus[SDLK_9] )
 				{
-					keystatus[SDL_SCANCODE_9] = 0;
+					keystatus[SDLK_9] = 0;
 					item = uidToItem(hotbar[8].item);
 					hotbar_t.current_hotbar = 8;
 				}
-				if ( keystatus[SDL_SCANCODE_0] )
+				if ( keystatus[SDLK_0] )
 				{
-					keystatus[SDL_SCANCODE_0] = 0;
+					keystatus[SDLK_0] = 0;
 					item = uidToItem(hotbar[9].item);
 					hotbar_t.current_hotbar = 9;
 				}
@@ -2101,7 +2101,7 @@ void drawStatus(int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
-			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
+			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) 
 				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;
@@ -2487,7 +2487,7 @@ void drawStatusNew(const int player)
 						&& (players[player]->inventoryUI.bFirstTimeSnapCursor) )
 					{
 						toggleclick = false;
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
+						if ( (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT])
 							&& Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player) )
 						{
 							hotbar[num].item = 0;
@@ -2548,14 +2548,14 @@ void drawStatusNew(const int player)
 					if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 						&& !players[player]->GUI.isDropdownActive() && !selectedItem )
 					{
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
+						if ( (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
-							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+							(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
 						{
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 							// force equip potion/spellbook
@@ -3346,7 +3346,7 @@ void drawStatusNew(const int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
-			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT])
+			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
 				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;

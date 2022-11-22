@@ -4203,7 +4203,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		button->action = &buttonCloseAndEndGameConfirm;
 		button->visible = 1;
 		button->focused = 1;
-		button->key = SDL_SCANCODE_RETURN;
+		button->key = SDLK_RETURN;
 
 		client_disconnected[0] = true;
 	}},

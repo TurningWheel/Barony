@@ -985,71 +985,14 @@ Sint8 dummy_value = 0; //THIS LINE IS AN UTTER BODGE to stop this function from 
 
 Sint8* inputPressed(Uint32 scancode)
 {
-	if (scancode >= 0 && scancode < 283)
-	{
-		// usual (keyboard) scancode range
-		return &keystatus[scancode];
-	}
-	else if (scancode < 299)
-	{
-		// mouse scancodes
-		return &mousestatus[scancode - 282];
-	}
-	else if (scancode < 301)
-	{
-		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
-		//return &joy_trigger_status[scancode - 299];
-		// WIP SPLITSCREEN - DEPRECATE THIS
-		dummy_value = 0;
-		return &dummy_value;
-	}
-	else if (scancode < 318)
-	{
-		//return &joystatus[scancode - 301];
-		// WIP SPLITSCREEN - DEPRECATE THIS
-		dummy_value = 0;
-		return &dummy_value;
-	}
-	else
-	{
-		// bad scancode
-		//return nullptr; //This crashes.
-		dummy_value = 0;
-		return &dummy_value;
-		//Not an ideal solution, but...
-	}
+	// deprecated
+    return nullptr;
 }
 
 Sint8* inputPressedForPlayer(int player, Uint32 scancode)
 {
-	if ( splitscreen )
-	{
-		// WIP SPLITSCREEN - keyboard only send for local player
-		if ( !inputs.bPlayerUsingKeyboardControl(player) )
-		{
-			dummy_value = 0;
-			return &dummy_value;
-		}
-	}
-
-	if ( scancode >= 0 && scancode < 283 )
-	{
-		// usual (keyboard) scancode range
-		return &keystatus[scancode];
-	}
-	else if ( scancode < 299 )
-	{
-		// mouse scancodes
-		return &mousestatus[scancode - 282];
-	}
-	else
-	{
-		// bad scancode
-		//return nullptr; //This crashes.
-		dummy_value = 0;
-		return &dummy_value;
-		//Not an ideal solution, but...
-	}
+    // deprecated
+    return nullptr;
 }
 
 void Player::GUI_t::setHoveringOverModuleButton(Player::GUI_t::GUIModules moduleOfButton)
@@ -12000,7 +11943,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		modifierPressed = true;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
-		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+		&& (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 	{
 		modifierPressed = true;
 	}
@@ -12043,7 +11986,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
 					if ( modifierPressed )
 					{
-						actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+						actionModifierImg->path = GlyphHelper.getGlyphPath(SDLK_LSHIFT, false);
 					}
 				}
 				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
@@ -13998,9 +13941,9 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 	alchFrame->setSize(alchFramePos);
 
-	if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
+	if ( keystatus[SDLK_j] && enableDebugKeys )
 	{
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		if ( keystatus[SDLK_LSHIFT] )
 		{
 			std::vector<ItemType> potions;
 			for ( int i = 0; i < NUMITEMS; ++i )
@@ -14041,12 +13984,12 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				recipes.openRecipePanel();
 			}
 		}
-		keystatus[SDL_SCANCODE_J] = 0;
+		keystatus[SDLK_j] = 0;
 	}
-	/*if ( keystatus[SDL_SCANCODE_H] && enableDebugKeys )
+	/*if ( keystatus[SDLK_H] && enableDebugKeys )
 	{
-		keystatus[SDL_SCANCODE_H] = 0;
-		if ( keystatus[SDL_SCANCODE_LSHIFT] )
+		keystatus[SDLK_H] = 0;
+		if ( keystatus[SDLK_LSHIFT] )
 		{
 			for ( int i = 0; i < NUMITEMS; ++i )
 			{
@@ -14056,7 +13999,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				}
 			}
 		}
-		else if ( keystatus[SDL_SCANCODE_LCTRL] )
+		else if ( keystatus[SDLK_LCTRL] )
 		{
 			consoleCommand("/gimmepotions2");
 		}
@@ -14347,9 +14290,9 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		return; // I can't see!
 	}
 
-	/*if ( keystatus[SDL_SCANCODE_B] && enableDebugKeys )
+	/*if ( keystatus[SDLK_B] && enableDebugKeys )
 	{
-		keystatus[SDL_SCANCODE_B] = 0;
+		keystatus[SDLK_B] = 0;
 		notifications.push_back(std::make_pair(ticks, AlchNotification_t("Wow a title!", "This is a body", "items/images/Alembic.png")));
 	}*/
 	auto notificationFrame = alchFrame->findFrame("notification");
@@ -14780,7 +14723,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		modifierPressed = true;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
-		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+		&& (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 	{
 		modifierPressed = true;
 	}
@@ -17286,10 +17229,10 @@ void GenericGUIMenu::FeatherGUI_t::changeSortingType(GenericGUIMenu::FeatherGUI_
 void GenericGUIMenu::FeatherGUI_t::updateScrolls()
 {
 	scrolls.clear();
-	/*if ( keystatus[SDL_SCANCODE_J] && enableDebugKeys )
+	/*if ( keystatus[SDLK_J] && enableDebugKeys )
 	{
-		keystatus[SDL_SCANCODE_J] = 0;
-		if ( keystatus[SDL_SCANCODE_LCTRL] )
+		keystatus[SDLK_J] = 0;
+		if ( keystatus[SDLK_LCTRL] )
 		{
 			clientLearnedScrollLabels[parentGUI.getPlayer()].clear();
 			for ( int i = 0; i < NUMLABELS; ++i )
@@ -18272,7 +18215,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		modifierPressed = true;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
-		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+		&& (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 	{
 		modifierPressed = true;
 	}
@@ -18347,7 +18290,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
 					if ( modifierPressed )
 					{
-						actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+						actionModifierImg->path = GlyphHelper.getGlyphPath(SDLK_LSHIFT, false);
 					}
 				}
 				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
@@ -20968,7 +20911,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		modifierPressed = true;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(playernum)
-		&& (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+		&& (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) )
 	{
 		modifierPressed = true;
 	}
@@ -21005,7 +20948,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuRightClick");
 					if ( modifierPressed )
 					{
-						//actionModifierImg->path = GlyphHelper.getGlyphPath(SDL_SCANCODE_LSHIFT, false);
+						//actionModifierImg->path = GlyphHelper.getGlyphPath(SDLK_LSHIFT, false);
 					}
 				}
 				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
