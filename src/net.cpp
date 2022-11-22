@@ -1980,8 +1980,9 @@ static void changeLevel() {
 	movie = false;
 
 	// setup level change
-	printlog("Received order to change level.\n");
-	currentlevel = static_cast<Sint8>(net_packet->data[13]);
+	const int newlevel = static_cast<Sint8>(net_packet->data[13]);
+	printlog("Received order to change level to %d (from %d).\n", newlevel, currentlevel);
+	currentlevel = newlevel;
 
 	if ( !secretlevel )
 	{

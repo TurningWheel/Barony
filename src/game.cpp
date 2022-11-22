@@ -2402,9 +2402,10 @@ void gameLogic(void)
 						SDLNet_Write32(mapseed, &net_packet->data[5]);
 						SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
 						net_packet->data[13] = currentlevel;
+						net_packet->data[14] = 0;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 14;
+						net_packet->len = 15;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
