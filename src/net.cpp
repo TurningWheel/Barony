@@ -3576,8 +3576,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// killed a monster
 	{'MKIL', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		kills[player]++;
+		const int monster = (int)net_packet->data[4];
+		if ( monster >= 0 && monster < NUMMONSTERS )
+		{
+			kills[monster]++;
+		}
 	}},
 
 	// update skill
