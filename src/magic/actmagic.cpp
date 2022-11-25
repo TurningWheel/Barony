@@ -3300,7 +3300,7 @@ void actParticleAestheticOrbit(Entity* my)
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
 		{
-			if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
+			if ( my->sprite == 863 && (!stats || !stats->EFFECTS[EFF_WEBBED]) )
 			{
 				list_RemoveNode(my->mynode);
 				return;
