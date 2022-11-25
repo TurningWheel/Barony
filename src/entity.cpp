@@ -8598,7 +8598,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 643);
 								playSoundEntity(hit.entity, 173, 128);
-								if ( gibtype[hitstats->type] > 0 )
+								if ( gibtype[hitstats->type] > 0 && gibtype[(int)hitstats->type] != 5 )
 								{
 									bleedStatusInflicted = true;
 									for ( int gibs = 0; gibs < 10; ++gibs )
