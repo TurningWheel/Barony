@@ -8680,16 +8680,16 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
-			floorNameText->setSize(SDL_Rect{ 20, 0, 162, 26 });
-			floorNameText->setText("Sand Labyrinth");
+			floorNameText->setSize(SDL_Rect{ 10, 0, 182, 26 });
+			floorNameText->setText("");
 			floorNameText->setVJustify(Field::justify_t::CENTER);
 			floorNameText->setHJustify(Field::justify_t::CENTER);
 			floorNameText->setColor(dungeonTextColor);
 
 			auto floorLevelText = dungeonFloorFrame->addField("dungeon level text", 32);
 			floorLevelText->setFont(dungeonFont);
-			floorLevelText->setSize(SDL_Rect{ 20, 26, 162, 26 });
-			floorLevelText->setText("Floor 27");
+			floorLevelText->setSize(SDL_Rect{ 10, 26, 182, 26 });
+			floorLevelText->setText("");
 			floorLevelText->setVJustify(Field::justify_t::CENTER);
 			floorLevelText->setHJustify(Field::justify_t::CENTER);
 			floorLevelText->setColor(dungeonTextColor);
@@ -8767,7 +8767,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classText->setText("Barbarian");
 			classText->setVJustify(Field::justify_t::CENTER);
 			classText->setHJustify(Field::justify_t::LEFT);
-			classText->setColor(classTextColor);
+			classText->setTextColor(classTextColor);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -14166,10 +14166,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = padx + padxMid;
 			entryPos.y = currentHeight;
-			entryPos.w = txtPos.w - (2 * (padx + padxMid));
+			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
 			entry->reflowTextToFit(0);
-			entryPos.h = actualFont->height(true) * entry->getNumTextLines();
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
 			entry->setColor(makeColor(255, 0, 255, 255));
 			currentHeight = std::max(entryPos.y + entryPos.h, 0);
@@ -14323,6 +14323,18 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			capitalizeString(classname);
 			className->setText(classname.c_str());
+		}
+		if ( client_classes[player.playernum] >= CLASS_CONJURER && client_classes[player.playernum] <= CLASS_BREWER )
+		{
+			className->setTextColor(hudColors.characterDLC1ClassText);
+		}
+		else if ( client_classes[player.playernum] >= CLASS_MACHINIST && client_classes[player.playernum] <= CLASS_HUNTER )
+		{
+			className->setTextColor(hudColors.characterDLC2ClassText);
+		}
+		else
+		{
+			className->setTextColor(hudColors.characterBaseClassText);
 		}
 		if ( auto textGet = Text::get(className->getText(), className->getFont(),
 			className->getTextColor(), className->getOutlineColor()) )
@@ -18121,6 +18133,30 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_highlight_text"]["g"].GetInt(),
 							d["colors"]["charsheet_highlight_text"]["b"].GetInt(),
 							d["colors"]["charsheet_highlight_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_base_class_text") )
+					{
+						hudColors.characterBaseClassText = makeColor(
+							d["colors"]["charsheet_base_class_text"]["r"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["g"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["b"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_dlc1_text") )
+					{
+						hudColors.characterDLC1ClassText = makeColor(
+							d["colors"]["charsheet_dlc1_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_dlc2_text") )
+					{
+						hudColors.characterDLC2ClassText = makeColor(
+							d["colors"]["charsheet_dlc2_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["a"].GetInt());
 					}
 				}
 				if ( d.HasMember("dropdowns") )

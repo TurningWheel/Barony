@@ -2096,9 +2096,6 @@ static void changeLevel() {
 		steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
 	}
 
-	saveGame();
-	printlog("Done.\n");
-
 	Player::Minimap_t::mapDetails.clear();
 
 	if ( !secretlevel )
@@ -2175,6 +2172,10 @@ static void changeLevel() {
 	{
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
+
+	saveGame();
+	printlog("Done.\n");
+
 	if ( !strncmp(map.name, "Mages Guild", 11) )
 	{
 		messagePlayer(clientnum, MESSAGE_HINT, language[2599]);

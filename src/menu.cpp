@@ -9615,6 +9615,8 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
+	Player::Minimap_t::mapDetails.clear();
+
 	// disable cheats
 	noclip = false;
 	godmode = false;
@@ -10151,7 +10153,15 @@ void doNewGame(bool makeHighscore) {
 	Frame::guiInit();
 
 	// make some messages
-	startMessages();
+	Player::MessageZone_t::startMessages();
+
+	for ( auto& pair : Player::Minimap_t::mapDetails )
+	{
+		if ( pair.second != "" )
+		{
+			messagePlayer(clientnum, MESSAGE_HINT, pair.second.c_str());
+		}
+	}
 
 	// kick off the main loop!
 	pauseGame(1, 0);

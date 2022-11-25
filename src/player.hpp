@@ -1691,13 +1691,15 @@ public:
 		//How fast the alpha value de-increments
 		static const int MESSAGE_FADE_RATE = 10;
 		TTF_Font* font = ttf16;
-		Uint32 old_sdl_ticks;
+		Uint32 old_sdl_ticks = 0;
 		Player& player;
 	public:
 		static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
 		MessageZone_t(Player& p) : player(p) {};
 		~MessageZone_t() {};
 		std::list<Message*> notification_messages;
+		//Init old_sdl_ticks to determine when to fade messages
+		static void startMessages();
 		//Adds a message to the list of messages.
 		void addMessage(Uint32 color, const char* content);
 		//Updates all the messages; fades them & removes them.

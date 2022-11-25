@@ -4429,19 +4429,6 @@ bool handleEvents(void)
 
 /*-------------------------------------------------------------------------------
 
-	startMessages
-
-	prints several messages to the console for game start.
-
--------------------------------------------------------------------------------*/
-
-void startMessages()
-{
-	// deprecated
-}
-
-/*-------------------------------------------------------------------------------
-
 	pauseGame
 
 	pauses or unpauses the game, depending on its current state
@@ -6149,7 +6136,6 @@ int main(int argc, char** argv)
 		playMusic(splashmusic, false, false, false);
 #endif
 
-		int old_sdl_ticks = 0;
 		int indev_timer = 0;
 
 		// main loop

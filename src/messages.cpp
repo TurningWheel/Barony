@@ -148,6 +148,14 @@ int Player::MessageZone_t::getMaxTotalLines()
 	return 7;
 }
 
+void Player::MessageZone_t::startMessages()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		players[i]->messageZone.old_sdl_ticks = SDL_GetTicks();
+	}
+}
+
 void Player::MessageZone_t::updateMessages()
 {
 	int time_passed = 0;

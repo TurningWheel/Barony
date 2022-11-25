@@ -53,6 +53,9 @@ struct CustomColors_t
 	Uint32 characterSheetOffWhiteText = 0xFFFFFFFF;
 	Uint32 characterSheetHeadingText = 0xFFFFFFFF;
 	Uint32 characterSheetHighlightText = 0xFFFFFFFF;
+	Uint32 characterBaseClassText = 0xFFFFFFFF;
+	Uint32 characterDLC1ClassText = 0xFFFFFFFF;
+	Uint32 characterDLC2ClassText = 0xFFFFFFFF;
 };
 extern CustomColors_t hudColors;
 
