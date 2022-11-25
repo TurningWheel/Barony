@@ -6341,7 +6341,7 @@ favorite customers.#
 4262 Nevermore.#
 4263 Hello, %s.#
 4264 Peep!#
-4265 Hello %s.#
+4265 Sankoxa.#
 4266 *slip slop*#
 4267 *grunt*#
 4268 *burble*#
