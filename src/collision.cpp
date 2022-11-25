@@ -61,6 +61,11 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 
 	Input& input = Input::inputs[player];
 
+	if ( gamePaused || movie )
+	{
+		input.consumeBinaryToggle("Use");
+		return nullptr;
+	}
 	if ( clicktype == ENTITY_CLICK_HELD_USE_TOOLTIPS_ONLY )
 	{
 		if ( !clickCheckOverride && !input.binaryToggle("Use") )
