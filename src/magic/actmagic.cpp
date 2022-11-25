@@ -2373,9 +2373,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							Stat* casterStats = nullptr;
 							if ( parent )
 							{
-								Stat* casterStats = parent->getStats();
+								casterStats = parent->getStats();
 								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
 								{
 									damage *= 2;
@@ -2393,11 +2394,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							bleedDuration /= (1 + (int)resistance);
+							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->EFFECTS[EFF_BLEEDING] : false;
 							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
 							{
 								if ( parent )
 								{
 									hitstats->bleedInflictedBy = static_cast<Sint32>(my->parent);
+								}
+								if ( !wasBleeding && parent && casterStats )
+								{
+									// energize if wearing punisher hood!
+									if ( casterStats->helmet && casterStats->helmet->type == PUNISHER_HOOD )
+									{
+										parent->modMP(1 + local_rng.rand() % 2);
+										Uint32 color = makeColorRGB(0, 255, 0);
+										parent->setEffect(EFF_MP_REGEN, true, 250, true);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[3753]);
+											steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
+										}
+										playSoundEntity(parent, 168, 128);
+									}
 								}
 							}
 							hitstats->EFFECTS[EFF_SLOW] = true;
