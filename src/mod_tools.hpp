@@ -3047,8 +3047,8 @@ struct ClassHotbarConfig_t
 {
 	struct HotbarEntry_t
 	{
-		std::set<int> itemTypes;
-		std::set<int> itemCategories;
+		std::vector<int> itemTypes;
+		std::vector<int> itemCategories;
 		int slotnum = -1;
 		HotbarEntry_t(int _slotnum)
 		{

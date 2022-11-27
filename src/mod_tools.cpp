@@ -6250,7 +6250,16 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 							}
 							if ( found )
 							{
-								classHotbar.hotbar[i].itemTypes.insert(itemType);
+								auto findVal = std::find(classHotbar.hotbar[i].itemTypes.begin(), classHotbar.hotbar[i].itemTypes.end(),
+									itemType);
+								if ( findVal == classHotbar.hotbar[i].itemTypes.end() )
+								{
+									classHotbar.hotbar[i].itemTypes.push_back(itemType);
+								}
+								else
+								{
+									*findVal = itemType;
+								}
 							}
 						}
 					}
@@ -6313,14 +6322,25 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 		hotbar_t.slots()[i].lastItemType = -1;
 	}
 
-	std::map<int, HotbarEntry_t*> itemsAndSlots;
+	std::vector<std::pair<int, HotbarEntry_t*>> itemsAndSlots;
+
 	for ( auto& slot : layoutDefault.hotbar )
 	{
 		if ( !slot.itemTypes.empty() )
 		{
 			for ( auto itemType : slot.itemTypes )
 			{
-				itemsAndSlots[itemType] = &slot;
+				auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+					[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+				if ( it == itemsAndSlots.end() )
+				{
+					itemsAndSlots.push_back(std::make_pair(itemType, &slot));
+				}
+				else
+				{
+					// update existing entry
+					it->second = &slot;
+				}
 			}
 		}
 	}
@@ -6334,12 +6354,33 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 			{
 				for ( auto itemType : slot.itemTypes )
 				{
-					itemsAndSlots[itemType] = &slot;
+					auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+						[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+					if ( it == itemsAndSlots.end() )
+					{
+						itemsAndSlots.push_back(std::make_pair(itemType, &slot));
+					}
+					else
+					{
+						// update existing entry
+						it->second = &slot;
+					}
 				}
 			}
 		}
 	}
 
+	struct MatchingItem_t
+	{
+		Item* item = nullptr;
+		int slotnum = -1;
+		MatchingItem_t(Item* _item, const int _slotnum) :
+			item(_item),
+			slotnum(_slotnum)
+		{};
+		MatchingItem_t() {};
+	};
+	std::map<int, MatchingItem_t> matchingItems;
 	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
@@ -6361,10 +6402,25 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 					continue;
 				}
 			}
-			if ( itemsAndSlots.find(itemType) != itemsAndSlots.end() )
+			auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+				[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+			if ( it != itemsAndSlots.end() )
 			{
-				auto& entry = itemsAndSlots[itemType];
-				hotbar_t.slots()[entry->slotnum].item = item->uid;
+				// store inventory items in a lookup table
+				matchingItems[itemType] = MatchingItem_t(item, it->second->slotnum);
+			}
+		}
+	}
+
+	for ( auto& itemAndSlot : itemsAndSlots )
+	{
+		// go through each slot, and each item. if item found, place it in hotbar slot
+		// if multiple items per slot, last item will override the slot
+		if ( matchingItems.find(itemAndSlot.first) != matchingItems.end() )
+		{
+			if ( matchingItems[itemAndSlot.first].item )
+			{
+				hotbar_t.slots()[matchingItems[itemAndSlot.first].slotnum].item = matchingItems[itemAndSlot.first].item->uid;
 			}
 		}
 	}
