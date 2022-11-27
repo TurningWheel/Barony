@@ -3346,8 +3346,9 @@ void drawStatusNew(const int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
-			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) )
+			if ( ((keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
+				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK)) 
+				|| item->type == FOOD_CREAMPIE )
 			{
 				badpotion = true;
 				learnedSpell = true;
