@@ -3747,7 +3747,18 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
 			return;
 		}
-		client_classes[clientnum] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
+		if ( argc == 2 )
+		{
+#ifndef NDEBUG
+			client_classes[clientnum] = std::min(NUMCLASSES - 1, std::max((int)CLASS_BARBARIAN, atoi(argv[1])));
+#else
+			client_classes[clientnum] = std::min((int)CLASS_MONK, std::max((int)CLASS_BARBARIAN, atoi(argv[1])));
+#endif
+		}
+		else
+		{
+			client_classes[clientnum] = local_rng.rand() % (CLASS_MONK + 1);
+		}
 		});
 
 	static ConsoleCommand ccmd_unpoly("/unpoly", "unpolymorph the player (cheat)", []CCMD{
@@ -4154,6 +4165,49 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_loadshopkeeperconsumables("/loadshopconsumables", "", []CCMD{
 #ifndef EDITOR
 		ShopkeeperConsumables_t::readFromFile();
+#endif
+	});
+
+	static ConsoleCommand ccmd_writedefaultclasshotbars("/writedefaultclasshotbars", "", []CCMD{
+#ifndef NINTENDO
+#ifndef EDITOR
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		bool oldIntro = intro;
+		intro = true;
+		ClassHotbarConfig_t::writeToFile(ClassHotbarConfig_t::HOTBAR_LAYOUT_DEFAULT_CONFIG, ClassHotbarConfig_t::HOTBAR_CONFIG_WRITE);
+		intro = oldIntro;
+		ClassHotbarConfig_t::init();
+#endif
+#endif
+	});
+
+	static ConsoleCommand ccmd_saveclasshotbar("/saveclasshotbar", "", []CCMD{
+#ifndef EDITOR
+		ClassHotbarConfig_t::writeToFile(ClassHotbarConfig_t::HOTBAR_LAYOUT_CUSTOM_CONFIG, ClassHotbarConfig_t::HOTBAR_CONFIG_WRITE);
+	ClassHotbarConfig_t::init();
+#endif
+	});
+
+	static ConsoleCommand ccmd_deleteclasshotbar("/deleteclasshotbar", "", []CCMD{
+#ifndef EDITOR
+		ClassHotbarConfig_t::writeToFile(ClassHotbarConfig_t::HOTBAR_LAYOUT_CUSTOM_CONFIG, ClassHotbarConfig_t::HOTBAR_CONFIG_DELETE);
+	ClassHotbarConfig_t::init();
+#endif
+	});
+
+	static ConsoleCommand ccmd_loadclasshotbars("/loadclasshotbars", "", []CCMD{
+#ifndef EDITOR
+		ClassHotbarConfig_t::init();
+#endif
+	});
+
+	static ConsoleCommand ccmd_assignclasshotbars("/assignhotbarslots", "", []CCMD{
+#ifndef EDITOR
+		ClassHotbarConfig_t::assignHotbarSlots(clientnum);
 #endif
 	});
 

@@ -219,6 +219,7 @@ int initGame()
 	MonsterData_t::loadMonsterDataJSON();
 	ScriptTextParser.readAllScripts();
 	ShopkeeperConsumables_t::readFromFile();
+	ClassHotbarConfig_t::init();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){

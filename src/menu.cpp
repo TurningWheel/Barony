@@ -9722,6 +9722,10 @@ void doNewGame(bool makeHighscore) {
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			players[i]->hud.resetBars(); // reset XP/HP/MP bars
+			if ( !loadingsavegame && players[i]->isLocalPlayer() && !client_disconnected[i] )
+			{
+				ClassHotbarConfig_t::assignHotbarSlots(i); // assign custom hotbar configuration
+			}
 		}
 
 		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
@@ -9976,6 +9980,12 @@ void doNewGame(bool makeHighscore) {
 		else
 		{
 			loadGame(clientnum, saveGameInfo);
+		}
+
+		players[clientnum]->hud.resetBars();
+		if ( !loadingsavegame )
+		{
+			ClassHotbarConfig_t::assignHotbarSlots(clientnum); // assign custom hotbar configuration
 		}
 
 		// stop all sounds

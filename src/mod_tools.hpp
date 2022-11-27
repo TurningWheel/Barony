@@ -3042,4 +3042,46 @@ struct ShopkeeperConsumables_t
 	static std::map<int, std::vector<StoreSlots_t>> entries; // shop type as key
 	static void readFromFile();
 };
+
+struct ClassHotbarConfig_t
+{
+	struct HotbarEntry_t
+	{
+		std::set<int> itemTypes;
+		std::set<int> itemCategories;
+		int slotnum = -1;
+		HotbarEntry_t(int _slotnum)
+		{
+			slotnum = _slotnum;
+		};
+	};
+	struct ClassHotbar_t
+	{
+		struct ClassHotbarLayout_t
+		{
+			std::vector<HotbarEntry_t> hotbar;
+			std::vector<std::vector<HotbarEntry_t>> hotbar_alternates;
+			void init();
+			bool hasData = false;
+		};
+		ClassHotbarLayout_t layoutClassic;
+		ClassHotbarLayout_t layoutModern;
+	};
+	static ClassHotbar_t ClassHotbarsDefault[NUMCLASSES];
+	static ClassHotbar_t ClassHotbars[NUMCLASSES];
+	static void assignHotbarSlots(const int player);
+	enum HotbarConfigType : int
+	{
+		HOTBAR_LAYOUT_DEFAULT_CONFIG,
+		HOTBAR_LAYOUT_CUSTOM_CONFIG
+	};
+	enum HotbarConfigWriteMode : int
+	{
+		HOTBAR_CONFIG_WRITE,
+		HOTBAR_CONFIG_DELETE
+	};
+	static void readFromFile(HotbarConfigType fileReadType);
+	static void writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode);
+	static void init();
+};
 #endif // !EDITOR

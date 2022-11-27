@@ -5883,4 +5883,490 @@ void ShopkeeperConsumables_t::readFromFile()
 
 	printlog("[JSON]: Successfully read json file %s, processed %d shop consumables", inputPath.c_str(), entries.size());
 }
+
+
+ClassHotbarConfig_t::ClassHotbar_t ClassHotbarConfig_t::ClassHotbarsDefault[NUMCLASSES];
+ClassHotbarConfig_t::ClassHotbar_t ClassHotbarConfig_t::ClassHotbars[NUMCLASSES];
+
+void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode)
+{
+	std::string outputDir = "/config/";
+	if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		outputDir = "/data/";
+	}
+
+	if ( !PHYSFS_getRealDir(outputDir.c_str()) )
+	{
+		printlog("[JSON]: ClassHotbarConfig_t: %s directory not found", outputDir.c_str());
+		return;
+	}
+	std::string outputPath = PHYSFS_getRealDir(outputDir.c_str());
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "config/class_hotbars.json";
+	if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		fileName = "data/class_hotbars.json";
+	}
+	outputPath.append(fileName.c_str());
+
+	rapidjson::Document exportDocument;
+	bool writeNewFile = true;
+	if ( fileWriteType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		File* fp = FileIO::open(outputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			if ( writeMode == HOTBAR_CONFIG_DELETE )
+			{
+				printlog("[JSON]: Could not locate json file %s, skipping deletion...", outputPath.c_str());
+				return;
+			}
+			else
+			{
+				printlog("[JSON]: Could not locate json file %s, creating new file...", outputPath.c_str());
+				fp = FileIO::open(outputPath.c_str(), "wb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+					return;
+				}
+				exportDocument.SetObject();
+			}
+		}
+		else
+		{
+			char buf[80000];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			exportDocument.ParseStream(is);
+			printlog("[JSON]: Loaded existing file %s", outputPath.c_str());
+			writeNewFile = false;
+		}
+	}
+	else
+	{
+		exportDocument.SetObject();
+	}
+
+	const int VERSION = 1;
+
+	if ( fileWriteType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		std::string classname = playerClassInternalNames[client_classes[clientnum]];
+		if ( writeNewFile )
+		{
+			CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+			rapidjson::Value allClassesObject(rapidjson::kObjectType);
+			CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
+		}
+		else
+		{
+			exportDocument["version"].SetInt(VERSION);
+		}
+
+		if ( !exportDocument["classes"].HasMember(classname.c_str()) )
+		{
+			if ( writeMode == HOTBAR_CONFIG_DELETE )
+			{
+				printlog("[JSON]: Custom layout not found for class '%s', skipping deletion...", classname.c_str());
+				return;
+			}
+			exportDocument["classes"].AddMember(rapidjson::Value(classname.c_str(), exportDocument.GetAllocator()),
+				rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+		}
+
+		if ( writeMode == HOTBAR_CONFIG_DELETE )
+		{
+			printlog("[JSON]: Custom layout found for class '%s', removing...", classname.c_str());
+			exportDocument["classes"].EraseMember(classname.c_str());
+		}
+		else
+		{
+			auto& hotbar_t = players[clientnum]->hotbar;
+			std::string layoutname = "classic";
+			if ( hotbar_t.useHotbarFaceMenu )
+			{
+				layoutname = "modern";
+			}
+			if ( !exportDocument["classes"][classname.c_str()].HasMember(layoutname.c_str()) )
+			{
+				exportDocument["classes"][classname.c_str()].AddMember(rapidjson::Value(layoutname.c_str(), exportDocument.GetAllocator()),
+					rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+			}
+
+			auto& layoutObj = exportDocument["classes"][classname.c_str()][layoutname.c_str()];
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				std::string slotnum = std::to_string(i);
+				if ( !layoutObj.HasMember(slotnum.c_str()) )
+				{
+					layoutObj.AddMember(rapidjson::Value(slotnum.c_str(), exportDocument.GetAllocator()),
+						rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+				}
+
+				auto& slot = layoutObj[slotnum.c_str()];
+				if ( !slot.HasMember("items") )
+				{
+					slot.AddMember("items", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+				}
+				else
+				{
+					slot["items"].Clear(); // overwrite new values in array
+				}
+				//slot.AddMember("categories", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+				if ( hotbar_t.slots()[i].item != 0 )
+				{
+					if ( Item* item = uidToItem(hotbar_t.slots()[i].item) )
+					{
+						if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+						{
+							std::string itemstr = itemNameStrings[item->type + 2];
+							if ( itemstr == "spell_item" )
+							{
+								if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+								{
+									itemstr = ItemTooltips.spellItems[spell->ID].internalName;
+								}
+								else
+								{
+									continue;
+								}
+							}
+							rapidjson::Value itemnamekey(itemstr.c_str(), exportDocument.GetAllocator());
+							slot["items"].PushBack(itemnamekey, exportDocument.GetAllocator());
+						}
+					}
+				}
+			}
+		}
+	}
+	else if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+		rapidjson::Value allClassesObject(rapidjson::kObjectType);
+		CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
+
+		int classIndex = -1;
+		for ( auto classname : playerClassInternalNames )
+		{
+			++classIndex;
+			rapidjson::Value classObj(rapidjson::kObjectType);
+			classObj.AddMember("classic", rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+			classObj.AddMember("modern", rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+
+			auto& hotbar_t = players[clientnum]->hotbar;
+
+			std::vector<std::string> layoutTypes = { "classic", "modern" };
+			for ( auto layout : layoutTypes )
+			{
+				if ( layout == "classic" )
+				{
+					hotbar_t.useHotbarFaceMenu = false;
+				}
+				else
+				{
+					hotbar_t.useHotbarFaceMenu = true;
+				}
+				stats[clientnum]->clearStats();
+				client_classes[clientnum] = classIndex;
+				initClass(clientnum);
+
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+				{
+					std::string slotnum = std::to_string(i);
+					classObj[layout.c_str()].AddMember(rapidjson::Value(slotnum.c_str(), exportDocument.GetAllocator()),
+						rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+
+					auto& slot = classObj[layout.c_str()][slotnum.c_str()];
+					slot.AddMember("items", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+					//slot.AddMember("categories", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+					if ( hotbar_t.slots()[i].item != 0 )
+					{
+						if ( Item* item = uidToItem(hotbar_t.slots()[i].item) )
+						{
+							if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+							{
+								std::string itemstr = itemNameStrings[item->type + 2];
+								if ( itemstr == "spell_item" )
+								{
+									if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+									{
+										itemstr = ItemTooltips.spellItems[spell->ID].internalName;
+									}
+									else
+									{
+										continue;
+									}
+								}
+								rapidjson::Value itemnamekey(itemstr.c_str(), exportDocument.GetAllocator());
+								slot["items"].PushBack(itemnamekey, exportDocument.GetAllocator());
+							}
+						}
+					}
+				}
+			}
+			CustomHelpers::addMemberToSubkey(exportDocument, "classes", classname, classObj);
+		}
+
+		stats[clientnum]->clearStats();
+		client_classes[clientnum] = CLASS_BARBARIAN;
+		initClass(clientnum);
+	}
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	printlog("[JSON]: Successfully wrote json file %s", outputPath.c_str());
+	return;
+}
+
+void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fileReadType)
+{
+	std::string filename = "data/class_hotbars.json";
+	if ( fileReadType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		filename = "config/class_hotbars.json";
+	}
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		if ( fileReadType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+		{
+			printlog("[JSON]: Notice: No custom class hotbar layout found '%s'", filename.c_str());
+		}
+		else
+		{
+			printlog("[JSON]: Error: Could not find json file %s", filename.c_str());
+		}
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[80000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("classes") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto classes = d["classes"].MemberBegin(); classes != d["classes"].MemberEnd(); ++classes )
+	{
+		int classIndex = -1;
+		for ( auto s : playerClassInternalNames )
+		{
+			++classIndex;
+			if ( s == classes->name.GetString() )
+			{
+				break;
+			}
+		}
+		if ( !(classIndex >= CLASS_BARBARIAN && classIndex < NUMCLASSES) )
+		{
+			continue;
+		}
+
+		for ( auto layout = classes->value.MemberBegin(); layout != classes->value.MemberEnd(); ++layout )
+		{
+			if ( strcmp(layout->name.GetString(), "classic") && strcmp(layout->name.GetString(), "modern") )
+			{
+				continue;
+			}
+			bool facebarLayout = false;
+			if ( !strcmp(layout->name.GetString(), "modern") )
+			{
+				facebarLayout = true;
+			}
+
+			auto& customOrDefaultHotbar = (fileReadType == HOTBAR_LAYOUT_DEFAULT_CONFIG) ? ClassHotbarsDefault[classIndex] : ClassHotbars[classIndex];
+			auto& classHotbar = facebarLayout ? customOrDefaultHotbar.layoutModern : customOrDefaultHotbar.layoutClassic;
+			classHotbar.hasData = true;
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				std::string slotnum = std::to_string(i);
+				auto& slot = layout->value[slotnum.c_str()];
+				if ( slot.HasMember("items") )
+				{
+					if ( slot["items"].IsArray() )
+					{
+						for ( auto itemArr = slot["items"].Begin(); itemArr != slot["items"].End(); ++itemArr )
+						{
+							std::string itemString = itemArr->GetString();
+							int itemType = WOODEN_SHIELD;
+							bool found = false;
+							bool spell = false;
+							if ( itemString.find("spell_") != std::string::npos )
+							{
+								spell = true;
+								for ( int spellID = 0; spellID < NUM_SPELLS; ++spellID )
+								{
+									if ( ItemTooltips.spellItems[spellID].internalName == itemString )
+									{
+										itemType = spellID + 10000; // special id offset
+										found = true;
+										break;
+									}
+								}
+							}
+							else
+							{
+								for ( int c = 0; c < NUMITEMS; ++c )
+								{
+									if ( itemString.compare(itemNameStrings[c + 2]) == 0 )
+									{
+										itemType = c;
+										found = true;
+										break;
+									}
+								}
+							}
+							if ( found )
+							{
+								classHotbar.hotbar[i].itemTypes.insert(itemType);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+}
+
+void ClassHotbarConfig_t::ClassHotbar_t::ClassHotbarLayout_t::init()
+{
+	hasData = false;
+	hotbar.clear();
+	hotbar_alternates.clear();
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		hotbar.push_back(HotbarEntry_t(i));
+	}
+	for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+	{
+		std::vector<HotbarEntry_t> althotbar;
+		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		{
+			althotbar.push_back(HotbarEntry_t(i));
+		}
+		hotbar_alternates.push_back(althotbar);
+	}
+}
+
+void ClassHotbarConfig_t::init()
+{
+	for ( int c = 0; c < NUMCLASSES; ++c )
+	{
+		auto& classHotbar = ClassHotbars[c];
+		auto& classHotbarDefault = ClassHotbarsDefault[c];
+		classHotbar.layoutClassic.init();
+		classHotbar.layoutModern.init();
+		classHotbarDefault.layoutClassic.init();
+		classHotbarDefault.layoutModern.init();
+	}
+
+	readFromFile(HOTBAR_LAYOUT_DEFAULT_CONFIG);
+	readFromFile(HOTBAR_LAYOUT_CUSTOM_CONFIG);
+}
+
+void ClassHotbarConfig_t::assignHotbarSlots(const int player)
+{
+	int classnum = client_classes[player];
+	auto& layoutDefault = players[player]->hotbar.useHotbarFaceMenu ? ClassHotbarsDefault[classnum].layoutModern : ClassHotbarsDefault[classnum].layoutClassic;
+	auto& layoutCustom = players[player]->hotbar.useHotbarFaceMenu ? ClassHotbars[classnum].layoutModern : ClassHotbars[classnum].layoutClassic;
+
+	auto& hotbar_t = players[player]->hotbar;
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		hotbar_t.slots()[i].item = 0;
+		hotbar_t.slots()[i].lastItemUid = 0;
+		hotbar_t.slots()[i].lastItemCategory = -1;
+		hotbar_t.slots()[i].lastItemType = -1;
+	}
+
+	std::map<int, HotbarEntry_t*> itemsAndSlots;
+	for ( auto& slot : layoutDefault.hotbar )
+	{
+		if ( !slot.itemTypes.empty() )
+		{
+			for ( auto itemType : slot.itemTypes )
+			{
+				itemsAndSlots[itemType] = &slot;
+			}
+		}
+	}
+	if ( layoutCustom.hasData )
+	{
+		printlog("[Class Hotbar]: Found custom layout for class '%s'", playerClassInternalNames[classnum].c_str());
+		itemsAndSlots.clear();
+		for ( auto& slot : layoutCustom.hotbar )
+		{
+			if ( !slot.itemTypes.empty() )
+			{
+				for ( auto itemType : slot.itemTypes )
+				{
+					itemsAndSlots[itemType] = &slot;
+				}
+			}
+		}
+	}
+
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			int itemType = item->type;
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				if ( item->appearance >= 1000 )
+				{
+					continue; // shaman form spells
+				}
+				if ( spell_t* spell = getSpellFromItem(player, item) )
+				{
+					itemType = spell->ID + 10000;
+				}
+				else
+				{
+					continue;
+				}
+			}
+			if ( itemsAndSlots.find(itemType) != itemsAndSlots.end() )
+			{
+				auto& entry = itemsAndSlots[itemType];
+				hotbar_t.slots()[entry->slotnum].item = item->uid;
+			}
+		}
+	}
+}
 #endif // !EDITOR
