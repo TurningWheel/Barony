@@ -4260,17 +4260,15 @@ void actPlayer(Entity* my)
 							serverUpdateEntitySkill(my, 50);
 
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3192]);
-							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3185]);
+							if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+							{
+								messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[3185]);
+							}
+							else
+							{
+								messagePlayer(PLAYER_NUM, MESSAGE_STATUS, language[4303]);  // wears out, no mention of 'normal' form
+							}
 						}
-						/*if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
-						{
-							my->setEffect(EFF_SHAPESHIFT, false, 0, true);
-							my->effectShapeshift = 0;
-							serverUpdateEntitySkill(my, 53);
-
-							messagePlayer(PLAYER_NUM, language[3418]);
-							messagePlayer(PLAYER_NUM, language[3417]);
-						}*/
 						playSoundEntity(my, 400, 92);
 						createParticleDropRising(my, 593, 1.f);
 						serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
