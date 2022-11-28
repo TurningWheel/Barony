@@ -20384,7 +20384,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		else
 		{
-			useItem(item, player);
+			if ( !disableItemUsage && prompt == PROMPT_INTERACT )
+			{
+				useItem(item, player);
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+			}
 		}
 		return;
 	}
@@ -25609,7 +25616,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				auto alchemyEntry = *it;
 				if ( GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
 				{
-					std::string itemName = items[alchemyEntry].name_identified;
+					std::string itemName = items[alchemyEntry].getIdentifiedName();
 					size_t pos = std::string::npos;
 					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
 					{
@@ -25639,7 +25646,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				if ( GenericGUI[playernum].isItemSecondaryIngredient(alchemyEntry)
 					&& !GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
 				{
-					std::string itemName = items[alchemyEntry].name_identified;
+					std::string itemName = items[alchemyEntry].getIdentifiedName();
 					size_t pos = std::string::npos;
 					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
 					{
@@ -25837,7 +25844,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 						magics += '\n';
 					}
 					magics += "\x1E ";
-					magics += spellEntry->name;
+					magics += spellEntry->getSpellName();
 				}
 			}
 			if ( magics == "" ) { magics = "-"; }
@@ -28700,7 +28707,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			else if ( itemCategory(item) == SCROLL )
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-					items[item->type].name_unidentified);
+					items[item->type].getUnidentifiedName());
 				snprintf(buf2, sizeof(buf), "%s %s (?)", language[4215], item->getScrollLabel());
 			}
 			else
