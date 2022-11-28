@@ -1773,7 +1773,7 @@ void gameLogic(void)
 								item->ownerUid = parent->getUID();
 								Item* pickedUp = itemPickup(parent->skill[2], item);
 								Uint32 color = makeColorRGB(0, 255, 0);
-								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
+								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].getUnidentifiedName());
 								if ( pickedUp )
 								{
 									if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )

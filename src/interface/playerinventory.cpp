@@ -4615,36 +4615,44 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				{
 					case SPELL_SPEED:
 					case SPELL_DETECT_FOOD:
-						snprintf(buf, sizeof(buf), "%s%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name, language[3408]);
+						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
+							ItemTooltips.spellItems[SPELL_RAT_FORM].name.c_str());
+						manuallyInsertedNewline = true;
 						break;
 					case SPELL_POISON:
 					case SPELL_SPRAY_WEB:
-						snprintf(buf, sizeof(buf), "%s%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name, language[3409]);
+						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
+							ItemTooltips.spellItems[SPELL_SPIDER_FORM].name.c_str());
+						manuallyInsertedNewline = true;
 						break;
 					case SPELL_STRIKE:
 					case SPELL_FEAR:
 					case SPELL_TROLLS_BLOOD:
-						snprintf(buf, sizeof(buf), "%s%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name, language[3410]);
+						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
+							ItemTooltips.spellItems[SPELL_TROLL_FORM].name.c_str());
+						manuallyInsertedNewline = true;
 						break;
 					case SPELL_LIGHTNING:
 					case SPELL_CONFUSE:
 					case SPELL_AMPLIFY_MAGIC:
-						snprintf(buf, sizeof(buf), "%s%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name, language[3411]);
+						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
+							ItemTooltips.spellItems[SPELL_IMP_FORM].name.c_str());
+						manuallyInsertedNewline = true;
 						break;
 					default:
 						snprintf(buf, sizeof(buf), "%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name);
+							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
 						break;
 				}
 			}
 			else
 			{
 				snprintf(buf, sizeof(buf), "%s%s",
-					ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->name);
+					ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
 			}
 		}
 		else
@@ -4660,7 +4668,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				else if ( itemCategory(item) == SCROLL )
 				{
 					snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-						items[item->type].name_unidentified, language[4215], item->getScrollLabel());
+						items[item->type].getUnidentifiedName(), language[4215], item->getScrollLabel());
 					manuallyInsertedNewline = true;
 				}
 				else
@@ -4730,17 +4738,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 		else
 		{
-			if ( itemTooltip.minWidths.find(ItemTooltips.tmpItems[item->type].itemName) != itemTooltip.minWidths.end() )
+			if ( itemTooltip.minWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.minWidths.end() )
 			{
-				minWidthKey = ItemTooltips.tmpItems[item->type].itemName;
+				minWidthKey = ItemTooltips.tmpItems[item->type].internalName;
 			}
-			if ( itemTooltip.maxWidths.find(ItemTooltips.tmpItems[item->type].itemName) != itemTooltip.maxWidths.end() )
+			if ( itemTooltip.maxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.maxWidths.end() )
 			{
-				maxWidthKey = ItemTooltips.tmpItems[item->type].itemName;
+				maxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
 			}
-			if ( itemTooltip.headerMaxWidths.find(ItemTooltips.tmpItems[item->type].itemName) != itemTooltip.headerMaxWidths.end() )
+			if ( itemTooltip.headerMaxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.headerMaxWidths.end() )
 			{
-				headerMaxWidthKey = ItemTooltips.tmpItems[item->type].itemName;
+				headerMaxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
 			}
 		}
 
@@ -4917,7 +4925,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					{
 						if ( icon.conditionalAttribute.find("magicstaff_") != std::string::npos )
 						{
-							if ( ItemTooltips.tmpItems[item->type].itemName != icon.conditionalAttribute )
+							if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
 							{
 								continue;
 							}
@@ -4928,7 +4936,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					{
 						if ( icon.conditionalAttribute.find("scroll_") != std::string::npos )
 						{
-							if ( ItemTooltips.tmpItems[item->type].itemName != icon.conditionalAttribute )
+							if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
 							{
 								continue;
 							}

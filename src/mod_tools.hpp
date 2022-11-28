@@ -2608,7 +2608,7 @@ class ItemTooltips_t
 {
 	struct tmpItem_t
 	{
-		std::string itemName = "nothing";
+		std::string internalName = "nothing";
 		Sint32 itemId = -1;
 		Sint32 fpIndex = -1;
 		Sint32 tpIndex = -1;
@@ -2707,12 +2707,20 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
+	void readItemLocalizationsFromFile();
 	void readTooltipsFromFile();
 	std::vector<tmpItem_t> tmpItems;
 	std::map<Sint32, spellItem_t> spellItems;
 	std::map<std::string, ItemTooltip_t> tooltips;
 	std::map<std::string, std::map<std::string, std::string>> adjectives;
 	std::map<std::string, std::vector<std::string>> templates;
+	struct ItemLocalization_t
+	{
+		std::string name_identified = "";
+		std::string name_unidentified = "";
+	};
+	std::map<std::string, ItemLocalization_t> itemNameLocalizations;
+	std::map<std::string, std::string> spellNameLocalizations;
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;

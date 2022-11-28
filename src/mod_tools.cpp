@@ -610,7 +610,7 @@ void ItemTooltips_t::readItemsFromFile()
 		item_itr != d["items"].MemberEnd(); ++item_itr )
 	{
 		tmpItem_t t;
-		t.itemName = item_itr->name.GetString();
+		t.internalName = item_itr->name.GetString();
 		t.itemId = item_itr->value["item_id"].GetInt();
 		t.fpIndex = item_itr->value["first_person_model_index"].GetInt();
 		t.tpIndex = item_itr->value["third_person_model_index"].GetInt();
@@ -864,11 +864,11 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				continue;
 			}
-			if ( t.spellbookInternalName == tmpItems[i].itemName )
+			if ( t.spellbookInternalName == tmpItems[i].internalName )
 			{
 				t.spellbookId = i;
 			}
-			if ( t.magicstaffInternalName == tmpItems[i].itemName )
+			if ( t.magicstaffInternalName == tmpItems[i].internalName )
 			{
 				t.magicstaffId = i;
 			}
@@ -900,6 +900,122 @@ void ItemTooltips_t::readItemsFromFile()
 		assert(items[i].index == tmpItems[i].tpIndex);
 		assert(!strcmp(itemNameStrings[i + 2], tmpItems[i].itemName.c_str()));
 	}*/
+}
+
+
+void ItemTooltips_t::readItemLocalizationsFromFile()
+{
+	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: lang/item_names.json");
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir("/lang/item_names.json");
+	inputPath.append("/lang/item_names.json");
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+	constexpr uint32_t buffer_size = (1 << 17); // 131kb
+	if ( fp->size() >= buffer_size )
+	{
+		printlog("[JSON]: Error: file size is too large to fit in buffer! %s", inputPath.c_str());
+		FileIO::close(fp);
+		return;
+	}
+
+	static char buf[buffer_size];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
+	rapidjson::StringStream is(buf);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	FileIO::close(fp);
+
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: json file does not define a complete object. Is there a syntax error? %s", inputPath.c_str());
+		return;
+	}
+
+	if ( !d.HasMember("version") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+	int version = d["version"].GetInt();
+
+	if ( d.HasMember("items") )
+	{
+		itemNameLocalizations.clear();
+		for ( rapidjson::Value::ConstMemberIterator items_itr = d["items"].MemberBegin();
+			items_itr != d["items"].MemberEnd(); ++items_itr )
+		{
+			if ( items_itr->value.HasMember("name_identified") )
+			{
+				itemNameLocalizations[items_itr->name.GetString()].name_identified = items_itr->value["name_identified"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: item '%s' has no member 'name_identified'!", items_itr->name.GetString());
+			}
+			if ( items_itr->value.HasMember("name_unidentified") )
+			{
+				itemNameLocalizations[items_itr->name.GetString()].name_unidentified = items_itr->value["name_unidentified"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: item '%s' has no member 'name_unidentified'!", items_itr->name.GetString());
+			}
+		}
+	}
+
+	if ( d.HasMember("spell_names") )
+	{
+		spellNameLocalizations.clear();
+		for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spell_names"].MemberBegin();
+			spell_itr != d["spell_names"].MemberEnd(); ++spell_itr )
+		{
+			if ( spell_itr->value.HasMember("name") )
+			{
+				spellNameLocalizations[spell_itr->name.GetString()] = spell_itr->value["name"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: spell '%s' has no member 'name'!", spell_itr->name.GetString());
+			}
+		}
+	}
+
+	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
+	assert(itemNameLocalizations.size() == (NUMITEMS));
+	assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+
+	// apply localizations
+	for ( int i = 0; i < NUMITEMS; ++i )
+	{
+		items[i].setIdentifiedName("default_identified_item_name");
+		items[i].setUnidentifiedName("default_unidentified_item_name");
+	}
+	for ( auto& item : tmpItems )
+	{
+		if ( item.itemId >= WOODEN_SHIELD && item.itemId < NUMITEMS )
+		{
+			items[item.itemId].setIdentifiedName(itemNameLocalizations[item.internalName].name_identified);
+			items[item.itemId].setUnidentifiedName(itemNameLocalizations[item.internalName].name_unidentified);
+		}
+	}
+	for ( auto& spell : spellItems )
+	{
+		spell.second.name = spellNameLocalizations[spell.second.internalName];
+	}
 }
 
 #ifndef EDITOR
@@ -2138,7 +2254,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( spell )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), spell->name);
+				snprintf(buf, sizeof(buf), str.c_str(), spell->getSpellName());
 			}
 		}
 		else if ( conditionalAttribute == "SPELLBOOK_CAST_BONUS"
@@ -5482,17 +5598,17 @@ void ImGui_t::showConsoleCommands()
 	if ( ImGui::Button("/spawnitem") )
 	{
 		std::string cmd = "/spawnitem ";
-		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].getIdentifiedName();
 		consoleCommand(cmd.c_str());
 	}
 	ImGui::SameLine();
-	const char* combo_preview_value = items[currentItem].name_identified;
+	const char* combo_preview_value = items[currentItem].getIdentifiedName();
 	if ( ImGui::BeginCombo("items", combo_preview_value) )
 	{
 		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
 		{
 			const bool is_selected = (currentItem == n);
-			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+			if ( ImGui::Selectable(items[n].getIdentifiedName(), is_selected) )
 				currentItem = n;
 
 			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -5517,17 +5633,17 @@ void ImGui_t::showConsoleCommands()
 		snprintf(num, sizeof(num), "%d", spawnItemStatusIndex);
 		cmd += num;
 		cmd += " ";
-		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].getIdentifiedName();
 		consoleCommand(cmd.c_str());
 	}
 	ImGui::SameLine();
-	const char* combo_preview_value2 = items[currentItem2].name_identified;
+	const char* combo_preview_value2 = items[currentItem2].getIdentifiedName();
 	if ( ImGui::BeginCombo("items2", combo_preview_value) )
 	{
 		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
 		{
 			const bool is_selected = (currentItem2 == n);
-			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+			if ( ImGui::Selectable(items[n].getIdentifiedName(), is_selected) )
 				currentItem2 = n;
 
 			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)

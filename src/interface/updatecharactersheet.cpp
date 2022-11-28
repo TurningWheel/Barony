@@ -1020,7 +1020,7 @@ void drawSkillsSheet(const int player)
 							if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 							{
 								magics += " -[";
-								magics += spellEntry->name;
+								magics += spellEntry->getSpellName();
 								magics += "]\n";
 								++lines;
 							}
@@ -1170,7 +1170,7 @@ void drawSkillsSheet(const int player)
 						if ( GenericGUI[player].isItemBaseIngredient(alchemyEntry) )
 						{
 							baseIngredients += " -[";
-							std::string itemName = items[alchemyEntry].name_identified;
+							std::string itemName = items[alchemyEntry].getIdentifiedName();
 							itemName = itemName.substr(10);
 							baseIngredients += itemName;
 							baseIngredients += "]\n";
@@ -1179,7 +1179,7 @@ void drawSkillsSheet(const int player)
 						if ( GenericGUI[player].isItemSecondaryIngredient(alchemyEntry) )
 						{
 							secondaryIngredients += " -[";
-							std::string itemName = items[alchemyEntry].name_identified;
+							std::string itemName = items[alchemyEntry].getIdentifiedName();
 							itemName = itemName.substr(10);
 							secondaryIngredients += itemName;
 							secondaryIngredients += "]\n";

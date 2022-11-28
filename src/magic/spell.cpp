@@ -19,6 +19,7 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../mod_tools.hpp"
 
 list_t channeledSpells[MAXPLAYERS];
 
@@ -346,7 +347,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			else if ( foundNormalSpell )
 			{
 				// can't learn, already have it.
-				messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->name);
+				messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->getSpellName());
 				spellDeconstructor((void*)new_spell);
 				return false;
 			}
@@ -354,7 +355,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->name);
+			messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->getSpellName());
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
@@ -372,7 +373,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	if ( !intro )
 	{
-		messagePlayer(player, MESSAGE_PROGRESSION, language[441], new_spell->name);
+		messagePlayer(player, MESSAGE_PROGRESSION, language[441], new_spell->getSpellName());
 	}
 	node = list_AddNodeLast(&players[player]->magic.spellList);
 	node->element = new_spell;
@@ -410,7 +411,7 @@ spell_t* newSpell()
 void spellConstructor(spell_t* spell)
 {
 	spell->ID = -1;
-	strcpy(spell->name, "Spell");
+	strcpy(spell->spell_internal_name, "spell_default");
 	spell->elements.first = NULL;
 	spell->elements.last = NULL;
 	spell->sustain = true;
@@ -452,7 +453,7 @@ void spellElementConstructor(spellElement_t* element)
 	element->damage = 0;
 	element->duration = 0;
 	element->can_be_learned = true;
-	strcpy(element->name, "New Element");
+	strcpy(element->element_internal_name, "element_default");
 	element->elements.first = NULL;
 	element->elements.last = NULL;
 	element->node = NULL;
@@ -647,9 +648,18 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 	if ( players[playernum]->isLocalPlayer() )
 	{
 		players[playernum]->magic.equipSpell(spell);
-		messagePlayer(playernum, MESSAGE_MISC, language[442], spell->name);
+		messagePlayer(playernum, MESSAGE_MISC, language[442], spell->getSpellName());
 		players[playernum]->magic.selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
+}
+
+const char* spell_t::getSpellName()
+{
+	if ( ItemTooltips.spellItems.find(ID) != ItemTooltips.spellItems.end() )
+	{
+		return ItemTooltips.spellItems[ID].name.c_str();
+	}
+	return "";
 }
 
 spell_t* getSpellFromID(int ID)

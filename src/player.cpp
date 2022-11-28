@@ -3617,9 +3617,11 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
-			char* itemName = items[parent->skill[21]].name_identified;
 			interactText = language[4039]; // "Disarm ";
-			interactText += itemName;
+			if ( parent->skill[21] >= WOODEN_SHIELD && parent->skill[21] < NUMITEMS )
+			{
+				interactText += items[parent->skill[21]].getIdentifiedName();
+			}
 		}
 		else
 		{

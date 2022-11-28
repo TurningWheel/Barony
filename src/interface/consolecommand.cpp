@@ -462,7 +462,7 @@ namespace ConsoleCommands {
 		int c;
 		for (c = 0; c < NUMITEMS; c++)
 		{
-			if (strcmp(items[c].name_identified, name.c_str()) == 0)
+			if (strcmp(items[c].getIdentifiedName(), name.c_str()) == 0)
 			{
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 				break;
@@ -472,7 +472,7 @@ namespace ConsoleCommands {
 		{
 			for (c = 0; c < NUMITEMS; c++)
 			{
-				if (strstr(items[c].name_identified, name.c_str()))
+				if (strstr(items[c].getIdentifiedName(), name.c_str()))
 				{
 					dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 					break;
@@ -504,7 +504,7 @@ namespace ConsoleCommands {
 		int c;
 		for (c = 0; c < NUMITEMS; c++)
 		{
-			if (strcmp(items[c].name_identified, name.c_str()) == 0)
+			if (strcmp(items[c].getIdentifiedName(), name.c_str()) == 0)
 			{
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 				break;
@@ -514,7 +514,7 @@ namespace ConsoleCommands {
 		{
 			for (c = 0; c < NUMITEMS; c++)
 			{
-				if (strstr(items[c].name_identified, name.c_str()))
+				if (strstr(items[c].getIdentifiedName(), name.c_str()))
 				{
 					dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 					break;
@@ -546,7 +546,7 @@ namespace ConsoleCommands {
 		int c;
 		for (c = 0; c < NUMITEMS; ++c)
 		{
-			if (strcmp(items[c].name_identified, name.c_str()) == 0)
+			if (strcmp(items[c].getIdentifiedName(), name.c_str()) == 0)
 			{
 				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 				break;
@@ -556,7 +556,7 @@ namespace ConsoleCommands {
 		{
 			for (c = 0; c < NUMITEMS; ++c)
 			{
-				if (strstr(items[c].name_identified, name.c_str()))
+				if (strstr(items[c].getIdentifiedName(), name.c_str()))
 				{
 					dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, local_rng.rand(), false, &stats[clientnum]->inventory), 0);
 					break;
@@ -3939,16 +3939,16 @@ namespace ConsoleCommands {
 			for (auto& entry : clientLearnedAlchemyRecipes[player])
 			{
 				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
-					items[entry.first].name_identified, items[entry.second.first].name_identified,
-					items[entry.second.second].name_identified);
+					items[entry.first].getIdentifiedName(), items[entry.second.first].getIdentifiedName(),
+					items[entry.second.second].getIdentifiedName());
 			}
 		}
 		else {
 			for (auto& entry : clientLearnedAlchemyRecipes[clientnum])
 			{
 				messagePlayer(clientnum, MESSAGE_MISC, "[%s]: %s | %s",
-					items[entry.first].name_identified, items[entry.second.first].name_identified,
-					items[entry.second.second].name_identified);
+					items[entry.first].getIdentifiedName(), items[entry.second.first].getIdentifiedName(),
+					items[entry.second.second].getIdentifiedName());
 			}
 		}
 		});
@@ -4120,7 +4120,7 @@ namespace ConsoleCommands {
 		int c;
 		for ( c = 0; c < NUMITEMS; c++ )
 		{
-			if ( strcmp(items[c].name_identified, name.c_str()) == 0 )
+			if ( strcmp(items[c].getIdentifiedName(), name.c_str()) == 0 )
 			{
 				dropItem(newItem(static_cast<ItemType>(c), static_cast<Status>(status), beatitude, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 				break;
@@ -4130,7 +4130,7 @@ namespace ConsoleCommands {
 		{
 			for ( c = 0; c < NUMITEMS; c++ )
 			{
-				if ( strstr(items[c].name_identified, name.c_str()) )
+				if ( strstr(items[c].getIdentifiedName(), name.c_str()) )
 				{
 					dropItem(newItem(static_cast<ItemType>(c), static_cast<Status>(status), beatitude, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 					break;
@@ -4228,6 +4228,92 @@ namespace ConsoleCommands {
 			}
 		}
 #endif
+	});
+
+	static ConsoleCommand ccmd_exportitemlang("/exportitemlang", "", []CCMD{
+#ifndef EDITOR
+#ifndef NINTENDO
+		/*rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+		CustomHelpers::addMemberToRoot(d, "items", rapidjson::Value(rapidjson::kObjectType));
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			d["item_names"].AddMember(rapidjson::Value(ItemTooltips.tmpItems[i].itemName.c_str(), d.GetAllocator()), rapidjson::Value(rapidjson::kObjectType),
+				d.GetAllocator());
+			d["item_names"][ItemTooltips.tmpItems[i].itemName.c_str()].AddMember("name_identified", rapidjson::Value(items[i].name_identified, d.GetAllocator()), d.GetAllocator());
+			d["item_names"][ItemTooltips.tmpItems[i].itemName.c_str()].AddMember("name_unidentified", rapidjson::Value(items[i].name_unidentified, d.GetAllocator()), d.GetAllocator());
+		}
+		File* fp = FileIO::open("lang/item_names.json", "wb");
+		if ( !fp )
+		{
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);*/
+#endif
+#endif
+	});
+
+	static ConsoleCommand ccmd_exportspelllang("/exportspelllang", "", []CCMD{
+#ifndef EDITOR
+#ifndef NINTENDO
+		/*rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "version", rapidjson::Value(1));
+		CustomHelpers::addMemberToRoot(d, "spells", rapidjson::Value(rapidjson::kObjectType));
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( spell_t* spell = getSpellFromID(i) )
+			{
+				d["spell_names"].AddMember(rapidjson::Value(ItemTooltips.spellItems[i].internalName.c_str(), d.GetAllocator()), rapidjson::Value(rapidjson::kObjectType),
+					d.GetAllocator());
+				d["spell_names"][ItemTooltips.spellItems[i].internalName.c_str()].AddMember("name", rapidjson::Value(spell->getSpellName(), d.GetAllocator()), d.GetAllocator());
+			}
+		}
+		File* fp = FileIO::open("lang/spell_names.json", "wb");
+		if ( !fp )
+		{
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);*/
+#endif
+#endif
+	});
+
+	static ConsoleCommand ccmd_spawndummy("/spawndummy", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			return;
+		}
+		if ( players[clientnum]->entity )
+		{
+			if ( Entity* monster = summonMonster(DUMMYBOT, players[clientnum]->entity->x, players[clientnum]->entity->y) )
+			{
+				if ( Stat* stat = monster->getStats() )
+				{
+					stat->HP = 5000;
+					stat->MAXHP = 5000;
+					stat->CON = 0;
+					stat->LVL = 50;
+					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+					serverUpdateEntityStatFlag(monster, 20);
+				}
+			}
+		}
 	});
 }
 

@@ -14,6 +14,7 @@ build/*
 **/lang/*
 **/config/*
 !lang/*
+!lang/item_names.json
 **/mods/*
 **/savegames/*
 src/Config.hpp

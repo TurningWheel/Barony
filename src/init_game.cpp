@@ -102,7 +102,7 @@ int initGame()
 	//std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
 	//itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
 	//File* fp = openDataFile(itemsDirectory.c_str(), "rb");
-	for ( int c = 0; c < NUMITEMS; ++c )
+	/*for ( int c = 0; c < NUMITEMS; ++c )
 	{
 		if ( c > SPELLBOOK_DETECT_FOOD )
 		{
@@ -121,7 +121,7 @@ int initGame()
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
-	}
+	}*/
 		/*items[c].index = fp->geti();
 		items[c].fpindex = fp->geti();
 		items[c].variations = fp->geti();
@@ -210,6 +210,7 @@ int initGame()
 	loadItemLists();*/
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readTooltipsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
 	setupSpells();
 
 	loadHUDSettingsJSON();

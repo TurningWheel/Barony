@@ -1515,7 +1515,14 @@ void Entity::effectTimes()
 					case EFF_POLYMORPH:
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
-						messagePlayer(player, MESSAGE_STATUS, language[3185]);
+						if ( !myStats->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[3185]);
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[4303]); // wears out, no mention of 'normal' form
+						}
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -1525,7 +1532,14 @@ void Entity::effectTimes()
 					case EFF_SHAPESHIFT:
 						effectShapeshift = 0;
 						serverUpdateEntitySkill(this, 53);
-						messagePlayer(player, MESSAGE_STATUS, language[3417]);
+						if ( !myStats->EFFECTS[EFF_POLYMORPH] )
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[3417]);
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[4302]); // return to your 'abnormal' form
+						}
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -15124,11 +15138,11 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					if ( item->identified )
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_identified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getIdentifiedName());
 					}
 					else
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_unidentified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getUnidentifiedName());
 					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 					pickedUpItemReturnValue = true;
@@ -16119,7 +16133,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 	if ( myStats->weapon && getSpellIDFromSpellbook(myStats->weapon->type) == spellbookType )
 	{
 		spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
-		//messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
+		//messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->getSpellName());
 		return true;
 	}
 
@@ -16134,7 +16148,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 		if ( getSpellIDFromSpellbook(item->type) == spellbookType )
 		{
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-			//messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->getSpellName());
 			return true;
 		}
 	}
@@ -17133,7 +17147,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
 				const int itemType = optionalEntity->skill[21];
-				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].getIdentifiedName());
 			}
 			break;
 		}
@@ -17236,11 +17250,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				itemType = optionalEntity->skill[21];
 				if ( namedMonsterAsGeneric || monsterType == HUMAN )
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, items[itemType].getIdentifiedName());
 				}
 				else
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].getIdentifiedName());
 				}
 			}
 			break;

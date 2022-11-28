@@ -1991,8 +1991,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-	//loadItems();
 	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
 	for ( c = 0; c < NUMITEMS; c++ )
 	{
 		items[c].surfaces.first = nullptr;

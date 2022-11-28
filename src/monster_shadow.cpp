@@ -1599,7 +1599,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			//TODO: Delete debug.
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
-			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->getSpellName());
 		}
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
