@@ -1068,7 +1068,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 290;
+static const int NUM_ITEM_STRINGS = 291;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
 static const int NUM_EDITOR_SPRITES = 179;
 static const int NUM_EDITOR_TILES = 350;

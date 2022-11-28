@@ -450,6 +450,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"heavy_crossbow",
 	"boomerang",
 	"scroll_conjurearrow",
+	"monocle",
 	""
 };
 
@@ -706,6 +707,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"monocle",
 		""
 	},
 	{

@@ -858,7 +858,7 @@ void initClass(const int player)
 		}
 
 		// glasses
-		item = newItem(TOOL_GLASSES, SERVICABLE, 0, 1, 0, true, nullptr);
+		item = newItem(MONOCLE, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);

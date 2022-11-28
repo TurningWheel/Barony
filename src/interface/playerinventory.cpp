@@ -316,6 +316,7 @@ const char* itemEquipString(int player, const Item& item)
 					return language[328];
 				}
 			case TOOL_GLASSES:
+			case MONOCLE:
 				if ( itemIsEquipped(&item, player) )
 				{
 					return language[327];

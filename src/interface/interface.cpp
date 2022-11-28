@@ -9221,6 +9221,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case IRON_KNUCKLES:
 		case TOOL_BEARTRAP:
 		case IRON_DAGGER:
+		case MONOCLE:
 			*metal = 2;
 			*magic = 0;
 			break;

@@ -2336,6 +2336,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				}
 			break;
 		case TOOL_GLASSES:
+		case MONOCLE:
 		case MASK_SHAMAN:
 			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
@@ -5163,7 +5164,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
-				&& this->type != TOOL_GLASSES)
+				&& this->type != TOOL_GLASSES
+				&& this->type != MONOCLE)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
@@ -5173,7 +5175,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
-				&& this->type != TOOL_GLASSES)
+				&& this->type != TOOL_GLASSES
+				&& this->type != MONOCLE)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.

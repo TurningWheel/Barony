@@ -5599,7 +5599,8 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->mask )
 	{
-		if ( entitystats->mask->type == TOOL_GLASSES )
+		if ( entitystats->mask->type == TOOL_GLASSES
+			|| entitystats->mask->type == MONOCLE )
 		{
 			if ( entitystats->mask->beatitude >= 0 || cursedItemIsBuff )
 			{

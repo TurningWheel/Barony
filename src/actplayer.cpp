@@ -7025,6 +7025,10 @@ void actPlayer(Entity* my)
 							{
 								entity->sprite = 165; // GlassesWorn.vox
 							}
+							else if ( stats[PLAYER_NUM]->mask->type == MONOCLE )
+							{
+								entity->sprite = 1196; // MonocleWorn.vox
+							}
 							else
 							{
 								entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
