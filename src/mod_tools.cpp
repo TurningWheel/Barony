@@ -567,7 +567,6 @@ void IRCHandler_t::handleMessage(std::string& msg)
 }
 #endif // !NINTENDO
 
-#ifndef EDITOR
 void ItemTooltips_t::readItemsFromFile()
 {
 	if ( !PHYSFS_getRealDir("items/items.json") )
@@ -667,7 +666,36 @@ void ItemTooltips_t::readItemsFromFile()
 		items[i].tooltip = tmpItems[i].tooltip;
 		items[i].attributes.clear();
 		items[i].attributes = tmpItems[i].attributes;
+		if ( i == SPELL_ITEM )
+		{
+			items[i].variations = 1;
+		}
+		else
+		{
+			items[i].variations = tmpItems[i].imagePaths.size();
+		}
+		list_FreeAll(&items[i].images);
+		items[i].images.first = NULL;
+		items[i].images.last = NULL;
+		for ( int j = 0; j < tmpItems[i].imagePaths.size(); ++j )
+		{
+			//auto s = static_cast<string_t*>(list_Node(&items[i].images, j)->element);
+			//assert(!strcmp(s->data, tmpItems[i].imagePaths[j].c_str()));
 
+			string_t* string = (string_t*)malloc(sizeof(string_t));
+			const size_t len = 64;
+			string->data = (char*)malloc(sizeof(char) * len);
+			memset(string->data, 0, sizeof(char) * len);
+			string->lines = 1;
+
+			node_t* node = list_AddNodeLast(&items[i].images);
+			node->element = string;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			string->node = node;
+
+			stringCopy(string->data, tmpItems[i].imagePaths[j].c_str(), len - 1, tmpItems[i].imagePaths[j].size());
+		}
 		if ( tmpItems[i].category.compare("WEAPON") == 0 )
 		{
 			items[i].category = WEAPON;
@@ -874,6 +902,7 @@ void ItemTooltips_t::readItemsFromFile()
 	}*/
 }
 
+#ifndef EDITOR
 void ItemTooltips_t::readTooltipsFromFile()
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )

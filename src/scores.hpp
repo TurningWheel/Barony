@@ -515,6 +515,7 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
 static const int SAVE_GAMES_MAX = 10;
 
+#ifndef EDITOR
 class AchievementObserver
 {
 	int levelObserved = -1;
@@ -673,6 +674,7 @@ public:
 	void updateGlobalStat(int index, int value = 1);
 };
 extern AchievementObserver achievementObserver;
+#endif
 
 #ifdef STEAMWORKS
 bool steamLeaderboardSetScore(score_t* score);
