@@ -9623,6 +9623,7 @@ void doNewGame(bool makeHighscore) {
 	buddhamode = false;
 	everybodyfriendly = false;
 	gameloopFreezeEntities = false;
+	skipLevelsOnLoad = 0;
 
 #ifdef STEAMWORKS
 	if ( !directConnect )
@@ -10534,6 +10535,13 @@ void doEndgame() {
 	{
 		deleteSaveGame(multiplayer);
 	}
+
+	// disable cheats
+	noclip = false;
+	godmode = false;
+	buddhamode = false;
+	everybodyfriendly = false;
+	skipLevelsOnLoad = 0;
 
 	// reset game
 	darkmap = false;
