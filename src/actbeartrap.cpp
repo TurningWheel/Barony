@@ -362,11 +362,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		// you stumbled into the trap!
 		if ( !hitByAOE )
 		{
-			messagePlayerColor(player, MESSAGE_STATUS, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3497], items[BOMB_ITEMTYPE].getIdentifiedName());
 		}
 		else
 		{
-			messagePlayerColor(player, MESSAGE_STATUS, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
+			messagePlayerColor(player, MESSAGE_STATUS, color, language[3612], items[BOMB_ITEMTYPE].getIdentifiedName());
 		}
 	}
 
@@ -696,7 +696,7 @@ void actBomb(Entity* my)
 					entity->itemNotMoving = 0;
 					entity->itemNotMovingClient = 0;
 				}
-				messagePlayer(i, MESSAGE_INTERACTION, language[3600], items[BOMB_ITEMTYPE].name_identified);
+				messagePlayer(i, MESSAGE_INTERACTION, language[3600], items[BOMB_ITEMTYPE].getIdentifiedName());
 				list_RemoveNode(my->mynode);
 				return;
 			}

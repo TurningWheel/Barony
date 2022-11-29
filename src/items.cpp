@@ -447,7 +447,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 			{
 				if ( pick == 0 )
 				{
-					//messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
+					//messagePlayer(0, "Chose item: %s of %d items.", items[c].getIdentifiedName() ,numleft);
 					return static_cast<ItemType>(c);
 				}
 				else
@@ -537,7 +537,7 @@ char* Item::description() const
 				}
 				else
 				{
-					snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_identified);
+					snprintf(&tempstr[c], 1024 - c, "%s", items[type].getIdentifiedName());
 				}
 			}
 			else
@@ -607,7 +607,7 @@ char* Item::description() const
 				}
 				else
 				{
-					snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_identified);
+					snprintf(&tempstr[c], 1024 - c, "%s", items[type].getIdentifiedName());
 				}
 			}
 			else
@@ -676,7 +676,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
@@ -686,7 +686,7 @@ char* Item::description() const
 					}
 					else
 					{
-						snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_unidentified);
+						snprintf(&tempstr[c], 1024 - c, "%s", items[type].getUnidentifiedName());
 					}
 				}
 			}
@@ -753,7 +753,7 @@ char* Item::description() const
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], items[type].name_unidentified, this->getScrollLabel());
+					snprintf(&tempstr[c], 1024 - c, language[1085], items[type].getUnidentifiedName(), this->getScrollLabel());
 				}
 				else
 				{
@@ -763,7 +763,7 @@ char* Item::description() const
 					}
 					else
 					{
-						snprintf(&tempstr[c], 1024 - c, "%s", items[type].name_unidentified);
+						snprintf(&tempstr[c], 1024 - c, "%s", items[type].getUnidentifiedName());
 					}
 				}
 			}
@@ -813,14 +813,14 @@ char* Item::getName() const
 			}
 			else
 			{
-				strcpy(tempstr, items[type].name_identified);
+				strcpy(tempstr, items[type].getIdentifiedName());
 			}
 		}
 		else
 		{
 			if ( itemCategory(this) == SCROLL )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].name_unidentified, this->getScrollLabel());
+				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].getUnidentifiedName(), this->getScrollLabel());
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
@@ -828,7 +828,7 @@ char* Item::getName() const
 			}
 			else
 			{
-				strcpy(tempstr, items[type].name_unidentified);
+				strcpy(tempstr, items[type].getUnidentifiedName());
 			}
 		}
 	}
@@ -2336,6 +2336,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				}
 			break;
 		case TOOL_GLASSES:
+		case MONOCLE:
 		case MASK_SHAMAN:
 			equipItemResult = equipItem(item, &stats[player]->mask, player, checkInventorySpaceForPaperDoll);
 			break;
@@ -2463,7 +2464,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(player, emptyBottle);
-				messagePlayer(player, MESSAGE_INTERACTION, language[3351], items[POTION_EMPTY].name_identified);
+				messagePlayer(player, MESSAGE_INTERACTION, language[3351], items[POTION_EMPTY].getIdentifiedName());
 				free(emptyBottle);
 			}
 		}
@@ -5163,7 +5164,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
-				&& this->type != TOOL_GLASSES)
+				&& this->type != TOOL_GLASSES
+				&& this->type != MONOCLE)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
@@ -5173,7 +5175,8 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_TINKERING_KIT
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
-				&& this->type != TOOL_GLASSES)
+				&& this->type != TOOL_GLASSES
+				&& this->type != MONOCLE)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.

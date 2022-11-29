@@ -567,7 +567,6 @@ void IRCHandler_t::handleMessage(std::string& msg)
 }
 #endif // !NINTENDO
 
-#ifndef EDITOR
 void ItemTooltips_t::readItemsFromFile()
 {
 	if ( !PHYSFS_getRealDir("items/items.json") )
@@ -611,7 +610,7 @@ void ItemTooltips_t::readItemsFromFile()
 		item_itr != d["items"].MemberEnd(); ++item_itr )
 	{
 		tmpItem_t t;
-		t.itemName = item_itr->name.GetString();
+		t.internalName = item_itr->name.GetString();
 		t.itemId = item_itr->value["item_id"].GetInt();
 		t.fpIndex = item_itr->value["first_person_model_index"].GetInt();
 		t.tpIndex = item_itr->value["third_person_model_index"].GetInt();
@@ -667,7 +666,36 @@ void ItemTooltips_t::readItemsFromFile()
 		items[i].tooltip = tmpItems[i].tooltip;
 		items[i].attributes.clear();
 		items[i].attributes = tmpItems[i].attributes;
+		if ( i == SPELL_ITEM )
+		{
+			items[i].variations = 1;
+		}
+		else
+		{
+			items[i].variations = tmpItems[i].imagePaths.size();
+		}
+		list_FreeAll(&items[i].images);
+		items[i].images.first = NULL;
+		items[i].images.last = NULL;
+		for ( int j = 0; j < tmpItems[i].imagePaths.size(); ++j )
+		{
+			//auto s = static_cast<string_t*>(list_Node(&items[i].images, j)->element);
+			//assert(!strcmp(s->data, tmpItems[i].imagePaths[j].c_str()));
 
+			string_t* string = (string_t*)malloc(sizeof(string_t));
+			const size_t len = 64;
+			string->data = (char*)malloc(sizeof(char) * len);
+			memset(string->data, 0, sizeof(char) * len);
+			string->lines = 1;
+
+			node_t* node = list_AddNodeLast(&items[i].images);
+			node->element = string;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			string->node = node;
+
+			stringCopy(string->data, tmpItems[i].imagePaths[j].c_str(), len - 1, tmpItems[i].imagePaths[j].size());
+		}
 		if ( tmpItems[i].category.compare("WEAPON") == 0 )
 		{
 			items[i].category = WEAPON;
@@ -836,11 +864,11 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				continue;
 			}
-			if ( t.spellbookInternalName == tmpItems[i].itemName )
+			if ( t.spellbookInternalName == tmpItems[i].internalName )
 			{
 				t.spellbookId = i;
 			}
-			if ( t.magicstaffInternalName == tmpItems[i].itemName )
+			if ( t.magicstaffInternalName == tmpItems[i].internalName )
 			{
 				t.magicstaffId = i;
 			}
@@ -874,6 +902,123 @@ void ItemTooltips_t::readItemsFromFile()
 	}*/
 }
 
+
+void ItemTooltips_t::readItemLocalizationsFromFile()
+{
+	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
+	{
+		printlog("[JSON]: Error: Could not find file: lang/item_names.json");
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir("/lang/item_names.json");
+	inputPath.append("/lang/item_names.json");
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+	constexpr uint32_t buffer_size = (1 << 17); // 131kb
+	if ( fp->size() >= buffer_size )
+	{
+		printlog("[JSON]: Error: file size is too large to fit in buffer! %s", inputPath.c_str());
+		FileIO::close(fp);
+		return;
+	}
+
+	static char buf[buffer_size];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
+	rapidjson::StringStream is(buf);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	FileIO::close(fp);
+
+	if ( !d.IsObject() )
+	{
+		printlog("[JSON]: Error: json file does not define a complete object. Is there a syntax error? %s", inputPath.c_str());
+		return;
+	}
+
+	if ( !d.HasMember("version") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+	int version = d["version"].GetInt();
+
+	if ( d.HasMember("items") )
+	{
+		itemNameLocalizations.clear();
+		for ( rapidjson::Value::ConstMemberIterator items_itr = d["items"].MemberBegin();
+			items_itr != d["items"].MemberEnd(); ++items_itr )
+		{
+			if ( items_itr->value.HasMember("name_identified") )
+			{
+				itemNameLocalizations[items_itr->name.GetString()].name_identified = items_itr->value["name_identified"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: item '%s' has no member 'name_identified'!", items_itr->name.GetString());
+			}
+			if ( items_itr->value.HasMember("name_unidentified") )
+			{
+				itemNameLocalizations[items_itr->name.GetString()].name_unidentified = items_itr->value["name_unidentified"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: item '%s' has no member 'name_unidentified'!", items_itr->name.GetString());
+			}
+		}
+	}
+
+	if ( d.HasMember("spell_names") )
+	{
+		spellNameLocalizations.clear();
+		for ( rapidjson::Value::ConstMemberIterator spell_itr = d["spell_names"].MemberBegin();
+			spell_itr != d["spell_names"].MemberEnd(); ++spell_itr )
+		{
+			if ( spell_itr->value.HasMember("name") )
+			{
+				spellNameLocalizations[spell_itr->name.GetString()] = spell_itr->value["name"].GetString();
+			}
+			else
+			{
+				printlog("[JSON]: Warning: spell '%s' has no member 'name'!", spell_itr->name.GetString());
+			}
+		}
+	}
+
+	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
+	assert(itemNameLocalizations.size() == (NUMITEMS));
+	assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+
+	// apply localizations
+	for ( int i = 0; i < NUMITEMS; ++i )
+	{
+		items[i].setIdentifiedName("default_identified_item_name");
+		items[i].setUnidentifiedName("default_unidentified_item_name");
+	}
+	for ( auto& item : tmpItems )
+	{
+		if ( item.itemId >= WOODEN_SHIELD && item.itemId < NUMITEMS )
+		{
+			items[item.itemId].setIdentifiedName(itemNameLocalizations[item.internalName].name_identified);
+			items[item.itemId].setUnidentifiedName(itemNameLocalizations[item.internalName].name_unidentified);
+		}
+	}
+	for ( auto& spell : spellItems )
+	{
+		spell.second.name = spellNameLocalizations[spell.second.internalName];
+	}
+}
+
+#ifndef EDITOR
 void ItemTooltips_t::readTooltipsFromFile()
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
@@ -2109,7 +2254,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( spell )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), spell->name);
+				snprintf(buf, sizeof(buf), str.c_str(), spell->getSpellName());
 			}
 		}
 		else if ( conditionalAttribute == "SPELLBOOK_CAST_BONUS"
@@ -5453,17 +5598,17 @@ void ImGui_t::showConsoleCommands()
 	if ( ImGui::Button("/spawnitem") )
 	{
 		std::string cmd = "/spawnitem ";
-		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].getIdentifiedName();
 		consoleCommand(cmd.c_str());
 	}
 	ImGui::SameLine();
-	const char* combo_preview_value = items[currentItem].name_identified;
+	const char* combo_preview_value = items[currentItem].getIdentifiedName();
 	if ( ImGui::BeginCombo("items", combo_preview_value) )
 	{
 		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
 		{
 			const bool is_selected = (currentItem == n);
-			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+			if ( ImGui::Selectable(items[n].getIdentifiedName(), is_selected) )
 				currentItem = n;
 
 			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -5488,17 +5633,17 @@ void ImGui_t::showConsoleCommands()
 		snprintf(num, sizeof(num), "%d", spawnItemStatusIndex);
 		cmd += num;
 		cmd += " ";
-		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].name_identified;
+		cmd += items[std::max(0, std::min(currentItem, NUMITEMS - 1))].getIdentifiedName();
 		consoleCommand(cmd.c_str());
 	}
 	ImGui::SameLine();
-	const char* combo_preview_value2 = items[currentItem2].name_identified;
+	const char* combo_preview_value2 = items[currentItem2].getIdentifiedName();
 	if ( ImGui::BeginCombo("items2", combo_preview_value) )
 	{
 		for ( int n = 0; n < IM_ARRAYSIZE(items); n++ )
 		{
 			const bool is_selected = (currentItem2 == n);
-			if ( ImGui::Selectable(items[n].name_identified, is_selected) )
+			if ( ImGui::Selectable(items[n].getIdentifiedName(), is_selected) )
 				currentItem2 = n;
 
 			// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -5882,5 +6027,547 @@ void ShopkeeperConsumables_t::readFromFile()
 	}
 
 	printlog("[JSON]: Successfully read json file %s, processed %d shop consumables", inputPath.c_str(), entries.size());
+}
+
+
+ClassHotbarConfig_t::ClassHotbar_t ClassHotbarConfig_t::ClassHotbarsDefault[NUMCLASSES];
+ClassHotbarConfig_t::ClassHotbar_t ClassHotbarConfig_t::ClassHotbars[NUMCLASSES];
+
+void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode)
+{
+	std::string outputDir = "/config/";
+	if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		outputDir = "/data/";
+	}
+
+	if ( !PHYSFS_getRealDir(outputDir.c_str()) )
+	{
+		printlog("[JSON]: ClassHotbarConfig_t: %s directory not found", outputDir.c_str());
+		return;
+	}
+	std::string outputPath = PHYSFS_getRealDir(outputDir.c_str());
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "config/class_hotbars.json";
+	if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		fileName = "data/class_hotbars.json";
+	}
+	outputPath.append(fileName.c_str());
+
+	rapidjson::Document exportDocument;
+	bool writeNewFile = true;
+	if ( fileWriteType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		File* fp = FileIO::open(outputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			if ( writeMode == HOTBAR_CONFIG_DELETE )
+			{
+				printlog("[JSON]: Could not locate json file %s, skipping deletion...", outputPath.c_str());
+				return;
+			}
+			else
+			{
+				printlog("[JSON]: Could not locate json file %s, creating new file...", outputPath.c_str());
+				fp = FileIO::open(outputPath.c_str(), "wb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+					return;
+				}
+				exportDocument.SetObject();
+			}
+		}
+		else
+		{
+			char buf[80000];
+			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+			buf[count] = '\0';
+			rapidjson::StringStream is(buf);
+			FileIO::close(fp);
+
+			exportDocument.ParseStream(is);
+			printlog("[JSON]: Loaded existing file %s", outputPath.c_str());
+			writeNewFile = false;
+		}
+	}
+	else
+	{
+		exportDocument.SetObject();
+	}
+
+	const int VERSION = 1;
+
+	if ( fileWriteType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		std::string classname = playerClassInternalNames[client_classes[clientnum]];
+		if ( writeNewFile )
+		{
+			CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+			rapidjson::Value allClassesObject(rapidjson::kObjectType);
+			CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
+		}
+		else
+		{
+			exportDocument["version"].SetInt(VERSION);
+		}
+
+		if ( !exportDocument["classes"].HasMember(classname.c_str()) )
+		{
+			if ( writeMode == HOTBAR_CONFIG_DELETE )
+			{
+				printlog("[JSON]: Custom layout not found for class '%s', skipping deletion...", classname.c_str());
+				return;
+			}
+			exportDocument["classes"].AddMember(rapidjson::Value(classname.c_str(), exportDocument.GetAllocator()),
+				rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+		}
+
+		if ( writeMode == HOTBAR_CONFIG_DELETE )
+		{
+			printlog("[JSON]: Custom layout found for class '%s', removing...", classname.c_str());
+			exportDocument["classes"].EraseMember(classname.c_str());
+		}
+		else
+		{
+			auto& hotbar_t = players[clientnum]->hotbar;
+			std::string layoutname = "classic";
+			if ( hotbar_t.useHotbarFaceMenu )
+			{
+				layoutname = "modern";
+			}
+			if ( !exportDocument["classes"][classname.c_str()].HasMember(layoutname.c_str()) )
+			{
+				exportDocument["classes"][classname.c_str()].AddMember(rapidjson::Value(layoutname.c_str(), exportDocument.GetAllocator()),
+					rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+			}
+
+			auto& layoutObj = exportDocument["classes"][classname.c_str()][layoutname.c_str()];
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				std::string slotnum = std::to_string(i);
+				if ( !layoutObj.HasMember(slotnum.c_str()) )
+				{
+					layoutObj.AddMember(rapidjson::Value(slotnum.c_str(), exportDocument.GetAllocator()),
+						rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+				}
+
+				auto& slot = layoutObj[slotnum.c_str()];
+				if ( !slot.HasMember("items") )
+				{
+					slot.AddMember("items", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+				}
+				else
+				{
+					slot["items"].Clear(); // overwrite new values in array
+				}
+				//slot.AddMember("categories", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+				if ( hotbar_t.slots()[i].item != 0 )
+				{
+					if ( Item* item = uidToItem(hotbar_t.slots()[i].item) )
+					{
+						if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+						{
+							std::string itemstr = itemNameStrings[item->type + 2];
+							if ( itemstr == "spell_item" )
+							{
+								if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+								{
+									itemstr = ItemTooltips.spellItems[spell->ID].internalName;
+								}
+								else
+								{
+									continue;
+								}
+							}
+							rapidjson::Value itemnamekey(itemstr.c_str(), exportDocument.GetAllocator());
+							slot["items"].PushBack(itemnamekey, exportDocument.GetAllocator());
+						}
+					}
+				}
+			}
+		}
+	}
+	else if ( fileWriteType == HOTBAR_LAYOUT_DEFAULT_CONFIG )
+	{
+		CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+		rapidjson::Value allClassesObject(rapidjson::kObjectType);
+		CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
+
+		int classIndex = -1;
+		for ( auto classname : playerClassInternalNames )
+		{
+			++classIndex;
+			rapidjson::Value classObj(rapidjson::kObjectType);
+			classObj.AddMember("classic", rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+			classObj.AddMember("modern", rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+
+			auto& hotbar_t = players[clientnum]->hotbar;
+
+			std::vector<std::string> layoutTypes = { "classic", "modern" };
+			for ( auto layout : layoutTypes )
+			{
+				if ( layout == "classic" )
+				{
+					hotbar_t.useHotbarFaceMenu = false;
+				}
+				else
+				{
+					hotbar_t.useHotbarFaceMenu = true;
+				}
+				stats[clientnum]->clearStats();
+				client_classes[clientnum] = classIndex;
+				initClass(clientnum);
+
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+				{
+					std::string slotnum = std::to_string(i);
+					classObj[layout.c_str()].AddMember(rapidjson::Value(slotnum.c_str(), exportDocument.GetAllocator()),
+						rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+
+					auto& slot = classObj[layout.c_str()][slotnum.c_str()];
+					slot.AddMember("items", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+					//slot.AddMember("categories", rapidjson::Value(rapidjson::kArrayType), exportDocument.GetAllocator());
+					if ( hotbar_t.slots()[i].item != 0 )
+					{
+						if ( Item* item = uidToItem(hotbar_t.slots()[i].item) )
+						{
+							if ( item->type >= WOODEN_SHIELD && item->type < NUMITEMS )
+							{
+								std::string itemstr = itemNameStrings[item->type + 2];
+								if ( itemstr == "spell_item" )
+								{
+									if ( spell_t* spell = getSpellFromItem(clientnum, item) )
+									{
+										itemstr = ItemTooltips.spellItems[spell->ID].internalName;
+									}
+									else
+									{
+										continue;
+									}
+								}
+								rapidjson::Value itemnamekey(itemstr.c_str(), exportDocument.GetAllocator());
+								slot["items"].PushBack(itemnamekey, exportDocument.GetAllocator());
+							}
+						}
+					}
+				}
+			}
+			CustomHelpers::addMemberToSubkey(exportDocument, "classes", classname, classObj);
+		}
+
+		stats[clientnum]->clearStats();
+		client_classes[clientnum] = CLASS_BARBARIAN;
+		initClass(clientnum);
+	}
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	printlog("[JSON]: Successfully wrote json file %s", outputPath.c_str());
+	return;
+}
+
+void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fileReadType)
+{
+	std::string filename = "data/class_hotbars.json";
+	if ( fileReadType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+	{
+		filename = "config/class_hotbars.json";
+	}
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		if ( fileReadType == HOTBAR_LAYOUT_CUSTOM_CONFIG )
+		{
+			printlog("[JSON]: Notice: No custom class hotbar layout found '%s'", filename.c_str());
+		}
+		else
+		{
+			printlog("[JSON]: Error: Could not find json file %s", filename.c_str());
+		}
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[80000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("classes") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	for ( auto classes = d["classes"].MemberBegin(); classes != d["classes"].MemberEnd(); ++classes )
+	{
+		int classIndex = -1;
+		for ( auto s : playerClassInternalNames )
+		{
+			++classIndex;
+			if ( s == classes->name.GetString() )
+			{
+				break;
+			}
+		}
+		if ( !(classIndex >= CLASS_BARBARIAN && classIndex < NUMCLASSES) )
+		{
+			continue;
+		}
+
+		for ( auto layout = classes->value.MemberBegin(); layout != classes->value.MemberEnd(); ++layout )
+		{
+			if ( strcmp(layout->name.GetString(), "classic") && strcmp(layout->name.GetString(), "modern") )
+			{
+				continue;
+			}
+			bool facebarLayout = false;
+			if ( !strcmp(layout->name.GetString(), "modern") )
+			{
+				facebarLayout = true;
+			}
+
+			auto& customOrDefaultHotbar = (fileReadType == HOTBAR_LAYOUT_DEFAULT_CONFIG) ? ClassHotbarsDefault[classIndex] : ClassHotbars[classIndex];
+			auto& classHotbar = facebarLayout ? customOrDefaultHotbar.layoutModern : customOrDefaultHotbar.layoutClassic;
+			classHotbar.hasData = true;
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				std::string slotnum = std::to_string(i);
+				auto& slot = layout->value[slotnum.c_str()];
+				if ( slot.HasMember("items") )
+				{
+					if ( slot["items"].IsArray() )
+					{
+						for ( auto itemArr = slot["items"].Begin(); itemArr != slot["items"].End(); ++itemArr )
+						{
+							std::string itemString = itemArr->GetString();
+							int itemType = WOODEN_SHIELD;
+							bool found = false;
+							bool spell = false;
+							if ( itemString.find("spell_") != std::string::npos )
+							{
+								spell = true;
+								for ( int spellID = 0; spellID < NUM_SPELLS; ++spellID )
+								{
+									if ( ItemTooltips.spellItems[spellID].internalName == itemString )
+									{
+										itemType = spellID + 10000; // special id offset
+										found = true;
+										break;
+									}
+								}
+							}
+							else
+							{
+								for ( int c = 0; c < NUMITEMS; ++c )
+								{
+									if ( itemString.compare(itemNameStrings[c + 2]) == 0 )
+									{
+										itemType = c;
+										found = true;
+										break;
+									}
+								}
+							}
+							if ( found )
+							{
+								auto findVal = std::find(classHotbar.hotbar[i].itemTypes.begin(), classHotbar.hotbar[i].itemTypes.end(),
+									itemType);
+								if ( findVal == classHotbar.hotbar[i].itemTypes.end() )
+								{
+									classHotbar.hotbar[i].itemTypes.push_back(itemType);
+								}
+								else
+								{
+									*findVal = itemType;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+}
+
+void ClassHotbarConfig_t::ClassHotbar_t::ClassHotbarLayout_t::init()
+{
+	hasData = false;
+	hotbar.clear();
+	hotbar_alternates.clear();
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		hotbar.push_back(HotbarEntry_t(i));
+	}
+	for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+	{
+		std::vector<HotbarEntry_t> althotbar;
+		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		{
+			althotbar.push_back(HotbarEntry_t(i));
+		}
+		hotbar_alternates.push_back(althotbar);
+	}
+}
+
+void ClassHotbarConfig_t::init()
+{
+	for ( int c = 0; c < NUMCLASSES; ++c )
+	{
+		auto& classHotbar = ClassHotbars[c];
+		auto& classHotbarDefault = ClassHotbarsDefault[c];
+		classHotbar.layoutClassic.init();
+		classHotbar.layoutModern.init();
+		classHotbarDefault.layoutClassic.init();
+		classHotbarDefault.layoutModern.init();
+	}
+
+	readFromFile(HOTBAR_LAYOUT_DEFAULT_CONFIG);
+	readFromFile(HOTBAR_LAYOUT_CUSTOM_CONFIG);
+}
+
+void ClassHotbarConfig_t::assignHotbarSlots(const int player)
+{
+	int classnum = client_classes[player];
+	auto& layoutDefault = players[player]->hotbar.useHotbarFaceMenu ? ClassHotbarsDefault[classnum].layoutModern : ClassHotbarsDefault[classnum].layoutClassic;
+	auto& layoutCustom = players[player]->hotbar.useHotbarFaceMenu ? ClassHotbars[classnum].layoutModern : ClassHotbars[classnum].layoutClassic;
+
+	auto& hotbar_t = players[player]->hotbar;
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		hotbar_t.slots()[i].item = 0;
+		hotbar_t.slots()[i].lastItemUid = 0;
+		hotbar_t.slots()[i].lastItemCategory = -1;
+		hotbar_t.slots()[i].lastItemType = -1;
+	}
+
+	std::vector<std::pair<int, HotbarEntry_t*>> itemsAndSlots;
+
+	for ( auto& slot : layoutDefault.hotbar )
+	{
+		if ( !slot.itemTypes.empty() )
+		{
+			for ( auto itemType : slot.itemTypes )
+			{
+				auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+					[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+				if ( it == itemsAndSlots.end() )
+				{
+					itemsAndSlots.push_back(std::make_pair(itemType, &slot));
+				}
+				else
+				{
+					// update existing entry
+					it->second = &slot;
+				}
+			}
+		}
+	}
+	if ( layoutCustom.hasData )
+	{
+		printlog("[Class Hotbar]: Found custom layout for class '%s'", playerClassInternalNames[classnum].c_str());
+		itemsAndSlots.clear();
+		for ( auto& slot : layoutCustom.hotbar )
+		{
+			if ( !slot.itemTypes.empty() )
+			{
+				for ( auto itemType : slot.itemTypes )
+				{
+					auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+						[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+					if ( it == itemsAndSlots.end() )
+					{
+						itemsAndSlots.push_back(std::make_pair(itemType, &slot));
+					}
+					else
+					{
+						// update existing entry
+						it->second = &slot;
+					}
+				}
+			}
+		}
+	}
+
+	struct MatchingItem_t
+	{
+		Item* item = nullptr;
+		int slotnum = -1;
+		MatchingItem_t(Item* _item, const int _slotnum) :
+			item(_item),
+			slotnum(_slotnum)
+		{};
+		MatchingItem_t() {};
+	};
+	std::map<int, MatchingItem_t> matchingItems;
+	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			int itemType = item->type;
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				if ( item->appearance >= 1000 )
+				{
+					continue; // shaman form spells
+				}
+				if ( spell_t* spell = getSpellFromItem(player, item) )
+				{
+					itemType = spell->ID + 10000;
+				}
+				else
+				{
+					continue;
+				}
+			}
+			auto it = std::find_if(itemsAndSlots.begin(), itemsAndSlots.end(),
+				[itemType](const std::pair<int, HotbarEntry_t*>& element) { return element.first == itemType; });
+			if ( it != itemsAndSlots.end() )
+			{
+				// store inventory items in a lookup table
+				matchingItems[itemType] = MatchingItem_t(item, it->second->slotnum);
+			}
+		}
+	}
+
+	for ( auto& itemAndSlot : itemsAndSlots )
+	{
+		// go through each slot, and each item. if item found, place it in hotbar slot
+		// if multiple items per slot, last item will override the slot
+		if ( matchingItems.find(itemAndSlot.first) != matchingItems.end() )
+		{
+			if ( matchingItems[itemAndSlot.first].item )
+			{
+				hotbar_t.slots()[matchingItems[itemAndSlot.first].slotnum].item = matchingItems[itemAndSlot.first].item->uid;
+			}
+		}
+	}
 }
 #endif // !EDITOR

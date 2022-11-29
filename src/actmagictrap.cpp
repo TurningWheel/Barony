@@ -368,14 +368,15 @@ void Entity::actTeleportShrine()
 				if ( selectedShrine )
 				{
 					messagePlayer(i, MESSAGE_INTERACTION, language[4301]);
-					Entity* spellTimer = createParticleTimer(players[i]->entity, 200, 625);
-					spellTimer->particleTimerPreDelay = 150; // wait x ticks before animation.
+					Entity* spellTimer = createParticleTimer(this, 150, 625);
+					spellTimer->particleTimerPreDelay = 50; // wait x ticks before animation.
 					spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHRINE_TELEPORT; // teleport behavior of timer.
 					spellTimer->particleTimerEndSprite = 625; // sprite to use for end of timer function.
 					spellTimer->particleTimerCountdownAction = 1;
 					spellTimer->particleTimerCountdownSprite = 625;
 					spellTimer->particleTimerTarget = static_cast<Sint32>(selectedShrine->getUID()); // get the target to teleport around.
 					spellTimer->particleTimerVariable1 = 1; // distance of teleport in tiles
+					spellTimer->particleTimerVariable2 = players[i]->entity->getUID(); // which player to teleport
 					if ( multiplayer == SERVER )
 					{
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHRINE_TELEPORT, 625);

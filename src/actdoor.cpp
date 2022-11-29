@@ -220,7 +220,15 @@ void actDoor(Entity* my)
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
 			bool somebodyinside = false;
-			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			std::vector<list_t*> entLists;
+			if ( multiplayer == CLIENT )
+			{
+				entLists.push_back(map.entities); // clients use old map.entities method
+			}
+			else
+			{
+				entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			}
 			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 			{
 				list_t* currentList = *it;
@@ -301,7 +309,7 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
 				}
 				else
 				{
@@ -312,7 +320,7 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].name_identified, language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
 				}
 				else
 				{

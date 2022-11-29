@@ -1773,7 +1773,7 @@ void gameLogic(void)
 								item->ownerUid = parent->getUID();
 								Item* pickedUp = itemPickup(parent->skill[2], item);
 								Uint32 color = makeColorRGB(0, 255, 0);
-								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
+								messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].getUnidentifiedName());
 								if ( pickedUp )
 								{
 									if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )
@@ -2402,9 +2402,10 @@ void gameLogic(void)
 						SDLNet_Write32(mapseed, &net_packet->data[5]);
 						SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
 						net_packet->data[13] = currentlevel;
+						net_packet->data[14] = 0;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 14;
+						net_packet->len = 15;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
@@ -4428,19 +4429,6 @@ bool handleEvents(void)
 
 /*-------------------------------------------------------------------------------
 
-	startMessages
-
-	prints several messages to the console for game start.
-
--------------------------------------------------------------------------------*/
-
-void startMessages()
-{
-	// deprecated
-}
-
-/*-------------------------------------------------------------------------------
-
 	pauseGame
 
 	pauses or unpauses the game, depending on its current state
@@ -6148,7 +6136,6 @@ int main(int argc, char** argv)
 		playMusic(splashmusic, false, false, false);
 #endif
 
-		int old_sdl_ticks = 0;
 		int indev_timer = 0;
 
 		// main loop

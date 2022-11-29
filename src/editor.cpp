@@ -18,6 +18,7 @@
 #include "interface/interface.hpp"
 #include "files.hpp"
 #include "init.hpp"
+#include "mod_tools.hpp"
 #include <sys/stat.h>
 #ifndef EDITOR
 #define EDITOR
@@ -58,9 +59,9 @@ std::string physfs_openDirectory = BASE_DATA_DIR;
 float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
 void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value) {} // dummy function for mod_tools.cpp
-AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
+//AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
 void initClass(int i) {} // dummy function for mod_tools.cpp
-void AchievementObserver::updateGlobalStat(int index, int value) {}
+//void AchievementObserver::updateGlobalStat(int index, int value) {}
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages; // dummy variable for files.cpp system resource reloading in Barony.
 void initMenuOptions() {} // dummy
 int textInsertCaratPosition = -1;
@@ -211,10 +212,12 @@ char spellTrapPropertyNames[5][38] =
 	"Trap refire rate (1-999s)",
 };
 
-char shrineTeleportPropertyNames[2][48] =
+char shrineTeleportPropertyNames[4][48] =
 {
 	"Direction (-1 - 3)",
-	"Height Offset (Qtrs of a voxel, +ive is higher)"
+	"Height Offset (Qtrs of a voxel, +ive is higher)",
+	"Destination X Offset",
+	"Destination Y Offset"
 };
 
 char furniturePropertyNames[1][19] =
@@ -1988,7 +1991,25 @@ int main(int argc, char** argv)
 		}
 	}
 
-	loadItems();
+	ItemTooltips.readItemsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
+	for ( c = 0; c < NUMITEMS; c++ )
+	{
+		items[c].surfaces.first = nullptr;
+		items[c].surfaces.last = nullptr;
+		for ( x = 0; x < list_Size(&items[c].images); x++ )
+		{
+			auto** surface = static_cast<SDL_Surface**>(malloc(sizeof(SDL_Surface*)));
+			node_t* node = list_AddNodeLast(&items[c].surfaces);
+			node->element = surface;
+			node->deconstructor = &defaultDeconstructor;
+			node->size = sizeof(SDL_Surface*);
+
+			node_t* node2 = list_Node(&items[c].images, x);
+			auto* string = static_cast<string_t*>(node2->element);
+			*surface = loadImage(string->data);
+		}
+	}
 	loadTilePalettes();
 
 	bool achievementCartographer = false;
@@ -7655,7 +7676,7 @@ int main(int argc, char** argv)
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}
 								}
-								else if ( i == 1 )
+								else if ( i == 1 || i == 2 || i == 3 )
 								{
 									if ( propertyInt > 999 || propertyInt < -999 )
 									{

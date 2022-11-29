@@ -1272,6 +1272,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = 165; // GlassesWorn.vox
 						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
 						else
 						{
 							entity->sprite = itemModel(myStats->mask);
@@ -1595,7 +1599,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			//TODO: Delete debug.
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
-			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->getSpellName());
 		}
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.

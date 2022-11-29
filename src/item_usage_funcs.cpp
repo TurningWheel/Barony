@@ -141,17 +141,15 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 					serverUpdateEntitySkill(entity, 50);
 
 					messagePlayer(player, MESSAGE_STATUS, language[3192]);
-					messagePlayer(player, MESSAGE_STATUS, language[3185]);
+					if ( !stats->EFFECTS[EFF_SHAPESHIFT] )
+					{
+						messagePlayer(player, MESSAGE_STATUS, language[3185]);
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_STATUS, language[4303]);
+					}
 				}
-				/*if ( stats->EFFECTS[EFF_SHAPESHIFT] )
-				{
-					entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
-					entity->effectShapeshift = 0;
-					serverUpdateEntitySkill(entity, 53);
-
-					messagePlayer(player, MESSAGE_STATUS, language[3418]);
-					messagePlayer(player, MESSAGE_STATUS, language[3417]);
-				}*/
 				playSoundEntity(entity, 400, 92);
 				createParticleDropRising(entity, 593, 1.f);
 				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);

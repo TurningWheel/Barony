@@ -1488,7 +1488,7 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].name_identified, language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
 				}
 				else
 				{
@@ -1499,7 +1499,7 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].name_identified, language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
 				}
 				else
 				{

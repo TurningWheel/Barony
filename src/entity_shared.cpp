@@ -450,6 +450,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"heavy_crossbow",
 	"boomerang",
 	"scroll_conjurearrow",
+	"monocle",
 	""
 };
 
@@ -706,6 +707,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"monocle",
 		""
 	},
 	{
@@ -1837,12 +1839,16 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			// copy old entity attributes to newly created.
 			entityNew->shrineDir = entityToCopy->shrineDir;
 			entityNew->shrineZ = entityToCopy->shrineZ;
+			entityNew->shrineDestXOffset = entityToCopy->shrineDestXOffset;
+			entityNew->shrineDestYOffset = entityToCopy->shrineDestYOffset;
 		}
 		else
 		{
 			// set default new entity attributes.
 			entityNew->shrineDir = 0;
 			entityNew->shrineZ = 0;
+			entityNew->shrineDestXOffset = 0;
+			entityNew->shrineDestYOffset = 0;
 		}
 	}
 	else if ( spriteType == 26 ) // spell shrine
@@ -1852,12 +1858,16 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			// copy old entity attributes to newly created.
 			entityNew->shrineDir = entityToCopy->shrineDir;
 			entityNew->shrineZ = entityToCopy->shrineZ;
+			entityNew->shrineDestXOffset = entityToCopy->shrineDestXOffset;
+			entityNew->shrineDestYOffset = entityToCopy->shrineDestYOffset;
 		}
 		else
 		{
 			// set default new entity attributes.
 			entityNew->shrineDir = 0;
 			entityNew->shrineZ = 0;
+			entityNew->shrineDestXOffset = 0;
+			entityNew->shrineDestYOffset = 0;
 		}
 	}
 

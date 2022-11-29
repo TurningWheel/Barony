@@ -2286,6 +2286,8 @@ void buttonSpriteProperties(button_t* my)
 			case 25: // teleport shrine
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->shrineDir));
 				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->shrineZ));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->shrineDestXOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->shrineDestYOffset));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2293,8 +2295,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 30;
 				subx1 = xres / 2 - 220;
 				subx2 = xres / 2 + 220;
-				suby1 = yres / 2 - 60;
-				suby2 = yres / 2 + 60;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
 				strcpy(subtext, "Teleport Shrine Properties:");
 				break;
 			case 26: // spell shrine
@@ -3393,6 +3395,8 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			case 25: // teleport shrine
 				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->shrineDestXOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->shrineDestYOffset = (Sint32)atoi(spriteProperties[3]);
 				break;
 			case 26: // spell shrine
 				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);

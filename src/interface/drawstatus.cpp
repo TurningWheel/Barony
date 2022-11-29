@@ -3346,8 +3346,9 @@ void drawStatusNew(const int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
-			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) )
+			if ( ((keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
+				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK)) 
+				|| item->type == FOOD_CREAMPIE )
 			{
 				badpotion = true;
 				learnedSpell = true;
@@ -3648,30 +3649,30 @@ int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src
 			{
 				case SPELL_SPEED:
 				case SPELL_DETECT_FOOD:
-					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3408]);
+					snprintf(spellNameString, 127, "%s (%s)", spell->getSpellName(), ItemTooltips.spellItems[SPELL_RAT_FORM].name.c_str());
 					break;
 				case SPELL_POISON:
 				case SPELL_SPRAY_WEB:
-					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3409]);
+					snprintf(spellNameString, 127, "%s (%s)", spell->getSpellName(), ItemTooltips.spellItems[SPELL_SPIDER_FORM].name.c_str());
 					break;
 				case SPELL_STRIKE:
 				case SPELL_FEAR:
 				case SPELL_TROLLS_BLOOD:
-					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3410]);
+					snprintf(spellNameString, 127, "%s (%s)", spell->getSpellName(), ItemTooltips.spellItems[SPELL_TROLL_FORM].name.c_str());
 					break;
 				case SPELL_LIGHTNING:
 				case SPELL_CONFUSE:
 				case SPELL_AMPLIFY_MAGIC:
-					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3411]);
+					snprintf(spellNameString, 127, "%s (%s)", spell->getSpellName(), ItemTooltips.spellItems[SPELL_IMP_FORM].name.c_str());
 					break;
 				default:
-					strncpy(spellNameString, spell->name, 127);
+					strncpy(spellNameString, spell->getSpellName(), 127);
 					break;
 			}
 		}
 		else
 		{
-			strncpy(spellNameString, spell->name, 127);
+			strncpy(spellNameString, spell->getSpellName(), 127);
 		}
 
 		if ( spell->ID == SPELL_DOMINATE )

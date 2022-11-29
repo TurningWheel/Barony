@@ -18828,7 +18828,7 @@ bind_failed:
             break;
         }
         case KilledBy::ITEM: {
-            cause_of_death = items[stats[player]->killer_item].name_identified;
+            cause_of_death = items[stats[player]->killer_item].getIdentifiedName();
             break;
         }
         default: {

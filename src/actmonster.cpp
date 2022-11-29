@@ -9914,7 +9914,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				if ( item )
 				{
 					char itemString[64] = "";
-					snprintf(itemString, 63, language[3123], items[item->type].name_unidentified);
+					snprintf(itemString, 63, language[3123], items[item->type].getUnidentifiedName());
 					strcpy(genericStr, language[3121]);
 					strcat(genericStr, itemString);
 					strcpy(namedStr, language[3122]);
@@ -9933,7 +9933,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				if ( item )
 				{
 					char itemString[64] = "";
-					snprintf(itemString, 63, language[3124], items[item->type].name_unidentified);
+					snprintf(itemString, 63, language[3124], items[item->type].getUnidentifiedName());
 					strcpy(genericStr, language[3121]);
 					strcat(genericStr, itemString);
 					strcpy(namedStr, language[3122]);

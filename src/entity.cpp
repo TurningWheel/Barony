@@ -249,6 +249,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	shrineInit(skill[6]),
 	shrineActivateDelay(skill[7]),
 	shrineZ(skill[8]),
+	shrineDestXOffset(skill[9]),
+	shrineDestYOffset(skill[10]),
 	ceilingTileModel(skill[0]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
@@ -1513,7 +1515,14 @@ void Entity::effectTimes()
 					case EFF_POLYMORPH:
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
-						messagePlayer(player, MESSAGE_STATUS, language[3185]);
+						if ( !myStats->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[3185]);
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[4303]); // wears out, no mention of 'normal' form
+						}
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -1523,7 +1532,14 @@ void Entity::effectTimes()
 					case EFF_SHAPESHIFT:
 						effectShapeshift = 0;
 						serverUpdateEntitySkill(this, 53);
-						messagePlayer(player, MESSAGE_STATUS, language[3417]);
+						if ( !myStats->EFFECTS[EFF_POLYMORPH] )
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[3417]);
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, language[4302]); // return to your 'abnormal' form
+						}
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
@@ -5597,7 +5613,8 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->mask )
 	{
-		if ( entitystats->mask->type == TOOL_GLASSES )
+		if ( entitystats->mask->type == TOOL_GLASSES
+			|| entitystats->mask->type == MONOCLE )
 		{
 			if ( entitystats->mask->beatitude >= 0 || cursedItemIsBuff )
 			{
@@ -8596,7 +8613,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 643);
 								playSoundEntity(hit.entity, 173, 128);
-								if ( gibtype[hitstats->type] > 0 )
+								if ( gibtype[hitstats->type] > 0 && gibtype[(int)hitstats->type] != 5 )
 								{
 									bleedStatusInflicted = true;
 									for ( int gibs = 0; gibs < 10; ++gibs )
@@ -10406,8 +10423,23 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	int tx = static_cast<int>(std::floor(target->x)) >> 4;
 	if ( target->behavior == &::actTeleportShrine )
 	{
-		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
 		tx = static_cast<int>(std::floor(target->x + 32.0 * cos(target->yaw))) >> 4;
+		ty = static_cast<int>(std::floor(target->y + 32.0 * sin(target->yaw))) >> 4;
+
+		if ( target->shrineDestXOffset != 0 || target->shrineDestYOffset != 0 )
+		{
+			// default both to ontop of the shrine
+			tx = static_cast<int>(std::floor(target->x)) >> 4;
+			ty = static_cast<int>(std::floor(target->y)) >> 4;
+		}
+		if ( target->shrineDestXOffset != 0 )
+		{
+			tx = (static_cast<int>(std::floor(target->x)) >> 4) + target->shrineDestXOffset;
+		}
+		if ( target->shrineDestYOffset != 0 )
+		{
+			ty = (static_cast<int>(std::floor(target->y)) >> 4) + target->shrineDestYOffset;
+		}
 	}
 
 	if ( behavior == &actPlayer )
@@ -15106,11 +15138,11 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					if ( item->identified )
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_identified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getIdentifiedName());
 					}
 					else
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].name_unidentified);
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getUnidentifiedName());
 					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 					pickedUpItemReturnValue = true;
@@ -16101,7 +16133,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 	if ( myStats->weapon && getSpellIDFromSpellbook(myStats->weapon->type) == spellbookType )
 	{
 		spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
-		//messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
+		//messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->getSpellName());
 		return true;
 	}
 
@@ -16116,7 +16148,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 		if ( getSpellIDFromSpellbook(item->type) == spellbookType )
 		{
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-			//messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->getSpellName());
 			return true;
 		}
 	}
@@ -17115,7 +17147,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			if ( optionalEntity && optionalEntity->behavior == &actBomb )
 			{
 				const int itemType = optionalEntity->skill[21];
-				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].getIdentifiedName());
 			}
 			break;
 		}
@@ -17218,11 +17250,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				itemType = optionalEntity->skill[21];
 				if ( namedMonsterAsGeneric || monsterType == HUMAN )
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, items[itemType].getIdentifiedName());
 				}
 				else
 				{
-					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].name_identified);
+					messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str(), items[itemType].getIdentifiedName());
 				}
 			}
 			break;

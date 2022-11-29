@@ -2493,8 +2493,10 @@ public:
 		void openGameoverWindow();
 		void onMapRestart(int levelNum)
 		{
+#ifndef EDITOR
 			achievementObserver.updateGlobalStat(
 				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+#endif // !EDITOR
 		}
 
 		class Menu_t
@@ -2606,7 +2608,7 @@ class ItemTooltips_t
 {
 	struct tmpItem_t
 	{
-		std::string itemName = "nothing";
+		std::string internalName = "nothing";
 		Sint32 itemId = -1;
 		Sint32 fpIndex = -1;
 		Sint32 tpIndex = -1;
@@ -2705,12 +2707,20 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
+	void readItemLocalizationsFromFile();
 	void readTooltipsFromFile();
 	std::vector<tmpItem_t> tmpItems;
 	std::map<Sint32, spellItem_t> spellItems;
 	std::map<std::string, ItemTooltip_t> tooltips;
 	std::map<std::string, std::map<std::string, std::string>> adjectives;
 	std::map<std::string, std::vector<std::string>> templates;
+	struct ItemLocalization_t
+	{
+		std::string name_identified = "";
+		std::string name_unidentified = "";
+	};
+	std::map<std::string, ItemLocalization_t> itemNameLocalizations;
+	std::map<std::string, std::string> spellNameLocalizations;
 	std::string defaultString = "";
 	char buf[2048];
 	bool autoReload = false;
@@ -3041,5 +3051,47 @@ struct ShopkeeperConsumables_t
 	static int consumableBuyValueMult;
 	static std::map<int, std::vector<StoreSlots_t>> entries; // shop type as key
 	static void readFromFile();
+};
+
+struct ClassHotbarConfig_t
+{
+	struct HotbarEntry_t
+	{
+		std::vector<int> itemTypes;
+		std::vector<int> itemCategories;
+		int slotnum = -1;
+		HotbarEntry_t(int _slotnum)
+		{
+			slotnum = _slotnum;
+		};
+	};
+	struct ClassHotbar_t
+	{
+		struct ClassHotbarLayout_t
+		{
+			std::vector<HotbarEntry_t> hotbar;
+			std::vector<std::vector<HotbarEntry_t>> hotbar_alternates;
+			void init();
+			bool hasData = false;
+		};
+		ClassHotbarLayout_t layoutClassic;
+		ClassHotbarLayout_t layoutModern;
+	};
+	static ClassHotbar_t ClassHotbarsDefault[NUMCLASSES];
+	static ClassHotbar_t ClassHotbars[NUMCLASSES];
+	static void assignHotbarSlots(const int player);
+	enum HotbarConfigType : int
+	{
+		HOTBAR_LAYOUT_DEFAULT_CONFIG,
+		HOTBAR_LAYOUT_CUSTOM_CONFIG
+	};
+	enum HotbarConfigWriteMode : int
+	{
+		HOTBAR_CONFIG_WRITE,
+		HOTBAR_CONFIG_DELETE
+	};
+	static void readFromFile(HotbarConfigType fileReadType);
+	static void writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode);
+	static void init();
 };
 #endif // !EDITOR

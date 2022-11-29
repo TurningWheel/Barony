@@ -173,7 +173,7 @@ typedef struct spellElement_t
 	int overload_multiplier; // what does this do?
 	int damage;
 	int duration; // travel time if it's a missile element, duration for a light spell, duration for curses/enchants/traps/beams/rays/effects/what have you.
-	char name[64];
+	char element_internal_name[64];
 	bool can_be_learned; // if a spellElement can't be learned, a player won't be able to build spells with it.
 	bool channeled; // false by default. Specific spells can set this to true. Channeling it sustains the effect in some fashion. It reconsumes the casting mana after every duration has expired.
 	/*
@@ -409,7 +409,7 @@ extern spellElement_t spellElement_selfPolymorph;
 typedef struct spell_t
 {
 	int ID;
-	char name[64];
+	char spell_internal_name[64];
 	//spellElement_t *elements;
 	int difficulty; //The proficiency you need in the magic skill to learn this spell. //TODO: Should this instead be determined by the spell elements?
 	//int skill_caster; //The spellcasting skill it was cast with. Lower skill can introduce inefficiencies and other !!FUN!!
@@ -421,6 +421,9 @@ typedef struct spell_t
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
+	
+	// get localized spell name
+	const char* getSpellName();
 } spell_t;
 
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.

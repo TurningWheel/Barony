@@ -1575,7 +1575,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
+								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1600,7 +1605,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1625,7 +1635,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
+								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1650,7 +1665,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1693,7 +1713,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
+								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1718,7 +1743,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1743,7 +1773,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
+								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -1768,7 +1803,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								|| entity->sprite == 19 || entity->sprite == 20
 								|| entity->sprite == 113 || entity->sprite == 114 )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
+								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+								{
+									list_RemoveNode(entity->mynode);
+								}
+								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2394,7 +2434,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			//entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
 		}
 		else if ( *cvar_underworldshrinetest && !strncmp(map.name, "Underworld", 10) 
-			&& (c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7) )
+			&& ((c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7)) )
 		{
 			std::set<int> walkableTiles;
 			for ( int isley = 1; isley < map.width - 1; ++isley )
@@ -2588,7 +2628,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			{
 				for ( y2 = -1; y2 <= 1; y2++ )
 				{
-					if ( checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL) )
+					if ( checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL, false) )
 					{
 						obstacles++;
 						if ( obstacles > 1 )

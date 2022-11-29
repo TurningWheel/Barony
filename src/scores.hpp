@@ -472,6 +472,7 @@ struct SaveGameInfo {
 		}
 	};
 	std::vector<Player> players;
+	std::vector<std::pair<std::string, std::string>> map_messages; // map modifiers "sound of pickaxes striking rock" "walls are fortified" etc
 	std::vector<std::pair<std::string, std::string>> additional_data;
 	
 	bool serialize(FileInterface* fp) {
@@ -491,6 +492,7 @@ struct SaveGameInfo {
 		fp->property("players_connected", players_connected);
 		fp->property("players", players);
 		fp->property("additional_data", additional_data);
+		fp->property("map_messages", map_messages);
 		return true;
 	}
 };
@@ -516,6 +518,7 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
 static const int SAVE_GAMES_MAX = 10;
 
+#ifndef EDITOR
 class AchievementObserver
 {
 	int levelObserved = -1;
@@ -674,6 +677,7 @@ public:
 	void updateGlobalStat(int index, int value = 1);
 };
 extern AchievementObserver achievementObserver;
+#endif
 
 #ifdef STEAMWORKS
 bool steamLeaderboardSetScore(score_t* score);

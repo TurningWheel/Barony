@@ -305,9 +305,10 @@ typedef enum ItemType
 	COMPOUND_BOW,
 	HEAVY_CROSSBOW,
 	BOOMERANG,
-	SCROLL_CONJUREARROW
+	SCROLL_CONJUREARROW,
+	MONOCLE
 } ItemType;
-const int NUMITEMS = 287;
+const int NUMITEMS = 288;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -509,9 +510,9 @@ extern Uint32 itemuids;
 // item generic
 class ItemGeneric
 {
+	std::string item_name_identified;      // identified item name
+	std::string item_name_unidentified;    // unidentified item name
 public:
-	char* name_identified;      // identified item name
-	char* name_unidentified;    // unidentified item name
 	int index;                  // world model
 	int fpindex;                // first person model
 	int variations;             // number of model variations
@@ -521,11 +522,15 @@ public:
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
 	int level;					// item level for random generation
-								// equip slot that item can go in
+	// equip slot that item can go in
 	ItemEquippableSlot item_slot = ItemEquippableSlot::NO_EQUIP;
 	std::map<std::string, Sint32> attributes;
 	std::string tooltip = "tooltip_default";
 
+	const char* getIdentifiedName() const { return item_name_identified.c_str(); }
+	const char* getUnidentifiedName() const { return item_name_unidentified.c_str(); }
+	void setIdentifiedName(std::string name) { item_name_identified = name; }
+	void setUnidentifiedName(std::string name) { item_name_unidentified = name; }
 	bool hasAttribute(std::string attribute)
 	{
 		if ( attributes.size() > 0 )

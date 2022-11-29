@@ -5561,6 +5561,8 @@ int saveGame(int saveIndex) {
 		}
 	}
 
+	info.map_messages = Player::Minimap_t::mapDetails;
+
 	static ConsoleVariable<bool> cvar_saveText("/save_text_format", true);
 
 	char path[PATH_MAX] = "";
@@ -5798,6 +5800,8 @@ int loadGame(int player, const SaveGameInfo& info) {
 	        shuffle.erase(shuffle.begin() + index);
 	    }
 	}
+
+	Player::Minimap_t::mapDetails = info.map_messages;
 
 	return 0;
 }

@@ -22,7 +22,7 @@
 #include "interface/consolecommand.hpp"
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-static const char VERSION[] = "v3.8.4";
+static const char VERSION[] = "v3.8.5";
 #define GAME_CODE
 
 class Entity;
@@ -155,6 +155,30 @@ enum PlayerClasses : int
 	CLASS_PUNISHER,
 	CLASS_SHAMAN,
 	CLASS_HUNTER
+};
+
+static const std::vector<std::string> playerClassInternalNames = {
+	"class_barbarian",
+	"class_warrior",
+	"class_healer",
+	"class_rogue",
+	"class_wanderer",
+	"class_cleric",
+	"class_merchant",
+	"class_wizard",
+	"class_arcanist",
+	"class_joker",
+	"class_sexton",
+	"class_ninja",
+	"class_monk",
+	"class_conjurer",
+	"class_accursed",
+	"class_mesmer",
+	"class_brewer",
+	"class_machinist",
+	"class_punisher",
+	"class_shaman",
+	"class_hunter"
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;

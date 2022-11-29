@@ -653,32 +653,32 @@ thou makest use of them.#
 410 Cannot cast spells while swimming!#
 411 Wow! You feel restored.#
 412 A map coalesces in your mind!#
-413 Uintelligible#
-414 Magic Missile#
-415 Forcebolt#
-416 Fireball#
-417 Lightning#
-418 Light#
-419 Dig#
-420 Invisibility#
-421 Identify#
-422 Mapping#
-423 Healing#
-424 Confuse#
-425 Cure Ailment#
-426 Locking#
-427 Opening#
-428 Sleep#
-429 Cold#
-430 Slow#
-431 Levitation#
-432 Teleportation#
-433 Magic Missile#
-434 Remove Curse#
-435 Magic Mapping#
-436 Sleep#
-437 Confuse#
-438 Extra Healing#
+413 DEPRECATED_SPELL_NAME#
+414 DEPRECATED_SPELL_NAME#
+415 DEPRECATED_SPELL_NAME#
+416 DEPRECATED_SPELL_NAME#
+417 DEPRECATED_SPELL_NAME#
+418 DEPRECATED_SPELL_NAME#
+419 DEPRECATED_SPELL_NAME#
+420 DEPRECATED_SPELL_NAME#
+421 DEPRECATED_SPELL_NAME#
+422 DEPRECATED_SPELL_NAME#
+423 DEPRECATED_SPELL_NAME#
+424 DEPRECATED_SPELL_NAME#
+425 DEPRECATED_SPELL_NAME#
+426 DEPRECATED_SPELL_NAME#
+427 DEPRECATED_SPELL_NAME#
+428 DEPRECATED_SPELL_NAME#
+429 DEPRECATED_SPELL_NAME#
+430 DEPRECATED_SPELL_NAME#
+431 DEPRECATED_SPELL_NAME#
+432 DEPRECATED_SPELL_NAME#
+433 DEPRECATED_SPELL_NAME#
+434 DEPRECATED_SPELL_NAME#
+435 DEPRECATED_SPELL_NAME#
+436 DEPRECATED_SPELL_NAME#
+437 DEPRECATED_SPELL_NAME#
+438 DEPRECATED_SPELL_NAME#
 439 You already know the %s spell!#
 440 This spell is too difficult for you!#
 441 You learn the %s spell.#
@@ -2350,342 +2350,342 @@ dungeon level %d, client (player %d) (direct ip), %s#
 
 # item names
 
-1545 wooden shield#
-1546 wooden shield#
-1547 quarter staff#
-1548 quarter staff#
-1549 bronze sword#
-1550 bronze sword#
-1551 bronze mace#
-1552 bronze mace#
-1553 bronze axe#
-1554 bronze axe#
-1555 bronze shield#
-1556 bronze shield#
-1557 slingshot#
-1558 slingshot#
-1559 iron spear#
-1560 iron spear#
-1561 iron sword#
-1562 iron sword#
-1563 iron mace#
-1564 iron mace#
-1565 iron axe#
-1566 iron axe#
-1567 iron shield#
-1568 iron shield#
-1569 shortbow#
-1570 shortbow#
-1571 steel halberd#
-1572 steel halberd#
-1573 steel sword#
-1574 steel sword#
-1575 steel mace#
-1576 steel mace#
-1577 steel axe#
-1578 steel axe#
-1579 steel shield#
-1580 steel shield#
-1581 steel shield of magic resistance#
-1582 steel shield#
-1583 crossbow#
-1584 crossbow#
-1585 leather gloves#
-1586 gloves#
-1587 leather gloves of dexterity#
-1588 gloves#
-1589 iron bracers#
-1590 bracers#
-1591 iron bracers of constitution#
-1592 bracers#
-1593 steel gauntlets#
-1594 gauntlets#
-1595 steel gauntlets of strength#
-1596 gauntlets#
-1597 cloak#
-1598 cloak#
-1599 cloak of magic reflection#
-1600 cloak#
-1601 cloak of invisibility#
-1602 cloak#
-1603 cloak of protection#
-1604 cloak#
-1605 leather boots#
-1606 leather boots#
-1607 leather boots of speed#
-1608 leather boots#
-1609 iron boots#
-1610 iron boots#
-1611 iron boots of water walking#
-1612 iron boots#
-1613 steel boots#
-1614 steel boots#
-1615 steel boots of levitation#
-1616 steel boots#
-1617 steel boots of feather#
-1618 steel boots#
-1619 leather breastpiece#
-1620 leather breastpiece#
-1621 iron breastpiece#
-1622 iron breastpiece#
-1623 steel breastpiece#
-1624 steel breastpiece#
-1625 phrygian hat#
-1626 phrygian hat#
-1627 hood#
-1628 hood#
-1629 wizard hat#
-1630 wizard hat#
-1631 jester hat#
-1632 jester hat#
-1633 leather helm#
-1634 leather helm#
-1635 iron helm#
-1636 iron helm#
-1637 steel helm#
-1638 steel helm#
-1639 amulet of sex change#
-1640 amulet#
-1641 amulet of life saving#
-1642 amulet#
-1643 amulet of olympic swimming#
-1644 amulet#
-1645 amulet of magic reflection#
-1646 amulet#
-1647 amulet of strangulation#
-1648 amulet#
-1649 amulet of poison resistance#
-1650 amulet#
-1651 bottle of water#
-1652 potion#
-1653 bottle of booze#
-1654 potion#
-1655 bottle of fruit juice#
-1656 potion#
-1657 potion of sickness#
-1658 potion#
-1659 potion of confusion#
-1660 potion#
-1661 potion of extra healing#
-1662 potion#
-1663 potion of healing#
-1664 potion#
-1665 potion of cure ailment#
-1666 potion#
-1667 potion of blindness#
-1668 potion#
-1669 potion of restore magic#
-1670 potion#
-1671 potion of invisibility#
-1672 potion#
-1673 potion of levitation#
-1674 potion#
-1675 potion of speed#
-1676 potion#
-1677 potion of acid#
-1678 potion#
-1679 potion of paralysis#
-1680 potion#
-1681 piece of mail#
-1682 stamped scroll#
-1683 scroll of identify#
-1684 scroll#
-1685 scroll of light#
-1686 scroll#
-1687 blank scroll#
-1688 scroll#
-1689 scroll of enchant weapon#
-1690 scroll#
-1691 scroll of enchant armor#
-1692 scroll#
-1693 scroll of remove curse#
-1694 scroll#
-1695 scroll of fire#
-1696 scroll#
-1697 scroll of food#
-1698 scroll#
-1699 scroll of magic mapping#
-1700 scroll#
-1701 scroll of repair#
-1702 scroll#
-1703 scroll of destroy armor#
-1704 scroll#
-1705 scroll of teleportation#
-1706 scroll#
-1707 scroll of summon#
-1708 scroll#
-1709 magicstaff of light#
-1710 magicstaff#
-1711 magicstaff of digging#
-1712 magicstaff#
-1713 magicstaff of locking#
-1714 magicstaff#
-1715 magicstaff of magic missile#
-1716 magicstaff#
-1717 magicstaff of opening#
-1718 magicstaff#
-1719 magicstaff of slow#
-1720 magicstaff#
-1721 magicstaff of cold#
-1722 magicstaff#
-1723 magicstaff of fire#
-1724 magicstaff#
-1725 magicstaff of lightning#
-1726 magicstaff#
-1727 magicstaff of sleep#
-1728 magicstaff#
-1729 ring of adornment#
-1730 ring#
-1731 ring of slow digestion#
-1732 ring#
-1733 ring of protection#
-1734 ring#
-1735 ring of warning#
-1736 ring#
-1737 ring of strength#
-1738 ring#
-1739 ring of constitution#
-1740 ring#
-1741 ring of invisibility#
-1742 ring#
-1743 ring of magic resistance#
-1744 ring#
-1745 ring of conflict#
-1746 ring#
-1747 ring of levitation#
-1748 ring#
-1749 ring of regeneration#
-1750 ring#
-1751 ring of teleportation#
-1752 ring#
-1753 spellbook of forcebolt#
-1754 spellbook#
-1755 spellbook of magic missile#
-1756 spellbook#
-1757 spellbook of cold#
-1758 spellbook#
-1759 spellbook of fireball#
-1760 spellbook#
-1761 spellbook of light#
-1762 spellbook#
-1763 spellbook of remove curse#
-1764 spellbook#
-1765 spellbook of lightning#
-1766 spellbook#
-1767 spellbook of identify#
-1768 spellbook#
-1769 spellbook of magic mapping#
-1770 spellbook#
-1771 spellbook of sleep#
-1772 spellbook#
-1773 spellbook of confuse#
-1774 spellbook#
-1775 spellbook of slow#
-1776 spellbook#
-1777 spellbook of opening#
-1778 spellbook#
-1779 spellbook of locking#
-1780 spellbook#
-1781 spellbook of levitation#
-1782 spellbook#
-1783 spellbook of invisibility#
-1784 spellbook#
-1785 spellbook of teleportation#
-1786 spellbook#
-1787 spellbook of healing#
-1788 spellbook#
-1789 spellbook of extra healing#
-1790 spellbook#
-1791 spellbook of cure ailment#
-1792 spellbook#
-1793 spellbook of dig#
-1794 spellbook#
-1795 rock#
-1796 rock#
-1797 luckstone#
-1798 rock#
-1799 garnet#
-1800 gem#
-1801 ruby#
-1802 gem#
-1803 jacinth#
-1804 gem#
-1805 amber#
-1806 gem#
-1807 citrine#
-1808 gem#
-1809 jade#
-1810 gem#
-1811 emerald#
-1812 gem#
-1813 sapphire#
-1814 gem#
-1815 aquamarine#
-1816 gem#
-1817 amethyst#
-1818 gem#
-1819 fluorite#
-1820 gem#
-1821 opal#
-1822 gem#
-1823 diamond#
-1824 gem#
-1825 jetstone#
-1826 gem#
-1827 obsidian#
-1828 gem#
-1829 piece of worthless glass#
-1830 gem#
-1831 pickaxe#
-1832 pickaxe#
-1833 tin opener#
-1834 tin opener#
-1835 mirror#
-1836 mirror#
-1837 lockpick#
-1838 lockpick#
-1839 skeleton key#
-1840 key#
-1841 torch#
-1842 torch#
-1843 lantern#
-1844 lantern#
-1845 blindfold#
-1846 blindfold#
-1847 towel#
-1848 towel#
-1849 pair of glasses#
-1850 pair of glasses#
-1851 beartrap#
-1852 beartrap#
-1853 bread#
-1854 bread#
-1855 cream pie#
-1856 cream pie#
-1857 cheese#
-1858 cheese#
-1859 apple#
-1860 apple#
-1861 meat#
-1862 meat#
-1863 fish#
-1864 fish#
-1865 tin#
-1866 tin#
-1867 book#
-1868 readable book#
-1869 spell#
-1870 spell#
-1871 Dyrnwyn#
-1872 magic sword#
-1873 Sharur#
-1874 magic mace#
-1875 Gungnir#
-1876 magic spear#
-1877 Parashu#
-1878 magic axe#
-1879 Khryselakatos#
-1880 magic bow#
+1545 DEPRECATED_ITEM_NAME#
+1546 DEPRECATED_ITEM_NAME#
+1547 DEPRECATED_ITEM_NAME#
+1548 DEPRECATED_ITEM_NAME#
+1549 DEPRECATED_ITEM_NAME#
+1550 DEPRECATED_ITEM_NAME#
+1551 DEPRECATED_ITEM_NAME#
+1552 DEPRECATED_ITEM_NAME#
+1553 DEPRECATED_ITEM_NAME#
+1554 DEPRECATED_ITEM_NAME#
+1555 DEPRECATED_ITEM_NAME#
+1556 DEPRECATED_ITEM_NAME#
+1557 DEPRECATED_ITEM_NAME#
+1558 DEPRECATED_ITEM_NAME#
+1559 DEPRECATED_ITEM_NAME#
+1560 DEPRECATED_ITEM_NAME#
+1561 DEPRECATED_ITEM_NAME#
+1562 DEPRECATED_ITEM_NAME#
+1563 DEPRECATED_ITEM_NAME#
+1564 DEPRECATED_ITEM_NAME#
+1565 DEPRECATED_ITEM_NAME#
+1566 DEPRECATED_ITEM_NAME#
+1567 DEPRECATED_ITEM_NAME#
+1568 DEPRECATED_ITEM_NAME#
+1569 DEPRECATED_ITEM_NAME#
+1570 DEPRECATED_ITEM_NAME#
+1571 DEPRECATED_ITEM_NAME#
+1572 DEPRECATED_ITEM_NAME#
+1573 DEPRECATED_ITEM_NAME#
+1574 DEPRECATED_ITEM_NAME#
+1575 DEPRECATED_ITEM_NAME#
+1576 DEPRECATED_ITEM_NAME#
+1577 DEPRECATED_ITEM_NAME#
+1578 DEPRECATED_ITEM_NAME#
+1579 DEPRECATED_ITEM_NAME#
+1580 DEPRECATED_ITEM_NAME#
+1581 DEPRECATED_ITEM_NAME#
+1582 DEPRECATED_ITEM_NAME#
+1583 DEPRECATED_ITEM_NAME#
+1584 DEPRECATED_ITEM_NAME#
+1585 DEPRECATED_ITEM_NAME#
+1586 DEPRECATED_ITEM_NAME#
+1587 DEPRECATED_ITEM_NAME#
+1588 DEPRECATED_ITEM_NAME#
+1589 DEPRECATED_ITEM_NAME#
+1590 DEPRECATED_ITEM_NAME#
+1591 DEPRECATED_ITEM_NAME#
+1592 DEPRECATED_ITEM_NAME#
+1593 DEPRECATED_ITEM_NAME#
+1594 DEPRECATED_ITEM_NAME#
+1595 DEPRECATED_ITEM_NAME#
+1596 DEPRECATED_ITEM_NAME#
+1597 DEPRECATED_ITEM_NAME#
+1598 DEPRECATED_ITEM_NAME#
+1599 DEPRECATED_ITEM_NAME#
+1600 DEPRECATED_ITEM_NAME#
+1601 DEPRECATED_ITEM_NAME#
+1602 DEPRECATED_ITEM_NAME#
+1603 DEPRECATED_ITEM_NAME#
+1604 DEPRECATED_ITEM_NAME#
+1605 DEPRECATED_ITEM_NAME#
+1606 DEPRECATED_ITEM_NAME#
+1607 DEPRECATED_ITEM_NAME#
+1608 DEPRECATED_ITEM_NAME#
+1609 DEPRECATED_ITEM_NAME#
+1610 DEPRECATED_ITEM_NAME#
+1611 DEPRECATED_ITEM_NAME#
+1612 DEPRECATED_ITEM_NAME#
+1613 DEPRECATED_ITEM_NAME#
+1614 DEPRECATED_ITEM_NAME#
+1615 DEPRECATED_ITEM_NAME#
+1616 DEPRECATED_ITEM_NAME#
+1617 DEPRECATED_ITEM_NAME#
+1618 DEPRECATED_ITEM_NAME#
+1619 DEPRECATED_ITEM_NAME#
+1620 DEPRECATED_ITEM_NAME#
+1621 DEPRECATED_ITEM_NAME#
+1622 DEPRECATED_ITEM_NAME#
+1623 DEPRECATED_ITEM_NAME#
+1624 DEPRECATED_ITEM_NAME#
+1625 DEPRECATED_ITEM_NAME#
+1626 DEPRECATED_ITEM_NAME#
+1627 DEPRECATED_ITEM_NAME#
+1628 DEPRECATED_ITEM_NAME#
+1629 DEPRECATED_ITEM_NAME#
+1630 DEPRECATED_ITEM_NAME#
+1631 DEPRECATED_ITEM_NAME#
+1632 DEPRECATED_ITEM_NAME#
+1633 DEPRECATED_ITEM_NAME#
+1634 DEPRECATED_ITEM_NAME#
+1635 DEPRECATED_ITEM_NAME#
+1636 DEPRECATED_ITEM_NAME#
+1637 DEPRECATED_ITEM_NAME#
+1638 DEPRECATED_ITEM_NAME#
+1639 DEPRECATED_ITEM_NAME#
+1640 DEPRECATED_ITEM_NAME#
+1641 DEPRECATED_ITEM_NAME#
+1642 DEPRECATED_ITEM_NAME#
+1643 DEPRECATED_ITEM_NAME#
+1644 DEPRECATED_ITEM_NAME#
+1645 DEPRECATED_ITEM_NAME#
+1646 DEPRECATED_ITEM_NAME#
+1647 DEPRECATED_ITEM_NAME#
+1648 DEPRECATED_ITEM_NAME#
+1649 DEPRECATED_ITEM_NAME#
+1650 DEPRECATED_ITEM_NAME#
+1651 DEPRECATED_ITEM_NAME#
+1652 DEPRECATED_ITEM_NAME#
+1653 DEPRECATED_ITEM_NAME#
+1654 DEPRECATED_ITEM_NAME#
+1655 DEPRECATED_ITEM_NAME#
+1656 DEPRECATED_ITEM_NAME#
+1657 DEPRECATED_ITEM_NAME#
+1658 DEPRECATED_ITEM_NAME#
+1659 DEPRECATED_ITEM_NAME#
+1660 DEPRECATED_ITEM_NAME#
+1661 DEPRECATED_ITEM_NAME#
+1662 DEPRECATED_ITEM_NAME#
+1663 DEPRECATED_ITEM_NAME#
+1664 DEPRECATED_ITEM_NAME#
+1665 DEPRECATED_ITEM_NAME#
+1666 DEPRECATED_ITEM_NAME#
+1667 DEPRECATED_ITEM_NAME#
+1668 DEPRECATED_ITEM_NAME#
+1669 DEPRECATED_ITEM_NAME#
+1670 DEPRECATED_ITEM_NAME#
+1671 DEPRECATED_ITEM_NAME#
+1672 DEPRECATED_ITEM_NAME#
+1673 DEPRECATED_ITEM_NAME#
+1674 DEPRECATED_ITEM_NAME#
+1675 DEPRECATED_ITEM_NAME#
+1676 DEPRECATED_ITEM_NAME#
+1677 DEPRECATED_ITEM_NAME#
+1678 DEPRECATED_ITEM_NAME#
+1679 DEPRECATED_ITEM_NAME#
+1680 DEPRECATED_ITEM_NAME#
+1681 DEPRECATED_ITEM_NAME#
+1682 DEPRECATED_ITEM_NAME#
+1683 DEPRECATED_ITEM_NAME#
+1684 DEPRECATED_ITEM_NAME#
+1685 DEPRECATED_ITEM_NAME#
+1686 DEPRECATED_ITEM_NAME#
+1687 DEPRECATED_ITEM_NAME#
+1688 DEPRECATED_ITEM_NAME#
+1689 DEPRECATED_ITEM_NAME#
+1690 DEPRECATED_ITEM_NAME#
+1691 DEPRECATED_ITEM_NAME#
+1692 DEPRECATED_ITEM_NAME#
+1693 DEPRECATED_ITEM_NAME#
+1694 DEPRECATED_ITEM_NAME#
+1695 DEPRECATED_ITEM_NAME#
+1696 DEPRECATED_ITEM_NAME#
+1697 DEPRECATED_ITEM_NAME#
+1698 DEPRECATED_ITEM_NAME#
+1699 DEPRECATED_ITEM_NAME#
+1700 DEPRECATED_ITEM_NAME#
+1701 DEPRECATED_ITEM_NAME#
+1702 DEPRECATED_ITEM_NAME#
+1703 DEPRECATED_ITEM_NAME#
+1704 DEPRECATED_ITEM_NAME#
+1705 DEPRECATED_ITEM_NAME#
+1706 DEPRECATED_ITEM_NAME#
+1707 DEPRECATED_ITEM_NAME#
+1708 DEPRECATED_ITEM_NAME#
+1709 DEPRECATED_ITEM_NAME#
+1710 DEPRECATED_ITEM_NAME#
+1711 DEPRECATED_ITEM_NAME#
+1712 DEPRECATED_ITEM_NAME#
+1713 DEPRECATED_ITEM_NAME#
+1714 DEPRECATED_ITEM_NAME#
+1715 DEPRECATED_ITEM_NAME#
+1716 DEPRECATED_ITEM_NAME#
+1717 DEPRECATED_ITEM_NAME#
+1718 DEPRECATED_ITEM_NAME#
+1719 DEPRECATED_ITEM_NAME#
+1720 DEPRECATED_ITEM_NAME#
+1721 DEPRECATED_ITEM_NAME#
+1722 DEPRECATED_ITEM_NAME#
+1723 DEPRECATED_ITEM_NAME#
+1724 DEPRECATED_ITEM_NAME#
+1725 DEPRECATED_ITEM_NAME#
+1726 DEPRECATED_ITEM_NAME#
+1727 DEPRECATED_ITEM_NAME#
+1728 DEPRECATED_ITEM_NAME#
+1729 DEPRECATED_ITEM_NAME#
+1730 DEPRECATED_ITEM_NAME#
+1731 DEPRECATED_ITEM_NAME#
+1732 DEPRECATED_ITEM_NAME#
+1733 DEPRECATED_ITEM_NAME#
+1734 DEPRECATED_ITEM_NAME#
+1735 DEPRECATED_ITEM_NAME#
+1736 DEPRECATED_ITEM_NAME#
+1737 DEPRECATED_ITEM_NAME#
+1738 DEPRECATED_ITEM_NAME#
+1739 DEPRECATED_ITEM_NAME#
+1740 DEPRECATED_ITEM_NAME#
+1741 DEPRECATED_ITEM_NAME#
+1742 DEPRECATED_ITEM_NAME#
+1743 DEPRECATED_ITEM_NAME#
+1744 DEPRECATED_ITEM_NAME#
+1745 DEPRECATED_ITEM_NAME#
+1746 DEPRECATED_ITEM_NAME#
+1747 DEPRECATED_ITEM_NAME#
+1748 DEPRECATED_ITEM_NAME#
+1749 DEPRECATED_ITEM_NAME#
+1750 DEPRECATED_ITEM_NAME#
+1751 DEPRECATED_ITEM_NAME#
+1752 DEPRECATED_ITEM_NAME#
+1753 DEPRECATED_ITEM_NAME#
+1754 DEPRECATED_ITEM_NAME#
+1755 DEPRECATED_ITEM_NAME#
+1756 DEPRECATED_ITEM_NAME#
+1757 DEPRECATED_ITEM_NAME#
+1758 DEPRECATED_ITEM_NAME#
+1759 DEPRECATED_ITEM_NAME#
+1760 DEPRECATED_ITEM_NAME#
+1761 DEPRECATED_ITEM_NAME#
+1762 DEPRECATED_ITEM_NAME#
+1763 DEPRECATED_ITEM_NAME#
+1764 DEPRECATED_ITEM_NAME#
+1765 DEPRECATED_ITEM_NAME#
+1766 DEPRECATED_ITEM_NAME#
+1767 DEPRECATED_ITEM_NAME#
+1768 DEPRECATED_ITEM_NAME#
+1769 DEPRECATED_ITEM_NAME#
+1770 DEPRECATED_ITEM_NAME#
+1771 DEPRECATED_ITEM_NAME#
+1772 DEPRECATED_ITEM_NAME#
+1773 DEPRECATED_ITEM_NAME#
+1774 DEPRECATED_ITEM_NAME#
+1775 DEPRECATED_ITEM_NAME#
+1776 DEPRECATED_ITEM_NAME#
+1777 DEPRECATED_ITEM_NAME#
+1778 DEPRECATED_ITEM_NAME#
+1779 DEPRECATED_ITEM_NAME#
+1780 DEPRECATED_ITEM_NAME#
+1781 DEPRECATED_ITEM_NAME#
+1782 DEPRECATED_ITEM_NAME#
+1783 DEPRECATED_ITEM_NAME#
+1784 DEPRECATED_ITEM_NAME#
+1785 DEPRECATED_ITEM_NAME#
+1786 DEPRECATED_ITEM_NAME#
+1787 DEPRECATED_ITEM_NAME#
+1788 DEPRECATED_ITEM_NAME#
+1789 DEPRECATED_ITEM_NAME#
+1790 DEPRECATED_ITEM_NAME#
+1791 DEPRECATED_ITEM_NAME#
+1792 DEPRECATED_ITEM_NAME#
+1793 DEPRECATED_ITEM_NAME#
+1794 DEPRECATED_ITEM_NAME#
+1795 DEPRECATED_ITEM_NAME#
+1796 DEPRECATED_ITEM_NAME#
+1797 DEPRECATED_ITEM_NAME#
+1798 DEPRECATED_ITEM_NAME#
+1799 DEPRECATED_ITEM_NAME#
+1800 DEPRECATED_ITEM_NAME#
+1801 DEPRECATED_ITEM_NAME#
+1802 DEPRECATED_ITEM_NAME#
+1803 DEPRECATED_ITEM_NAME#
+1804 DEPRECATED_ITEM_NAME#
+1805 DEPRECATED_ITEM_NAME#
+1806 DEPRECATED_ITEM_NAME#
+1807 DEPRECATED_ITEM_NAME#
+1808 DEPRECATED_ITEM_NAME#
+1809 DEPRECATED_ITEM_NAME#
+1810 DEPRECATED_ITEM_NAME#
+1811 DEPRECATED_ITEM_NAME#
+1812 DEPRECATED_ITEM_NAME#
+1813 DEPRECATED_ITEM_NAME#
+1814 DEPRECATED_ITEM_NAME#
+1815 DEPRECATED_ITEM_NAME#
+1816 DEPRECATED_ITEM_NAME#
+1817 DEPRECATED_ITEM_NAME#
+1818 DEPRECATED_ITEM_NAME#
+1819 DEPRECATED_ITEM_NAME#
+1820 DEPRECATED_ITEM_NAME#
+1821 DEPRECATED_ITEM_NAME#
+1822 DEPRECATED_ITEM_NAME#
+1823 DEPRECATED_ITEM_NAME#
+1824 DEPRECATED_ITEM_NAME#
+1825 DEPRECATED_ITEM_NAME#
+1826 DEPRECATED_ITEM_NAME#
+1827 DEPRECATED_ITEM_NAME#
+1828 DEPRECATED_ITEM_NAME#
+1829 DEPRECATED_ITEM_NAME#
+1830 DEPRECATED_ITEM_NAME#
+1831 DEPRECATED_ITEM_NAME#
+1832 DEPRECATED_ITEM_NAME#
+1833 DEPRECATED_ITEM_NAME#
+1834 DEPRECATED_ITEM_NAME#
+1835 DEPRECATED_ITEM_NAME#
+1836 DEPRECATED_ITEM_NAME#
+1837 DEPRECATED_ITEM_NAME#
+1838 DEPRECATED_ITEM_NAME#
+1839 DEPRECATED_ITEM_NAME#
+1840 DEPRECATED_ITEM_NAME#
+1841 DEPRECATED_ITEM_NAME#
+1842 DEPRECATED_ITEM_NAME#
+1843 DEPRECATED_ITEM_NAME#
+1844 DEPRECATED_ITEM_NAME#
+1845 DEPRECATED_ITEM_NAME#
+1846 DEPRECATED_ITEM_NAME#
+1847 DEPRECATED_ITEM_NAME#
+1848 DEPRECATED_ITEM_NAME#
+1849 DEPRECATED_ITEM_NAME#
+1850 DEPRECATED_ITEM_NAME#
+1851 DEPRECATED_ITEM_NAME#
+1852 DEPRECATED_ITEM_NAME#
+1853 DEPRECATED_ITEM_NAME#
+1854 DEPRECATED_ITEM_NAME#
+1855 DEPRECATED_ITEM_NAME#
+1856 DEPRECATED_ITEM_NAME#
+1857 DEPRECATED_ITEM_NAME#
+1858 DEPRECATED_ITEM_NAME#
+1859 DEPRECATED_ITEM_NAME#
+1860 DEPRECATED_ITEM_NAME#
+1861 DEPRECATED_ITEM_NAME#
+1862 DEPRECATED_ITEM_NAME#
+1863 DEPRECATED_ITEM_NAME#
+1864 DEPRECATED_ITEM_NAME#
+1865 DEPRECATED_ITEM_NAME#
+1866 DEPRECATED_ITEM_NAME#
+1867 DEPRECATED_ITEM_NAME#
+1868 DEPRECATED_ITEM_NAME#
+1869 DEPRECATED_ITEM_NAME#
+1870 DEPRECATED_ITEM_NAME#
+1871 DEPRECATED_ITEM_NAME#
+1872 DEPRECATED_ITEM_NAME#
+1873 DEPRECATED_ITEM_NAME#
+1874 DEPRECATED_ITEM_NAME#
+1875 DEPRECATED_ITEM_NAME#
+1876 DEPRECATED_ITEM_NAME#
+1877 DEPRECATED_ITEM_NAME#
+1878 DEPRECATED_ITEM_NAME#
+1879 DEPRECATED_ITEM_NAME#
+1880 DEPRECATED_ITEM_NAME#
 
 # new random messages
 
@@ -2888,156 +2888,156 @@ been designed to contain them.#
 2165 gets terminated by a dummybot.#
 
 # items, reserve (2200-2349) for new items
-2200 Dragon's Mail#
-2201 artifact breastpiece#
-2202 Sphinx's Veil#
-2203 artifact helm#
-2204 Oracle's Treads#
-2205 artifact boots#
-2206 Wraith's Gown#
-2207 artifact cloak#
-2208 Djinni's Brace#
-2209 artifact gloves#
-2210 crystal breastpiece#
-2211 crystal breastpiece#
-2212 crystal helm#
-2213 crystal helm#
-2214 crystal boots#
-2215 crystal boots#
-2216 crystal shield#
-2217 crystal shield#
-2218 crystal gauntlets#
-2219 crystal gauntlets#
-2220 vampire doublet#
-2221 doublet#
-2222 wizard doublet#
-2223 doublet#
-2224 healer doublet#
-2225 doublet#
-2226 mirror shield#
-2227 mirror shield#
-2228 brass knuckles#
-2229 knuckles#
-2230 iron knuckles#
-2231 knuckles#
-2232 spiked gauntlets#
-2233 knuckles#
-2234 tomalley#
-2235 tomalley#
-2236 crystal shard#
-2237 crystal shard#
-2238 crystal sword#
-2239 crystal sword#
-2240 crystal spear#
-2241 crystal spear#
-2242 crystal axe#
-2243 crystal axe#
-2244 crystal mace#
-2245 crystal mace#
-2246 bronze tomahawk#
-2247 bronze tomahawk#
-2248 iron dagger#
-2249 iron dagger#
-2250 steel chakram#
-2251 steel chakram#
-2252 crystal shuriken#
-2253 crystal shuriken#
-2254 black cloak#
-2255 black cloak#
-2256 magicstaff of stoneblood#
-2257 magicstaff#
-2258 magicstaff of bloodletting#
-2259 magicstaff#
-2260 magicstaff of conjure skeleton#
-2261 magicstaff#
-2262 blindfold of free action#
-2263 blindfold#
-2264 blindfold of telepathy#
-2265 blindfold#
-2266 spellbook of conjure skeleton#
-2267 spellbook#
-2268 spellbook of stoneblood#
-2269 spellbook#
-2270 spellbook of bloodletting#
-2271 spellbook#
-2272 spellbook of reflect magic#
-2273 spellbook#
-2274 spellbook of spray acid#
-2275 spellbook#
-2276 spellbook of steal weapon#
-2277 spellbook#
-2278 spellbook of drain soul#
-2279 spellbook#
-2280 spellbook of vampiric aura#
-2281 spellbook#
-2282 spellbook of charm monster#
-2283 spellbook#
-2284 empty bottle#
-2285 empty bottle#
-2286 blue mystic orb#
-2287 blue mystic orb#
-2288 red mystic orb#
-2289 red mystic orb#
-2290 purple mystic orb#
-2291 purple mystic orb#
-2292 green mystic orb#
-2293 green mystic orb#
-2294 tunic#
-2295 tunic#
-2296 fez#
-2297 fez#
-2298 magicstaff of charm monster#
-2299 magicstaff#
-2300 potion of polymorph#
-2301 potion#
-2302 vial of blood#
-2303 potion#
-2304 backpack#
-2305 backpack#
-2306 alembic#
-2307 alembic#
-2308 potion of firestorm#
-2309 unstable potion#
-2310 potion of icestorm#
-2311 unstable potion#
-2312 potion of thunderstorm#
-2313 unstable potion#
-2314 potion of strength#
-2315 potion#
-2316 suede boots#
-2317 suede boots#
-2318 suede gloves#
-2319 suede gloves#
-2320 silver cloak#
-2321 silver cloak#
-2322 silver hood#
-2323 silver hood#
-2324 red hood#
-2325 red hood#
-2326 silver doublet#
-2327 silver doublet#
-2328 spellbook of revert form#
-2329 spellbook#
-2330 spellbook of rat form#
-2331 spellbook#
-2332 spellbook of arthropod form#
-2333 spellbook#
-2334 spellbook of troll form#
-2335 spellbook#
-2336 spellbook of imp form#
-2337 spellbook#
-2338 spellbook of spray web#
-2339 spellbook#
-2340 spellbook of poison#
-2341 spellbook#
-2342 spellbook of speed#
-2343 spellbook#
-2344 spellbook of fear#
-2345 spellbook#
-2346 spellbook of power strike#
-2347 spellbook#
-2348 spellbook of detect food#
-2349 spellbook#
+2200 DEPRECATED_ITEM_NAME#
+2201 DEPRECATED_ITEM_NAME#
+2202 DEPRECATED_ITEM_NAME#
+2203 DEPRECATED_ITEM_NAME#
+2204 DEPRECATED_ITEM_NAME#
+2205 DEPRECATED_ITEM_NAME#
+2206 DEPRECATED_ITEM_NAME#
+2207 DEPRECATED_ITEM_NAME#
+2208 DEPRECATED_ITEM_NAME#
+2209 DEPRECATED_ITEM_NAME#
+2210 DEPRECATED_ITEM_NAME#
+2211 DEPRECATED_ITEM_NAME#
+2212 DEPRECATED_ITEM_NAME#
+2213 DEPRECATED_ITEM_NAME#
+2214 DEPRECATED_ITEM_NAME#
+2215 DEPRECATED_ITEM_NAME#
+2216 DEPRECATED_ITEM_NAME#
+2217 DEPRECATED_ITEM_NAME#
+2218 DEPRECATED_ITEM_NAME#
+2219 DEPRECATED_ITEM_NAME#
+2220 DEPRECATED_ITEM_NAME#
+2221 DEPRECATED_ITEM_NAME#
+2222 DEPRECATED_ITEM_NAME#
+2223 DEPRECATED_ITEM_NAME#
+2224 DEPRECATED_ITEM_NAME#
+2225 DEPRECATED_ITEM_NAME#
+2226 DEPRECATED_ITEM_NAME#
+2227 DEPRECATED_ITEM_NAME#
+2228 DEPRECATED_ITEM_NAME#
+2229 DEPRECATED_ITEM_NAME#
+2230 DEPRECATED_ITEM_NAME#
+2231 DEPRECATED_ITEM_NAME#
+2232 DEPRECATED_ITEM_NAME#
+2233 DEPRECATED_ITEM_NAME#
+2234 DEPRECATED_ITEM_NAME#
+2235 DEPRECATED_ITEM_NAME#
+2236 DEPRECATED_ITEM_NAME#
+2237 DEPRECATED_ITEM_NAME#
+2238 DEPRECATED_ITEM_NAME#
+2239 DEPRECATED_ITEM_NAME#
+2240 DEPRECATED_ITEM_NAME#
+2241 DEPRECATED_ITEM_NAME#
+2242 DEPRECATED_ITEM_NAME#
+2243 DEPRECATED_ITEM_NAME#
+2244 DEPRECATED_ITEM_NAME#
+2245 DEPRECATED_ITEM_NAME#
+2246 DEPRECATED_ITEM_NAME#
+2247 DEPRECATED_ITEM_NAME#
+2248 DEPRECATED_ITEM_NAME#
+2249 DEPRECATED_ITEM_NAME#
+2250 DEPRECATED_ITEM_NAME#
+2251 DEPRECATED_ITEM_NAME#
+2252 DEPRECATED_ITEM_NAME#
+2253 DEPRECATED_ITEM_NAME#
+2254 DEPRECATED_ITEM_NAME#
+2255 DEPRECATED_ITEM_NAME#
+2256 DEPRECATED_ITEM_NAME#
+2257 DEPRECATED_ITEM_NAME#
+2258 DEPRECATED_ITEM_NAME#
+2259 DEPRECATED_ITEM_NAME#
+2260 DEPRECATED_ITEM_NAME#
+2261 DEPRECATED_ITEM_NAME#
+2262 DEPRECATED_ITEM_NAME#
+2263 DEPRECATED_ITEM_NAME#
+2264 DEPRECATED_ITEM_NAME#
+2265 DEPRECATED_ITEM_NAME#
+2266 DEPRECATED_ITEM_NAME#
+2267 DEPRECATED_ITEM_NAME#
+2268 DEPRECATED_ITEM_NAME#
+2269 DEPRECATED_ITEM_NAME#
+2270 DEPRECATED_ITEM_NAME#
+2271 DEPRECATED_ITEM_NAME#
+2272 DEPRECATED_ITEM_NAME#
+2273 DEPRECATED_ITEM_NAME#
+2274 DEPRECATED_ITEM_NAME#
+2275 DEPRECATED_ITEM_NAME#
+2276 DEPRECATED_ITEM_NAME#
+2277 DEPRECATED_ITEM_NAME#
+2278 DEPRECATED_ITEM_NAME#
+2279 DEPRECATED_ITEM_NAME#
+2280 DEPRECATED_ITEM_NAME#
+2281 DEPRECATED_ITEM_NAME#
+2282 DEPRECATED_ITEM_NAME#
+2283 DEPRECATED_ITEM_NAME#
+2284 DEPRECATED_ITEM_NAME#
+2285 DEPRECATED_ITEM_NAME#
+2286 DEPRECATED_ITEM_NAME#
+2287 DEPRECATED_ITEM_NAME#
+2288 DEPRECATED_ITEM_NAME#
+2289 DEPRECATED_ITEM_NAME#
+2290 DEPRECATED_ITEM_NAME#
+2291 DEPRECATED_ITEM_NAME#
+2292 DEPRECATED_ITEM_NAME#
+2293 DEPRECATED_ITEM_NAME#
+2294 DEPRECATED_ITEM_NAME#
+2295 DEPRECATED_ITEM_NAME#
+2296 DEPRECATED_ITEM_NAME#
+2297 DEPRECATED_ITEM_NAME#
+2298 DEPRECATED_ITEM_NAME#
+2299 DEPRECATED_ITEM_NAME#
+2300 DEPRECATED_ITEM_NAME#
+2301 DEPRECATED_ITEM_NAME#
+2302 DEPRECATED_ITEM_NAME#
+2303 DEPRECATED_ITEM_NAME#
+2304 DEPRECATED_ITEM_NAME#
+2305 DEPRECATED_ITEM_NAME#
+2306 DEPRECATED_ITEM_NAME#
+2307 DEPRECATED_ITEM_NAME#
+2308 DEPRECATED_ITEM_NAME#
+2309 DEPRECATED_ITEM_NAME#
+2310 DEPRECATED_ITEM_NAME#
+2311 DEPRECATED_ITEM_NAME#
+2312 DEPRECATED_ITEM_NAME#
+2313 DEPRECATED_ITEM_NAME#
+2314 DEPRECATED_ITEM_NAME#
+2315 DEPRECATED_ITEM_NAME#
+2316 DEPRECATED_ITEM_NAME#
+2317 DEPRECATED_ITEM_NAME#
+2318 DEPRECATED_ITEM_NAME#
+2319 DEPRECATED_ITEM_NAME#
+2320 DEPRECATED_ITEM_NAME#
+2321 DEPRECATED_ITEM_NAME#
+2322 DEPRECATED_ITEM_NAME#
+2323 DEPRECATED_ITEM_NAME#
+2324 DEPRECATED_ITEM_NAME#
+2325 DEPRECATED_ITEM_NAME#
+2326 DEPRECATED_ITEM_NAME#
+2327 DEPRECATED_ITEM_NAME#
+2328 DEPRECATED_ITEM_NAME#
+2329 DEPRECATED_ITEM_NAME#
+2330 DEPRECATED_ITEM_NAME#
+2331 DEPRECATED_ITEM_NAME#
+2332 DEPRECATED_ITEM_NAME#
+2333 DEPRECATED_ITEM_NAME#
+2334 DEPRECATED_ITEM_NAME#
+2335 DEPRECATED_ITEM_NAME#
+2336 DEPRECATED_ITEM_NAME#
+2337 DEPRECATED_ITEM_NAME#
+2338 DEPRECATED_ITEM_NAME#
+2339 DEPRECATED_ITEM_NAME#
+2340 DEPRECATED_ITEM_NAME#
+2341 DEPRECATED_ITEM_NAME#
+2342 DEPRECATED_ITEM_NAME#
+2343 DEPRECATED_ITEM_NAME#
+2344 DEPRECATED_ITEM_NAME#
+2345 DEPRECATED_ITEM_NAME#
+2346 DEPRECATED_ITEM_NAME#
+2347 DEPRECATED_ITEM_NAME#
+2348 DEPRECATED_ITEM_NAME#
+2349 DEPRECATED_ITEM_NAME#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -3085,16 +3085,16 @@ but it retracts beyond your might!#
 2389 You feel tough!#
 
 #New spells (2390-2399)
-2390 Conjure Skeleton#
-2391 Stone Blood#
-2392 Bloodletting#
-2393 Dominate#
-2394 Reflect Magic#
-2395 Spray Acid#
-2396 Steal Weapon#
-2397 Drain Soul#
-2398 Vampiric Aura#
-2399 Charm Monster#
+2390 DEPRECATED_SPELL_NAME#
+2391 DEPRECATED_SPELL_NAME#
+2392 DEPRECATED_SPELL_NAME#
+2393 DEPRECATED_SPELL_NAME#
+2394 DEPRECATED_SPELL_NAME#
+2395 DEPRECATED_SPELL_NAME#
+2396 DEPRECATED_SPELL_NAME#
+2397 DEPRECATED_SPELL_NAME#
+2398 DEPRECATED_SPELL_NAME#
+2399 DEPRECATED_SPELL_NAME#
 
 2400 Gamepad#
 
@@ -3328,7 +3328,7 @@ Difficulty: Normal#
 2594 Dropped %d gold pieces.#
 2595 The spellbook deteriorates.#
 2596 The spellbook deteriorates and crumbles to ash!#
-2597 The doublet seems to tug your mind toward an ethereal force, and away from your mortal body.#
+2597 You feel your mind detaching from your mortal body.#
 2598 keep right sidebar active#
 2599 You feel refreshed!#
 
@@ -3870,9 +3870,9 @@ NOTE: Enabling this will disable Achievements on your save files! #
 2971 The gods of Sokoban were less than impressed.#
 2972 The armor is warm against your heart.#
 2973 The helmet fills your mind with arcane whispers.#
-2974 Vibrations pulse through the earth from all around your feet when you wear the boots.#
-2975 The cape carries you above the ground and you feel its power surging through your body.#
-2976 The gauntlets fill you with otherworldly defiance.#
+2974 Vibrations pulse from the earth through your feet.#
+2975 The cape's power surges through your body.#
+2976 You're filled with otherworldly defiance.#
 2977 Cost: %d + ?? MP#
 2978 Custom Content#
 2979 Workshop#
@@ -4794,23 +4794,23 @@ Thank you for your support!#
 Thank you for your support!#
 3406 ERROR: Invalid serial key.#
 
-3407 Revert Form#
-3408 Rat Form#
-3409 Arthropod Form#
-3410 Troll Form#
-3411 Imp Form#
-3412 Spray Web#
-3413 Poison#
-3414 Speed#
-3415 Fear#
-3416 Power Strike#
+3407 DEPRECATED_SPELL_NAME#
+3408 DEPRECATED_SPELL_NAME#
+3409 DEPRECATED_SPELL_NAME#
+3410 DEPRECATED_SPELL_NAME#
+3411 DEPRECATED_SPELL_NAME#
+3412 DEPRECATED_SPELL_NAME#
+3413 DEPRECATED_SPELL_NAME#
+3414 DEPRECATED_SPELL_NAME#
+3415 DEPRECATED_SPELL_NAME#
+3416 DEPRECATED_SPELL_NAME#
 
 3417 Your shapeshift fades and you return to your normal form.#
 3418 The shapeshift is washed away by the water!#
 3419 You shapeshift into a %s!#
 3420 You feel no different...#
-3421 Detect Food#
-3422 Weakness#
+3421 DEPRECATED_SPELL_NAME#
+3422 DEPRECATED_SPELL_NAME#
 3423 You sense a lack of food nearby.#
 3424 Your nose starts to tingle and you smell food!#
 3425 Your nose twitches, but there are no new scents.#
@@ -4830,16 +4830,16 @@ Transformed into a creature
 3437 You unleash a primordial roar!#
 3438 ...that went unheard.#
 3439 You regain your composure.#
-3440 Elemental Focus#
+3440 DEPRECATED_SPELL_NAME#
 3441 Your elemental spell power returns to normal.#
 3442 Your elemental spell power increases!#
 3443 Failed to sustain spell (elemental focus).#
 3444 You are unable to learn spells as a goblin!#
 3445 You are unable to learn spells in your current form!#
 3446 All of your melee abilities have improved!#
-3447 Arcane Mark#
-3448 Teleport Other#
-3449 Inner Demon#
+3447 DEPRECATED_SPELL_NAME#
+3448 DEPRECATED_SPELL_NAME#
+3449 DEPRECATED_SPELL_NAME#
 3450 Your magic draws the %s near!#
 3451 Your magic draws %s near!#
 3452 You are unable to teleport your ally in this area.#
@@ -4879,7 +4879,7 @@ Transformed into a creature
 3486 Your boiler is barely keeping up.#
 3487 Consume#
 3488 Your level is not high enough to use that spell.#
-3489 Troll's Blood#
+3489 DEPRECATED_SPELL_NAME#
 3490 Your veins feel warm!#
 3491 Your bloodflow returns to normal.#
 3492 Troll's Blood
@@ -4894,94 +4894,96 @@ Increased Dexterity and movement speed#
 3499 %s stumbles into your %s!#
 
 # new new items (3500-3599)
-3500 spellbook of weakness#
-3501 spellbook#
-3502 shaman mask#
-3503 shaman mask#
-3504 spellbook of amplify magic#
-3505 spellbook#
-3506 spellbook of arcane mark#
-3507 spellbook#
-3508 spellbook of teleport other#
-3509 spellbook#
-3510 spellbook of inner demon#
-3511 spellbook#
-3512 spellbook of troll's blood#
-3513 spellbook#
-3514 spellbook of salvage#
-3515 spellbook#
-3516 whip#
-3517 whip#
-3518 spellbook of flutter#
-3519 spellbook#
-3520 spellbook of dash#
-3521 spellbook#
-3522 spellbook of polymorph#
-3523 spellbook#
-3524 spellbook of 9#
-3525 spellbook#
-3526 spellbook of 10#
-3527 spellbook#
-3528 magicstaff of poison#
-3529 magicstaff#
-3530 metal scrap#
-3531 scrap#
-3532 magic scrap#
-3533 scrap#
-3534 tinkering kit#
-3535 tinkering kit#
-3536 sentry bot#
-3537 sentry bot#
-3538 detonator#
-3539 detonator#
-3540 flame trap#
-3541 trap#
-3542 sleep trap#
-3543 trap#
-3544 freeze trap#
-3545 trap#
-3546 teleportation trap#
-3547 trap#
-3548 gyrobot#
-3549 gyrobot#
-3550 spellbot#
-3551 spellbot#
-3552 noisemaker#
-3553 noisemaker#
-3554 dummybot#
-3555 dummybot#
-3556 leather apron#
-3557 apron#
-3558 enchanted feather#
-3559 feather#
-3560 executioner hood#
-3561 hood#
-3562 scroll of charging#
-3563 scroll#
-3564 quiver of silver ammo#
-3565 quiver#
-3566 quiver of piercing ammo#
-3567 quiver#
-3568 quiver of swift ammo#
-3569 quiver#
-3570 quiver of fire ammo#
-3571 quiver#
-3572 quiver of springshot ammo#
-3573 quiver#
-3574 quiver of crystal ammo#
-3575 quiver#
-3576 quiver of hunting ammo#
-3577 quiver#
-3578 longbow#
-3579 longbow#
-3580 compound bow#
-3581 compound bow#
-3582 arbalest#
-3583 arbalest#
-3584 boomerang#
-3585 boomerang#
-3586 scroll of conjure arrow#
-3587 scroll#
+3500 DEPRECATED_ITEM_NAME#
+3501 DEPRECATED_ITEM_NAME#
+3502 DEPRECATED_ITEM_NAME#
+3503 DEPRECATED_ITEM_NAME#
+3504 DEPRECATED_ITEM_NAME#
+3505 DEPRECATED_ITEM_NAME#
+3506 DEPRECATED_ITEM_NAME#
+3507 DEPRECATED_ITEM_NAME#
+3508 DEPRECATED_ITEM_NAME#
+3509 DEPRECATED_ITEM_NAME#
+3510 DEPRECATED_ITEM_NAME#
+3511 DEPRECATED_ITEM_NAME#
+3512 DEPRECATED_ITEM_NAME#
+3513 DEPRECATED_ITEM_NAME#
+3514 DEPRECATED_ITEM_NAME#
+3515 DEPRECATED_ITEM_NAME#
+3516 DEPRECATED_ITEM_NAME#
+3517 DEPRECATED_ITEM_NAME#
+3518 DEPRECATED_ITEM_NAME#
+3519 DEPRECATED_ITEM_NAME#
+3520 DEPRECATED_ITEM_NAME#
+3521 DEPRECATED_ITEM_NAME#
+3522 DEPRECATED_ITEM_NAME#
+3523 DEPRECATED_ITEM_NAME#
+3524 DEPRECATED_ITEM_NAME#
+3525 DEPRECATED_ITEM_NAME#
+3526 DEPRECATED_ITEM_NAME#
+3527 DEPRECATED_ITEM_NAME#
+3528 DEPRECATED_ITEM_NAME#
+3529 DEPRECATED_ITEM_NAME#
+3530 DEPRECATED_ITEM_NAME#
+3531 DEPRECATED_ITEM_NAME#
+3532 DEPRECATED_ITEM_NAME#
+3533 DEPRECATED_ITEM_NAME#
+3534 DEPRECATED_ITEM_NAME#
+3535 DEPRECATED_ITEM_NAME#
+3536 DEPRECATED_ITEM_NAME#
+3537 DEPRECATED_ITEM_NAME#
+3538 DEPRECATED_ITEM_NAME#
+3539 DEPRECATED_ITEM_NAME#
+3540 DEPRECATED_ITEM_NAME#
+3541 DEPRECATED_ITEM_NAME#
+3542 DEPRECATED_ITEM_NAME#
+3543 DEPRECATED_ITEM_NAME#
+3544 DEPRECATED_ITEM_NAME#
+3545 DEPRECATED_ITEM_NAME#
+3546 DEPRECATED_ITEM_NAME#
+3547 DEPRECATED_ITEM_NAME#
+3548 DEPRECATED_ITEM_NAME#
+3549 DEPRECATED_ITEM_NAME#
+3550 DEPRECATED_ITEM_NAME#
+3551 DEPRECATED_ITEM_NAME#
+3552 DEPRECATED_ITEM_NAME#
+3553 DEPRECATED_ITEM_NAME#
+3554 DEPRECATED_ITEM_NAME#
+3555 DEPRECATED_ITEM_NAME#
+3556 DEPRECATED_ITEM_NAME#
+3557 DEPRECATED_ITEM_NAME#
+3558 DEPRECATED_ITEM_NAME#
+3559 DEPRECATED_ITEM_NAME#
+3560 DEPRECATED_ITEM_NAME#
+3561 DEPRECATED_ITEM_NAME#
+3562 DEPRECATED_ITEM_NAME#
+3563 DEPRECATED_ITEM_NAME#
+3564 DEPRECATED_ITEM_NAME#
+3565 DEPRECATED_ITEM_NAME#
+3566 DEPRECATED_ITEM_NAME#
+3567 DEPRECATED_ITEM_NAME#
+3568 DEPRECATED_ITEM_NAME#
+3569 DEPRECATED_ITEM_NAME#
+3570 DEPRECATED_ITEM_NAME#
+3571 DEPRECATED_ITEM_NAME#
+3572 DEPRECATED_ITEM_NAME#
+3573 DEPRECATED_ITEM_NAME#
+3574 DEPRECATED_ITEM_NAME#
+3575 DEPRECATED_ITEM_NAME#
+3576 DEPRECATED_ITEM_NAME#
+3577 DEPRECATED_ITEM_NAME#
+3578 DEPRECATED_ITEM_NAME#
+3579 DEPRECATED_ITEM_NAME#
+3580 DEPRECATED_ITEM_NAME#
+3581 DEPRECATED_ITEM_NAME#
+3582 DEPRECATED_ITEM_NAME#
+3583 DEPRECATED_ITEM_NAME#
+3584 DEPRECATED_ITEM_NAME#
+3585 DEPRECATED_ITEM_NAME#
+3586 DEPRECATED_ITEM_NAME#
+3587 DEPRECATED_ITEM_NAME#
+3588 DEPRECATED_ITEM_NAME#
+3589 DEPRECATED_ITEM_NAME#
 
 3600 You disarm the %s.#
 3601 The %s is whisked away!#
@@ -5099,7 +5101,7 @@ any gyrobot findings.#
 3708 Your boiler is out of fuel...#
 3709 You are losing heat rapidly!#
 3710 Your gears begin to seize!#
-3711 Salvage#
+3711 DEPRECATED_SPELL_NAME#
 3712 Your spell salvaged %d items!#
 3713 Your spell fails to salvage any nearby items.#
 3714 Your systems are failing...#
@@ -5154,8 +5156,8 @@ any gyrobot findings.#
 3761 Gungnir pierced %s's armor!#
 3762 A quiver suddenly appears before you!#
 3763 a #
-3764 Flutter#
-3765 Dash#
+3764 DEPRECATED_SPELL_NAME#
+3765 DEPRECATED_SPELL_NAME#
 3766 Flutter
 Levitating for a short duration#
 3767 Your wings part your feet with the floor!#
@@ -5827,7 +5829,7 @@ Unable to attack#
 3882 You hear footsteps drawn towards your noisemaker!#
 3883 You are unable to deploy any more tinkering machines with your current skill!#
 3884 You are unable to deploy any more tinkering machines.#
-3885 Polymorph#
+3885 DEPRECATED_SPELL_NAME#
 3886 Polymorphs the caster into a different creature for a duration
 Non-humans are always polymorphed into a human#
 3887 You are not skilled enough to empty the trap.#
@@ -6341,7 +6343,7 @@ favorite customers.#
 4262 Nevermore.#
 4263 Hello, %s.#
 4264 Peep!#
-4265 Hello %s.#
+4265 Sankoxa.#
 4266 *slip slop*#
 4267 *grunt*#
 4268 *burble*#
@@ -6379,5 +6381,7 @@ favorite customers.#
 4299 Touch shrine#
 4300 Your touch falls on inert stone.#
 4301 The shrine responds to your touch!#
+4302 Your shapeshift fades and you return to your abnormal form.#
+4303 The polymorph wears out.#
 
 4399 end#

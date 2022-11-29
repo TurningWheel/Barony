@@ -659,7 +659,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = makeColorRGB(0, 255, 0);
-							if ( strcmp(element->name, spellElement_charmMonster.name) )
+							if ( strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
 							{
 								if ( my->actmagicCastByTinkerTrap == 1 )
 								{
@@ -755,7 +755,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							if ( !strcmp(element->name, spellElement_charmMonster.name) )
+							if ( !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
 							{
 								Uint32 color = makeColorRGB(0, 255, 0);
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
@@ -953,8 +953,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
 				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					if ( !strcmp(element->name, spellElement_telePull.name) 
-						|| !strcmp(element->name, spellElement_shadowTag.name)
+					if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name)
+						|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name)
 						|| my->actmagicTinkerTrapFriendlyFire == 1 )
 					{
 						// these spells can hit allies no penalty.
@@ -1045,7 +1045,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									alertTarget = false;
 								}
 							}
-							if ( !strcmp(element->name, spellElement_telePull.name) || !strcmp(element->name, spellElement_shadowTag.name) )
+							if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name) 
+								|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
 							{
 								alertTarget = false;
 								alertAllies = false;
@@ -1134,7 +1135,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element);
 				}
 
-				if (!strcmp(element->name, spellElement_force.name))
+				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1235,7 +1236,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_magicmissile.name))
+				else if (!strcmp(element->element_internal_name, spellElement_magicmissile.element_internal_name))
 				{
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity)
@@ -1390,7 +1391,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_fire.name))
+				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name))
 				{
 					if ( !(my->actmagicIsOrbiting == 2) )
 					{
@@ -1630,7 +1631,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_confuse.name))
+				else if (!strcmp(element->element_internal_name, spellElement_confuse.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1665,7 +1666,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_cold.name))
+				else if (!strcmp(element->element_internal_name, spellElement_cold.element_internal_name))
 				{
 					playSoundEntity(my, 197, 128);
 					if (hit.entity)
@@ -1788,7 +1789,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_slow.name))
+				else if (!strcmp(element->element_internal_name, spellElement_slow.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1823,7 +1824,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_sleep.name))
+				else if (!strcmp(element->element_internal_name, spellElement_sleep.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -1897,7 +1898,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_lightning.name))
+				else if (!strcmp(element->element_internal_name, spellElement_lightning.element_internal_name))
 				{
 					playSoundEntity(my, 173, 128);
 					if (hit.entity)
@@ -2063,7 +2064,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_locking.name))
+				else if (!strcmp(element->element_internal_name, spellElement_locking.element_internal_name))
 				{
 					if ( hit.entity )
 					{
@@ -2128,7 +2129,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 					}
 				}
-				else if (!strcmp(element->name, spellElement_opening.name))
+				else if (!strcmp(element->element_internal_name, spellElement_opening.element_internal_name))
 				{
 					if (hit.entity)
 					{
@@ -2277,7 +2278,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 					}
 				}
-				else if (!strcmp(element->name, spellElement_dig.name))
+				else if (!strcmp(element->element_internal_name, spellElement_dig.element_internal_name))
 				{
 					if ( !hit.entity )
 					{
@@ -2313,7 +2314,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_stoneblood.element_internal_name) )
 				{
 					if ( hit.entity )
 					{
@@ -2359,7 +2360,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_bleed.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_bleed.element_internal_name) )
 				{
 					playSoundEntity(my, 173, 128);
 					if ( hit.entity )
@@ -2373,9 +2374,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							Stat* casterStats = nullptr;
 							if ( parent )
 							{
-								Stat* casterStats = parent->getStats();
+								casterStats = parent->getStats();
 								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
 								{
 									damage *= 2;
@@ -2393,11 +2395,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							bleedDuration /= (1 + (int)resistance);
+							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->EFFECTS[EFF_BLEEDING] : false;
 							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
 							{
 								if ( parent )
 								{
 									hitstats->bleedInflictedBy = static_cast<Sint32>(my->parent);
+								}
+								if ( !wasBleeding && parent && casterStats )
+								{
+									// energize if wearing punisher hood!
+									if ( casterStats->helmet && casterStats->helmet->type == PUNISHER_HOOD )
+									{
+										parent->modMP(1 + local_rng.rand() % 2);
+										Uint32 color = makeColorRGB(0, 255, 0);
+										parent->setEffect(EFF_MP_REGEN, true, 250, true);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[3753]);
+											steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
+										}
+										playSoundEntity(parent, 168, 128);
+									}
 								}
 							}
 							hitstats->EFFECTS[EFF_SLOW] = true;
@@ -2473,7 +2492,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_dominate.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_dominate.element_internal_name) )
 				{
 					Entity *caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2484,7 +2503,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_acidSpray.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2492,7 +2511,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectAcid(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_poison.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_poison.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2500,7 +2519,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectPoison(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_sprayWeb.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_sprayWeb.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2508,7 +2527,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectSprayWeb(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_stealWeapon.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2516,7 +2535,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectStealWeapon(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_drainSoul.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2524,7 +2543,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectDrainSoul(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_charmMonster.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2532,7 +2551,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_telePull.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2540,7 +2559,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectTeleportPull(my, *element, parent, hit.entity, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_shadowTag.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2548,7 +2567,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectShadowTag(*my, *element, parent, resistance);
 					}
 				}
-				else if ( !strcmp(element->name, spellElement_demonIllusion.name) )
+				else if ( !strcmp(element->element_internal_name, spellElement_demonIllusion.element_internal_name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
@@ -2643,7 +2662,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		//element = (spellElement_t *)element->elements->first->element; //Go down two levels to the second element.
 		node = element->elements.first;
 		element = (spellElement_t*)node->element;
-		if (!strcmp(element->name, spellElement_fire.name) || !strcmp(element->name, spellElement_lightning.name))
+		if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name) 
+			|| !strcmp(element->element_internal_name, spellElement_lightning.element_internal_name))
 		{
 			//Make the ball light up stuff as it travels.
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
@@ -3282,7 +3302,7 @@ void actParticleAestheticOrbit(Entity* my)
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
 		{
-			if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
+			if ( my->sprite == 863 && (!stats || !stats->EFFECTS[EFF_WEBBED]) )
 			{
 				list_RemoveNode(my->mynode);
 				return;
@@ -3962,19 +3982,19 @@ void actParticleTimer(Entity* my)
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHRINE_TELEPORT )
 			{
 				// teleport to target spell.
-				Entity* parent = uidToEntity(my->parent);
+				Entity* toTeleport = uidToEntity(my->particleTimerVariable2);
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
-				if ( parent && target )
+				if ( toTeleport && target )
 				{
 					bool teleported = false;
-					teleported = parent->teleportAroundEntity(target, my->particleTimerVariable1);
+					teleported = toTeleport->teleportAroundEntity(target, my->particleTimerVariable1);
 					if ( teleported )
 					{
-						createParticleErupt(parent, my->particleTimerEndSprite);
+						createParticleErupt(toTeleport, my->particleTimerEndSprite);
 						// teleport success.
 						if ( multiplayer == SERVER )
 						{
-							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+							serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 						}
 					}
 				}
@@ -4320,7 +4340,7 @@ void actParticleSapCenter(Entity* my)
 					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].name_unidentified);
+					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].getUnidentifiedName());
 					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{

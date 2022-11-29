@@ -99,18 +99,18 @@ int initGame()
 	// load item types
 	int newItems = 0;
 	printlog("loading items...\n");
-	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
-	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	File* fp = openDataFile(itemsDirectory.c_str(), "rb");
-	for (int c = 0; !fp->eof(); ++c)
+	//std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
+	//itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	//File* fp = openDataFile(itemsDirectory.c_str(), "rb");
+	/*for ( int c = 0; c < NUMITEMS; ++c )
 	{
-		if (c > SPELLBOOK_DETECT_FOOD)
+		if ( c > SPELLBOOK_DETECT_FOOD )
 		{
 			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
 			items[c].name_identified = language[3500 + newItems * 2];
 			items[c].name_unidentified = language[3501 + newItems * 2];
 		}
-		else if (c > ARTIFACT_BOW)
+		else if ( c > ARTIFACT_BOW )
 		{
 			newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
@@ -121,7 +121,8 @@ int initGame()
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
-		items[c].index = fp->geti();
+	}*/
+		/*items[c].index = fp->geti();
 		items[c].fpindex = fp->geti();
 		items[c].variations = fp->geti();
 		char name[32];
@@ -206,9 +207,10 @@ int initGame()
 		}
 	}
 	FileIO::close(fp);
-	loadItemLists();
+	loadItemLists();*/
 	ItemTooltips.readItemsFromFile();
 	ItemTooltips.readTooltipsFromFile();
+	ItemTooltips.readItemLocalizationsFromFile();
 	setupSpells();
 
 	loadHUDSettingsJSON();
@@ -219,6 +221,7 @@ int initGame()
 	MonsterData_t::loadMonsterDataJSON();
 	ScriptTextParser.readAllScripts();
 	ShopkeeperConsumables_t::readFromFile();
+	ClassHotbarConfig_t::init();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){

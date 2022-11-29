@@ -1980,8 +1980,9 @@ static void changeLevel() {
 	movie = false;
 
 	// setup level change
-	printlog("Received order to change level.\n");
-	currentlevel = static_cast<Sint8>(net_packet->data[13]);
+	const int newlevel = static_cast<Sint8>(net_packet->data[13]);
+	printlog("Received order to change level to %d (from %d).\n", newlevel, currentlevel);
+	currentlevel = newlevel;
 
 	if ( !secretlevel )
 	{
@@ -2095,9 +2096,6 @@ static void changeLevel() {
 		steamAchievement("BARONY_ACH_TRICKS_AND_TRAPS");
 	}
 
-	saveGame();
-	printlog("Done.\n");
-
 	Player::Minimap_t::mapDetails.clear();
 
 	if ( !secretlevel )
@@ -2174,6 +2172,10 @@ static void changeLevel() {
 	{
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
 	}
+
+	saveGame();
+	printlog("Done.\n");
+
 	if ( !strncmp(map.name, "Mages Guild", 11) )
 	{
 		messagePlayer(clientnum, MESSAGE_HINT, language[2599]);
@@ -2533,10 +2535,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				break;
 				case PARTICLE_EFFECT_SHRINE_TELEPORT:
 				{
-					Entity* spellTimer = createParticleTimer(entity, 200, sprite);
+					Entity* spellTimer = createParticleTimer(entity, 150, sprite);
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
-					spellTimer->particleTimerPreDelay = 150;
+					spellTimer->particleTimerPreDelay = 50;
 				}
 				break;
 				case PARTICLE_EFFECT_TELEPORT_PULL:
@@ -3575,8 +3577,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// killed a monster
 	{'MKIL', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		kills[player]++;
+		const int monster = (int)net_packet->data[4];
+		if ( monster >= 0 && monster < NUMMONSTERS )
+		{
+			kills[monster]++;
+		}
 	}},
 
 	// update skill

@@ -8680,16 +8680,16 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 			auto floorNameText = dungeonFloorFrame->addField("dungeon name text", 32);
 			floorNameText->setFont(dungeonFont);
-			floorNameText->setSize(SDL_Rect{ 20, 0, 162, 26 });
-			floorNameText->setText("Sand Labyrinth");
+			floorNameText->setSize(SDL_Rect{ 10, 0, 182, 26 });
+			floorNameText->setText("");
 			floorNameText->setVJustify(Field::justify_t::CENTER);
 			floorNameText->setHJustify(Field::justify_t::CENTER);
 			floorNameText->setColor(dungeonTextColor);
 
 			auto floorLevelText = dungeonFloorFrame->addField("dungeon level text", 32);
 			floorLevelText->setFont(dungeonFont);
-			floorLevelText->setSize(SDL_Rect{ 20, 26, 162, 26 });
-			floorLevelText->setText("Floor 27");
+			floorLevelText->setSize(SDL_Rect{ 10, 26, 182, 26 });
+			floorLevelText->setText("");
 			floorLevelText->setVJustify(Field::justify_t::CENTER);
 			floorLevelText->setHJustify(Field::justify_t::CENTER);
 			floorLevelText->setColor(dungeonTextColor);
@@ -8698,6 +8698,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		Frame* characterFrame = sheetFrame->addFrame("character info");
 		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
 		characterFrame->setSize(SDL_Rect{ leftAlignX, 206, bgWidth, 116});
+		characterFrame->setHollow(true);
 		Uint32 infoTextColor = makeColor( 188, 154, 114, 255);
 		Uint32 classTextColor = makeColor( 74, 66, 207, 255);
 
@@ -8767,7 +8768,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			classText->setText("Barbarian");
 			classText->setVJustify(Field::justify_t::CENTER);
 			classText->setHJustify(Field::justify_t::LEFT);
-			classText->setColor(classTextColor);
+			classText->setTextColor(classTextColor);
 
 			characterTextPos.x = 4;
 			characterTextPos.w = 194;
@@ -9711,15 +9712,18 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			fullscreenBg->setSize(fullscreenBgPos);
 			compactImgBg->disabled = true;
 
-			auto attributesPos = attributesFrame->getSize();
-			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
-			attributesPos.y = sheetFrame->getSize().h - attributesPos.h;
-			attributesFrame->setSize(attributesPos);
+			Frame::image_t* fullscreenBgImg = fullscreenBg->findImage("bg image");
 
 			auto statsPos = statsFrame->getSize();
 			statsPos.x = sheetFrame->getSize().w - statsPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
-			statsPos.y = attributesPos.y - statsPos.h + 4; // 4 pixels below top edge of attributes pane
+			statsPos.y = fullscreenBgImg->pos.y + fullscreenBgImg->pos.h;
 			statsFrame->setSize(statsPos);
+
+			auto attributesPos = attributesFrame->getSize();
+			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+			attributesPos.y = statsPos.y + statsPos.h - 4; // 4 px overlap attributes pane
+			attributesFrame->setSize(attributesPos);
+
 		}
 	}
 
@@ -14166,10 +14170,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = padx + padxMid;
 			entryPos.y = currentHeight;
-			entryPos.w = txtPos.w - (2 * (padx + padxMid));
+			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
 			entry->reflowTextToFit(0);
-			entryPos.h = actualFont->height(true) * entry->getNumTextLines();
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
 			entry->setColor(makeColor(255, 0, 255, 255));
 			currentHeight = std::max(entryPos.y + entryPos.h, 0);
@@ -14323,6 +14327,18 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			capitalizeString(classname);
 			className->setText(classname.c_str());
+		}
+		if ( client_classes[player.playernum] >= CLASS_CONJURER && client_classes[player.playernum] <= CLASS_BREWER )
+		{
+			className->setTextColor(hudColors.characterDLC1ClassText);
+		}
+		else if ( client_classes[player.playernum] >= CLASS_MACHINIST && client_classes[player.playernum] <= CLASS_HUNTER )
+		{
+			className->setTextColor(hudColors.characterDLC2ClassText);
+		}
+		else
+		{
+			className->setTextColor(hudColors.characterBaseClassText);
 		}
 		if ( auto textGet = Text::get(className->getText(), className->getFont(),
 			className->getTextColor(), className->getOutlineColor()) )
@@ -18122,6 +18138,30 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_highlight_text"]["b"].GetInt(),
 							d["colors"]["charsheet_highlight_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_base_class_text") )
+					{
+						hudColors.characterBaseClassText = makeColor(
+							d["colors"]["charsheet_base_class_text"]["r"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["g"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["b"].GetInt(),
+							d["colors"]["charsheet_base_class_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_dlc1_text") )
+					{
+						hudColors.characterDLC1ClassText = makeColor(
+							d["colors"]["charsheet_dlc1_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc1_text"]["a"].GetInt());
+					}
+					if ( d["colors"].HasMember("charsheet_dlc2_text") )
+					{
+						hudColors.characterDLC2ClassText = makeColor(
+							d["colors"]["charsheet_dlc2_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc2_text"]["a"].GetInt());
+					}
 				}
 				if ( d.HasMember("dropdowns") )
 				{
@@ -20348,7 +20388,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		else
 		{
-			useItem(item, player);
+			if ( !disableItemUsage && prompt == PROMPT_INTERACT )
+			{
+				useItem(item, player);
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+			}
 		}
 		return;
 	}
@@ -25573,7 +25620,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				auto alchemyEntry = *it;
 				if ( GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
 				{
-					std::string itemName = items[alchemyEntry].name_identified;
+					std::string itemName = items[alchemyEntry].getIdentifiedName();
 					size_t pos = std::string::npos;
 					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
 					{
@@ -25603,7 +25650,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				if ( GenericGUI[playernum].isItemSecondaryIngredient(alchemyEntry)
 					&& !GenericGUI[playernum].isItemBaseIngredient(alchemyEntry) )
 				{
-					std::string itemName = items[alchemyEntry].name_identified;
+					std::string itemName = items[alchemyEntry].getIdentifiedName();
 					size_t pos = std::string::npos;
 					for ( auto& potionName : Player::SkillSheet_t::skillSheetData.potionNamesToFilter )
 					{
@@ -25801,7 +25848,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 						magics += '\n';
 					}
 					magics += "\x1E ";
-					magics += spellEntry->name;
+					magics += spellEntry->getSpellName();
 				}
 			}
 			if ( magics == "" ) { magics = "-"; }
@@ -28664,7 +28711,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			else if ( itemCategory(item) == SCROLL )
 			{
 				snprintf(buf, sizeof(buf), "%s %s", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-					items[item->type].name_unidentified);
+					items[item->type].getUnidentifiedName());
 				snprintf(buf2, sizeof(buf), "%s %s (?)", language[4215], item->getScrollLabel());
 			}
 			else

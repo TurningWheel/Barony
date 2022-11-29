@@ -9591,6 +9591,8 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
+	Player::Minimap_t::mapDetails.clear();
+
 	// disable cheats
 	noclip = false;
 	godmode = false;
@@ -9696,6 +9698,10 @@ void doNewGame(bool makeHighscore) {
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			players[i]->hud.resetBars(); // reset XP/HP/MP bars
+			if ( !loadingsavegame && players[i]->isLocalPlayer() && !client_disconnected[i] )
+			{
+				ClassHotbarConfig_t::assignHotbarSlots(i); // assign custom hotbar configuration
+			}
 		}
 
 		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
@@ -9952,6 +9958,12 @@ void doNewGame(bool makeHighscore) {
 			loadGame(clientnum, saveGameInfo);
 		}
 
+		players[clientnum]->hud.resetBars();
+		if ( !loadingsavegame )
+		{
+			ClassHotbarConfig_t::assignHotbarSlots(clientnum); // assign custom hotbar configuration
+		}
+
 		// stop all sounds
 #ifdef USE_FMOD
 		if ( sound_group )
@@ -10127,7 +10139,15 @@ void doNewGame(bool makeHighscore) {
 	Frame::guiInit();
 
 	// make some messages
-	startMessages();
+	Player::MessageZone_t::startMessages();
+
+	for ( auto& pair : Player::Minimap_t::mapDetails )
+	{
+		if ( pair.second != "" )
+		{
+			messagePlayer(clientnum, MESSAGE_HINT, pair.second.c_str());
+		}
+	}
 
 	// kick off the main loop!
 	pauseGame(1, 0);
@@ -10486,9 +10506,14 @@ void doEndgame() {
 		}
 	}
 
+	if ( !endTutorial && victory > 0 )
+	{
+		deleteSaveGame(multiplayer);
+	}
+
 	// reset game
 	darkmap = false;
-	multiplayer = 0;
+	multiplayer = SINGLE;
 	currentlevel = 0;
 	secretlevel = false;
 	clientnum = 0;

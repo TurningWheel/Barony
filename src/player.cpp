@@ -3043,8 +3043,8 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	real_t dist = entityDist(&tooltip, players[player.playernum]->entity);
 	Entity* parent = uidToEntity(tooltip.parent);
 
-	real_t maxDist = 24;
-	real_t minDist = 4;
+	real_t maxDist = 24.0;
+	real_t minDist = 4.0;
 
 	bool followerSelectInteract = false;
 	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
@@ -3060,6 +3060,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				&& parent->monsterAllyGetPlayerLeader() == players[player.playernum]->entity)) )
 	{
 		maxDist = TOUCHRANGE;
+	}
+	if ( parent && parent->behavior == &actDoor && parent->doorStatus == 0 ) // min dist 0.0 when door closed, just in case we're stuck inside.
+	{
+		minDist = 0.0;
 	}
 
 	if ( dist < maxDist && dist > minDist )
@@ -3444,7 +3448,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actDoor )
 		{
-			if ( parent->flags[PASSABLE] )
+			if ( parent->doorStatus != 0 )
 			{
 				interactText = language[4015]; // "Close door" 
 			}
@@ -3613,9 +3617,11 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
-			char* itemName = items[parent->skill[21]].name_identified;
 			interactText = language[4039]; // "Disarm ";
-			interactText += itemName;
+			if ( parent->skill[21] >= WOODEN_SHIELD && parent->skill[21] < NUMITEMS )
+			{
+				interactText += items[parent->skill[21]].getIdentifiedName();
+			}
 		}
 		else
 		{
