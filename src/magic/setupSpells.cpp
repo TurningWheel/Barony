@@ -1184,7 +1184,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_trollsBlood);
 	strcpy(spell_trollsBlood.spell_internal_name, "spell_trolls_blood");
 	spell_trollsBlood.ID = SPELL_TROLLS_BLOOD;
-	spell_trollsBlood.difficulty = 60;
+	spell_trollsBlood.difficulty = 40;
 	spell_trollsBlood.elements.first = NULL;
 	spell_trollsBlood.elements.last = NULL;
 	node = list_AddNodeLast(&spell_trollsBlood.elements);
