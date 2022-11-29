@@ -12631,7 +12631,7 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
 			auto buf1 = new wchar_t[len1];
 			MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, buf1, len1);
-			const int pathlen = GetFullPathName(buf1, PATH_MAX, pathbuffer, NULL);
+			const int pathlen = GetFullPathNameW(buf1, PATH_MAX, pathbuffer, NULL);
 			delete[] buf1;
 			const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
 			auto buf2 = new char[len2];
@@ -12740,7 +12740,7 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 				const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
 				auto buf1 = new wchar_t[len1];
 				MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, buf1, len1);
-				const int pathlen = GetFullPathName(buf1, PATH_MAX, pathbuffer, NULL);
+				const int pathlen = GetFullPathNameW(buf1, PATH_MAX, pathbuffer, NULL);
 				delete[] buf1;
 				const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
 				auto buf2 = new char[len2];
