@@ -12627,6 +12627,7 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			}
 			gamemods_workshopSetPropertyReturn[1] = SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, gamemods_uploadDescription);
 #ifdef WINDOWS
+#ifdef _UNICODE
 			wchar_t pathbuffer[PATH_MAX];
 			const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
 			auto buf1 = new wchar_t[len1];
@@ -12637,6 +12638,11 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			auto buf2 = new char[len2];
 			WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
 			std::string fullpath = buf2;
+#else
+			char pathbuffer[PATH_MAX];
+			GetFullPathNameA(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
+			std::string fullpath = pathbuffer;
+#endif
 #else
 			char pathbuffer[PATH_MAX];
 			realpath(directoryToUpload.c_str(), pathbuffer);
@@ -12736,6 +12742,7 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 			if ( !directoryFilesListToUpload.empty() )
 			{
 #ifdef WINDOWS
+#ifdef _UNICODE
 				wchar_t pathbuffer[PATH_MAX];
 				const int len1 = MultiByteToWideChar(CP_ACP, 0, directoryToUpload.c_str(), directoryToUpload.size() + 1, 0, 0);
 				auto buf1 = new wchar_t[len1];
@@ -12746,6 +12753,11 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 				auto buf2 = new char[len2];
 				WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
 				std::string fullpath = buf2;
+#else
+				char pathbuffer[PATH_MAX];
+				GetFullPathNameA(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
+				std::string fullpath = pathbuffer;
+#endif
 #else
 				char pathbuffer[PATH_MAX];
 				realpath(directoryToUpload.c_str(), pathbuffer);
