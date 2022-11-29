@@ -4520,7 +4520,8 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset();
-				settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
+				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
+				settingsBindings(player, inputs.hasController(player) ? 1 : 0,
 				    {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
@@ -5121,7 +5122,8 @@ bind_failed:
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
-			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
+				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
+			    settingsBindings(player, inputs.hasController(player) ? 1 : 0,
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 
@@ -5156,7 +5158,8 @@ bind_failed:
 			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
-			    settingsBindings(getMenuOwner(), inputs.hasController(getMenuOwner()) ? 1 : 0,
+				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
+			    settingsBindings(player, inputs.hasController(player) ? 1 : 0,
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 #else
@@ -17926,7 +17929,7 @@ bind_failed:
 
 		if (!main_menu_frame) {
 		    if (ingame) {
-		        if (movie) {
+		        if (movie || fadeout) {
 		            createDummyMainMenu();
 		        } else {
 		            createMainMenu(ingame);
