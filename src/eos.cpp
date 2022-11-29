@@ -3140,22 +3140,6 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 	);
 }
 
-void buttonRetryAuthorisation()
-{
-	EOS.AccountManager.AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
-	EOS.initAuth();
-
-	UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
-	if ( n )
-	{
-		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
-		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-		n->showMainCard();
-		n->setDisplayedText(n->getMainText());
-		n->updateCardEvent(true, false);
-	}
-}
-
 void EOSFuncs::Accounts_t::handleLogin()
 {
 #ifdef STEAMWORKS
@@ -3164,20 +3148,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 
 	if ( !initPopupWindow && popupType == POPUP_TOAST )
 	{
-		if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT) )
-		{
-			UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
-			n->setHeaderText("Account Status");
-			n->setMainText("Logging in...");
-			n->setSecondaryText("An error has occurred!");
-			n->setActionText("Retry");
-			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
-			n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-			n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-			n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
-			n->buttonAction = &buttonRetryAuthorisation;
-			n->setIdleSeconds(5);
-		}
+		UIToastNotificationManager.createEpicLoginNotification();
 		initPopupWindow = true;
 	}
 
@@ -3218,7 +3189,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 					n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 					char buf[128] = "";
-					snprintf(buf, sizeof(buf), "Login has failed.\nError code: %d", static_cast<int>(AccountAuthenticationStatus));
+					snprintf(buf, sizeof(buf), "Login has failed.\nError code: %d\n", static_cast<int>(AccountAuthenticationStatus));
 					n->showMainCard();
 					n->setSecondaryText(buf);
 					n->updateCardEvent(false, true);
@@ -3232,19 +3203,7 @@ void EOSFuncs::Accounts_t::handleLogin()
 
 void EOSFuncs::CrossplayAccounts_t::createNotification()
 {
-	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT) )
-	{
-		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
-		n->setHeaderText("Crossplay Status");
-		n->setMainText("Initializing...");
-		n->setSecondaryText("An error has occurred!");
-		n->setActionText("Retry");
-		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
-		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
-		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-		n->cardType = UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT;
-		n->setIdleSeconds(5);
-	}
+	UIToastNotificationManager.createEpicCrossplayLoginNotification();
 }
 
 void EOSFuncs::CrossplayAccounts_t::handleLogin()
@@ -3379,7 +3338,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 				char buf[128] = "";
-				snprintf(buf, sizeof(buf), "Setup has failed.\nError code: %d", static_cast<int>(connectLoginStatus));
+				snprintf(buf, sizeof(buf), "Setup has failed.\nError code: %d\n", static_cast<int>(connectLoginStatus));
 				n->showMainCard();
 				n->setSecondaryText(buf);
 				n->updateCardEvent(false, true);

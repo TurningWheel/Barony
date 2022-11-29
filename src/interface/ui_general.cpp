@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "ui.hpp"
+#include "../menu.hpp"
 #include "../scores.hpp"
 #ifdef WINDOWS
 #include <shellapi.h>
@@ -28,13 +29,23 @@ void UIToastNotification::init()
 		return;
 	}
 	isInit = true;
-	displayedText = mainCardText;
+	setDisplayedText(mainCardText.c_str());
 	mainCardIsHidden = false;
 	mainCardHide = false;
 	lastInteractedTick = ticks;
 
 	frame = UIToastNotificationManager.frame->addFrame();
-	frame->setColor(makeColor(0, 32, 160, 255));
+	frame->setColor(makeColor(0, 0, 0, 0));
+	frame->setBorder(0);
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topleft");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "top");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topright");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "left");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "center");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "right");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomleft");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottom");
+	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomright");
 
 	headerField = frame->addField("header", 128);
 	headerField->setColor(makeColor(255, 255, 0, 255));
@@ -44,7 +55,20 @@ void UIToastNotification::init()
 	mainField->setFont(smallfont_outline);
 
 	closeButton = frame->addButton("close");
+	closeButton->setBorder(0);
 	closeButton->setUserData(this);
+	closeButton->setBackground("*#images/ui/Shop/Button_X_00.png");
+	closeButton->setBackgroundHighlighted("*#images/ui/Shop/Button_XHigh_00.png");
+	closeButton->setBackgroundActivated("*#images/ui/Shop/Button_XPress_00.png");
+	closeButton->setColor(makeColor(255, 255, 255, 255));
+	closeButton->setHighlightColor(makeColor(255, 255, 255, 255));
+	closeButton->setText("X");
+	closeButton->setFont(smallfont_outline);
+	closeButton->setHideGlyphs(true);
+	closeButton->setHideKeyboardGlyphs(true);
+	closeButton->setHideSelectors(true);
+	closeButton->setMenuConfirmControlType(0);
+	closeButton->setTextHighlightColor(makeColor(201, 162, 100, 255));
 	closeButton->setCallback([](Button& button){
 		auto n = static_cast<UIToastNotification*>(button.getUserData());
 		n->mainCardHide = true;
@@ -53,16 +77,32 @@ void UIToastNotification::init()
 		});
 
 	actionButton = frame->addButton("action");
+	actionButton->setBorder(0);
 	actionButton->setUserData(this);
+	actionButton->setBackground("*#images/ui/GameOver/UI_GameOver_Button_SpawnAsGhost_02.png");
+	actionButton->setBackgroundHighlighted("*#images/ui/GameOver/UI_GameOver_Button_SpawnAsGhostHigh_02.png");
+	actionButton->setBackgroundActivated("*#images/ui/GameOver/UI_GameOver_Button_SpawnAsGhostPress_02.png");
+	actionButton->setColor(makeColor(255, 255, 255, 255));
+	actionButton->setHighlightColor(makeColor(255, 255, 255, 255));
+	actionButton->setSize(SDL_Rect{108, 0, 150, 34});
+	actionButton->setText("X");
+	actionButton->setFont(smallfont_outline);
+	actionButton->setHideGlyphs(true);
+	actionButton->setHideKeyboardGlyphs(true);
+	actionButton->setHideSelectors(true);
+	actionButton->setMenuConfirmControlType(0);
+	actionButton->setTextHighlightColor(makeColor(201, 162, 100, 255));
 	actionButton->setCallback([](Button& button) {
 		auto n = static_cast<UIToastNotification*>(button.getUserData());
 		n->lastInteractedTick = ticks;
-		n->buttonAction();
+		if (n->buttonAction) {
+			n->buttonAction();
+		}
 		});
 
-	frameImage = frame->addImage(SDL_Rect{0, 0, 64, 64}, 0xffffffff, "", "image");
-	progressBarBackground = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xffffffff, "", "progressBarBackground");
-	progressBar = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xffffffff, "", "progressBar");
+	frameImage = frame->addImage(SDL_Rect{0, 0, 0, 0}, 0xffffffff, "", "image");
+	progressBarBackground = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColorRGB(0, 48, 16), "images/system/white.png", "progressBarBackground");
+	progressBar = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColorRGB(0, 160, 48), "images/system/white.png", "progressBar");
 }
 
 void UIToastNotification::draw()
@@ -193,6 +233,55 @@ void UIToastNotification::animate(int& xout, int& current_ticks, int duration, i
 	}
 }
 
+static void sizeFrameImages(Frame& frame) {
+	const auto r = frame.getSize();
+	{
+		auto img = frame.findImage("topleft"); assert(img);
+		img->section = SDL_Rect{ 0, 0, 16, 16 };
+		img->pos = SDL_Rect{ 0, 0, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("top"); assert(img);
+		img->section = SDL_Rect{ 16, 0, 16, 16 };
+		img->pos = SDL_Rect{ 16, 0, r.w - 32, 16 };
+	}
+	{
+		auto img = frame.findImage("topright"); assert(img);
+		img->section = SDL_Rect{ 32, 0, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, 0, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("left"); assert(img);
+		img->section = SDL_Rect{ 0, 16, 16, 16 };
+		img->pos = SDL_Rect{ 0, 16, 16, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("center"); assert(img);
+		img->section = SDL_Rect{ 16, 16, 16, 16 };
+		img->pos = SDL_Rect{ 16, 16, r.w - 32, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("right"); assert(img);
+		img->section = SDL_Rect{ 32, 16, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, 16, 16, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("bottomleft"); assert(img);
+		img->section = SDL_Rect{ 0, 32, 16, 16 };
+		img->pos = SDL_Rect{ 0, r.h - 16, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("bottom"); assert(img);
+		img->section = SDL_Rect{ 16, 32, 16, 16 };
+		img->pos = SDL_Rect{ 16, r.h - 16, r.w - 32, 16 };
+	}
+	{
+		auto img = frame.findImage("bottomright"); assert(img);
+		img->section = SDL_Rect{ 32, 32, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, r.h - 16, 16, 16 };
+	}
+}
+
 void UIToastNotification::drawDockedCard()
 {
 	SDL_Rect r;
@@ -201,6 +290,7 @@ void UIToastNotification::drawDockedCard()
 	r.x = Frame::virtualScreenX - r.w + docked_animx;
 	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
+	sizeFrameImages(*frame);
 
 #if defined(NINTENDO)
 	const bool clicking = fingerdown;
@@ -255,10 +345,11 @@ void UIToastNotification::drawMainCard()
 {
 	SDL_Rect r;
 	r.w = cardWidth;
-	r.h = showHeight + dockHeight;
+	r.h = cardType == CardType::UI_CARD_ACHIEVEMENT ? 80 : showHeight;
 	r.x = Frame::virtualScreenX - r.w + animx;
-	r.y = Frame::virtualScreenY - r.h - posy - (showHeight - dockHeight);
+	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
+	sizeFrameImages(*frame);
 
 	if (actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE)
 	{
@@ -301,7 +392,7 @@ void UIToastNotification::drawMainCard()
 				if (statisticUpdateCurrent >= statisticUpdateMax)
 				{
 					this->setHeaderText("Achievement Unlocked!");
-					notificationImage = std::string("*#") + this->achievementID + std::string(".png");
+					notificationImage = std::string("*#images/achievements/") + this->achievementID + std::string(".png");
 				}
 				pendingStatisticUpdateCurrent = -1;
 			}
@@ -330,51 +421,59 @@ void UIToastNotification::drawMainCard()
 		}
 	}
 
+	const int imgSize = r.h - 16;
+	const int offset = cardType == CardType::UI_CARD_ACHIEVEMENT ? 8 : -8;
+
 	headerField->setInvisible(false);
-	headerField->setSize(SDL_Rect{ textx + 64, texty, r.w - textx, r.h - texty });
+	headerField->setSize(SDL_Rect{ textx + imgSize + offset, texty, r.w - textx - imgSize, r.h - texty });
 	headerField->setHJustify(Field::justify_t::LEFT);
 	headerField->setVJustify(Field::justify_t::TOP);
 	headerField->setText(headerCardText.c_str());
 
-	mainField->setInvisible(false);
-	mainField->setSize(SDL_Rect{ bodyx + 64, bodyy, r.w - bodyx, r.h - bodyy });
-	mainField->setHJustify(Field::justify_t::LEFT);
-	mainField->setVJustify(Field::justify_t::TOP);
-	mainField->setText(displayedText.c_str());
+	if (!(actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE))
+	{
+		mainField->setInvisible(false);
+		mainField->setSize(SDL_Rect{ bodyx + imgSize + offset, bodyy, r.w - bodyx - imgSize, r.h - bodyy });
+		mainField->setHJustify(Field::justify_t::LEFT);
+		mainField->setVJustify(Field::justify_t::CENTER);
+		mainField->setText(displayedText.c_str());
+	}
 
 	frameImage->path = notificationImage;
 	frameImage->disabled = false;
+	frameImage->pos = SDL_Rect{cardType == CardType::UI_CARD_ACHIEVEMENT ? 8 : 0, 8, imgSize, imgSize};
 }
 
-void UIToastNotification::drawProgressBar(const SDL_Rect& imageDimensions)
+void UIToastNotification::drawProgressBar(const SDL_Rect& src)
 {
-	return; //wip
+	const SDL_Rect r{ src.h, src.h - 40, src.w - src.h - 8, 32 };
 
-	int percent = (int)floor(statisticUpdateCurrent * 100 / static_cast<double>(statisticUpdateMax));
+	const int percent = (statisticUpdateCurrent * 100) / statisticUpdateMax;
+	const int size = (r.w * percent) / 100;
 
-	SDL_Rect progressbar;
-	progressbar.x = imageDimensions.x + imageDimensions.w + textx;
-	progressbar.h = TTF12_HEIGHT + 2;
-	progressbar.w = (Frame::virtualScreenX - 8 + animx) - progressbar.x - 10;
-	progressbar.y = imageDimensions.y + imageDimensions.h - progressbar.h;
-	drawWindowFancy(progressbar.x - 2, progressbar.y - 2, progressbar.x + progressbar.w + 2, progressbar.y + progressbar.h + 2);
-
-	drawRect(&progressbar, makeColorRGB(36, 36, 36), 255);
-	progressbar.w = std::min((Frame::virtualScreenX - 8 + animx) - progressbar.x - 4, static_cast<int>(progressbar.w * percent / 100.0));
-	drawRect(&progressbar, uint32ColorBaronyBlue, 92);
-	progressbar.w = (Frame::virtualScreenX - 8 + animx) - progressbar.x - TTF12_WIDTH;
+	progressBarBackground->disabled = false;
+	progressBarBackground->pos = r;
+	if (size) {
+		progressBar->disabled = false;
+		progressBar->pos = SDL_Rect{ r.x, r.y, size < r.w ? size : r.w, r.h };
+	}
 
 	char progress_str[32] = { '\0' };
-	const int len = snprintf(progress_str, sizeof(progress_str), "%d / %d", statisticUpdateCurrent, statisticUpdateMax);
-	ttfPrintTextColor(ttf12, progressbar.x + progressbar.w / 2 - (len * TTF12_WIDTH) / 2,
-		progressbar.y + 4, uint32ColorWhite, true, progress_str);
+	const int len = snprintf(progress_str, sizeof(progress_str), "%d / %d",
+		statisticUpdateCurrent < statisticUpdateMax ? statisticUpdateCurrent : statisticUpdateMax, statisticUpdateMax);
+	mainField->setInvisible(false);
+	mainField->setSize(r);
+	mainField->setHJustify(Field::justify_t::CENTER);
+	mainField->setVJustify(Field::justify_t::CENTER);
+	mainField->setText(progress_str);
+
 }
 
 void UIToastNotification::drawCloseButton(const SDL_Rect& src)
 {
 	closeButton->setInvisible(false);
 
-	const SDL_Rect r{ src.w - 4 - 16, 4, 16, 16 };
+	const SDL_Rect r{ src.w - 4 - 26, 4, 26, 26 };
 	closeButton->setSize(r);
 }
 
@@ -382,7 +481,7 @@ void UIToastNotification::drawActionButton(const SDL_Rect& src)
 {
 	actionButton->setInvisible(false);
 
-	const SDL_Rect r{ 4, src.h - 20, 16, 16 };
+	const SDL_Rect r{ 100, src.h - 40, 150, 34 };
 	actionButton->setSize(r);
 	actionButton->setText(actionText.c_str());
 }
@@ -394,6 +493,15 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 	if ( !bIsInit )
 	{
 		return;
+	}
+
+	if (achievementsCheck && !intro) {
+		if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| gamemods_disableSteamAchievements) {
+			achievementsCheck = false;
+			createAchievementsDisabledNotification();
+		}
 	}
 
 	frame->setSize(gui->getSize());
@@ -409,10 +517,12 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 
 	for ( auto& card : allNotifications )
 	{
-		if ((isMoviePlaying || !intro) 
-			&& !(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
+		if (isMoviePlaying || !intro)
 		{
-			continue;
+			if (!(card.actionFlags & UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE))
+			{
+				continue;
+			}
 		}
 
 		bool docked = false;
@@ -498,6 +608,10 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 
 		if ( card.skipDrawingCardThisTick )
 		{
+			if (card.isInit && card.frame)
+			{
+				card.frame->setInvisible(true);
+			}
 			continue;
 		}
 
@@ -505,13 +619,14 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 		card.draw();
 	}
 
-	for ( size_t c = 0; c < allNotifications.size(); ++c )
+	auto next = allNotifications.begin();
+	for ( auto it = allNotifications.begin(); it != allNotifications.end(); it = next )
 	{
-		auto& card = allNotifications[c];
+		++next;
+		auto& card = *it;
 		if (card.getCardState() == UIToastNotification::CardState::UI_CARD_STATE_REMOVED)
 		{
-			allNotifications.erase(allNotifications.begin() + c);
-			--c;
+			allNotifications.erase(it);
 		}
 	}
 }
@@ -523,9 +638,57 @@ UIToastNotification* UIToastNotificationManager_t::addNotification(const char* i
 		init();
 	}
 
-	allNotifications.push_back(UIToastNotification(getImage(image)));
+	allNotifications.emplace_back(getImage(image));
 	auto& notification = allNotifications.back();
 	return &notification;
+}
+
+void UIToastNotificationManager_t::createEpicLoginNotification()
+{
+	if (!UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT))
+	{
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
+		n->setHeaderText("Account Status");
+		n->setMainText("Logging in...");
+		n->setSecondaryText("An error has occurred!");
+		n->setActionText("Retry");
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+		n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
+		n->buttonAction = [](){
+			EOS.AccountManager.AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
+			EOS.initAuth();
+
+			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
+			if (n)
+			{
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+				n->showMainCard();
+				n->setDisplayedText(n->getMainText());
+				n->updateCardEvent(true, false);
+			}
+		};
+		n->setIdleSeconds(5);
+	}
+}
+
+void UIToastNotificationManager_t::createEpicCrossplayLoginNotification()
+{
+	if (!UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT))
+	{
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
+		n->setHeaderText("Crossplay Status");
+		n->setMainText("Initializing...");
+		n->setSecondaryText("An error has occurred!");
+		n->setActionText("Retry");
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+		n->cardType = UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT;
+		n->setIdleSeconds(5);
+	}
 }
 
 void openURLTryWithOverlay(const std::string& url, bool forceSystemBrowser)
@@ -582,11 +745,11 @@ void UIToastNotificationManager_t::createAchievementsDisabledNotification()
 	if ( !UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED) )
 	{
 		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
-		n->setHeaderText("Notification");
-		n->setMainText("Achievements disabled");
+		n->setHeaderText("Status Notification");
+		n->setMainText("Achievements disabled.");
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
-		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED;
 		n->setIdleSeconds(8);
 	}
@@ -640,7 +803,7 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 		}
 	}
 
-	const std::string imgName = std::string("*#") + name + std::string(".png");
+	const std::string imgName = std::string("*#images/achievements/") + name + std::string(".png");
 	n = UIToastNotificationManager.addNotification(imgName.c_str());
 	n->setHeaderText("Achievement Unlocked!");
 
@@ -677,8 +840,8 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 
 	const std::string imgName = unlocked ?
-		std::string("*#") + name + std::string(".png"):
-		std::string("*#") + name + std::string("_l.png");
+		std::string("*#images/achievements/") + name + std::string(".png"):
+		std::string("*#images/achievements/") + name + std::string("_l.png");
 	n = UIToastNotificationManager.addNotification(imgName.c_str());
 	n->setHeaderText(unlocked ? "Achievement Unlocked!" : "Achievement Updated!");
 
@@ -695,3 +858,50 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	n->setStatisticMaxValue(maxValue);
 	n->setIdleSeconds(5);
 }
+
+#include "consolecommand.hpp"
+
+static ConsoleCommand ccmd_toastTestAchievement("/toast_test_achievement", "",
+	[](int argc, const char** argv){
+		if (argc > 1) {
+			UIToastNotificationManager.createAchievementNotification(argv[1]);
+		} else {
+			messagePlayer(clientnum, MESSAGE_DEBUG,
+				"Give the name of a valid achievement\n"
+				"ex: %s <BARONY_ACH_xxx>", argv[0]);
+		}
+	});
+
+static ConsoleCommand ccmd_toastTestStatistic("/toast_test_statistic", "",
+	[](int argc, const char** argv) {
+		if (argc > 1) {
+			const int cur = argc > 2 ? (int)strtol(argv[2], nullptr, 10) : 0;
+			const int max = argc > 3 ? (int)strtol(argv[3], nullptr, 10) : 10;
+			UIToastNotificationManager.createStatisticUpdateNotification(argv[1], cur, max);
+		}
+		else {
+			messagePlayer(clientnum, MESSAGE_DEBUG,
+				"Give the name of a valid achievement\n"
+				"ex: %s <BARONY_ACH_xxx> [current] [maximum]", argv[0]);
+		}
+	});
+
+static ConsoleCommand ccmd_toastTestAchievementsDisabled("/toast_test_achievements_disabled", "",
+	[](int argc, const char** argv) {
+		UIToastNotificationManager.createAchievementsDisabledNotification();
+	});
+
+static ConsoleCommand ccmd_toastTest("/toast_test", "",
+	[](int argc, const char** argv) {
+		UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
+		n->setHeaderText("Test Notification");
+		n->setMainText("This is a test.\nIt means nothing.\n");
+		n->setSecondaryText("This is a secondary message.\n");
+		n->setActionText("Do a thing");
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
+		n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+		n->setIdleSeconds(8);
+	});

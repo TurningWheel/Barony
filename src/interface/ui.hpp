@@ -30,6 +30,14 @@ public:
 	~UIToastNotification() {
 		if (frame) {
 			frame->removeSelf();
+			frame = nullptr;
+			headerField = nullptr;
+			mainField = nullptr;
+			closeButton = nullptr;
+			actionButton = nullptr;
+			frameImage = nullptr;
+			progressBar = nullptr;
+			progressBarBackground = nullptr;
 		}
 	}
 
@@ -103,23 +111,23 @@ public:
 
 	void drawDockedCard();
 	void drawMainCard();
-	void drawProgressBar(const SDL_Rect& imageDimensions);
+	void drawProgressBar(const SDL_Rect& src);
 	void drawCloseButton(const SDL_Rect& src);
 	void drawActionButton(const SDL_Rect& src);
 
-	void (*buttonAction)();
+	void (*buttonAction)() = nullptr;
 
 private:
 	int posx = 260;
 	int posy = 110;
-	int showHeight = 64;
-	int dockHeight = 32;
+	static const int showHeight = 116;
+	static const int dockHeight = 32;
 	std::string notificationImage;
 	bool isInit = false;
 	int textx = 8;
-	int texty = 0;
-	int bodyx = 12;
-	int bodyy = 16;
+	int texty = 8;
+	int bodyx = 8;
+	int bodyy = 0;
 
 	bool mainCardHide = false;
 	bool mainCardIsHidden = false;
@@ -181,6 +189,7 @@ class UIToastNotificationManager_t
 	Uint32 lastUndockTick = 0;
 	bool bIsInit = false;
 	Frame* frame = nullptr;
+	bool achievementsCheck = false;
 public:
 	UIToastNotificationManager_t() = default;
 	~UIToastNotificationManager_t()
@@ -192,7 +201,7 @@ public:
 	{
 		if ( image == nullptr )
 		{
-			return "*#images/system/CommunityLink1.png";
+			return "#images/system/CommunityLink1.png";
 		}
 		return image;
 	};
@@ -207,6 +216,7 @@ public:
 		//promoLink1 = loadImage("images/system/Promo1.png");
 		frame = gui->addFrame("toasts");
 		frame->setHollow(true);
+		achievementsCheck = true;
 	}
 	void term()
 	{
@@ -219,13 +229,15 @@ public:
 			frame->removeSelf();
 			frame = nullptr;
 		}
+		achievementsCheck = false;
 	}
 	void drawNotifications(bool isMoviePlaying, bool beforeFadeout);
+	void createEpicLoginNotification();
+	void createEpicCrossplayLoginNotification();
 	void createAchievementsDisabledNotification();
 	void createAchievementNotification(const char* name);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
 	void undockAllCards();
-	void processUndockingCards();
 
 	/// @param image nullptr for default barony icon
 	UIToastNotification* addNotification(const char* image);
@@ -255,7 +267,7 @@ public:
 		}
 		return nullptr;
 	}
-	std::vector<UIToastNotification> allNotifications;
+	std::list<UIToastNotification> allNotifications;
 };
 extern UIToastNotificationManager_t UIToastNotificationManager;
 
