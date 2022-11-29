@@ -657,8 +657,10 @@ void UIToastNotificationManager_t::createEpicLoginNotification()
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT;
 		n->buttonAction = [](){
+#ifdef USE_EOS
 			EOS.AccountManager.AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 			EOS.initAuth();
+#endif
 
 			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_EOS_ACCOUNT);
 			if (n)
@@ -860,6 +862,7 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 }
 
 #include "consolecommand.hpp"
+#include "../net.hpp"
 
 static ConsoleCommand ccmd_toastTestAchievement("/toast_test_achievement", "",
 	[](int argc, const char** argv){
