@@ -8698,6 +8698,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 		Frame* characterFrame = sheetFrame->addFrame("character info");
 		const char* infoFont = "fonts/pixel_maz.ttf#32#2";
 		characterFrame->setSize(SDL_Rect{ leftAlignX, 206, bgWidth, 116});
+		characterFrame->setHollow(true);
 		Uint32 infoTextColor = makeColor( 188, 154, 114, 255);
 		Uint32 classTextColor = makeColor( 74, 66, 207, 255);
 
@@ -9711,15 +9712,18 @@ void Player::CharacterSheet_t::processCharacterSheet()
 			fullscreenBg->setSize(fullscreenBgPos);
 			compactImgBg->disabled = true;
 
-			auto attributesPos = attributesFrame->getSize();
-			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
-			attributesPos.y = sheetFrame->getSize().h - attributesPos.h;
-			attributesFrame->setSize(attributesPos);
+			Frame::image_t* fullscreenBgImg = fullscreenBg->findImage("bg image");
 
 			auto statsPos = statsFrame->getSize();
 			statsPos.x = sheetFrame->getSize().w - statsPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
-			statsPos.y = attributesPos.y - statsPos.h + 4; // 4 pixels below top edge of attributes pane
+			statsPos.y = fullscreenBgImg->pos.y + fullscreenBgImg->pos.h;
 			statsFrame->setSize(statsPos);
+
+			auto attributesPos = attributesFrame->getSize();
+			attributesPos.x = sheetFrame->getSize().w - attributesPos.w + player.inventoryUI.slideOutPercent * player.inventoryUI.slideOutWidth;
+			attributesPos.y = statsPos.y + statsPos.h - 4; // 4 px overlap attributes pane
+			attributesFrame->setSize(attributesPos);
+
 		}
 	}
 
