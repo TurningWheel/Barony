@@ -109,8 +109,10 @@ bool initSoundEngine()
 	}
 #endif
 
+#ifndef EDITOR
 	// saves your ears getting blasted if the game starts without window focus.
 	setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
+#endif
 
 	return !no_sound; //No double negatives pls
 }

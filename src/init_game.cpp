@@ -517,6 +517,8 @@ int initGame()
 
 -------------------------------------------------------------------------------*/
 
+#include "interface/ui.hpp"
+
 void deinitGame()
 {
 	int c, x;
@@ -565,6 +567,8 @@ void deinitGame()
 	        pollNetworkForShutdown();
 	    }
 	}
+
+	UIToastNotificationManager.term();
 
 	saveAllScores(SCORESFILE);
 	saveAllScores(SCORESFILE_MULTIPLAYER);

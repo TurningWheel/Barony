@@ -5344,6 +5344,9 @@ int saveGame(int saveIndex) {
 			for (int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i) {
 				player.additionalConducts[i] = conductGameChallenges[i];
 			}
+			for (int i = 0; i < NUM_GAMEPLAY_STATISTICS; ++i) {
+				player.gameStatistics[i] = gameStatistics[i];
+			}
 
 			// hotbar
 			for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
@@ -5628,6 +5631,9 @@ int loadGame(int player, const SaveGameInfo& info) {
 	conductIlliterate = info.players[player].conductIlliterate;
 	for (int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c) {
 		conductGameChallenges[c] = info.players[player].additionalConducts[c];
+	}
+	for (int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c) {
+		gameStatistics[c] = info.players[player].gameStatistics[c];
 	}
 
 	// read spells

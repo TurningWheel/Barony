@@ -335,6 +335,7 @@ struct SaveGameInfo {
 		bool conductVegetarian = false;
 		bool conductIlliterate = false;
 		int additionalConducts[NUM_CONDUCT_CHALLENGES] = { 0 };
+		int gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 };
 
 		Uint32 hotbar[NUM_HOTBAR_SLOTS];
 		std::vector<Uint32> spells;
@@ -442,6 +443,7 @@ struct SaveGameInfo {
 				fp->property("player_equipment", player_equipment);
 				fp->property("npc_equipment", npc_equipment);
 				fp->property("inventory", inventory);
+				fp->property("attributes", attributes);
 				return true;
 			}
 		};
@@ -465,6 +467,7 @@ struct SaveGameInfo {
 			fp->property("scrolls", known_scrolls);
 			fp->property("stats", stats);
 			fp->property("followers", followers);
+			fp->property("game_statistics", gameStatistics);
 			return true;
 		}
 	};
