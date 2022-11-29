@@ -8185,7 +8185,11 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 
 bool playerRequiresBloodToSustain(int player)
 {
-	if ( !stats[player] )
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return false;
+	}
+	if ( !stats[player] || client_disconnected[player] )
 	{
 		return false;
 	}
