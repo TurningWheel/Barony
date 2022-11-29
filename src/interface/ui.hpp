@@ -33,6 +33,7 @@ public:
 			frame = nullptr;
 			headerField = nullptr;
 			mainField = nullptr;
+			progressField = nullptr;
 			closeButton = nullptr;
 			actionButton = nullptr;
 			frameImage = nullptr;
@@ -169,6 +170,7 @@ private:
 	Frame* frame = nullptr;
 	Field* headerField = nullptr;
 	Field* mainField = nullptr;
+	Field* progressField = nullptr;
 	Button* closeButton = nullptr;
 	Button* actionButton = nullptr;
 	Frame::image_t* frameImage = nullptr;

@@ -53,6 +53,9 @@ void UIToastNotification::init()
 	mainField = frame->addField("main", 256);
 	mainField->setColor(makeColor(255, 255, 255, 255));
 	mainField->setFont(smallfont_outline);
+	progressField = frame->addField("progress", 32);
+	progressField->setColor(makeColor(255, 255, 255, 255));
+	progressField->setFont(smallfont_outline);
 
 	closeButton = frame->addButton("close");
 	closeButton->setBorder(0);
@@ -114,6 +117,7 @@ void UIToastNotification::draw()
 
 	headerField->setInvisible(true);
 	mainField->setInvisible(true);
+	progressField->setInvisible(true);
 	closeButton->setInvisible(true);
 	actionButton->setInvisible(true);
 	frameImage->disabled = true;
@@ -430,14 +434,11 @@ void UIToastNotification::drawMainCard()
 	headerField->setVJustify(Field::justify_t::TOP);
 	headerField->setText(headerCardText.c_str());
 
-	if (!(actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE))
-	{
-		mainField->setInvisible(false);
-		mainField->setSize(SDL_Rect{ bodyx + imgSize + offset, bodyy, r.w - bodyx - imgSize, r.h - bodyy });
-		mainField->setHJustify(Field::justify_t::LEFT);
-		mainField->setVJustify(Field::justify_t::CENTER);
-		mainField->setText(displayedText.c_str());
-	}
+	mainField->setInvisible(false);
+	mainField->setSize(SDL_Rect{ bodyx + imgSize + offset, bodyy, r.w - bodyx - imgSize, r.h - bodyy });
+	mainField->setHJustify(Field::justify_t::LEFT);
+	mainField->setVJustify(Field::justify_t::CENTER);
+	mainField->setText(displayedText.c_str());
 
 	frameImage->path = notificationImage;
 	frameImage->disabled = false;
@@ -446,7 +447,8 @@ void UIToastNotification::drawMainCard()
 
 void UIToastNotification::drawProgressBar(const SDL_Rect& src)
 {
-	const SDL_Rect r{ src.h, src.h - 40, src.w - src.h - 8, 32 };
+	const int height = 16;
+	const SDL_Rect r{ src.h, src.h - height - 8, src.w - src.h - 8, height };
 
 	const int percent = (statisticUpdateCurrent * 100) / statisticUpdateMax;
 	const int size = (r.w * percent) / 100;
@@ -461,11 +463,11 @@ void UIToastNotification::drawProgressBar(const SDL_Rect& src)
 	char progress_str[32] = { '\0' };
 	const int len = snprintf(progress_str, sizeof(progress_str), "%d / %d",
 		statisticUpdateCurrent < statisticUpdateMax ? statisticUpdateCurrent : statisticUpdateMax, statisticUpdateMax);
-	mainField->setInvisible(false);
-	mainField->setSize(r);
-	mainField->setHJustify(Field::justify_t::CENTER);
-	mainField->setVJustify(Field::justify_t::CENTER);
-	mainField->setText(progress_str);
+	progressField->setInvisible(false);
+	progressField->setSize(SDL_Rect{r.x, r.y, r.w, r.h + 1});
+	progressField->setHJustify(Field::justify_t::CENTER);
+	progressField->setVJustify(Field::justify_t::CENTER);
+	progressField->setText(progress_str);
 
 }
 
@@ -796,7 +798,7 @@ void UIToastNotificationManager_t::createAchievementNotification(const char* nam
 		}
 	}
 
-	const char* achievementName = "";
+	const char* achievementName = "Unknown Achievement";
 	{
 		auto it = achievementNames.find(name);
 		if (it != achievementNames.end())
@@ -832,7 +834,7 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	}
 
 	const bool unlocked = (currentValue >= maxValue);
-	const char* achievementName = "";
+	const char* achievementName = "Unknown Achievement";
 	{
 		auto it = achievementNames.find(name);
 		if ( it != achievementNames.end() )
