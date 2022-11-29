@@ -899,7 +899,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -919,6 +919,11 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalx = limbs[SUCCUBUS][10][0] + .25; // .25
 					entity->focaly = limbs[SUCCUBUS][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[SUCCUBUS][10][2]; // .5
+
+					if ( entity->sprite == 1196 )
+					{
+						entity->focalx -= .25;
+					}
 				}
 				break;
 			}

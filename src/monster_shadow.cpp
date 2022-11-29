@@ -1307,7 +1307,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					entity->focalx = limbs[SHADOW][10][0] + .35; // .35
 					entity->focaly = limbs[SHADOW][10][1] - 2; // -2
