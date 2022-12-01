@@ -17196,7 +17196,9 @@ bind_failed:
 		};
 		Option options[] = {
 			//{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifdef USE_EOS
 			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
@@ -18642,7 +18644,9 @@ bind_failed:
 		        {"Back to Game", "BACK TO GAME", mainClose},
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
 		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifdef USE_EOS
 		        {"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 		        {"Settings", "SETTINGS", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {
