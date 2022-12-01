@@ -367,9 +367,10 @@ void Entity::actTeleportShrine()
 
 				if ( selectedShrine )
 				{
+					playSoundEntity(this, 252, 128);
 					messagePlayer(i, MESSAGE_INTERACTION, language[4301]);
-					Entity* spellTimer = createParticleTimer(this, 150, 625);
-					spellTimer->particleTimerPreDelay = 50; // wait x ticks before animation.
+					Entity* spellTimer = createParticleTimer(this, 200, 625);
+					spellTimer->particleTimerPreDelay = 0; // wait x ticks before animation.
 					spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHRINE_TELEPORT; // teleport behavior of timer.
 					spellTimer->particleTimerEndSprite = 625; // sprite to use for end of timer function.
 					spellTimer->particleTimerCountdownAction = 1;
