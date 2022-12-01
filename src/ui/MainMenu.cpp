@@ -6407,9 +6407,6 @@ bind_failed:
 		auto window = genericWindow("achievements", "ACHIEVEMENTS", false);
 		assert(window);
 
-		auto slider = window->findSlider("scroll_slider"); assert(slider);
-		slider->setWidgetBack("back_button");
-
 		auto back_button = createBackWidget(window,[](Button& button){
 			soundCancel();
 			auto frame = static_cast<Frame*>(button.getParent());
@@ -6425,6 +6422,9 @@ bind_failed:
 
 		auto subwindow = window->findFrame("subwindow");
 		assert(subwindow);
+
+		auto slider = subwindow->findSlider("scroll_slider"); assert(slider);
+		slider->setWidgetBack("back_button");
 
 		int y = 0;
 
