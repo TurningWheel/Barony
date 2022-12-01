@@ -7177,63 +7177,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( hit.entity->behavior == &actMonster )
 			{
 				previousMonsterState = hit.entity->monsterState;
-				if ( hit.entity->children.first != nullptr )
+				hitstats = hit.entity->getStats();
+				if ( hitstats )
 				{
-					if ( hit.entity->children.first->next != nullptr )
+					bool alertTarget = true;
+					if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
 					{
-						hitstats = (Stat*)hit.entity->children.first->next->element;
-
-						bool alertTarget = true;
-						if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
-						{
-							// if we're both allies of players, don't alert the hit target.
-							alertTarget = false;
-						}
-
-						// alert the monster!
-						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
-						{
-							if ( alertTarget )
-							{
-								hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH, true);
-							}
-						}
-
-						// alert other monsters too
-						Entity* ohitentity = hit.entity;
-						for ( node = map.creatures->first; node != nullptr && alertTarget; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
-						{
-							Entity* entity = (Entity*)node->element;
-							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
-							{
-								Stat* buddystats = entity->getStats();
-								if ( buddystats != nullptr )
-								{
-									if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-									{
-										continue; // shopkeepers don't care about hitting humans/robots etc.
-									}
-									if ( entity->checkFriend(ohitentity) )
-									{
-										if ( entity->monsterState == MONSTER_STATE_WAIT )
-										{
-											tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-											if ( hit.entity == entity )
-											{
-												Entity* attackTarget = uidToEntity(uid);
-												if ( attackTarget )
-												{
-													entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-						hit.entity = ohitentity;
+						// if we're both allies of players, don't alert the hit target.
+						alertTarget = false;
 					}
+
+					// alert the monster!
+					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+					{
+						if ( alertTarget )
+						{
+							hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH, true);
+						}
+					}
+
+					// alert other monsters too
+					if ( alertTarget )
+					{
+						hit.entity->alertAlliesOnBeingHit(this);
+					}
+					hit.entity->updateEntityOnHit(this, alertTarget);
 				}
 			}
 			else if ( hit.entity->behavior == &actPlayer )
@@ -10979,6 +10947,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 		}
 
+		if ( root && srcStats->type == SHOPKEEPER )
+		{
+			ShopkeeperPlayerHostility.onShopkeeperDeath(src, srcStats, players[player]->entity);
+		}
 		if ( player == 0 )
 		{
 			if ( srcStats->type == LICH )
@@ -11292,6 +11264,14 @@ bool Entity::checkEnemy(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = swornenemies[myStats->type][yourStats->type];
+			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			{
+				result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
+			}
+			else if ( yourStats->type == SHOPKEEPER && behavior == &actPlayer )
+			{
+				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+			}
 
 			// player exceptions to table go here.
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
@@ -11376,6 +11356,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( yourStats->type == SHOPKEEPER )
 							{
 								result = swornenemies[SHOPKEEPER][AUTOMATON];
+								if ( this->behavior == &actPlayer )
+								{
+									result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+								}
 							}
 							break;
 						default:
@@ -11466,6 +11450,10 @@ bool Entity::checkEnemy(Entity* your)
 							if ( myStats->type == SHOPKEEPER )
 							{
 								result = swornenemies[SHOPKEEPER][AUTOMATON];
+								if ( your->behavior == &actPlayer )
+								{
+									result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
+								}
 							}
 							break;
 						default:
@@ -11696,6 +11684,14 @@ bool Entity::checkFriend(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
+			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			{
+				result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
+			}
+			else if ( yourStats->type == SHOPKEEPER && behavior == &actPlayer )
+			{
+				result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+			}
 
 			// player exceptions to table go here.
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
@@ -11776,6 +11772,10 @@ bool Entity::checkFriend(Entity* your)
 							if ( yourStats->type == SHOPKEEPER )
 							{
 								result = monsterally[SHOPKEEPER][AUTOMATON];
+								if ( behavior == &actPlayer )
+								{
+									result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+								}
 							}
 							else if ( yourStats->type == HUMAN )
 							{
@@ -11865,6 +11865,10 @@ bool Entity::checkFriend(Entity* your)
 							if ( myStats->type == SHOPKEEPER )
 							{
 								result = monsterally[SHOPKEEPER][AUTOMATON];
+								if ( your->behavior == &actPlayer )
+								{
+									result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
+								}
 							}
 							else if ( myStats->type == HUMAN )
 							{
@@ -19496,4 +19500,56 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 			break;
 	}
 	return 1000;
+}
+
+void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>* skipEntitiesToAlert)
+{
+	if ( !attacker ) 
+	{ 
+		return;
+	}
+	Stat* hitstats = getStats();
+	if ( !hitstats )
+	{
+		return;
+	}
+	// alert other monsters too
+	Entity* ohitentity = hit.entity;
+	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( !entity ) { continue; }
+		if ( skipEntitiesToAlert && (skipEntitiesToAlert->find(entity) != skipEntitiesToAlert->end()) )
+		{
+			continue;
+		}
+		if ( entity->behavior == &actMonster && entity != this )
+		{
+			Stat* buddystats = entity->getStats();
+			if ( buddystats != nullptr )
+			{
+				if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+				{
+					continue; // shopkeepers don't care about hitting humans/robots etc.
+				}
+				if ( hitstats->type == SHOPKEEPER && entity->monsterAllyGetPlayerLeader() )
+				{
+					continue; // hitting a shopkeeper, player followers won't retaliate against player
+				}
+				if ( entity->checkFriend(this) )
+				{
+					if ( entity->monsterState == MONSTER_STATE_WAIT )
+					{
+						real_t tangent = atan2(entity->y - this->y, entity->x - this->x);
+						lineTrace(this, this->x, this->y, tangent, 1024, 0, false);
+						if ( hit.entity == entity )
+						{
+							entity->monsterAcquireAttackTarget(*attacker, MONSTER_STATE_PATH);
+						}
+					}
+				}
+			}
+		}
+	}
+	hit.entity = ohitentity;
 }

@@ -670,35 +670,11 @@ void actArrow(Entity* my)
 						}
 
 						// alert other monsters too
-						Entity* ohitentity = hit.entity;
-						for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
+						if ( alertAllies )
 						{
-							Entity* entity = (Entity*)node->element;
-							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
-							{
-								Stat* buddystats = entity->getStats();
-								if ( buddystats != nullptr )
-								{
-									if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-									{
-										continue; // shopkeepers don't care about hitting humans/robots etc.
-									}
-									if ( entity->checkFriend(ohitentity) )
-									{
-										if ( entity->monsterState == MONSTER_STATE_WAIT ) // monster is waiting
-										{
-											real_t tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-											if ( hit.entity == entity )
-											{
-												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-											}
-										}
-									}
-								}
-							}
+							hit.entity->alertAlliesOnBeingHit(parent);
 						}
-						hit.entity = ohitentity;
+						hit.entity->updateEntityOnHit(parent, alertTarget);
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = makeColorRGB(0, 255, 0);

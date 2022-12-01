@@ -5406,6 +5406,17 @@ int saveGame(int saveIndex) {
 				player.stats.MISC_FLAGS[i] = stats[c]->MISC_FLAGS[i];
 			}
 			//player.stats.attributes = ; // players have no key/value table
+			for ( auto& h : ShopkeeperPlayerHostility.playerHostility[c] )
+			{
+				player.shopkeeperHostility.push_back(std::make_pair(h.first, SaveGameInfo::Player::PlayerRaceHostility_t()));
+				auto& h2 = player.shopkeeperHostility.at(player.shopkeeperHostility.size() - 1);
+				h2.second.wantedLevel = h.second.wantedLevel;
+				h2.second.playerRace = h.second.playerRace;
+				h2.second.player = h.second.player;
+				h2.second.numKills = h.second.numKills;
+				h2.second.numAggressions = h.second.numAggressions;
+				h2.second.numAccessories = h.second.numAccessories;
+			}
 
 			// equipment slots
 			const std::vector<std::pair<std::string, Item*>> player_slots = {
@@ -5799,6 +5810,22 @@ int loadGame(int player, const SaveGameInfo& info) {
 	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
 	        shuffle.erase(shuffle.begin() + index);
 	    }
+	}
+
+	// shopkeeper hostility
+	{
+		auto& h = ShopkeeperPlayerHostility.playerHostility[player];
+		h.clear();
+		for ( auto& hostility : info.players[player].shopkeeperHostility )
+		{
+			h[(Monster)hostility.first] = ShopkeeperPlayerHostility_t::PlayerRaceHostility_t();
+			h[(Monster)hostility.first].wantedLevel = (ShopkeeperPlayerHostility_t::WantedLevel)hostility.second.wantedLevel;
+			h[(Monster)hostility.first].playerRace = (Monster)hostility.second.playerRace;
+			h[(Monster)hostility.first].player = hostility.second.player;
+			h[(Monster)hostility.first].numAggressions = hostility.second.numAggressions;
+			h[(Monster)hostility.first].numKills = hostility.second.numKills;
+			h[(Monster)hostility.first].numAccessories = hostility.second.numAccessories;
+		}
 	}
 
 	Player::Minimap_t::mapDetails = info.map_messages;

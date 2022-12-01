@@ -1330,32 +1330,12 @@ void actThrown(Entity* my)
 					}
 
 					// alert other monsters too
-					Entity* ohitentity = hit.entity;
-					node_t* node;
-					for ( node = map.creatures->first; node != nullptr && alertAllies && !targetHealed; node = node->next ) //Searching for monsters? Creature list, not entity list.
+					if ( alertAllies && !targetHealed )
 					{
-						Entity* entity = (Entity*)node->element;
-						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
-						{
-							if ( entity->getStats() && entity->getStats()->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-							{
-								continue; // shopkeepers don't care about hitting humans/robots etc.
-							}
-							if ( entity->checkFriend(ohitentity) )
-							{
-								if ( entity->monsterState == MONSTER_STATE_WAIT )
-								{
-									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
-									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-									if ( hit.entity == entity )
-									{
-										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-									}
-								}
-							}
-						}
+						std::unordered_set<Entity*> entitiesToSkip = { polymorphedTarget };
+						hit.entity->alertAlliesOnBeingHit(parent, &entitiesToSkip);
 					}
-					hit.entity = ohitentity;
+					hit.entity->updateEntityOnHit(parent, alertTarget);
 					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer && !skipMessage )
 					{

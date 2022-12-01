@@ -1554,11 +1554,20 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					if ( hitstats->type == SHOPKEEPER && parent && parent->behavior == &actPlayer )
 					{
 						// reverses shop keeper grudges.
-						swornenemies[SHOPKEEPER][HUMAN] = false;
-						swornenemies[SHOPKEEPER][AUTOMATON] = false;
-						monsterally[SHOPKEEPER][HUMAN] = true;
-						monsterally[SHOPKEEPER][AUTOMATON] = true;
 						hit.entity->monsterReleaseAttackTarget();
+						for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( !entity ) { continue; }
+							if ( entity->behavior == &actMonster && entity != hit.entity )
+							{
+								if ( entity->monsterAllyGetPlayerLeader() && ((Uint32)entity->monsterTarget == hit.entity->getUID()) )
+								{
+									entity->monsterReleaseAttackTarget(); // player allies stop attacking this target
+								}
+							}
+						}
+						ShopkeeperPlayerHostility.resetPlayerHostility(parent->skill[2]);
 					}
 				}
 				else

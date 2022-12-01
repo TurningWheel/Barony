@@ -1051,6 +1051,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								alertTarget = false;
 								alertAllies = false;
 							}
+							if ( hitstats->type == SHOPKEEPER && !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									alertTarget = false;
+									alertAllies = false;
+								}
+							}
 							if ( my->actmagicCastByTinkerTrap == 1 )
 							{
 								if ( entityDist(hit.entity, parent) > TOUCHRANGE )
@@ -1076,35 +1084,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							// alert other monsters too
-							Entity* ohitentity = hit.entity;
-							for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
+							if ( alertAllies )
 							{
-								entity = (Entity*)node->element;
-								if ( entity->behavior == &actMonster && entity != ohitentity )
-								{
-									Stat* buddystats = entity->getStats();
-									if ( buddystats != nullptr )
-									{
-										if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-										{
-											continue; // shopkeepers don't care about hitting humans/robots etc.
-										}
-										if ( entity->checkFriend(ohitentity) )
-										{
-											if ( entity->monsterState == MONSTER_STATE_WAIT )
-											{
-												tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-												lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-												if ( hit.entity == entity )
-												{
-													entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-												}
-											}
-										}
-									}
-								}
+								hit.entity->alertAlliesOnBeingHit(parent);
 							}
-							hit.entity = ohitentity;
+							hit.entity->updateEntityOnHit(parent, alertTarget);
 						}
 					}
 				}

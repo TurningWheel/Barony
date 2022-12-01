@@ -12,6 +12,7 @@
 #pragma once
 
 #include "stat.hpp"
+#include "json.hpp"
 
 #ifndef EDITOR
 #include "interface/consolecommand.hpp"
@@ -1075,3 +1076,78 @@ struct MonsterData_t
 	static void loadMonsterDataJSON();
 };
 extern MonsterData_t monsterData;
+
+class ShopkeeperPlayerHostility_t
+{
+public:
+	enum WantedLevel : int
+	{
+		NO_WANTED_LEVEL,
+		WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED,
+		WANTED_FOR_ACCESSORY,
+		WANTED_FOR_AGGRESSION,
+		WANTED_FOR_KILL
+	};
+	struct PlayerRaceHostility_t
+	{
+	public:
+		int numAggressions = 0;
+		int numKills = 0;
+		int numAccessories = 0;
+		Monster playerRace = NOTHING;
+		WantedLevel wantedLevel = NO_WANTED_LEVEL;
+		int player = -1;
+		bool bRequiresNetUpdate = false;
+		PlayerRaceHostility_t()
+		{
+			wantedLevel = NO_WANTED_LEVEL;
+			playerRace = NOTHING;
+			player = -1;
+			numAggressions = 0;
+			numKills = 0;
+			numAccessories = 0;
+		};
+		PlayerRaceHostility_t(const Monster _playerRace, const WantedLevel _wantedLevel, const int _player) :
+			PlayerRaceHostility_t()
+		{
+			wantedLevel = _wantedLevel;
+			playerRace = _playerRace;
+			player = _player;
+		}
+
+		bool serialize(FileInterface* fp);
+	};
+	bool playerRaceCheckHostility(Monster type)
+	{
+		if ( type != HUMAN && type != AUTOMATON ) { return false; }
+		return true;
+	}
+	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING)
+	{
+		if ( player < 0 || player >= MAXPLAYERS ) { return nullptr; }
+
+		Monster type = stats[player]->type;
+		if ( overrideType != NOTHING )
+		{
+			type = overrideType;
+		}
+		if ( !playerRaceCheckHostility(type) ) { return nullptr; }
+		if ( playerHostility[player].find(type) == playerHostility[player].end() )
+		{
+			playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, NO_WANTED_LEVEL, player)));
+		}
+		return &playerHostility[player][type];
+	}
+	void serverSendClientUpdate(const bool force = false);
+	void reset();
+	void resetPlayerHostility(const int player);
+	ShopkeeperPlayerHostility_t();
+	bool isPlayerEnemy(const int player);
+	void setWantedLevel(PlayerRaceHostility_t& h, WantedLevel wantedLevel, Entity* shopkeeper, bool primaryPlayerCheck);
+	WantedLevel getWantedLevel(const int player);
+	void onShopkeeperDeath(Entity* my, Stat* myStats, Entity* attacker);
+	void onShopkeeperHit(Entity* my, Stat* myStats, Entity* attacker);
+	void updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict);
+	std::map<Monster, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
+};
+extern ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;

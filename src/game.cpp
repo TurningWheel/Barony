@@ -2092,10 +2092,10 @@ void gameLogic(void)
 						messageLocalPlayers(MESSAGE_STATUS, language[2599]);
 
 						// undo shopkeeper grudge
-						swornenemies[SHOPKEEPER][HUMAN] = false;
-						monsterally[SHOPKEEPER][HUMAN] = true;
-						swornenemies[SHOPKEEPER][AUTOMATON] = false;
-						monsterally[SHOPKEEPER][AUTOMATON] = true;
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							ShopkeeperPlayerHostility.resetPlayerHostility(c);
+						}
 					}
 
 					// (special) unlock temple achievement
@@ -2431,6 +2431,11 @@ void gameLogic(void)
 					serverLastPlayerHealthUpdate = ticks;
 					serverSchedulePlayerHealthUpdate = 0;
 					serverUpdatePlayerStats();
+				}
+
+				{
+					const bool forceUpdate = (ticks % (TICKS_PER_SECOND * 15)) == 0; // re-send every x seconds, or when update flag is dirty.
+					ShopkeeperPlayerHostility.serverSendClientUpdate(forceUpdate);
 				}
 
 				// send entity info to clients

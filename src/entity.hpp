@@ -674,6 +674,7 @@ public:
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+	void alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>* skipEntitiesToAlert = nullptr);
 
 	//Act functions.
 	void actChest();
@@ -950,6 +951,7 @@ public:
 	void createWorldUITooltip();
 	bool bEntityTooltipRequiresButtonHeld() const;
 	bool bEntityHighlightedForPlayer(const int player) const;
+	void updateEntityOnHit(Entity* attacker, bool alertTarget);
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

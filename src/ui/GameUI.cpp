@@ -4747,7 +4747,7 @@ std::string& StatusEffectQueue_t::EffectDefinitionEntry_t::getDesc(int variation
 {
 	if ( variation >= 0 )
 	{
-		return descVariations[std::min(variation, (int)nameVariations.size() - 1)];
+		return descVariations[std::min(variation, (int)descVariations.size() - 1)];
 	}
 	return desc;
 }
@@ -5044,8 +5044,49 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(definition.getDesc(descVariation).c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectWanted
+					|| effectID == StatusEffectQueue_t::kEffectWantedInShop )
+				{
+					auto& definition2 = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(kEffectWanted);
+					std::string newHeader = definition2.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText("");
+					tooltipInnerWidth = definition.tooltipWidth;
+					if ( auto h = ShopkeeperPlayerHostility.getPlayerHostility(player) )
+					{
+						char buf[128];
+						memset(buf, 0, sizeof(buf));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), getMonsterLocalizedName(h->playerRace).c_str());
+						std::string descStr = buf;
+						if ( h->numKills > 0 )
+						{
+							//snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), h->numKills);
+							if ( descStr != "" ) { descStr += '\n'; }
+							//descStr += buf;
+							descStr += definition.getDesc(1);
+						}
+						if ( h->numAggressions > 0 )
+						{
+							//snprintf(buf, sizeof(buf), definition.getDesc(2).c_str(), h->numAggressions);
+							if ( descStr != "" ) { descStr += '\n'; }
+							//descStr += buf;
+							descStr += definition.getDesc(2);
+						}
+						if ( h->numAccessories > 0 )
+						{
+							//snprintf(buf, sizeof(buf), definition.getDesc(3).c_str(), h->numAccessories);
+							if ( descStr != "" ) { descStr += '\n'; }
+							//descStr += buf;
+							descStr += definition.getDesc(3);
+						}
+						tooltipDesc->setText(descStr.c_str());
+					}
+				}
 
-				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger )
+				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger
+					&& effectID != StatusEffectQueue_t::kEffectWanted
+					&& effectID != StatusEffectQueue_t::kEffectWantedInShop )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
@@ -5115,6 +5156,8 @@ const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
 const int StatusEffectQueue_t::kEffectBurning = -5;
+const int StatusEffectQueue_t::kEffectWanted = -6;
+const int StatusEffectQueue_t::kEffectWantedInShop = -7;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5235,12 +5278,66 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	}
 
 	bool burning = false;
-	if ( players[player] && players[player]->entity && players[player]->entity->flags[BURNING] )
+	auto wantedLevel = ShopkeeperPlayerHostility.getWantedLevel(player);
+	bool wantedOutsideOfShop = false;
+	bool wantedInsideShop = false;
+	bool inshop = false;
+	if ( players[player] && players[player]->entity )
 	{
-		burning = true;
-		if ( effectSet.find(kEffectBurning) == effectSet.end() )
+		if ( players[player]->entity->flags[BURNING] )
 		{
-			insertEffect(kEffectBurning, -1);
+			burning = true;
+			if ( effectSet.find(kEffectBurning) == effectSet.end() )
+			{
+				insertEffect(kEffectBurning, -1);
+			}
+		}
+		int playerx = static_cast<int>(players[player]->entity->x) >> 4;
+		int playery = static_cast<int>(players[player]->entity->y) >> 4;
+		if ( playerx >= 0 && playerx < map.width && playery >= 0 && playery < map.height )
+		{
+			// if the criminal was inside a shop
+			if ( shoparea[playery + playerx * map.height] )
+			{
+				inshop = true;
+			}
+		}
+		if ( wantedLevel != ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
+		{
+			/*if ( inshop ) // if we want a re-notify while in the shop
+			{
+				if ( effectSet.find(kEffectWantedInShop) == effectSet.end() )
+				{
+					insertEffect(kEffectWantedInShop, -1);
+				}
+				if ( effectSet.find(kEffectWanted) != effectSet.end() )
+				{
+					deleteEffect(kEffectWanted);
+				}
+			}
+			else*/
+			{
+				if ( effectSet.find(kEffectWantedInShop) != effectSet.end() )
+				{
+					if ( effectSet.find(kEffectWanted) != effectSet.end() )
+					{
+						deleteEffect(kEffectWanted);
+					}
+					for ( auto it = effectQueue.begin(); it != effectQueue.end(); )
+					{
+						if ( (*it).effect == kEffectWantedInShop )
+						{
+							(*it).effect = kEffectWanted;
+							break;
+						}
+						++it;
+					}
+				}
+				else if ( effectSet.find(kEffectWanted) == effectSet.end() )
+				{
+					insertEffect(kEffectWanted, -1);
+				}
+			}
 		}
 	}
 	if ( !burning )
@@ -5248,6 +5345,17 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		if ( effectSet.find(kEffectBurning) != effectSet.end() )
 		{
 			deleteEffect(kEffectBurning);
+		}
+	}
+	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
+	{
+		if ( effectSet.find(kEffectWanted) != effectSet.end() )
+		{
+			deleteEffect(kEffectWanted);
+		}
+		if ( effectSet.find(kEffectWantedInShop) != effectSet.end() )
+		{
+			deleteEffect(kEffectWantedInShop);
 		}
 	}
 

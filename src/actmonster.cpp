@@ -210,6 +210,307 @@ std::string getMonsterLocalizedInjury(Monster creature)
 	return "hit type";
 }
 
+void ShopkeeperPlayerHostility_t::reset()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		playerHostility[i].clear();
+	}
+}
+ShopkeeperPlayerHostility_t::ShopkeeperPlayerHostility_t()
+{
+	reset();
+};
+
+void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	Monster type = stats[player]->type;
+	if ( playerRaceCheckHostility(type) )
+	{
+		if ( auto h = getPlayerHostility(player) )
+		{
+			if ( h->wantedLevel != NO_WANTED_LEVEL )
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[4304]);
+			}
+			h->wantedLevel = NO_WANTED_LEVEL;
+			h->bRequiresNetUpdate = true;
+		}
+	}
+}
+
+bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+
+	Monster type = stats[player]->type;
+	if ( !playerRaceCheckHostility(type) )
+	{ 
+		return true;
+	}
+	if ( auto h = getPlayerHostility(player) )
+	{
+		return h->wantedLevel != NO_WANTED_LEVEL;
+	}
+	return false;
+}
+
+ShopkeeperPlayerHostility_t::WantedLevel ShopkeeperPlayerHostility_t::getWantedLevel(const int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return NO_WANTED_LEVEL; }
+
+	Monster type = stats[player]->type;
+	if ( !playerRaceCheckHostility(type) ) { return NO_WANTED_LEVEL; }
+	if ( auto h = getPlayerHostility(player) )
+	{
+		return h->wantedLevel;
+	}
+	return NO_WANTED_LEVEL;
+}
+
+void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::PlayerRaceHostility_t& h, 
+	ShopkeeperPlayerHostility_t::WantedLevel wantedLevel, Entity* shopkeeper, bool primaryPlayerCheck)
+{
+	assert(h.player >= 0 && h.player < MAXPLAYERS);
+	assert(multiplayer != CLIENT);
+	if ( h.player < 0 || h.player >= MAXPLAYERS ) { return; }
+
+	bool checkNearbyPlayersForAccessory = false;
+	if ( wantedLevel > NO_WANTED_LEVEL && wantedLevel != WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED )
+	{
+		checkNearbyPlayersForAccessory = primaryPlayerCheck;
+	}
+
+	if ( h.wantedLevel == NO_WANTED_LEVEL && wantedLevel > NO_WANTED_LEVEL )
+	{
+		if ( wantedLevel == WANTED_FOR_ACCESSORY )
+		{
+			messagePlayerColor(h.player, MESSAGE_STATUS, makeColorRGB(255, 0, 0), language[4306]);
+		}
+		else
+		{
+			messagePlayerColor(h.player, MESSAGE_STATUS, makeColorRGB(255, 0, 0), language[4305]);
+		}
+	}
+	if ( h.wantedLevel != wantedLevel )
+	{
+		h.bRequiresNetUpdate = true;
+	}
+	if ( h.wantedLevel < wantedLevel )
+	{
+		h.wantedLevel = wantedLevel;
+	}
+	//messagePlayer(0, MESSAGE_DEBUG, "Player %d wanted level: %d", h.player, wantedLevel);
+	
+	if ( !checkNearbyPlayersForAccessory ) { return; }
+
+	if ( shopkeeper )
+	{
+		int shopx = static_cast<int>(shopkeeper->x) >> 4;
+		int shopy = static_cast<int>(shopkeeper->y) >> 4;
+		int base_playerx = static_cast<int>(players[h.player]->entity->x) >> 4;
+		int base_playery = static_cast<int>(players[h.player]->entity->y) >> 4;
+
+		bool inshop = false;
+		if ( shopx >= 0 && shopx < map.width && shopy >= 0 && shopy < map.height )
+		{
+			// if the crime was inside a shop
+			if ( shoparea[shopy + shopx * map.height] )
+			{
+				inshop = true;
+			}
+		}
+		if ( base_playerx >= 0 && base_playerx < map.width && base_playery >= 0 && base_playery < map.height )
+		{
+			// if the crime was inside a shop
+			if ( shoparea[base_playery + base_playerx * map.height] )
+			{
+				inshop = true;
+			}
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( h.player == i ) { continue; }
+			if ( !players[i]->entity ) { continue; }
+			if ( !playerRaceCheckHostility(stats[i]->type) ) { continue; }
+
+			if ( inshop )
+			{
+				int secondary_playerx = static_cast<int>(players[i]->entity->x) >> 4;
+				int secondary_playery = static_cast<int>(players[i]->entity->y) >> 4;
+				if ( secondary_playerx >= 0 && secondary_playerx < map.width && secondary_playery >= 0 && secondary_playery < map.height )
+				{
+					// if the accessory was inside a shop, no need for LOS checks.
+					if ( shoparea[secondary_playery + secondary_playerx * map.height] )
+					{
+						if ( auto h2 = getPlayerHostility(i) )
+						{
+							setWantedLevel(*h2, WantedLevel::WANTED_FOR_ACCESSORY, shopkeeper, false);
+							++h2->numAccessories;
+							continue;
+						}
+					}
+				}
+			}
+
+			real_t monsterVisionRange = sightranges[SHOPKEEPER];
+			int light = players[i]->entity->entityLightAfterReductions(*stats[i], shopkeeper);
+			double targetdist = sqrt(pow(shopkeeper->x - players[i]->entity->x, 2) + pow(shopkeeper->y - players[i]->entity->y, 2));
+
+			if ( targetdist > monsterVisionRange )
+			{
+				continue;
+			}
+			if ( targetdist < light )
+			{
+				Entity* ohitentity = hit.entity;
+				real_t tangent = atan2(players[i]->entity->y - shopkeeper->y, players[i]->entity->x - shopkeeper->x);
+				lineTrace(shopkeeper, shopkeeper->x, shopkeeper->y, tangent, monsterVisionRange, 0, true);
+
+				bool found = hit.entity == players[i]->entity;
+				hit.entity = ohitentity;
+
+				if ( found )
+				{
+					if ( auto h2 = getPlayerHostility(i) )
+					{
+						setWantedLevel(*h2, WantedLevel::WANTED_FOR_ACCESSORY, shopkeeper, false);
+						++h2->numAccessories;
+					}
+				}
+			}
+		}
+	}
+}
+
+void ShopkeeperPlayerHostility_t::onShopkeeperDeath(Entity* my, Stat* myStats, Entity* attacker)
+{
+	if ( shopIsMysteriousShopkeeper(my) ) { return; }
+	if ( my && myStats && attacker && myStats->type == SHOPKEEPER )
+	{
+		if ( attacker->behavior == &actPlayer )
+		{
+			if ( auto h = getPlayerHostility(attacker->skill[2]) )
+			{
+				setWantedLevel(*h, WantedLevel::WANTED_FOR_KILL, my, true);
+				++h->numKills;
+			}
+		}
+	}
+}
+void ShopkeeperPlayerHostility_t::onShopkeeperHit(Entity* my, Stat* myStats, Entity* attacker)
+{
+	if ( shopIsMysteriousShopkeeper(my) ) { return; }
+	if ( my && myStats && attacker && myStats->type == SHOPKEEPER )
+	{
+		if ( attacker->behavior == &actPlayer )
+		{
+			if ( auto h = getPlayerHostility(attacker->skill[2]) )
+			{
+				setWantedLevel(*h, WantedLevel::WANTED_FOR_AGGRESSION, my, true);
+				++h->numAggressions;
+			}
+		}
+	}
+}
+
+void ShopkeeperPlayerHostility_t::updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict)
+{
+	if ( ringconflict ) { return; }
+	if ( shopIsMysteriousShopkeeper(&my) ) { return; }
+	if ( Entity* entity = uidToEntity(my.monsterTarget) )
+	{
+		if ( entity->behavior == &actPlayer )
+		{
+			const int player = entity->skill[2];
+			if ( auto h = getPlayerHostility(player) )
+			{
+				auto oldWantedLevel = h->wantedLevel;
+				setWantedLevel(*h, WantedLevel::WANTED_FOR_AGGRESSION_SHOPKEEP_INITIATED, &my, false);
+				if ( h->numAggressions == 0 && oldWantedLevel == WantedLevel::NO_WANTED_LEVEL )
+				{
+					++h->numAggressions;
+				}
+			}
+		}
+	}
+}
+
+void ShopkeeperPlayerHostility_t::serverSendClientUpdate(const bool force)
+{
+	if ( multiplayer != SERVER ) { return; }
+
+	std::vector<int> monsters;
+	for ( int i = 0; i < NUMMONSTERS; ++i )
+	{
+		if ( playerRaceCheckHostility((Monster)i) )
+		{
+			monsters.push_back(i);
+		}
+	}
+
+	for ( int c = 1; c < MAXPLAYERS; ++c )
+	{
+		if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
+		{
+			continue;
+		}
+		
+		for ( auto type : monsters )
+		{
+			auto hostility = getPlayerHostility(c, (Monster)type);
+			if ( !hostility ) { continue; }
+			if ( !force && !hostility->bRequiresNetUpdate )
+			{
+				continue;
+			}
+			hostility->bRequiresNetUpdate = false;
+
+			strcpy((char*)net_packet->data, "SHPH");
+			net_packet->data[4] = (int)hostility->wantedLevel;
+			net_packet->data[5] = (int)hostility->playerRace;
+			const Uint16 max = 0xFFFF;
+			SDLNet_Write16(std::min(max, (Uint16)hostility->numKills), &net_packet->data[6]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility->numAggressions), &net_packet->data[8]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility->numAccessories), &net_packet->data[10]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 12;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;
+
+void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
+{
+	if ( !attacker ) return;
+	if ( attacker == this ) { return; }
+
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->type == SHOPKEEPER )
+		{
+			if ( alertTarget )
+			{
+				if ( attacker->behavior == &actPlayer )
+				{
+					ShopkeeperPlayerHostility.onShopkeeperHit(this, myStats, attacker);
+				}
+				else if ( attacker->behavior == &actMonster )
+				{
+					if ( Entity* leader = attacker->monsterAllyGetPlayerLeader() )
+					{
+						ShopkeeperPlayerHostility.onShopkeeperHit(this, myStats, leader);
+					}
+				}
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	summonMonster
@@ -3983,16 +4284,7 @@ void actMonster(Entity* my)
 					{
 						if ( my->monsterTarget == players[c]->entity->getUID() )
 						{
-							if ( stats[c] && stats[c]->type == HUMAN && !stats[c]->EFFECTS[EFF_POLYMORPH] )
-							{
-								swornenemies[SHOPKEEPER][HUMAN] = true;
-								monsterally[SHOPKEEPER][HUMAN] = false;
-							}
-							else if ( stats[c] && stats[c]->type == AUTOMATON && !stats[c]->EFFECTS[EFF_POLYMORPH] )
-							{
-								swornenemies[SHOPKEEPER][AUTOMATON] = true;
-								monsterally[SHOPKEEPER][AUTOMATON] = false;
-							}
+							ShopkeeperPlayerHostility.updateShopkeeperActMonster(*my, *myStats, ringconflict);
 							break;
 						}
 					}

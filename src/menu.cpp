@@ -9483,10 +9483,7 @@ void doNewGame(bool makeHighscore) {
 	camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
 	// undo shopkeeper grudge
-	swornenemies[SHOPKEEPER][HUMAN] = false;
-	monsterally[SHOPKEEPER][HUMAN] = true;
-	swornenemies[SHOPKEEPER][AUTOMATON] = false;
-	monsterally[SHOPKEEPER][AUTOMATON] = true;
+	ShopkeeperPlayerHostility.reset();
 
 	// setup game //TODO: Move into a function startGameStuff() or something.
 	ticks = 0;
