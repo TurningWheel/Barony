@@ -37,15 +37,8 @@ void UIToastNotification::init()
 	frame = UIToastNotificationManager.frame->addFrame();
 	frame->setColor(makeColor(0, 0, 0, 0));
 	frame->setBorder(0);
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topleft");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "top");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topright");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "left");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "center");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "right");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomleft");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottom");
-	frame->addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomright");
+
+	createGenericWindowDecorations(*frame);
 
 	headerField = frame->addField("header", 128);
 	headerField->setColor(makeColor(255, 255, 0, 255));
@@ -237,55 +230,6 @@ void UIToastNotification::animate(int& xout, int& current_ticks, int duration, i
 	}
 }
 
-static void sizeFrameImages(Frame& frame) {
-	const auto r = frame.getSize();
-	{
-		auto img = frame.findImage("topleft"); assert(img);
-		img->section = SDL_Rect{ 0, 0, 16, 16 };
-		img->pos = SDL_Rect{ 0, 0, 16, 16 };
-	}
-	{
-		auto img = frame.findImage("top"); assert(img);
-		img->section = SDL_Rect{ 16, 0, 16, 16 };
-		img->pos = SDL_Rect{ 16, 0, r.w - 32, 16 };
-	}
-	{
-		auto img = frame.findImage("topright"); assert(img);
-		img->section = SDL_Rect{ 32, 0, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, 0, 16, 16 };
-	}
-	{
-		auto img = frame.findImage("left"); assert(img);
-		img->section = SDL_Rect{ 0, 16, 16, 16 };
-		img->pos = SDL_Rect{ 0, 16, 16, r.h - 32 };
-	}
-	{
-		auto img = frame.findImage("center"); assert(img);
-		img->section = SDL_Rect{ 16, 16, 16, 16 };
-		img->pos = SDL_Rect{ 16, 16, r.w - 32, r.h - 32 };
-	}
-	{
-		auto img = frame.findImage("right"); assert(img);
-		img->section = SDL_Rect{ 32, 16, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, 16, 16, r.h - 32 };
-	}
-	{
-		auto img = frame.findImage("bottomleft"); assert(img);
-		img->section = SDL_Rect{ 0, 32, 16, 16 };
-		img->pos = SDL_Rect{ 0, r.h - 16, 16, 16 };
-	}
-	{
-		auto img = frame.findImage("bottom"); assert(img);
-		img->section = SDL_Rect{ 16, 32, 16, 16 };
-		img->pos = SDL_Rect{ 16, r.h - 16, r.w - 32, 16 };
-	}
-	{
-		auto img = frame.findImage("bottomright"); assert(img);
-		img->section = SDL_Rect{ 32, 32, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, r.h - 16, 16, 16 };
-	}
-}
-
 void UIToastNotification::drawDockedCard()
 {
 	SDL_Rect r;
@@ -294,7 +238,7 @@ void UIToastNotification::drawDockedCard()
 	r.x = Frame::virtualScreenX - r.w + docked_animx;
 	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
-	sizeFrameImages(*frame);
+	sizeWindowDecorations(*frame);
 
 #if defined(NINTENDO)
 	const bool clicking = fingerdown;
@@ -349,21 +293,23 @@ void UIToastNotification::drawMainCard()
 {
 	SDL_Rect r;
 	r.w = cardWidth;
-	r.h = cardType == CardType::UI_CARD_ACHIEVEMENT ? 80 : showHeight;
+	r.h = showHeight;
 	r.x = Frame::virtualScreenX - r.w + animx;
 	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
-	sizeFrameImages(*frame);
+	sizeWindowDecorations(*frame);
 
 	if (actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE)
 	{
 		drawProgressBar(r);
 	}
 
+#ifndef NINTENDO
 	if (actionFlags & ActionFlags::UI_NOTIFICATION_CLOSE)
 	{
 		drawCloseButton(r);
 	}
+#endif
 
 	if (actionFlags & ActionFlags::UI_NOTIFICATION_ACTION_BUTTON)
 	{
@@ -425,8 +371,8 @@ void UIToastNotification::drawMainCard()
 		}
 	}
 
-	const int imgSize = r.h - 16;
-	const int offset = cardType == CardType::UI_CARD_ACHIEVEMENT ? 8 : -8;
+	const int imgSize = 64;
+	const int offset = 8;
 
 	headerField->setInvisible(false);
 	headerField->setSize(SDL_Rect{ textx + imgSize + offset, texty, r.w - textx - imgSize, r.h - texty });
@@ -442,7 +388,7 @@ void UIToastNotification::drawMainCard()
 
 	frameImage->path = notificationImage;
 	frameImage->disabled = false;
-	frameImage->pos = SDL_Rect{cardType == CardType::UI_CARD_ACHIEVEMENT ? 8 : 0, 8, imgSize, imgSize};
+	frameImage->pos = SDL_Rect{offset, 8, imgSize, imgSize};
 }
 
 void UIToastNotification::drawProgressBar(const SDL_Rect& src)
@@ -468,13 +414,12 @@ void UIToastNotification::drawProgressBar(const SDL_Rect& src)
 	progressField->setHJustify(Field::justify_t::CENTER);
 	progressField->setVJustify(Field::justify_t::CENTER);
 	progressField->setText(progress_str);
-
 }
 
 void UIToastNotification::drawCloseButton(const SDL_Rect& src)
 {
 	closeButton->setInvisible(false);
-
+	
 	const SDL_Rect r{ src.w - 4 - 26, 4, 26, 26 };
 	closeButton->setSize(r);
 }
@@ -483,7 +428,7 @@ void UIToastNotification::drawActionButton(const SDL_Rect& src)
 {
 	actionButton->setInvisible(false);
 
-	const SDL_Rect r{ 100, src.h - 40, 150, 34 };
+	const SDL_Rect r{ 80, src.h - 40, 150, 34 };
 	actionButton->setSize(r);
 	actionButton->setText(actionText.c_str());
 }
@@ -654,6 +599,7 @@ void UIToastNotificationManager_t::createEpicLoginNotification()
 		n->setMainText("Logging in...");
 		n->setSecondaryText("An error has occurred!");
 		n->setActionText("Retry");
+		n->showHeight = 112;
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
@@ -687,6 +633,7 @@ void UIToastNotificationManager_t::createEpicCrossplayLoginNotification()
 		n->setMainText("Initializing...");
 		n->setSecondaryText("An error has occurred!");
 		n->setActionText("Retry");
+		n->showHeight = 112;
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON); // unset
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 		n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
@@ -863,6 +810,67 @@ void UIToastNotificationManager_t::createStatisticUpdateNotification(const char*
 	n->setIdleSeconds(5);
 }
 
+void createGenericWindowDecorations(Frame& frame) {
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topleft");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "top");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "topright");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "left");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "center");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "right");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomleft");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottom");
+	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomright");
+}
+
+void sizeWindowDecorations(Frame& frame) {
+	const auto r = frame.getSize();
+	{
+		auto img = frame.findImage("topleft"); assert(img);
+		img->section = SDL_Rect{ 0, 0, 16, 16 };
+		img->pos = SDL_Rect{ 0, 0, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("top"); assert(img);
+		img->section = SDL_Rect{ 16, 0, 16, 16 };
+		img->pos = SDL_Rect{ 16, 0, r.w - 32, 16 };
+	}
+	{
+		auto img = frame.findImage("topright"); assert(img);
+		img->section = SDL_Rect{ 32, 0, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, 0, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("left"); assert(img);
+		img->section = SDL_Rect{ 0, 16, 16, 16 };
+		img->pos = SDL_Rect{ 0, 16, 16, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("center"); assert(img);
+		img->section = SDL_Rect{ 16, 16, 16, 16 };
+		img->pos = SDL_Rect{ 16, 16, r.w - 32, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("right"); assert(img);
+		img->section = SDL_Rect{ 32, 16, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, 16, 16, r.h - 32 };
+	}
+	{
+		auto img = frame.findImage("bottomleft"); assert(img);
+		img->section = SDL_Rect{ 0, 32, 16, 16 };
+		img->pos = SDL_Rect{ 0, r.h - 16, 16, 16 };
+	}
+	{
+		auto img = frame.findImage("bottom"); assert(img);
+		img->section = SDL_Rect{ 16, 32, 16, 16 };
+		img->pos = SDL_Rect{ 16, r.h - 16, r.w - 32, 16 };
+	}
+	{
+		auto img = frame.findImage("bottomright"); assert(img);
+		img->section = SDL_Rect{ 32, 32, 16, 16 };
+		img->pos = SDL_Rect{ r.w - 16, r.h - 16, 16, 16 };
+	}
+}
+
 #include "consolecommand.hpp"
 #include "../net.hpp"
 
@@ -908,5 +916,6 @@ static ConsoleCommand ccmd_toastTest("/toast_test", "",
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 		n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_RESET_TEXT_TO_MAIN_ON_HIDE);
 		n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+		n->showHeight = 112;
 		n->setIdleSeconds(8);
 	});

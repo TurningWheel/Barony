@@ -504,6 +504,8 @@ int initGame()
 			loading_done = true;
 			return -1;
 		}
+
+		loadAchievementData("/data/achievements.json");
 	}
 
 	return result;
@@ -900,4 +902,102 @@ void deinitGame()
 #ifdef USE_IMGUI
 	ImGui_t::deinit();
 #endif
+}
+
+void loadAchievementData(const char* path) {
+	if ( !PHYSFS_getRealDir(path) )
+	{
+		printlog("[JSON]: Error: Could not find file: %s", path);
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(path);
+	inputPath.append(path);
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if (!fp) {
+		printlog("[JSON]: Error: Could not find file: %s", path);
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+
+	if (!d.HasMember("achievements") || !d["achievements"].IsObject()) {
+		printlog("[JSON]: Error: could not parse %s", path);
+		return;
+	}
+	const auto& achievements = d["achievements"].GetObject();
+
+	for (const auto& it : achievements) {
+		if (!it.name.IsString()) {
+			printlog("[JSON]: Error: could not parse %s", path);
+			return;
+		}
+		auto achName = it.name.GetString();
+		const auto& ach = it.value.GetObject();
+		if (ach.HasMember("name") && ach["name"].IsString()) {
+			achievementNames[achName] = ach["name"].GetString();
+		}
+		if (ach.HasMember("description") && ach["description"].IsString()) {
+			achievementDesc[achName] = ach["description"].GetString();
+		}
+		if (ach.HasMember("hidden") && ach["hidden"].IsBool()) {
+			if (ach["hidden"].GetBool()) {
+				achievementHidden.emplace(achName);
+			}
+		}
+	}
+
+	sortAchievementsForDisplay();
+}
+
+void sortAchievementsForDisplay()
+{
+	// sort achievements list
+	achievementNamesSorted.clear();
+	Comparator compFunctor =
+		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
+	{
+		bool ach1 = achievementUnlocked(lhs.first.c_str());
+		bool ach2 = achievementUnlocked(rhs.first.c_str());
+		bool lhsAchIsHidden = (achievementHidden.find(lhs.first) != achievementHidden.end());
+		bool rhsAchIsHidden = (achievementHidden.find(rhs.first) != achievementHidden.end());
+		if ( ach1 && !ach2 )
+		{
+			return true;
+		}
+		else if ( !ach1 && ach2 )
+		{
+			return false;
+		}
+		else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
+		{
+			if ( lhsAchIsHidden && rhsAchIsHidden )
+			{
+				return lhs.second < rhs.second;
+			}
+			if ( !lhsAchIsHidden )
+			{
+				return true;
+			}
+			if ( !rhsAchIsHidden )
+			{
+				return false;
+			}
+			return lhs.second < rhs.second;
+		}
+		else
+		{
+			return lhs.second < rhs.second;
+		}
+	};
+	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
+	achievementNamesSorted.swap(sorted);
 }

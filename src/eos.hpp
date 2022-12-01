@@ -134,7 +134,6 @@ public:
 		bool definitionsAwaitingCallback = false;
 		bool playerDataLoaded = false;
 		bool definitionsLoaded = false;
-		void sortAchievementsForDisplay();
 		bool bAchievementsInit = false;
 	} Achievements;
 
