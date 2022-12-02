@@ -6383,5 +6383,12 @@ favorite customers.#
 4301 The shrine responds to your touch!#
 4302 Your shapeshift fades and you return to your abnormal form.#
 4303 The polymorph wears out.#
+4304 You are no longer an enemy of the Merchant's Guild.#
+4305 You are now deemed an enemy of the Merchant's Guild
+for inciting violence!#
+4306 You are now deemed an enemy of the Merchant's Guild
+for accessory to violence!#
+4307 You see a shrine.#
+4308 You see a statue.#
 
 4399 end#
