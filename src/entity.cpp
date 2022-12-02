@@ -19517,10 +19517,18 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 
 	bool infightingStop = false;
 	static ConsoleVariable<bool> cvar_infightingprotect("/infighting_protect", true);
-	if ( behavior == &actMonster && attacker->behavior == &actMonster
-		&& !monsterAllyGetPlayerLeader() && !attacker->monsterAllyGetPlayerLeader() )
+	static ConsoleVariable<bool> cvar_infightingprotectplayerallies("/infighting_protect_player_allies", true);
+	if ( (behavior == &actMonster && attacker->behavior == &actPlayer)
+		|| (behavior == &actPlayer && attacker->behavior == &actMonster) )
 	{
-		infightingStop = *cvar_infightingprotect;
+		infightingStop = *cvar_infightingprotectplayerallies;
+	}
+	else if ( behavior == &actMonster && attacker->behavior == &actMonster )
+	{
+		if ( !monsterAllyGetPlayerLeader() && !attacker->monsterAllyGetPlayerLeader() )
+		{
+			infightingStop = *cvar_infightingprotect;
+		}
 	}
 
 	// alert other monsters too
@@ -19552,8 +19560,31 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 					{
 						if ( infightingStop && entity->checkFriend(attacker) )
 						{
-							//messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
-							continue;
+							if ( attacker->behavior == &actPlayer )
+							{
+								if ( (monsterAllyGetPlayerLeader() == nullptr) 
+									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
+								{
+									// if the fight is between player allies, outside mobs do not interfere
+									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 1.");
+									continue;
+								}
+							}
+							else if ( behavior == &actPlayer )
+							{
+								if ( (attacker->monsterAllyGetPlayerLeader() == nullptr)
+									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
+								{
+									// if the fight is between player allies, outside mobs do not interfere
+									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 2.");
+									continue;
+								}
+							}
+							else
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
+								continue;
+							}
 						}
 						real_t tangent = atan2(entity->y - this->y, entity->x - this->x);
 						lineTrace(this, this->x, this->y, tangent, 1024, 0, false);

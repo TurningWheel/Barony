@@ -9454,8 +9454,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					Item* item = (Item*)node->element;
 					if ( item )
 					{
-						if ( item->type == TOOL_TELEPORT_BOMB || item->type == TOOL_FREEZE_BOMB
-							|| item->type == TOOL_BOMB || item->type == TOOL_SLEEP_BOMB )
+						if ( itemIsThrowableTinkerTool(item) )
 						{
 							int count = item->count;
 							this->monsterEquipItem(*item, &myStats->weapon);
