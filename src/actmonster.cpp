@@ -3801,8 +3801,8 @@ void actMonster(Entity* my)
 								if ( hit.entity == entity )
 								{
 									// charge state
-									Entity& attackTarget = *hit.entity;
-									my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
+									Entity* attackTarget = hit.entity;
+									my->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_ATTACK);
 
 									if ( MONSTER_SOUND == nullptr )
 									{
@@ -3847,20 +3847,23 @@ void actMonster(Entity* my)
 									for ( node = map.creatures->first; node != nullptr; node = node->next )
 									{
 										entity = (Entity*)node->element;
-										if ( entity->behavior == &actMonster )
+										if ( entity->behavior == &actMonster && entity != my )
 										{
-											hitstats = entity->getStats();
-											if ( hitstats != nullptr )
+											Stat* buddystats = entity->getStats();
+											if ( buddystats != nullptr )
 											{
 												if ( entity->checkFriend(my) )
 												{
-													if ( entity->skill[0] == MONSTER_STATE_WAIT )   // monster is waiting
+													if ( entity->monsterState == MONSTER_STATE_WAIT )   // monster is waiting
 													{
-														tangent = atan2( entity->y - my->y, entity->x - my->x );
-														lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-														if ( hit.entity == entity )
+														if ( !entity->checkFriend(attackTarget) )
 														{
-															entity->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_PATH);
+															tangent = atan2( entity->y - my->y, entity->x - my->x );
+															lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+															if ( hit.entity == entity )
+															{
+																entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+															}
 														}
 													}
 												}
