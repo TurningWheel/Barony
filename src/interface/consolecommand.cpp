@@ -1939,6 +1939,14 @@ namespace ConsoleCommands {
 		}
 		});
 
+#ifndef NDEBUG
+	static ConsoleCommand ccmd_unlock_achievement("/unlockachievement", "", []CCMD{
+		if (argc > 1) {
+			steamAchievement(argv[1]);
+		}
+		});
+#endif
+
 	static ConsoleCommand ccmd_gamepad_deadzone("/gamepad_deadzone", "", []CCMD{
 		if (argc < 2)
 		{

@@ -831,6 +831,7 @@ void steamAchievement(const char* achName)
 #endif
 #endif
 		achievementUnlockedLookup.insert(std::string(achName));
+		achievementUnlockTime.emplace(std::make_pair(std::string(achName), time(nullptr)));
 	}
 }
 

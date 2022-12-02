@@ -7328,6 +7328,11 @@ void Player::HUD_t::processHUD()
 		}
 	}
 
+	if ( !gamePaused && player.entity && player.shootmode )
+	{
+		inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+	}
+
     if ( !this->minimapFrame )
     {
 		this->minimapFrame = createMinimap(player.playernum);
