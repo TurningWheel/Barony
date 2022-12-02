@@ -831,6 +831,8 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					default:
 						break; //Should never happen.
 				}
+				entity.skill[0] = std::max(entity.skill[0], 0);
+				serverUpdateEntitySkill(&entity, 0);
 			}
 			else
 			{
