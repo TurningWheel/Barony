@@ -1117,27 +1117,8 @@ public:
 
 		bool serialize(FileInterface* fp);
 	};
-	bool playerRaceCheckHostility(Monster type)
-	{
-		if ( type != HUMAN && type != AUTOMATON ) { return false; }
-		return true;
-	}
-	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING)
-	{
-		if ( player < 0 || player >= MAXPLAYERS ) { return nullptr; }
-
-		Monster type = stats[player]->type;
-		if ( overrideType != NOTHING )
-		{
-			type = overrideType;
-		}
-		if ( !playerRaceCheckHostility(type) ) { return nullptr; }
-		if ( playerHostility[player].find(type) == playerHostility[player].end() )
-		{
-			playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, NO_WANTED_LEVEL, player)));
-		}
-		return &playerHostility[player][type];
-	}
+	bool playerRaceCheckHostility(const int player, const Monster type) const;
+	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
 	void serverSendClientUpdate(const bool force = false);
 	void reset();
 	void resetPlayerHostility(const int player);

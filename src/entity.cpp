@@ -11266,6 +11266,8 @@ bool Entity::checkEnemy(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = swornenemies[myStats->type][yourStats->type];
+
+			// player exceptions to table go here.
 			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
@@ -11274,9 +11276,7 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
 			}
-
-			// player exceptions to table go here.
-			if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
@@ -11354,14 +11354,6 @@ bool Entity::checkEnemy(Entity* your)
 							if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
 							{
 								result = false;
-							}
-							if ( yourStats->type == SHOPKEEPER )
-							{
-								result = swornenemies[SHOPKEEPER][AUTOMATON];
-								if ( this->behavior == &actPlayer )
-								{
-									result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
-								}
 							}
 							break;
 						default:
@@ -11448,14 +11440,6 @@ bool Entity::checkEnemy(Entity* your)
 							if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
 							{
 								result = false;
-							}
-							if ( myStats->type == SHOPKEEPER )
-							{
-								result = swornenemies[SHOPKEEPER][AUTOMATON];
-								if ( your->behavior == &actPlayer )
-								{
-									result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
-								}
 							}
 							break;
 						default:
@@ -11686,6 +11670,8 @@ bool Entity::checkFriend(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
+
+			// player exceptions to table go here.
 			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
@@ -11694,9 +11680,7 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
 			}
-
-			// player exceptions to table go here.
-			if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = monsterally[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
@@ -11774,10 +11758,6 @@ bool Entity::checkFriend(Entity* your)
 							if ( yourStats->type == SHOPKEEPER )
 							{
 								result = monsterally[SHOPKEEPER][AUTOMATON];
-								if ( behavior == &actPlayer )
-								{
-									result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
-								}
 							}
 							else if ( yourStats->type == HUMAN )
 							{
@@ -11867,10 +11847,6 @@ bool Entity::checkFriend(Entity* your)
 							if ( myStats->type == SHOPKEEPER )
 							{
 								result = monsterally[SHOPKEEPER][AUTOMATON];
-								if ( your->behavior == &actPlayer )
-								{
-									result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
-								}
 							}
 							else if ( myStats->type == HUMAN )
 							{

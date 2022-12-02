@@ -226,17 +226,14 @@ void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
 	Monster type = stats[player]->type;
-	if ( playerRaceCheckHostility(type) )
+	if ( auto h = getPlayerHostility(player) )
 	{
-		if ( auto h = getPlayerHostility(player) )
+		if ( h->wantedLevel != NO_WANTED_LEVEL )
 		{
-			if ( h->wantedLevel != NO_WANTED_LEVEL )
-			{
-				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[4304]);
-			}
-			h->wantedLevel = NO_WANTED_LEVEL;
-			h->bRequiresNetUpdate = true;
+			messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[4304]);
 		}
+		h->wantedLevel = NO_WANTED_LEVEL;
+		h->bRequiresNetUpdate = true;
 	}
 }
 
@@ -245,7 +242,7 @@ bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
 
 	Monster type = stats[player]->type;
-	if ( !playerRaceCheckHostility(type) )
+	if ( !playerRaceCheckHostility(player, type) )
 	{ 
 		return true;
 	}
@@ -256,12 +253,43 @@ bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
 	return false;
 }
 
+bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, const Monster type) const
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	if ( type != HUMAN && type != AUTOMATON ) 
+	{
+		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
+		{
+			return true;
+		}
+		return false;
+	}
+	return true;
+}
+
+ShopkeeperPlayerHostility_t::PlayerRaceHostility_t* ShopkeeperPlayerHostility_t::getPlayerHostility(const int player, Monster overrideType)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return nullptr; }
+
+	Monster type = stats[player]->type;
+	if ( overrideType != NOTHING )
+	{
+		type = overrideType;
+	}
+
+	if ( playerHostility[player].find(type) == playerHostility[player].end() )
+	{
+		playerHostility[player].emplace(std::make_pair(type, PlayerRaceHostility_t(type, NO_WANTED_LEVEL, player)));
+	}
+	return &playerHostility[player][type];
+}
+
 ShopkeeperPlayerHostility_t::WantedLevel ShopkeeperPlayerHostility_t::getWantedLevel(const int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return NO_WANTED_LEVEL; }
 
 	Monster type = stats[player]->type;
-	if ( !playerRaceCheckHostility(type) ) { return NO_WANTED_LEVEL; }
+	if ( !playerRaceCheckHostility(player, type) ) { return NO_WANTED_LEVEL; }
 	if ( auto h = getPlayerHostility(player) )
 	{
 		return h->wantedLevel;
@@ -333,7 +361,6 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 		{
 			if ( h.player == i ) { continue; }
 			if ( !players[i]->entity ) { continue; }
-			if ( !playerRaceCheckHostility(stats[i]->type) ) { continue; }
 
 			if ( inshop )
 			{
@@ -443,15 +470,6 @@ void ShopkeeperPlayerHostility_t::serverSendClientUpdate(const bool force)
 {
 	if ( multiplayer != SERVER ) { return; }
 
-	std::vector<int> monsters;
-	for ( int i = 0; i < NUMMONSTERS; ++i )
-	{
-		if ( playerRaceCheckHostility((Monster)i) )
-		{
-			monsters.push_back(i);
-		}
-	}
-
 	for ( int c = 1; c < MAXPLAYERS; ++c )
 	{
 		if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
@@ -459,23 +477,22 @@ void ShopkeeperPlayerHostility_t::serverSendClientUpdate(const bool force)
 			continue;
 		}
 		
-		for ( auto type : monsters )
+		for ( auto& entry : playerHostility[c] )
 		{
-			auto hostility = getPlayerHostility(c, (Monster)type);
-			if ( !hostility ) { continue; }
-			if ( !force && !hostility->bRequiresNetUpdate )
+			auto& hostility = entry.second;
+			if ( !force && !hostility.bRequiresNetUpdate )
 			{
 				continue;
 			}
-			hostility->bRequiresNetUpdate = false;
+			hostility.bRequiresNetUpdate = false;
 
 			strcpy((char*)net_packet->data, "SHPH");
-			net_packet->data[4] = (int)hostility->wantedLevel;
-			net_packet->data[5] = (int)hostility->playerRace;
+			net_packet->data[4] = (int)hostility.wantedLevel;
+			net_packet->data[5] = (int)hostility.playerRace;
 			const Uint16 max = 0xFFFF;
-			SDLNet_Write16(std::min(max, (Uint16)hostility->numKills), &net_packet->data[6]);
-			SDLNet_Write16(std::min(max, (Uint16)hostility->numAggressions), &net_packet->data[8]);
-			SDLNet_Write16(std::min(max, (Uint16)hostility->numAccessories), &net_packet->data[10]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numKills), &net_packet->data[6]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numAggressions), &net_packet->data[8]);
+			SDLNet_Write16(std::min(max, (Uint16)hostility.numAccessories), &net_packet->data[10]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 12;
