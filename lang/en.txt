@@ -6390,5 +6390,8 @@ for inciting violence!#
 for accessory to violence!#
 4307 You see a shrine.#
 4308 You see a statue.#
+4309 shrine#
+4310 ladder#
+4311 portal#
 
 4399 end#
