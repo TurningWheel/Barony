@@ -785,6 +785,14 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	messagePlayer(player, MESSAGE_HINT, language[761]);
 	entity->modHP(-damage);
 	stats->EFFECTS[EFF_POISONED] = true;
+	if ( usedBy && usedBy != entity )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			stats->poisonKiller = usedBy->getUID();
+		}
+	}
 	if ( stats->type == LICH || stats->type == SHOPKEEPER || stats->type == DEVIL
 		|| stats->type == MINOTAUR || stats->type == LICH_FIRE || stats->type == LICH_ICE )
 	{

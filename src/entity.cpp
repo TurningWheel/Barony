@@ -8638,7 +8638,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
-						if ( damage >= 150 && playerhit >= 0 )
+						if ( damage >= 150 && hit.entity->behavior == &actPlayer && playerhit >= 0 )
 						{
 							if ( hitstats && hitstats->HP > 0 )
 							{

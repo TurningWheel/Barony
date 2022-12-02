@@ -1117,7 +1117,7 @@ namespace ConsoleCommands {
 		{
 			int c;
 			Stat* myStats = stats[0];
-			skipLevelsOnLoad = 31;
+			//skipLevelsOnLoad = 31;
 			for (c = 0; c < 24; c++)
 			{
 				consoleCommand("/levelup");

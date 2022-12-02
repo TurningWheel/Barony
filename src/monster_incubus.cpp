@@ -1325,7 +1325,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1345,6 +1345,11 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalx = limbs[INCUBUS][10][0] + .25; // .25
 					entity->focaly = limbs[INCUBUS][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[INCUBUS][10][2]; // .5
+
+					if ( entity->sprite == 1196 ) // MonocleWorn.vox
+					{
+						entity->focalx -= .4;
+					}
 				}
 				break;
 			}

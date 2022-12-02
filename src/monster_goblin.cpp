@@ -1069,7 +1069,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -1089,6 +1089,12 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalx = limbs[GOBLIN][10][0] + .25; // .25
 					entity->focaly = limbs[GOBLIN][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[GOBLIN][10][2]; // .25
+
+					if ( entity->sprite == 1196 ) // MonocleWorn.vox
+					{
+						entity->focalx -= .5;
+						entity->focalz -= .05;
+					}
 				}
 				break;
 		}

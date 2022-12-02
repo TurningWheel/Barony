@@ -1685,7 +1685,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				if ( entity->sprite != 165 )
+				if ( entity->sprite != 165 && entity->sprite != 1196 )
 				{
 					if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
