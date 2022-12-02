@@ -3979,6 +3979,8 @@ void actParticleTimer(Entity* my)
 				if ( toTeleport && target )
 				{
 					bool teleported = false;
+					createParticleErupt(toTeleport, my->particleTimerEndSprite);
+					serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 					teleported = toTeleport->teleportAroundEntity(target, my->particleTimerVariable1);
 					if ( teleported )
 					{

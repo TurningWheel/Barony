@@ -417,6 +417,8 @@ void ShopkeeperPlayerHostility_t::onShopkeeperHit(Entity* my, Stat* myStats, Ent
 
 void ShopkeeperPlayerHostility_t::updateShopkeeperActMonster(Entity& my, Stat& myStats, bool ringconflict)
 {
+	// unused? if attacking after a ring of conflict then it could set enemy
+	return;
 	if ( ringconflict ) { return; }
 	if ( shopIsMysteriousShopkeeper(&my) ) { return; }
 	if ( Entity* entity = uidToEntity(my.monsterTarget) )
@@ -5949,6 +5951,11 @@ timeToGoAgain:
 										}
 										my->monsterAllyInteractTarget = 0;
 										my->monsterAllyState = ALLY_STATE_DEFAULT;
+										if ( target->behavior == &actTeleporter || target->behavior == &actTeleportShrine )
+										{
+											my->monsterAllyState = ALLY_STATE_DEFEND;
+											my->createPathBoundariesNPC(5);
+										}
 									}
 								}
 							}
@@ -5987,6 +5994,11 @@ timeToGoAgain:
 									serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
 									playSoundEntity(my, 449, 128);
 								}
+							}
+
+							if ( my->monsterAllyState != ALLY_STATE_MOVETO )
+							{
+								serverUpdateEntitySkill(my, 43); // update monsterAllyState
 							}
 						}
 						else if ( !target && my->monsterAllyGetPlayerLeader() )
@@ -6059,10 +6071,26 @@ timeToGoAgain:
 										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
 									}
 									my->monsterAllyInteractTarget = 0;
-									my->monsterAllyState = ALLY_STATE_DEFAULT;
+
+									if ( target->behavior == &actTeleporter || target->behavior == &actTeleportShrine )
+									{
+										my->monsterAllyState = ALLY_STATE_DEFEND;
+										my->createPathBoundariesNPC(5);
+									}
+									else
+									{
+										my->monsterAllyState = ALLY_STATE_DEFAULT;
+									}
 								}
 							}
-							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 2) )
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) ) // try closest tiles
+							{
+								my->monsterState = MONSTER_STATE_HUNT;
+								my->monsterAllyState = ALLY_STATE_MOVETO;
+								//messagePlayer(0, "Moving to my interactable!.");
+								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_REPATH);
+							}
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 2) ) // expand search
 							{
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
@@ -6106,6 +6134,11 @@ timeToGoAgain:
 							}
 							my->monsterAllyState = ALLY_STATE_DEFEND;
 							my->createPathBoundariesNPC(5);
+						}
+
+						if ( my->monsterAllyState != ALLY_STATE_MOVETO )
+						{
+							serverUpdateEntitySkill(my, 43); // update monsterAllyState
 						}
 					}
 				}

@@ -4143,6 +4143,31 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			strcat(interactText, language[4044]); // "switch"
 		}
 	}
+	else if ( (selectedEntity.behavior == &actTeleportShrine ) && interactWorld && followerStats->type != GYROBOT )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, language[4309]); // "shrine"
+		}
+	}
+	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			switch ( selectedEntity.teleporterType )
+			{
+				case 0:
+				case 1:
+					strcat(interactText, language[4310]); // "ladder"
+					break;
+				case 2:
+					strcat(interactText, language[4311]); // "portal"
+					break;
+				default:
+					break;
+			}
+		}
+	}
 	else if ( selectedEntity.behavior == &actBomb && interactWorld && followerStats->type == GYROBOT )
 	{
 		if ( updateInteractText )
@@ -4172,7 +4197,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			}
 		}
 	}
-	else if ( selectedEntity.behavior == &actMonster && enableAttack )
+	else if ( selectedEntity.behavior == &actMonster && enableAttack && selectedEntity.getMonsterTypeFromSprite() != GYROBOT )
 	{
 		if ( updateInteractText )
 		{
