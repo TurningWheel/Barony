@@ -534,7 +534,7 @@ void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
 void createParticleRock(Entity* parent);
-void createParticleShatteredGem(Entity* parent, int sprite);
+void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);

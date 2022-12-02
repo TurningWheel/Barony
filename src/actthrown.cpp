@@ -1546,11 +1546,19 @@ void actThrown(Entity* my)
 			bool dropItem = true;
 			if ( itemCategory(item) == GEM )
 			{
-				if ( hit.entity && local_rng.rand() % 2 == 0 )
+				if ( (hit.entity && local_rng.rand() % 2 == 0) || item->beatitude < 0 || local_rng.rand() % 5 == 0 )
 				{
 					dropItem = false;
-					createParticleShatteredGem(hit.entity, my->sprite);
-					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					if ( hit.entity )
+					{
+						createParticleShatteredGem(hit.entity->x, hit.entity->y, 7.5, my->sprite, hit.entity);
+						serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
+					else
+					{
+						createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
+						serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
 				}
 			}
 			if ( dropItem )

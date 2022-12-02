@@ -6312,6 +6312,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 			}
 		}
+		/*if ( myStats->type == SHOPKEEPER )
+		{
+			if ( Entity* myTarget = uidToEntity(monsterTarget) )
+			{
+				if ( Stat* targetStats = myTarget->getStats() )
+				{
+					if ( targetStats->type == SHOPKEEPER )
+					{
+						this->monsterReleaseAttackTarget(true);
+					}
+				}
+			}
+		}*/
 
 		bool shapeshifted = false;
 		if ( this->behavior == &actPlayer && this->effectShapeshift != NOTHING )

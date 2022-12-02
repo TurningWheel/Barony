@@ -1067,6 +1067,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									alertAllies = false;
 								}
 							}
+							/*if ( hitstats->type == SHOPKEEPER && parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+							{
+								alertTarget = false;
+							}*/
 							if ( my->actmagicCastByTinkerTrap == 1 )
 							{
 								if ( entityDist(hit.entity, parent) > TOUCHRANGE )
@@ -3169,20 +3173,24 @@ void createParticleRock(Entity* parent)
 	}
 }
 
-void createParticleShatteredGem(Entity* parent, int sprite)
+void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent)
 {
-	if ( !parent )
-	{
-		return;
-	}
 	for ( int c = 0; c < 5; c++ )
 	{
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + local_rng.rand() % 9);
-		entity->y = parent->y + (-4 + local_rng.rand() % 9);
-		entity->z = 7.5;
+		if ( parent )
+		{
+			entity->x = parent->x + (-4 + local_rng.rand() % 9);
+			entity->y = parent->y + (-4 + local_rng.rand() % 9);
+		}
+		else
+		{
+			entity->x = x + (-4 + local_rng.rand() % 9);
+			entity->y = y + (-4 + local_rng.rand() % 9);
+		}
+		entity->z = z;
 		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
 		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 

@@ -2506,7 +2506,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					createParticleRock(entity);
 					break;
 				case PARTICLE_EFFECT_SHATTERED_GEM:
-					createParticleShatteredGem(entity, sprite);
+					createParticleShatteredGem(entity->x, entity->y, 7.5, sprite, entity);
 					break;
 				case PARTICLE_EFFECT_SHADOW_INVIS:
 					createParticleDropRising(entity, sprite, 1.0);
@@ -2675,6 +2675,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->sizey = 4;
 			}
 			break;
+			case PARTICLE_EFFECT_SHATTERED_GEM:
+				createParticleShatteredGem(particle_x, particle_y, 7.5, sprite, nullptr);
+				break;
 			default:
 				break;
 		}
