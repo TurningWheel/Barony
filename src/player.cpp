@@ -3126,6 +3126,13 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			{
+				if ( ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
+				{
+					return 0.0;
+				}
+			}
 			if ( parent->behavior == &actPlayer || parent->behavior == &actMonster )
 			{
 				interactAngle = PI / 16;
