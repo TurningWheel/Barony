@@ -3761,7 +3761,7 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
-	else if ( entity.behavior == &::actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
+	else if ( entity.behavior == &actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
 	{
 		return false;
 	}

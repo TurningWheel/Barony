@@ -872,6 +872,14 @@ bool isPathObstacle(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actStatue )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actTeleportShrine /*|| entity->behavior == &actSpellShrine*/ )
+	{
+		return true;
+	}
 
 	return false;
 }

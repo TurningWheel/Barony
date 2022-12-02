@@ -156,6 +156,14 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actTeleportShrine /*entity->behavior == &actSpellShrine*/ )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStatue )
+	{
+		return true;
+	}
 	return false;
 }
 
