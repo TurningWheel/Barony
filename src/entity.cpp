@@ -7469,6 +7469,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, MESSAGE_COMBAT, language[585]); //TODO: Alert all players that see (or otherwise in range) it?
 						playSoundEntity(hit.entity, 132, 64);
+						serverUpdateEntitySkill(hit.entity, 0);
 					}
 				}
 			}
