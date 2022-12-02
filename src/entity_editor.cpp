@@ -281,6 +281,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicSpellbookBonus(skill[21]),
 	actmagicCastByTinkerTrap(skill[22]),
 	actmagicTinkerTrapFriendlyFire(skill[23]),
+	actmagicReflectionCount(skill[25]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),

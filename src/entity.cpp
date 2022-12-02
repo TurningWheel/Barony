@@ -308,6 +308,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicSpellbookBonus(skill[21]),
 	actmagicCastByTinkerTrap(skill[22]),
 	actmagicTinkerTrapFriendlyFire(skill[23]),
+	actmagicReflectionCount(skill[25]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -19513,6 +19514,15 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 	{
 		return;
 	}
+
+	bool infightingStop = false;
+	static ConsoleVariable<bool> cvar_infightingprotect("/infighting_protect", true);
+	if ( behavior == &actMonster && attacker->behavior == &actMonster
+		&& !monsterAllyGetPlayerLeader() && !attacker->monsterAllyGetPlayerLeader() )
+	{
+		infightingStop = *cvar_infightingprotect;
+	}
+
 	// alert other monsters too
 	Entity* ohitentity = hit.entity;
 	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
@@ -19540,6 +19550,11 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 				{
 					if ( entity->monsterState == MONSTER_STATE_WAIT )
 					{
+						if ( infightingStop && entity->checkFriend(attacker) )
+						{
+							//messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
+							continue;
+						}
 						real_t tangent = atan2(entity->y - this->y, entity->x - this->x);
 						lineTrace(this, this->x, this->y, tangent, 1024, 0, false);
 						if ( hit.entity == entity )

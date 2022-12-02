@@ -808,6 +808,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->pitch = 0;
 						}
 						my->parent = hit.entity->getUID();
+						++my->actmagicReflectionCount;
 					}
 
 					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
@@ -946,6 +947,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayer(player, MESSAGE_STATUS, language[2476]);
 							}
 						}
+					}
+
+					if ( my->actmagicReflectionCount >= 3 )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
 					}
 					return;
 				}

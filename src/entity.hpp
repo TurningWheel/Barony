@@ -472,6 +472,7 @@ public:
 	Sint32& actmagicOrbitCastFromSpell; // skill[20]
 	Sint32& actmagicCastByTinkerTrap; // skill[22]
 	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
+	Sint32& actmagicReflectionCount; // skill[25]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
