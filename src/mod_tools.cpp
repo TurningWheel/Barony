@@ -3256,13 +3256,25 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( !spell ) { return; }
 
 			int intBonus = (statGetINT(stats[player], players[player]->entity) * 0.5);
-			int beatitudeBonus = getSpellbookBonusPercent(players[player]->entity, stats[player], &item) - intBonus;
+			real_t mult = ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
+			intBonus *= mult;
+			int beatitudeBonus = (mult * getSpellbookBonusPercent(players[player]->entity, stats[player], &item)) - intBonus;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
 				!= spellItems[spell->ID].spellTags.end() )
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
+			}
+			else if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_CURE)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["duration"];
+			}
+			else if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_STATUS_EFFECT)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["duration"];
 			}
 
 			std::string attribute("INT");
