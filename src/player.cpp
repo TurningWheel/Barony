@@ -3128,7 +3128,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			}
 			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
 			{
-				if ( ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
+				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
 				{
 					return 0.0;
 				}

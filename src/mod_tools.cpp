@@ -2403,6 +2403,18 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		return;
 	}
+	else if ( conditionalAttribute == "EFF_MONOCLE_APPRAISE" )
+	{
+		int appraisalMult = 200;
+		if ( item.beatitude > 0 )
+		{
+			appraisalMult = 400;
+		}
+
+		snprintf(buf, sizeof(buf), str.c_str(), appraisalMult);
+		str = buf;
+		return;
+	}
 	else if ( conditionalAttribute.compare("") != 0 && items[item.type].hasAttribute(conditionalAttribute) )
 	{
 		if ( conditionalAttribute == "STR" )

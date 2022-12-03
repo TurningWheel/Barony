@@ -260,7 +260,10 @@ bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, con
 	{
 		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
 		{
-			return true;
+			if ( !stats[player]->EFFECTS[EFF_SHAPESHIFT] && !(players[player]->entity && players[player]->entity->isInvisible()) )
+			{
+				return true;
+			}
 		}
 		return false;
 	}
@@ -289,7 +292,7 @@ ShopkeeperPlayerHostility_t::WantedLevel ShopkeeperPlayerHostility_t::getWantedL
 	if ( player < 0 || player >= MAXPLAYERS ) { return NO_WANTED_LEVEL; }
 
 	Monster type = stats[player]->type;
-	if ( !playerRaceCheckHostility(player, type) ) { return NO_WANTED_LEVEL; }
+	//if ( !playerRaceCheckHostility(player, type) ) { return NO_WANTED_LEVEL; }
 	if ( auto h = getPlayerHostility(player) )
 	{
 		return h->wantedLevel;

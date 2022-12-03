@@ -479,7 +479,7 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 			{
 				mult = .5;
 			}
-			else if ( stats[player.playernum]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
 			{
 				mult = .25;
 			}
