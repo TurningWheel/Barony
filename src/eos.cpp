@@ -2564,7 +2564,7 @@ void EOS_CALL EOSFuncs::OnAchievementQueryComplete(const EOS_Achievements_OnQuer
 	}
 
 	EOS.Achievements.definitionsLoaded = true;
-	EOS.Achievements.sortAchievementsForDisplay();
+	sortAchievementsForDisplay();
 
 	logInfo("Successfully loaded achievements");
 }
@@ -2638,58 +2638,9 @@ void EOSFuncs::OnPlayerAchievementQueryComplete(const EOS_Achievements_OnQueryPl
 	}
 
 	EOS.Achievements.playerDataLoaded = true;
-	EOS.Achievements.sortAchievementsForDisplay();
+	sortAchievementsForDisplay();
 
 	logInfo("OnPlayerAchievementQueryComplete: success");
-}
-
-void EOSFuncs::Achievements_t::sortAchievementsForDisplay()
-{
-	if ( !definitionsLoaded )
-	{
-		return;
-	}
-
-	// sort achievements list
-	achievementNamesSorted.clear();
-	Comparator compFunctor =
-		[](std::pair<std::string, std::string> lhs, std::pair<std::string, std::string> rhs)
-	{
-		bool ach1 = achievementUnlocked(lhs.first.c_str());
-		bool ach2 = achievementUnlocked(rhs.first.c_str());
-		bool lhsAchIsHidden = (achievementHidden.find(lhs.first) != achievementHidden.end());
-		bool rhsAchIsHidden = (achievementHidden.find(rhs.first) != achievementHidden.end());
-		if ( ach1 && !ach2 )
-		{
-			return true;
-		}
-		else if ( !ach1 && ach2 )
-		{
-			return false;
-		}
-		else if ( !ach1 && !ach2 && (lhsAchIsHidden || rhsAchIsHidden) )
-		{
-			if ( lhsAchIsHidden && rhsAchIsHidden )
-			{
-				return lhs.second < rhs.second;
-			}
-			if ( !lhsAchIsHidden )
-			{
-				return true;
-			}
-			if ( !rhsAchIsHidden )
-			{
-				return false;
-			}
-			return lhs.second < rhs.second;
-		}
-		else
-		{
-			return lhs.second < rhs.second;
-		}
-	};
-	std::set<std::pair<std::string, std::string>, Comparator> sorted(achievementNames.begin(), achievementNames.end(), compFunctor);
-	achievementNamesSorted.swap(sorted);
 }
 
 void EOSFuncs::OnIngestStatComplete(const EOS_Stats_IngestStatCompleteCallbackInfo* data)

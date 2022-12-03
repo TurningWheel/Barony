@@ -80,7 +80,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	const bool focused = (fingerdown && highlighted) || selected;
 #else
 	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
-	const bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor);
+	const bool focused = highlighted || (selected && !inputs.getVirtualMouse(mouseowner)->draw_cursor && (intro || !players[owner]->shootmode));
 #endif
 
 	SDL_Rect scaledSize;

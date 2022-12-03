@@ -619,3 +619,6 @@ public:
 	static void postRenderRestore(view_t& camera, int player);
 	static void updateEntityInterpolationPosition(Entity* entity);
 };
+
+void loadAchievementData(const char* path);
+void sortAchievementsForDisplay();

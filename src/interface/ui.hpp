@@ -117,11 +117,12 @@ public:
 	void drawActionButton(const SDL_Rect& src);
 
 	void (*buttonAction)() = nullptr;
+	
+	int showHeight = 80;
 
 private:
 	int posx = 260;
 	int posy = 110;
-	static const int showHeight = 116;
 	static const int dockHeight = 32;
 	std::string notificationImage;
 	bool isInit = false;
@@ -203,7 +204,7 @@ public:
 	{
 		if ( image == nullptr )
 		{
-			return "#images/system/CommunityLink1.png";
+			return "#images/ui/Toasts/bell1.png";
 		}
 		return image;
 	};
@@ -218,7 +219,9 @@ public:
 		//promoLink1 = loadImage("images/system/Promo1.png");
 		frame = gui->addFrame("toasts");
 		frame->setHollow(true);
-		achievementsCheck = true;
+		if (intro) {
+			achievementsCheck = true;
+		}
 	}
 	void term()
 	{
@@ -231,7 +234,6 @@ public:
 			frame->removeSelf();
 			frame = nullptr;
 		}
-		achievementsCheck = false;
 	}
 	void drawNotifications(bool isMoviePlaying, bool beforeFadeout);
 	void createEpicLoginNotification();
@@ -274,3 +276,5 @@ public:
 extern UIToastNotificationManager_t UIToastNotificationManager;
 
 void openURLTryWithOverlay(const std::string& url, bool forceSystemBrowser = false);
+void createGenericWindowDecorations(Frame& frame);
+void sizeWindowDecorations(Frame& frame);

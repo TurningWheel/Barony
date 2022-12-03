@@ -487,6 +487,7 @@ namespace MainMenu {
 
 	static void archivesLeaderboards(Button&);
 	static void archivesDungeonCompendium(Button&);
+	static void archivesAchievements(Button&);
 	static void archivesStoryIntroduction(Button&);
 	static void archivesCredits(Button&);
 	static void archivesBackToMainMenu(Button&);
@@ -867,6 +868,7 @@ namespace MainMenu {
 		back_button->setVJustify(Button::justify_t::TOP);
 		back_button->setCallback(callback);
 		back_button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		back_button->setWidgetSearchParent(parent->getName());
 		back_button->setWidgetBack("back_button");
 		back_button->setTickCallback([](Widget& widget) {
 			if (widget.isSelected()) {
@@ -1483,6 +1485,134 @@ namespace MainMenu {
             });
 #endif
     }
+
+	static Frame* genericWindow(const char* name, const char* title, bool decorations) {
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame(name);
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 826) / 2,
+			(Frame::virtualScreenY - 718) / 2,
+			826,
+			718});
+		window->setActualSize(SDL_Rect{0, 0, 826, 718});
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto tooltip = window->addField("tooltip", 256);
+		tooltip->setSize(SDL_Rect{66, 576, 646, 40});
+		tooltip->setFont(smallfont_no_outline);
+		tooltip->setJustify(Field::justify_t::CENTER);
+		tooltip->setText("");
+
+		auto background = window->addImage(
+			window->getActualSize(),
+			0xffffffff,
+			decorations ?
+				"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window00.png":
+				"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window02.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			SDL_Rect{0, 54, 826, 78},
+			0xffffffff,
+			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto banner = window->addField("title", 64);
+		banner->setSize(SDL_Rect{246, 22, 338, 24});
+		banner->setFont(banner_font);
+		banner->setText(title);
+		banner->setJustify(Field::justify_t::CENTER);
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{30, 64, 766, 506});
+		subwindow->setActualSize(SDL_Rect{0, 0, 766, 506});
+		subwindow->setScrollBarsEnabled(false);
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rocks = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks01.png",
+			"background"
+		);
+		rocks->tiled = true;
+
+		auto gradient_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
+			"gradient_background"
+		);
+
+		auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(48);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{712, 0, 54, 536});
+		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar01.png");
+		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
+		slider->setHandleImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+		slider->setCallback([](Slider& slider){
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			auto actualSize = frame->getActualSize();
+			actualSize.y = slider.getValue();
+			frame->setActualSize(actualSize);
+			auto railSize = slider.getRailSize();
+			railSize.y = actualSize.y;
+			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
+			});
+		slider->setTickCallback([](Widget& widget){
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			auto actualSize = frame->getActualSize();
+			slider->setValue(actualSize.y);
+			auto railSize = slider->getRailSize();
+			railSize.y = actualSize.y;
+			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
+			});
+		slider->setWidgetSearchParent(name);
+		slider->setWidgetBack("discard_and_exit");
+		slider->addWidgetAction("MenuStart", "confirm_and_exit");
+		slider->addWidgetAction("MenuAlt1", "restore_defaults");
+
+		auto sliderLeft = subwindow->addImage(
+			SDL_Rect{0, 0, 30, 44},
+			0xffffffff,
+			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Left00.png",
+			"slider_left"
+		);
+		sliderLeft->disabled = true;
+		sliderLeft->ontop = true;
+
+		auto sliderRight = subwindow->addImage(
+			SDL_Rect{0, 0, 30, 44},
+			0xffffffff,
+			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Right00.png",
+			"slider_right"
+		);
+		sliderRight->disabled = true;
+		sliderRight->ontop = true;
+
+		return window;
+	}
 
 /******************************************************************************/
 
@@ -4030,7 +4160,7 @@ namespace MainMenu {
 		widget->select();
 	}
 
-	static void settingsSubwindowFinalize(Frame& frame, int y, const Setting& setting) {
+	static void genericSubwindowFinalizeBasic(Frame& frame, int y) {
 		auto size = frame.getActualSize();
 		const int height = std::max(size.h, y);
 		frame.setActualSize(SDL_Rect{0, 0, size.w, height});
@@ -4040,7 +4170,12 @@ namespace MainMenu {
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
 		slider->setMaxValue(height - size.h);
+	}
+
+	static void settingsSubwindowFinalize(Frame& frame, int y, const Setting& setting) {
+		genericSubwindowFinalizeBasic(frame, y);
 		auto names = getFullSettingNames(setting);
+		auto slider = frame.findSlider("scroll_slider"); assert(slider);
 		slider->setWidgetLeft(names.first.c_str());
 
 		// rescues focus if it is lost somehow
@@ -4099,127 +4234,7 @@ namespace MainMenu {
 		void (*discard_callback)(Button&),
 		void (*confirm_callback)(Button&))
 	{
-		auto dimmer = main_menu_frame->addFrame("dimmer");
-		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		dimmer->setActualSize(dimmer->getSize());
-		dimmer->setColor(makeColor(0, 0, 0, 63));
-		dimmer->setBorder(0);
-
-		auto window = dimmer->addFrame(name);
-		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 826) / 2,
-			(Frame::virtualScreenY - 718) / 2,
-			826,
-			718});
-		window->setActualSize(SDL_Rect{0, 0, 826, 718});
-		window->setBorder(0);
-		window->setColor(0);
-
-		auto tooltip = window->addField("tooltip", 256);
-		tooltip->setSize(SDL_Rect{66, 576, 646, 40});
-		tooltip->setFont(smallfont_no_outline);
-		tooltip->setJustify(Field::justify_t::CENTER);
-		tooltip->setText("");
-
-		auto background = window->addImage(
-			window->getActualSize(),
-			0xffffffff,
-			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window00.png",
-			"background"
-		);
-
-		auto timber = window->addImage(
-			SDL_Rect{0, 54, 826, 78},
-			0xffffffff,
-			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Window01.png",
-			"timber"
-		);
-		timber->ontop = true;
-
-		auto banner = window->addField("title", 64);
-		banner->setSize(SDL_Rect{246, 22, 338, 24});
-		banner->setFont(banner_font);
-		banner->setText(title);
-		banner->setJustify(Field::justify_t::CENTER);
-
-		auto subwindow = window->addFrame("subwindow");
-		subwindow->setSize(SDL_Rect{30, 64, 766, 506});
-		subwindow->setActualSize(SDL_Rect{0, 0, 766, 506});
-		subwindow->setScrollBarsEnabled(false);
-		subwindow->setBorder(0);
-		subwindow->setColor(0);
-
-		auto rocks = subwindow->addImage(
-			subwindow->getActualSize(),
-			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_Rocks01.png",
-			"background"
-		);
-		rocks->tiled = true;
-
-		auto gradient_background = subwindow->addImage(
-			subwindow->getActualSize(),
-			makeColor(255, 255, 255, 255),
-			"#images/ui/Main Menus/Settings/Settings_Window_06_BGGradient.png",
-			"gradient_background"
-		);
-
-		auto slider = subwindow->addSlider("scroll_slider");
-		slider->setBorder(48);
-		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{712, 0, 54, 536});
-		slider->setRailImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBar01.png");
-		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
-		slider->setHandleImage("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ScrollBoulder00.png");
-		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
-		slider->setCallback([](Slider& slider){
-			Frame* frame = static_cast<Frame*>(slider.getParent());
-			auto actualSize = frame->getActualSize();
-			actualSize.y = slider.getValue();
-			frame->setActualSize(actualSize);
-			auto railSize = slider.getRailSize();
-			railSize.y = actualSize.y;
-			slider.setRailSize(railSize);
-			slider.updateHandlePosition();
-			auto gradient_background = frame->findImage("gradient_background");
-			assert(gradient_background);
-			gradient_background->pos.y = actualSize.y;
-			});
-		slider->setTickCallback([](Widget& widget){
-			Slider* slider = static_cast<Slider*>(&widget);
-			Frame* frame = static_cast<Frame*>(slider->getParent());
-			auto actualSize = frame->getActualSize();
-			slider->setValue(actualSize.y);
-			auto railSize = slider->getRailSize();
-			railSize.y = actualSize.y;
-			slider->setRailSize(railSize);
-			slider->updateHandlePosition();
-			auto gradient_background = frame->findImage("gradient_background");
-			assert(gradient_background);
-			gradient_background->pos.y = actualSize.y;
-			});
-		slider->setWidgetSearchParent(name);
-		slider->setWidgetBack("discard_and_exit");
-		slider->addWidgetAction("MenuStart", "confirm_and_exit");
-		slider->addWidgetAction("MenuAlt1", "restore_defaults");
-
-		auto sliderLeft = subwindow->addImage(
-			SDL_Rect{0, 0, 30, 44},
-			0xffffffff,
-			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Left00.png",
-			"slider_left"
-		);
-		sliderLeft->disabled = true;
-		sliderLeft->ontop = true;
-
-		auto sliderRight = subwindow->addImage(
-			SDL_Rect{0, 0, 30, 44},
-			0xffffffff,
-			"*images/ui/Main Menus/Settings/AutoSort/AutoSort_SliderBox_Right00.png",
-			"slider_right"
-		);
-		sliderRight->disabled = true;
-		sliderRight->ontop = true;
+		auto window = genericWindow(name, title, true);
 
 		auto defaults = window->addButton("restore_defaults");
 		defaults->setBackground("*images/ui/Main Menus/Settings/GenericWindow/UI_MM14_ButtonStandard00.png");
@@ -6386,6 +6401,269 @@ bind_failed:
         tab->activate();
     }
 
+	static void createSimpleAchievementsWindow() {
+		soundActivate();
+
+		auto window = genericWindow("achievements", "ACHIEVEMENTS", false);
+		assert(window);
+
+		auto back_button = createBackWidget(window,[](Button& button){
+			soundCancel();
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+			auto achievements = buttons->findButton("Achievements"); assert(achievements);
+			achievements->select();
+			});
+		back_button->select();
+
+		auto subwindow = window->findFrame("subwindow");
+		assert(subwindow);
+
+		auto slider = subwindow->findSlider("scroll_slider"); assert(slider);
+		slider->setWidgetBack("back_button");
+
+		int y = 0;
+
+		// count all the different types of achievements
+		const int num_achievements = achievementNames.size();
+		int num_unlocked = 0;
+		int num_locked = 0;
+		int num_hidden = 0;
+		for (auto& item : achievementNames) {
+			if (achievementUnlocked(item.first.c_str())) {
+				++num_unlocked;
+			} else {
+				++num_locked;
+				if (achievementHidden.find(item.first.c_str()) != achievementHidden.end()) {
+					++num_hidden;
+				}
+			}
+		}
+
+		// set tooltip text
+		char tooltip_buf[256] = { '\0' };
+		const int percent = (num_unlocked * 100) / num_achievements;
+		snprintf(tooltip_buf, sizeof(tooltip_buf), "Unlocked %d / %d achievements (%d%%)",
+			num_unlocked, num_achievements, percent);
+		auto tooltip = window->findField("tooltip"); assert(tooltip);
+		tooltip->setText(tooltip_buf);
+
+		const char* explanation_text =
+			"Complete optional in-game challenges\nfor fun and bragging rights";
+
+		// explanation text
+		auto explanation = window->addField("explanation", 256);
+		explanation->setSize(SDL_Rect{74, 624, 680, 72});
+		explanation->setFont(bigfont_outline);
+		explanation->setTextColor(makeColor(170, 134, 102, 255));
+		explanation->setOutlineColor(makeColor(29, 16, 11, 255));
+		explanation->setText(explanation_text);
+		explanation->setJustify(Field::justify_t::CENTER);
+
+		// function to add achievement to the list
+		auto add_achievement = [](
+			Frame& subwindow,
+			const char* name,
+			int num_hidden,
+			bool locked,
+			int statisticUpdateCurrent,
+			int statisticUpdateMax,
+			int y) {
+			const SDL_Rect r{4, y, subwindow.getSize().w - 56, 80};
+			auto frame = subwindow.addFrame(name ? name : "hidden achievements");
+			frame->setHollow(true);
+			frame->setBorder(0);
+			frame->setSize(r);
+			createGenericWindowDecorations(*frame);
+			sizeWindowDecorations(*frame);
+
+			const char* achName = nullptr;
+			const char* achDesc = nullptr;
+			if (name) {
+				auto achNameFind = achievementNames.find(name);
+				if (achNameFind != achievementNames.end()) {
+					achName = achNameFind->second.c_str();
+				}
+
+				auto achDescFind = achievementDesc.find(name);
+				if (achDescFind != achievementDesc.end()) {
+					achDesc = achDescFind->second.c_str();
+				}
+			}
+
+			// achievement title
+			const char* title = achName ? achName :
+				(num_hidden ?
+				"Hidden achievements":
+				"Hidden achievement");
+			auto headerField = frame->addField("header", 64);
+			headerField->setFont(smallfont_outline);
+			headerField->setColor(makeColorRGB(255, 255, 0));
+			headerField->setSize(SDL_Rect{80, 8, r.w - 80, r.h - 8});
+			headerField->setHJustify(Field::justify_t::LEFT);
+			headerField->setVJustify(Field::justify_t::TOP);
+			headerField->setText(title);
+
+			// description
+			constexpr int longest_line = 62;
+			int offset = 0;
+			char buf[256];
+			if (name) {
+				assert(achDesc);
+				snprintf(buf, sizeof(buf), "%s", achDesc);
+				for (int c = 0; c < sizeof(buf) && buf[c] != '\0'; ++c) {
+					if (c >= longest_line && buf[c] == ' ') {
+						offset += 8;
+						buf[c] = '\n';
+						break;
+					}
+				}
+			} else {
+				const char* fmt = num_hidden > 1 ?
+					"%d additional achievements remain...":
+					"%d additional achievement remains...";
+				snprintf(buf, sizeof(buf), fmt, num_hidden);
+			}
+			auto mainField = frame->addField("main", 256);
+			mainField->setFont(smallfont_outline);
+			mainField->setColor(makeColor(255, 255, 255, 255));
+			mainField->setSize(SDL_Rect{80, 8 + offset, r.w - 80, r.h - 8 - offset});
+			mainField->setHJustify(Field::justify_t::LEFT);
+			mainField->setVJustify(Field::justify_t::CENTER);
+			mainField->setText(buf);
+
+			if (locked) {
+				if (statisticUpdateMax > 0) {
+					// progress bar
+					const int width = 256;
+					const int height = 20;
+					const SDL_Rect pr{ r.w - width - 8, 8, width, height };
+					const int percent = (statisticUpdateCurrent * 100) / statisticUpdateMax;
+					const int size = (pr.w * percent) / 100;
+
+					auto progressBarBackground = frame->addImage(pr, makeColorRGB(0, 48, 16),
+						"images/system/white.png", "progressBarBackground");
+					if (size) {
+						const SDL_Rect pbr{ pr.x, pr.y, size < pr.w ? size : pr.w, pr.h };
+						auto progressBar = frame->addImage(pbr, makeColorRGB(0, 160, 48),
+							"images/system/white.png", "progressBar");
+					}
+
+					// progress bar text
+					auto progressField = frame->addField("progress", 32);
+					progressField->setColor(makeColor(255, 255, 255, 255));
+					progressField->setFont(smallfont_outline);
+
+					char progress_str[32] = { '\0' };
+					if (statisticUpdateMax > 0) {
+						const int len = snprintf(progress_str, sizeof(progress_str), "%d / %d",
+							statisticUpdateCurrent < statisticUpdateMax ? statisticUpdateCurrent : statisticUpdateMax, statisticUpdateMax);
+					}
+					progressField->setInvisible(false);
+					progressField->setSize(SDL_Rect{pr.x, pr.y, pr.w, pr.h + 1});
+					progressField->setHJustify(Field::justify_t::CENTER);
+					progressField->setVJustify(Field::justify_t::CENTER);
+					progressField->setText(progress_str);
+				}
+			} else {
+				// unlock time
+				assert(name);
+				auto it = achievementUnlockTime.find(name);
+				if (it != achievementUnlockTime.end()) {
+					char buffer[64];
+					time_t t = (time_t)it->second;
+					struct tm* tm_info = localtime(&t);
+					strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
+
+					auto unlockField = frame->addField("unlock", 64);
+					unlockField->setFont(smallfont_outline);
+					unlockField->setColor(makeColorRGB(255, 255, 0));
+					unlockField->setSize(SDL_Rect{80, 8, r.w - 84, r.h - 8});
+					unlockField->setHJustify(Field::justify_t::RIGHT);
+					unlockField->setVJustify(Field::justify_t::TOP);
+					unlockField->setText(buffer);
+				}
+			}
+
+			// image path
+			std::string path;
+			if (locked) {
+				if (name) {
+					path = std::string("*#images/achievements/") + name + std::string("_l.png");
+				} else {
+					path = "*#images/achievements/LOCKED_ACHIEVEMENT.png";
+				}
+			} else {
+				assert(name);
+				path = std::string("*#images/achievements/") + name + std::string(".png");
+			}
+			frame->addImage(SDL_Rect{8, 8, 64, 64}, 0xffffffff, path.c_str(), "ach_image");
+
+			return frame->getSize().h + 4;
+			};
+
+		// list unlocked achievements
+		if (num_unlocked > 0) {
+			y += settingsAddSubHeader(*subwindow, y, "unlocked", "Unlocked", true);
+			for (auto& item : achievementNamesSorted) {
+				if (!achievementUnlocked(item.first.c_str())) {
+					continue;
+				}
+
+				int statMax = 0;
+				for (auto& it : steamStatAchStringsAndMaxVals) {
+					if (it.first == item.first) {
+						statMax = it.second;
+						break;
+					}
+				}
+
+				y += add_achievement(*subwindow, item.first.c_str(), num_hidden, false,
+					statMax, statMax, y);
+			}
+		}
+
+		// list locked achievements
+		if (num_locked > 0) {
+			y += settingsAddSubHeader(*subwindow, y, "locked", "Locked", true);
+			for (auto& item : achievementNamesSorted) {
+				if (achievementUnlocked(item.first.c_str())) {
+					continue;
+				}
+				if (achievementHidden.find(item.first.c_str()) != achievementHidden.end()) {
+					continue;
+				}
+
+				int statCur = 0;
+				auto progIt = achievementProgress.find(item.first);
+				if (progIt != achievementProgress.end()) {
+					statCur = g_SteamStats[progIt->second].m_iValue;
+				}
+
+				int statMax = 0;
+				for (auto& it : steamStatAchStringsAndMaxVals) {
+					if (it.first == item.first) {
+						statMax = it.second;
+						break;
+					}
+				}
+
+				y += add_achievement(*subwindow, item.first.c_str(), num_hidden, true,
+					statCur, statMax, y);
+			}
+			if (num_hidden) {
+				y += add_achievement(*subwindow, nullptr, num_hidden, true,
+					0, 0, y);
+			}
+		}
+		
+		genericSubwindowFinalizeBasic(*subwindow, y);
+	}
+
 /******************************************************************************/
 
 	static void archivesLeaderboards(Button& button) {
@@ -6402,6 +6680,10 @@ bind_failed:
 
 	static void archivesDungeonCompendium(Button& button) {
 		soundActivate();
+	}
+
+	static void archivesAchievements(Button& button) {
+		createSimpleAchievementsWindow();
 	}
 
 	static void archivesStoryIntroduction(Button& button) {
@@ -16913,8 +17195,11 @@ bind_failed:
 			void (*callback)(Button&);
 		};
 		Option options[] = {
+			//{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifdef USE_EOS
+			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
-			//{"Dungeon Compendium", "ACHIEVEMENTS", archivesDungeonCompendium},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -18359,6 +18644,9 @@ bind_failed:
 		        {"Back to Game", "BACK TO GAME", mainClose},
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
 		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifdef USE_EOS
+		        {"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 		        {"Settings", "SETTINGS", mainSettings},
 		        });
 			if (gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT) {

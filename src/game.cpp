@@ -3895,7 +3895,10 @@ bool handleEvents(void)
 						inputs.getVirtualMouse(i)->lastMovementFromController = false;
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
-							inputs.getVirtualMouse(i)->draw_cursor = true;
+							if ( !players[i]->shootmode || !players[i]->entity || gamePaused )
+							{
+								inputs.getVirtualMouse(i)->draw_cursor = true;
+							}
 						}
 					}
 				}
