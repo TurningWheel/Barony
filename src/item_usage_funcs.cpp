@@ -938,8 +938,12 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
+
+	int numEffectsCured = 0;
+
 	if ( entity->flags[BURNING] )
 	{
+		++numEffectsCured;
 		entity->flags[BURNING] = false;
 		serverUpdateEntityFlag(entity, BURNING);
 	}
@@ -954,22 +958,39 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, MESSAGE_HINT, language[2900]);
 	}
 
-	Uint32 color = makeColorRGB(0, 255, 0);
-	messagePlayerColor(player, MESSAGE_STATUS, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) 
-			&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
+		if ( statusEffectRemovedByCureAilment(c) )
 		{
-			stats->EFFECTS[c] = false;
-			stats->EFFECTS_TIMERS[c] = 0;
+			if ( stats->EFFECTS[c] )
+			{
+				stats->EFFECTS[c] = false;
+				if ( stats->EFFECTS_TIMERS[c] > 0 )
+				{
+					stats->EFFECTS_TIMERS[c] = 1;
+				}
+				++numEffectsCured;
+			}
 		}
 	}
 
 	if ( stats->EFFECTS[EFF_WITHDRAWAL] )
 	{
+		++numEffectsCured;
 		entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
+	}
+
+	if ( numEffectsCured > 0 || item->beatitude > 0 )
+	{
+		messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[763]);
+	}
+	else
+	{
+		if ( item->beatitude == 0 )
+		{
+			messagePlayer(player, MESSAGE_STATUS, language[4312]);
+		}
 	}
 
 	if ( item->beatitude < 0 )

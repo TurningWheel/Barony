@@ -1268,3 +1268,27 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 		return 0;
 	}
 }
+
+bool statusEffectRemovedByCureAilment(const int effect)
+{
+	switch ( effect )
+	{
+		case EFF_ASLEEP:
+		case EFF_POISONED:
+		case EFF_CONFUSED:
+		case EFF_DRUNK:
+		case EFF_BLIND:
+		case EFF_GREASY:
+		case EFF_MESSY:
+		case EFF_PARALYZED:
+		case EFF_BLEEDING:
+		case EFF_SLOW:
+		case EFF_PACIFY:
+		case EFF_WEBBED:
+		case EFF_FEAR:
+		case EFF_DISORIENTED:
+			return true;
+			break;
+	}
+	return false;
+}
