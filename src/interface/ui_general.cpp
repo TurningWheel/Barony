@@ -502,7 +502,7 @@ void UIToastNotificationManager_t::drawNotifications(bool isMoviePlaying, bool b
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| gamemods_disableSteamAchievements) {
 			achievementsCheck = false;
-			createAchievementsDisabledNotification();
+			//createAchievementsDisabledNotification();
 		}
 	}
 
