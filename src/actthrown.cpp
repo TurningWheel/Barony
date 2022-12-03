@@ -352,6 +352,15 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0) )
+				{
+					// cursed gem, explode
+					createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
+					serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
 				{
 					Entity* parent = uidToEntity(my->parent);
@@ -1556,8 +1565,8 @@ void actThrown(Entity* my)
 					}
 					else
 					{
-						createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
-						serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+						createParticleShatteredGem(my->x, my->y, my->z, my->sprite, nullptr);
+						serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
 					}
 				}
 			}
