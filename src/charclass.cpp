@@ -1231,7 +1231,7 @@ void initClass(const int player)
 		}
 
 		// jester hat
-		item = newItem(HAT_JESTER, SERVICABLE, 1, 1, 0, true, nullptr);
+		item = newItem(HAT_JESTER, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
