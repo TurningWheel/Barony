@@ -77,6 +77,7 @@ namespace MainMenu {
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot
 	bool isPlayerSlotLocked(int index);	// checks whether a player slot has been locked out for joining
     bool isCutsceneActive();            // checks whether we are playing a cutscene
+	bool isMenuOpen();					// checks whether the menu is open
 	void beginFade(FadeDestination);    // begins a fade transition to a specific destination
 
 	bool settingsApply();	// write settings to global variables (true if video mode changed)

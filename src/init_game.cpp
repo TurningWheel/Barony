@@ -506,6 +506,10 @@ int initGame()
 		}
 
 		loadAchievementData("/data/achievements.json");
+
+#ifdef NINTENDO
+		nxPostSDLInit();
+#endif
 	}
 
 	return result;

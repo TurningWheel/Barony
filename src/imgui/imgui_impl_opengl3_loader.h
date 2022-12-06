@@ -650,6 +650,16 @@ static GL3WglProc get_proc(const char *proc)
     *(void **)(&res) = dlsym(libgl, proc);
     return res;
 }
+#elif defined(NINTENDO)
+static int open_libgl(void) { return GL3W_OK; }
+
+static void close_libgl(void) {}
+
+#include <SDL.h>
+static GL3WglProc get_proc(const char *proc)
+{
+    return (GL3WglProc)SDL_GL_GetProcAddress(proc);
+}
 #else
 #include <dlfcn.h>
 
