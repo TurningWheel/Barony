@@ -178,6 +178,26 @@ int initApp(char const * const title, int fullscreen)
 		return 13;
 	}
 
+	// initialize SDL
+	window_title = title;
+	printlog("initializing SDL...\n");
+#ifdef WINDOWS
+#ifndef EDITOR
+	if ((*cvar_sdl_disablejoystickrawinput) == true)
+	{
+		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
+		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
+	}
+#endif
+#endif
+	Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+	init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+	if (SDL_Init(init_flags) == -1)
+	{
+		printlog("failed to initialize SDL: %s\n", SDL_GetError());
+		return 1;
+	}
+
 	// init steamworks
 #ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
@@ -202,6 +222,7 @@ int initApp(char const * const title, int fullscreen)
 		return 14;
 	}
 #ifndef STEAMWORKS
+#ifndef NINTENDO
 #ifdef APPLE
 	if ( EOS.CredentialName.compare("") == 0 )
 	{
@@ -216,28 +237,81 @@ int initApp(char const * const title, int fullscreen)
 		return 15;
 	}
 #endif
+#endif
+#ifdef NINTENDO
+	EOS.SetNetworkAvailable(nxConnectedToNetwork());
+#endif
 	EOS.initAuth();
 #endif // !STEAMWORKS
 #endif
 
-	window_title = title;
-	printlog("initializing SDL...\n");
-#ifdef WINDOWS
-#ifndef EDITOR
-	if ( (*cvar_sdl_disablejoystickrawinput) == true )
-	{
-		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0"); // prefer XINPUT devices, helps making SDL_HapticOpen() work on my wireless xbox controllers
-		printlog("SDL_HINT_JOYSTICK_RAWINPUT set to 0");
-	}
+	// I'm not sure when we'd need the following block.
+	// mobile ports????
+#if 0
+	auto event_filter = [](void* userdata, SDL_Event* e) -> int {
+		if (!e) {
+			return 0;
+		}
+		switch (e->type) {
+		default: break;
+		case SDL_APP_TERMINATING:
+			// safe cleanup
+			printlog("barony safely shutting down");
+			saveConfig("default.cfg");
+			MainMenu::settingsMount();
+			(void)MainMenu::settingsSave();
+			deinitGame();
+			deinitApp();
+			nxTerm();
+			break;
+		case SDL_APP_WILLENTERFOREGROUND:
+		case SDL_APP_DIDENTERFOREGROUND:
+		{
+			printlog("barony waking up");
+			static const int displays = SDL_GetNumVideoDisplays();
+			std::vector<SDL_Rect> displayBounds;
+			for (int i = 0; i < displays; i++) {
+				displayBounds.push_back(SDL_Rect());
+				SDL_GetDisplayBounds(i, &displayBounds.back());
+			}
+			if (displayBounds.size() > 0) {
+				const int x = displayBounds[0].w;
+				const int y = displayBounds[0].h;
+				printlog("new display size: %d %d", x, y);
+				SDL_Event new_event;
+				new_event.type = SDL_WINDOWEVENT;
+				new_event.window.event = SDL_WINDOWEVENT_RESIZED;
+				new_event.window.data1 = x;
+				new_event.window.data2 = y;
+				new_event.window.timestamp = SDL_GetTicks();
+				new_event.window.type = SDL_WINDOWEVENT;
+				new_event.window.windowID = screen ? SDL_GetWindowID(screen) : 0;
+				SDL_PushEvent(&new_event);
+			}
+#ifdef USE_EOS
+			EOS.SetSleepStatus(false);
 #endif
+			break;
+		}
+		case SDL_APP_WILLENTERBACKGROUND:
+		case SDL_APP_DIDENTERBACKGROUND:
+			printlog("barony going to sleep");
+#ifdef USE_EOS
+			EOS.SetSleepStatus(true);
 #endif
-	Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
-	init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
-	if (SDL_Init(init_flags) == -1)
-	{
-		printlog("failed to initialize SDL: %s\n", SDL_GetError());
-		return 1;
-	}
+			break;
+		case SDL_APP_LOWMEMORY:
+			printlog("barony low memory, dumping UI cache");
+			Text::dumpCache();
+			Image::dumpCache();
+			Font::dumpCache();
+			break;
+		}
+
+		return 0;
+		};
+	SDL_SetEventFilter(event_filter, nullptr);
+#endif
 
 #ifdef NINTENDO
 	SDL_GameControllerAddMappingsFromFile(GAME_CONTROLLER_DB_FILEPATH);
@@ -2513,6 +2587,13 @@ void GO_InitFBO()
 
 static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 {
+#ifdef NINTENDO
+	// don't do anything on nintendo.
+	// SDL_GetDisplayBounds() isn't helpful, because it just returns
+	// the size of the current display, which is incorrect when you're
+	// trying to switch the display size.
+	return;
+#else
 	static const int displays = SDL_GetNumVideoDisplays();
 	std::vector<SDL_Rect> displayBounds;
 	for (int i = 0; i < displays; i++) {
@@ -2521,12 +2602,6 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 	}
 	if (display_id >= 0 && display_id < displays) {
 		auto& bound = displayBounds[display_id];
-#ifdef NINTENDO
-		x = bound.x;
-		y = bound.y;
-		w = bound.w;
-		h = bound.h;
-#else
 		if (fullscreen) {
 #ifdef WINDOWS
 			x = bound.x;
@@ -2546,8 +2621,8 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 			x = bound.x + (bound.w - w) / 2;
 			y = bound.y + (bound.h - h) / 2;
 		}
-#endif
 	}
+#endif
 }
 
 bool initVideo()
@@ -2603,7 +2678,7 @@ bool initVideo()
 	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
 #ifdef NINTENDO
-    	flags = SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
+    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
 #else
 #ifdef WINDOWS
 	    if ( fullscreen )

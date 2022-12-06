@@ -4,6 +4,8 @@
 
 #ifdef USE_EOS
 #ifdef NINTENDO
+#define EOS_BUILD_PLATFORM_NAME Switch
+#include "eos_platform_prereqs.h"
 #include "eos/Switch/eos_Switch.h"
 #endif
 #include "eos_sdk.h"
@@ -40,7 +42,11 @@ public:
 	class Accounts_t 
 	{
 	public:
+#ifdef NINTENDO
+		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_ExternalAuth;
+#else
 		EOS_ELoginCredentialType AuthType = EOS_ELoginCredentialType::EOS_LCT_Developer;
+#endif
 		EOS_EResult AccountAuthenticationStatus = EOS_EResult::EOS_NotConfigured;
 		EOS_EResult AccountAuthenticationCompleted = EOS_EResult::EOS_NotConfigured;
 
@@ -743,6 +749,34 @@ public:
 				return EOS_ProductUserId_FromString(string);
 			}
 	};
+
+	void SetSleepStatus(bool asleep)
+	{
+		if (!PlatformHandle)
+		{
+			return;
+		}
+		static bool oldStatus = false;
+		if (oldStatus != asleep) {
+			oldStatus = asleep;
+			auto status = asleep ? EOS_EApplicationStatus::EOS_AS_BackgroundSuspended : EOS_EApplicationStatus::EOS_AS_Foreground;
+			EOS_Platform_SetApplicationStatus(PlatformHandle, status);
+		}
+	}
+
+	void SetNetworkAvailable(bool available)
+	{
+		if (!PlatformHandle)
+		{
+			return;
+		}
+		static bool oldStatus = false;
+		if (oldStatus != available) {
+			oldStatus = available;
+			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
+			EOS_Platform_SetNetworkStatus(PlatformHandle, status);
+		}
+	}
 
 	bool HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn);
 	bool HandleReceivedMessagesAndIgnore(EOS_ProductUserId* remoteIdReturn); // function to empty the packet queue on main lobby.

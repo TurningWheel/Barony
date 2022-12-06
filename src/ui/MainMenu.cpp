@@ -137,6 +137,10 @@ namespace MainMenu {
         return story_active;
     }
 
+	bool isMenuOpen() {
+		return main_menu_frame != nullptr;
+	}
+
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
 		fadeout = true;
@@ -2022,7 +2026,7 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-#if defined(USE_EOS) && defined(STEAMWORKS)
+#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
@@ -2844,14 +2848,14 @@ namespace MainMenu {
 			u8"Desiree Colborn\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Learn more at http://www.github.com/TurningWheel/Barony\n"
+			u8"Learn more at https://www.github.com/TurningWheel/Barony\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Copyright \u00A9 %s, all rights reserved\n"
 #ifdef USE_FMOD
 			u8"Made with FMOD Core by Firelight Technologies Pty Ltd.\n"
 #endif
-			u8"http://www.baronygame.com/\n"
+			u8"https://www.baronygame.com/\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8" \n"
@@ -5243,7 +5247,7 @@ bind_failed:
 		y += settingsAddField(*settings_subwindow, y, "port_number", "Port",
 		    port_desc, buf, [](Field& field){allSettings.port_number = (Uint16)strtol(field.getText(), nullptr, 10);});
 
-#if defined(USE_EOS) && defined(STEAMWORKS)
+#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
 		y += settingsAddSubHeader(*settings_subwindow, y, "crossplay", "Crossplay");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "crossplay", "Crossplay Enabled",
 		    "Enable crossplay through Epic Online Services",
@@ -11749,7 +11753,7 @@ bind_failed:
 		    (*class_name->getTickCallback())(*class_name);
 		}
 
-		constexpr int height = std::max(254, 6 + 54 * (int)(num_classes / 4 + ((num_classes % 4) ? 1 : 0)));
+		const int height = std::max(254, 6 + 54 * (int)(num_classes / 4 + ((num_classes % 4) ? 1 : 0)));
 
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
@@ -15351,6 +15355,15 @@ bind_failed:
 		filter_settings->setColor(makeColor(255, 255, 255, 255));
 		filter_settings->setTextHighlightColor(makeColor(255, 255, 255, 255));
 		filter_settings->setTextColor(makeColor(255, 255, 255, 255));
+		filter_settings->setWidgetSearchParent(window->getName());
+		filter_settings->addWidgetAction("MenuPageLeft", "online_tab");
+		filter_settings->addWidgetAction("MenuPageRight", "lan_tab");
+		filter_settings->addWidgetAction("MenuStart", "join_lobby");
+		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
+		filter_settings->addWidgetAction("MenuAlt2", "refresh");
+		filter_settings->setWidgetBack("back_button");
+		filter_settings->setWidgetDown("crossplay");
+		filter_settings->setWidgetUp("names");
 #endif
 
 #ifdef NDEBUG
@@ -18323,6 +18336,17 @@ bind_failed:
 		main_menu_frame->setColor(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
 
+		// logout at the start screen
+#if defined(NINTENDO) && defined(USE_EOS)
+		if (LobbyHandler.crossplayEnabled) {
+			LobbyHandler.crossplayEnabled = false;
+			EOS.CrossplayAccountManager.logOut = true;
+		}
+		if (!nxConnectedToNetwork()) {
+			nxConnectToNetwork();
+		}
+#endif
+
 		const auto title_scale = 4.0;
 		auto title_img = Image::get("*images/system/title.png");
 		auto title = main_menu_frame->addImage(
@@ -18417,6 +18441,9 @@ bind_failed:
 			if (!firstTimeTutorialPrompt()) {
 				soundActivate();
 			}
+#if defined(NINTENDO) && defined(USE_EOS)
+			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+#endif
 		    });
 		button->setTickCallback([](Widget& widget){
 			const int pace = TICKS_PER_SECOND * 4;
@@ -18813,7 +18840,7 @@ bind_failed:
 		    void(*banner_funcs[])(Button&) = {
 		        [](Button&){ // banner #1
 		        if (enabledDLCPack1 && enabledDLCPack2) {
-                    openURLTryWithOverlay("http://turningwheelgames.com/blog/2022/11/qodbeta");
+                    openURLTryWithOverlay("https://turningwheelgames.com/blog/2022/11/qodbeta");
                 } else {
 					openDLCPrompt();
                 }

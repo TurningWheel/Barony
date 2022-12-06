@@ -263,7 +263,7 @@ void UIToastNotification::drawDockedCard()
 
 	if (!temporaryCardHide && rectContainsPoint(r, omousex, omousey))
 	{
-		if (mousestatus[SDL_BUTTON_LEFT])
+		if (clicking)
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			undockCard();
@@ -704,6 +704,18 @@ void UIToastNotificationManager_t::createAchievementsDisabledNotification()
 		n->cardType = UIToastNotification::CardType::UI_CARD_ACHIEVEMENTS_DISABLED;
 		n->setIdleSeconds(8);
 	}
+}
+
+void UIToastNotificationManager_t::createGenericNotification(const char* header, const char* text)
+{
+	UIToastNotification* n = UIToastNotificationManager.addNotification(nullptr);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
+	n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_REMOVABLE);
+	n->cardType = UIToastNotification::CardType::UI_CARD_DEFAULT;
+	n->setHeaderText(header);
+	n->setMainText(text);
+	n->setIdleSeconds(10);
 }
 
 void truncateMainText(std::string& str)
