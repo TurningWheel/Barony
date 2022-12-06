@@ -618,6 +618,19 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
+		// ring warning
+		item = newItem(RING_WARNING, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
 		if ( isLocalPlayer )
 		{
 			// crossbow
@@ -658,7 +671,12 @@ void initClass(const int player)
 			free(item);
 
 			// scroll
-			item = newItem(SCROLL_MAGICMAPPING, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(SCROLL_MAGICMAPPING, SERVICABLE, 0, 6, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// book
+			item = newItem(SPELLBOOK_DETECT_FOOD, WORN, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1173,6 +1191,12 @@ void initClass(const int player)
 			hotbar[3].item = item2->uid;
 			free(item);
 
+			// fire staff
+			item = newItem(MAGICSTAFF_FIRE, SERVICABLE, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
 			// spellbook of forcebolt
 			item = newItem(SPELLBOOK_FORCEBOLT, WORN, 0, 1, 6, true, nullptr);
 			item2 = itemPickup(player, item);
@@ -1200,7 +1224,7 @@ void initClass(const int player)
 			free(item);
 
 			// scroll
-			item = newItem(SCROLL_CHARGING, EXCELLENT, 0, 1, 1, true, nullptr);
+			item = newItem(SCROLL_CHARGING, EXCELLENT, 0, 2, 1, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
