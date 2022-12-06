@@ -567,12 +567,12 @@ void Entity::actChest()
 					//newItem(static_cast<ItemType>(POTION_WATER + (local_rng.rand() % 15)), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
 					newItem(itemLevelCurve(POTION, 0, currentlevel + 7), static_cast<Status>(WORN + local_rng.rand() % 3), 0, 1, local_rng.rand(), false, inventory);
 				}
-				if ( local_rng.rand() % 2 == 0 )
+				if ( local_rng.rand() % 8 == 0 )
 				{
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
 					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + local_rng.rand() % 3, 0, true, inventory);
 				}
-				else if ( local_rng.rand() % 4 == 0 )
+				else if ( local_rng.rand() % 16 == 0 )
 				{
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + local_rng.rand() % 3), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, inventory);
 				}

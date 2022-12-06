@@ -57,6 +57,17 @@ void Entity::actTeleporter()
 	// use teleporter
 	if ( multiplayer != CLIENT )
 	{
+		if ( this->isInteractWithMonster() )
+		{
+			Entity* monsterInteracting = uidToEntity(this->interactedByMonster);
+			if ( monsterInteracting )
+			{
+				monsterInteracting->teleporterMove(teleporterX, teleporterY, teleporterType);
+				this->clearMonsterInteract();
+				return;
+			}
+			this->clearMonsterInteract();
+		}
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
 			if ( selectedEntity[i] == this || client_selected[i] == this )

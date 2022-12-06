@@ -17196,8 +17196,10 @@ bind_failed:
 		};
 		Option options[] = {
 			//{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifndef STEAMWORKS
 #ifdef USE_EOS
 			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 #endif
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
@@ -18644,8 +18646,10 @@ bind_failed:
 		        {"Back to Game", "BACK TO GAME", mainClose},
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
 		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
+#ifndef STEAMWORKS
 #ifdef USE_EOS
 		        {"Achievements", "ACHIEVEMENTS", archivesAchievements},
+#endif
 #endif
 		        {"Settings", "SETTINGS", mainSettings},
 		        });

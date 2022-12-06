@@ -1225,9 +1225,33 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			&& my->monsterSpecialTimer == 0
 			&& my->monsterSpecialState == 0 )
 		{
-			// doACoolFlip = true!
-			my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
-			my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
+			bool doACoolFlip = true;
+
+			for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+			{
+				if ( bodypart == GYRO_BOMB )
+				{
+					entity = (Entity*)node->element;
+					if ( entity )
+					{
+						if ( entity->sprite == items[TOOL_SENTRYBOT].index )
+						{
+							doACoolFlip = false;
+						}
+						else if ( entity->sprite == items[TOOL_SPELLBOT].index )
+						{
+							doACoolFlip = false;
+						}
+					}
+					break;
+				}
+			}
+
+			if ( doACoolFlip )
+			{
+				my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+				my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
+			}
 		}
 
 		if ( my->monsterSpecialState == GYRO_RETURN_LANDING )
@@ -1420,7 +1444,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					for ( node_t* inv = myStats->inventory.first; inv; inv = inv->next )
 					{
 						Item* holding = (Item*)inv->element;
-						if ( holding && holding->type >= TOOL_BOMB && holding->type <= TOOL_TELEPORT_BOMB )
+						if ( holding && itemIsThrowableTinkerTool(holding) )
 						{
 							entity->sprite = items[holding->type].index;
 						}
@@ -1433,6 +1457,31 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 					}
+				}
+
+				if ( entity->sprite == items[TOOL_SENTRYBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][8][0];
+					entity->focaly = limbs[GYROBOT][8][1];
+					entity->focalz = limbs[GYROBOT][8][2];
+				}
+				else if ( entity->sprite == items[TOOL_SPELLBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][9][0];
+					entity->focaly = limbs[GYROBOT][9][1];
+					entity->focalz = limbs[GYROBOT][9][2];
+				}
+				else if ( entity->sprite == items[TOOL_GYROBOT].index )
+				{
+					entity->focalx = limbs[GYROBOT][10][0];
+					entity->focaly = limbs[GYROBOT][10][1];
+					entity->focalz = limbs[GYROBOT][10][2];
+				}
+				else if ( entity->sprite == items[TOOL_DUMMYBOT].index || entity->sprite == items[TOOL_DECOY].index )
+				{
+					entity->focalx = limbs[GYROBOT][11][0];
+					entity->focaly = limbs[GYROBOT][11][1];
+					entity->focalz = limbs[GYROBOT][11][2];
 				}
 
 				if ( multiplayer == SERVER )

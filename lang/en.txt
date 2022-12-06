@@ -651,7 +651,7 @@ thou makest use of them.#
 408 Unsustaining spell %s.#
 409 You fumble the spell and it fizzles!#
 410 Cannot cast spells while swimming!#
-411 Wow! You feel restored.#
+411 Your body feels cleansed!#
 412 A map coalesces in your mind!#
 413 DEPRECATED_SPELL_NAME#
 414 DEPRECATED_SPELL_NAME#
@@ -1190,7 +1190,7 @@ Thank you!#
 760 This tastes like fruit juice.#
 761 Yecch! This tastes like poison.#
 762 You feel very confused!#
-763 Wow! You feel restored.#
+763 Your body feels cleansed!#
 764 You consume a tin of
  %s.#
 765 You can't see a thing!#
@@ -6383,5 +6383,17 @@ favorite customers.#
 4301 The shrine responds to your touch!#
 4302 Your shapeshift fades and you return to your abnormal form.#
 4303 The polymorph wears out.#
+4304 You are no longer an enemy of the Merchant's Guild.#
+4305 You are now deemed an enemy of the Merchant's Guild
+for inciting violence!#
+4306 You are now deemed an enemy of the Merchant's Guild
+for accessory to violence!#
+4307 You see a shrine.#
+4308 You see a statue.#
+4309 shrine#
+4310 ladder#
+4311 portal#
+4312 The potion had no effect.#
+4313 Your allies feel cleansed!#
 
 4399 end#

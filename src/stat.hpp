@@ -336,3 +336,4 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
 char* getSkillLangEntry(int skill);
+bool statusEffectRemovedByCureAilment(const int effect);

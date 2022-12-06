@@ -2506,7 +2506,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					createParticleRock(entity);
 					break;
 				case PARTICLE_EFFECT_SHATTERED_GEM:
-					createParticleShatteredGem(entity, sprite);
+					createParticleShatteredGem(entity->x, entity->y, 7.5, sprite, entity);
 					break;
 				case PARTICLE_EFFECT_SHADOW_INVIS:
 					createParticleDropRising(entity, sprite, 1.0);
@@ -2535,10 +2535,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				break;
 				case PARTICLE_EFFECT_SHRINE_TELEPORT:
 				{
-					Entity* spellTimer = createParticleTimer(entity, 150, sprite);
+					Entity* spellTimer = createParticleTimer(entity, 200, sprite);
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
-					spellTimer->particleTimerPreDelay = 50;
+					spellTimer->particleTimerPreDelay = 0;
 				}
 				break;
 				case PARTICLE_EFFECT_TELEPORT_PULL:
@@ -2675,6 +2675,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->sizey = 4;
 			}
 			break;
+			case PARTICLE_EFFECT_SHATTERED_GEM:
+				createParticleShatteredGem(particle_x, particle_y, 7.5, sprite, nullptr);
+				break;
 			default:
 				break;
 		}
@@ -4470,6 +4473,25 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			(Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t)net_packet->data[8];
 		const char* msg = (const char*)(&net_packet->data[9]);
 		players[clientnum]->worldUI.worldTooltipDialogue.createDialogueTooltip(uid, type, msg);
+		return;
+	}},
+
+	// shopkeeper player hostility
+	{ 'SHPH', []() {
+		ShopkeeperPlayerHostility_t::WantedLevel wantedLevel = (ShopkeeperPlayerHostility_t::WantedLevel)net_packet->data[4];
+		Monster playerRace = (Monster)net_packet->data[5];
+		Uint16 numKills = SDLNet_Read16(&net_packet->data[6]);
+		Uint16 numAggressions = SDLNet_Read16(&net_packet->data[8]);
+		Uint16 numAccessories = SDLNet_Read16(&net_packet->data[10]);
+		if ( auto hostility = ShopkeeperPlayerHostility.getPlayerHostility(clientnum, playerRace) )
+		{
+			hostility->wantedLevel = wantedLevel;
+			hostility->playerRace = playerRace;
+			hostility->numKills = (int)numKills;
+			hostility->numAggressions = (int)numAggressions;
+			hostility->numAccessories = (int)numAccessories;
+			hostility->player = clientnum;
+		}
 		return;
 	}},
 };

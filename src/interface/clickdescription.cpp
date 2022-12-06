@@ -168,6 +168,14 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, language[271]);
 				}
+				else if ( entity->behavior == &actTeleportShrine /*||entity->behavior == &actSpellShrine*/ )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, language[4307]);
+				}
+				else if ( entity->behavior == &actStatue )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, language[4308]);
+				}
 				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal
 					|| entity->behavior == &actMidGamePortal )
 				{

@@ -1538,45 +1538,52 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
-					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(i, MESSAGE_STATUS, color, language[411]);
 					int c = 0;
+					int numEffectsCured = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{
-						if ( c == EFF_LEVITATING && stats[i]->EFFECTS[EFF_LEVITATING] )
+						if ( statusEffectRemovedByCureAilment(c) )
 						{
-							// don't unlevitate
-						}
-						else
-						{
-							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL
-								&& c != EFF_SHAPESHIFT )
+							if ( stats[i]->EFFECTS[c] )
 							{
 								stats[i]->EFFECTS[c] = false;
-								stats[i]->EFFECTS_TIMERS[c] = 0;
+								if ( stats[i]->EFFECTS_TIMERS[c] > 0 )
+								{
+									stats[i]->EFFECTS_TIMERS[c] = 1;
+								}
+								++numEffectsCured;
 							}
 						}
 					}
 					if ( stats[i]->EFFECTS[EFF_WITHDRAWAL] )
 					{
+						++numEffectsCured;
 						players[i]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 						serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{
+						++numEffectsCured;
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 					}
-					serverUpdateEffects(player);
-					playSoundEntity(players[i]->entity, 168, 128);
 
-					if ( spellBookBonusPercent >= 25 )
+					bool regenEffect = spellBookBonusPercent >= 25;
+					if ( regenEffect )
 					{
 						int bonus = 10 * ((spellBookBonusPercent * 4) / 100.f); // 25% = 10 seconds, 50% = 20 seconds.
-						caster->setEffect(EFF_HP_REGEN, true, bonus * TICKS_PER_SECOND, true);
+						caster->setEffect(EFF_HP_REGEN, true, std::max(stats[i]->EFFECTS_TIMERS[EFF_HP_REGEN], bonus * TICKS_PER_SECOND), true);
 					}
 
-					for ( node = map.creatures->first; node->next; node = node->next )
+					if ( numEffectsCured > 0 || regenEffect )
+					{
+						serverUpdateEffects(player);
+					}
+					playSoundEntity(players[i]->entity, 168, 128);
+
+
+					int numAlliesEffectsCured = 0;
+					for ( node = map.creatures->first; node; node = node->next )
 					{
 						Entity* entity = (Entity*)(node->element);
 						if ( !entity || entity == caster )
@@ -1587,6 +1594,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							continue;
 						}
+						int entityEffectsCured = 0;
 						Stat* target_stat = entity->getStats();
 						if ( target_stat )
 						{
@@ -1594,36 +1602,62 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) 
-										&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
+									if ( statusEffectRemovedByCureAilment(c) )
 									{
-										target_stat->EFFECTS[c] = false;
-										target_stat->EFFECTS_TIMERS[c] = 0;
+										if ( target_stat->EFFECTS[c] )
+										{
+											target_stat->EFFECTS[c] = false;
+											if ( target_stat->EFFECTS_TIMERS[c] > 0 )
+											{
+												target_stat->EFFECTS_TIMERS[c] = 1;
+											}
+											++numAlliesEffectsCured;
+											++entityEffectsCured;
+										}
 									}
 								}
 								if ( target_stat->EFFECTS[EFF_WITHDRAWAL] )
 								{
+									++numAlliesEffectsCured;
+									++entityEffectsCured;
 									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 									serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
 								}
-								if ( spellBookBonusPercent >= 25 )
+								if ( regenEffect )
 								{
 									int bonus = 10 * ((spellBookBonusPercent * 4) / 100.f); // 25% = 10 seconds, 50% = 20 seconds.
-									entity->setEffect(EFF_HP_REGEN, true, bonus * TICKS_PER_SECOND, true);
-								}
-								if ( entity->behavior == &actPlayer )
-								{
-									serverUpdateEffects(entity->skill[2]);
+									entity->setEffect(EFF_HP_REGEN, true, std::max(target_stat->EFFECTS_TIMERS[EFF_HP_REGEN], bonus * TICKS_PER_SECOND), true);
 								}
 								if ( entity->flags[BURNING] )
 								{
+									++numAlliesEffectsCured;
+									++entityEffectsCured;
 									entity->flags[BURNING] = false;
 									serverUpdateEntityFlag(entity, BURNING);
 								}
+								if ( entity->behavior == &actPlayer && (entityEffectsCured > 0 || regenEffect) )
+								{
+									serverUpdateEffects(entity->skill[2]);
+									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[411]);
+								}
+
 								playSoundEntity(entity, 168, 128);
 								spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 							}
 						}
+					}
+
+					if ( regenEffect || numEffectsCured > 0 )
+					{
+						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[411]); // your body feels cleansed
+					}
+					if ( numAlliesEffectsCured > 0 )
+					{
+						messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), language[4313]); // your allies feel cleansed
+					}
+					if ( !regenEffect && numEffectsCured == 0 && numAlliesEffectsCured == 0 )
+					{
+						messagePlayer(i, MESSAGE_STATUS, language[3715]); // had no effect.
 					}
 					break;
 				}

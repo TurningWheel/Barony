@@ -2974,7 +2974,7 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
 	if ( targetEntityType == SHOPKEEPER )
 	{
-		if ( shopIsMysteriousShopkeeper(&entity) || monsterally[playerRace][SHOPKEEPER] || playerRace == AUTOMATON )
+		if ( shopIsMysteriousShopkeeper(&entity) || !ShopkeeperPlayerHostility.isPlayerEnemy(player) )
 		{
 			return true;
 		}
@@ -3125,6 +3125,13 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			if ( parent->behavior == &actGate && parent->flags[PASSABLE] )
 			{
 				return 0.0;
+			}
+			if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+			{
+				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
+				{
+					return 0.0;
+				}
 			}
 			if ( parent->behavior == &actPlayer || parent->behavior == &actMonster )
 			{
@@ -3761,7 +3768,7 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
-	else if ( entity.behavior == &::actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
+	else if ( entity.behavior == &actTeleportShrine /*|| entity.behavior == &::actSpellShrine*/ )
 	{
 		return false;
 	}

@@ -352,6 +352,15 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0) )
+				{
+					// cursed gem, explode
+					createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
+					serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
 				{
 					Entity* parent = uidToEntity(my->parent);
@@ -1330,32 +1339,12 @@ void actThrown(Entity* my)
 					}
 
 					// alert other monsters too
-					Entity* ohitentity = hit.entity;
-					node_t* node;
-					for ( node = map.creatures->first; node != nullptr && alertAllies && !targetHealed; node = node->next ) //Searching for monsters? Creature list, not entity list.
+					if ( alertAllies && !targetHealed )
 					{
-						Entity* entity = (Entity*)node->element;
-						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
-						{
-							if ( entity->getStats() && entity->getStats()->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-							{
-								continue; // shopkeepers don't care about hitting humans/robots etc.
-							}
-							if ( entity->checkFriend(ohitentity) )
-							{
-								if ( entity->monsterState == MONSTER_STATE_WAIT )
-								{
-									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
-									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-									if ( hit.entity == entity )
-									{
-										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-									}
-								}
-							}
-						}
+						std::unordered_set<Entity*> entitiesToSkip = { polymorphedTarget };
+						hit.entity->alertAlliesOnBeingHit(parent, &entitiesToSkip);
 					}
-					hit.entity = ohitentity;
+					hit.entity->updateEntityOnHit(parent, alertTarget);
 					Uint32 color = makeColorRGB(0, 255, 0);
 					if ( parent->behavior == &actPlayer && !skipMessage )
 					{
@@ -1566,11 +1555,19 @@ void actThrown(Entity* my)
 			bool dropItem = true;
 			if ( itemCategory(item) == GEM )
 			{
-				if ( hit.entity && local_rng.rand() % 2 == 0 )
+				if ( (hit.entity && local_rng.rand() % 2 == 0) || item->beatitude < 0 || local_rng.rand() % 5 == 0 )
 				{
 					dropItem = false;
-					createParticleShatteredGem(hit.entity, my->sprite);
-					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					if ( hit.entity )
+					{
+						createParticleShatteredGem(hit.entity->x, hit.entity->y, 7.5, my->sprite, hit.entity);
+						serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
+					else
+					{
+						createParticleShatteredGem(my->x, my->y, my->z, my->sprite, nullptr);
+						serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
+					}
 				}
 			}
 			if ( dropItem )

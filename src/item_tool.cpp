@@ -788,16 +788,22 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				if ( player > 0 && !splitscreen )
 				{
 					client_selected[player] = &entity;
+					bool oldInRange = inrange[player];
+					inrange[player] = true;
 					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
 					entity.skill[8] = 0;
+					inrange[player] = oldInRange;
 				}
 				else if ( player == 0 || (player > 0 && splitscreen) )
 				{
 					selectedEntity[player] = &entity;
+					bool oldInRange = inrange[player];
+					inrange[player] = true;
 					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
 					entity.skill[8] = 0;
+					inrange[player] = oldInRange;
 				}
 			}
 			else if ( entity.skill[0] > 1 )
@@ -831,6 +837,8 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					default:
 						break; //Should never happen.
 				}
+				entity.skill[0] = std::max(entity.skill[0], 0);
+				serverUpdateEntitySkill(&entity, 0);
 			}
 			else
 			{
@@ -921,6 +929,8 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		}
 		else if ( skillLVL < 2 || (skillLVL >= 2 && local_rng.rand() % (skillLVL) == 0 ) )
 		{
+			bool oldInRange = inrange[player];
+			inrange[player] = true;
 			if ( player > 0 && !splitscreen )
 			{
 				client_selected[player] = &entity;
@@ -931,6 +941,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				selectedEntity[player] = &entity;
 				actFountain(&entity);
 			}
+			inrange[player] = oldInRange;
 		}
 	}
 	else

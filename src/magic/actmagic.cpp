@@ -808,6 +808,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->pitch = 0;
 						}
 						my->parent = hit.entity->getUID();
+						++my->actmagicReflectionCount;
 					}
 
 					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
@@ -947,6 +948,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 					}
+
+					if ( my->actmagicReflectionCount >= 3 )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
 					return;
 				}
 
@@ -1051,6 +1059,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								alertTarget = false;
 								alertAllies = false;
 							}
+							if ( hitstats->type == SHOPKEEPER && !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									alertTarget = false;
+									alertAllies = false;
+								}
+							}
+							/*if ( hitstats->type == SHOPKEEPER && parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+							{
+								alertTarget = false;
+							}*/
 							if ( my->actmagicCastByTinkerTrap == 1 )
 							{
 								if ( entityDist(hit.entity, parent) > TOUCHRANGE )
@@ -1076,35 +1096,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							// alert other monsters too
-							Entity* ohitentity = hit.entity;
-							for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
+							if ( alertAllies )
 							{
-								entity = (Entity*)node->element;
-								if ( entity->behavior == &actMonster && entity != ohitentity )
-								{
-									Stat* buddystats = entity->getStats();
-									if ( buddystats != nullptr )
-									{
-										if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
-										{
-											continue; // shopkeepers don't care about hitting humans/robots etc.
-										}
-										if ( entity->checkFriend(ohitentity) )
-										{
-											if ( entity->monsterState == MONSTER_STATE_WAIT )
-											{
-												tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-												lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-												if ( hit.entity == entity )
-												{
-													entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-												}
-											}
-										}
-									}
-								}
+								hit.entity->alertAlliesOnBeingHit(parent);
 							}
-							hit.entity = ohitentity;
+							hit.entity->updateEntityOnHit(parent, alertTarget);
 						}
 					}
 				}
@@ -3177,20 +3173,24 @@ void createParticleRock(Entity* parent)
 	}
 }
 
-void createParticleShatteredGem(Entity* parent, int sprite)
+void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent)
 {
-	if ( !parent )
-	{
-		return;
-	}
 	for ( int c = 0; c < 5; c++ )
 	{
 		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->x = parent->x + (-4 + local_rng.rand() % 9);
-		entity->y = parent->y + (-4 + local_rng.rand() % 9);
-		entity->z = 7.5;
+		if ( parent )
+		{
+			entity->x = parent->x + (-4 + local_rng.rand() % 9);
+			entity->y = parent->y + (-4 + local_rng.rand() % 9);
+		}
+		else
+		{
+			entity->x = x + (-4 + local_rng.rand() % 9);
+			entity->y = y + (-4 + local_rng.rand() % 9);
+		}
+		entity->z = z;
 		entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
 		entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 
@@ -3987,6 +3987,8 @@ void actParticleTimer(Entity* my)
 				if ( toTeleport && target )
 				{
 					bool teleported = false;
+					createParticleErupt(toTeleport, my->particleTimerEndSprite);
+					serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 					teleported = toTeleport->teleportAroundEntity(target, my->particleTimerVariable1);
 					if ( teleported )
 					{

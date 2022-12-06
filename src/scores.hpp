@@ -344,6 +344,40 @@ struct SaveGameInfo {
 		std::vector<recipe_t> known_recipes;
 		std::vector<int> known_scrolls;
 
+		struct PlayerRaceHostility_t
+		{
+			int numAggressions = 0;
+			int numKills = 0;
+			int numAccessories = 0;
+			int playerRace = NOTHING;
+			int wantedLevel = ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL;
+			int player = -1;
+
+			PlayerRaceHostility_t() = default;
+			PlayerRaceHostility_t(const PlayerRaceHostility_t&) = default;
+			PlayerRaceHostility_t(PlayerRaceHostility_t&&) = default;
+			PlayerRaceHostility_t(ShopkeeperPlayerHostility_t::PlayerRaceHostility_t& h)
+			{
+				wantedLevel = h.wantedLevel;
+				playerRace = h.playerRace;
+				player = h.player;
+				numAggressions = h.numAggressions;
+				numKills = h.numKills;
+				numAccessories = h.numAccessories;
+			}
+			bool serialize(FileInterface* fp)
+			{
+				fp->property("wanted_level", wantedLevel);
+				fp->property("player_race", playerRace);
+				fp->property("player", player);
+				fp->property("num_aggressions", numAggressions);
+				fp->property("num_kills", numKills);
+				fp->property("num_accessories", numAccessories);
+				return true;
+			}
+		};
+		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
+
 		struct stat_t {
 			struct item_t {
 				item_t() = default;
@@ -468,6 +502,7 @@ struct SaveGameInfo {
 			fp->property("stats", stats);
 			fp->property("followers", followers);
 			fp->property("game_statistics", gameStatistics);
+			fp->property("shopkeeper_hostility", shopkeeperHostility);
 			return true;
 		}
 	};

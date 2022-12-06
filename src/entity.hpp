@@ -472,6 +472,7 @@ public:
 	Sint32& actmagicOrbitCastFromSpell; // skill[20]
 	Sint32& actmagicCastByTinkerTrap; // skill[22]
 	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
+	Sint32& actmagicReflectionCount; // skill[25]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -674,6 +675,7 @@ public:
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+	void alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>* skipEntitiesToAlert = nullptr);
 
 	//Act functions.
 	void actChest();
@@ -950,6 +952,7 @@ public:
 	void createWorldUITooltip();
 	bool bEntityTooltipRequiresButtonHeld() const;
 	bool bEntityHighlightedForPlayer(const int player) const;
+	void updateEntityOnHit(Entity* attacker, bool alertTarget);
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);
