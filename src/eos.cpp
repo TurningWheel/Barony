@@ -1103,10 +1103,12 @@ static void* EOS_CALL CustomRealloc(void* Ptr, size_t Size, size_t Alignment)
 }
 #endif
 
+#ifdef NINTENDO
 EOS_Bool EOS_CALL Game_OnNetworkRequested()
 {
 	return nxConnectedToNetwork() ? EOS_TRUE : EOS_FALSE;
 }
+#endif
 
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
@@ -3264,7 +3266,8 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 	UIToastNotificationManager.createEpicCrossplayLoginNotification();
 }
 
-void nxTokenRequest()
+#ifdef NINTENDO
+static void nxTokenRequest()
 {
 	char token[1024] = "";
 	nxGetNSAID(token, sizeof(token));
@@ -3291,6 +3294,7 @@ void nxTokenRequest()
 	EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
 	printlog("[NX]: AppTicket request success");
 }
+#endif
 
 void EOSFuncs::CrossplayAccounts_t::handleLogin()
 {
