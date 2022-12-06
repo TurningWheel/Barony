@@ -752,6 +752,7 @@ public:
 
 	void SetSleepStatus(bool asleep)
 	{
+#ifdef NINTENDO
 		if (!PlatformHandle)
 		{
 			return;
@@ -762,10 +763,12 @@ public:
 			auto status = asleep ? EOS_EApplicationStatus::EOS_AS_BackgroundSuspended : EOS_EApplicationStatus::EOS_AS_Foreground;
 			EOS_Platform_SetApplicationStatus(PlatformHandle, status);
 		}
+#endif
 	}
 
 	void SetNetworkAvailable(bool available)
 	{
+#ifdef NINTENDO
 		if (!PlatformHandle)
 		{
 			return;
@@ -776,6 +779,7 @@ public:
 			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
 			EOS_Platform_SetNetworkStatus(PlatformHandle, status);
 		}
+#endif
 	}
 
 	bool HandleReceivedMessages(EOS_ProductUserId* remoteIdReturn);
