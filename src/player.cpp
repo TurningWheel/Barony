@@ -1218,7 +1218,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		if ( player.bookGUI.bBookOpen || player.skillSheet.bSkillSheetOpen
 			|| player.signGUI.bSignOpen
 			|| FollowerMenu[player.playernum].followerMenuIsOpen()
-			|| player.hud.mapWindow || player.hud.logWindow )
+			|| player.minimap.mapWindow || player.messageZone.logWindow )
 		{
 			return false;
 		}
@@ -6042,8 +6042,6 @@ void Player::clearGUIPointers()
 	hud.allyFollowerTitleFrame = nullptr;
 	hud.allyFollowerGlyphFrame = nullptr;
 	hud.allyPlayerFrame = nullptr;
-	hud.mapWindow = nullptr;
-	hud.logWindow = nullptr;
 	hud.enemyBarFrame = nullptr;
 	hud.enemyBarFrameHUD = nullptr;
 	hud.actionPromptsFrame = nullptr;
@@ -6052,6 +6050,11 @@ void Player::clearGUIPointers()
 	hud.cursorFrame = nullptr;
 
 	messageZone.chatFrame = nullptr;
+	messageZone.logParentFrame = nullptr;
+	messageZone.logWindow = nullptr;
+
+	minimap.mapWindow = nullptr;
+	minimap.mapParentFrame = nullptr;
 
 	std::fill(hotbar.hotbarSlotFrames.begin(), hotbar.hotbarSlotFrames.end(), nullptr);
 	hotbar.hotbarFrame = nullptr;
