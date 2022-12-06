@@ -7615,14 +7615,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( (basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID) && !samePotion )
 		{
-			if ( local_rng.rand() % 5 == 0 )
+			if ( local_rng.rand() % 10 == 0 )
 			{
 				degradeAlembic = true;
 			}
 		}
 		else
 		{
-			if ( local_rng.rand() % 20 == 0 )
+			if ( local_rng.rand() % 40 == 0 )
 			{
 				degradeAlembic = true;
 			}
