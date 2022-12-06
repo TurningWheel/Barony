@@ -3370,7 +3370,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 		createNotification();
 		awaitingAppTicketResponse = true;
 		EOSFuncs::logInfo("Crossplay login request started...");
-#else if defined(NINTENDO)
+#elif defined(NINTENDO)
 		createNotification();
 		awaitingAppTicketResponse = true;
 		nxTokenRequest();
