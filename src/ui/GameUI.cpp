@@ -8181,6 +8181,9 @@ static ConsoleCommand ccmd_log_clear("/log_clear", "Clears log history",
     list_FreeAll(&messages);
     });
 
+static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
+static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
+static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
 void addMessageToLogWindow(int player, string_t* string) {
     auto& frame = players[player]->messageZone.logWindow;
     if (!frame || !string) {
@@ -8192,7 +8195,11 @@ void addMessageToLogWindow(int player, string_t* string) {
 
     auto subframe = frame->findFrame("subframe"); assert(subframe);
     auto subframe_size = subframe->getActualSize();
-    int y = subframe_size.h;
+	int y = subframe_size.h;
+	if ( y != 4 )
+	{
+		y = subframe_size.h + *cvar_log_lineheight_offset;
+	}
 
     static ConsoleVariable<bool> timestamp_messages("/log_timestamp", true);
 
@@ -8209,24 +8216,57 @@ void addMessageToLogWindow(int player, string_t* string) {
 
     static ConsoleVariable<std::string> font("/log_font",
         "fonts/PixelMaz_monospace.ttf#32#2");
+	static ConsoleVariable<std::string> compactfont("/log_font_compact",
+		"fonts/pixel_maz.ttf#32#2");
 
+	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
     auto field = subframe->addField("field", size + 1);
-    auto text = Text::get(buf, font->c_str(),
-        uint32ColorWhite, uint32ColorBlack);
-    const int text_h = (int)text->getHeight() * (int)string->lines + 2;
-    const int text_w = (int)text->getWidth();
-    field->setSize(SDL_Rect{8, y, text_w, text_h});
-    field->setFont(font->c_str());
-    field->setTextColor(string->color);
-	field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
-    field->setText(buf);
+	int text_h = 0;
+	int text_w = 0;
+	int textHeight = 0;
+	if ( bCompactWidth )
+	{
+		field->setFont(compactfont->c_str());
+		field->setTextColor(string->color);
+		field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
+		field->setText(buf);
+		field->setPaddingPerLine(*cvar_log_multiline_pady);
+		auto text = Text::get(buf, compactfont->c_str(),
+			uint32ColorWhite, uint32ColorBlack);
+		if ( auto text = field->getTextObject() )
+		{
+			textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)text->getHeight()) * (int)string->lines + 2);
+			text_h = textHeight + *cvar_log_lineheight_offset;
+			text_w = (int)text->getWidth();
+			field->setSize(SDL_Rect{ 8, y, text_w, textHeight });
+		}
+	}
+	else
+	{
+		field->setFont(font->c_str());
+		field->setTextColor(string->color);
+		field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(1, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(2, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(3, makeColorRGB(166, 166, 166));
+		field->setText(buf);
+		field->setPaddingPerLine(*cvar_log_multiline_pady);
+		if ( auto text = field->getTextObject() )
+		{
+			textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)text->getHeight()) * (int)string->lines + 2);
+			text_h = textHeight + *cvar_log_lineheight_offset;
+			text_w = (int)text->getWidth();
+			field->setSize(SDL_Rect{ 8, y, text_w, textHeight });
+		}
+	}
 
     //(void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
     //field->setTooltip(buf);
 
     const int new_w = std::max(subframe_size.w, text_w + 8);
 
-    y += text_h;
+	y = std::max(y, 0);
+    y += textHeight;
     if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
         // advance scroll because we're already at bottom
         const int limit = new_w > w ?
@@ -8279,8 +8319,16 @@ void openLogWindow(int player) {
     }
     Frame* parent = players[player]->messageZone.logParentFrame;
     const SDL_Rect size = parent->getSize();
-    const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-    const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
+	if ( bCompactWidth )
+	{
+		static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
+		static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
+		w = size.w - *cvar_log_splitscreen_w;
+		h = size.h - *cvar_log_splitscreen_h;
+	}
 
     frame = parent->addFrame("log_window");
     frame->setOwner(player);
@@ -8331,7 +8379,8 @@ void openLogWindow(int player) {
 		auto LogScrollDown = frame->findImage("LogScrollDown"); assert(LogScrollDown); 
 		LogScrollDown->disabled = true;
 
-		bool twoPrompts = players[player]->bUseCompactGUIWidth();
+		const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
+		const bool twoPrompts = bCompactWidth;
 		struct TextAndGlyphs
 		{
 			Frame::image_t* img1;
@@ -8467,6 +8516,17 @@ void openLogWindow(int player) {
 
         auto subframe = frame->findFrame("subframe"); assert(subframe);
         auto subframe_size = subframe->getActualSize();
+		/*auto fields = subframe->getFields();
+		if ( fields.size() > 0 )
+		{
+			SDL_Rect fieldPos = fields[fields.size() - 1]->getSize();
+			if ( fieldPos.y + fieldPos.h > subframe_size.h )
+			{
+				subframe_size.h += (fieldPos.y + fieldPos.h - subframe_size.h);
+				subframe_size.y += (fieldPos.y + fieldPos.h - subframe_size.h);
+				subframe->setActualSize(subframe_size);
+			}
+		}*/
 
         if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
             Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
@@ -29092,6 +29152,9 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 					{
 						buf[c] = '\0';
 						strcpy(buf2, buf + c + 1);
+						std::string buf2Str = buf2;
+						replace(buf2Str.begin(), buf2Str.end(), '\n', ' ');
+						strcpy(buf2, buf2Str.c_str());
 						break;
 					}
 				}
