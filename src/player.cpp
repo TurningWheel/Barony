@@ -4805,7 +4805,7 @@ const bool Player::bUseCompactGUIWidth() const
 {
 	if ( splitscreen )
 	{
-		if ( camera_virtualWidth() < Frame::virtualScreenX * .95 )
+		if ( camera_virtualWidth() < Frame::virtualScreenX * .75 )
 		{
 			return true;
 		}
@@ -4816,7 +4816,7 @@ const bool Player::bUseCompactGUIHeight() const
 {
 	if ( splitscreen )
 	{
-		if ( camera_virtualHeight() < Frame::virtualScreenY * .95 )
+		if ( camera_virtualHeight() < Frame::virtualScreenY * .75 )
 		{
 			return true;
 		}
