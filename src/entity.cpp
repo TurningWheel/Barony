@@ -7888,7 +7888,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							int chance = 10;
 							bool notify = true;
-							if ( myStats->type == GOBLIN )
+							if ( myStats->type == GOBLIN && weaponskill != PRO_RANGED )
 							{
 								chance = 14;
 								notify = false;
