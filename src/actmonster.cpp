@@ -344,22 +344,22 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 		int base_playery = static_cast<int>(players[h.player]->entity->y) >> 4;
 
 		bool inshop = false;
-		if ( shopx >= 0 && shopx < map.width && shopy >= 0 && shopy < map.height )
-		{
-			// if the crime was inside a shop
-			if ( shoparea[shopy + shopx * map.height] )
-			{
-				inshop = true;
-			}
-		}
-		if ( base_playerx >= 0 && base_playerx < map.width && base_playery >= 0 && base_playery < map.height )
-		{
-			// if the crime was inside a shop
-			if ( shoparea[base_playery + base_playerx * map.height] )
-			{
-				inshop = true;
-			}
-		}
+		//if ( shopx >= 0 && shopx < map.width && shopy >= 0 && shopy < map.height )
+		//{
+		//	// if the crime was inside a shop
+		//	if ( shoparea[shopy + shopx * map.height] )
+		//	{
+		//		inshop = true;
+		//	}
+		//}
+		//if ( base_playerx >= 0 && base_playerx < map.width && base_playery >= 0 && base_playery < map.height )
+		//{
+		//	// if the crime was inside a shop
+		//	if ( shoparea[base_playery + base_playerx * map.height] )
+		//	{
+		//		inshop = true;
+		//	}
+		//}
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			if ( h.player == i ) { continue; }
@@ -425,6 +425,13 @@ void ShopkeeperPlayerHostility_t::onShopkeeperDeath(Entity* my, Stat* myStats, E
 			{
 				setWantedLevel(*h, WantedLevel::WANTED_FOR_KILL, my, true);
 				++h->numKills;
+			}
+		}
+		else if ( attacker->behavior == &actMonster )
+		{
+			if ( Entity* leader = attacker->monsterAllyGetPlayerLeader() )
+			{
+				ShopkeeperPlayerHostility.onShopkeeperHit(my, myStats, leader);
 			}
 		}
 	}
@@ -521,13 +528,13 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 				{
 					ShopkeeperPlayerHostility.onShopkeeperHit(this, myStats, attacker);
 				}
-				else if ( attacker->behavior == &actMonster )
+				/*else if ( attacker->behavior == &actMonster )
 				{
 					if ( Entity* leader = attacker->monsterAllyGetPlayerLeader() )
 					{
 						ShopkeeperPlayerHostility.onShopkeeperHit(this, myStats, leader);
 					}
-				}
+				}*/
 			}
 		}
 	}
