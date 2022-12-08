@@ -466,6 +466,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -596,6 +597,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			if ( hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 			}
 
 			Uint32 color = makeColorRGB(255, 0, 0);
@@ -1051,6 +1053,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
+				spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 			}
 
 			if ( damageHP > 0 && parent )

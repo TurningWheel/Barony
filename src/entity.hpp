@@ -1138,6 +1138,8 @@ int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches ui
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
 
 bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
+void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats);
+
 enum EntityHungerIntervals : int
 {
 	HUNGER_INTERVAL_OVERSATIATED,
