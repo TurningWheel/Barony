@@ -434,6 +434,53 @@ void actMagiclightBall(Entity* my)
 	}
 }
 
+void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats)
+{
+	if ( !entity || !hitstats ) { return; }
+	if ( entity->behavior == &actMonster )
+	{
+		bool tryBloodVial = false;
+		if ( gibtype[hitstats->type] == 1 || gibtype[hitstats->type] == 2 )
+		{
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( playerRequiresBloodToSustain(c) )
+				{
+					tryBloodVial = true;
+					break;
+				}
+			}
+			if ( tryBloodVial )
+			{
+				bool spawnBloodVial = false;
+				if ( hitstats->EFFECTS[EFF_BLEEDING] )
+				{
+					if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
+					{
+						spawnBloodVial = (local_rng.rand() % 2 == 0);
+					}
+					else if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 150 )
+					{
+						spawnBloodVial = (local_rng.rand() % 4 == 0);
+					}
+					else
+					{
+						spawnBloodVial = (local_rng.rand() % 8 == 0);
+					}
+				}
+				else
+				{
+					spawnBloodVial = (local_rng.rand() % 10 == 0);
+				}
+				if ( spawnBloodVial )
+				{
+					Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
+				}
+			}
+		}
+	}
+}
+
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
@@ -1169,6 +1216,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if (hit.entity->behavior == &actDoor)
@@ -1284,6 +1332,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
@@ -1516,6 +1565,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
 									parent->awardXP( hit.entity, true, true );
+									spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 								}
 								else
 								{
@@ -1773,6 +1823,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
+									spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 								}
 								else
 								{
@@ -1974,6 +2025,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 								}
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )

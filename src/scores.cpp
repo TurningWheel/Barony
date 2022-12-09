@@ -5594,10 +5594,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 		return 1;
 	}
 
-	if (info.game_version != getSavegameVersion(VERSION)) {
-		printlog("loadGame() failed: game version mismatch");
-		return 1;
-	}
+	//if (info.game_version != getSavegameVersion(VERSION)) {
+	//	printlog("loadGame() failed: game version mismatch");
+	//	return 1;
+	//}
 
 	if (!info.players_connected[player]) {
 		printlog("loadGame() failed: given player is not connected");
@@ -5839,10 +5839,10 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 		return nullptr;
 	}
 
-	if (info.game_version != getSavegameVersion(VERSION)) {
-		printlog("loadGameFollowers() failed: game version mismatch");
-		return nullptr;
-	}
+	//if (info.game_version != getSavegameVersion(VERSION)) {
+	//	printlog("loadGameFollowers() failed: game version mismatch");
+	//	return nullptr;
+	//}
 
 	if (info.players_connected.size() != info.players.size()) {
 		printlog("loadGameFollowers() failed: player data is malformed");

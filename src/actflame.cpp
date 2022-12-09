@@ -45,8 +45,8 @@ void actFlame(Entity* my)
 	    }
     }
     if ( !flickerLights &&
-        my->sprite == SPRITE_FLAME ||
-        my->sprite == SPRITE_CRYSTALFLAME )
+        (my->sprite == SPRITE_FLAME ||
+        my->sprite == SPRITE_CRYSTALFLAME) )
     {
         FLAME_ANG += PI / TICKS_PER_SECOND * 2.0;
         if (FLAME_ANG > PI * 2.0)

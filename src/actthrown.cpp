@@ -1274,6 +1274,7 @@ void actThrown(Entity* my)
 				if ( hitstats->HP <= 0 && parent )
 				{
 					parent->awardXP(hit.entity, true, true);
+					spawnBloodVialOnMonsterDeath(hit.entity, hitstats);
 				}
 
 				bool doAlert = true;

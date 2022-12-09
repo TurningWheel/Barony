@@ -1742,7 +1742,7 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 
 	Uint32 saveGameKey = atoi(pchLoadingSaveGame);      // get the savegame key of the server.
 	Uint32 gameKey = getSaveGameUniqueGameKey(savegameinfo);   // maybe we were already loading a compatible save.
-	if (saveGameKey && saveGameKey == gameKey) {
+	if ( gameKey && saveGameKey && saveGameKey == gameKey) {
 		loadingsavegame = saveGameKey; // save game matches! load game.
 	}
 	else if (!saveGameKey) {
@@ -1754,7 +1754,7 @@ bool processLobbyInvite(void* lobbyToConnectTo)
 		for (int c = 0; c < SAVE_GAMES_MAX; ++c) {
 			auto info = getSaveGameInfo(false, c);
 			if (info.game_version != -1) {
-				if (info.gamekey == gameKey) {
+				if (info.gamekey == saveGameKey ) {
 					savegameCurrentFileIndex = c;
 					foundSave = true;
 					break;

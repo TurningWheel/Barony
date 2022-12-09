@@ -211,10 +211,10 @@ void actBeartrap(Entity* my)
 								{
 									parent->increaseSkill(PRO_LOCKPICKING);
 								}
-								if ( local_rng.rand() % 5 == 0 )
-								{
-									parent->increaseSkill(PRO_RANGED);
-								}
+								//if ( local_rng.rand() % 5 == 0 )
+								//{
+								//	parent->increaseSkill(PRO_RANGED);
+								//}
 							}
 							// update enemy bar for attacker
 							if ( !strcmp(stat->name, "") )

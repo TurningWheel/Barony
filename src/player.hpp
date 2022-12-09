@@ -1390,8 +1390,6 @@ public:
 		Frame* minotaurSharedDisplay = nullptr;
 		Frame* minotaurDisplay = nullptr;
 		Frame* mapPromptFrame = nullptr;
-		Frame* mapWindow = nullptr;
-		Frame* logWindow = nullptr;
 		Frame* allyFollowerFrame = nullptr;
 		Frame* allyFollowerTitleFrame = nullptr;
 		Frame* allyFollowerGlyphFrame = nullptr;
@@ -1721,6 +1719,9 @@ public:
 		void createChatbox();
 		void processChatbox();
 
+		Frame* logParentFrame = nullptr;
+		Frame* logWindow = nullptr;
+		void processLogFrame();
 		int fontSize() { return getHeightOfFont(font); }
 	} messageZone;
 
@@ -2101,6 +2102,9 @@ public:
 		bool animating = false;		// if in the middle of scaling animation
 		SDL_Rect minimapPos;
 		static SDL_Rect sharedMinimapPos;
+		Frame* mapParentFrame = nullptr;
+		Frame* mapWindow = nullptr;
+		void processMapFrame();
 	} minimap;
 };
 

@@ -1316,15 +1316,15 @@ void Player::openStatusScreen(const int whichGUIMode, const int whichInventoryMo
 		FollowerMenu[playernum].closeFollowerMenuGUI();
 	}
 	GenericGUI[playernum].closeGUI();
-	if ( hud.mapWindow )
+	if ( minimap.mapWindow )
 	{
-		hud.mapWindow->removeSelf();
-		hud.mapWindow = nullptr;
+		minimap.mapWindow->removeSelf();
+		minimap.mapWindow = nullptr;
 	}
-	if ( hud.logWindow )
+	if ( messageZone.logWindow )
 	{
-		hud.logWindow->removeSelf();
-		hud.logWindow = nullptr;
+		messageZone.logWindow->removeSelf();
+		messageZone.logWindow = nullptr;
 	}
 
 	int oldgui = gui_mode;
@@ -1432,15 +1432,15 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		signGUI.closeSignGUI();
 	}
 
-	if ( hud.mapWindow )
+	if ( minimap.mapWindow )
 	{
-		hud.mapWindow->removeSelf();
-		hud.mapWindow = nullptr;
+		minimap.mapWindow->removeSelf();
+		minimap.mapWindow = nullptr;
 	}
-	if ( hud.logWindow )
+	if ( messageZone.logWindow )
 	{
-		hud.logWindow->removeSelf();
-		hud.logWindow = nullptr;
+		messageZone.logWindow->removeSelf();
+		messageZone.logWindow = nullptr;
 	}
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )

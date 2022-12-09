@@ -4794,8 +4794,8 @@ void ingameHud()
 			&& players[player]->gui_mode == GUI_MODE_INVENTORY
 			&& players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& !players[player]->inventoryUI.chestGUI.bOpen
-			&& !players[player]->hud.mapWindow
-			&& !players[player]->hud.logWindow
+			&& !players[player]->minimap.mapWindow
+			&& !players[player]->messageZone.logWindow
 			&& !players[player]->shopGUI.bOpen
 			&& !GenericGUI[player].isGUIOpen() )
 		{
@@ -5085,6 +5085,8 @@ void ingameHud()
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
+		players[player]->messageZone.processLogFrame();
+		players[player]->minimap.processMapFrame();
 		players[player]->skillSheet.processSkillSheet();
 		players[player]->signGUI.updateSignGUI();
 		players[player]->hud.updateStatusEffectTooltip(); // to create a tooltip in this order to draw over previous elements

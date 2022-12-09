@@ -7838,7 +7838,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						doSkillIncrease = false; // no skill for killing/hurting players
 					}
 					if ( doSkillIncrease
-						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
+						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED || (whip && weaponskill == PRO_RANGED)) )
 					{
 						if ( myStats->weapon &&
 							(myStats->weapon->type == CRYSTAL_BATTLEAXE
@@ -7888,7 +7888,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							int chance = 10;
 							bool notify = true;
-							if ( myStats->type == GOBLIN )
+							if ( myStats->type == GOBLIN && weaponskill != PRO_RANGED )
 							{
 								chance = 14;
 								notify = false;
@@ -7904,7 +7904,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( skillIncreased && myStats->type == GOBLIN )
+					if ( skillIncreased && myStats->type == GOBLIN && weaponskill != PRO_RANGED )
 					{
 						// goblins level up all combat skills at once.
 						if ( weaponskill != PRO_SWORD )

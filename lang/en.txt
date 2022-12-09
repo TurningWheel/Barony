@@ -6395,5 +6395,8 @@ for accessory to violence!#
 4311 portal#
 4312 The potion had no effect.#
 4313 Your allies feel cleansed!#
+4314 Skip to start/end#
+4315 Page Up/Down#
+4316 Scroll Up/Down#
 
 4399 end#

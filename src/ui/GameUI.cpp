@@ -3888,7 +3888,7 @@ void Player::HUD_t::updateUINavigation()
 				}
 			}
 			if ( GenericGUI[player.playernum].isGUIOpen() || player.GUI.isDropdownActive()
-				|| player.hud.mapWindow || player.hud.logWindow )
+				|| player.minimap.mapWindow || player.messageZone.logWindow )
 			{
 				button->setDisabled(true);
 				continue;
@@ -3901,8 +3901,8 @@ void Player::HUD_t::updateUINavigation()
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
 				&& !player.bUseCompactGUIWidth()
 				&& !GenericGUI[player.playernum].isGUIOpen()
-				&& !player.hud.mapWindow
-				&& !player.hud.logWindow )
+				&& !player.minimap.mapWindow
+				&& !player.messageZone.logWindow )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_ITEM )
 				{
@@ -7847,8 +7847,85 @@ void openMinimap(int player) {
     }
 }
 
+void Player::MessageZone_t::processLogFrame()
+{
+	if ( !logParentFrame )
+	{
+		Frame* f = gameUIFrame[player.playernum]->addFrame("log parent frame");
+		f->setHollow(true);
+		f->setDisabled(true);
+		f->setBorder(0);
+		f->setOwner(player.playernum);
+		logParentFrame = f;
+	}
+
+	if ( logWindow )
+	{
+		logParentFrame->setDisabled(false);
+	}
+	else
+	{
+		if ( player.hud.hudFrame )
+		{
+			logParentFrame->setDisabled(player.hud.hudFrame->isDisabled());
+		}
+		else
+		{
+			logParentFrame->setDisabled(true);
+		}
+	}
+
+	if ( !logParentFrame->isDisabled() )
+	{
+		logParentFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			players[player.playernum]->camera_virtualWidth(),
+			players[player.playernum]->camera_virtualHeight() });
+	}
+}
+void Player::Minimap_t::processMapFrame()
+{
+	if ( !mapParentFrame )
+	{
+		Frame* f = gameUIFrame[player.playernum]->addFrame("map parent frame");
+		f->setHollow(true);
+		f->setDisabled(true);
+		f->setBorder(0);
+		f->setOwner(player.playernum);
+		mapParentFrame = f;
+	}
+
+	if ( mapWindow )
+	{
+		mapParentFrame->setDisabled(false);
+	}
+	else
+	{
+		if ( player.hud.hudFrame )
+		{
+			mapParentFrame->setDisabled(player.hud.hudFrame->isDisabled());
+		}
+		else
+		{
+			mapParentFrame->setDisabled(true);
+		}
+	}
+
+	if ( !mapParentFrame->isDisabled() )
+	{
+		mapParentFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+			players[player.playernum]->camera_virtualy1(),
+			players[player.playernum]->camera_virtualWidth(),
+			players[player.playernum]->camera_virtualHeight() });
+	}
+}
+
 void openMapWindow(int player) {
-    auto& frame = players[player]->hud.mapWindow;
+	if ( !players[player]->minimap.mapParentFrame )
+	{
+		return;
+	}
+    auto& frame = players[player]->minimap.mapWindow;
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
@@ -7874,12 +7951,12 @@ void openMapWindow(int player) {
 			players[player]->inventory_mode, Player::GUI_t::MODULE_MAP); // Reset the GUI to the inventory.
 	}
 
-    auto& otherWindow = players[player]->hud.logWindow;
+    auto& otherWindow = players[player]->messageZone.logWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
         otherWindow = nullptr;
     }
-    Frame* parent = players[player]->hud.hudFrame;
+    Frame* parent = players[player]->minimap.mapParentFrame;
     const SDL_Rect size = parent->getSize();
     const int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
     const int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
@@ -7897,7 +7974,7 @@ void openMapWindow(int player) {
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
         if (players[player]->shootmode) {
-            players[player]->hud.mapWindow = nullptr;
+            players[player]->minimap.mapWindow = nullptr;
             frame->removeSelf();
         }
         });
@@ -8011,9 +8088,9 @@ void openMapWindow(int player) {
         input.consumeBindingsSharedWithBinding("MinimapUp");
         if (input.consumeBinaryToggle("MinimapClose")) {
 			input.consumeBindingsSharedWithBinding("MinimapClose");
-            if (players[player]->hud.mapWindow) {
-                players[player]->hud.mapWindow->removeSelf();
-                players[player]->hud.mapWindow = nullptr;
+            if (players[player]->minimap.mapWindow) {
+                players[player]->minimap.mapWindow->removeSelf();
+                players[player]->minimap.mapWindow = nullptr;
                 if (players[player]->gui_mode == GUI_MODE_NONE) {
                     players[player]->shootmode = true;
                 }
@@ -8090,7 +8167,7 @@ void openMapWindow(int player) {
 	close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
-        players[player]->hud.mapWindow = nullptr;
+        players[player]->minimap.mapWindow = nullptr;
         auto parent = static_cast<Frame*>(button.getParent());
         parent->removeSelf();
         if (players[player]->gui_mode == GUI_MODE_NONE) {
@@ -8104,8 +8181,11 @@ static ConsoleCommand ccmd_log_clear("/log_clear", "Clears log history",
     list_FreeAll(&messages);
     });
 
+static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
+static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
+static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
 void addMessageToLogWindow(int player, string_t* string) {
-    auto& frame = players[player]->hud.logWindow;
+    auto& frame = players[player]->messageZone.logWindow;
     if (!frame || !string) {
         return;
     }
@@ -8115,7 +8195,11 @@ void addMessageToLogWindow(int player, string_t* string) {
 
     auto subframe = frame->findFrame("subframe"); assert(subframe);
     auto subframe_size = subframe->getActualSize();
-    int y = subframe_size.h;
+	int y = subframe_size.h;
+	if ( y != 4 )
+	{
+		y = subframe_size.h + *cvar_log_lineheight_offset;
+	}
 
     static ConsoleVariable<bool> timestamp_messages("/log_timestamp", true);
 
@@ -8132,23 +8216,57 @@ void addMessageToLogWindow(int player, string_t* string) {
 
     static ConsoleVariable<std::string> font("/log_font",
         "fonts/PixelMaz_monospace.ttf#32#2");
+	static ConsoleVariable<std::string> compactfont("/log_font_compact",
+		"fonts/pixel_maz.ttf#32#2");
 
+	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
     auto field = subframe->addField("field", size + 1);
-    auto text = Text::get(buf, font->c_str(),
-        uint32ColorWhite, uint32ColorBlack);
-    const int text_h = (int)text->getHeight() * (int)string->lines + 2;
-    const int text_w = (int)text->getWidth();
-    field->setSize(SDL_Rect{8, y, text_w, text_h});
-    field->setFont(font->c_str());
-    field->setColor(string->color);
-    field->setText(buf);
+	int text_h = 0;
+	int text_w = 0;
+	int textHeight = 0;
+	if ( bCompactWidth )
+	{
+		field->setFont(compactfont->c_str());
+		field->setTextColor(string->color);
+		field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
+		field->setText(buf);
+		field->setPaddingPerLine(*cvar_log_multiline_pady);
+		auto text = Text::get(buf, compactfont->c_str(),
+			uint32ColorWhite, uint32ColorBlack);
+		if ( auto text = field->getTextObject() )
+		{
+			textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)text->getHeight()) * (int)string->lines + 2);
+			text_h = textHeight + *cvar_log_lineheight_offset;
+			text_w = (int)text->getWidth();
+			field->setSize(SDL_Rect{ 8, y, text_w, textHeight });
+		}
+	}
+	else
+	{
+		field->setFont(font->c_str());
+		field->setTextColor(string->color);
+		field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(1, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(2, makeColorRGB(166, 166, 166));
+		field->addWordToHighlight(3, makeColorRGB(166, 166, 166));
+		field->setText(buf);
+		field->setPaddingPerLine(*cvar_log_multiline_pady);
+		if ( auto text = field->getTextObject() )
+		{
+			textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)text->getHeight()) * (int)string->lines + 2);
+			text_h = textHeight + *cvar_log_lineheight_offset;
+			text_w = (int)text->getWidth();
+			field->setSize(SDL_Rect{ 8, y, text_w, textHeight });
+		}
+	}
 
     //(void)snprintf(buf, sizeof(buf), "[%.2u:%.2u:%.2u]", hour, min, sec);
     //field->setTooltip(buf);
 
     const int new_w = std::max(subframe_size.w, text_w + 8);
 
-    y += text_h;
+	y = std::max(y, 0);
+    y += textHeight;
     if (subframe_size.y >= subframe_size.h - subframe->getSize().h) {
         // advance scroll because we're already at bottom
         const int limit = new_w > w ?
@@ -8164,7 +8282,11 @@ void addMessageToLogWindow(int player, string_t* string) {
 }
 
 void openLogWindow(int player) {
-    auto& frame = players[player]->hud.logWindow;
+	if ( !players[player]->messageZone.logParentFrame )
+	{
+		return;
+	}
+    auto& frame = players[player]->messageZone.logWindow;
     if (frame) {
         frame->removeSelf();
         frame = nullptr;
@@ -8190,15 +8312,23 @@ void openLogWindow(int player) {
 			players[player]->inventory_mode, Player::GUI_t::MODULE_LOG); // Reset the GUI to the inventory.
 	}
 
-    auto& otherWindow = players[player]->hud.mapWindow;
+    auto& otherWindow = players[player]->minimap.mapWindow;
     if (otherWindow) {
         otherWindow->removeSelf();
         otherWindow = nullptr;
     }
-    Frame* parent = players[player]->hud.hudFrame;
+    Frame* parent = players[player]->messageZone.logParentFrame;
     const SDL_Rect size = parent->getSize();
-    const int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-    const int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+    int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
+	if ( bCompactWidth )
+	{
+		static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
+		static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
+		w = size.w - *cvar_log_splitscreen_w;
+		h = size.h - *cvar_log_splitscreen_h;
+	}
 
     frame = parent->addFrame("log_window");
     frame->setOwner(player);
@@ -8211,85 +8341,192 @@ void openLogWindow(int player) {
         const int player = widget.getOwner();
         auto frame = static_cast<Frame*>(&widget);
         if (players[player]->shootmode) {
-            players[player]->hud.logWindow = nullptr;
+            players[player]->messageZone.logWindow = nullptr;
             frame->removeSelf();
         }
 
         const int w = frame->getSize().w;
         const int h = frame->getSize().h;
 
-        static ConsoleVariable<int> glyph1_kb("/log_kb_glyph1", 32);
-        static ConsoleVariable<int> glyph2_kb("/log_kb_glyph2", 92);
-        static ConsoleVariable<int> glyph3_kb("/log_kb_glyph3", 330);
-        static ConsoleVariable<int> glyph4_kb("/log_kb_glyph4", 396);
-        static ConsoleVariable<int> glyph5_kb("/log_kb_glyph5", 660);
-        static ConsoleVariable<int> glyph6_kb("/log_kb_glyph6", 694);
-
-        static ConsoleVariable<int> glyph1_gamepad("/log_gamepad_glyph1", 32);
-        static ConsoleVariable<int> glyph2_gamepad("/log_gamepad_glyph2", 92);
-        static ConsoleVariable<int> glyph3_gamepad("/log_gamepad_glyph3", 330);
-        static ConsoleVariable<int> glyph4_gamepad("/log_gamepad_glyph4", 396);
-        static ConsoleVariable<int> glyph5_gamepad("/log_gamepad_glyph5", 660);
-        static ConsoleVariable<int> glyph6_gamepad("/log_gamepad_glyph6", 694);
-
         const bool using_keyboard = Input::inputs[player].getPlayerControlType() ==
             Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD;
 
-        struct Glyph {
-            const char* name;
-            int kb_x;
-            int gamepad_x;
-        };
-        const Glyph glyphs[] = {
-            {"LogHome", *glyph1_kb, *glyph1_gamepad},
-            {"LogEnd", *glyph2_kb, *glyph2_gamepad},
-            {"LogPageUp", *glyph3_kb, *glyph3_gamepad},
-            {"LogPageDown", *glyph4_kb, *glyph4_gamepad},
-            {"LogScrollUp", *glyph5_kb, *glyph5_gamepad},
-            {"LogScrollDown", *glyph6_kb, *glyph6_gamepad},
-        };
-        const int num_glyphs = sizeof(glyphs) / sizeof(glyphs[0]);
-
         const bool pressed = (ticks % TICKS_PER_SECOND) >= TICKS_PER_SECOND / 2;
-
-        for (int c = 0; c < num_glyphs; ++c) {
-            auto path = Input::inputs[player].getGlyphPathForBinding(glyphs[c].name, pressed);
-            auto glyph = Image::get(path.c_str()); assert(glyph);
-            auto image = frame->findImage(glyphs[c].name); assert(image);
-            image->color = 0xffffffff;
-            image->path = path;
-            image->pos = SDL_Rect{
-                using_keyboard ?
-                    (int)(glyphs[c].kb_x - glyph->getWidth() / 2):
-                    (int)(glyphs[c].gamepad_x - glyph->getWidth() / 2),
-                (int)(h - 16 - glyph->getHeight() / 2),
-                (int)glyph->getWidth(),
-                (int)glyph->getHeight()};
-        }
 
         auto help_left = frame->findField("help_left"); assert(help_left);
         auto help_center = frame->findField("help_center"); assert(help_center);
         auto help_right = frame->findField("help_right"); assert(help_right);
+		auto help_left_div = frame->findField("help_left_div"); assert(help_left_div);
+		auto help_center_div = frame->findField("help_center_div"); assert(help_center_div);
+		auto help_right_div = frame->findField("help_right_div"); assert(help_right_div);
+		help_left->setDisabled(false);
+		help_center->setDisabled(false);
+		help_right->setDisabled(false);
+		help_left_div->setDisabled(false);
+		help_center_div->setDisabled(false);
+		help_right_div->setDisabled(false);
 
-        static ConsoleVariable<std::string> help_left_kb("/log_kb_help_left", "              /              Skip to start/end");
-        static ConsoleVariable<std::string> help_center_kb("/log_kb_help_center", "              /              Page Up/Down");
-        static ConsoleVariable<std::string> help_right_kb("/log_kb_help_right", "        /        Scroll Up/Down");
-        static ConsoleVariable<std::string> help_left_gamepad("/log_gamepad_help_left", "             /              Skip to start/end");
-        static ConsoleVariable<std::string> help_center_gamepad("/log_gamepad_help_center", "              /              Page Up/Down");
-        static ConsoleVariable<std::string> help_right_gamepad("/log_gamepad_help_right", "        /        Scroll Up/Down");
+		auto LogHome = frame->findImage("LogHome"); assert(LogHome); 
+		LogHome->disabled = true;
+		auto LogEnd = frame->findImage("LogEnd"); assert(LogEnd); 
+		LogEnd->disabled = true;
+		auto LogPageUp = frame->findImage("LogPageUp"); assert(LogPageUp); 
+		LogPageUp->disabled = true;
+		auto LogPageDown = frame->findImage("LogPageDown"); assert(LogPageDown); 
+		LogPageDown->disabled = true;
+		auto LogScrollUp = frame->findImage("LogScrollUp"); assert(LogScrollUp); 
+		LogScrollUp->disabled = true;
+		auto LogScrollDown = frame->findImage("LogScrollDown"); assert(LogScrollDown); 
+		LogScrollDown->disabled = true;
 
-        if (using_keyboard) {
-            help_left->setText(help_left_kb->c_str());
-            help_center->setText(help_center_kb->c_str());
-            help_right->setText(help_right_kb->c_str());
-        } else {
-            help_left->setText(help_left_gamepad->c_str());
-            help_center->setText(help_center_gamepad->c_str());
-            help_right->setText(help_right_gamepad->c_str());
-        }
+		const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
+		const bool twoPrompts = bCompactWidth;
+		struct TextAndGlyphs
+		{
+			Frame::image_t* img1;
+			Frame::image_t* img2;
+			Field* div;
+			Field* text;
+		};
+		std::vector<TextAndGlyphs> textAndGlyphs;
+		if ( twoPrompts )
+		{
+			help_left->setText(language[4315]);
+			help_center->setDisabled(true);
+			help_center_div->setDisabled(true);
+			help_right->setText(language[4316]);
+
+			textAndGlyphs.push_back(TextAndGlyphs{ LogPageUp, LogPageDown, help_left_div, help_left});
+			textAndGlyphs.push_back(TextAndGlyphs{ LogScrollUp, LogScrollDown, help_right_div, help_right });
+		}
+		else
+		{
+			help_left->setText(language[4314]);
+			help_center->setText(language[4315]);
+			help_right->setText(language[4316]);
+
+			textAndGlyphs.push_back(TextAndGlyphs{ LogHome, LogEnd, help_left_div, help_left });
+			textAndGlyphs.push_back(TextAndGlyphs{ LogPageUp, LogPageDown, help_center_div, help_center });
+			textAndGlyphs.push_back(TextAndGlyphs{ LogScrollUp, LogScrollDown, help_right_div, help_right });
+		}
+
+		for ( auto& entry : textAndGlyphs )
+		{
+			entry.div->setDisabled(entry.text->isDisabled());
+
+			entry.img1->disabled = entry.text->isDisabled();
+			if ( !entry.img1->disabled )
+			{
+				std::string path = Input::inputs[player].getGlyphPathForBinding(entry.img1->name.c_str(), pressed);
+				if ( auto glyph = Image::get(path.c_str()) )
+				{
+					entry.img1->color = 0xffffffff;
+					entry.img1->path = path;
+					entry.img1->pos.w = (int)glyph->getWidth();
+					entry.img1->pos.h = (int)glyph->getHeight();
+					entry.img1->pos.y = (int)(h - 16 - entry.img1->pos.h / 2);
+				}
+			}
+
+			entry.img2->disabled = entry.text->isDisabled();
+			if ( !entry.img2->disabled )
+			{
+				std::string path = Input::inputs[player].getGlyphPathForBinding(entry.img2->name.c_str(), pressed);
+				if ( auto glyph = Image::get(path.c_str()) )
+				{
+					entry.img2->color = 0xffffffff;
+					entry.img2->path = path;
+					entry.img2->pos.w = (int)glyph->getWidth();
+					entry.img2->pos.h = (int)glyph->getHeight();
+					entry.img2->pos.y = (int)(h - 16 - entry.img2->pos.h / 2);
+				}
+			}
+			if ( entry.text->isDisabled() )
+			{
+				continue;
+			}
+
+			if ( entry.text == help_left )
+			{
+				entry.img1->pos.x = 8;
+				SDL_Rect divPos = entry.div->getSize();
+				divPos.x = entry.img1->pos.x + entry.img1->pos.w + 4;
+				if ( auto textGet = entry.div->getTextObject() )
+				{
+					divPos.w = textGet->getWidth();
+				}
+				entry.div->setSize(divPos);
+
+				entry.img2->pos.x = divPos.x + divPos.w + 4;
+				SDL_Rect textPos = entry.text->getSize();
+				textPos.x = entry.img2->pos.x + entry.img2->pos.w + 8;
+				entry.text->setSize(textPos);
+			}
+			else if ( entry.text == help_center )
+			{
+				int totalWidth = entry.img1->pos.w + entry.img2->pos.w;
+				SDL_Rect divPos = entry.div->getSize();
+				if ( auto textGet = entry.div->getTextObject() )
+				{
+					divPos.w = textGet->getWidth();
+				}
+				SDL_Rect textPos = entry.text->getSize();
+				if ( auto textGet = entry.text->getTextObject() )
+				{
+					textPos.w = textGet->getWidth();
+				}
+				totalWidth += 4 + 4 + divPos.w + 8 + textPos.w;
+				int startx = w / 2 - (totalWidth / 2);
+				if ( startx % 2 == 1 ) { ++startx; } // even alignment
+
+				entry.img1->pos.x = startx;
+				divPos.x = entry.img1->pos.x + entry.img1->pos.w + 4;
+				entry.div->setSize(divPos);
+
+				entry.img2->pos.x = divPos.x + divPos.w + 4;
+				textPos.x = entry.img2->pos.x + entry.img2->pos.w + 8;
+				entry.text->setSize(textPos);
+			}
+			else if ( entry.text == help_right )
+			{
+				int totalWidth = entry.img1->pos.w + entry.img2->pos.w;
+				SDL_Rect divPos = entry.div->getSize();
+				if ( auto textGet = entry.div->getTextObject() )
+				{
+					divPos.w = textGet->getWidth();
+				}
+				SDL_Rect textPos = entry.text->getSize();
+				if ( auto textGet = entry.text->getTextObject() )
+				{
+					textPos.w = textGet->getWidth();
+				}
+				totalWidth += 4 + 4 + divPos.w + 8 + textPos.w;
+				int startx = w - 8 - totalWidth;
+				if ( startx % 2 == 1 ) { --startx; } // even alignment
+
+				entry.img1->pos.x = startx;
+				divPos.x = entry.img1->pos.x + entry.img1->pos.w + 4;
+				entry.div->setSize(divPos);
+
+				entry.img2->pos.x = divPos.x + divPos.w + 4;
+				textPos.x = entry.img2->pos.x + entry.img2->pos.w + 8;
+				entry.text->setSize(textPos);
+			}
+		}
 
         auto subframe = frame->findFrame("subframe"); assert(subframe);
         auto subframe_size = subframe->getActualSize();
+		/*auto fields = subframe->getFields();
+		if ( fields.size() > 0 )
+		{
+			SDL_Rect fieldPos = fields[fields.size() - 1]->getSize();
+			if ( fieldPos.y + fieldPos.h > subframe_size.h )
+			{
+				subframe_size.h += (fieldPos.y + fieldPos.h - subframe_size.h);
+				subframe_size.y += (fieldPos.y + fieldPos.h - subframe_size.h);
+				subframe->setActualSize(subframe_size);
+			}
+		}*/
 
         if (Input::inputs[player].consumeBinaryToggle("LogHome")) {
             Input::inputs[player].consumeBindingsSharedWithBinding("LogHome");
@@ -8323,9 +8560,9 @@ void openLogWindow(int player) {
         }
 		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
 			Input::inputs[player].consumeBindingsSharedWithBinding("LogClose");
-			if ( players[player]->hud.logWindow ) {
-				players[player]->hud.logWindow->removeSelf();
-				players[player]->hud.logWindow = nullptr;
+			if ( players[player]->messageZone.logWindow ) {
+				players[player]->messageZone.logWindow->removeSelf();
+				players[player]->messageZone.logWindow = nullptr;
 				if ( players[player]->gui_mode == GUI_MODE_NONE ) {
 					players[player]->shootmode = true;
 				}
@@ -8422,7 +8659,7 @@ void openLogWindow(int player) {
 	close_button->setTextHighlightColor(makeColor(201, 162, 100, 255));
     close_button->setCallback([](Button& button){
         const int player = button.getOwner();
-        players[player]->hud.logWindow = nullptr;
+        players[player]->messageZone.logWindow = nullptr;
         auto parent = static_cast<Frame*>(button.getParent());
         parent->removeSelf();
         if (players[player]->gui_mode == GUI_MODE_NONE) {
@@ -8435,10 +8672,19 @@ void openLogWindow(int player) {
         });
 
     auto help_left = frame->addField("help_left", 128);
-    help_left->setSize(SDL_Rect{4, h - 32, w - 4, 32});
+    help_left->setSize(SDL_Rect{0, h - 32, w, 32});
     help_left->setHJustify(Field::justify_t::LEFT);
     help_left->setVJustify(Field::justify_t::CENTER);
     help_left->setFont(smallfont_outline);
+	help_left->setDisabled(true);
+
+	auto help_left_div = frame->addField("help_left_div", 32);
+	help_left_div->setSize(SDL_Rect{ 0, h - 32, w, 32 });
+	help_left_div->setHJustify(Field::justify_t::LEFT);
+	help_left_div->setVJustify(Field::justify_t::CENTER);
+	help_left_div->setFont(smallfont_outline);
+	help_left_div->setDisabled(true);
+	help_left_div->setText("/");
 
     frame->addImage(SDL_Rect{0,0,0,0}, 0,
 		"images/system/white.png", "LogHome");
@@ -8447,9 +8693,18 @@ void openLogWindow(int player) {
 
     auto help_center = frame->addField("help_center", 128);
     help_center->setSize(SDL_Rect{0, h - 32, w, 32});
-    help_center->setHJustify(Field::justify_t::CENTER);
+    help_center->setHJustify(Field::justify_t::LEFT);
     help_center->setVJustify(Field::justify_t::CENTER);
     help_center->setFont(smallfont_outline);
+	help_center->setDisabled(true);
+
+	auto help_center_div = frame->addField("help_center_div", 32);
+	help_center_div->setSize(SDL_Rect{ 0, h - 32, w, 32 });
+	help_center_div->setHJustify(Field::justify_t::LEFT);
+	help_center_div->setVJustify(Field::justify_t::CENTER);
+	help_center_div->setFont(smallfont_outline);
+	help_center_div->setDisabled(true);
+	help_center_div->setText("/");
 
     frame->addImage(SDL_Rect{0,0,0,0}, 0,
 		"images/system/white.png", "LogPageUp");
@@ -8461,6 +8716,15 @@ void openLogWindow(int player) {
     help_right->setHJustify(Field::justify_t::RIGHT);
     help_right->setVJustify(Field::justify_t::CENTER);
     help_right->setFont(smallfont_outline);
+	help_right->setDisabled(true);
+
+	auto help_right_div = frame->addField("help_right_div", 32);
+	help_right_div->setSize(SDL_Rect{ 0, h - 32, w, 32 });
+	help_right_div->setHJustify(Field::justify_t::LEFT);
+	help_right_div->setVJustify(Field::justify_t::CENTER);
+	help_right_div->setFont(smallfont_outline);
+	help_right_div->setDisabled(true);
+	help_right_div->setText("/");
 
     frame->addImage(SDL_Rect{0,0,0,0}, 0,
 		"images/system/white.png", "LogScrollUp");
@@ -8644,7 +8908,7 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			mapButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			mapButton->setCallback([](Button& button){
 			    openMapWindow(button.getOwner());
-			    if (players[button.getOwner()]->hud.mapWindow) {
+			    if (players[button.getOwner()]->minimap.mapWindow) {
 	                button.deselect();
 			    }
 			});
@@ -28888,6 +29152,9 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 					{
 						buf[c] = '\0';
 						strcpy(buf2, buf + c + 1);
+						std::string buf2Str = buf2;
+						replace(buf2Str.begin(), buf2Str.end(), '\n', ' ');
+						strcpy(buf2, buf2Str.c_str());
 						break;
 					}
 				}
