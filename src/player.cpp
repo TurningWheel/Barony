@@ -410,49 +410,11 @@ void GameController::handleAnalog(int player)
 			oldAxisRightY = righty;
 		}
 
-		oldFloatRightX += rightx;
-		oldFloatRightY += righty;
-
 		if (rightx || righty)
 		{
 			const auto& mouse = inputs.getVirtualMouse(player);
 			mouse->lastMovementFromController = true;
-
 			return;
-
-			//if ( gamePaused )
-			//{
-			//	if ( !mouse->draw_cursor )
-			//	{
-			//		mouse->draw_cursor = true;
-			//	}
-
-			//	if ( inputs.bPlayerUsingKeyboardControl(player) )
-			//	{
-			//		//SDL_WarpMouseInWindow(screen, std::max(0, std::min(xres, mousex + rightx)), std::max(0, std::min(yres, mousey + righty)));
-			//		//mouse->warpMouseInScreen(screen, rightx, righty);
-			//		// smoother to use virtual mouse than push mouse events
-			//		if ( gamePaused )
-			//		{
-			//			mouse->warpMouseInScreen(screen, rightx, righty);
-			//		}
-			//		else
-			//		{
-			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
-			//		}
-			//	}
-			//	else
-			//	{
-			//		if ( gamePaused )
-			//		{
-			//			mouse->warpMouseInScreen(screen, rightx, righty);
-			//		}
-			//		else
-			//		{
-			//			mouse->warpMouseInCamera(cameras[player], rightx, righty);
-			//		}
-			//	}
-			//}
 		}
 	}
 	else

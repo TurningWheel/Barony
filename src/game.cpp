@@ -3892,9 +3892,13 @@ bool handleEvents(void)
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						inputs.getVirtualMouse(i)->lastMovementFromController = false;
+						if ( gamePaused || intro )
+						{
+							inputs.getVirtualMouse(i)->lastMovementFromController = false;
+						}
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
+							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							if ( !players[i]->shootmode || !players[i]->entity || gamePaused )
 							{
 								inputs.getVirtualMouse(i)->draw_cursor = true;
@@ -6857,7 +6861,7 @@ int main(int argc, char** argv)
 					}
 				}
 			}
-
+			Text::dumpCacheInMainLoop();
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
