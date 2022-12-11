@@ -1163,7 +1163,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_VeryVerbose);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
 		}
 	}
 
@@ -1202,9 +1202,9 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	auto networkStatus = nxConnectedToNetwork() ?
 		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
 	auto networkSetRes = EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
-	printlog("[EOSSSS]: %d net status", networkSetRes);
+	logInfo("EOS_Platform_SetNetworkStatus: %d", networkSetRes);
 	auto getNet = EOS_Platform_GetNetworkStatus(PlatformHandle);
-	printlog("[EOSSSS]: %d get net status", getNet);
+	logInfo("EOS_Platform_GetNetworkStatus: %d", getNet);
 	if (!nxConnectedToNetwork())
 	{
 		nxConnectToNetwork();
