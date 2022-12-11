@@ -542,7 +542,13 @@ namespace MainMenu {
     static SDL_Surface* fireSurface = nullptr;
     static TempTexture* fireTexture = nullptr;
 
+	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", true);
+
     static void fireStart() {
+		if ( !*cvar_story_fire_fx )
+		{
+			return;
+		}
         assert(!fireSurface);
         assert(!fireTexture);
 	    fireSurface = SDL_CreateRGBSurface(0,
@@ -581,6 +587,10 @@ namespace MainMenu {
     }
 
     static void fire() {
+		if ( !*cvar_story_fire_fx )
+		{
+			return;
+		}
 	    SDL_LockSurface(fireSurface);
         const int w = Frame::virtualScreenX / firePixelSize;
         const int fireSize = (Frame::virtualScreenX * Frame::virtualScreenY) / (firePixelSize * firePixelSize);
