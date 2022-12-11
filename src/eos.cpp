@@ -86,6 +86,12 @@ void EOS_CALL EOSFuncs::AuthLoginCompleteCallback(const EOS_Auth_LoginCallbackIn
 	{
 		EOSFuncs::logError("Login Callback: MFA required");
 	}
+#ifdef NINTENDO
+	else if ( data->ResultCode == EOS_EResult::EOS_InvalidUser )
+	{
+		// need to sign in with Nintendo Account and relogin
+	}
+#endif
 	else
 	{
 		EOSFuncs::logError("Login Callback: General fail: %d", static_cast<int>(data->ResultCode));
@@ -159,7 +165,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 		EOS.CurrentUserInfo.bUserLoggedIn = true;
 		EOS.SubscribeToConnectionRequests();
 		EOS.AddConnectAuthExpirationNotification();
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS) || defined(NINTENDO)
 		EOS_ELoginStatus authLoginStatus = EOS_Auth_GetLoginStatus(EOS_Platform_GetAuthInterface(EOS.PlatformHandle),
 			EOSFuncs::Helpers_t::epicIdFromString(EOS.CurrentUserInfo.epicAccountId.c_str()));
 		if ( authLoginStatus != EOS_ELoginStatus::EOS_LS_LoggedIn )
@@ -167,6 +173,13 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 			EOS.queryLocalExternalAccountId(EOS_EExternalAccountType::EOS_EAT_STEAM);
 		}
 		EOS.StatGlobalManager.queryGlobalStatUser();
+#endif
+#ifdef NINTENDO
+		// load achievement data
+		if ( !EOS.Achievements.bAchievementsInit )
+		{
+			EOS.loadAchievementData();
+		}
 #endif
 		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
@@ -777,6 +790,28 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 						}
 						MappingsReceived.push_back(productId);
 					}
+					else if ( Result == EOS_EResult::EOS_NotFound )
+					{
+						// try different account types
+						Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_NINTENDO;
+						Result = EOS_Connect_GetProductUserIdMapping(ConnectHandle, &Options, buffer, &bufferSize);
+						if ( Result == EOS_EResult::EOS_Success )
+						{
+							EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, buffer));
+							if ( EOSFuncs::Helpers_t::isMatchingProductIds(EOS.CurrentUserInfo.getProductUserIdHandle(), productId) )
+							{
+								EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOCAL);
+							}
+							for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
+							{
+								if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
+								{
+									EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+								}
+							}
+							MappingsReceived.push_back(productId);
+						}
+					}
 				}
 			}
 
@@ -1012,7 +1047,7 @@ void EOS_CALL EOSFuncs::ConnectAuthExpirationCallback(const EOS_Connect_AuthExpi
 	{
 		EOSFuncs::logInfo("ConnectAuthExpirationCallback: connect auth expiring - product id: %s",
 			EOSFuncs::Helpers_t::productIdToString(data->LocalUserId));
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS) || defined(NINTENDO)
 		if ( LobbyHandler.crossplayEnabled )
 		{
 			EOSFuncs::logInfo("ConnectAuthExpirationCallback: Reconnecting crossplay account");
@@ -1068,12 +1103,20 @@ static void* EOS_CALL CustomRealloc(void* Ptr, size_t Size, size_t Alignment)
 }
 #endif
 
+#ifdef NINTENDO
+EOS_Bool EOS_CALL Game_OnNetworkRequested()
+{
+	return nxConnectedToNetwork() ? EOS_TRUE : EOS_FALSE;
+}
+#endif
+
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
 #ifdef NINTENDO
 	EOS_Switch_InitializeOptions SwitchOptions;
 	SwitchOptions.ApiVersion = EOS_SWITCH_INITIALIZEOPTIONS_API_LATEST;
-	SwitchOptions.OnNetworkRequested_DEPRECATED = 0;
+	//SwitchOptions.OnNetworkRequested = &Game_OnNetworkRequested;
+	SwitchOptions.OnNetworkRequested_DEPRECATED = nullptr;
 	SwitchOptions.CacheStorageSizekB = 0; // EOS_SWITCH_MIN_CACHE_STORAGE_SIZE_KB
 	SwitchOptions.CacheStorageIndex = 0;
 
@@ -1120,7 +1163,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_VeryVerbose);
 		}
 	}
 
@@ -1155,12 +1198,25 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.SandboxId = nullptr;
 	PlatformOptions.DeploymentId = nullptr;
 
+#ifdef NINTENDO
+	auto networkStatus = nxConnectedToNetwork() ?
+		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
+	auto networkSetRes = EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
+	printlog("[EOSSSS]: %d net status", networkSetRes);
+	auto getNet = EOS_Platform_GetNetworkStatus(PlatformHandle);
+	printlog("[EOSSSS]: %d get net status", getNet);
+	if (!nxConnectedToNetwork())
+	{
+		nxConnectToNetwork();
+	}
+#endif
+
 	if ( !PlatformHandle )
 	{
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
 		return false;
 	}
-#ifndef STEAMWORKS
+#if defined(STEAMWORKS) && !defined(NINTENDO)
 #ifdef WINDOWS
 #ifdef NDEBUG
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);
@@ -1202,7 +1258,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 #endif
 #endif
 
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS) || defined(NINTENDO)
 	EOS.StatGlobalManager.queryGlobalStatUser();
 #endif
 	return true;
@@ -1210,7 +1266,51 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 
 void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 {
+#ifdef NINTENDO
+	if (!nxConnectedToNetwork()) {
+		return;
+	}
+#endif
+
 	ConnectHandle = EOS_Platform_GetConnectInterface(PlatformHandle);
+
+#ifdef NINTENDO
+	EOS_Auth_Token* UserAuthToken = nullptr;
+	EOS_Auth_CopyUserAuthTokenOptions CopyTokenOptions = { 0 };
+	CopyTokenOptions.ApiVersion = EOS_AUTH_COPYUSERAUTHTOKEN_API_LATEST;
+
+	if (EOS_Auth_CopyUserAuthToken(AuthHandle, &CopyTokenOptions,
+		EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str()), &UserAuthToken) == EOS_EResult::EOS_Success)
+	{
+		logInfo("initConnectLogin: Auth expires: %f", UserAuthToken->ExpiresIn);
+
+		static char token[4096];
+
+		EOS_Connect_Credentials Credentials;
+		Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
+		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN;
+		Credentials.Token = nxGetNSAID(token, sizeof(token));
+
+		if (!Credentials.Token) {
+			logError("initConnectLogin: Credential token not available, is the user online?");
+			return;
+		}
+
+		EOS_Connect_UserLoginInfo Info;
+		char buf[1024];
+		nxGetUsername(buf, sizeof(buf));
+		Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
+		Info.DisplayName = buf;
+
+		EOS_Connect_LoginOptions Options;
+		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
+		Options.Credentials = &Credentials;
+		Options.UserLoginInfo = &Info;
+
+		EOS_Connect_Login(ConnectHandle, &Options, nullptr, ConnectLoginCompleteCallback);
+		EOS_Auth_Token_Release(UserAuthToken);
+	}
+#else
 
 	EOS_Auth_Token* UserAuthToken = nullptr;
 	EOS_Auth_CopyUserAuthTokenOptions CopyTokenOptions = { 0 };
@@ -1223,12 +1323,8 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 
 		EOS_Connect_Credentials Credentials;
 		Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
-		Credentials.Token = UserAuthToken->AccessToken;
-#ifdef NINTENDO
-		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN;
-#else
 		Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC; // change this to steam etc for different account providers.
-#endif
+		Credentials.Token = UserAuthToken->AccessToken;
 
 		EOS_Connect_LoginOptions Options;
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
@@ -1238,6 +1334,7 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 		EOS_Connect_Login(ConnectHandle, &Options, nullptr, ConnectLoginCompleteCallback);
 		EOS_Auth_Token_Release(UserAuthToken);
 	}
+#endif
 }
 
 void EOSFuncs::readFromFile()
@@ -3012,20 +3109,32 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	}
 	if ( tokenName.compare("") == 0 )
 	{
+#ifdef NINTENDO
+		static char token[4096];
+		Credentials.Token = nxGetNSAID(token, sizeof(token));
+		Credentials.ExternalType = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN;
+#else
 		Credentials.Token = nullptr;
+#endif
 	}
 	else
 	{
 		Credentials.Token = tokenName.c_str();
 	}
 	Credentials.Type = EOS.AccountManager.AuthType;
-	if ( Credentials.Type == EOS_ELoginCredentialType::EOS_LCT_Developer )
-	{
+	switch (Credentials.Type) {
+	case EOS_ELoginCredentialType::EOS_LCT_Developer:
 		EOSFuncs::logInfo("Connecting to \'%s\'...", hostname.c_str());
-	}
-	else if ( Credentials.Type == EOS_ELoginCredentialType::EOS_LCT_ExchangeCode )
-	{
+		break;
+	case EOS_ELoginCredentialType::EOS_LCT_ExchangeCode:
 		EOSFuncs::logInfo("Connecting via exchange token...");
+		break;
+	case EOS_ELoginCredentialType::EOS_LCT_ExternalAuth:
+		EOSFuncs::logInfo("Connecting via external authorization token...");
+		break;
+	default:
+		EOSFuncs::logInfo("Unknown authorization method, possible problem?");
+		break;
 	}
 
 	EOS_Auth_LoginOptions LoginOptions = {};
@@ -3040,10 +3149,10 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 	EOS.AccountManager.waitingForCallback = true;
 	Uint32 startAuthTicks = SDL_GetTicks();
 	Uint32 currentAuthTicks = startAuthTicks;
-#ifndef STEAMWORKS
+#if !defined(STEAMWORKS)
 	while ( EOS.AccountManager.AccountAuthenticationStatus == EOS_EResult::EOS_NotConfigured )
 	{
-#ifdef APPLE
+#if defined(APPLE)
 		SDL_Event event;
 		while ( SDL_PollEvent(&event) != 0 )
 		{
@@ -3093,7 +3202,7 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 
 void EOSFuncs::Accounts_t::handleLogin()
 {
-#ifdef STEAMWORKS
+#if defined(STEAMWORKS) || defined(NINTENDO) // or nintendo, can return early
 	return;
 #endif
 
@@ -3157,9 +3266,39 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 	UIToastNotificationManager.createEpicCrossplayLoginNotification();
 }
 
+#ifdef NINTENDO
+static void nxTokenRequest()
+{
+	char token[1024] = "";
+	nxGetNSAID(token, sizeof(token));
+
+	EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
+	EOS_Connect_Credentials Credentials;
+	Credentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
+	Credentials.Token = token;
+	Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN; // change this to steam etc for different account providers.
+
+	EOS_Connect_UserLoginInfo Info;
+	char buf[1024];
+	nxGetUsername(buf, sizeof(buf));
+	Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
+	Info.DisplayName = buf;
+
+	EOS_Connect_LoginOptions Options;
+	Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
+	Options.Credentials = &Credentials;
+	Options.UserLoginInfo = &Info;
+
+	EOS_Connect_Login(EOS.ConnectHandle, &Options, nullptr, EOS.ConnectLoginCrossplayCompleteCallback);
+	EOS.CrossplayAccountManager.awaitingConnectCallback = true;
+	EOS.CrossplayAccountManager.awaitingAppTicketResponse = false;
+	printlog("[NX]: AppTicket request success");
+}
+#endif
+
 void EOSFuncs::CrossplayAccounts_t::handleLogin()
 {
-#ifndef STEAMWORKS
+#if !defined(STEAMWORKS) && !defined(NINTENDO) // or nintendo, can use this if we only want product users
 	return;
 #endif // !STEAMWORKS
 
@@ -3217,16 +3356,26 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 			buttonCloseSubwindow(nullptr);
 		}
 	}
+#ifdef NINTENDO
+	if (!nxConnectedToNetwork()) {
+		printlog("[NX] not connected to network, can't login to EOS");
+		initLogin = false;
+	}
+#endif
 
 	if ( initLogin )
 	{
 #ifdef STEAMWORKS
 		cpp_SteamMatchmaking_RequestAppTicket();
-#endif // STEAMWORKS
-
 		createNotification();
 		awaitingAppTicketResponse = true;
 		EOSFuncs::logInfo("Crossplay login request started...");
+#elif defined(NINTENDO)
+		createNotification();
+		awaitingAppTicketResponse = true;
+		nxTokenRequest();
+		EOSFuncs::logInfo("NX Crossplay login request started...");
+#endif // STEAMWORKS
 		return;
 	}
 
@@ -3250,7 +3399,11 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_CLOSE);
 				n->showMainCard();
+#ifdef STEAMWORKS
 				n->setMainText("Steam account linked.\nCrossplay enabled.");
+#else
+				n->setMainText("Successfully logged into\nEpic Online Services (tm)");
+#endif
 				n->updateCardEvent(true, false);
 				n->setIdleSeconds(5);
 			}
@@ -3273,11 +3426,15 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 			{
 				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->showMainCard();
+#ifdef STEAMWORKS
 				n->setSecondaryText("New Steam user.\nAccept EULA to proceed.");
+#else
+				n->setSecondaryText("New user.\nAccept EULA to proceed.");
+#endif
 				n->updateCardEvent(false, true);
 				n->setIdleSeconds(10);
 			}
-			EOSFuncs::logInfo("New Steam user, awaiting user response.");
+			EOSFuncs::logInfo("New EOS user, awaiting user response.");
 			createDialogue();
 		}
 		else
@@ -3348,7 +3505,7 @@ void EOSFuncs::CrossplayAccounts_t::denyCrossplay()
 
 void EOSFuncs::CrossplayAccounts_t::viewPrivacyPolicy()
 {
-	openURLTryWithOverlay("http://www.baronygame.com/privacypolicy.html");
+	openURLTryWithOverlay("https://www.baronygame.com/privacypolicy.html");
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()

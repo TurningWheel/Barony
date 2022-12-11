@@ -239,6 +239,7 @@ public:
 	void createEpicLoginNotification();
 	void createEpicCrossplayLoginNotification();
 	void createAchievementsDisabledNotification();
+	void createGenericNotification(const char* header, const char* text);
 	void createAchievementNotification(const char* name);
 	void createStatisticUpdateNotification(const char* name, int currentValue, int maxValue);
 	void undockAllCards();

@@ -3516,7 +3516,32 @@ bool handleEvents(void)
 	Input::lastInputOfAnyKind = "";
 
 #ifdef NINTENDO
+	// update controllers
 	nxControllersUpdate();
+
+	// detect resolution changes
+	if (nxHasResolutionChanged()) {
+		int x, y;
+		nxGetCurrentResolution(x, y);
+		printlog("new display size: %d %d", x, y);
+
+		if (!changeVideoMode(x, y)) {
+			printlog("critical error! Attempting to abort safely...\n");
+			mainloop = 0;
+		}
+		if (!intro) {
+			MainMenu::setupSplitscreen();
+		}
+	}
+
+	// detect app focus changes
+	if (!intro && !gamePaused) {
+		if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
+			if (nxAppOutOfFocus()) {
+				pauseGame(2, 0);
+			}
+		}
+	}
 #endif
 
     // consume mouse buttons that were eaten by GUI
@@ -3535,6 +3560,12 @@ bool handleEvents(void)
 	        }
 	    }
 	}
+
+#if defined(NINTENDO) && defined(USE_EOS)
+	if (initialized && !loading) {
+		EOS.SetNetworkAvailable(nxConnectedToNetwork());
+	}
+#endif
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
@@ -4354,7 +4385,7 @@ bool handleEvents(void)
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
-#ifdef NINTENDO
+#if defined(NINTENDO)
 					if (!changeVideoMode(event.window.data1, event.window.data2))
 					{
 						printlog("critical error! Attempting to abort safely...\n");
@@ -4447,7 +4478,7 @@ bool handleEvents(void)
 
 -------------------------------------------------------------------------------*/
 
-void pauseGame(int mode, int ignoreplayer)
+void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */, int ignoreplayer /* ignored */)
 {
 	int c;
 
@@ -6082,7 +6113,7 @@ int main(int argc, char** argv)
 									"Barony has encountered a critical error and cannot start.\n\n"
 									"Please check the log.txt file in the game directory for additional info\n"
 									"and verify Steam is running. Alternatively, contact us through our website\n"
-									"at http://www.baronygame.com/ for support.",
+									"at https://www.baronygame.com/ for support.",
 				screen);
 #elif defined USE_EOS
 			if ( EOS.appRequiresRestart == EOS_EResult::EOS_Success )
@@ -6095,14 +6126,14 @@ int main(int argc, char** argv)
 					"Barony has encountered a critical error and cannot start.\n\n"
 					"Please check the log.txt file in the game directory for additional info,\n"
 					"and verify the game is launched through the Epic Games Store. \n"
-					"Alternatively, contact us through our website at http://www.baronygame.com/ for support.",
+					"Alternatively, contact us through our website at https://www.baronygame.com/ for support.",
 					screen);
 			}
 #else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"
 									"Please check the log.txt file in the game directory for additional info,\n"
-									"or contact us through our website at http://www.baronygame.com/ for support.",
+									"or contact us through our website at https://www.baronygame.com/ for support.",
 									screen);
 #endif
 			deinitApp();
@@ -6125,7 +6156,7 @@ int main(int argc, char** argv)
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 			                         "Barony has encountered a critical error and cannot start.\n\n"
 			                         "Please check the log.txt file in the game directory for additional info,\n"
-			                         "or contact us through our website at http://www.baronygame.com/ for support.",
+			                         "or contact us through our website at https://www.baronygame.com/ for support.",
 			                         screen);
 			deinitGame();
 			deinitApp();
