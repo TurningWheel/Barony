@@ -3370,7 +3370,7 @@ void Player::HUD_t::updateUINavigation()
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
-		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDLK_Y] && enableDebugKeys) )
+		/*if ( player.bUseCompactGUIHeight() * Frame::virtualScreenX || (keystatus[SDLK_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
 		}*/
@@ -3410,7 +3410,7 @@ void Player::HUD_t::updateUINavigation()
 	auto additionalGlyph = uiNavFrame->findImage("additional img");
 	additionalGlyph->disabled = true;
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth() )
+		&& !player.bUseCompactGUIHeight() )
 	{
 		if ( leftBumperModule != Player::GUI_t::MODULE_NONE )
 		{
@@ -3553,7 +3553,7 @@ void Player::HUD_t::updateUINavigation()
 	}
 
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth() )
+		&& !player.bUseCompactGUIHeight() )
 	{
 		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
@@ -3868,7 +3868,7 @@ void Player::HUD_t::updateUINavigation()
 			button->setColor(makeColor(255, 255, 255, 191));
 		}
 
-		if ( player.bUseCompactGUIWidth() )
+		if ( player.bUseCompactGUIHeight() )
 		{
 			if ( player.inventoryUI.chestGUI.bOpen )
 			{
@@ -3899,7 +3899,7 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIWidth()
+				&& !player.bUseCompactGUIHeight()
 				&& !GenericGUI[player.playernum].isGUIOpen()
 				&& !player.minimap.mapWindow
 				&& !player.messageZone.logWindow )
@@ -3929,7 +3929,7 @@ void Player::HUD_t::updateUINavigation()
 					}
 				}
 			}
-			else if ( player.bUseCompactGUIWidth() )
+			else if ( player.bUseCompactGUIHeight() )
 			{
 				buttonPos.x = leftAlignX;
 				if ( numButtonsToShow < 4 )
@@ -3983,11 +3983,11 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum)
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIWidth() )
+				&& !player.bUseCompactGUIHeight() )
 			{
 				// leave disabled
 			}
-			else if ( player.bUseCompactGUIWidth() )
+			else if ( player.bUseCompactGUIHeight() )
 			{
 				buttonPos.x = rightAlignX;
 				if ( numButtonsToShow < 4 )
@@ -7958,10 +7958,18 @@ void openMapWindow(int player) {
     }
     Frame* parent = players[player]->minimap.mapParentFrame;
     const SDL_Rect size = parent->getSize();
-    const int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-    const int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
-    const int w = std::min(_w, _h);
-    const int h = std::min(_w, _h);
+    int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+	const bool bCompact = players[player]->bUseCompactGUIHeight() || players[player]->bUseCompactGUIWidth();
+	if ( bCompact )
+	{
+		static ConsoleVariable<int> cvar_map_splitscreen_w("/map_splitscreen_wborder", 64);
+		static ConsoleVariable<int> cvar_map_splitscreen_h("/map_splitscreen_hborder", 64);
+		_w = size.w - *cvar_map_splitscreen_w;
+		_h = size.h - *cvar_map_splitscreen_h;
+	}
+    int w = std::min(_w, _h);
+    int h = std::min(_w, _h);
     frame = parent->addFrame("minimap_window");
     frame->setOwner(player);
     frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
@@ -8321,12 +8329,17 @@ void openLogWindow(int player) {
     const SDL_Rect size = parent->getSize();
     int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
     int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
-	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
-	if ( bCompactWidth )
+	static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
+	static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
+	if ( (players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth())
+		|| players[player]->bUseCompactGUIWidth() )
 	{
-		static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
-		static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
 		w = size.w - *cvar_log_splitscreen_w;
+		h = size.h - *cvar_log_splitscreen_h;
+	}
+	else if ( players[player]->bUseCompactGUIHeight() )
+	{
+		w = std::max(Frame::virtualScreenX / 2, size.w - 432);
 		h = size.h - *cvar_log_splitscreen_h;
 	}
 
@@ -22048,24 +22061,25 @@ void Player::HUD_t::updateXPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	xpFrame->setInheritParentFrameOpacity(false);
 	xpFrame->setOpacity(100.0);
 	SDL_Rect pos = xpFrame->getSize();
-	pos.w = XP_FRAME_WIDTH + (bCompact ? xpbarCompactOffsetWidth : xpbarOffsetWidth);
+	pos.w = XP_FRAME_WIDTH + (bCompactWidth ? xpbarCompactOffsetWidth : xpbarOffsetWidth);
 	pos.x = hudFrame->getSize().w / 2 - pos.w / 2;
-	if ( bCompact )
+	if ( bCompactWidth || bCompactHeight )
 	{
-		pos.y = 0 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+		pos.y = 0 + ((bCompactWidth || bCompactHeight) ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
 	else
 	{
-		pos.y = 8 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+		pos.y = 8 + ((bCompactWidth || bCompactHeight) ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
 
 	bool tempHideXP = false;
@@ -23344,16 +23358,17 @@ void Player::HUD_t::updateHPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	SDL_Rect pos = hpFrame->getSize();
-	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
-	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	hpFrame->setSize(pos);
 
 	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
@@ -23383,14 +23398,14 @@ void Player::HUD_t::updateHPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxHPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
+		const Sint32 maxHPWidth = (bCompactWidth ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXHP < maxHPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 HP past 20 MAXHP
-			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
-			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
-			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
-			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier = (bCompactWidth ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompactWidth ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompactWidth ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompactWidth ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
 			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXHP - baseIntervalStart) / intervalThreshold)));
 		}
 
@@ -23684,16 +23699,17 @@ void Player::HUD_t::updateMPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	SDL_Rect pos = mpFrame->getSize();
-	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
-	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	mpFrame->setSize(pos);
 
 	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
@@ -23723,14 +23739,14 @@ void Player::HUD_t::updateMPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxMPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
+		const Sint32 maxMPWidth = (bCompactWidth ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXMP < maxMPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 MP past 20 MAXMP
-			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
-			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
-			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
-			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier = (bCompactWidth ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompactWidth ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompactWidth ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompactWidth ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
 			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXMP - baseIntervalStart) / intervalThreshold)));
 		}
 
@@ -24083,14 +24099,20 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
+	bool loweredY = false;
 	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
+		loweredY = true;
+	}
+	else if ( player.bUseCompactGUIHeight() )
+	{
+		loweredY = true;
 	}
 	int hotbarStartY1 = hotbarFrame->getSize().h + getHotbarStartY1(); // higher row (center group)
 	int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
-	hotbarStartY1 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
-	hotbarStartY2 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
+	hotbarStartY1 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
+	hotbarStartY2 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
 	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
 	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
 	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
@@ -24160,7 +24182,7 @@ void Player::Hotbar_t::updateHotbar()
 	auto cancelPromptGlyph = hotbarFrame->findImage("hotbar cancel glyph");
 	cancelPromptGlyph->disabled = true;
 
-	if ( !bCompactView && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	if ( (!bCompactView && !loweredY) && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
 	{
 		cancelPromptTxt->setDisabled(false);
 		cancelPromptTxt->setText(language[3063]);
