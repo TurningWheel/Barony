@@ -458,6 +458,13 @@ public:
 	std::chrono::high_resolution_clock::time_point eventsT5;
 	std::chrono::high_resolution_clock::time_point eventsT6;
 
+	std::chrono::high_resolution_clock::time_point drawWorldT1;
+	std::chrono::high_resolution_clock::time_point drawWorldT2;
+	std::chrono::high_resolution_clock::time_point drawWorldT3;
+	std::chrono::high_resolution_clock::time_point drawWorldT4;
+	std::chrono::high_resolution_clock::time_point drawWorldT5;
+	std::chrono::high_resolution_clock::time_point drawWorldT6;
+
 	std::chrono::high_resolution_clock::time_point messagesT1;
 
 	std::chrono::high_resolution_clock::time_point t1Stored;

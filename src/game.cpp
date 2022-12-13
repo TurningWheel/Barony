@@ -5486,6 +5486,7 @@ void ingameHud()
 }
 
 void drawAllPlayerCameras() {
+	DebugStats.drawWorldT1 = std::chrono::high_resolution_clock::now();
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c)
 	{
@@ -5536,6 +5537,7 @@ void drawAllPlayerCameras() {
 			}
 
 			// do occlusion culling from the perspective of this camera
+			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
 
 			if ( players[c] && players[c]->entity )
@@ -5604,10 +5606,12 @@ void drawAllPlayerCameras() {
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 					}
 				}
+				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
 				    raycast(&camera, minimap); // update minimap
 				}
+				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
 
 				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -5640,6 +5644,7 @@ void drawAllPlayerCameras() {
 				glDrawWorld(&camera, REALCOLORS);
 			}
 
+			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
@@ -5653,6 +5658,7 @@ void drawAllPlayerCameras() {
 			camera.vang -= cvars.shakey2 / 200.0;
 		}
 	}
+	DebugStats.drawWorldT6 = std::chrono::high_resolution_clock::now();
 }
 
 /*-------------------------------------------------------------------------------
