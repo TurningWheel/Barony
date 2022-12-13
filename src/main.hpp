@@ -530,8 +530,27 @@ typedef struct string_t
 // door structure (used for map generation)
 typedef struct door_t
 {
+	enum DoorDir : Sint32
+	{
+		DIR_EAST,
+		DIR_SOUTH,
+		DIR_WEST,
+		DIR_NORTH
+	};
+	enum DoorEdge : Sint32
+	{
+		EDGE_EAST,
+		EDGE_SOUTHEAST,
+		EDGE_SOUTH,
+		EDGE_SOUTHWEST,
+		EDGE_WEST,
+		EDGE_NORTHWEST,
+		EDGE_NORTH,
+		EDGE_NORTHEAST
+	};
 	Sint32 x, y;
-	Sint32 dir; // 0: east, 1: south, 2: west, 3: north
+	DoorDir dir;
+	DoorEdge edge;
 } door_t;
 
 #define CLIPNEAR 2

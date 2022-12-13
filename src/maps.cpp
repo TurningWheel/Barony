@@ -1104,19 +1104,67 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						door->y = y;
 						if ( x == tempMap->width - 1 )
 						{
-							door->dir = 0;
+							door->dir = door_t::DIR_EAST;
+							if ( y == tempMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_EAST;
+							}
 						}
 						else if ( y == tempMap->height - 1 )
 						{
-							door->dir = 1;
+							door->dir = door_t::DIR_SOUTH;
+							if ( x == tempMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_SOUTH;
+							}
 						}
 						else if ( x == 0 )
 						{
-							door->dir = 2;
+							door->dir = door_t::DIR_WEST;
+							if ( y == tempMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_WEST;
+							}
 						}
 						else if ( y == 0 )
 						{
-							door->dir = 3;
+							door->dir = door_t::DIR_NORTH;
+							if ( x == tempMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_NORTH;
+							}
 						}
 						node2 = list_AddNodeLast(newList);
 						node2->element = door;
@@ -1210,19 +1258,67 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							door->y = y;
 							if ( x == subRoomMap->width - 1 )
 							{
-								door->dir = 0;
+								door->dir = door_t::DIR_EAST;
+								if ( y == subRoomMap->height - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHEAST;
+								}
+								else if ( y == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHEAST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_EAST;
+								}
 							}
 							else if ( y == subRoomMap->height - 1 )
 							{
-								door->dir = 1;
+								door->dir = door_t::DIR_SOUTH;
+								if ( x == subRoomMap->width - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHEAST;
+								}
+								else if ( x == 0 )
+								{
+									door->edge = door_t::EDGE_SOUTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_SOUTH;
+								}
 							}
 							else if ( x == 0 )
 							{
-								door->dir = 2;
+								door->dir = door_t::DIR_WEST;
+								if ( y == subRoomMap->height - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHWEST;
+								}
+								else if ( y == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_WEST;
+								}
 							}
 							else if ( y == 0 )
 							{
-								door->dir = 3;
+								door->dir = door_t::DIR_NORTH;
+								if ( x == subRoomMap->width - 1 )
+								{
+									door->edge = door_t::EDGE_NORTHEAST;
+								}
+								else if ( x == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_NORTH;
+								}
 							}
 							node2 = list_AddNodeLast(subRoomList);
 							node2->element = door;
@@ -1886,6 +1982,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				newDoor->x = door->x + x;
 				newDoor->y = door->y + y;
 				newDoor->dir = door->dir;
+				newDoor->edge = door->edge;
 				node = list_AddNodeLast(&doorList);
 				node->element = newDoor;
 				node->deconstructor = &defaultDeconstructor;
@@ -1902,6 +1999,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					newDoor->x = door->x + subRoom_tileStartx;
 					newDoor->y = door->y + subRoom_tileStarty;
 					newDoor->dir = door->dir;
+					newDoor->edge = door->edge;
 					node = list_AddNodeLast(&doorList);
 					node->element = newDoor;
 					node->deconstructor = &defaultDeconstructor;
@@ -1963,9 +2061,57 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				&& (/*entity->sprite == 2 || entity->sprite == 3 ||*/ entity->sprite == 19 || entity->sprite == 20
 					|| entity->sprite == 113 || entity->sprite == 114) )
 			{
-				switch ( door->dir )
+				int doordir = door->dir;
+
+				// if door is on a corner, then determine the proper facing based on the entity dir
+				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					case 0: // east
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_SOUTH;
+								break;
+							case door_t::EDGE_NORTHEAST:
+							case door_t::EDGE_NORTHWEST:
+								doordir = door_t::DIR_NORTH;
+								break;
+							case door_t::EDGE_EAST:
+							case door_t::EDGE_WEST:
+								continue; // no need to process this door as it is facing internal map contents
+							default:
+								break;
+						}
+					}
+				}
+				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
+				{
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_NORTHEAST:
+								doordir = door_t::DIR_EAST;
+								break;
+							case door_t::EDGE_NORTHWEST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_WEST;
+								break;
+							case door_t::EDGE_SOUTH:
+							case door_t::EDGE_NORTH:
+								continue; // no need to process this door as it is facing internal map contents
+							default:
+								break;
+						}
+					}
+				}
+
+				switch ( doordir )
+				{
+					case door_t::DIR_EAST: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -1995,7 +2141,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 1: // south
+					case door_t::DIR_SOUTH: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2025,7 +2171,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 2: // west
+					case door_t::DIR_WEST: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2055,7 +2201,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 3: // north
+					case door_t::DIR_NORTH: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2101,9 +2247,59 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				&& (entity->sprite == 2 || entity->sprite == 3/* || entity->sprite == 19 || entity->sprite == 20
 															  || entity->sprite == 113 || entity->sprite == 114*/) )
 			{
-				switch ( door->dir )
+				int doordir = door->dir;
+
+				// if door is on a corner, then determine the proper facing based on the entity dir
+				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					case 0: // east
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_SOUTH;
+								break;
+							case door_t::EDGE_NORTHEAST:
+							case door_t::EDGE_NORTHWEST:
+								doordir = door_t::DIR_NORTH;
+								break;
+							case door_t::EDGE_EAST:
+							case door_t::EDGE_WEST:
+								continue; // no need to process this door as it is facing internal map contents
+								break;
+							default:
+								break;
+						}
+					}
+				}
+				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
+				{
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_NORTHEAST:
+								doordir = door_t::DIR_EAST;
+								break;
+							case door_t::EDGE_NORTHWEST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_WEST;
+								break;
+							case door_t::EDGE_SOUTH:
+							case door_t::EDGE_NORTH:
+								continue; // no need to process this door as it is facing internal map contents
+								break;
+							default:
+								break;
+						}
+					}
+				}
+
+				switch ( doordir )
+				{
+					case door_t::DIR_EAST: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2133,7 +2329,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 1: // south
+					case door_t::DIR_SOUTH: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2163,7 +2359,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 2: // west
+					case door_t::DIR_WEST: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
@@ -2193,7 +2389,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 3: // north
+					case door_t::DIR_NORTH: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
