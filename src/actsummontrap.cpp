@@ -158,7 +158,7 @@ void actSummonTrap(Entity* my)
 				{
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;
-					playSoundEntity(my, 76, 128);
+					//playSoundEntity(my, 76, 128);
 					return;
 				}
 
@@ -169,7 +169,7 @@ void actSummonTrap(Entity* my)
 					{
 						// trap is finished running
 						SUMMONTRAP_FIRED = 1;
-						playSoundEntity(my, 76, 128);
+						//playSoundEntity(my, 76, 128);
 					}	
 				}
 				else
