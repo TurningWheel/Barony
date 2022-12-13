@@ -359,6 +359,403 @@ int monsterCurve(int level)
 	return SKELETON; // basic monster
 }
 
+struct StartRoomInfo_t
+{
+	int x1 = -1;
+	int x2 = -1;
+	int y1 = -1;
+	int y2 = -1;
+	bool isWall(int x, int y)
+	{
+		if ( x <= 0 || x >= map.width - 1 || y <= 0 || y >= map.height - 1 )
+		{
+			return true;
+		}
+		return map.tiles[OBSTACLELAYER + (y)* MAPLAYERS + (x)* MAPLAYERS * map.height];
+	}
+	bool isWalkable(int x, int y)
+	{
+		if ( x <= 0 || x >= map.width - 1 || y <= 0 || y >= map.height - 1 )
+		{
+			return false;
+		}
+		return map.tiles[(y)* MAPLAYERS + (x)* MAPLAYERS * map.height];
+	}
+	void addCoord(int x, int y)
+	{
+		if ( x1 == -1 )
+		{
+			x1 = x;
+		}
+		else
+		{
+			x1 = std::min(x, x1);
+		}
+		if ( x2 == -1 )
+		{
+			x2 = x;
+		}
+		else
+		{
+			x2 = std::max(x2, x);
+		}
+
+		if ( y1 == -1 )
+		{
+			y1 = y;
+		}
+		else
+		{
+			y1 = std::min(y, y1);
+		}
+		if ( y2 == -1 )
+		{
+			y2 = y;
+		}
+		else
+		{
+			y2 = std::max(y2, y);
+		}
+	}
+	void checkBorderAccessibility()
+	{
+		enum Direction : int
+		{
+			NORTH,
+			EAST,
+			SOUTH,
+			WEST
+		};
+		std::vector<std::pair<std::pair<int, int>, Direction>> potentialExitPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> goodTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> badTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> worstTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> exitPoints;
+		if ( x1 - 1 > 0 )
+		{
+			for ( int y = y1; y <= y2; ++y )
+			{
+				if ( !isWall(x1, y) && isWalkable(x1, y) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+					if ( !isWall(x1 - 1, y) && isWalkable(x1 - 1, y) )
+					{
+						// exit point found heading west
+						exitPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+					}
+					else if ( isWall(x1 - 1, y) && isWalkable(x1 - 1, y) )
+					{
+						if ( isWalkable(x1 - 2, y) )
+						{
+							if ( isWall(x1 - 2, y) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x1 - 2, y, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+						}
+					}
+				}
+			}
+		}
+		if ( x2 + 1 < (map.width) )
+		{
+			for ( int y = y1; y <= y2; ++y )
+			{
+				if ( !isWall(x2, y) && isWalkable(x2, y) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+					if ( !isWall(x2 + 1, y) && isWalkable(x2 + 1, y) )
+					{
+						// exit point found heading east
+						exitPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+					}
+					else if ( isWall(x2 + 1, y) && isWalkable(x2 + 1, y) )
+					{
+						if ( isWalkable(x2 + 2, y) )
+						{
+							if ( isWall(x2 + 2, y) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x2 + 2, y, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+						}
+					}
+				}
+			}
+		}
+		if ( y1 - 1 > 0 )
+		{
+			for ( int x = x1; x <= x2; ++x )
+			{
+				if ( !isWall(x, y1) && isWalkable(x, y1) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+					if ( !isWall(x, y1 - 1) && isWalkable(x, y1 - 1) )
+					{
+						// exit point found heading north
+						exitPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+					}
+					else if ( isWall(x, y1 - 1) && isWalkable(x, y1 - 1) )
+					{
+						if ( isWalkable(x, y1 - 2) )
+						{
+							if ( isWall(x, y1 - 2) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x, y1 - 2, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+						}
+					}
+				}
+			}
+		}
+		if ( y2 + 1 < (map.height) )
+		{
+			for ( int x = x1; x <= x2; ++x )
+			{
+				if ( !isWall(x, y2) && isWalkable(x, y2) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+					if ( !isWall(x, y2 + 1) && isWalkable(x, y2 + 1) )
+					{
+						// exit point found heading north
+						exitPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+					}
+					else if ( isWall(x, y2 + 1) && isWalkable(x, y2 + 1) )
+					{
+						if ( isWalkable(x, y2 + 2) )
+						{
+							if ( isWall(x, y2 + 2) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x, y2 + 2, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+						}
+					}
+				}
+			}
+		}
+
+		//for ( auto point : exitPoints )
+		//{
+		//	std::string dir = "";
+		//	switch ( point.second )
+		//	{
+		//		case WEST:
+		//			dir = "West";
+		//			break;
+		//		case EAST:
+		//			dir = "East";
+		//			break;
+		//		case NORTH:
+		//			dir = "North";
+		//			break;
+		//		case SOUTH:
+		//			dir = "South";
+		//			break;
+		//		default:
+		//			break;
+		//	}
+		//	printlog("exitPoints %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+		//}
+		if ( exitPoints.empty() )
+		{
+			printlog("[MAP GENERATOR]: Start map does not have accessibility to any other areas!");
+			for ( auto point : goodTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints1 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			for ( auto point : badTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints2 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			for ( auto point : worstTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints3 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			if ( !goodTunnelPoints.empty() )
+			{
+				auto picked = goodTunnelPoints.at(map_rng.rand() % goodTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints1 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+			else if ( !badTunnelPoints.empty() )
+			{
+				auto picked = badTunnelPoints.at(map_rng.rand() % badTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints2 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+			else if ( !worstTunnelPoints.empty() )
+			{
+				auto picked = worstTunnelPoints.at(map_rng.rand() % worstTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints3 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+		}
+	}
+};
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -886,6 +1283,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		node->deconstructor = &mapDeconstructor;
 	}
 
+	StartRoomInfo_t startRoomInfo;
+
 	// generate dungeon level...
 	int roomcount = 0;
 	if ( numlevels > 1 )
@@ -1398,6 +1797,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( c == 0 )
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
+								startRoomInfo.addCoord(x0, y0);
 							}
 							else if ( c == 2 && shoplevel )
 							{
@@ -2228,6 +2628,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] && i <= 10 );
 		}
+	}
+
+	// check start room for accessibility to rest of level
+	if ( strncmp(map.name, "Underworld", 10) )
+	{
+		startRoomInfo.checkBorderAccessibility();
 	}
 
 	// monsters, decorations, and items
