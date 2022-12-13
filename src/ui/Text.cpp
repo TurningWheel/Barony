@@ -55,7 +55,7 @@ size_t getNumTextLines(std::string& str)
 }
 
 static ConsoleVariable<bool> cvar_text_render_addspace("/text_render_addspace", true);
-static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", true);
+static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", false);
 
 void Text::render() {
 	if ( surf ) {
@@ -437,8 +437,9 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 }
 
 void Text::dumpCache() {
+	printlog("[Text Cache]: dumping...");
 	for (auto text : hashed_text) {
-		printlog("%s", text.second->getName());
+		//printlog("%s", text.second->getName());
 		delete text.second;
 	}
 	hashed_text.clear();
