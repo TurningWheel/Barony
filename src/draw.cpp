@@ -1706,7 +1706,7 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 		    if ( !entity->flags[OVERDRAW] )
 		    {
-		        if ( !map.vismap[y + x * map.height] && !entity->monsterEntityRenderAsTelepath )
+		        if ( !map.vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
 		        {
 		            continue;
 		        }
