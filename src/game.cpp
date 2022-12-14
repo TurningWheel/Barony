@@ -1156,10 +1156,12 @@ void gameLogic(void)
 				    j = 1 + local_rng.rand() % 4;
 				    for ( c = 0; c < j; ++c )
 				    {
-					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					    flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					    flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					    flame->z += local_rng.rand() % 5 - 2;
+						if ( Entity* flame = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
+							flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
+							flame->z += local_rng.rand() % 5 - 2;
+						}
 				    }
 				}
 			}

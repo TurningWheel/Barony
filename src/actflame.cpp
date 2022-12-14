@@ -79,12 +79,35 @@ void actFlame(Entity* my)
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<bool> cvar_flame_use_vismap("/flame_use_vismap", false);
+
 Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 {
-	Entity* entity;
-	double vel;
+	if ( !parentent )
+	{
+		return nullptr;
+	}
+	if ( *cvar_flame_use_vismap )
+	{
+		if ( parentent->behavior != actPlayer 
+			&& parentent->behavior != actPlayerLimb
+			&& !parentent->flags[OVERDRAW]
+			&& !parentent->flags[GENIUS] )
+		{
+			int x = parentent->x / 16.0;
+			int y = parentent->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				if ( !map.vismap[y + x * map.height] )
+				{
+					return nullptr;
+				}
+			}
+		}
+	}
 
-	entity = newEntity(sprite, 1, map.entities, nullptr); // flame particle
+	double vel;
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); // flame particle
 	if ( intro )
 	{
 		entity->setUID(0);

@@ -1452,13 +1452,15 @@ namespace ConsoleCommands {
 
 		for (int c = 0; c < 100; c++)
 		{
-			auto entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
-			entity->sprite = 16;
-			double vel = local_rng.rand() % 10;
-			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
-			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
-			entity->vel_z = vel * sin(entity->pitch) * .2;
-			entity->skill[0] = 5 + local_rng.rand() % 10;
+			if ( auto entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME) )
+			{
+				entity->sprite = 16;
+				double vel = local_rng.rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + local_rng.rand() % 10;
+			}
 		}
 		});
 

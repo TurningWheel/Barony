@@ -53,12 +53,14 @@ void actTorch(Entity* my)
 	}
 	if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 	{
-	    Entity* entity = spawnFlame(my, SPRITE_FLAME);
-	    entity->x += .25 * cos(my->yaw);
-	    entity->y += .25 * sin(my->yaw);
-	    entity->z -= 2.5;
-	    entity->flags[GENIUS] = false;
-	    entity->setUID(-3);
+		if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+		{
+			entity->x += .25 * cos(my->yaw);
+			entity->y += .25 * sin(my->yaw);
+			entity->z -= 2.5;
+			entity->flags[GENIUS] = false;
+			entity->setUID(-3);
+		}
 	}
 
 	// check wall behind me. (e.g mined or destroyed then remove torch)

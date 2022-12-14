@@ -18535,10 +18535,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18549,10 +18551,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
@@ -18652,10 +18656,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+						flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18666,10 +18672,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2.5 * sin(shieldLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+						flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
@@ -18776,10 +18784,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 		        if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldLimb->yaw);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18790,10 +18800,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index

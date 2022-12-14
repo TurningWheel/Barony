@@ -116,18 +116,20 @@ void actArrow(Entity* my)
 
 			if ( ARROW_STUCK != 0 )
 			{
-				Entity* entity = spawnFlame(my, SPRITE_FLAME);
-				if ( ARROW_STUCK == 1 )
+				if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
 				{
-					entity->x += .5 * cos(my->yaw);
-					entity->y += .5 * sin(my->yaw);
+					if ( ARROW_STUCK == 1 )
+					{
+						entity->x += .5 * cos(my->yaw);
+						entity->y += .5 * sin(my->yaw);
+					}
+					else
+					{
+						entity->x += 1.5 * cos(my->yaw);
+						entity->y += 1.5 * sin(my->yaw);
+					}
+					entity->z = my->z;
 				}
-				else
-				{
-					entity->x += 1.5 * cos(my->yaw);
-					entity->y += 1.5 * sin(my->yaw);
-				}
-				entity->z = my->z;
 			}
 			else
 			{
