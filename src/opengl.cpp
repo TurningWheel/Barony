@@ -1288,14 +1288,11 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 #ifndef EDITOR
 	real_t s = 1;
 
-	if ( !entity )
+	if ( !entity || intro )
 	{
 		return;
 	}
-	if ( !uidToEntity(entity->parent) && entity->behavior == &actSpriteWorldTooltip )
-	{
-		return;
-	}
+
 	int player = -1;
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
@@ -1322,6 +1319,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			}
 		}
 		else
+		{
+			return;
+		}
+		if ( !uidToEntity(entity->parent) )
 		{
 			return;
 		}
