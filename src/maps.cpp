@@ -756,6 +756,28 @@ struct StartRoomInfo_t
 	}
 };
 
+bool mapSpriteIsDoorway(int sprite)
+{
+	switch ( sprite )
+	{
+		case 2:
+		case 3:
+			return true;
+			break;
+		case 19:
+		case 20:
+			return true;
+			break;
+		case 113:
+		case 114:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -2117,9 +2139,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -2147,9 +2167,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -2177,9 +2195,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -2207,9 +2223,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -2305,9 +2319,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -2335,9 +2347,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -2365,9 +2375,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -2395,9 +2403,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -2531,7 +2537,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	// boulder and arrow traps
-	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 
+	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0
 		&& (!customTrapsForMapInUse || (customTrapsForMapInUse && (customTraps.boulders || customTraps.arrows)) )
 		)
 	{
@@ -2593,7 +2599,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity = (Entity*)node->element;
 			int x = entity->x / 16;
 			int y = entity->y / 16;
-			if ( (entity->sprite == 2 || entity->sprite == 3)
+			if ( (mapSpriteIsDoorway(entity->sprite) )
 				&& (x >= 0 && x < map.width)
 				&& (y >= 0 && y < map.height) )
 			{
@@ -2696,7 +2702,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				if ( map_rng.rand() % 2 && (currentlevel > 5 && currentlevel <= 25) )
+				if ( !strncmp(map.name, "Underworld", 10) )
+				{
+					arrowtrapspawn = true; // no boulders in underworld
+				}
+				else if ( map_rng.rand() % 2 && (currentlevel > 5 && currentlevel <= 25) )
 				{
 					arrowtrapspawn = true;
 				}
