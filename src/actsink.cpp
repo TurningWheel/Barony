@@ -203,7 +203,11 @@ void actSink(Entity* my)
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, language[583]);
 								playSoundEntity(players[i]->entity, 52, 64);
-								stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+								if ( stats[i]->type != SKELETON )
+								{
+									stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+									serverUpdateHunger(i);
+								}
 								players[i]->entity->modHP(1);
 							}
 							else
