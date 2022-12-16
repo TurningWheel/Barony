@@ -481,6 +481,8 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats)
 	}
 }
 
+static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", false);
+
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
@@ -2746,7 +2748,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		}
 
 		// spawn particles
-		spawnMagicParticle(my);
+		if ( *cvar_magic_fx_use_vismap )
+		{
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				if ( map.vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+				}
+			}
+		}
+		else
+		{
+			spawnMagicParticle(my);
+		}
 	}
 	else
 	{
@@ -2794,12 +2811,43 @@ void actMagicClient(Entity* my)
 	}
 
 	// spawn particles
-	spawnMagicParticle(my);
+	if ( *cvar_magic_fx_use_vismap )
+	{
+		int x = my->x / 16.0;
+		int y = my->y / 16.0;
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			if ( map.vismap[y + x * map.height] )
+			{
+				spawnMagicParticle(my);
+			}
+		}
+	}
+	else
+	{
+		spawnMagicParticle(my);
+	}
 }
 
 void actMagicClientNoLight(Entity* my)
 {
-	spawnMagicParticle(my); // simply spawn particles
+	// simply spawn particles
+	if ( *cvar_magic_fx_use_vismap )
+	{
+		int x = my->x / 16.0;
+		int y = my->y / 16.0;
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			if ( map.vismap[y + x * map.height] )
+			{
+				spawnMagicParticle(my);
+			}
+		}
+	}
+	else
+	{
+		spawnMagicParticle(my);
+	}
 }
 
 void actMagicParticle(Entity* my)
@@ -3700,7 +3748,22 @@ void actParticleErupt(Entity* my)
 		my->scalex *= 0.99;
 		my->scaley *= 0.99;
 		my->scalez *= 0.99;
-		spawnMagicParticle(my);
+		if ( *cvar_magic_fx_use_vismap )
+		{
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				if ( map.vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+				}
+			}
+		}
+		else
+		{
+			spawnMagicParticle(my);
+		}
 		if ( my->skill[1] == 0 ) // rising
 		{
 			my->z += my->vel_z;
@@ -4210,7 +4273,22 @@ void actParticleSap(Entity* my)
 		}
 		else
 		{
-			spawnMagicParticle(my);
+			if ( *cvar_magic_fx_use_vismap )
+			{
+				int x = my->x / 16.0;
+				int y = my->y / 16.0;
+				if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+				{
+					if ( map.vismap[y + x * map.height] )
+					{
+						spawnMagicParticle(my);
+					}
+				}
+			}
+			else
+			{
+				spawnMagicParticle(my);
+			}
 		}
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
