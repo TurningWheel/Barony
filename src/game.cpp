@@ -882,6 +882,7 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
 -------------------------------------------------------------------------------*/
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
+static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", false);
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
@@ -1388,8 +1389,19 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
+											bool doLavaParticles = true;
+											if ( *cvar_lava_use_vismap )
+											{
+												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												{
+													if ( !map.vismap[y + x * map.height] )
+													{
+														doLavaParticles = false;
+													}
+												}
+											}
 											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j; ++c )
+											for ( c = 0; c < j && doLavaParticles; ++c )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
@@ -2070,9 +2082,9 @@ void gameLogic(void)
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
 						}
-						enemyHPDamageBarHandler[i].HPBars.clear();
 						players[i]->hud.followerBars.clear();
 					}
+					EnemyHPDamageBarHandler::dumpCache();
 
 					achievementObserver.updateData();
 
@@ -2764,8 +2776,19 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
+											bool doLavaParticles = true;
+											if ( *cvar_lava_use_vismap )
+											{
+												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												{
+													if ( !map.vismap[y + x * map.height] )
+													{
+														doLavaParticles = false;
+													}
+												}
+											}
 											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j; c++ )
+											for ( c = 0; c < j && doLavaParticles; c++ )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
