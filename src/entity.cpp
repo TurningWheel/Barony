@@ -10394,6 +10394,31 @@ Teleports the given entity within a radius of a target entity.
 
 -------------------------------------------------------------------------------*/
 
+bool teleportCoordHasTrap(const int x, const int y)
+{
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(x, y, 0);
+	for ( auto it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( !entity ) { continue; }
+			if ( entity->behavior == &actSpearTrap )
+			{
+				int i = static_cast<int>(entity->x) >> 4;
+				int j = static_cast<int>(entity->y) >> 4;
+				if ( i == x && j == y )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 {
 	int numlocations = 0;
@@ -10439,8 +10464,20 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		}
 	}
 
-	std::vector<std::pair<int, int>> goodspots;
-	std::vector<std::pair<int, int>> spotsBehindMonster;
+	struct Coord_t
+	{
+		bool onHazard = false;
+		int x = 0;
+		int y = 0;
+		Coord_t(const int _x, const int _y, const bool _onHazard)
+		{
+			x = _x;
+			y = _y;
+			onHazard = _onHazard;
+		};
+	};
+	std::vector<Coord_t> goodspots;
+	std::vector<Coord_t> spotsBehindMonster;
 	bool forceSpot = false;
 	for ( int iy = std::max(1, ty - dist); !forceSpot && iy <= std::min(ty + dist, static_cast<int>(map.height) - 1); ++iy )
 	{
@@ -10477,11 +10514,11 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						real_t yawDifference = (PI - abs(abs(tangent - targetYaw) - PI)) * 2;
 						if ( yawDifference >= 0 && yawDifference <= PI ) // 180 degree arc
 						{
-							spotsBehindMonster.push_back(std::make_pair(ix, iy));
+							spotsBehindMonster.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 						}
 						else
 						{
-							goodspots.push_back(std::make_pair(ix, iy));
+							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 						}
 					}
 					// restore coordinates.
@@ -10501,14 +10538,23 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							forceSpot = true;
-							goodspots.clear();
-							goodspots.push_back(std::make_pair(ix, iy));
-							numlocations = 1;
-							// restore coordinates.
-							x = tmpx;
-							y = tmpy;
-							break;
+							bool onTrap = false;
+							if ( !onTrap )
+							{
+								forceSpot = true;
+								goodspots.clear();
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations = 1;
+								// restore coordinates.
+								x = tmpx;
+								y = tmpy;
+								break;
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations++;
+							}
 						}
 						// restore coordinates.
 						x = tmpx;
@@ -10523,14 +10569,23 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							forceSpot = true;
-							goodspots.clear();
-							goodspots.push_back(std::make_pair(ix, iy));
-							numlocations = 1;
-							// restore coordinates.
-							x = tmpx;
-							y = tmpy;
-							break;
+							bool onTrap = teleportCoordHasTrap(ix, iy);
+							if ( !onTrap )
+							{
+								forceSpot = true;
+								goodspots.clear();
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations = 1;
+								// restore coordinates.
+								x = tmpx;
+								y = tmpy;
+								break;
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations++;
+							}
 						}
 						// restore coordinates.
 						x = tmpx;
@@ -10544,7 +10599,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							goodspots.push_back(std::make_pair(ix, iy));
+							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 							numlocations++;
 						}
 						// restore coordinates.
@@ -10561,17 +10616,76 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		messagePlayer(player, MESSAGE_HINT, language[708]);
 		return false;
 	}
-	std::pair<int, int> tmpPair;
 	if ( behavior == &actMonster || spotsBehindMonster.empty() )
 	{
-		tmpPair = goodspots[local_rng.rand() % goodspots.size()];
+		std::vector<unsigned int> goodchances;
+		std::vector<unsigned int> badchances;
+		bool foundGoodSpot = false;
+		bool foundBadSpot = false;
+		for ( auto& coord : goodspots )
+		{
+			if ( coord.onHazard )
+			{
+				foundBadSpot = true;
+				badchances.push_back(1);
+				goodchances.push_back(0);
+			}
+			else
+			{
+				foundGoodSpot = true;
+				badchances.push_back(0);
+				goodchances.push_back(1);
+			}
+		}
+
+		if ( foundGoodSpot )
+		{
+			auto& coord = goodspots[local_rng.discrete(goodchances.data(), goodchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
+		else
+		{
+			auto& coord = goodspots[local_rng.discrete(badchances.data(), badchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
 	}
 	else
 	{
-		tmpPair = spotsBehindMonster[local_rng.rand() % spotsBehindMonster.size()];
+		std::vector<unsigned int> goodchances;
+		std::vector<unsigned int> badchances;
+		bool foundGoodSpot = false;
+		bool foundBadSpot = false;
+		for ( auto& coord : spotsBehindMonster )
+		{
+			if ( coord.onHazard )
+			{
+				foundBadSpot = true;
+				badchances.push_back(1);
+				goodchances.push_back(0);
+			}
+			else
+			{
+				foundGoodSpot = true;
+				badchances.push_back(0);
+				goodchances.push_back(1);
+			}
+		}
+
+		if ( foundGoodSpot )
+		{
+			auto& coord = spotsBehindMonster[local_rng.discrete(goodchances.data(), goodchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
+		else
+		{
+			auto& coord = spotsBehindMonster[local_rng.discrete(badchances.data(), badchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
 	}
-	tx = tmpPair.first;
-	ty = tmpPair.second;
 	if ( behavior == &actPlayer )
 	{
 		// pretend player has teleported, get the angle needed.
