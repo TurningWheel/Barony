@@ -7564,7 +7564,12 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
+	static ConsoleVariable<bool> cvar_smallmessages("/smallmessages", false);
     bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	if ( *cvar_smallmessages )
+	{
+		useBigFont = false;
+	}
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
         ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
@@ -7573,25 +7578,34 @@ void Player::MessageZone_t::processChatbox()
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	const int leftAlignedBottomY = 200;
 	const int topAlignedPaddingX = 8;
-	const int topAlignedPaddingY = playercount > 2 ? 32 : 8;
+	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
+	if ( players[player.playernum]->hud.xpFrame )
+	{
+		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
+		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
+	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
 	    topAlignedPaddingY,
-		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX,
+		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
 		players[player.playernum]->camera_virtualHeight() - topAlignedPaddingY };
 	SDL_Rect messageboxLeftAlignedPos{
 	    leftAlignedPaddingX,
 	    0,
-	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX,
+	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX * 2,
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
     static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	const bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
+	bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
+	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+
+	if ( *alignment == "center" && *cvar_top_aligned )
+	{
+		useLeftAligned = false;
+	}
 
 	SDL_Rect messageBoxSize = useLeftAligned ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
-
-	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
 
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
 	{
