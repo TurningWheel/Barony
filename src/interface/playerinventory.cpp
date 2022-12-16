@@ -5023,6 +5023,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						}
 						else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
 						{
+							if ( isGoblin ) { continue; }
 							if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
 							{
 								continue;
