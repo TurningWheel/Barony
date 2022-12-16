@@ -971,7 +971,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	}
 	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
 	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
-	if ( !sprite )
+	if ( !sprite || !enemybar->worldTexture )
 	{
 		return false;
 	}
@@ -1050,7 +1050,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	// get shade factor
 	if ( mode == REALCOLORS )
 	{
-		glColor4f(1.f, 1.f, 1.f, 1);
+		glColor4f(1.f, 1.f, 1.f, enemybar->animator.fadeOut / 100.f);
 	}
 	else
 	{
