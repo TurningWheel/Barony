@@ -1230,6 +1230,8 @@ voxel_t* loadVoxel(char* filename)
 	}
 }
 
+static ConsoleVariable<int> cvar_hell_ambience("/hell_ambience", 32);
+
 /*-------------------------------------------------------------------------------
 
 	loadMap
@@ -1831,10 +1833,18 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					lightmap[c] = *cvar_hell_ambience;
+				}
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
 				lightmapSmoothed[c] = 32;
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					lightmapSmoothed[c] = *cvar_hell_ambience;
+				}
 			}
 		}
 
