@@ -142,10 +142,13 @@ int Player::MessageZone_t::getMessageZoneStartY()
 {
 	return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) - fontSize() - 20 - (60 * uiscale_playerbars * uiscale_playerbars));
 }
+
+static ConsoleVariable<int> cvar_messages_max_lines("/messages_max_lines", 7);
+
 int Player::MessageZone_t::getMaxTotalLines()
 {
 	//return ((players[player.playernum]->camera_y2() - (status_bmp->h * uiscale_chatlog)) / fontSize());
-	return 7;
+	return *cvar_messages_max_lines;
 }
 
 void Player::MessageZone_t::startMessages()
