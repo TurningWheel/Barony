@@ -2769,6 +2769,7 @@ void updateAllyPlayerFrame(const int player)
 	Frame* baseFrame = hud_t.allyPlayerFrame;
 
 	static ConsoleVariable<bool> cvar_playerbars("/playerbars", true);
+	static ConsoleVariable<int> cvar_playerbars_debug("/playerbars_debug", -1);
 
 	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) )
 	{
@@ -2793,6 +2794,20 @@ void updateAllyPlayerFrame(const int player)
 	baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY;
 	baseFrame->setSize(baseFramePos);
 
+	if ( *cvar_playerbars_debug >= 0 )
+	{
+		if ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+		{
+			while ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+			{
+				hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
+			}
+		}
+		else if ( hud_t.playerBars.size() > *cvar_playerbars_debug )
+		{
+			hud_t.playerBars.clear();
+		}
+	}
 	/*if ( enableDebugKeys && keystatus[SDLK_H] )
 	{
 		keystatus[SDLK_H] = 0;
@@ -7565,10 +7580,19 @@ void Player::MessageZone_t::processChatbox()
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
 	static ConsoleVariable<bool> cvar_smallmessages("/smallmessages", false);
+    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
+	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
     bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 	if ( *cvar_smallmessages )
 	{
 		useBigFont = false;
+	}
+	bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
+
+	if ( *alignment == "center" && *cvar_top_aligned && playercount <= 2 )
+	{
+		useLeftAligned = false;
 	}
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
@@ -7576,13 +7600,21 @@ void Player::MessageZone_t::processChatbox()
         (playercount == 2 && !*MainMenu::vertical_splitscreen));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
-	const int leftAlignedBottomY = 200;
+	const int leftAlignedBottomY = *cvar_messages_left_y;
 	const int topAlignedPaddingX = 8;
 	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
-	if ( players[player.playernum]->hud.xpFrame )
+	if ( players[player.playernum]->hud.xpFrame && !useLeftAligned && *alignment == "center" )
 	{
 		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
 		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
+	}
+	else if ( players[player.playernum]->hud.allyPlayerFrame && !useLeftAligned && *alignment == "left" && !splitscreen )
+	{
+		SDL_Rect allyPlayerPos = players[player.playernum]->hud.allyPlayerFrame->getSize();
+		if ( !players[player.playernum]->hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
+		{
+			topAlignedPaddingY = 4 + allyPlayerPos.y + allyPlayerPos.h;
+		}
 	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
@@ -7595,14 +7627,6 @@ void Player::MessageZone_t::processChatbox()
 	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX * 2,
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
-    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
-	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
-
-	if ( *alignment == "center" && *cvar_top_aligned )
-	{
-		useLeftAligned = false;
-	}
 
 	SDL_Rect messageBoxSize = useLeftAligned ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
@@ -7660,8 +7684,7 @@ void Player::MessageZone_t::processChatbox()
 			entry->setFont(useBigFont ? bigfont : smallfont);
 
             Font* fontGet = Font::get(entry->getFont());
-			Text* textGet = Text::get(entry->getText(), entry->getFont(),
-				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
+			Text* textGet = entry->getTextObject();
 
 			int w = textGet->getWidth();
 			int h = textGet->getHeight() * current->text->lines;
