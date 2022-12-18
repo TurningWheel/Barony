@@ -151,6 +151,8 @@ int checkSpriteType(Sint32 sprite)
 	case 178:
 		// generic spell shrine
 		return 26;
+	case 179:
+		return 27;
 	default:
 		return 0;
 		break;
@@ -910,7 +912,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"NOT USED",
 	"TELEPORT SHRINE",
-	"SPELL SHRINE"
+	"SPELL SHRINE",
+	"COLLIDER DECORATION"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1868,6 +1871,39 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->shrineZ = 0;
 			entityNew->shrineDestXOffset = 0;
 			entityNew->shrineDestYOffset = 0;
+		}
+	}
+	else if ( spriteType == 27 ) // collider deco
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->colliderDecorationModel = entityToCopy->colliderDecorationModel;
+			entityNew->colliderDecorationRotation = entityToCopy->colliderDecorationRotation;
+			entityNew->colliderDecorationHeightOffset = entityToCopy->colliderDecorationHeightOffset;
+			entityNew->colliderDecorationXOffset = entityToCopy->colliderDecorationXOffset;
+			entityNew->colliderDecorationYOffset = entityToCopy->colliderDecorationYOffset;
+			entityNew->colliderHasCollision = entityToCopy->colliderHasCollision;
+			entityNew->colliderSizeX = entityToCopy->colliderSizeX;
+			entityNew->colliderSizeY = entityToCopy->colliderSizeY;
+			entityNew->colliderMaxHP = entityToCopy->colliderMaxHP;
+			entityNew->colliderDiggable = entityToCopy->colliderDiggable;
+			entityNew->colliderDamageTypes = entityToCopy->colliderDamageTypes;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->colliderDecorationModel = 0;
+			entityNew->colliderDecorationRotation = 0;
+			entityNew->colliderDecorationHeightOffset = 0;
+			entityNew->colliderDecorationXOffset = 0;
+			entityNew->colliderDecorationYOffset = 0;
+			entityNew->colliderHasCollision = 1;
+			entityNew->colliderSizeX = 0;
+			entityNew->colliderSizeY = 0;
+			entityNew->colliderMaxHP = 0;
+			entityNew->colliderDiggable = 0;
+			entityNew->colliderDamageTypes = 0;
 		}
 	}
 

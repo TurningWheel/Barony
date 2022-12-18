@@ -54,8 +54,10 @@ size_t getNumTextLines(std::string& str)
 	return numLines + newlines;
 }
 
+#ifndef EDITOR
 static ConsoleVariable<bool> cvar_text_render_addspace("/text_render_addspace", true);
 static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", false);
+#endif
 
 void Text::render() {
 	if ( surf ) {
@@ -122,6 +124,7 @@ void Text::render() {
 #else
 	const int spaces_width = 0;
 	bool addedSpace = false;
+#ifndef EDITOR
 	if ( *cvar_text_render_addspace )
 	{
 		if ( strToRender == "" )
@@ -130,6 +133,7 @@ void Text::render() {
 			strToRender += ' ';
 		}
 	}
+#endif
 #endif
 
 	SDL_Color colorText;
@@ -415,6 +419,9 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	auto search = hashed_text.find(textAndFont);
 	if (search == hashed_text.end()) {
 		if (TEXT_VOLUME > TEXT_BUDGET) {
+#ifdef EDITOR
+			dumpCache();
+#else
 			if ( *cvar_text_delay_dumpcache )
 			{
 				bRequireTextDump = true;
@@ -423,6 +430,7 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 			{
 				dumpCache();
 			}
+#endif
 		}
 		text = new Text(textAndFont);
 		hashed_text.insert(std::make_pair(textAndFont, text));

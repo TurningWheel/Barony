@@ -2313,6 +2313,32 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 60;
 				strcpy(subtext, "Spell Shrine Properties:");
 				break;
+			case 27:
+			{
+				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationModel));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationRotation));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationHeightOffset));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationXOffset));
+				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity[0]->colliderDecorationYOffset));
+				snprintf(spriteProperties[5], 5, "%d", static_cast<int>(selectedEntity[0]->colliderHasCollision));
+				snprintf(spriteProperties[6], 4, "%d", static_cast<int>(selectedEntity[0]->colliderSizeX));
+				snprintf(spriteProperties[7], 4, "%d", static_cast<int>(selectedEntity[0]->colliderSizeY));
+				snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity[0]->colliderMaxHP));
+				snprintf(spriteProperties[9], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDiggable));
+				snprintf(spriteProperties[10], 4, "%d", static_cast<int>(selectedEntity[0]->colliderDamageTypes));
+
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 31;
+				subx1 = xres / 2 - 200;
+				subx2 = xres / 2 + 200;
+				suby1 = yres / 2 - 220;
+				suby2 = yres / 2 + 220;
+				strcpy(subtext, "Collider Model Properties:");
+				break;
+			}
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3401,6 +3427,19 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			case 26: // spell shrine
 				selectedEntity[0]->shrineDir = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->shrineZ = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 27:
+				selectedEntity[0]->colliderDecorationModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->colliderDecorationRotation = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->colliderDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->colliderDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->colliderDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->colliderHasCollision = (Sint32)atoi(spriteProperties[5]);
+				selectedEntity[0]->colliderSizeX = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity[0]->colliderSizeY = (Sint32)atoi(spriteProperties[7]);
+				selectedEntity[0]->colliderMaxHP = (Sint32)atoi(spriteProperties[8]);
+				selectedEntity[0]->colliderDiggable = (Sint32)atoi(spriteProperties[9]);
+				selectedEntity[0]->colliderDamageTypes = (Sint32)atoi(spriteProperties[10]);
 				break;
 			default:
 				break;

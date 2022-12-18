@@ -614,6 +614,15 @@ void Entity::actPistonCam()
 	}
 }
 
+void actColliderDecoration(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
+}
+
 void actFloorDecoration(Entity* my)
 {
 	if ( !my )

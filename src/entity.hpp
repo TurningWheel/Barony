@@ -382,6 +382,21 @@ public:
 	Sint32& floorDecorationInteractText7; //skill[14]
 	Sint32& floorDecorationInteractText8; //skill[15]
 
+	//--PUBLIC COLLISION DECORATION MODELS--
+	Sint32& colliderDecorationModel; //skill[0]
+	Sint32& colliderDecorationRotation; //skill[1]
+	Sint32& colliderDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
+	Sint32& colliderDecorationXOffset; //skill[4]
+	Sint32& colliderDecorationYOffset; //skill[5]
+	Sint32& colliderHasCollision; //skill[6]
+	Sint32& colliderSizeX; //skill[7]
+	Sint32& colliderSizeY; //skill[8]
+	Sint32& colliderMaxHP; //skill[9]
+	Sint32& colliderDiggable; //skill[10]
+	Sint32& colliderDamageTypes; //skill[11]
+	Sint32& colliderCurrentHP; //skill[12]
+	Sint32& colliderOldHP; //skill[13]
+
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
 	Sint32& spellTrapRefire; //skill[1]
@@ -1061,6 +1076,9 @@ void actColumn(Entity* my);
 //--Floor vegetation--
 void actFloorDecoration(Entity* my);
 
+//--Collider decoration--
+void actColliderDecoration(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -1073,7 +1091,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 291;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 179;
+static const int NUM_EDITOR_SPRITES = 180;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

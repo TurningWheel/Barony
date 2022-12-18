@@ -6456,6 +6456,36 @@ void assignActions(map_t* map)
 				entity->sprite = 1193;
 				entity->yaw = entity->shrineDir * PI / 2;
 				break;
+			case 179:
+				// collider decoration
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = entity->colliderDecorationModel;
+				entity->sizex = entity->colliderSizeX;
+				entity->sizey = entity->colliderSizeY;
+				entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+				entity->x += entity->colliderDecorationXOffset * 0.25;
+				entity->y += entity->colliderDecorationYOffset * 0.25;
+				if ( entity->colliderDecorationRotation == -1 )
+				{
+					entity->yaw = (map_rng.rand() % 8) * (PI / 4);
+				}
+				else
+				{
+					entity->yaw = entity->colliderDecorationRotation * (PI / 4);
+				}
+				entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[UNCLICKABLE] = true;
+				entity->behavior = &actColliderDecoration;
+				entity->colliderCurrentHP = entity->colliderMaxHP;
+				entity->colliderOldHP = entity->colliderMaxHP;
+				/*if ( multiplayer != CLIENT )
+				{
+				entity_uids--;
+				}
+				entity->setUID(-3);*/
+				break;
 			default:
 				break;
 		}

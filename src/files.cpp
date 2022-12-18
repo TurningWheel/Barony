@@ -1230,7 +1230,9 @@ voxel_t* loadVoxel(char* filename)
 	}
 }
 
+#ifndef EDITOR
 static ConsoleVariable<int> cvar_hell_ambience("/hell_ambience", 32);
+#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -1775,6 +1777,19 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->shrineDir, sizeof(Sint32), 1);
 						fp->read(&entity->shrineZ, sizeof(Sint32), 1);
 						break;
+					case 27:
+						fp->read(&entity->colliderDecorationModel, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDecorationRotation, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDecorationHeightOffset, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDecorationXOffset, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDecorationYOffset, sizeof(Sint32), 1);
+						fp->read(&entity->colliderHasCollision, sizeof(Sint32), 1);
+						fp->read(&entity->colliderSizeX, sizeof(Sint32), 1);
+						fp->read(&entity->colliderSizeY, sizeof(Sint32), 1);
+						fp->read(&entity->colliderMaxHP, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDiggable, sizeof(Sint32), 1);
+						fp->read(&entity->colliderDamageTypes, sizeof(Sint32), 1);
+						break;
 					default:
 						break;
 				}
@@ -1833,18 +1848,22 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
+#ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
 					lightmap[c] = *cvar_hell_ambience;
 				}
+#endif
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
 				lightmapSmoothed[c] = 32;
+#ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
 					lightmapSmoothed[c] = *cvar_hell_ambience;
 				}
+#endif
 			}
 		}
 
@@ -2189,6 +2208,19 @@ int saveMap(const char* filename2)
 				case 26:
 					fp->write(&entity->shrineDir, sizeof(Sint32), 1);
 					fp->write(&entity->shrineZ, sizeof(Sint32), 1);
+					break;
+				case 27:
+					fp->write(&entity->colliderDecorationModel, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDecorationRotation, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDecorationHeightOffset, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDecorationXOffset, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDecorationYOffset, sizeof(Sint32), 1);
+					fp->write(&entity->colliderHasCollision, sizeof(Sint32), 1);
+					fp->write(&entity->colliderSizeX, sizeof(Sint32), 1);
+					fp->write(&entity->colliderSizeY, sizeof(Sint32), 1);
+					fp->write(&entity->colliderMaxHP, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDiggable, sizeof(Sint32), 1);
+					fp->write(&entity->colliderDamageTypes, sizeof(Sint32), 1);
 					break;
 				default:
 					break;
