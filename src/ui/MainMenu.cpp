@@ -266,6 +266,7 @@ namespace MainMenu {
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
 		Video video;
+		bool use_frame_interpolation = true;
 		bool vertical_split_enabled;
 		bool staggered_split_enabled;
 		bool clipped_split_enabled;
@@ -291,6 +292,8 @@ namespace MainMenu {
 		bool rotation_speed_limit_enabled;
 		float turn_sensitivity_x;
 		float turn_sensitivity_y;
+		bool gamepad_camera_invert_x;
+		bool gamepad_camera_invert_y;
 		bool classic_mode_enabled;
 		bool hardcore_mode_enabled;
 		bool friendly_fire_enabled;
@@ -1999,6 +2002,7 @@ namespace MainMenu {
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
 		*clipped_splitscreen = clipped_split_enabled;
+		TimerExperiments::bUseTimerInterpolation = use_frame_interpolation;
 		::fov = std::min(std::max(40.f, fov), 100.f);
 		fpsLimit = std::min(std::max(30.f, fps), 300.f);
 		current_audio_device = audio_device;
@@ -2021,6 +2025,8 @@ namespace MainMenu {
 		disablemouserotationlimit = !rotation_speed_limit_enabled;
 		gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
 		gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
+		gamepad_rightx_invert = gamepad_camera_invert_x;
+		gamepad_righty_invert = gamepad_camera_invert_y;
 		if (multiplayer != CLIENT) {
 		    svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		    svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
@@ -2078,6 +2084,7 @@ namespace MainMenu {
 		settings.vertical_split_enabled = *vertical_splitscreen;
 		settings.staggered_split_enabled = *staggered_splitscreen;
 		settings.clipped_split_enabled = *clipped_splitscreen;
+		settings.use_frame_interpolation = TimerExperiments::bUseTimerInterpolation;
 		settings.fov = ::fov;
 		settings.fps = fpsLimit;
 		settings.audio_device = current_audio_device;
@@ -2100,6 +2107,8 @@ namespace MainMenu {
 		settings.rotation_speed_limit_enabled = !disablemouserotationlimit;
 		settings.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
 		settings.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
+		settings.gamepad_camera_invert_x = gamepad_rightx_invert;
+		settings.gamepad_camera_invert_y = gamepad_righty_invert;
 		settings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		settings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		settings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -2140,6 +2149,7 @@ namespace MainMenu {
 		settings.vertical_split_enabled = false;
 		settings.clipped_split_enabled = false;
 		settings.staggered_split_enabled = false;
+		settings.use_frame_interpolation = true;
 		settings.fov = 60;
 		settings.fps = 60;
 		settings.audio_device = "";
@@ -2162,6 +2172,8 @@ namespace MainMenu {
 		settings.rotation_speed_limit_enabled = true;
 		settings.turn_sensitivity_x = 75.f;
 		settings.turn_sensitivity_y = 50.f;
+		settings.gamepad_camera_invert_x = false;
+		settings.gamepad_camera_invert_y = false;
 		settings.classic_mode_enabled = false;
 		settings.hardcore_mode_enabled = false;
 		settings.friendly_fire_enabled = true;
@@ -2177,7 +2189,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 5;
+	    int version = 6;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2210,6 +2222,10 @@ namespace MainMenu {
 		            file->property("clipped_split_enabled", clipped_split_enabled);
 		            file->property("staggered_split_enabled", staggered_split_enabled);
 		        }
+				if ( version >= 6 )
+				{
+					file->property("use_frame_interpolation", use_frame_interpolation);
+				}
 		    } else {
 		        int i = 0;
 		        float f = 0.f;
@@ -2226,6 +2242,7 @@ namespace MainMenu {
 	        file->property("vertical_split_enabled", vertical_split_enabled);
 	        file->property("clipped_split_enabled", clipped_split_enabled);
 	        file->property("staggered_split_enabled", staggered_split_enabled);
+			file->property("use_frame_interpolation", use_frame_interpolation);
 		}
 		file->property("fov", fov);
 		file->property("fps", fps);
@@ -2271,6 +2288,19 @@ namespace MainMenu {
 		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
 		file->property("turn_sensitivity_x", turn_sensitivity_x);
 		file->property("turn_sensitivity_y", turn_sensitivity_y);
+		if ( file->isReading() )
+		{
+			if ( version >= 6 )
+			{
+				file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
+				file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+			}
+		}
+		else
+		{
+			file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
+			file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+		}
 		file->property("classic_mode_enabled", classic_mode_enabled);
 		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
 		file->property("friendly_fire_enabled", friendly_fire_enabled);
@@ -4914,15 +4944,6 @@ bind_failed:
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
 #endif
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
-			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
-			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
-			"For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.",
-			allSettings.clipped_split_enabled, [](Button& button){soundToggle(); allSettings.clipped_split_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
-			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display",
-			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
 			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
@@ -4934,6 +4955,18 @@ bind_failed:
 			"Control the frame-rate limit of the game window.",
 			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
+		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
+			"Smooth player camera by interpolating camera movements over several frames.",
+			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
+			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
+			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "clipped_split", "Clipped Splitscreen",
+			"For splitscreen with two-players: reduce each viewport by 20% to preserve aspect ratio.",
+			allSettings.clipped_split_enabled, [](Button& button){soundToggle(); allSettings.clipped_split_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "staggered_split", "Staggered Splitscreen",
+			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.",
+			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
@@ -4975,12 +5008,13 @@ bind_failed:
 			{Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "window_mode"},
 			{Setting::Type::Boolean, "vsync"},
-			{Setting::Type::Boolean, "vertical_split"},
-			{Setting::Type::Boolean, "clipped_split"},
-			{Setting::Type::Boolean, "staggered_split"},
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Slider, "fps"},
+			{Setting::Type::Boolean, "use_frame_interpolation"},
+			{Setting::Type::Boolean, "vertical_split"},
+			{Setting::Type::Boolean, "clipped_split"},
+			{Setting::Type::Boolean, "staggered_split"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
 			{Setting::Type::Boolean, "arachnophobia_filter"},
@@ -4995,11 +5029,12 @@ bind_failed:
 		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
 #else
 		hookSettings(*settings_subwindow,{
+			{Setting::Type::Slider, "gamma"},
+			{Setting::Type::Slider, "fov"},
+			{Setting::Type::Boolean, "use_frame_interpolation"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
-			{Setting::Type::Slider, "gamma"},
-			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
 			{Setting::Type::Boolean, "arachnophobia_filter"},
@@ -5205,6 +5240,13 @@ bind_failed:
 			"Affect the vertical sensitivity of the control stick used for turning.",
 			allSettings.turn_sensitivity_y, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
+		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
+			"Enable to invert left/right look controls of the player camera.",
+			allSettings.gamepad_camera_invert_x, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_x = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
+			"Enable to invert up/down look controls of the player camera.",
+			allSettings.gamepad_camera_invert_y, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_y = button.isPressed(); });
+
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
@@ -5218,13 +5260,17 @@ bind_failed:
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
 			{Setting::Type::Slider, "turn_sensitivity_y"},
+			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"}
 		});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"}});
+			{Setting::Type::Slider, "turn_sensitivity_y"}}
+			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"});
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
