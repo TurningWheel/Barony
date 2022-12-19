@@ -9755,13 +9755,36 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				destX = static_cast<int>(players[monsterAllyIndex]->entity->x) >> 4;
 				destY = static_cast<int>(players[monsterAllyIndex]->entity->y) >> 4;
-				if ( entityDist(this, players[monsterAllyIndex]->entity) < TOUCHRANGE * 2 )
+
+				bool noground = false;
+				const int monsterX = static_cast<int>(x) >> 4;
+				const int monsterY = static_cast<int>(y) >> 4;
+				if ( monsterX >= 0 && monsterX < map.width )
+				{
+					if ( monsterY >= 0 && monsterY < map.height )
+					{
+						int index = (monsterY) * MAPLAYERS + (monsterX) * MAPLAYERS * map.height;
+						noground = !map.tiles[index];
+					}
+				}
+
+				if ( entityDist(this, players[monsterAllyIndex]->entity) < STRIKERANGE
+					&& !noground )
 				{
 					monsterSpecialState = GYRO_RETURN_LANDING;
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					playSoundEntity(this, 449, 128);
 				}
-				else if ( monsterSetPathToLocation(destX, destY, 2) )
+				else if ( gyrobotSetPathToReturnLocation(destX, destY, 0) )
+				{
+					monsterState = MONSTER_STATE_HUNT; // hunt state
+					monsterAllyState = ALLY_STATE_MOVETO;
+					serverUpdateEntitySkill(this, 0);
+					handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_BEGIN);
+					monsterSpecialState = GYRO_RETURN_PATHING;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+				}
+				else if ( gyrobotSetPathToReturnLocation(destX, destY, 2) ) // expand search
 				{
 					monsterState = MONSTER_STATE_HUNT; // hunt state
 					monsterAllyState = ALLY_STATE_MOVETO;
@@ -9773,7 +9796,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				else
 				{
 					//messagePlayer(0, "no path to destination");
-					handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_FAIL);
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[4317], language[4317], MSG_GENERIC);
 				}
 			}
 			break;
@@ -9941,6 +9964,77 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 				else if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
 				{
 					int distance = pow(x / 16 - u, 2) + pow(y / 16 - v, 2);
+					possibleDestinations.push_back(std::make_pair(distance, std::make_pair(u, v)));
+				}
+			}
+		}
+	}
+
+	if ( !possibleDestinations.empty() )
+	{
+		// sort by distance from monster, first result is shortest path.
+		std::sort(possibleDestinations.begin(), possibleDestinations.end());
+		pathToX = possibleDestinations.at(0).second.first;
+		pathToY = possibleDestinations.at(0).second.second;
+		foundplace = true;
+	}
+
+	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, this, nullptr);
+	if ( children.first != NULL )
+	{
+		list_RemoveNode(children.first);
+	}
+	node_t* node = list_AddNodeFirst(&children);
+	node->element = path;
+	node->deconstructor = &listDeconstructor;
+
+	if ( path == nullptr || !foundplace )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool Entity::gyrobotSetPathToReturnLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot)
+{
+	int u, v;
+	bool foundplace = false;
+	int pathToX = destX;
+	int pathToY = destY;
+
+	if ( static_cast<int>(x / 16) == destX && static_cast<int>(y / 16) == destY )
+	{
+		return true; // we're trying to move to the spot we're already at!
+	}
+	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
+	{
+		int index = (destY)* MAPLAYERS + (destX)* MAPLAYERS * map.height;
+		if ( !tryRandomSpot && map.tiles[index] )
+		{
+			foundplace = true; // we can path directly to the destination specified.
+		}
+	}
+
+	std::vector<std::pair<int, std::pair<int, int>>> possibleDestinations; // store distance and the x, y coordinates in each element.
+
+	if ( !foundplace )
+	{
+		for ( u = destX - adjacentTilesToCheck; u <= destX + adjacentTilesToCheck; u++ )
+		{
+			for ( v = destY - adjacentTilesToCheck; v <= destY + adjacentTilesToCheck; v++ )
+			{
+				if ( static_cast<int>(x / 16) == u && static_cast<int>(y / 16) == v )
+				{
+					// we're trying to move to the spot we're already at!
+				}
+				else if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
+				{
+					int index = (v) * MAPLAYERS + (u) * MAPLAYERS * map.height;
+					if ( !map.tiles[index] )
+					{
+						continue; // bad spot to land
+					}
+					int distance = pow(destX - u, 2) + pow(destY - v, 2);
 					possibleDestinations.push_back(std::make_pair(distance, std::make_pair(u, v)));
 				}
 			}
