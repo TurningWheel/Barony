@@ -19696,7 +19696,7 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
 								{
 									// if the fight is between player allies, outside mobs do not interfere
-									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 1.");
+									//messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 1.");
 									continue;
 								}
 							}
@@ -19706,13 +19706,13 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
 								{
 									// if the fight is between player allies, outside mobs do not interfere
-									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 2.");
+									//messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 2.");
 									continue;
 								}
 							}
 							else
 							{
-								messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
+								//messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
 								continue;
 							}
 						}
