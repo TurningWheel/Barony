@@ -1192,6 +1192,7 @@ void buttonAttributes(button_t* my)
 	snprintf(mapflagtext[MAP_FLAG_GENLOOTMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 16) & static_cast<int>(0xFF));
 	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 8) & static_cast<int>(0xFF));
 	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_PERIMETER_GAP], 4, "%d", (map.flags[MAP_FLAG_GENBYTES4] >> 0) & static_cast<int>(0xFF));
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 24) & static_cast<int>(0xFF) )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
@@ -1423,6 +1424,10 @@ void buttonAttributesConfirm(button_t* my)
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEHUNGER], "[x]", 3) )
 	{
 		map.flags[MAP_FLAG_GENBYTES4] |= (1 << 8); // store in third leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_PERIMETER_GAP]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES4] |= 0xFF & (atoi(mapflagtext[MAP_FLAG_PERIMETER_GAP]) << 0); // store in fourth leftmost byte.
 	}
 
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )

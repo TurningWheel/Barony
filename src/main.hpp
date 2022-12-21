@@ -388,7 +388,7 @@ typedef struct map_t
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
 #define MAPFLAGS 16 // map flags for custom properties
-#define MAPFLAGTEXTS 19 // map flags for custom properties
+#define MAPFLAGTEXTS 20 // map flags for custom properties
 // names for the flag indices
 static const int MAP_FLAG_CEILINGTILE = 0;
 static const int MAP_FLAG_DISABLETRAPS = 1;
@@ -416,6 +416,7 @@ static const int MAP_FLAG_GENADJACENTROOMS = 15;
 static const int MAP_FLAG_DISABLEOPENING = 16;
 static const int MAP_FLAG_DISABLEMESSAGES = 17;
 static const int MAP_FLAG_DISABLEHUNGER = 18;
+static const int MAP_FLAG_PERIMETER_GAP = 19;
 
 #define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
@@ -424,6 +425,7 @@ static const int MAP_FLAG_DISABLEHUNGER = 18;
 #define MFLAG_DISABLEOPENING ((map.flags[MAP_FLAG_GENBYTES4] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLEMESSAGES ((map.flags[MAP_FLAG_GENBYTES4] >> 16) & 0xFF) // second leftmost byte
 #define MFLAG_DISABLEHUNGER ((map.flags[MAP_FLAG_GENBYTES4] >> 8) & 0xFF) // third leftmost byte
+#define MFLAG_PERIMETER_GAP ((map.flags[MAP_FLAG_GENBYTES4] >> 0) & 0xFF) // fourth leftmost byte
 
 // delete entity structure
 typedef struct deleteent_t

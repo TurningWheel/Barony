@@ -778,6 +778,30 @@ bool mapSpriteIsDoorway(int sprite)
 	return false;
 }
 
+int getMapPossibleLocationX1()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return perimeter;
+}
+
+int getMapPossibleLocationY1()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return perimeter;
+}
+
+int getMapPossibleLocationX2()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return map.width - perimeter;
+}
+
+int getMapPossibleLocationY2()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return map.height - perimeter;
+}
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -1415,7 +1439,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			for ( x = 0; x < map.width; x++ )
 			{
-				if ( x < 2 || y < 2 || x > map.width - 3 || y > map.height - 3 )
+				if ( x < (2 + getMapPossibleLocationX1())
+					|| y < (2 + getMapPossibleLocationY1()) 
+					|| x > getMapPossibleLocationX2() - 3 
+					|| y > getMapPossibleLocationY2() - 3 )
 				{
 					possiblelocations[x + y * map.width] = false;
 				}
@@ -2658,27 +2685,46 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 			int side = 0;
+			bool nofloor = false;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 			{
 				side = 0;
+				if ( !map.tiles[y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				side = 1;
+				if ( !map.tiles[(y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
 			{
 				side = 2;
+				if ( !map.tiles[y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				side = 3;
+				if ( !map.tiles[(y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			bool arrowtrap = false;
 			bool noceiling = false;
 			bool arrowtrapspawn = false;
+			bool arrowtrappotential = false;
 			if ( !strncmp(map.name, "Hell", 4) )
 			{
+				arrowtrappotential = true;
 				if ( side == 0 && !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 				{
 					noceiling = true;
@@ -2702,11 +2748,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
+				if ( currentlevel > 5 && currentlevel <= 25 )
+				{
+					arrowtrappotential = true;
+				}
+
 				if ( !strncmp(map.name, "Underworld", 10) )
 				{
 					arrowtrapspawn = true; // no boulders in underworld
 				}
-				else if ( map_rng.rand() % 2 && (currentlevel > 5 && currentlevel <= 25) )
+				else if ( map_rng.rand() % 2 && (arrowtrappotential) )
 				{
 					arrowtrapspawn = true;
 				}
@@ -2721,7 +2772,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 
-			if ( arrowtrapspawn || noceiling )
+			if ( arrowtrapspawn || noceiling || (nofloor && arrowtrappotential) )
 			{
 				arrowtrap = true;
 				entity = newEntity(32, 1, map.entities, nullptr); // arrow trap
@@ -2737,9 +2788,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity->x = x * 16;
 			entity->y = y * 16;
 			//printlog("2 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-			entity = newEntity(18, 1, map.entities, nullptr); // electricity node
-			entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
-			entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
+			//entity = newEntity(18, 1, map.entities, nullptr); // electricity node
+			//entity->x = x * 16;
+			//entity->y = y * 16;
 			//printlog("4 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 			// make torches
 			if ( arrowtrap )
@@ -2798,21 +2849,24 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 				}
-				if ( arrowtrap )
-				{
-					entity = newEntity(33, 1, map.entities, nullptr); // pressure plate
-				}
 				else
 				{
-					entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+					if ( arrowtrap )
+					{
+						entity = newEntity(33, 1, map.entities, nullptr); // pressure plate
+					}
+					else
+					{
+						entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+					}
+					entity->x = x * 16;
+					entity->y = y * 16;
+					//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
+					entity = newEntity(18, 1, map.entities, nullptr); // electricity node
+					entity->x = x * 16;
+					entity->y = y * 16;
+					//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				}
-				entity->x = x * 16;
-				entity->y = y * 16;
-				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-				entity = newEntity(18, 1, map.entities, nullptr); // electricity node
-				entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
-				entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
-				//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				switch ( side )
 				{
 					case 0:
@@ -2828,11 +2882,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						y--;
 						break;
 				}
-				i++;
 				testx = std::min(std::max<unsigned int>(0, x), map.width - 1); //TODO: Why are const int and unsigned int being compared?
 				testy = std::min(std::max<unsigned int>(0, y), map.height - 1); //TODO: Why are const int and unsigned int being compared?
+				i++;
 			}
-			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] && i <= 10 );
+			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] 
+				&& !trapexcludelocations[testx + testy * map.width]
+				&& !(!arrowtrap && !map.tiles[testy * MAPLAYERS + testx * MAPLAYERS * map.height]) // boulders stop wiring at pit edges
+				&& i <= 10 );
 		}
 	}
 
@@ -2865,7 +2922,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				possiblelocations[y + x * map.height] = true;
+				if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
+					|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )
+				{
+					possiblelocations[y + x * map.height] = false;
+					--numpossiblelocations;
+				}
+				else
+				{
+					possiblelocations[y + x * map.height] = true;
+				}
 			}
 		}
 	}

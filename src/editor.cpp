@@ -2983,6 +2983,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELEVITATION]);
 
 					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Gen Border:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_PERIMETER_GAP]);
+
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Gen Adjacent Rooms:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_GENADJACENTROOMS]);
 
@@ -3013,7 +3017,7 @@ int main(int argc, char** argv)
 						keystatus[SDLK_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 14 )
+						if ( editproperty == 15 )
 						{
 							editproperty = 0;
 						}
@@ -3056,10 +3060,15 @@ int main(int argc, char** argv)
 								inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
 								break;
 							case 12:
-								inputstr = widthtext;
+								inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
 								break;
 							case 13:
+								inputstr = widthtext;
+								break;
+							case 14:
 								inputstr = heighttext;
+								break;
+							default:
 								break;
 						}
 					}
@@ -3269,17 +3278,24 @@ int main(int argc, char** argv)
 							editproperty = 11;
 							cursorflash = ticks;
 						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 64 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+							editproperty = 12;
+							cursorflash = ticks;
+						}
 
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 12;
+							editproperty = 13;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 13;
+							editproperty = 14;
 							cursorflash = ticks;
 						}
 					}
@@ -3346,7 +3362,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, start_y + pad_y1, "\26");
 						}
 					}
-					if ( editproperty == 12 )   // edit map width
+					if ( editproperty == 13 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3360,7 +3376,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 13 )   // edit map height
+					if ( editproperty == 14 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3480,6 +3496,20 @@ int main(int argc, char** argv)
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 12 )   // edit perimeter gap
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+						}
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_PERIMETER_GAP]) * 8, start_y + pad_y1, "\26");
 						}
 					}
 				}
