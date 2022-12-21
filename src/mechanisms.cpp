@@ -19,10 +19,21 @@
 #include "scores.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
+static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
 
 void actCircuit(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+		my->sprite = 170;
+	}
+	else
+	{
+		my->sprite = 18;
+		my->flags[INVISIBLE] = true;
+	}
 }
 
 void Entity::circuitPowerOn()
@@ -381,6 +392,15 @@ void actSwitchWithTimer(Entity* my)
 #define TRAP_ON my->skill[0]
 void actTrap(Entity* my)
 {
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+	}
+
 	// activates circuit when certain entities are occupying its tile
 	node_t* node;
 	Entity* entity;
@@ -429,6 +449,15 @@ void actTrap(Entity* my)
 #define TRAPPERMANENT_ON my->skill[0]
 void actTrapPermanent(Entity* my)
 {
+	if ( (svFlags & SV_FLAG_CHEATS) && *cvar_wire_debug )
+	{
+		my->flags[INVISIBLE] = false;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+	}
+
 	// activates circuit when certain entities are occupying its tile
 	// unlike actTrap, never deactivates
 	node_t* node;
