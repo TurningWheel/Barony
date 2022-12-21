@@ -1192,6 +1192,27 @@ void actBoulder(Entity* my)
 #define BOULDERTRAP_FIRED my->skill[0]
 #define BOULDERTRAP_AMBIENCE my->skill[6]
 
+void actBoulderTrapHole(Entity* my)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( !my ) { return; }
+
+	if ( my->z > -11.0 && my->z < -10 )
+	{
+		// in ceiling, delete self if ceiling no longer exists
+		int x = ((int)(my->x)) >> 4;
+		int y = ((int)(my->y)) >> 4;
+		if ( !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+}
+
 void actBoulderTrap(Entity* my)
 {
 	int x, y;

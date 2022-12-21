@@ -302,6 +302,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
 void actBoulder(Entity* my);
 void actBoulderTrap(Entity* my);
+void actBoulderTrapHole(Entity* my);
 void actBoulderTrapEast(Entity* my);
 void actBoulderTrapWest(Entity* my);
 void actBoulderTrapSouth(Entity* my);
