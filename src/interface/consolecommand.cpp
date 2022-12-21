@@ -4240,6 +4240,70 @@ namespace ConsoleCommands {
 #endif
 	});
 
+	static ConsoleCommand ccmd_mapwirecheck("/mapwirecheck", "", []CCMD{
+#ifndef NINTENDO
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();
+			if ( foundNumber && PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				int gate = 0;
+				int invertedGate = 0;
+				int gateOnEdge = 0;
+				int invertedGateOnEdge = 0;
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->sprite == 19 || entity->sprite == 20 )
+						{
+							++gate;
+							if ( entity->x == 0 || entity->y == 0
+								|| entity->x == map.width - 1 || entity->y == map.height - 1 )
+							{
+								++gateOnEdge;
+							}
+						}
+						else if ( entity->sprite == 113 || entity->sprite == 114 )
+						{
+							++invertedGate;
+							if ( entity->x == 0 || entity->y == 0
+								|| entity->x == map.width - 1 || entity->y == map.height - 1 )
+							{
+								++invertedGateOnEdge;
+							}
+						}
+					}
+				}
+				if ( gate || invertedGate )
+				{
+					char buf[1024];
+					if ( gateOnEdge || invertedGateOnEdge )
+					{
+						snprintf(buf, sizeof(buf), "[Map Wiring]: File %s | Disable Traps: %d | Found %d gates (%d perimeter) %d inverted gates (%d perimeter)", f.c_str(),
+							map.flags[MAP_FLAG_DISABLETRAPS], gate, gateOnEdge, invertedGate, invertedGateOnEdge);
+						printlog(buf);
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), "[Map Wiring]: File %s | Disable Traps: %d | Found %d gates (NO perimeter) %d inverted gates (NO perimeter)", f.c_str(),
+							map.flags[MAP_FLAG_DISABLETRAPS], gate, invertedGate);
+						printlog(buf);
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+	});
+
 	static ConsoleCommand ccmd_exportitemlang("/exportitemlang", "", []CCMD{
 #ifndef EDITOR
 #ifndef NINTENDO
