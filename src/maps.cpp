@@ -1439,10 +1439,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			for ( x = 0; x < map.width; x++ )
 			{
-				if ( x < (2 + getMapPossibleLocationX1())
-					|| y < (2 + getMapPossibleLocationY1()) 
-					|| x > getMapPossibleLocationX2() - 3 
-					|| y > getMapPossibleLocationY2() - 3 )
+				if ( x < (std::max(2, getMapPossibleLocationX1()))
+					|| y < (std::max(2, getMapPossibleLocationY1())) 
+					|| x > (std::min(getMapPossibleLocationX2(), (int)map.width - 3))
+					|| y > (std::min(getMapPossibleLocationY2(), (int)map.height - 3)) )
 				{
 					possiblelocations[x + y * map.width] = false;
 				}
@@ -1605,7 +1605,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			// find locations where the selected room can be added to the level
 			numpossiblelocations = map.width * map.height;
 
-			bool hellGenerationFix = !strncmp(map.name, "Hell", 4);
+			bool hellGenerationFix = !strncmp(map.name, "Hell", 4) && !MFLAG_GENADJACENTROOMS;
 
 			for ( y0 = 0; y0 < map.height; y0++ )
 			{
@@ -1709,6 +1709,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						// 7x7, pick random location across all map.
 						x = 2 + (map_rng.rand() % 7) * 7;
 						y = 2 + (map_rng.rand() % 7) * 7;
+					}
+				}
+				else if ( !strncmp(map.name, "Hell", 4) )
+				{
+					if ( c == 0 )
+					{
+						// 7x7, pick random location across all map.
+						x = getMapPossibleLocationX1() + (map_rng.rand() % 6) * 7;
+						y = getMapPossibleLocationY1() + (map_rng.rand() % 6) * 7;
+					}
+					else if ( secretlevelexit && c == 1 )
+					{
+						// 14x14, pick random location minus 1 from both edges.
+						x = 2 + (map_rng.rand() % 5) * 7;
+						y = 2 + (map_rng.rand() % 5) * 7;
+					}
+					else if ( c == 2 && shoplevel )
+					{
+						// 7x7, pick random location across all map.
+						x = 2 + (map_rng.rand() % 6) * 7;
+						y = 2 + (map_rng.rand() % 6) * 7;
 					}
 				}
 				else
