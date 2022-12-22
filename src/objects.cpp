@@ -365,6 +365,7 @@ string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const 
 	string->lines = 1;
 	if ( content != NULL )
 	{
+#ifndef EDITOR
 		if ( list && list == &messages )
 		{
 			std::string sanitizedStr = messageSanitizePercentSign(content, nullptr).c_str();
@@ -375,6 +376,7 @@ string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const 
 			va_end( argptr );
 		}
 		else
+#endif
 		{
 			// format the content
 			va_start(argptr, content);
