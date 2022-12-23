@@ -5424,6 +5424,77 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 	}},
 
+	// update appearance of item
+	{ 'EQUA', []() {
+		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		auto item = newItem(
+			static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			nullptr);
+
+		const bool onIdentify = net_packet->data[27];
+		Item* slot = nullptr;
+
+		switch ( net_packet->data[26] )
+		{
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+				slot = stats[client]->weapon;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+				slot = stats[client]->shield;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+				slot = stats[client]->mask;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+				slot = stats[client]->helmet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+				slot = stats[client]->gloves;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+				slot = stats[client]->shoes;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+				slot = stats[client]->breastplate;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+				slot = stats[client]->cloak;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+				slot = stats[client]->amulet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+				slot = stats[client]->ring;
+				break;
+			default:
+				break;
+		}
+
+		if ( slot )
+		{
+			if ( onIdentify )
+			{
+				item->identified = slot->identified;
+			}
+			if ( !itemCompare(item, slot, false) )
+			{
+				slot->appearance = item->appearance;
+				if ( onIdentify )
+				{
+					slot->identified = true;
+				}
+			}
+		}
+
+		free(item);
+		item = nullptr;
+	} },
+
 	// apply item to entity
 	{'APIT', [](){
 		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));

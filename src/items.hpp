@@ -634,6 +634,7 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* item, bool checkI
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
 EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
 enum ItemStackResults : int
 {

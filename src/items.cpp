@@ -5743,6 +5743,29 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 	}
 }
 
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify)
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !item || !itemIsEquipped(item, player) || items[item->type].item_slot == NO_EQUIP )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "EQUA");
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = items[item->type].item_slot;
+	net_packet->data[27] = onIdentify;
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
 	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified)
 {
