@@ -1616,10 +1616,12 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	            {
 				    if ( entity->sprite == items[TOOL_TORCH].index )
 				    {
-					    entity2 = spawnFlame(entity, SPRITE_FLAME);
-					    entity2->x += 2 * cos(my->yaw);
-					    entity2->y += 2 * sin(my->yaw);
-					    entity2->z -= 2;
+						if ( entity2 = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							entity2->x += 2 * cos(my->yaw);
+							entity2->y += 2 * sin(my->yaw);
+							entity2->z -= 2;
+						}
 				    }
 				    else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
 				    {
@@ -1630,10 +1632,12 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				    }
 				    else if ( entity->sprite == items[TOOL_LANTERN].index )
 				    {
-					    entity2 = spawnFlame(entity, SPRITE_FLAME);
-					    entity2->x += 2 * cos(my->yaw);
-					    entity2->y += 2 * sin(my->yaw);
-					    entity2->z += 1;
+						if ( entity2 = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							entity2->x += 2 * cos(my->yaw);
+							entity2->y += 2 * sin(my->yaw);
+							entity2->z += 1;
+						}
 				    }
 				}
 				break;

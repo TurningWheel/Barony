@@ -971,7 +971,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	}
 	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
 	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
-	if ( !sprite )
+	if ( !sprite || !enemybar->worldTexture )
 	{
 		return false;
 	}
@@ -1050,7 +1050,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	// get shade factor
 	if ( mode == REALCOLORS )
 	{
-		glColor4f(1.f, 1.f, 1.f, 1);
+		glColor4f(1.f, 1.f, 1.f, enemybar->animator.fadeOut / 100.f);
 	}
 	else
 	{
@@ -1288,14 +1288,11 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 #ifndef EDITOR
 	real_t s = 1;
 
-	if ( !entity )
+	if ( !entity || intro )
 	{
 		return;
 	}
-	if ( !uidToEntity(entity->parent) && entity->behavior == &actSpriteWorldTooltip )
-	{
-		return;
-	}
+
 	int player = -1;
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
@@ -1322,6 +1319,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			}
 		}
 		else
+		{
+			return;
+		}
+		if ( !uidToEntity(entity->parent) )
 		{
 			return;
 		}

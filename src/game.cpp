@@ -882,6 +882,7 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
 -------------------------------------------------------------------------------*/
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
+static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", false);
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
@@ -1156,10 +1157,12 @@ void gameLogic(void)
 				    j = 1 + local_rng.rand() % 4;
 				    for ( c = 0; c < j; ++c )
 				    {
-					    Entity* flame = spawnFlame(entity, SPRITE_FLAME);
-					    flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
-					    flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
-					    flame->z += local_rng.rand() % 5 - 2;
+						if ( Entity* flame = spawnFlame(entity, SPRITE_FLAME) )
+						{
+							flame->x += local_rng.rand() % (entity->sizex * 2 + 1) - entity->sizex;
+							flame->y += local_rng.rand() % (entity->sizey * 2 + 1) - entity->sizey;
+							flame->z += local_rng.rand() % 5 - 2;
+						}
 				    }
 				}
 			}
@@ -1386,8 +1389,19 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
+											bool doLavaParticles = true;
+											if ( *cvar_lava_use_vismap )
+											{
+												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												{
+													if ( !map.vismap[y + x * map.height] )
+													{
+														doLavaParticles = false;
+													}
+												}
+											}
 											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j; ++c )
+											for ( c = 0; c < j && doLavaParticles; ++c )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
@@ -2068,9 +2082,9 @@ void gameLogic(void)
 						{
 							FollowerMenu[i].closeFollowerMenuGUI(true);
 						}
-						enemyHPDamageBarHandler[i].HPBars.clear();
 						players[i]->hud.followerBars.clear();
 					}
+					EnemyHPDamageBarHandler::dumpCache();
 
 					achievementObserver.updateData();
 
@@ -2762,8 +2776,19 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
+											bool doLavaParticles = true;
+											if ( *cvar_lava_use_vismap )
+											{
+												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												{
+													if ( !map.vismap[y + x * map.height] )
+													{
+														doLavaParticles = false;
+													}
+												}
+											}
 											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j; c++ )
+											for ( c = 0; c < j && doLavaParticles; c++ )
 											{
 												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
@@ -3941,9 +3966,13 @@ bool handleEvents(void)
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						inputs.getVirtualMouse(i)->lastMovementFromController = false;
+						if ( gamePaused || intro )
+						{
+							inputs.getVirtualMouse(i)->lastMovementFromController = false;
+						}
 						if ( inputs.bPlayerUsingKeyboardControl(i) )
 						{
+							inputs.getVirtualMouse(i)->lastMovementFromController = false;
 							if ( !players[i]->shootmode || !players[i]->entity || gamePaused )
 							{
 								inputs.getVirtualMouse(i)->draw_cursor = true;
@@ -5500,6 +5529,7 @@ void ingameHud()
 }
 
 void drawAllPlayerCameras() {
+	DebugStats.drawWorldT1 = std::chrono::high_resolution_clock::now();
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c)
 	{
@@ -5550,6 +5580,7 @@ void drawAllPlayerCameras() {
 			}
 
 			// do occlusion culling from the perspective of this camera
+			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
 
 			if ( players[c] && players[c]->entity )
@@ -5618,10 +5649,12 @@ void drawAllPlayerCameras() {
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 					}
 				}
+				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
 				    raycast(&camera, minimap); // update minimap
 				}
+				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
 
 				if ( gameplayCustomManager.inUse() && gameplayCustomManager.minimapShareProgress && !splitscreen )
@@ -5654,6 +5687,7 @@ void drawAllPlayerCameras() {
 				glDrawWorld(&camera, REALCOLORS);
 			}
 
+			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
@@ -5667,6 +5701,7 @@ void drawAllPlayerCameras() {
 			camera.vang -= cvars.shakey2 / 200.0;
 		}
 	}
+	DebugStats.drawWorldT6 = std::chrono::high_resolution_clock::now();
 }
 
 /*-------------------------------------------------------------------------------
@@ -6906,7 +6941,7 @@ int main(int argc, char** argv)
 					}
 				}
 			}
-
+			Text::dumpCacheInMainLoop();
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count

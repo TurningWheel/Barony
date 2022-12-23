@@ -18,7 +18,6 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw);
 void toggleShopBuybackView(const int player);
 void loadHUDSettingsJSON();
-SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite);
 struct EnemyBarSettings_t
 {
 	std::unordered_map<std::string, float> heightOffsets;

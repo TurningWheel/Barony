@@ -265,6 +265,19 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	floorDecorationInteractText6(skill[13]),
 	floorDecorationInteractText7(skill[14]),
 	floorDecorationInteractText8(skill[15]),
+	colliderDecorationModel(skill[0]),
+	colliderDecorationRotation(skill[1]),
+	colliderDecorationHeightOffset(skill[3]),
+	colliderDecorationXOffset(skill[4]),
+	colliderDecorationYOffset(skill[5]),
+	colliderHasCollision(skill[6]),
+	colliderSizeX(skill[7]),
+	colliderSizeY(skill[8]),
+	colliderMaxHP(skill[9]),
+	colliderDiggable(skill[10]),
+	colliderDamageTypes(skill[11]),
+	colliderCurrentHP(skill[12]),
+	colliderOldHP(skill[13]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -2639,7 +2652,8 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 	if ( !strncmp(map.name, "Sanctum", 7)
 		|| !strncmp(map.name, "Boss", 4)
 		|| !strncmp(map.name, "Hell Boss", 9)
-		|| !strncmp(map.name, "Mages Guild", 11) )
+		|| !strncmp(map.name, "Mages Guild", 11)
+		|| strstr(map.name, " Transition") )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 		if ( vampiricHunger > 0 )
@@ -10393,6 +10407,31 @@ Teleports the given entity within a radius of a target entity.
 
 -------------------------------------------------------------------------------*/
 
+bool teleportCoordHasTrap(const int x, const int y)
+{
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(x, y, 0);
+	for ( auto it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( !entity ) { continue; }
+			if ( entity->behavior == &actSpearTrap )
+			{
+				int i = static_cast<int>(entity->x) >> 4;
+				int j = static_cast<int>(entity->y) >> 4;
+				if ( i == x && j == y )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 {
 	int numlocations = 0;
@@ -10438,8 +10477,20 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		}
 	}
 
-	std::vector<std::pair<int, int>> goodspots;
-	std::vector<std::pair<int, int>> spotsBehindMonster;
+	struct Coord_t
+	{
+		bool onHazard = false;
+		int x = 0;
+		int y = 0;
+		Coord_t(const int _x, const int _y, const bool _onHazard)
+		{
+			x = _x;
+			y = _y;
+			onHazard = _onHazard;
+		};
+	};
+	std::vector<Coord_t> goodspots;
+	std::vector<Coord_t> spotsBehindMonster;
 	bool forceSpot = false;
 	for ( int iy = std::max(1, ty - dist); !forceSpot && iy <= std::min(ty + dist, static_cast<int>(map.height) - 1); ++iy )
 	{
@@ -10476,11 +10527,11 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						real_t yawDifference = (PI - abs(abs(tangent - targetYaw) - PI)) * 2;
 						if ( yawDifference >= 0 && yawDifference <= PI ) // 180 degree arc
 						{
-							spotsBehindMonster.push_back(std::make_pair(ix, iy));
+							spotsBehindMonster.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 						}
 						else
 						{
-							goodspots.push_back(std::make_pair(ix, iy));
+							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 						}
 					}
 					// restore coordinates.
@@ -10500,14 +10551,23 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							forceSpot = true;
-							goodspots.clear();
-							goodspots.push_back(std::make_pair(ix, iy));
-							numlocations = 1;
-							// restore coordinates.
-							x = tmpx;
-							y = tmpy;
-							break;
+							bool onTrap = false;
+							if ( !onTrap )
+							{
+								forceSpot = true;
+								goodspots.clear();
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations = 1;
+								// restore coordinates.
+								x = tmpx;
+								y = tmpy;
+								break;
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations++;
+							}
 						}
 						// restore coordinates.
 						x = tmpx;
@@ -10522,14 +10582,23 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							forceSpot = true;
-							goodspots.clear();
-							goodspots.push_back(std::make_pair(ix, iy));
-							numlocations = 1;
-							// restore coordinates.
-							x = tmpx;
-							y = tmpy;
-							break;
+							bool onTrap = teleportCoordHasTrap(ix, iy);
+							if ( !onTrap )
+							{
+								forceSpot = true;
+								goodspots.clear();
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations = 1;
+								// restore coordinates.
+								x = tmpx;
+								y = tmpy;
+								break;
+							}
+							else
+							{
+								goodspots.push_back(Coord_t(ix, iy, onTrap));
+								numlocations++;
+							}
 						}
 						// restore coordinates.
 						x = tmpx;
@@ -10543,7 +10612,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							goodspots.push_back(std::make_pair(ix, iy));
+							goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
 							numlocations++;
 						}
 						// restore coordinates.
@@ -10560,17 +10629,76 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		messagePlayer(player, MESSAGE_HINT, language[708]);
 		return false;
 	}
-	std::pair<int, int> tmpPair;
 	if ( behavior == &actMonster || spotsBehindMonster.empty() )
 	{
-		tmpPair = goodspots[local_rng.rand() % goodspots.size()];
+		std::vector<unsigned int> goodchances;
+		std::vector<unsigned int> badchances;
+		bool foundGoodSpot = false;
+		bool foundBadSpot = false;
+		for ( auto& coord : goodspots )
+		{
+			if ( coord.onHazard )
+			{
+				foundBadSpot = true;
+				badchances.push_back(1);
+				goodchances.push_back(0);
+			}
+			else
+			{
+				foundGoodSpot = true;
+				badchances.push_back(0);
+				goodchances.push_back(1);
+			}
+		}
+
+		if ( foundGoodSpot )
+		{
+			auto& coord = goodspots[local_rng.discrete(goodchances.data(), goodchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
+		else
+		{
+			auto& coord = goodspots[local_rng.discrete(badchances.data(), badchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
 	}
 	else
 	{
-		tmpPair = spotsBehindMonster[local_rng.rand() % spotsBehindMonster.size()];
+		std::vector<unsigned int> goodchances;
+		std::vector<unsigned int> badchances;
+		bool foundGoodSpot = false;
+		bool foundBadSpot = false;
+		for ( auto& coord : spotsBehindMonster )
+		{
+			if ( coord.onHazard )
+			{
+				foundBadSpot = true;
+				badchances.push_back(1);
+				goodchances.push_back(0);
+			}
+			else
+			{
+				foundGoodSpot = true;
+				badchances.push_back(0);
+				goodchances.push_back(1);
+			}
+		}
+
+		if ( foundGoodSpot )
+		{
+			auto& coord = spotsBehindMonster[local_rng.discrete(goodchances.data(), goodchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
+		else
+		{
+			auto& coord = spotsBehindMonster[local_rng.discrete(badchances.data(), badchances.size())];
+			tx = coord.x;
+			ty = coord.y;
+		}
 	}
-	tx = tmpPair.first;
-	ty = tmpPair.second;
 	if ( behavior == &actPlayer )
 	{
 		// pretend player has teleported, get the angle needed.
@@ -18534,10 +18662,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18548,10 +18678,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldArmLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldArmLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
@@ -18651,10 +18783,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 			    if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
-				    flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+						flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18665,10 +18799,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2.5 * sin(shieldLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+						flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
@@ -18775,10 +18911,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	        {
 		        if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldLimb->yaw);
-				    flameEntity->z -= 2;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z -= 2;
+					}
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			    {
@@ -18789,10 +18927,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			    }
 			    else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
 			    {
-				    flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				    flameEntity->x += 2 * cos(shieldLimb->yaw);
-				    flameEntity->y += 2 * sin(shieldLimb->yaw);
-				    flameEntity->z += 1;
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z += 1;
+					}
 			    }
 			}
 			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
@@ -19556,7 +19696,7 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
 								{
 									// if the fight is between player allies, outside mobs do not interfere
-									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 1.");
+									//messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 1.");
 									continue;
 								}
 							}
@@ -19566,13 +19706,13 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 									!= (entity->monsterAllyGetPlayerLeader() == nullptr) )
 								{
 									// if the fight is between player allies, outside mobs do not interfere
-									messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 2.");
+									//messagePlayer(0, MESSAGE_DEBUG, "Stopped an ally infight 2.");
 									continue;
 								}
 							}
 							else
 							{
-								messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
+								//messagePlayer(0, MESSAGE_DEBUG, "Stopped an infight.");
 								continue;
 							}
 						}

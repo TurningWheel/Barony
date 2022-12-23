@@ -2769,6 +2769,7 @@ void updateAllyPlayerFrame(const int player)
 	Frame* baseFrame = hud_t.allyPlayerFrame;
 
 	static ConsoleVariable<bool> cvar_playerbars("/playerbars", true);
+	static ConsoleVariable<int> cvar_playerbars_debug("/playerbars_debug", -1);
 
 	if ( !players[player]->isLocalPlayer() || !(*cvar_playerbars) )
 	{
@@ -2793,6 +2794,20 @@ void updateAllyPlayerFrame(const int player)
 	baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY;
 	baseFrame->setSize(baseFramePos);
 
+	if ( *cvar_playerbars_debug >= 0 )
+	{
+		if ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+		{
+			while ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+			{
+				hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
+			}
+		}
+		else if ( hud_t.playerBars.size() > *cvar_playerbars_debug )
+		{
+			hud_t.playerBars.clear();
+		}
+	}
 	/*if ( enableDebugKeys && keystatus[SDLK_H] )
 	{
 		keystatus[SDLK_H] = 0;
@@ -2891,7 +2906,7 @@ void createEnemyBar(const int player, Frame*& frame)
 	dmg->pos.h = bg->pos.h;
 	dmg->pos.y = 0;
 	dmg->pos.w = 548 / 2 + 100;
-	dmg->color = makeColor(255, 255, 255, 224);
+	dmg->color = makeColor(255, 255, 255, 255);
 
 	auto dmgEndCap = dmgFrame->addImage(pos, 0xFFFFFFFF, "*#images/ui/HUD/enemybar/HUD_EnemyHP_DMG_Cap_01.png", "dmg img endcap");
 	dmgEndCap->pos.x = dmg->pos.w;
@@ -3370,7 +3385,7 @@ void Player::HUD_t::updateUINavigation()
 		&& player.gui_mode != GUI_MODE_SIGN
 		&& player.isLocalPlayer() && !player.shootmode )
 	{
-		/*if ( player.bUseCompactGUIWidth() * Frame::virtualScreenX || (keystatus[SDLK_Y] && enableDebugKeys) )
+		/*if ( player.bUseCompactGUIHeight() * Frame::virtualScreenX || (keystatus[SDLK_Y] && enableDebugKeys) )
 		{
 			bShowUINavigation = true;
 		}*/
@@ -3410,7 +3425,7 @@ void Player::HUD_t::updateUINavigation()
 	auto additionalGlyph = uiNavFrame->findImage("additional img");
 	additionalGlyph->disabled = true;
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth() )
+		&& !player.bUseCompactGUIHeight() )
 	{
 		if ( leftBumperModule != Player::GUI_t::MODULE_NONE )
 		{
@@ -3553,7 +3568,7 @@ void Player::HUD_t::updateUINavigation()
 	}
 
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIWidth() )
+		&& !player.bUseCompactGUIHeight() )
 	{
 		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
@@ -3868,7 +3883,7 @@ void Player::HUD_t::updateUINavigation()
 			button->setColor(makeColor(255, 255, 255, 191));
 		}
 
-		if ( player.bUseCompactGUIWidth() )
+		if ( player.bUseCompactGUIHeight() )
 		{
 			if ( player.inventoryUI.chestGUI.bOpen )
 			{
@@ -3899,7 +3914,7 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIWidth()
+				&& !player.bUseCompactGUIHeight()
 				&& !GenericGUI[player.playernum].isGUIOpen()
 				&& !player.minimap.mapWindow
 				&& !player.messageZone.logWindow )
@@ -3929,7 +3944,7 @@ void Player::HUD_t::updateUINavigation()
 					}
 				}
 			}
-			else if ( player.bUseCompactGUIWidth() )
+			else if ( player.bUseCompactGUIHeight() )
 			{
 				buttonPos.x = leftAlignX;
 				if ( numButtonsToShow < 4 )
@@ -3983,11 +3998,11 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum)
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIWidth() )
+				&& !player.bUseCompactGUIHeight() )
 			{
 				// leave disabled
 			}
-			else if ( player.bUseCompactGUIWidth() )
+			else if ( player.bUseCompactGUIHeight() )
 			{
 				buttonPos.x = rightAlignX;
 				if ( numButtonsToShow < 4 )
@@ -7564,34 +7579,57 @@ void Player::MessageZone_t::processChatbox()
 
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
+	static ConsoleVariable<bool> cvar_smallmessages("/smallmessages", false);
+    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
+	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
     bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	if ( *cvar_smallmessages )
+	{
+		useBigFont = false;
+	}
+	bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
+
+	if ( *alignment == "center" && *cvar_top_aligned && playercount <= 2 )
+	{
+		useLeftAligned = false;
+	}
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
         ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
         (playercount == 2 && !*MainMenu::vertical_splitscreen));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
-	const int leftAlignedBottomY = 200;
+	const int leftAlignedBottomY = *cvar_messages_left_y;
 	const int topAlignedPaddingX = 8;
-	const int topAlignedPaddingY = playercount > 2 ? 32 : 8;
+	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
+	if ( players[player.playernum]->hud.xpFrame && !useLeftAligned && *alignment == "center" )
+	{
+		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
+		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
+	}
+	else if ( players[player.playernum]->hud.allyPlayerFrame && !useLeftAligned && *alignment == "left" && !splitscreen )
+	{
+		SDL_Rect allyPlayerPos = players[player.playernum]->hud.allyPlayerFrame->getSize();
+		if ( !players[player.playernum]->hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
+		{
+			topAlignedPaddingY = 4 + allyPlayerPos.y + allyPlayerPos.h;
+		}
+	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
 	    topAlignedPaddingY,
-		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX,
+		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
 		players[player.playernum]->camera_virtualHeight() - topAlignedPaddingY };
 	SDL_Rect messageboxLeftAlignedPos{
 	    leftAlignedPaddingX,
 	    0,
-	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX,
+	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX * 2,
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
-    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	const bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
 
 	SDL_Rect messageBoxSize = useLeftAligned ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
-
-	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
 
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
 	{
@@ -7646,8 +7684,7 @@ void Player::MessageZone_t::processChatbox()
 			entry->setFont(useBigFont ? bigfont : smallfont);
 
             Font* fontGet = Font::get(entry->getFont());
-			Text* textGet = Text::get(entry->getText(), entry->getFont(),
-				makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255));
+			Text* textGet = entry->getTextObject();
 
 			int w = textGet->getWidth();
 			int h = textGet->getHeight() * current->text->lines;
@@ -7958,10 +7995,18 @@ void openMapWindow(int player) {
     }
     Frame* parent = players[player]->minimap.mapParentFrame;
     const SDL_Rect size = parent->getSize();
-    const int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-    const int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
-    const int w = std::min(_w, _h);
-    const int h = std::min(_w, _h);
+    int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
+    int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+	const bool bCompact = players[player]->bUseCompactGUIHeight() || players[player]->bUseCompactGUIWidth();
+	if ( bCompact )
+	{
+		static ConsoleVariable<int> cvar_map_splitscreen_w("/map_splitscreen_wborder", 64);
+		static ConsoleVariable<int> cvar_map_splitscreen_h("/map_splitscreen_hborder", 64);
+		_w = size.w - *cvar_map_splitscreen_w;
+		_h = size.h - *cvar_map_splitscreen_h;
+	}
+    int w = std::min(_w, _h);
+    int h = std::min(_w, _h);
     frame = parent->addFrame("minimap_window");
     frame->setOwner(player);
     frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
@@ -8321,12 +8366,17 @@ void openLogWindow(int player) {
     const SDL_Rect size = parent->getSize();
     int w = std::max(Frame::virtualScreenX / 2, size.w - 432);
     int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
-	const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
-	if ( bCompactWidth )
+	static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
+	static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
+	if ( (players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth())
+		|| players[player]->bUseCompactGUIWidth() )
 	{
-		static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
-		static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
 		w = size.w - *cvar_log_splitscreen_w;
+		h = size.h - *cvar_log_splitscreen_h;
+	}
+	else if ( players[player]->bUseCompactGUIHeight() )
+	{
+		w = std::max(Frame::virtualScreenX / 2, size.w - 432);
 		h = size.h - *cvar_log_splitscreen_h;
 	}
 
@@ -22048,24 +22098,25 @@ void Player::HUD_t::updateXPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	xpFrame->setInheritParentFrameOpacity(false);
 	xpFrame->setOpacity(100.0);
 	SDL_Rect pos = xpFrame->getSize();
-	pos.w = XP_FRAME_WIDTH + (bCompact ? xpbarCompactOffsetWidth : xpbarOffsetWidth);
+	pos.w = XP_FRAME_WIDTH + (bCompactWidth ? xpbarCompactOffsetWidth : xpbarOffsetWidth);
 	pos.x = hudFrame->getSize().w / 2 - pos.w / 2;
-	if ( bCompact )
+	if ( bCompactWidth || bCompactHeight )
 	{
-		pos.y = 0 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+		pos.y = 0 + ((bCompactWidth || bCompactHeight) ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
 	else
 	{
-		pos.y = 8 + (bCompact ? xpbarCompactOffsetY : xpbarOffsetY);
+		pos.y = 8 + ((bCompactWidth || bCompactHeight) ? xpbarCompactOffsetY : xpbarOffsetY);
 	}
 
 	bool tempHideXP = false;
@@ -22240,7 +22291,160 @@ void Player::HUD_t::updateXPBar()
 	xpProgressClipFrameImg->pos.x = -(xpProgressClipFrameImg->pos.w - pos.w) / 2;
 }
 
-SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
+bool EnemyHPDamageBarHandler::bEnemyBarSimpleBlit = false;
+static ConsoleVariable<bool> cvar_enemybar_simple_blit("/enemybar_simple_blit", false);
+
+// to nest deep maps and suppress visual studio warnings
+struct enemybarMapLowDurationTick_k {
+	std::map<bool, SDL_Surface*> m;
+	~enemybarMapLowDurationTick_k()
+	{
+		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+		{
+			for ( auto& entry : m )
+			{
+				if ( entry.second )
+				{
+					SDL_FreeSurface(entry.second);
+					entry.second = nullptr;
+				}
+			}
+		}
+	};
+};
+struct enemybarEffectMapFx2_lowDuration_k {
+	std::map<Uint32, enemybarMapLowDurationTick_k> m;
+};
+struct enemybarEffectMapFx1_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx2_lowDuration_k> m;
+};
+struct enemybarEffectMapFx2_k {
+	std::map<Uint32, enemybarEffectMapFx1_lowDuration_k> m;
+};
+struct enemybarEffectMapFx1_k {
+	std::map<Uint32, enemybarEffectMapFx2_k> m;
+};
+enemybarEffectMapFx1_k enemyBarEffectMap;
+SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks)
+{
+	if ( enemyBarEffectMap.m.find(fx1) != enemyBarEffectMap.m.end() )
+	{
+		auto& m1 = enemyBarEffectMap.m[fx1];
+		if ( m1.m.find(fx2) != m1.m.end() )
+		{
+			auto& m2 = m1.m[fx2];
+			if ( m2.m.find(fx_lowDuration1) != m2.m.end() )
+			{
+				auto& m3 = m2.m[fx_lowDuration1];
+				if ( m3.m.find(fx_lowDuration2) != m3.m.end() )
+				{
+					auto& m4 = m3.m[fx_lowDuration2];
+					if ( m4.m.find(lowDurationTicks) != m4.m.end() )
+					{
+						return m4.m[lowDurationTicks];
+					}
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks,
+	SDL_Surface* surf)
+{
+	enemyBarEffectMap.m[fx1].m[fx2].m[fx_lowDuration1].m[fx_lowDuration2].m[lowDurationTicks] = surf;
+}
+
+// to nest deep maps and suppress visual studio warnings
+struct enemybarMapFx2_lowDuration_k {
+	std::map<Uint32, SDL_Surface*> m;
+	~enemybarMapFx2_lowDuration_k()
+	{
+		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+		{
+			for ( auto& entry : m )
+			{
+				if ( entry.second )
+				{
+					SDL_FreeSurface(entry.second);
+					entry.second = nullptr;
+				}
+			}
+		}
+	};
+};
+struct enemybarMapFx1_lowDuration_k {
+	std::map<Uint32, enemybarMapFx2_lowDuration_k> m;
+};
+struct enemybarMapFx2_k {
+	std::map<Uint32, enemybarMapFx1_lowDuration_k> m;
+};
+struct enemybarMapFx1_k {
+	std::map<Uint32, enemybarMapFx2_k> m;
+};
+struct enemybarMapProgress_k {
+	std::map<Uint32, enemybarMapFx1_k> m;
+};
+struct enemybarMapTotalSize_k {
+	std::map<Uint32, enemybarMapProgress_k> m;
+};
+struct enemybarMapName_k {
+	std::map<std::string, enemybarMapTotalSize_k> m;
+};
+enemybarMapName_k enemyBarMap;
+SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
+	int progressWidth, int damageWidth,
+	Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2)
+{
+	if ( enemyBarMap.m.find(name) != enemyBarMap.m.end() )
+	{
+		auto& m1 = enemyBarMap.m[name];
+		Uint32 totalSizeKey = baseWidth & 0xFFFF;
+		totalSizeKey |= (baseHeight << 16) & 0xFF0000;
+		totalSizeKey |= (((ticks % 25) >= 12) << 24) & 0xFF000000;
+		if ( m1.m.find(totalSizeKey) != m1.m.end() )
+		{
+			auto& m2 = m1.m[totalSizeKey];
+			Uint32 progressDamageKey = progressWidth & 0xFFFF;
+			progressDamageKey |= (damageWidth << 16) & 0xFFFF0000;
+			if ( m2.m.find(progressDamageKey) != m2.m.end() )
+			{
+				auto& m3 = m2.m[progressDamageKey];
+				if ( m3.m.find(fx1) != m3.m.end() )
+				{
+					auto& m4 = m3.m[fx1];
+					if ( m4.m.find(fx2) != m4.m.end() )
+					{
+						auto& m5 = m4.m[fx2];
+						if ( m5.m.find(fx_lowDuration1) != m5.m.end() )
+						{
+							auto& m6 = m5.m[fx_lowDuration1];
+							if ( m6.m.find(fx_lowDuration2) != m6.m.end() )
+							{
+								return m6.m[fx_lowDuration2];
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, int progressWidth, int damageWidth,
+	Uint32 statusfx1, Uint32 statusfx2,
+	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2,
+	SDL_Surface* surf)
+{
+	Uint32 totalSizeKey = baseWidth & 0xFFFF;
+	totalSizeKey |= (baseHeight << 16) & 0xFF0000;
+	totalSizeKey |= (((ticks % 25) >= 12) << 24) & 0xFF000000;
+	Uint32 progressDamageKey = progressWidth & 0xFFFF;
+	progressDamageKey |= ((damageWidth & 0xFFFF) << 16);
+	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey].m[statusfx1].m[statusfx2].m[statusfx_lowDuration1].m[statusfx_lowDuration2] = surf;
+}
+
+SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 {
 	Frame* frame = players[player]->hud.enemyBarFrame;
 	if ( !frame || !players[player]->isLocalPlayer() )
@@ -22251,6 +22455,11 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	auto baseBg = frame->findImage("base img");
 	auto baseEndCap = frame->findImage("base img endcap");
 	real_t frameOpacity = frame->getOpacity() / 100.0;
+	frameOpacity = 1.0;
+	/*if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+	{
+		frameOpacity = 1.0;
+	}*/
 
 	auto foregroundFrame = frame->findFrame("bar progress frame");
 	auto hpProgress = foregroundFrame->findImage("progress img");
@@ -22260,14 +22469,37 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	auto dmgProgress = dmgFrame->findImage("dmg img");
 	auto dmgEndCap = dmgFrame->findImage("dmg img endcap");
 
+	auto nameField = frame->findField("enemy name txt");
+
 	auto skullFrame = frame->findFrame("skull frame");
 	int totalWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
 	int totalHeight = frame->getSize().h;
 	int statusEffectOffsetY = 0;
+
 	if ( statusEffectSprite ) 
 	{ 
 		statusEffectOffsetY = statusEffectSprite->h;
 		totalHeight += statusEffectOffsetY;
+	}
+
+	SDL_Surface* hashSurf = nullptr;
+	if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+	{
+		hashSurf = enemyBarMapExists(nameField->getText(), 
+			totalWidth, totalHeight, 
+			dmgProgress->pos.w, hpProgress->pos.w,
+			enemy_statusEffects1,
+			enemy_statusEffects2,
+			enemy_statusEffectsLowDuration1,
+			enemy_statusEffectsLowDuration2);
+		if ( !hashSurf )
+		{
+			//messagePlayer(0, MESSAGE_DEBUG, "Hash for enemy bar not found!");
+		}
+		else
+		{
+			return hashSurf;
+		}
 	}
 
 	SDL_Surface* sprite = SDL_CreateRGBSurface(0, totalWidth, totalHeight, 32,
@@ -22288,6 +22520,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
 		getColor(img->color, &r, &g, &b, &a);
+		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit && a < 255 ) { continue; }
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 		SDL_Rect pos = img->pos;
@@ -22314,6 +22547,7 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 		Uint8 r, g, b, a;
 		getColor(img->color, &r, &g, &b, &a);
+		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit && a < 255 ) { continue; }
 		SDL_SetSurfaceAlphaMod(srcSurf, a * frameOpacity);
 		SDL_Rect pos = img->pos;
 		pos.x += skullFrame->getSize().x;
@@ -22339,8 +22573,21 @@ SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
 	}
 	if ( statusEffectSprite )
 	{
-		SDL_Rect pos{0, 0, statusEffectSprite->w, statusEffectSprite->h};
+		int status_x = (sprite->w / 2) - (statusEffectSprite->w / 2);
+		SDL_Rect pos{ status_x, 0, statusEffectSprite->w, statusEffectSprite->h};
 		SDL_BlitSurface(statusEffectSprite, nullptr, sprite, &pos);
+	}
+
+	if ( !hashSurf && EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+	{
+		enemyBarMapInsert(nameField->getText(), 
+			totalWidth, totalHeight, 
+			dmgProgress->pos.w, hpProgress->pos.w, 
+			enemy_statusEffects1,
+			enemy_statusEffects2,
+			enemy_statusEffectsLowDuration1,
+			enemy_statusEffectsLowDuration2,
+			sprite);
 	}
 	return sprite;
 }
@@ -22361,15 +22608,30 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 	{
 		return nullptr;
 	}
-	auto baseBg = frame->findImage("base img");
-	auto baseEndCap = frame->findImage("base img endcap");
-	real_t frameOpacity = frame->getOpacity() / 100.0;
-	const int maxWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
+	//auto baseBg = frame->findImage("base img");
+	//auto baseEndCap = frame->findImage("base img endcap");
+	//const int maxWidth = baseBg->pos.x + baseBg->pos.w + baseEndCap->pos.w;
 	const int iconHeight = 32;
 	const int iconWidth = 32;
 
-	SDL_Surface* sprite = SDL_CreateRGBSurface(0, maxWidth, iconHeight + 2, 32,
-		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	SDL_Surface* hashSurf = nullptr;
+	if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+	{
+		hashSurf = enemyBarEffectMapExists(
+			enemy_statusEffects1,
+			enemy_statusEffects2,
+			enemy_statusEffectsLowDuration1,
+			enemy_statusEffectsLowDuration2,
+			(ticks % 25) >= 12);
+		if ( !hashSurf )
+		{
+			//messagePlayer(0, MESSAGE_DEBUG, "Hash for enemy effects not found!");
+		}
+		else
+		{
+			return hashSurf;
+		}
+	}
 
 	int playernum = -1;
 	if ( entity && entity->behavior == &actPlayer )
@@ -22377,7 +22639,7 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		playernum = entity->skill[2];
 	}
 
-	int currentX = (maxWidth / 2);
+	int currentX = 0; // (maxWidth / 2);
 	bool anyStatusEffect = false;
 
 	std::vector<std::pair<SDL_Surface*, bool>> statusEffectIcons;
@@ -22489,22 +22751,35 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		}
 	}
 
-	const int numIcons = statusEffectIcons.size();
-	const int iconTotalWidth = iconWidth + 2;
-	if ( numIcons % 2 == 1 ) // odd numbered
+	//const int numIcons = statusEffectIcons.size();
+	//const int iconTotalWidth = iconWidth + 2;
+	//if ( numIcons % 2 == 1 ) // odd numbered
+	//{
+	//	currentX -= ((iconTotalWidth) * (numIcons / 2)) + (iconTotalWidth / 2);
+	//}
+	//else
+	//{
+	//	currentX -= ((iconTotalWidth) * (numIcons / 2));
+	//}
+
+	if ( statusEffectIcons.empty() )
 	{
-		currentX -= ((iconTotalWidth) * (numIcons / 2)) + (iconTotalWidth / 2);
+		return nullptr;
 	}
-	else
-	{
-		currentX -= ((iconTotalWidth) * (numIcons / 2));
-	}
+
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, iconWidth + 2, iconHeight + 2, 32,
+		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
 	for ( auto& icon : statusEffectIcons )
 	{
 		anyStatusEffect = true;
 		int tickModifier = ticks % 25;
-		real_t alpha = 255 * frameOpacity;
+		real_t alpha = 255;
+		/*if ( !EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
+		{
+			const real_t frameOpacity = frame->getOpacity() / 100.0;
+			alpha *= frameOpacity;
+		}*/
 		if ( tickModifier >= 12 && icon.second )
 		{
 			alpha = 0;
@@ -22516,13 +22791,37 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		currentX += (iconWidth + 2);
 	}
 
-	if ( !anyStatusEffect )
+	if ( !hashSurf && EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
 	{
-		SDL_FreeSurface(sprite);
-		sprite = nullptr;
+		enemyBarEffectMapInsert(
+			enemy_statusEffects1,
+			enemy_statusEffects2,
+			enemy_statusEffectsLowDuration1,
+			enemy_statusEffectsLowDuration2,
+			(ticks % 25) >= 12,
+			sprite);
 	}
-
 	return sprite;
+}
+
+EnemyHPDamageBarHandler::EnemyHPDetails::~EnemyHPDetails()
+{
+	if ( worldTexture )
+	{
+		delete worldTexture;
+		worldTexture = nullptr;
+	}
+	if ( !bEnemyBarSimpleBlit )
+	{
+		if ( worldSurfaceSpriteStatusEffects ) {
+			SDL_FreeSurface(worldSurfaceSpriteStatusEffects);
+			worldSurfaceSpriteStatusEffects = nullptr;
+		}
+		if ( worldSurfaceSprite ) {
+			SDL_FreeSurface(worldSurfaceSprite);
+			worldSurfaceSprite = nullptr;
+		}
+	}
 }
 
 void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
@@ -22830,7 +23129,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 			}
 		}
 		a = skullOpacity;
-		a *= enemyDetails->animator.fadeOut / 100.0;
+		//a *= enemyDetails->animator.fadeOut / 100.0;
 		skull.first->color = makeColor( r, g, b, a);
 		++skullIndex;
 	}
@@ -22847,16 +23146,16 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	if ( dmgProgress->pos.w == 1 && enemyDetails->animator.setpoint <= 0 )
 	{
 		dmgProgress->disabled = true;
-		real_t& opacity = enemyDetails->animator.damageFrameOpacity;
-		if ( doAnimation )
-		{
-			real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
-			opacity = std::max(0.0, opacity - opacityChange);
-		}
-		dmgFrame->setOpacity(opacity);
-		dmgFrame->setOpacity(dmgFrame->getOpacity() * enemyDetails->animator.fadeOut / 100.0);
-		// make this element fade out to the left
-		dmgEndCap->pos.x = 0 - (dmgEndCap->pos.w * (1.0 - opacity / 100.0));
+		//real_t& opacity = enemyDetails->animator.damageFrameOpacity;
+		//if ( doAnimation )
+		//{
+		//	real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+		//	opacity = std::max(0.0, opacity - opacityChange);
+		//}
+		//dmgFrame->setOpacity(opacity);
+		//dmgFrame->setOpacity(dmgFrame->getOpacity() * enemyDetails->animator.fadeOut / 100.0);
+		//// make this element fade out to the left
+		//dmgEndCap->pos.x = 0 - (dmgEndCap->pos.w * (1.0 - opacity / 100.0));
 	}
 	else
 	{
@@ -22930,26 +23229,80 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		}
 	}
 
-	if ( enemyDetails->worldTexture )
+
+	bool oldBlitType = EnemyHPDamageBarHandler::bEnemyBarSimpleBlit;
+	EnemyHPDamageBarHandler::bEnemyBarSimpleBlit = *cvar_enemybar_simple_blit;
+
+	//auto blit = std::chrono::high_resolution_clock::now();
+	if ( !EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
 	{
-		delete enemyDetails->worldTexture;
-		enemyDetails->worldTexture = nullptr;
+		if ( !enemyBarMap.m.empty() )
+		{
+			enemyBarEffectMap.m.clear();
+			enemyBarMap.m.clear();
+			enemyDetails->worldSurfaceSprite = nullptr;
+			enemyDetails->worldSurfaceSpriteStatusEffects = nullptr;
+		}
+
+		if ( enemyDetails->worldTexture )
+		{
+			delete enemyDetails->worldTexture;
+			enemyDetails->worldTexture = nullptr;
+		}
+		if ( enemyDetails->worldSurfaceSprite )
+		{
+			SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
+			enemyDetails->worldSurfaceSprite = nullptr;
+		}
+		if ( enemyDetails->worldSurfaceSpriteStatusEffects )
+		{
+			SDL_FreeSurface(enemyDetails->worldSurfaceSpriteStatusEffects);
+			enemyDetails->worldSurfaceSpriteStatusEffects = nullptr;
+		}
+
+		enemyDetails->worldSurfaceSpriteStatusEffects = enemyDetails->blitEnemyBarStatusEffects(player.playernum);
+		//auto blit2 = std::chrono::high_resolution_clock::now();
+		enemyDetails->worldSurfaceSprite = enemyDetails->blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
+		//auto blit3 = std::chrono::high_resolution_clock::now();
+		enemyDetails->worldTexture = new TempTexture();
+		enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+		//auto blit4 = std::chrono::high_resolution_clock::now();
+		//float ms1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit2 - blit).count();
+		//float ms2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit3 - blit2).count();
+		//float ms3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit4 - blit3).count();
+		//float msTotal = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit4 - blit).count();
+		//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Total: %.4f\n ms1: %.4f\n ms2: %.4f\nms3: %.4f", msTotal, ms1, ms2, ms3);
 	}
-	if ( enemyDetails->worldSurfaceSprite )
+	else
 	{
-		SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
-		enemyDetails->worldSurfaceSprite = nullptr;
-	}
-	if ( enemyDetails->worldSurfaceSpriteStatusEffects )
-	{
-		SDL_FreeSurface(enemyDetails->worldSurfaceSpriteStatusEffects);
-		enemyDetails->worldSurfaceSpriteStatusEffects = nullptr;
+		enemyDetails->worldSurfaceSpriteStatusEffects = enemyDetails->blitEnemyBarStatusEffects(player.playernum);
+		//auto blit2 = std::chrono::high_resolution_clock::now();
+		SDL_Surface* oldWorldSprite = enemyDetails->worldSurfaceSprite;
+		enemyDetails->worldSurfaceSprite = enemyDetails->blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
+		//auto blit3 = std::chrono::high_resolution_clock::now();
+		if ( oldWorldSprite != enemyDetails->worldSurfaceSprite )
+		{
+			if ( enemyDetails->worldTexture )
+			{
+				delete enemyDetails->worldTexture;
+				enemyDetails->worldTexture = nullptr;
+			}
+
+			if ( enemyDetails->worldSurfaceSprite )
+			{
+				enemyDetails->worldTexture = new TempTexture();
+				enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+			}
+		}
+		//auto blit4 = std::chrono::high_resolution_clock::now();
+		//float ms1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit2 - blit).count();
+		//float ms2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit3 - blit2).count();
+		//float ms3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit4 - blit3).count();
+		//float msTotal = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(blit4 - blit).count();
+		//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Total: %.4f\n ms1: %.4f\n ms2: %.4f\nms3: %.4f", msTotal, ms1, ms2, ms3);
 	}
 
-	enemyDetails->worldSurfaceSpriteStatusEffects = enemyDetails->blitEnemyBarStatusEffects(player.playernum);
-	enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
-	enemyDetails->worldTexture = new TempTexture();
-	enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
+
 
 	whichFrame->setDisabled(true);
 	if ( !enemyDetails->displayOnHUD )
@@ -22966,6 +23319,21 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		{
 			updateEnemyBar2(enemyBarFrameHUD, enemyHPDetails);
 		}
+	}
+}
+
+static ConsoleCommand ccmd_enemybar_dump_cache("/enemybar_dump_cache", "Dumps cached enemy bars",
+	[](int argc, const char** argv) {
+	EnemyHPDamageBarHandler::dumpCache();
+});
+
+void EnemyHPDamageBarHandler::dumpCache()
+{
+	enemyBarEffectMap.m.clear();
+	enemyBarMap.m.clear();
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		enemyHPDamageBarHandler[i].HPBars.clear();
 	}
 }
 
@@ -23327,7 +23695,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 			SDL_FreeSurface(enemyDetails->worldSurfaceSprite);
 			enemyDetails->worldSurfaceSprite = nullptr;
 		}
-		enemyDetails->worldSurfaceSprite = blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
+		enemyDetails->worldSurfaceSprite = enemyDetails->blitEnemyBar(player.playernum, enemyDetails->worldSurfaceSpriteStatusEffects);
 		enemyDetails->worldTexture = new TempTexture();
 		enemyDetails->worldTexture->load(enemyDetails->worldSurfaceSprite, false, true);
 	}
@@ -23344,16 +23712,17 @@ void Player::HUD_t::updateHPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	SDL_Rect pos = hpFrame->getSize();
-	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
-	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	hpFrame->setSize(pos);
 
 	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
@@ -23383,14 +23752,14 @@ void Player::HUD_t::updateHPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxHPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
+		const Sint32 maxHPWidth = (bCompactWidth ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXHP < maxHPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 HP past 20 MAXHP
-			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
-			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
-			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
-			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier = (bCompactWidth ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompactWidth ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompactWidth ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompactWidth ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
 			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXHP - baseIntervalStart) / intervalThreshold)));
 		}
 
@@ -23684,16 +24053,17 @@ void Player::HUD_t::updateMPBar()
 		return;
 	}
 
-	bool bCompact = false;
+	bool bCompactWidth = false;
+	bool bCompactHeight = player.bUseCompactGUIHeight();
 	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
 	{
-		bCompact = true;
+		bCompactWidth = true;
 	}
 
 	SDL_Rect pos = mpFrame->getSize();
-	pos.w = HPMP_FRAME_WIDTH + (bCompact ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
-	pos.x = HPMP_FRAME_START_X + (bCompact ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
-	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + (bCompact ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
+	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	mpFrame->setSize(pos);
 
 	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
@@ -23723,14 +24093,14 @@ void Player::HUD_t::updateMPBar()
 	// handle bar size changing
 	{
 		real_t multiplier = 1.0;
-		const Sint32 maxMPWidth = (bCompact ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
+		const Sint32 maxMPWidth = (bCompactWidth ? hpmpbarCompactMaxWidthAmount : hpmpbarMaxWidthAmount);
 		if ( stats[player.playernum]->MAXMP < maxMPWidth )
 		{
 			// start at 30%, increase 2.5% every 5 MP past 20 MAXMP
-			multiplier = (bCompact ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
-			real_t widthIntervalPercent = (bCompact ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
-			int intervalThreshold = (bCompact ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
-			int baseIntervalStart = (bCompact ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
+			multiplier = (bCompactWidth ? hpmpbarCompactBasePercentSize : hpmpbarBasePercentSize) / 100.0;
+			real_t widthIntervalPercent = (bCompactWidth ? hpmpbarCompactWidthIncreasePercentOnInterval : hpmpbarWidthIncreasePercentOnInterval) / 100.0;
+			int intervalThreshold = (bCompactWidth ? hpmpbarCompactIntervalToIncreaseWidth : hpmpbarIntervalToIncreaseWidth);
+			int baseIntervalStart = (bCompactWidth ? hpmpbarCompactIntervalStartValue : hpmpbarIntervalStartValue);
 			multiplier += (widthIntervalPercent * ((std::max(0, stats[player.playernum]->MAXMP - baseIntervalStart) / intervalThreshold)));
 		}
 
@@ -24083,14 +24453,20 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool bCompactView = false;
+	bool loweredY = false;
 	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
+		loweredY = true;
+	}
+	else if ( player.bUseCompactGUIHeight() )
+	{
+		loweredY = true;
 	}
 	int hotbarStartY1 = hotbarFrame->getSize().h + getHotbarStartY1(); // higher row (center group)
 	int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
-	hotbarStartY1 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
-	hotbarStartY2 += (bCompactView ? hotbarCompactOffsetY : hotbarOffsetY);
+	hotbarStartY1 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
+	hotbarStartY2 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
 	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
 	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
 	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
@@ -24160,7 +24536,7 @@ void Player::Hotbar_t::updateHotbar()
 	auto cancelPromptGlyph = hotbarFrame->findImage("hotbar cancel glyph");
 	cancelPromptGlyph->disabled = true;
 
-	if ( !bCompactView && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+	if ( (!bCompactView && !loweredY) && useHotbarFaceMenu && faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
 	{
 		cancelPromptTxt->setDisabled(false);
 		cancelPromptTxt->setText(language[3063]);

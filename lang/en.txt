@@ -6398,5 +6398,6 @@ for accessory to violence!#
 4314 Skip to start/end#
 4315 Page Up/Down#
 4316 Scroll Up/Down#
+4317 Your %s failed to detect a suitable landing spot.#
 
 4399 end#

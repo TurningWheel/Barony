@@ -1645,15 +1645,6 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 
-        if ( !entity->flags[OVERDRAW] )
-        {
-            const real_t rx = entity->x / 16.0;
-            const real_t ry = entity->y / 16.0;
-	        if ( behindCamera(*camera, rx, ry) )
-	        {
-	            continue;
-	        }
-	    }
 		if ( entity->flags[INVISIBLE] )
 		{
 			continue;
@@ -1700,16 +1691,23 @@ void drawEntities3D(view_t* camera, int mode)
 				}
 			}
 		}
+
 		x = entity->x / 16;
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
 		    if ( !entity->flags[OVERDRAW] )
 		    {
-		        if ( !map.vismap[y + x * map.height] && !entity->monsterEntityRenderAsTelepath )
+		        if ( !map.vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
 		        {
 		            continue;
 		        }
+				const real_t rx = entity->x / 16.0;
+				const real_t ry = entity->y / 16.0;
+				if ( behindCamera(*camera, rx, ry) )
+				{
+					continue;
+				}
 		    }
 			if ( entity->flags[SPRITE] == false )
 			{

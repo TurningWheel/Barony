@@ -359,6 +359,449 @@ int monsterCurve(int level)
 	return SKELETON; // basic monster
 }
 
+struct StartRoomInfo_t
+{
+	int x1 = -1;
+	int x2 = -1;
+	int y1 = -1;
+	int y2 = -1;
+	bool isWall(int x, int y)
+	{
+		if ( x <= 0 || x >= map.width - 1 || y <= 0 || y >= map.height - 1 )
+		{
+			return true;
+		}
+		return map.tiles[OBSTACLELAYER + (y)* MAPLAYERS + (x)* MAPLAYERS * map.height];
+	}
+	bool isWalkable(int x, int y)
+	{
+		if ( x <= 0 || x >= map.width - 1 || y <= 0 || y >= map.height - 1 )
+		{
+			return false;
+		}
+		return map.tiles[(y)* MAPLAYERS + (x)* MAPLAYERS * map.height];
+	}
+	void addCoord(int x, int y)
+	{
+		if ( x1 == -1 )
+		{
+			x1 = x;
+		}
+		else
+		{
+			x1 = std::min(x, x1);
+		}
+		if ( x2 == -1 )
+		{
+			x2 = x;
+		}
+		else
+		{
+			x2 = std::max(x2, x);
+		}
+
+		if ( y1 == -1 )
+		{
+			y1 = y;
+		}
+		else
+		{
+			y1 = std::min(y, y1);
+		}
+		if ( y2 == -1 )
+		{
+			y2 = y;
+		}
+		else
+		{
+			y2 = std::max(y2, y);
+		}
+	}
+	void checkBorderAccessibility()
+	{
+		enum Direction : int
+		{
+			NORTH,
+			EAST,
+			SOUTH,
+			WEST
+		};
+		std::vector<std::pair<std::pair<int, int>, Direction>> potentialExitPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> goodTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> badTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> worstTunnelPoints;
+		std::vector<std::pair<std::pair<int, int>, Direction>> exitPoints;
+		if ( x1 - 1 > 0 )
+		{
+			for ( int y = y1; y <= y2; ++y )
+			{
+				if ( !isWall(x1, y) && isWalkable(x1, y) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+					if ( !isWall(x1 - 1, y) && isWalkable(x1 - 1, y) )
+					{
+						// exit point found heading west
+						exitPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+					}
+					else if ( isWall(x1 - 1, y) && isWalkable(x1 - 1, y) )
+					{
+						if ( isWalkable(x1 - 2, y) )
+						{
+							if ( isWall(x1 - 2, y) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x1 - 2, y, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x1, y), Direction::WEST));
+						}
+					}
+				}
+			}
+		}
+		if ( x2 + 1 < (map.width) )
+		{
+			for ( int y = y1; y <= y2; ++y )
+			{
+				if ( !isWall(x2, y) && isWalkable(x2, y) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+					if ( !isWall(x2 + 1, y) && isWalkable(x2 + 1, y) )
+					{
+						// exit point found heading east
+						exitPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+					}
+					else if ( isWall(x2 + 1, y) && isWalkable(x2 + 1, y) )
+					{
+						if ( isWalkable(x2 + 2, y) )
+						{
+							if ( isWall(x2 + 2, y) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x2 + 2, y, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x2, y), Direction::EAST));
+						}
+					}
+				}
+			}
+		}
+		if ( y1 - 1 > 0 )
+		{
+			for ( int x = x1; x <= x2; ++x )
+			{
+				if ( !isWall(x, y1) && isWalkable(x, y1) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+					if ( !isWall(x, y1 - 1) && isWalkable(x, y1 - 1) )
+					{
+						// exit point found heading north
+						exitPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+					}
+					else if ( isWall(x, y1 - 1) && isWalkable(x, y1 - 1) )
+					{
+						if ( isWalkable(x, y1 - 2) )
+						{
+							if ( isWall(x, y1 - 2) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x, y1 - 2, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x, y1), Direction::NORTH));
+						}
+					}
+				}
+			}
+		}
+		if ( y2 + 1 < (map.height) )
+		{
+			for ( int x = x1; x <= x2; ++x )
+			{
+				if ( !isWall(x, y2) && isWalkable(x, y2) )
+				{
+					potentialExitPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+					if ( !isWall(x, y2 + 1) && isWalkable(x, y2 + 1) )
+					{
+						// exit point found heading north
+						exitPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+					}
+					else if ( isWall(x, y2 + 1) && isWalkable(x, y2 + 1) )
+					{
+						if ( isWalkable(x, y2 + 2) )
+						{
+							if ( isWall(x, y2 + 2) )
+							{
+								badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+							}
+							else
+							{
+								if ( pathCheckObstacle(x, y2 + 2, nullptr, nullptr) == 1 ) // check interfering entities
+								{
+									badTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+								}
+								else
+								{
+									goodTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+								}
+							}
+						}
+						else
+						{
+							worstTunnelPoints.push_back(std::make_pair(std::make_pair(x, y2), Direction::SOUTH));
+						}
+					}
+				}
+			}
+		}
+
+		//for ( auto point : exitPoints )
+		//{
+		//	std::string dir = "";
+		//	switch ( point.second )
+		//	{
+		//		case WEST:
+		//			dir = "West";
+		//			break;
+		//		case EAST:
+		//			dir = "East";
+		//			break;
+		//		case NORTH:
+		//			dir = "North";
+		//			break;
+		//		case SOUTH:
+		//			dir = "South";
+		//			break;
+		//		default:
+		//			break;
+		//	}
+		//	printlog("exitPoints %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+		//}
+		if ( exitPoints.empty() )
+		{
+			printlog("[MAP GENERATOR]: Start map does not have accessibility to any other areas!");
+			for ( auto point : goodTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints1 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			for ( auto point : badTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints2 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			for ( auto point : worstTunnelPoints )
+			{
+				std::string dir = "";
+				switch ( point.second )
+				{
+					case WEST:
+						dir = "West";
+						break;
+					case EAST:
+						dir = "East";
+						break;
+					case NORTH:
+						dir = "North";
+						break;
+					case SOUTH:
+						dir = "South";
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: TunnelPoints3 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
+			}
+			if ( !goodTunnelPoints.empty() )
+			{
+				auto picked = goodTunnelPoints.at(map_rng.rand() % goodTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints1 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+			else if ( !badTunnelPoints.empty() )
+			{
+				auto picked = badTunnelPoints.at(map_rng.rand() % badTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints2 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+			else if ( !worstTunnelPoints.empty() )
+			{
+				auto picked = worstTunnelPoints.at(map_rng.rand() % worstTunnelPoints.size());
+				switch ( picked.second )
+				{
+					case WEST:
+						picked.first.first--;
+						break;
+					case EAST:
+						picked.first.first++;
+						break;
+					case NORTH:
+						picked.first.second--;
+						break;
+					case SOUTH:
+						picked.first.second++;
+						break;
+					default:
+						break;
+				}
+				printlog("[MAP GENERATOR]: Dug hole using TunnelPoints3 at x: %d y: %d", picked.first.first, picked.first.second);
+				map.tiles[OBSTACLELAYER + (picked.first.second)* MAPLAYERS + (picked.first.first)* MAPLAYERS * map.height] = 0;
+			}
+		}
+	}
+};
+
+bool mapSpriteIsDoorway(int sprite)
+{
+	switch ( sprite )
+	{
+		case 2:
+		case 3:
+			return true;
+			break;
+		case 19:
+		case 20:
+			return true;
+			break;
+		case 113:
+		case 114:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+int getMapPossibleLocationX1()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return perimeter;
+}
+
+int getMapPossibleLocationY1()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return perimeter;
+}
+
+int getMapPossibleLocationX2()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return map.width - perimeter;
+}
+
+int getMapPossibleLocationY2()
+{
+	const int perimeter = MFLAG_PERIMETER_GAP;
+	return map.height - perimeter;
+}
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon
@@ -707,19 +1150,67 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						door->y = y;
 						if ( x == tempMap->width - 1 )
 						{
-							door->dir = 0;
+							door->dir = door_t::DIR_EAST;
+							if ( y == tempMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_EAST;
+							}
 						}
 						else if ( y == tempMap->height - 1 )
 						{
-							door->dir = 1;
+							door->dir = door_t::DIR_SOUTH;
+							if ( x == tempMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_SOUTH;
+							}
 						}
 						else if ( x == 0 )
 						{
-							door->dir = 2;
+							door->dir = door_t::DIR_WEST;
+							if ( y == tempMap->height - 1 )
+							{
+								door->edge = door_t::EDGE_SOUTHWEST;
+							}
+							else if ( y == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_WEST;
+							}
 						}
 						else if ( y == 0 )
 						{
-							door->dir = 3;
+							door->dir = door_t::DIR_NORTH;
+							if ( x == tempMap->width - 1 )
+							{
+								door->edge = door_t::EDGE_NORTHEAST;
+							}
+							else if ( x == 0 )
+							{
+								door->edge = door_t::EDGE_NORTHWEST;
+							}
+							else
+							{
+								door->edge = door_t::EDGE_NORTH;
+							}
 						}
 						node2 = list_AddNodeLast(newList);
 						node2->element = door;
@@ -813,19 +1304,67 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							door->y = y;
 							if ( x == subRoomMap->width - 1 )
 							{
-								door->dir = 0;
+								door->dir = door_t::DIR_EAST;
+								if ( y == subRoomMap->height - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHEAST;
+								}
+								else if ( y == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHEAST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_EAST;
+								}
 							}
 							else if ( y == subRoomMap->height - 1 )
 							{
-								door->dir = 1;
+								door->dir = door_t::DIR_SOUTH;
+								if ( x == subRoomMap->width - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHEAST;
+								}
+								else if ( x == 0 )
+								{
+									door->edge = door_t::EDGE_SOUTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_SOUTH;
+								}
 							}
 							else if ( x == 0 )
 							{
-								door->dir = 2;
+								door->dir = door_t::DIR_WEST;
+								if ( y == subRoomMap->height - 1 )
+								{
+									door->edge = door_t::EDGE_SOUTHWEST;
+								}
+								else if ( y == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_WEST;
+								}
 							}
 							else if ( y == 0 )
 							{
-								door->dir = 3;
+								door->dir = door_t::DIR_NORTH;
+								if ( x == subRoomMap->width - 1 )
+								{
+									door->edge = door_t::EDGE_NORTHEAST;
+								}
+								else if ( x == 0 )
+								{
+									door->edge = door_t::EDGE_NORTHWEST;
+								}
+								else
+								{
+									door->edge = door_t::EDGE_NORTH;
+								}
 							}
 							node2 = list_AddNodeLast(subRoomList);
 							node2->element = door;
@@ -886,6 +1425,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		node->deconstructor = &mapDeconstructor;
 	}
 
+	StartRoomInfo_t startRoomInfo;
+
 	// generate dungeon level...
 	int roomcount = 0;
 	if ( numlevels > 1 )
@@ -898,7 +1439,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			for ( x = 0; x < map.width; x++ )
 			{
-				if ( x < 2 || y < 2 || x > map.width - 3 || y > map.height - 3 )
+				if ( x < (std::max(2, getMapPossibleLocationX1()))
+					|| y < (std::max(2, getMapPossibleLocationY1())) 
+					|| x > (std::min(getMapPossibleLocationX2(), (int)map.width - 3))
+					|| y > (std::min(getMapPossibleLocationY2(), (int)map.height - 3)) )
 				{
 					possiblelocations[x + y * map.width] = false;
 				}
@@ -1061,7 +1605,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			// find locations where the selected room can be added to the level
 			numpossiblelocations = map.width * map.height;
 
-			bool hellGenerationFix = !strncmp(map.name, "Hell", 4);
+			bool hellGenerationFix = !strncmp(map.name, "Hell", 4) && !MFLAG_GENADJACENTROOMS;
 
 			for ( y0 = 0; y0 < map.height; y0++ )
 			{
@@ -1165,6 +1709,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						// 7x7, pick random location across all map.
 						x = 2 + (map_rng.rand() % 7) * 7;
 						y = 2 + (map_rng.rand() % 7) * 7;
+					}
+				}
+				else if ( !strncmp(map.name, "Hell", 4) )
+				{
+					if ( c == 0 )
+					{
+						// 7x7, pick random location across all map.
+						x = getMapPossibleLocationX1() + (map_rng.rand() % 6) * 7;
+						y = getMapPossibleLocationY1() + (map_rng.rand() % 6) * 7;
+					}
+					else if ( secretlevelexit && c == 1 )
+					{
+						// 14x14, pick random location minus 1 from both edges.
+						x = 2 + (map_rng.rand() % 5) * 7;
+						y = 2 + (map_rng.rand() % 5) * 7;
+					}
+					else if ( c == 2 && shoplevel )
+					{
+						// 7x7, pick random location across all map.
+						x = 2 + (map_rng.rand() % 6) * 7;
+						y = 2 + (map_rng.rand() % 6) * 7;
 					}
 				}
 				else
@@ -1398,6 +1963,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( c == 0 )
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
+								startRoomInfo.addCoord(x0, y0);
 							}
 							else if ( c == 2 && shoplevel )
 							{
@@ -1486,6 +2052,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				newDoor->x = door->x + x;
 				newDoor->y = door->y + y;
 				newDoor->dir = door->dir;
+				newDoor->edge = door->edge;
 				node = list_AddNodeLast(&doorList);
 				node->element = newDoor;
 				node->deconstructor = &defaultDeconstructor;
@@ -1502,6 +2069,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					newDoor->x = door->x + subRoom_tileStartx;
 					newDoor->y = door->y + subRoom_tileStarty;
 					newDoor->dir = door->dir;
+					newDoor->edge = door->edge;
 					node = list_AddNodeLast(&doorList);
 					node->element = newDoor;
 					node->deconstructor = &defaultDeconstructor;
@@ -1563,17 +2131,63 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				&& (/*entity->sprite == 2 || entity->sprite == 3 ||*/ entity->sprite == 19 || entity->sprite == 20
 					|| entity->sprite == 113 || entity->sprite == 114) )
 			{
-				switch ( door->dir )
+				int doordir = door->dir;
+
+				// if door is on a corner, then determine the proper facing based on the entity dir
+				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					case 0: // east
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_SOUTH;
+								break;
+							case door_t::EDGE_NORTHEAST:
+							case door_t::EDGE_NORTHWEST:
+								doordir = door_t::DIR_NORTH;
+								break;
+							case door_t::EDGE_EAST:
+							case door_t::EDGE_WEST:
+								continue; // no need to process this door as it is facing internal map contents
+							default:
+								break;
+						}
+					}
+				}
+				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
+				{
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_NORTHEAST:
+								doordir = door_t::DIR_EAST;
+								break;
+							case door_t::EDGE_NORTHWEST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_WEST;
+								break;
+							case door_t::EDGE_SOUTH:
+							case door_t::EDGE_NORTH:
+								continue; // no need to process this door as it is facing internal map contents
+							default:
+								break;
+						}
+					}
+				}
+
+				switch ( doordir )
+				{
+					case door_t::DIR_EAST: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -1595,15 +2209,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 1: // south
+					case door_t::DIR_SOUTH: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -1625,15 +2237,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 2: // west
+					case door_t::DIR_WEST: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -1655,15 +2265,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 3: // north
+					case door_t::DIR_NORTH: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -1701,17 +2309,65 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				&& (entity->sprite == 2 || entity->sprite == 3/* || entity->sprite == 19 || entity->sprite == 20
 															  || entity->sprite == 113 || entity->sprite == 114*/) )
 			{
-				switch ( door->dir )
+				int doordir = door->dir;
+
+				// if door is on a corner, then determine the proper facing based on the entity dir
+				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					case 0: // east
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_SOUTH;
+								break;
+							case door_t::EDGE_NORTHEAST:
+							case door_t::EDGE_NORTHWEST:
+								doordir = door_t::DIR_NORTH;
+								break;
+							case door_t::EDGE_EAST:
+							case door_t::EDGE_WEST:
+								continue; // no need to process this door as it is facing internal map contents
+								break;
+							default:
+								break;
+						}
+					}
+				}
+				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
+				{
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					{
+						switch ( door->edge )
+						{
+							case door_t::EDGE_SOUTHEAST:
+							case door_t::EDGE_NORTHEAST:
+								doordir = door_t::DIR_EAST;
+								break;
+							case door_t::EDGE_NORTHWEST:
+							case door_t::EDGE_SOUTHWEST:
+								doordir = door_t::DIR_WEST;
+								break;
+							case door_t::EDGE_SOUTH:
+							case door_t::EDGE_NORTH:
+								continue; // no need to process this door as it is facing internal map contents
+								break;
+							default:
+								break;
+						}
+					}
+				}
+
+				switch ( doordir )
+				{
+					case door_t::DIR_EAST: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -1733,15 +2389,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 1: // south
+					case door_t::DIR_SOUTH: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -1763,15 +2417,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 2: // west
+					case door_t::DIR_WEST: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
 									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
@@ -1793,15 +2445,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 						}
 						break;
-					case 3: // north
+					case door_t::DIR_NORTH: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
-							if ( entity->sprite == 2 || entity->sprite == 3
-								|| entity->sprite == 19 || entity->sprite == 20
-								|| entity->sprite == 113 || entity->sprite == 114 )
+							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
 									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
@@ -1935,7 +2585,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	// boulder and arrow traps
-	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 
+	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0
 		&& (!customTrapsForMapInUse || (customTrapsForMapInUse && (customTraps.boulders || customTraps.arrows)) )
 		)
 	{
@@ -1997,7 +2647,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity = (Entity*)node->element;
 			int x = entity->x / 16;
 			int y = entity->y / 16;
-			if ( (entity->sprite == 2 || entity->sprite == 3)
+			if ( (mapSpriteIsDoorway(entity->sprite) )
 				&& (x >= 0 && x < map.width)
 				&& (y >= 0 && y < map.height) )
 			{
@@ -2056,27 +2706,46 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 			int side = 0;
+			bool nofloor = false;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 			{
 				side = 0;
+				if ( !map.tiles[y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				side = 1;
+				if ( !map.tiles[(y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
 			{
 				side = 2;
+				if ( !map.tiles[y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			else if ( !map.tiles[OBSTACLELAYER + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				side = 3;
+				if ( !map.tiles[(y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					nofloor = true;
+				}
 			}
 			bool arrowtrap = false;
 			bool noceiling = false;
 			bool arrowtrapspawn = false;
+			bool arrowtrappotential = false;
 			if ( !strncmp(map.name, "Hell", 4) )
 			{
+				arrowtrappotential = true;
 				if ( side == 0 && !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 				{
 					noceiling = true;
@@ -2100,7 +2769,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				if ( map_rng.rand() % 2 && (currentlevel > 5 && currentlevel <= 25) )
+				if ( currentlevel > 5 && currentlevel <= 25 )
+				{
+					arrowtrappotential = true;
+				}
+
+				if ( !strncmp(map.name, "Underworld", 10) )
+				{
+					arrowtrapspawn = true; // no boulders in underworld
+				}
+				else if ( map_rng.rand() % 2 && (arrowtrappotential) )
 				{
 					arrowtrapspawn = true;
 				}
@@ -2115,7 +2793,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 
-			if ( arrowtrapspawn || noceiling )
+			if ( arrowtrapspawn || noceiling || (nofloor && arrowtrappotential) )
 			{
 				arrowtrap = true;
 				entity = newEntity(32, 1, map.entities, nullptr); // arrow trap
@@ -2131,9 +2809,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity->x = x * 16;
 			entity->y = y * 16;
 			//printlog("2 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-			entity = newEntity(18, 1, map.entities, nullptr); // electricity node
-			entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
-			entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
+			//entity = newEntity(18, 1, map.entities, nullptr); // electricity node
+			//entity->x = x * 16;
+			//entity->y = y * 16;
 			//printlog("4 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 			// make torches
 			if ( arrowtrap )
@@ -2192,21 +2870,24 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 				}
-				if ( arrowtrap )
-				{
-					entity = newEntity(33, 1, map.entities, nullptr); // pressure plate
-				}
 				else
 				{
-					entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+					if ( arrowtrap )
+					{
+						entity = newEntity(33, 1, map.entities, nullptr); // pressure plate
+					}
+					else
+					{
+						entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+					}
+					entity->x = x * 16;
+					entity->y = y * 16;
+					//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
+					entity = newEntity(18, 1, map.entities, nullptr); // electricity node
+					entity->x = x * 16;
+					entity->y = y * 16;
+					//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				}
-				entity->x = x * 16;
-				entity->y = y * 16;
-				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-				entity = newEntity(18, 1, map.entities, nullptr); // electricity node
-				entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
-				entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
-				//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				switch ( side )
 				{
 					case 0:
@@ -2222,12 +2903,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						y--;
 						break;
 				}
-				i++;
 				testx = std::min(std::max<unsigned int>(0, x), map.width - 1); //TODO: Why are const int and unsigned int being compared?
 				testy = std::min(std::max<unsigned int>(0, y), map.height - 1); //TODO: Why are const int and unsigned int being compared?
+				i++;
 			}
-			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] && i <= 10 );
+			while ( !map.tiles[OBSTACLELAYER + testy * MAPLAYERS + testx * MAPLAYERS * map.height] 
+				&& !trapexcludelocations[testx + testy * map.width]
+				&& !(!arrowtrap && !map.tiles[testy * MAPLAYERS + testx * MAPLAYERS * map.height]) // boulders stop wiring at pit edges
+				&& i <= 10 );
 		}
+	}
+
+	// check start room for accessibility to rest of level
+	if ( strncmp(map.name, "Underworld", 10) )
+	{
+		startRoomInfo.checkBorderAccessibility();
 	}
 
 	// monsters, decorations, and items
@@ -2253,7 +2943,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				possiblelocations[y + x * map.height] = true;
+				if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
+					|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )
+				{
+					possiblelocations[y + x * map.height] = false;
+					--numpossiblelocations;
+				}
+				else
+				{
+					possiblelocations[y + x * map.height] = true;
+				}
 			}
 		}
 	}
@@ -4342,6 +5041,7 @@ void assignActions(map_t* map)
 							{
 								childEntity->z = -10.99;
 							}
+							childEntity->behavior = &actBoulderTrapHole;
 							TileEntityList.addEntity(*childEntity);
 							entity->boulderTrapRocksToSpawn |= (1 << c); // add this location to spawn a boulder below the trapdoor model.
 						}
@@ -4797,6 +5497,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
 				}
@@ -4837,6 +5538,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
 				}
@@ -4877,6 +5579,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
 				}
@@ -4917,6 +5620,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
 				}
@@ -5843,6 +6547,36 @@ void assignActions(map_t* map)
 				//entity->behavior = &actSpellShrine;
 				entity->sprite = 1193;
 				entity->yaw = entity->shrineDir * PI / 2;
+				break;
+			case 179:
+				// collider decoration
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = entity->colliderDecorationModel;
+				entity->sizex = entity->colliderSizeX;
+				entity->sizey = entity->colliderSizeY;
+				entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+				entity->x += entity->colliderDecorationXOffset * 0.25;
+				entity->y += entity->colliderDecorationYOffset * 0.25;
+				if ( entity->colliderDecorationRotation == -1 )
+				{
+					entity->yaw = (map_rng.rand() % 8) * (PI / 4);
+				}
+				else
+				{
+					entity->yaw = entity->colliderDecorationRotation * (PI / 4);
+				}
+				entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[UNCLICKABLE] = true;
+				entity->behavior = &actColliderDecoration;
+				entity->colliderCurrentHP = entity->colliderMaxHP;
+				entity->colliderOldHP = entity->colliderMaxHP;
+				/*if ( multiplayer != CLIENT )
+				{
+				entity_uids--;
+				}
+				entity->setUID(-3);*/
 				break;
 			default:
 				break;

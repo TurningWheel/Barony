@@ -51,6 +51,9 @@ public:
 	//! dump engine's text cache
 	static void dumpCache();
 
+	//! check if text cache needs to be dumped due to excess size
+	static void dumpCacheInMainLoop();
+
 	//! renders the text using its pre-specified parameters.
 	//! you usually won't need to call this yourself,
 	//! but if for some reason the text object has changed,

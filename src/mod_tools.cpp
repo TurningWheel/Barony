@@ -5585,6 +5585,11 @@ void ImGui_t::showConsoleCommands()
 	ImGui::SameLine();
 	buttonConsoleCommandHighlight("/entityfreeze", gameloopFreezeEntities);
 
+	buttonConsoleCommandHighlight("/disable_controller_reconnect true", false);
+	buttonConsoleCommandHighlight("/splitscreen", splitscreen);
+	buttonConsoleCommandHighlight("/culling_max_walls 1", false);
+	buttonConsoleCommandHighlight("/culling_max_walls 2", false);
+
 	static int jumpLevel = 0;
 	if ( ImGui::Button("/jumplevel") )
 	{
@@ -5725,7 +5730,46 @@ void ImGui_t::showConsoleCommands()
 	}
 
 	{
-		float milliseconds = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t4Music - DebugStats.t3SteamCallbacks).count();
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT6 - DebugStats.drawWorldT1).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom1", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples1", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Draw ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT3 - DebugStats.drawWorldT2).count();
 		static int plotIndex = 0;
 		static float plotValues[1000] = { 0.f };
 
@@ -5737,6 +5781,162 @@ void ImGui_t::showConsoleCommands()
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(windowWidth * .25);
 		ImGui::SliderInt("Samples2", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Occlusion ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT4 - DebugStats.drawWorldT3).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom3", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples3", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Raycast ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT5 - DebugStats.drawWorldT4).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom4", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples4", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Draw world ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT6 - DebugStats.drawWorldT5).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom5", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples5", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Draw entities ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t4Music - DebugStats.t3SteamCallbacks).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom6", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples6", &plotSamples, 50, 1000);
 
 		plotValues[plotIndex] = milliseconds;
 		++plotIndex;

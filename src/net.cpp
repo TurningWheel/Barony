@@ -2034,10 +2034,10 @@ static void changeLevel() {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		minimapPings[i].clear(); // clear minimap pings
-		enemyHPDamageBarHandler[i].HPBars.clear();
 	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 		players[i]->hud.followerBars.clear();
 	}
+	EnemyHPDamageBarHandler::dumpCache();
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);

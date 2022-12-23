@@ -1413,11 +1413,37 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 			{
 				entity->z = 4;
 			}
+			else if ( monsterStats->type == GYROBOT )
+			{
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->vel_z = -.5;
+			}
 			else if ( monsterStats->type == SENTRYBOT || monsterStats->type == SPELLBOT )
 			{
 				entity->vel_x *= 0.1;
 				entity->vel_y *= 0.1;
 				entity->vel_z = -.5;
+			}
+			else if ( item->type == ARTIFACT_ORB_PURPLE && monsterStats->type == LICH )
+			{
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				int ix = static_cast<int>(std::floor(monster->x)) >> 4;
+				int iy = static_cast<int>(std::floor(monster->y)) >> 4;
+				if ( map.tiles[OBSTACLELAYER + iy * MAPLAYERS + ix * MAPLAYERS * map.height]
+					|| !map.tiles[iy * MAPLAYERS + ix * MAPLAYERS * map.height] )
+				{
+					// failsafe area in the center of the boss room
+					entity->x = 36 * 16.0 + 8.0;
+					entity->y = 17 * 16.0 + 8.0;
+				}
+				else
+				{
+					// drop in center of tile
+					entity->x = ix * 16.0 + 8.0;
+					entity->y = iy * 16.0 + 8.0;
+				}
 			}
 		}
 	}

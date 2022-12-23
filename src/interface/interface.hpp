@@ -42,6 +42,8 @@ public:
 	static int maxTickFurnitureLifetime;
 	static int shortDistanceHPBarFadeTicks;
 	static real_t shortDistanceHPBarFadeDistance;
+	static bool bEnemyBarSimpleBlit;
+	static void dumpCache();
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsMonsters;
 	static std::vector<std::pair<real_t, int>>widthHealthBreakpointsFurniture;
 	enum HPBarType {
@@ -114,22 +116,7 @@ public:
 			shouldDisplay = true;
 			enemy_name = name;
 		}
-		~EnemyHPDetails()
-		{
-			if ( worldTexture )
-			{
-				delete worldTexture;
-				worldTexture = nullptr;
-			}
-			if ( worldSurfaceSpriteStatusEffects ) {
-				SDL_FreeSurface(worldSurfaceSpriteStatusEffects);
-				worldSurfaceSpriteStatusEffects = nullptr;
-			}
-			if ( worldSurfaceSprite ) {
-				SDL_FreeSurface(worldSurfaceSprite);
-				worldSurfaceSprite = nullptr;
-			}
-		}
+		~EnemyHPDetails();
 
 		real_t worldX = 0.0;
 		real_t worldY = 0.0;
@@ -139,6 +126,7 @@ public:
 		SDL_Surface* worldSurfaceSprite = nullptr;
 		SDL_Surface* worldSurfaceSpriteStatusEffects = nullptr;
 		SDL_Surface* blitEnemyBarStatusEffects(const int player);
+		SDL_Surface* blitEnemyBar(const int player, SDL_Surface* statusEffectSprite);
 		void updateWorldCoordinates();
 	};
 

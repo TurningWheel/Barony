@@ -22,7 +22,7 @@
 #include "interface/consolecommand.hpp"
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-static const char VERSION[] = "v3.8.5";
+static const char VERSION[] = "v3.8.6";
 #define GAME_CODE
 
 class Entity;
@@ -302,6 +302,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
 void actBoulder(Entity* my);
 void actBoulderTrap(Entity* my);
+void actBoulderTrapHole(Entity* my);
 void actBoulderTrapEast(Entity* my);
 void actBoulderTrapWest(Entity* my);
 void actBoulderTrapSouth(Entity* my);
@@ -457,6 +458,13 @@ public:
 	std::chrono::high_resolution_clock::time_point eventsT4;
 	std::chrono::high_resolution_clock::time_point eventsT5;
 	std::chrono::high_resolution_clock::time_point eventsT6;
+
+	std::chrono::high_resolution_clock::time_point drawWorldT1;
+	std::chrono::high_resolution_clock::time_point drawWorldT2;
+	std::chrono::high_resolution_clock::time_point drawWorldT3;
+	std::chrono::high_resolution_clock::time_point drawWorldT4;
+	std::chrono::high_resolution_clock::time_point drawWorldT5;
+	std::chrono::high_resolution_clock::time_point drawWorldT6;
 
 	std::chrono::high_resolution_clock::time_point messagesT1;
 

@@ -450,8 +450,29 @@ void drawMinimap(const int player, SDL_Rect rect)
 			Uint32 color_edge = 0;
 			if ( foundplayer >= 0 ) {
 				color_edge = uint32ColorWhite;
-				if ( players[player] && players[player]->entity
-					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
+
+				bool foundShadowTaggedEntity = false;
+				if ( splitscreen )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i] && players[i]->entity
+							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+						{
+							foundShadowTaggedEntity = true;
+							break;
+						}
+					}
+				}
+				else
+				{
+					if ( players[player] && players[player]->entity
+						&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+					{
+						foundShadowTaggedEntity = true;
+					}
+				}
+				if ( foundShadowTaggedEntity ) {
 					color = uint32ColorPlayerX; // grey
 				} else {
 					if (colorblind) {
@@ -472,11 +493,14 @@ void drawMinimap(const int player, SDL_Rect rect)
 						}
 					}
 		        }
-			} else if ( entity->sprite == 239 ) {
+			} else if ( entity->sprite == 239 ) { // minotaur
 				color_edge = uint32ColorBlack;
-			    if (!players[player] || !players[player]->entity) {
-			        continue;
-			    }
+				if ( !splitscreen )
+				{
+					if (!players[player] || !players[player]->entity) {
+						continue;
+					}
+				}
 			    if ( ticks % 120 - ticks % 60 ) {
 				    if ( !minotaur_timer ) {
 					    playSound(116, 64);
@@ -489,8 +513,30 @@ void drawMinimap(const int player, SDL_Rect rect)
 				color = makeColor(255, 0, 0, 255);
 			} else {
 				color_edge = uint32ColorGray;
-				if ( players[player] && players[player]->entity
-					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() ) {
+
+				bool foundShadowTaggedEntity = false;
+				if ( splitscreen )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i] && players[i]->entity
+							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+						{
+							foundShadowTaggedEntity = true;
+							break;
+						}
+					}
+				}
+				else
+				{
+					if ( players[player] && players[player]->entity
+						&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+					{
+						foundShadowTaggedEntity = true;
+					}
+				}
+
+				if ( foundShadowTaggedEntity ) {
 					color = uint32ColorPlayerX_Ally; // grey
 				} else {
 				    switch ( drawMonsterAlly ) {

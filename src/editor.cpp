@@ -238,6 +238,21 @@ char floorDecorationPropertyNames[9][59] =
 	""
 };
 
+char colliderDecorationPropertyNames[11][59] =
+{
+	"Model texture to use (0-9999)",
+	"Direction (-1 - 7)",
+	"Height Offset (Qtrs of a voxel, +ive is higher)",
+	"X Offset (L/R, Qtrs of a voxel, +ive is right)",
+	"Y Offset (U/D, Qtrs of a voxel, +ive is down)",
+	"Has Collision (0 - no collision, 1 - collision",
+	"Collision X (8 - full width, 4 - half width)",
+	"Collision Y (8 - full width, 4 - half width)",
+	"HP (0 - not damageable)",
+	"Diggable (0-1)",
+	"Damage Types"
+};
+
 char soundSourcePropertyNames[5][59] =
 {
 	"Sound source line number to play from sounds.txt (0-999)",
@@ -2968,6 +2983,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELEVITATION]);
 
 					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Gen Border:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_PERIMETER_GAP]);
+
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Gen Adjacent Rooms:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_GENADJACENTROOMS]);
 
@@ -2998,7 +3017,7 @@ int main(int argc, char** argv)
 						keystatus[SDLK_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 14 )
+						if ( editproperty == 15 )
 						{
 							editproperty = 0;
 						}
@@ -3041,10 +3060,15 @@ int main(int argc, char** argv)
 								inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
 								break;
 							case 12:
-								inputstr = widthtext;
+								inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
 								break;
 							case 13:
+								inputstr = widthtext;
+								break;
+							case 14:
 								inputstr = heighttext;
+								break;
+							default:
 								break;
 						}
 					}
@@ -3254,17 +3278,24 @@ int main(int argc, char** argv)
 							editproperty = 11;
 							cursorflash = ticks;
 						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 64 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+							editproperty = 12;
+							cursorflash = ticks;
+						}
 
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 12;
+							editproperty = 13;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 13;
+							editproperty = 14;
 							cursorflash = ticks;
 						}
 					}
@@ -3331,7 +3362,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, start_y + pad_y1, "\26");
 						}
 					}
-					if ( editproperty == 12 )   // edit map width
+					if ( editproperty == 13 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3345,7 +3376,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 13 )   // edit map height
+					if ( editproperty == 14 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -3465,6 +3496,20 @@ int main(int argc, char** argv)
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 12 )   // edit perimeter gap
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_PERIMETER_GAP];
+						}
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_PERIMETER_GAP]) * 8, start_y + pad_y1, "\26");
 						}
 					}
 				}
@@ -7803,6 +7848,224 @@ int main(int argc, char** argv)
 					//		propertyPageCursorFlash(spacing);
 					//	}
 					//}
+				}
+				else if ( newwindow == 31 )
+				{
+					if ( selectedEntity[0] != nullptr )
+					{
+						int numProperties = sizeof(colliderDecorationPropertyNames) / sizeof(colliderDecorationPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(colliderDecorationPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = makeColorRGB(0, 255, 0);
+						Uint32 colorRandom = makeColorRGB(0, 168, 255);
+						Uint32 colorError = makeColorRGB(255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+							inputFieldWidth = 64; // width of the text field
+							spacing = 36;
+
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							strcpy(tmpPropertyName, colliderDecorationPropertyNames[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 || i == 8 )
+								{
+									if ( propertyInt > 9999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 7 || propertyInt < -1 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case -1:
+												strcpy(tmpStr, "random");
+												break;
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "Southeast");
+												break;
+											case 2:
+												strcpy(tmpStr, "South");
+												break;
+											case 3:
+												strcpy(tmpStr, "Southwest");
+												break;
+											case 4:
+												strcpy(tmpStr, "West");
+												break;
+											case 5:
+												strcpy(tmpStr, "Northwest");
+												break;
+											case 6:
+												strcpy(tmpStr, "North");
+												break;
+											case 7:
+												strcpy(tmpStr, "Northeast");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 2 || i == 3 || i == 4 )
+								{
+									if ( propertyInt > 999 || propertyInt < -999 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "No collision");
+												break;
+											case 1:
+												strcpy(tmpStr, "Has collision");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 6 || i == 7 )
+								{
+									if ( propertyInt > 8 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 8 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "Unable to damage");
+												break;
+											case 1:
+												strcpy(tmpStr, "Breakable");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 9 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "Not diggable");
+												break;
+											case 1:
+												strcpy(tmpStr, "Diggable");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 10 )
+								{
+									if ( propertyInt > 8 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											default:
+												strcpy(tmpStr, "Unimplemented");
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 5;
+							propertyPageCursorFlash(spacing);
+						}
+					}
 				}
 				else if ( newwindow == 16 || newwindow == 17 )
 				{

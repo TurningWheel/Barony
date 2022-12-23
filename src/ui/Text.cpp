@@ -54,6 +54,11 @@ size_t getNumTextLines(std::string& str)
 	return numLines + newlines;
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_text_render_addspace("/text_render_addspace", true);
+static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", false);
+#endif
+
 void Text::render() {
 	if ( surf ) {
 		SDL_FreeSurface(surf);
@@ -118,6 +123,17 @@ void Text::render() {
 	}
 #else
 	const int spaces_width = 0;
+	bool addedSpace = false;
+#ifndef EDITOR
+	if ( *cvar_text_render_addspace )
+	{
+		if ( strToRender == "" )
+		{
+			addedSpace = true;
+			strToRender += ' ';
+		}
+	}
+#endif
 #endif
 
 	SDL_Color colorText;
@@ -129,9 +145,19 @@ void Text::render() {
 	int outlineSize = font->getOutline();
 	if ( outlineSize > 0 ) {
 		TTF_SetFontOutline(ttf, outlineSize);
+		SDL_ClearError();
 		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorOutline);
+		if ( !surf )
+		{
+			printlog("[TTF]: Error: surf = TTF_RenderUTF8_Blended: %s", TTF_GetError());
+		}
 		TTF_SetFontOutline(ttf, 0);
+		SDL_ClearError();
 		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
+		if ( !text )
+		{
+			printlog("[TTF]: Error: text = TTF_RenderUTF8_Blended: %s", TTF_GetError());
+		}
 		SDL_Rect rect;
 		rect.x = outlineSize; rect.y = outlineSize;
 		SDL_BlitSurface(text, NULL, surf, &rect);
@@ -143,13 +169,22 @@ void Text::render() {
 	}
 
 	if (!surf) {
+		num_text_lines = 1;
 	    width = 4;
 	    height = font->height(true);
 	    return;
 	}
 
-	width = surf->w - spaces_width;
-	height = surf->h;
+	if ( addedSpace )
+	{
+		width = 4;
+		height = surf->h;
+	}
+	else
+	{
+		width = std::max(0, surf->w - spaces_width);
+		height = surf->h;
+	}
 
 	// Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()
 	// So calculating width/height ourselves is redundant and buggy (it doesn't factor trailing spaces)
@@ -326,6 +361,7 @@ int Text::countNumTextLines() const {
 static std::unordered_map<std::string, Text*> hashed_text;
 static const size_t TEXT_BUDGET = 1 * 1024 * 1024 * 128; // in bytes
 static size_t TEXT_VOLUME = 0; // in bytes
+static bool bRequireTextDump = false;
 
 static inline void uint32tox(uint32_t value, char* out) {
 	for (int i = 28; i >= 0; i -= 4) {
@@ -383,7 +419,18 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	auto search = hashed_text.find(textAndFont);
 	if (search == hashed_text.end()) {
 		if (TEXT_VOLUME > TEXT_BUDGET) {
+#ifdef EDITOR
 			dumpCache();
+#else
+			if ( *cvar_text_delay_dumpcache )
+			{
+				bRequireTextDump = true;
+			}
+			else
+			{
+				dumpCache();
+			}
+#endif
 		}
 		text = new Text(textAndFont);
 		hashed_text.insert(std::make_pair(textAndFont, text));
@@ -398,11 +445,22 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 }
 
 void Text::dumpCache() {
+	printlog("[Text Cache]: dumping...");
 	for (auto text : hashed_text) {
+		//printlog("%s", text.second->getName());
 		delete text.second;
 	}
 	hashed_text.clear();
 	TEXT_VOLUME = 0;
+	bRequireTextDump = false;
+}
+
+void Text::dumpCacheInMainLoop()
+{
+	if ( bRequireTextDump )
+	{
+		dumpCache();
+	}
 }
 
 #ifndef EDITOR

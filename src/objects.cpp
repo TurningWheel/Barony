@@ -12,6 +12,7 @@
 #include <new>
 #include "main.hpp"
 #include "entity.hpp"
+#include "messages.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -364,10 +365,24 @@ string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const 
 	string->lines = 1;
 	if ( content != NULL )
 	{
-		// format the content
-		va_start( argptr, content );
-		i = vsnprintf(str, 1023, content, argptr);
-		va_end( argptr );
+#ifndef EDITOR
+		if ( list && list == &messages )
+		{
+			std::string sanitizedStr = messageSanitizePercentSign(content, nullptr).c_str();
+			const char* strPtr = sanitizedStr.c_str();
+			// format the content
+			va_start( argptr, strPtr);
+			i = vsnprintf(str, 1023, strPtr, argptr);
+			va_end( argptr );
+		}
+		else
+#endif
+		{
+			// format the content
+			va_start(argptr, content);
+			i = vsnprintf(str, 1023, content, argptr);
+			va_end(argptr);
+		}
 		string->data = (char*) malloc(sizeof(char) * (i + 1));
 		if ( !string->data )
 		{

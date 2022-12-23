@@ -3926,11 +3926,13 @@ void actHudShield(Entity* my)
 		    {
                 if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
                 {
-			        Entity* entity = spawnFlame(my, SPRITE_FLAME);
-			        entity->flags[OVERDRAW] = true;
-			        entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
-			        entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-			        entity->skill[11] = HUDSHIELD_PLAYERNUM;
+					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+					{
+						entity->flags[OVERDRAW] = true;
+						entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+						entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+					}
 			    }
 			    my->flags[BRIGHT] = true;
 		    }
@@ -3950,10 +3952,12 @@ void actHudShield(Entity* my)
 		    {
                 if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
                 {
-			        Entity* entity = spawnFlame(my, SPRITE_FLAME);
-			        entity->flags[OVERDRAW] = true;
-			        entity->skill[11] = HUDSHIELD_PLAYERNUM;
-			        entity->z += 1;
+					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+					{
+						entity->flags[OVERDRAW] = true;
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						entity->z += 1;
+					}
 			    }
 			    my->flags[BRIGHT] = true;
 		    }

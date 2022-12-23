@@ -1653,13 +1653,15 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			serverUpdateHunger(player);
 			for ( int c = 0; c < 100; c++ )
 			{
-				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
-				entity->sprite = 16;
-				double vel = local_rng.rand() % 10;
-				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
-				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
-				entity->vel_z = vel * sin(entity->pitch) * .2;
-				entity->skill[0] = 5 + local_rng.rand() % 10;
+				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
+				{
+					entity->sprite = 16;
+					double vel = local_rng.rand() % 10;
+					entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+					entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+					entity->vel_z = vel * sin(entity->pitch) * .2;
+					entity->skill[0] = 5 + local_rng.rand() % 10;
+				}
 			}
 		}
 		else
@@ -2973,13 +2975,15 @@ bool item_ScrollFire(Item* item, int player)
 		int c;
 		for (c = 0; c < 100; c++)
 		{
-			Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
-			entity->sprite = 16;
-			double vel = local_rng.rand() % 10;
-			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
-			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
-			entity->vel_z = vel * sin(entity->pitch) * .2;
-			entity->skill[0] = 5 + local_rng.rand() % 10;
+			if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
+			{
+				entity->sprite = 16;
+				double vel = local_rng.rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + local_rng.rand() % 10;
+			}
 		}
 		return true;
 	}
@@ -5168,13 +5172,15 @@ void item_FoodAutomaton(Item*& item, int player)
 			playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
 			for ( int c = 0; c < 100; c++ )
 			{
-				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
-				entity->sprite = 16;
-				double vel = local_rng.rand() % 10;
-				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
-				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
-				entity->vel_z = vel * sin(entity->pitch) * .2;
-				entity->skill[0] = 5 + local_rng.rand() % 10;
+				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
+				{
+					entity->sprite = 16;
+					double vel = local_rng.rand() % 10;
+					entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+					entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+					entity->vel_z = vel * sin(entity->pitch) * .2;
+					entity->skill[0] = 5 + local_rng.rand() % 10;
+				}
 			}
 			break;
 		}

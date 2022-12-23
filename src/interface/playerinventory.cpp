@@ -124,11 +124,16 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	int oldGUI = players[player]->gui_mode;
 	players[player]->gui_mode = GUI_MODE_INVENTORY; // this makes sure we don't try sell the item or something
 
+	bool isSelectedItem = inputs.getUIInteraction(player)->selectedItem == item;
 	players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP);
 
 	players[player]->gui_mode = oldGUI;
 
 	players[player]->paperDoll.updateSlots();
+	if ( isSelectedItem && inputs.getUIInteraction(player)->selectedItem == nullptr )
+	{
+		return true; // item was consumed
+	}
 	if ( players[player]->paperDoll.isItemOnDoll(*item) )
 	{
 		return true;
@@ -3974,13 +3979,16 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						if ( !equipped )
 						{
 							// failure to equip
-							selectedItem->x = oldx;
-							selectedItem->y = oldy;
-							selectedItem = nullptr;
-							inputs.getUIInteraction(player)->selectedItemFromChest = 0;
-							toggleclick = false;
-							Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
-							return;
+							if ( selectedItem )
+							{
+								selectedItem->x = oldx;
+								selectedItem->y = oldy;
+								selectedItem = nullptr;
+								inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+								toggleclick = false;
+								Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
+								return;
+							}
 						}
 
 						// success - assign selectedItem to the newly picked up item from the paper doll
@@ -5023,6 +5031,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						}
 						else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
 						{
+							if ( isGoblin ) { continue; }
 							if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
 							{
 								continue;

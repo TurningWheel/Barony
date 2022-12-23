@@ -35,7 +35,6 @@
 
 void actCampfire(Entity* my)
 {
-	Entity* entity;
 	int i;
 
 	// init
@@ -61,20 +60,26 @@ void actCampfire(Entity* my)
 		{
 		    for ( i = 0; i < 3; i++ )
 		    {
-			    entity = spawnFlame(my, SPRITE_FLAME);
-			    entity->x += ((local_rng.rand() % 30) - 10) / 10.f;
-			    entity->y += ((local_rng.rand() % 30) - 10) / 10.f;
-			    entity->z -= 1;
+				if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				{
+					entity->x += ((local_rng.rand() % 30) - 10) / 10.f;
+					entity->y += ((local_rng.rand() % 30) - 10) / 10.f;
+					entity->z -= 1;
+				}
 		    }
-		    entity = spawnFlame(my, SPRITE_FLAME);
-		    entity->z -= 2;
+			if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+			{
+				entity->z -= 2;
+			}
 		}
 		else
 		{
 		    if ( ticks % TICKS_PER_SECOND == 0 )
 		    {
-		        entity = spawnFlame(my, SPRITE_FLAME);
-		        entity->z -= 2;
+				if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				{
+					entity->z -= 2;
+				}
 		    }
 		}
 

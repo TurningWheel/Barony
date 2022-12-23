@@ -161,7 +161,18 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 			|| entity->sprite == 19		// gate
 			|| entity->sprite == 20		// gate 2
 			|| entity->sprite == 39		// head stone
-			|| entity->sprite == 44 )	// boulder?
+			|| entity->sprite == 44		// boulder?
+			|| entity->sprite == 106 	// power crystal
+			|| entity->sprite == 108	// stalag column
+			|| entity->sprite == 109	// stalagmite
+			|| entity->sprite == 110	// stalagmite
+			|| entity->sprite == 116	// pedestal
+			|| entity->sprite == 124	// column
+			|| entity->sprite == 126	// piston
+			|| entity->sprite == 169	// statue
+			|| entity->sprite == 177	// shrine
+			|| entity->sprite == 178	// spell shrine
+			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
 			{

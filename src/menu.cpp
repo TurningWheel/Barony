@@ -9506,9 +9506,9 @@ void doNewGame(bool makeHighscore) {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
-		enemyHPDamageBarHandler[i].HPBars.clear();
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
+	EnemyHPDamageBarHandler::dumpCache();
 	currentlevel = startfloor;
 	secretlevel = false;
 	victory = 0;
@@ -10546,6 +10546,7 @@ void doEndgame() {
 		players[i]->magic.clearSelectedSpells();
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
+	EnemyHPDamageBarHandler::dumpCache();
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;
 	for ( c = 0; c < MAXPLAYERS; c++ )
