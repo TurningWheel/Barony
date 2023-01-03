@@ -5652,7 +5652,7 @@ void drawAllPlayerCameras() {
 				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
-				    raycast(&camera, minimap); // update minimap
+				    raycast(camera, minimap); // update minimap
 				}
 				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
@@ -5672,7 +5672,7 @@ void drawAllPlayerCameras() {
 							    camera.x = players[i]->entity->x / 16.0;
 							    camera.y = players[i]->entity->y / 16.0;
 							    camera.ang = players[i]->entity->yaw;
-							    raycast(&camera, minimap); // update minimap from other players' perspectives
+							    raycast(camera, minimap); // update minimap from other players' perspectives
 							    camera.x = x;
 							    camera.y = y;
 							    camera.ang = ang;
