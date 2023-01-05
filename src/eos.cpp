@@ -1216,7 +1216,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
 		return false;
 	}
-#if defined(STEAMWORKS) && !defined(NINTENDO)
+#if !defined(STEAMWORKS) && !defined(NINTENDO)
 #ifdef WINDOWS
 #ifdef NDEBUG
 	appRequiresRestart = EOS_Platform_CheckForLauncherAndRestart(EOS.PlatformHandle);

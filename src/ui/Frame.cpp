@@ -20,8 +20,11 @@
 
 const Sint32 Frame::sliderSize = 16;
 
-static const int _virtualScreenDefaultWidth = 1280;
+int uiDefaultHeight = 720;
+
+static const int _virtualScreenMinWidth = 1280;
 static const int _virtualScreenMinHeight = 720;
+
 int Frame::_virtualScreenX = 0;
 int Frame::_virtualScreenY = 0;
 
@@ -96,7 +99,7 @@ void Frame::listener_t::onChangeName(const char* name) {
 }
 
 #ifndef EDITOR
-static ConsoleVariable<bool> ui_filter("/ui_filter", false);
+ConsoleVariable<bool> ui_filter("/ui_filter", false);
 static ConsoleCommand ui_filter_refresh("/ui_filter_refresh", "refresh ui filter state",
     [](int argc, const char** argv){
     Frame::fboDestroy();
@@ -134,10 +137,10 @@ void Frame::fboDestroy() {
 
 void Frame::guiInit() {
 	if ( _virtualScreenX == 0 && _virtualScreenY == 0 ) {
-		const int defaultWidth = _virtualScreenDefaultWidth;
-		const int vsize = (yres * defaultWidth) / xres;
-		_virtualScreenX = defaultWidth;
-		_virtualScreenY = std::max(vsize, _virtualScreenMinHeight);
+		const int defaultWidth = (xres * uiDefaultHeight) / yres;
+		const int defaultHeight = uiDefaultHeight;
+		_virtualScreenX = std::max(defaultWidth, _virtualScreenMinWidth);
+		_virtualScreenY = std::max(defaultHeight, _virtualScreenMinHeight);
 	}
 	fboInit();
 

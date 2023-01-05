@@ -113,7 +113,14 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 
-    static bool resolution_changed = false;
+    // if anything but none, causes the video mode to change
+    // and reopens the settings menu to the specified tab
+    enum VideoRefresh : int {
+        None = 0,
+        General = 1 << 0,
+        Video = 1 << 1,
+    };
+    static int video_refresh = VideoRefresh::None;
 
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 	static std::string tutorial_map_destination;
@@ -241,18 +248,20 @@ namespace MainMenu {
 		static inline Video reset();
 		bool serialize(FileInterface*);
 	};
-	static Video old_video;
+	static struct Video old_video;
 
     // All menu options combined
 	struct AllSettings {
 	    std::vector<std::pair<std::string, std::string>> mods;
 	    bool crossplay_enabled;
-	    bool fast_restart;
+	    bool fast_restart = false;
 		float world_tooltip_scale = 100.f;
 		float world_tooltip_scale_splitscreen = 150.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
+        bool ui_filter_enabled = false;
+        float ui_scale = 100.f;
 		Minimap minimap;
 		bool show_messages_enabled;
 		Messages show_messages;
@@ -265,7 +274,7 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
-		Video video;
+        struct Video video;
 		bool use_frame_interpolation = true;
 		bool vertical_split_enabled;
 		bool staggered_split_enabled;
@@ -305,7 +314,7 @@ namespace MainMenu {
 		bool cheats_enabled;
 		bool skipintro;
 		int port_number;
-		inline bool save(); // true if video needs restart
+		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
 		bool serialize(FileInterface*);
@@ -485,7 +494,7 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static void settingsUI(Button&);
+	static void settingsGeneral(Button&);
 	static void settingsVideo(Button&);
 	static void settingsAudio(Button&);
 	static void settingsControls(Button&);
@@ -1947,7 +1956,7 @@ namespace MainMenu {
 		return result;
 	}
 
-	inline Video Video::load() {
+	inline struct Video Video::load() {
 	    Video settings;
 		settings.window_mode = fullscreen ? 2 : (borderless ? 1 : 0);
 		settings.display_id = ::display_id;
@@ -1958,7 +1967,7 @@ namespace MainMenu {
 		return settings;
 	}
 
-	inline Video Video::reset() {
+	inline struct Video Video::reset() {
 	    return Video();
 	}
 
@@ -1978,7 +1987,8 @@ namespace MainMenu {
 
 	static AllSettings allSettings;
 
-	inline bool AllSettings::save() {
+	inline int AllSettings::save() {
+        int result = VideoRefresh::None;
         gamemods_mountedFilepaths = mods;
 		*cvar_fastRestart = fast_restart;
 		*cvar_worldtooltip_scale = world_tooltip_scale;
@@ -1987,6 +1997,12 @@ namespace MainMenu {
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
 		minimap.save();
+        const bool oldUIFilter = *ui_filter;
+        const int oldUIDefaultHeight = uiDefaultHeight;
+        *ui_filter = ui_filter_enabled;
+        uiDefaultHeight = 1440 - 720 * ((ui_scale - 50.f) / 50.f);
+        result |= (oldUIFilter != *ui_filter || oldUIDefaultHeight != uiDefaultHeight) ?
+            VideoRefresh::General : VideoRefresh::None;
 		disable_messages = !show_messages_enabled;
 		show_messages.save();
 		hide_playertags = !show_player_nametags_enabled;
@@ -1998,7 +2014,7 @@ namespace MainMenu {
 		shaking = shaking_enabled;
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
-		bool result = video.save();
+		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
 		*clipped_splitscreen = clipped_split_enabled;
@@ -2069,6 +2085,8 @@ namespace MainMenu {
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
 		settings.minimap = Minimap::load();
+        settings.ui_scale = 100.f - 50.f * ((uiDefaultHeight - 720) / 720.f);
+        settings.ui_filter_enabled = *ui_filter;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
 		settings.show_player_nametags_enabled = !hide_playertags;
@@ -2189,21 +2207,17 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 6;
+	    int version = 7;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
-		if (file->isReading()) {
-		    if (version >= 2) {
-		        file->property("fast_restart", fast_restart);
-		    }
-		} else {
-		    file->property("fast_restart", fast_restart);
-		}
+		file->propertyVersion("fast_restart", version >= 2, fast_restart);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
 		file->property("minimap", minimap);
+        file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);
+        file->propertyVersion("ui_scale", version >= 7, ui_scale);
 		file->property("show_messages_enabled", show_messages_enabled);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
 		file->property("show_hud_enabled", show_hud_enabled);
@@ -2214,45 +2228,31 @@ namespace MainMenu {
 		file->property("shaking_enabled", shaking_enabled);
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
-		if (file->isReading()) {
-		    if (version >= 1) {
-		        file->property("video", video);
-	            file->property("vertical_split_enabled", vertical_split_enabled);
-		        if (version >= 2) {
-		            file->property("clipped_split_enabled", clipped_split_enabled);
-		            file->property("staggered_split_enabled", staggered_split_enabled);
-		        }
-				if ( version >= 6 )
-				{
-					file->property("use_frame_interpolation", use_frame_interpolation);
-				}
-		    } else {
-		        int i = 0;
-		        float f = 0.f;
-		        bool b = false;
-		        file->property("window_mode", i);
-		        file->property("resolution_x", i);
-		        file->property("resolution_y", i);
-		        file->property("vsync_enabled", b);
-		        file->property("vertical_split_enabled", vertical_split_enabled);
-		        file->property("gamma", f);
-		    }
-		} else {
-		    file->property("video", video);
-	        file->property("vertical_split_enabled", vertical_split_enabled);
-	        file->property("clipped_split_enabled", clipped_split_enabled);
-	        file->property("staggered_split_enabled", staggered_split_enabled);
-			file->property("use_frame_interpolation", use_frame_interpolation);
-		}
+        if (version >= 1) {
+            file->property("video", video);
+            file->property("vertical_split_enabled", vertical_split_enabled);
+            if (version >= 2) {
+                file->property("clipped_split_enabled", clipped_split_enabled);
+                file->property("staggered_split_enabled", staggered_split_enabled);
+            }
+            if ( version >= 6 )
+            {
+                file->property("use_frame_interpolation", use_frame_interpolation);
+            }
+        } else {
+            int i = 0;
+            float f = 0.f;
+            bool b = false;
+            file->property("window_mode", i);
+            file->property("resolution_x", i);
+            file->property("resolution_y", i);
+            file->property("vsync_enabled", b);
+            file->property("vertical_split_enabled", vertical_split_enabled);
+            file->property("gamma", f);
+        }
 		file->property("fov", fov);
 		file->property("fps", fps);
-		if (file->isReading()) {
-		    if (version >= 4) {
-		    	file->property("audio_device", audio_device);
-			}
-		} else {
-			file->property("audio_device", audio_device);
-		}
+		file->propertyVersion("audio_device", version >= 4, audio_device);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
@@ -2262,25 +2262,14 @@ namespace MainMenu {
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
 		file->property("bindings", bindings);
-		if ( file->isReading() )
-		{
-			if ( version >= 5 )
-			{
-				file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
-				file->property("mkb_facehotbar", mkb_facehotbar);
-				file->property("gamepad_facehotbar", gamepad_facehotbar);
-				file->property("world_tooltip_scale", world_tooltip_scale);
-				file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
-			}
-		}
-		else
-		{
-			file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
-			file->property("mkb_facehotbar", mkb_facehotbar);
-			file->property("gamepad_facehotbar", gamepad_facehotbar);
-			file->property("world_tooltip_scale", world_tooltip_scale);
-			file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
-		}
+        if ( version >= 5 )
+        {
+            file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
+            file->property("mkb_facehotbar", mkb_facehotbar);
+            file->property("gamepad_facehotbar", gamepad_facehotbar);
+            file->property("world_tooltip_scale", world_tooltip_scale);
+            file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
+        }
 		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
@@ -2288,19 +2277,11 @@ namespace MainMenu {
 		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
 		file->property("turn_sensitivity_x", turn_sensitivity_x);
 		file->property("turn_sensitivity_y", turn_sensitivity_y);
-		if ( file->isReading() )
-		{
-			if ( version >= 6 )
-			{
-				file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
-				file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
-			}
-		}
-		else
-		{
-			file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
-			file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
-		}
+        if ( version >= 6 )
+        {
+            file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
+            file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+        }
 		file->property("classic_mode_enabled", classic_mode_enabled);
 		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
 		file->property("friendly_fire_enabled", friendly_fire_enabled);
@@ -2935,12 +2916,11 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	bool settingsApply() {
-		bool reset_video = allSettings.save();
-
+	void settingsApply() {
+        video_refresh = allSettings.save();
+        
 		// change video mode
-		if (initialized && reset_video) {
-			resolution_changed = true;
+		if (initialized && (video_refresh & VideoRefresh::Video)) {
 		    int x = std::max(allSettings.video.resolution_x, 1024);
 		    int y = std::max(allSettings.video.resolution_y, 720);
 			if (!changeVideoMode(x, y)) {
@@ -2973,7 +2953,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -2982,13 +2962,11 @@ namespace MainMenu {
 #endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
-
-		return reset_video;
 	}
 
 	void settingsMount() {
 		allSettings = AllSettings::load();
-		if (!resolution_changed) {
+		if (!video_refresh) {
 	        old_video = allSettings.video;
 	    }
 	}
@@ -4074,7 +4052,7 @@ namespace MainMenu {
 		/*if (settings_tab_name == button.getName()) {
 			return nullptr;
 		}*/
-		if (!resolution_changed) {
+		if (!video_refresh) {
 		    soundActivate();
 		}
 		settings_tab_name = button.getName();
@@ -4200,8 +4178,10 @@ namespace MainMenu {
 
 	static void settingsSelect(Frame& frame, const Setting& setting) {
 		auto names = getFullSettingNames(setting);
-		auto widget = frame.findWidget(names.first.c_str(), false); assert(widget);
-		widget->select();
+		auto widget = frame.findWidget(names.first.c_str(), false);
+        if (widget) {
+            widget->select();
+        }
 	}
 
 	static void genericSubwindowFinalizeBasic(Frame& frame, int y) {
@@ -4804,7 +4784,7 @@ bind_failed:
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
-	static void settingsUI(Button& button) {
+	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -4833,6 +4813,13 @@ bind_failed:
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
+        y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
+            "Scale the UI to a larger or smaller size.",
+            allSettings.ui_scale, 50.f, 100.f, true,
+            [](Slider& slider){soundSlider(true); allSettings.ui_scale = slider.getValue();});
+        y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
+            "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
+            allSettings.ui_filter_enabled, [](Button& button){soundToggle(); allSettings.ui_filter_enabled = button.isPressed();});
 		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
 			"Customize the appearance of the in-game minimap.",
 			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
@@ -9591,9 +9578,10 @@ bind_failed:
 		if (card) {
 			card->removeSelf();
 		}
-
+        
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - height, 324, height});
+		card->setSize(SDL_Rect{pos - 324 / 2, Frame::virtualScreenY - height, 324, height});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -12584,8 +12572,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -12680,8 +12669,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -12949,8 +12939,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -13013,8 +13004,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -13137,8 +13129,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -17413,7 +17406,7 @@ bind_failed:
 		settings->setTickCallback([](Widget& widget){
 			auto settings = static_cast<Frame*>(&widget);
 			std::vector<const char*> tabs = {
-				"UI",
+				"General",
 				"Video",
 				"Audio",
 				"Controls",
@@ -17450,7 +17443,7 @@ bind_failed:
 			void (*callback)(Button&);
 		};
 		std::vector<Option> tabs = {
-			{"UI", settingsUI},
+			{"General", settingsGeneral},
 			{"Video", settingsVideo},
 			{"Audio", settingsAudio},
 			{"Controls", settingsControls},
@@ -17523,14 +17516,14 @@ bind_failed:
 		tab_left->setWidgetBack("discard_and_exit");
 		tab_left->setWidgetPageLeft("tab_left");
 		tab_left->setWidgetPageRight("tab_right");
-		tab_left->setWidgetRight("UI");
+		tab_left->setWidgetRight("General");
 		tab_left->setWidgetDown("restore_defaults");
 		tab_left->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
 		tab_left->setCallback([](Button&){
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			std::vector<const char*> tabs = {
-				"UI",
+				"General",
 				"Video",
 				"Audio",
 				"Controls",
@@ -17568,7 +17561,7 @@ bind_failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
-		tab_right->setWidgetLeft("Controls");
+		tab_right->setWidgetLeft(intro ? "Online" : "Game");
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -17578,7 +17571,7 @@ bind_failed:
 				"Controls",
 				"Audio",
 				"Video",
-				"UI",
+				"General",
 			};
 			if (intro) {
 #ifndef NINTENDO
@@ -17624,7 +17617,7 @@ bind_failed:
 		restore_defaults->setWidgetBack("discard_and_exit");
 		restore_defaults->setWidgetPageLeft("tab_left");
 		restore_defaults->setWidgetPageRight("tab_right");
-		restore_defaults->setWidgetUp("UI");
+		restore_defaults->setWidgetUp("General");
 		restore_defaults->setWidgetRight("discard_and_exit");
 		restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -17636,7 +17629,7 @@ bind_failed:
 				"Controls",
 				"Audio",
 				"Video",
-				"UI",
+				"General",
 			};
 			if (intro) {
 				tabs.insert(tabs.begin(), "Online");
@@ -17700,7 +17693,8 @@ bind_failed:
 		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
-			if (!settingsApply()) {
+            settingsApply();
+			if (video_refresh == VideoRefresh::None) {
 			    // resolution confirm prompt makes this sound
 			    soundActivate();
 			}
@@ -18195,7 +18189,7 @@ bind_failed:
 	}
 
 	void doMainMenu(bool ingame) {
-        if (resolution_changed) {
+        if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
 
@@ -18205,8 +18199,14 @@ bind_failed:
             auto settings_button = buttons->findButton("Settings"); assert(settings_button);
             settings_button->activate();
             auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-            auto video = settings->findButton("Video"); assert(video);
-            video->activate();
+            if (video_refresh & VideoRefresh::Video) {
+                auto video = settings->findButton("Video"); assert(video);
+                video->activate();
+            }
+            else if (video_refresh & VideoRefresh::General) {
+                auto general = settings->findButton("General"); assert(general);
+                general->activate();
+            }
 
             // setup timeout to revert resolution
             char buf[256];
@@ -18280,7 +18280,7 @@ bind_failed:
             }
 
             // at the end so that old_video is not overwritten
-            resolution_changed = false;
+            video_refresh = VideoRefresh::None;
         }
 
 		if (!main_menu_frame) {
@@ -18789,10 +18789,7 @@ bind_failed:
 
 		const int num_options = options.size();
 
-		if (ingame) {
-			y = (Frame::virtualScreenY - num_options * 32) / 2;
-			++y; // fix aliasing nonsense
-		}
+        y = (Frame::virtualScreenY - num_options * 32) / 2 + 1;
 		main_menu_buttons_height = y;
 
 		auto buttons = main_menu_frame->addFrame("buttons");

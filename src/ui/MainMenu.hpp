@@ -80,7 +80,7 @@ namespace MainMenu {
 	bool isMenuOpen();					// checks whether the menu is open
 	void beginFade(FadeDestination);    // begins a fade transition to a specific destination
 
-	bool settingsApply();	// write settings to global variables (true if video mode changed)
+	void settingsApply();	// write settings to global variables (true if video mode changed)
 	void settingsMount();	// read settings from global variables
 	bool settingsSave();	// write settings to disk (true if succeeded)
 	bool settingsLoad();	// read settings from disk (true if succeeded)
