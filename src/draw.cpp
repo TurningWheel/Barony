@@ -1402,6 +1402,10 @@ void drawClearBuffers()
 
 #include <future>
 
+#ifndef EDITOR
+#include "net.hpp"
+#endif
+
 void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 {
     // originally we cast a ray for every column of pixels in the
@@ -1620,7 +1624,9 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         TimeTest = false;
         auto duration = std::chrono::high_resolution_clock::now() - t;
         auto timer = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+#ifndef EDITOR
         messageLocalPlayers(MESSAGE_DEBUG, "Raycast took ~%llu microseconds", timer);
+#endif
     }
 }
 
