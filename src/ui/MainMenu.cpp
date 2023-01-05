@@ -4813,13 +4813,15 @@ bind_failed:
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
+#ifndef NINTENDO
         y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
-            "Scale the UI to a larger or smaller size.",
+            "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
             allSettings.ui_scale, 50.f, 100.f, true,
             [](Slider& slider){soundSlider(true); allSettings.ui_scale = slider.getValue();});
         y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
             "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
             allSettings.ui_filter_enabled, [](Button& button){soundToggle(); allSettings.ui_filter_enabled = button.isPressed();});
+#endif
 		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
 			"Customize the appearance of the in-game minimap.",
 			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
@@ -4843,6 +4845,8 @@ bind_failed:
 			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Boolean, "use_on_release"},
+            {Setting::Type::Slider, "ui_scale"},
+            {Setting::Type::Boolean, "ui_filter"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
