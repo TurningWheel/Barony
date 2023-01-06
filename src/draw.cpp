@@ -1417,7 +1417,6 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
     static constexpr int NumRaysPerJob = 50;
     static constexpr bool DoRaysInParallel = true;
     static constexpr bool WriteOutsSequentially = false;
-    static constexpr bool TimeTest = false;
 #else
     static ConsoleVariable<int> cvar_numRays("/raycast_num", 200);
     static ConsoleVariable<int> cvar_numRaysPerJob("/raycast_num_per_job", 50);
@@ -1620,14 +1619,14 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         }
     }
     
+#ifndef EDITOR
     if (TimeTest) {
         TimeTest = false;
         auto duration = std::chrono::high_resolution_clock::now() - t;
         auto timer = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-#ifndef EDITOR
         messageLocalPlayers(MESSAGE_DEBUG, "Raycast took ~%llu microseconds", timer);
-#endif
     }
+#endif
 }
 
 /*-------------------------------------------------------------------------------
