@@ -3869,10 +3869,24 @@ bool handleEvents(void)
 					break;
 				}
 #endif // USE_IMGUI
-				mousestatus[event.button.button] = 1; // set this mouse button to 1
-				Input::mouseButtons[event.button.button] = 1;
-				Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
-				lastkeypressed = 282 + event.button.button;
+#ifdef APPLE
+                if ((keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]) && event.button.button == SDL_BUTTON_LEFT) {
+                    mousestatus[SDL_BUTTON_RIGHT] = 1;
+                    Input::mouseButtons[SDL_BUTTON_RIGHT] = 1;
+                    Input::lastInputOfAnyKind = "Mouse2";
+                    lastkeypressed = 284;
+                } else {
+                    mousestatus[event.button.button] = 1; // set this mouse button to 1
+                    Input::mouseButtons[event.button.button] = 1;
+                    Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
+                    lastkeypressed = 282 + event.button.button;
+                }
+#else
+                mousestatus[event.button.button] = 1; // set this mouse button to 1
+                Input::mouseButtons[event.button.button] = 1;
+                Input::lastInputOfAnyKind = std::string("Mouse") + std::to_string(event.button.button);
+                lastkeypressed = 282 + event.button.button;
+#endif
 				break;
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
 			    if (demo_mode == DemoMode::PLAYING) {
@@ -3891,6 +3905,10 @@ bool handleEvents(void)
 						}
 					}
 				}
+#ifdef APPLE
+                mousestatus[SDL_BUTTON_RIGHT] = 0;
+                Input::mouseButtons[SDL_BUTTON_RIGHT] = 0;
+#endif
 				break;
 			case SDL_MOUSEWHEEL:
 			    if (demo_mode == DemoMode::PLAYING) {
