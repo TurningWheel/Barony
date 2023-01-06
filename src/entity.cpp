@@ -14844,7 +14844,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
 						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
 				}
-				if (target.behavior == &actPlayer)
+				if (target.behavior == &actPlayer && targetStats->type != HUMAN && targetStats->type != AUTOMATON )
 				{
 					steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 				}
