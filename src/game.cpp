@@ -2382,6 +2382,9 @@ void gameLogic(void)
 
                     // save at end of level change
 					saveGame();
+#ifdef LOCAL_ACHIEVEMENTS
+					LocalAchievements_t::writeToFile();
+#endif
 					break;
 				}
 			}

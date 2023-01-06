@@ -2174,6 +2174,9 @@ static void changeLevel() {
 	}
 
 	saveGame();
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements_t::writeToFile();
+#endif
 	printlog("Done.\n");
 
 	if ( !strncmp(map.name, "Mages Guild", 11) )

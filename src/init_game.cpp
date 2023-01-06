@@ -506,7 +506,9 @@ int initGame()
 		}
 
 		loadAchievementData("/data/achievements.json");
-
+#ifdef LOCAL_ACHIEVEMENTS
+		LocalAchievements.readFromFile();
+#endif
 #ifdef NINTENDO
 		nxPostSDLInit();
 #endif
@@ -574,7 +576,10 @@ void deinitGame()
 	    }
 	}
 
-	UIToastNotificationManager.term();
+	UIToastNotificationManager.term(true);
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements_t::writeToFile();
+#endif
 
 	saveAllScores(SCORESFILE);
 	saveAllScores(SCORESFILE_MULTIPLAYER);

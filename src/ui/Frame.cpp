@@ -184,7 +184,7 @@ void Frame::guiDestroy() {
 	}
 	minimapFrame = nullptr; // shared minimap
 
-	UIToastNotificationManager.term();
+	UIToastNotificationManager.term(false);
 #endif
 
 	if (gui) {
