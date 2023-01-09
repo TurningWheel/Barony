@@ -48,7 +48,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 
 		// loading bar
 		auto loading_bar = loading_frame->addFrame("loading_bar");
-		loading_bar->setSize(SDL_Rect{60, 474, 1168, 228});
+		loading_bar->setSize(SDL_Rect{(Frame::virtualScreenX - 1168) / 2, Frame::virtualScreenY - (720 - 474), 1168, 228});
 		{
 			// background
 			auto background = loading_bar->addImage(

@@ -463,3 +463,9 @@ private:
 // root frame object
 extern Frame* gui;
 void createTestUI();
+extern int uiDefaultHeight;
+
+#ifndef EDITOR
+#include "../interface/consolecommand.hpp"
+extern ConsoleVariable<bool> ui_filter;
+#endif
