@@ -1400,189 +1400,233 @@ void drawClearBuffers()
 
 -------------------------------------------------------------------------------*/
 
-void raycast(view_t* camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
+#include <future>
+
+#ifndef EDITOR
+#include "net.hpp"
+#endif
+
+void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 {
-	long posx, posy;
-	real_t fracx, fracy;
-	long inx, iny, inx2, iny2;
-	real_t rx, ry;
-	real_t d, dstart, dend;
-	long sx;
-	real_t arx, ary;
-	long dincx, dincy;
-	real_t dval0, dval1;
+    // originally we cast a ray for every column of pixels in the
+    // camera viewport. now we just shoot out a few hundred rays to
+    // save time. this makes this function less accurate at distance,
+    // but that's good enough!
+#ifdef EDITOR
+    static constexpr int NumRays = 200;
+    static constexpr int NumRaysPerJob = 50;
+    static constexpr bool DoRaysInParallel = true;
+    static constexpr bool WriteOutsSequentially = false;
+#else
+    static ConsoleVariable<int> cvar_numRays("/raycast_num", 200);
+    static ConsoleVariable<int> cvar_numRaysPerJob("/raycast_num_per_job", 50);
+    static ConsoleVariable<bool> cvar_parallelRays("/raycast_multithread", true);
+    static ConsoleVariable<bool> cvar_writeOutsSequentially("/raycast_write_outs_sequentially", false);
+    
+    static int NumRays;
+    NumRays = *cvar_numRays;
+    static int NumRaysPerJob;
+    NumRaysPerJob = *cvar_numRaysPerJob;
+    static bool DoRaysInParallel;
+    DoRaysInParallel = *cvar_parallelRays;
+    static bool WriteOutsSequentially;
+    WriteOutsSequentially = *cvar_writeOutsSequentially;
+    
+    static bool TimeTest = false;
+    static ConsoleCommand ccmd_raycastTime("/raycast_time", "Time the raycast() function", [](int argc, const char** argv){
+        TimeTest = true;
+    });
+#endif
+    
+    // ray shooting functor
+    struct outs_t {
+        int x;
+        int y;
+        int value;
+    };
+    struct ins_t {
+        const int sx;
+        const int mw;
+        const int mh;
+        const view_t camera;
+        const Sint32* tiles;
+        const Sint32* lights;
+        Sint8 (*minimap)[MINIMAP_MAX_DIMENSION];
+    };
+    auto shoot_ray = [](const ins_t&& ins) -> std::vector<outs_t>{
+        std::vector<outs_t> result;
+        
+        const int& mw = ins.mw;
+        const int& mh = ins.mh;
+        const view_t& camera = ins.camera;
+        const auto& tiles = ins.tiles;
+        const auto& lights = ins.lights;
+        const auto& minimap = ins.minimap;
+        
+        const int posx = (int)camera.x;
+        const int posy = (int)camera.y; // integer coordinates
+        const real_t fracx = camera.x - posx;
+        const real_t fracy = camera.y - posy; // fraction coordinates
 
-	Uint8 light;
-	Sint32 z;
-	bool zhit[MAPLAYERS], wallhit;
+        const real_t wfov = (fov * camera.winw / camera.winh) * PI / 180.f;
+        constexpr real_t dstart = CLIPNEAR / 16.0;
+        constexpr real_t dend = CLIPFAR / 16;
+        
+        for (int sx = ins.sx; sx < ins.sx + NumRaysPerJob; ++sx) {
+            int inx = posx;
+            int iny = posy;
+            int inx2 = inx;
+            int iny2 = iny;
+            
+            // new ray vector for next column
+            const real_t rx = cos(camera.ang - wfov / 2.f + (wfov / NumRays) * sx);
+            const real_t ry = sin(camera.ang - wfov / 2.f + (wfov / NumRays) * sx);
+            const real_t arx = rx ? 1.0 / fabs(rx) : 0.0;
+            const real_t ary = ry ? 1.0 / fabs(ry) : 0.0;
+            
+            // dval0=dend+1 is there to prevent infinite loops when ray is parallel to axis
+            long dincx = 0;
+            long dincy = 0;
+            real_t dval0 = 1e32;
+            real_t dval1 = 1e32;
+            
+            // calculate integer coordinate increments
+            // x-axis:
+            if (rx < 0) {
+                dincx = -1;
+                dval0 = fracx * arx;
+            } else if (rx > 0) {
+                dincx = 1;
+                dval0 = (1 - fracx) * arx;
+            }
+            
+            // y-axis:
+            if (ry < 0) {
+                dincy = -1;
+                dval1 = fracy * ary;
+            } else if (ry > 0) {
+                dincy = 1;
+                dval1 = (1 - fracy) * ary;
+            }
+            
+            real_t d = 0;
+            do {
+                // record previous ray position
+                inx2 = inx;
+                iny2 = iny;
+                
+                // move the ray one square forward
+                if (dval1 > dval0) {
+                    inx += dincx;
+                    d = dval0;
+                    dval0 += arx;
+                } else {
+                    iny += dincy;
+                    d = dval1;
+                    dval1 += ary;
+                }
+                
+                // check ray is within map bounds
+                if (inx < 0 || iny < 0 || inx >= mw || iny >= mh) {
+                    // out of map bounds
+                    break;
+                }
+                
+                // check against tiles in each map layer
+                bool zhit[MAPLAYERS] = { false };
+                for (int z = 0; z < MAPLAYERS; z++) {
+                    if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] && d > dstart) { // hit something solid
+                        zhit[z] = true;
+                        
+                        // collect light information
+                        if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]) {
+                            continue;
+                        }
+                        const Uint8 light = std::min(std::max(0, lights[iny2 + inx2 * mh]), 255);
+                        
+                        // update minimap
+                        if (d < 16 && z == OBSTACLELAYER) {
+                            if (light > 0) {
+                                // wall space
+                                if (WriteOutsSequentially) {
+                                    result.push_back({inx, iny, 2});
+                                } else {
+                                    minimap[iny][inx] = 2;
+                                }
+                            }
+                        }
+                    } else if (z == OBSTACLELAYER) {
+                        // update minimap to show empty region
+                        const Uint8 light = std::min(std::max(0, lights[iny + inx * mh]), 255);
+                        if (d < 16) {
+                            if (light > 0 && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                                // walkable space
+                                if (WriteOutsSequentially) {
+                                    result.push_back({inx, iny, 1});
+                                } else {
+                                    minimap[iny][inx] = 1;
+                                }
+                            } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                                // no floor
+                                if (WriteOutsSequentially) {
+                                    result.push_back({inx, iny, 0});
+                                } else {
+                                    minimap[iny][inx] = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // if a wall was hit (full column of map layers) stop the ray
+                bool wallhit = true;
+                for (int z = 0; z < MAPLAYERS; z++) {
+                    if (zhit[z] == false) {
+                        wallhit = false;
+                    }
+                }
+                if (wallhit == true) {
+                    break;
+                }
+            }
+            while (d < dend);
+        }
+        return result;
+    };
+    
+    auto t = std::chrono::high_resolution_clock::now();
 
-	posx = floor(camera->x);
-	posy = floor(camera->y); // integer coordinates
-	fracx = camera->x - posx;
-	fracy = camera->y - posy; // fraction coordinates
-
-	real_t wfov = (fov * camera->winw / camera->winh) * PI / 180.f;
-	dstart = CLIPNEAR / 16.0;
-
-	// ray vector
-	rx = cos(camera->ang - wfov / 2.f);
-	ry = sin(camera->ang - wfov / 2.f);
-
-	// originally we cast a ray for every column of pixels in the
-	// camera viewport. now we just shoot out 300 rays to save time.
-	// this makes this function less accurate at distance, but right
-	// now it's good enough!
-	static const int NUMRAYS = 300;
-
-	// TODO replace this with a simple line algorithm that performs
-	// a basic line check from the camera origin through every tile.
-
-	for ( sx = 0; sx < NUMRAYS; sx++ )
-	{
-		inx = posx;
-		iny = posy;
-		inx2 = inx;
-		iny2 = iny;
-
-		arx = 0;
-		if (rx)
-		{
-			arx = 1.0 / fabs(rx);  // distance increments
-		}
-		ary = 0;
-		if (ry)
-		{
-			ary = 1.0 / fabs(ry);
-		}
-
-		// dval0=dend+1 is there to prevent infinite loops when ray is parallel to axis
-		dincx = 0;
-		dval0 = 1e32;
-		dincy = 0;
-		dval1 = 1e32;
-
-		// calculate integer coordinate increments
-		// x-axis:
-		if (rx < 0)
-		{
-			dincx = -1;
-			dval0 = fracx * arx;
-		}
-		else if (rx > 0)
-		{
-			dincx = 1;
-			dval0 = (1 - fracx) * arx;
-		}
-
-		// y-axis:
-		if (ry < 0)
-		{
-			dincy = -1;
-			dval1 = fracy * ary;
-		}
-		else if (ry > 0)
-		{
-			dincy = 1;
-			dval1 = (1 - fracy) * ary;
-		}
-
-		d = 0;
-		dend = CLIPFAR / 16;
-		do
-		{
-			inx2 = inx;
-			iny2 = iny;
-
-			// move the ray one square forward
-			if (dval1 > dval0)
-			{
-				inx += dincx;
-				d = dval0;
-				dval0 += arx;
-			}
-			else
-			{
-				iny += dincy;
-				d = dval1;
-				dval1 += ary;
-			}
-
-			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
-			{
-				for ( z = 0; z < MAPLAYERS; z++ )
-				{
-					zhit[z] = false;
-					if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] && d > dstart )   // hit something solid
-					{
-						zhit[z] = true;
-
-						// collect light information
-						if ( inx2 >= 0 && iny2 >= 0 && inx2 < map.width && iny2 < map.height )
-						{
-							if ( map.tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * map.height] )
-							{
-								continue;
-							}
-							light = std::min(std::max(0, lightmap[iny2 + inx2 * map.height]), 255);
-						}
-						else
-						{
-							light = 128;
-						}
-
-						// update minimap
-						if ( d < 16 && z == OBSTACLELAYER )
-						{
-							if ( light > 0 )
-							{
-								minimap[iny][inx] = 2;  // wall space
-							}
-						}
-					}
-					else if ( z == OBSTACLELAYER )
-					{
-						// update minimap to show empty region
-						if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
-						{
-							light = std::min(std::max(0, lightmap[iny + inx * map.height]), 255);
-						}
-						else
-						{
-							light = 128;
-						}
-						if ( d < 16 )
-						{
-							if ( light > 0 && map.tiles[iny * MAPLAYERS + inx * MAPLAYERS * map.height] )
-							{
-								minimap[iny][inx] = 1;  // walkable space
-							}
-							else if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] )
-							{
-								minimap[iny][inx] = 0;  // no floor
-							}
-						}
-					}
-				}
-				wallhit = true;
-				for ( z = 0; z < MAPLAYERS; z++ )
-				{
-					if ( zhit[z] == false )
-					{
-						wallhit = false;
-					}
-				}
-				if ( wallhit == true )
-				{
-					break;
-				}
-			}
-		}
-		while (d < dend);
-
-		// new ray vector for next column
-		rx = cos(camera->ang - wfov / 2.f + (wfov / NUMRAYS) * sx);
-		ry = sin(camera->ang - wfov / 2.f + (wfov / NUMRAYS) * sx);
-	}
+    // shoot the rays
+    if (DoRaysInParallel) {
+        std::vector<std::future<std::vector<outs_t>>> tasks;
+        for (int x = 0; x < NumRays; x += NumRaysPerJob) {
+            tasks.emplace_back(std::async(std::launch::async, shoot_ray,
+                ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap}));
+        }
+        for (int x = (int)tasks.size() - 1; x >= 0; --x) {
+            auto out_list = tasks[x].get();
+            for (auto& it : out_list) {
+                minimap[it.y][it.x] = it.value;
+            }
+            tasks.pop_back();
+        }
+    } else {
+        for (int x = 0; x < NumRays; x += NumRaysPerJob) {
+            auto out_list = shoot_ray(ins_t{x, (int)map.width, (int)map.height, camera, map.tiles, lightmap, minimap});
+            for (auto& it : out_list) {
+                minimap[it.y][it.x] = it.value;
+            }
+        }
+    }
+    
+#ifndef EDITOR
+    if (TimeTest) {
+        TimeTest = false;
+        auto duration = std::chrono::high_resolution_clock::now() - t;
+        auto timer = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+        messageLocalPlayers(MESSAGE_DEBUG, "Raycast took ~%llu microseconds", timer);
+    }
+#endif
 }
 
 /*-------------------------------------------------------------------------------

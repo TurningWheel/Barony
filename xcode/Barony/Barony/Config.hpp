@@ -5,6 +5,7 @@
 #define STEAMWORKS
 #define USE_EOS
 #define USE_THEORA_PLAYER
+#define GL_SILENCE_DEPRECATION
 //#define USE_IMGUI
 #endif
 
