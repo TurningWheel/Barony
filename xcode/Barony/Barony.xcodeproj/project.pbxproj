@@ -8,10 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		844D4A262925E64C005907BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844D4A252925E64C005907BA /* Assets.xcassets */; };
-		844D4A32292724C8005907BA /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; };
-		844D4A33292724C8005907BA /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		844D4A35292724D4005907BA /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; };
-		844D4A36292724D4005907BA /* libphysfs.3.0.2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; };
 		844D4A3D292724FE005907BA /* SDL2.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -59,16 +55,20 @@
 		844D4A70292728A1005907BA /* buttons.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 844D4A69292728A1005907BA /* buttons.cpp */; };
 		844D4A7129272AE7005907BA /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA4D291F78CD0084EAD5 /* input.cpp */; };
 		844D4A7229272B06005907BA /* mod_tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C3DA84291F78F10084EAD5 /* mod_tools.cpp */; };
-		845F4BB429202FE600D6B9D7 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; };
-		845F4BB629202FF600D6B9D7 /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; };
-		845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84B7E17F2920290E00D1F0C5 /* libfmod.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		845F4BC32920302F00D6B9D7 /* SDL2_image.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84C3D8F4291F5DEB0084EAD5 /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		845F4BC42920302F00D6B9D7 /* SDL2_net.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84C3D8F5291F5DEB0084EAD5 /* SDL2_net.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84C3D8F3291F5DEB0084EAD5 /* SDL2_ttf.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84C3D8F1291F5D370084EAD5 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		845F4BB92920302F00D6B9D7 /* libfmod.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84B7E17F2920290E00D1F0C5 /* libfmod.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		845F4BC32920302F00D6B9D7 /* SDL2_image.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F4291F5DEB0084EAD5 /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		845F4BC42920302F00D6B9D7 /* SDL2_net.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F5291F5DEB0084EAD5 /* SDL2_net.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F3291F5DEB0084EAD5 /* SDL2_ttf.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		845F4BC62920302F00D6B9D7 /* SDL2.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F1291F5D370084EAD5 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		845F4BCD292051C000D6B9D7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 845F4BCC292051C000D6B9D7 /* Assets.xcassets */; };
+		8473FAE9296BDE0600C199A3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8473FAE8296BDE0600C199A3 /* libpng16.16.dylib */; };
+		8473FAEB296BDE1A00C199A3 /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8473FAEA296BDE1A00C199A3 /* libphysfs.3.0.2.dylib */; };
+		8473FAED296BDE3600C199A3 /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8473FAEC296BDE3600C199A3 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		8473FAEF296BDE4800C199A3 /* libphysfs.3.0.2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8473FAEE296BDE4800C199A3 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		849EEE27296BE7A900D29059 /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 849EEE26296BE7A900D29059 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		849EEE29296BE7BE00D29059 /* libphysfs.3.0.2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 849EEE28296BE7BE00D29059 /* libphysfs.3.0.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		849EEE2A296BE7D000D29059 /* libphysfs.3.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 849EEE28296BE7BE00D29059 /* libphysfs.3.0.2.dylib */; };
+		849EEE2B296BE7DA00D29059 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 849EEE26296BE7A900D29059 /* libpng16.16.dylib */; };
 		84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84B7E17F2920290E00D1F0C5 /* libfmod.dylib */; };
 		84C3D8F2291F5D370084EAD5 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3D8F1291F5D370084EAD5 /* SDL2.framework */; };
 		84C3D8F6291F5DEB0084EAD5 /* SDL2_ttf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3D8F3291F5DEB0084EAD5 /* SDL2_ttf.framework */; };
@@ -227,17 +227,17 @@
 		84C3DB31292028790084EAD5 /* lang in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2E292028790084EAD5 /* lang */; };
 		84C3DB32292028790084EAD5 /* playernames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84C3DB2F292028790084EAD5 /* playernames-female.txt */; };
 		84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; };
-		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		84F710642923280D00AE0D03 /* libsteam_api.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7105F292327D900AE0D03 /* libsteam_api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71061292327F100AE0D03 /* libEOSSDK-Mac-Shipping.dylib */; };
 		84F7108D292350C500AE0D03 /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; };
 		84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; };
 		84F7108F292350C500AE0D03 /* Theora.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; };
 		84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; };
-		84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71091292350DA00AE0D03 /* Ogg.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7108A292350C500AE0D03 /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71092292350DA00AE0D03 /* Theora.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7108B292350C500AE0D03 /* Theora.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71093292350DA00AE0D03 /* theoraplayer.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F7108C292350C500AE0D03 /* theoraplayer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		84F71094292350DA00AE0D03 /* Vorbis.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84F71089292350C500AE0D03 /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		84F7109A29236B0600AE0D03 /* steam_appid.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84F7109929236B0600AE0D03 /* steam_appid.txt */; };
 /* End PBXBuildFile section */
 
@@ -258,36 +258,37 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				8473FAEF296BDE4800C199A3 /* libphysfs.3.0.2.dylib in Embed Libraries */,
+				8473FAED296BDE3600C199A3 /* libpng16.16.dylib in Embed Libraries */,
 				844D4A3F292724FE005907BA /* SDL2_ttf.framework in Embed Libraries */,
 				844D4A3D292724FE005907BA /* SDL2.framework in Embed Libraries */,
-				844D4A36292724D4005907BA /* libphysfs.3.0.2.dylib in Embed Libraries */,
 				844D4A43292724FF005907BA /* SDL2_image.framework in Embed Libraries */,
-				844D4A33292724C8005907BA /* libpng16.16.dylib in Embed Libraries */,
 				844D4A41292724FF005907BA /* SDL2_net.framework in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		84B7FB4F29202F9200D1F0C5 /* CopyFiles */ = {
+		84B7FB4F29202F9200D1F0C5 /* Embed Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				84F71091292350DA00AE0D03 /* Ogg.framework in CopyFiles */,
-				84F71092292350DA00AE0D03 /* Theora.framework in CopyFiles */,
-				84F71093292350DA00AE0D03 /* theoraplayer.framework in CopyFiles */,
-				84F71094292350DA00AE0D03 /* Vorbis.framework in CopyFiles */,
-				845F4BC62920302F00D6B9D7 /* SDL2.framework in CopyFiles */,
-				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in CopyFiles */,
-				845F4BC32920302F00D6B9D7 /* SDL2_image.framework in CopyFiles */,
-				845F4BC42920302F00D6B9D7 /* SDL2_net.framework in CopyFiles */,
-				845F4BB92920302F00D6B9D7 /* libfmod.dylib in CopyFiles */,
-				845F4BB82920302F00D6B9D7 /* libpng16.16.dylib in CopyFiles */,
-				845F4BB72920302F00D6B9D7 /* libphysfs.3.0.2.dylib in CopyFiles */,
-				84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in CopyFiles */,
-				84F710642923280D00AE0D03 /* libsteam_api.dylib in CopyFiles */,
+				84F71091292350DA00AE0D03 /* Ogg.framework in Embed Libraries */,
+				84F71092292350DA00AE0D03 /* Theora.framework in Embed Libraries */,
+				84F71093292350DA00AE0D03 /* theoraplayer.framework in Embed Libraries */,
+				84F71094292350DA00AE0D03 /* Vorbis.framework in Embed Libraries */,
+				845F4BC62920302F00D6B9D7 /* SDL2.framework in Embed Libraries */,
+				845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in Embed Libraries */,
+				845F4BC32920302F00D6B9D7 /* SDL2_image.framework in Embed Libraries */,
+				845F4BC42920302F00D6B9D7 /* SDL2_net.framework in Embed Libraries */,
+				849EEE29296BE7BE00D29059 /* libphysfs.3.0.2.dylib in Embed Libraries */,
+				849EEE27296BE7A900D29059 /* libpng16.16.dylib in Embed Libraries */,
+				845F4BB92920302F00D6B9D7 /* libfmod.dylib in Embed Libraries */,
+				84F710632923280500AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Embed Libraries */,
+				84F710642923280D00AE0D03 /* libsteam_api.dylib in Embed Libraries */,
 			);
+			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -310,7 +311,13 @@
 		845F4BB329202FE600D6B9D7 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../opt/homebrew/Cellar/libpng/1.6.38/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		845F4BB529202FF600D6B9D7 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = ../../../../../../opt/homebrew/Cellar/physfs/3.0.2/lib/libphysfs.3.0.2.dylib; sourceTree = "<group>"; };
 		845F4BCC292051C000D6B9D7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8473FAE8296BDE0600C199A3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../lpng1639/libpng16.16.dylib; sourceTree = "<group>"; };
+		8473FAEA296BDE1A00C199A3 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = "../../../physfs-3.0.2/build/libphysfs.3.0.2.dylib"; sourceTree = "<group>"; };
+		8473FAEC296BDE3600C199A3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../lpng1639/libpng16.16.dylib; sourceTree = "<group>"; };
+		8473FAEE296BDE4800C199A3 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = "../../../physfs-3.0.2/build/libphysfs.3.0.2.dylib"; sourceTree = "<group>"; };
 		847E18F729239843003BD4E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = Barony/Info.plist; sourceTree = "<group>"; };
+		849EEE26296BE7A900D29059 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../lpng1639/libpng16.16.dylib; sourceTree = "<group>"; };
+		849EEE28296BE7BE00D29059 /* libphysfs.3.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.3.0.2.dylib; path = "../../../physfs-3.0.2/build/libphysfs.3.0.2.dylib"; sourceTree = "<group>"; };
 		84B7E17F2920290E00D1F0C5 /* libfmod.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfmod.dylib; path = ../../../fmod/api/core/lib/libfmod.dylib; sourceTree = "<group>"; };
 		84C3D6DF291F429B0084EAD5 /* Barony.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Barony.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84C3D8F1291F5D370084EAD5 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/SDL2.framework; sourceTree = "<group>"; };
@@ -484,8 +491,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				844D4A35292724D4005907BA /* libphysfs.3.0.2.dylib in Frameworks */,
-				844D4A32292724C8005907BA /* libpng16.16.dylib in Frameworks */,
+				8473FAEB296BDE1A00C199A3 /* libphysfs.3.0.2.dylib in Frameworks */,
+				8473FAE9296BDE0600C199A3 /* libpng16.16.dylib in Frameworks */,
 				844D4A42292724FF005907BA /* SDL2_image.framework in Frameworks */,
 				844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */,
 				844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */,
@@ -507,9 +514,9 @@
 				84F71090292350C500AE0D03 /* theoraplayer.framework in Frameworks */,
 				84C3D8F8291F5DEB0084EAD5 /* SDL2_net.framework in Frameworks */,
 				84F7108E292350C500AE0D03 /* Ogg.framework in Frameworks */,
+				849EEE2A296BE7D000D29059 /* libphysfs.3.0.2.dylib in Frameworks */,
+				849EEE2B296BE7DA00D29059 /* libpng16.16.dylib in Frameworks */,
 				84B7E1802920290E00D1F0C5 /* libfmod.dylib in Frameworks */,
-				845F4BB429202FE600D6B9D7 /* libpng16.16.dylib in Frameworks */,
-				845F4BB629202FF600D6B9D7 /* libphysfs.3.0.2.dylib in Frameworks */,
 				84F7106529232BB100AE0D03 /* libEOSSDK-Mac-Shipping.dylib in Frameworks */,
 				84F71060292327D900AE0D03 /* libsteam_api.dylib in Frameworks */,
 			);
@@ -530,6 +537,10 @@
 		84C3D6D6291F429B0084EAD5 = {
 			isa = PBXGroup;
 			children = (
+				849EEE28296BE7BE00D29059 /* libphysfs.3.0.2.dylib */,
+				849EEE26296BE7A900D29059 /* libpng16.16.dylib */,
+				8473FAEE296BDE4800C199A3 /* libphysfs.3.0.2.dylib */,
+				8473FAEC296BDE3600C199A3 /* libpng16.16.dylib */,
 				844D4A69292728A1005907BA /* buttons.cpp */,
 				844D4A67292728A1005907BA /* cursors.cpp */,
 				844D4A68292728A1005907BA /* editor.cpp */,
@@ -710,6 +721,8 @@
 		84C3D8F0291F5D370084EAD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8473FAEA296BDE1A00C199A3 /* libphysfs.3.0.2.dylib */,
+				8473FAE8296BDE0600C199A3 /* libpng16.16.dylib */,
 				844D4A3B292724FE005907BA /* SDL2_image.framework */,
 				844D4A3A292724FE005907BA /* SDL2_net.framework */,
 				844D4A39292724FE005907BA /* SDL2_ttf.framework */,
@@ -761,7 +774,7 @@
 				84C3D6DB291F429B0084EAD5 /* Sources */,
 				84C3D6DC291F429B0084EAD5 /* Frameworks */,
 				84C3D6DD291F429B0084EAD5 /* Resources */,
-				84B7FB4F29202F9200D1F0C5 /* CopyFiles */,
+				84B7FB4F29202F9200D1F0C5 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -1047,7 +1060,7 @@
 		844D4A2B2925E64C005907BA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
@@ -1069,9 +1082,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
-					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
@@ -1083,14 +1096,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/**",
-					/opt/homebrew/Cellar/libpng/1.6.38/lib,
-					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1103,7 +1115,7 @@
 		844D4A2C2925E64C005907BA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
@@ -1125,9 +1137,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
-					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
@@ -1139,14 +1151,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/**",
-					/opt/homebrew/Cellar/libpng/1.6.38/lib,
-					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1269,7 +1280,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -1291,9 +1302,9 @@
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
-					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
@@ -1316,14 +1327,13 @@
 				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/**",
-					/opt/homebrew/Cellar/libpng/1.6.38/lib,
-					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1343,7 +1353,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
@@ -1367,9 +1377,9 @@
 				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/Cellar/libpng/1.6.38/include,
 					/opt/homebrew/Cellar/rapidjson/1.1.0/include,
-					/opt/homebrew/Cellar/physfs/3.0.2/include,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/src\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/inc\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Include\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/public\"",
@@ -1392,14 +1402,13 @@
 				);
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/**",
-					/opt/homebrew/Cellar/libpng/1.6.38/lib,
-					/opt/homebrew/Cellar/physfs/3.0.2/lib,
+					"\"$(SRCROOT)/../../../lpng1639\"",
+					"\"$(SRCROOT)/../../../physfs-3.0.2/build\"",
 					"\"$(SRCROOT)/../../../fmod/api/core/lib\"",
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
