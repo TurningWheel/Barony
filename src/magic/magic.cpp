@@ -1650,6 +1650,10 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	            DUMMYBOT
 	        };
 			typesToSkip.insert(targetStats->type);
+			if ( target->monsterAllyGetPlayerLeader() )
+			{
+				typesToSkip.insert(SHADOW);
+			}
 
 			std::vector<Monster> possibleTypes;
 			for ( int i = 0; i < NUMMONSTERS; ++i )
