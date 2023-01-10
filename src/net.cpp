@@ -4761,17 +4761,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			strcpy((char*)net_packet->data, "ITMU");
 			SDLNet_Write32(uid, &net_packet->data[4]);
 
-			Uint32 itemTypeAndIdentified = (static_cast<Uint16>(entity->skill[10]) << 16); // type
-			itemTypeAndIdentified |= static_cast<Uint16>(entity->skill[15]); // identified
+			Uint32 itemTypeAndIdentified = ((static_cast<Uint16>(entity->skill[10]) & 0xFFFF) << 16); // type
+			itemTypeAndIdentified |= (static_cast<Uint16>(entity->skill[15]) & 0xFFFF); // identified
 
 			SDLNet_Write32(itemTypeAndIdentified, &net_packet->data[8]);
 
 			Uint32 statusBeatitudeQuantityAppearance = 0;
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[11]) << 24); // status
-			statusBeatitudeQuantityAppearance |= (static_cast<Sint8>(entity->skill[12]) << 16); // beatitude
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[13]) << 8); // quantity
+			statusBeatitudeQuantityAppearance |= ((static_cast<Uint8>(entity->skill[11]) & 0xFF) << 24); // status
+			statusBeatitudeQuantityAppearance |= ((static_cast<Sint8>(entity->skill[12]) & 0xFF) << 16); // beatitude
+			statusBeatitudeQuantityAppearance |= ((static_cast<Uint8>(entity->skill[13]) & 0xFF) << 8); // quantity
 			Uint8 appearance = entity->skill[14] % items[entity->skill[10]].variations;
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance)); // appearance
+			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance) & 0xFF); // appearance
 
 			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
 
