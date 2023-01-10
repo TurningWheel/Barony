@@ -7809,7 +7809,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
 							{
-								damage *= amount; // Parashu sometimes multiplier damage
+								if ( !shapeshifted )
+								{
+									damage *= amount; // Parashu sometimes multiplier damage
+								}
 								parashuProc = true;
 							}
 						}
