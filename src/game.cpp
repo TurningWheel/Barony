@@ -2620,7 +2620,7 @@ void gameLogic(void)
 							break;
 					}
 
-					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -3194,7 +3194,7 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == VAMPIRE && stats[clientnum]->appearance == 0 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->appearance == 0 )
 				{
 					bloodCount += item->count;
 					if ( bloodCount >= 20 )
