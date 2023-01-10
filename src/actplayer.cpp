@@ -2917,20 +2917,27 @@ void actPlayer(Entity* my)
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_7] )
 		{
 			keystatus[SDLK_KP_7] = 0;
+			consoleCommand("/disable_controller_reconnect true");
 			consoleCommand("/splitscreen");
 		}
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_8] )
 		{
 			keystatus[SDLK_KP_8] = 0;
-			if ( !players[PLAYER_NUM]->inventoryUI.chestGUI.bOpen )
+			consoleCommand("/disable_controller_reconnect true");
+			consoleCommand("/splitscreen 2");
+		}
+		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_6] )
+		{
+			keystatus[SDLK_KP_6] = 0;
+			if ( keystatus[SDLK_LALT] )
 			{
-				players[PLAYER_NUM]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
-				players[PLAYER_NUM]->inventoryUI.chestGUI.openChest();
+				consoleCommand("/split_clipped false");
 			}
 			else
 			{
-				players[PLAYER_NUM]->inventoryUI.chestGUI.closeChest();
+				consoleCommand("/split_clipped true");
 			}
+			consoleCommand("/split_refresh");
 		}
 	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_9] )
 	    {
