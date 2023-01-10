@@ -4795,6 +4795,19 @@ const bool Player::usingCommand() const
 	return false;
 }
 
+const bool Player::bAlignGUINextToInventoryCompact() const
+{
+	if ( shopGUI.bOpen )
+	{
+		return false;
+	}
+	if ( bUseCompactGUIHeight() && !bUseCompactGUIWidth() )
+	{
+		return true;
+	}
+	return false;
+}
+
 std::vector<std::pair<std::string, std::string>> Player::Minimap_t::mapDetails;
 
 void Inputs::setMouse(const int player, MouseInputs input, Sint32 value)

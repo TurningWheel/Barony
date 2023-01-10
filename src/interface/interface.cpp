@@ -11308,6 +11308,10 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		players[playernum]->camera_virtualHeight() });
 
 	bool bConstructDrawerOpen = isConstructMenuActive();
+	if ( !bConstructDrawerOpen )
+	{
+		drawerJustifyInverted = false;
+	}
 
 	if ( !tinkerFrame->isDisabled() && bOpen )
 	{
@@ -11393,6 +11397,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		animFilter = std::max(0.0, animFilter);
 	}
 
+	bool reversed = false;
 	auto tinkerFramePos = tinkerFrame->getSize();
 	if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
@@ -11411,7 +11416,15 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		}
 		else
 		{
-			tinkerFramePos.x = player->camera_virtualWidth() - animx * tinkerFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
+				tinkerFramePos.x = -tinkerFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				tinkerFramePos.x = player->camera_virtualWidth() - animx * tinkerFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -11424,10 +11437,11 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 	else if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
 	{
+		reversed = true;
 		if ( !player->inventoryUI.bCompactView )
 		{
 			const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
-			tinkerFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			tinkerFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -11439,7 +11453,15 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		}
 		else
 		{
-			tinkerFramePos.x = -tinkerFramePos.w + animx * tinkerFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = tinkerFramePos.w + 210; // inventory width 210
+				tinkerFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				tinkerFramePos.x = -tinkerFramePos.w + animx * tinkerFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -11450,6 +11472,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			}
 		}
 	}
+	drawerJustifyInverted = reversed;
 
 	if ( !player->bUseCompactGUIHeight() )
 	{
@@ -11481,11 +11504,21 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		drawerFrame->setDisabled(!bConstructDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
 		const int widthDifference = animDrawer * (drawerFramePos.w);
-		drawerFramePos.x = 0;
+		if ( drawerJustifyInverted )
+		{
+			drawerFramePos.x = baseFramePos.x + baseFramePos.w + animDrawer * (drawerFramePos.w) - (drawerFramePos.w);
+		}
+		else
+		{
+			drawerFramePos.x = 0;
+		}
 		drawerFramePos.y = 18;
 		drawerFrame->setSize(drawerFramePos);
 
-		tinkerFramePos.x -= widthDifference;
+		if ( !drawerJustifyInverted )
+		{
+			tinkerFramePos.x -= widthDifference;
+		}
 		int adjustx = 0;
 		if ( tinkerFramePos.x < 0 )
 		{
@@ -11495,8 +11528,10 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		tinkerFramePos.w += (widthDifference);
 		tinkerFramePos.h = std::max(drawerFramePos.y + drawerFramePos.h, baseFramePos.y + baseFramePos.h);
 		tinkerFrame->setSize(tinkerFramePos);
-
-		baseFramePos.x = tinkerFramePos.w - baseFramePos.w;
+		if ( !drawerJustifyInverted )
+		{
+			baseFramePos.x = tinkerFramePos.w - baseFramePos.w;
+		}
 		baseFrame->setSize(baseFramePos);
 	}
 
@@ -13889,7 +13924,15 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else
 		{
-			alchFramePos.x = player->camera_virtualWidth() - animx * alchFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = alchFramePos.w + 210; // inventory width 210
+				alchFramePos.x = -alchFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				alchFramePos.x = player->camera_virtualWidth() - animx * alchFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -13905,7 +13948,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		if ( !player->inventoryUI.bCompactView )
 		{
 			const int fullWidth = alchFramePos.w + 210; // inventory width 210
-			alchFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			alchFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -13917,7 +13960,15 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else
 		{
-			alchFramePos.x = -alchFramePos.w + animx * alchFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = alchFramePos.w + 210; // inventory width 210
+				alchFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				alchFramePos.x = -alchFramePos.w + animx * alchFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -14056,6 +14107,15 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		if ( !player->inventoryUI.bCompactView )
 		{
 			if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+			{
+				alchFramePos.w += recipePos.w;
+				alchFrame->setSize(alchFramePos);
+			}
+		}
+		else
+		{
+			if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT
+				&& player->bAlignGUINextToInventoryCompact() )
 			{
 				alchFramePos.w += recipePos.w;
 				alchFrame->setSize(alchFramePos);
@@ -17539,7 +17599,7 @@ void GenericGUIMenu::FeatherGUI_t::closeFeatherMenu()
 
 const int featherBaseWidth = 334;
 const int featherBaseHeight = 358;
-const int featherDrawerWidth = 210;
+const int featherDrawerWidth = 214;
 int GenericGUIMenu::FeatherGUI_t::heightOffsetWhenNotCompact = 150;
 
 void onFeatherChangeTabAction(const int playernum, bool changingToNewTab)
@@ -17620,6 +17680,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		players[playernum]->camera_virtualHeight() });
 
 	bool bFeatherDrawerOpen = isInscriptionDrawerOpen();
+	if ( !bFeatherDrawerOpen )
+	{
+		drawerJustifyInverted = false;
+	}
 
 	if ( !featherFrame->isDisabled() && bOpen )
 	{
@@ -17698,6 +17762,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		animFilter = std::max(0.0, animFilter);
 	}
 
+	bool reversed = false;
 	auto featherFramePos = featherFrame->getSize();
 	if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
@@ -17716,7 +17781,15 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 		else
 		{
-			featherFramePos.x = player->camera_virtualWidth() - animx * featherFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = featherFramePos.w + 210/* + (40 * (1.0 - animFilter))*/; // inventory width 210
+				featherFramePos.x = -featherFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				featherFramePos.x = player->camera_virtualWidth() - animx * featherFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -17729,10 +17802,11 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	}
 	else if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
 	{
+		reversed = true;
 		if ( !player->inventoryUI.bCompactView )
 		{
 			const int fullWidth = featherFramePos.w + 210 /*+ (40 * (1.0 - animFilter))*/; // inventory width 210
-			featherFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			featherFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -17744,7 +17818,15 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 		else
 		{
-			featherFramePos.x = -featherFramePos.w + animx * featherFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = featherFramePos.w + 210 /*+ (40 * (1.0 - animFilter))*/; // inventory width 210
+				featherFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				featherFramePos.x = -featherFramePos.w + animx * featherFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -17755,6 +17837,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			}
 		}
 	}
+	drawerJustifyInverted = reversed;
 
 	int heightOffsetCompact = 0;
 	if ( !player->bUseCompactGUIHeight() )
@@ -17790,8 +17873,16 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		drawerFrame->setDisabled(!bFeatherDrawerOpen);
 		SDL_Rect drawerFramePos = drawerFrame->getSize();
-		const int widthDifference = animDrawer * (drawerFramePos.w - 2/* - 8*/);
-		drawerFramePos.x = 0;
+		const int widthDifference = animDrawer * (drawerFramePos.w - (drawerJustifyInverted ? 0 : 6)/* - 8*/);
+		if ( drawerJustifyInverted )
+		{
+			drawerFramePos.x = baseFramePos.x + baseFramePos.w + animDrawer * (drawerFramePos.w - 4) - (drawerFramePos.w);
+		}
+		else
+		{
+			drawerFramePos.x = 0;
+		}
+
 		if ( !player->bUseCompactGUIHeight() )
 		{
 			drawerFramePos.y = 54;
@@ -17802,7 +17893,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		}
 		drawerFrame->setSize(drawerFramePos);
 
-		featherFramePos.x -= widthDifference;
+		if ( !drawerJustifyInverted )
+		{
+			featherFramePos.x -= widthDifference;
+		}
 		int adjustx = 0;
 		if ( featherFramePos.x < 0 )
 		{
@@ -17812,8 +17906,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		featherFramePos.w += (widthDifference);
 		featherFramePos.h = std::max(drawerFramePos.y + drawerFramePos.h, baseFramePos.y + baseFramePos.h);
 		featherFrame->setSize(featherFramePos);
-
-		baseFramePos.x = featherFramePos.w - baseFramePos.w;
+		if ( !drawerJustifyInverted )
+		{
+			baseFramePos.x = featherFramePos.w - baseFramePos.w;
+		}
 		baseFrame->setSize(baseFramePos);
 	}
 
@@ -19151,7 +19247,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 		slider->setMinValue(0);
 		slider->setMaxValue(100);
 		slider->setValue(0);
-		SDL_Rect sliderPos{ featherDrawerWidth - 24, 50, 20, drawerPos.h - 44 - 50 };
+		SDL_Rect sliderPos{ featherDrawerWidth - 28, 50, 20, drawerPos.h - 44 - 50 };
 		slider->setRailSize(sliderPos);
 		slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
@@ -19216,7 +19312,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			sortBtn->setTickCallback(genericgui_deselect_fn);
 
 			auto closeBtn = drawerFrame->addButton("close drawer button");
-			SDL_Rect closeBtnPos{ drawerPos.w - 0 - 28, 4, 26, 26 };
+			SDL_Rect closeBtnPos{ drawerPos.w - 32, 4, 26, 26 };
 			closeBtn->setSize(closeBtnPos);
 			closeBtn->setColor(makeColor(255, 255, 255, 255));
 			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -20519,7 +20615,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		}
 		else
 		{
-			itemFxFramePos.x = player->camera_virtualWidth() - animx * itemFxFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = itemFxFramePos.w + 210; // inventory width 210
+				itemFxFramePos.x = -itemFxFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				itemFxFramePos.x = player->camera_virtualWidth() - animx * itemFxFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -20536,7 +20640,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		if ( !player->inventoryUI.bCompactView )
 		{
 			const int fullWidth = itemFxFramePos.w + 210; // inventory width 210
-			itemFxFramePos.x = player->camera_virtualWidth() - animx * fullWidth * 2;
+			itemFxFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )
@@ -20548,7 +20652,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		}
 		else
 		{
-			itemFxFramePos.x = -itemFxFramePos.w + animx * itemFxFramePos.w;
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = itemFxFramePos.w + 210; // inventory width 210
+				itemFxFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				itemFxFramePos.x = -itemFxFramePos.w + animx * itemFxFramePos.w;
+			}
 			if ( player->bUseCompactGUIWidth() )
 			{
 				if ( player->inventoryUI.slideOutPercent >= .0001 )

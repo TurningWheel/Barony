@@ -6938,8 +6938,9 @@ void Player::HUD_t::updateActionPrompts()
 	    }
 	}
 
-	if ( !bShowActionPrompts || playercount > 2 ||
-	    (playercount == 2 && *MainMenu::vertical_splitscreen) || *disableActionPrompts )
+	if ( !bShowActionPrompts || playercount > 2 
+		|| (playercount == 2 /*&& *MainMenu::vertical_splitscreen*/ && !player.shootmode) 
+		|| *disableActionPrompts )
 	{
 		actionPromptsFrame->setDisabled(true);
 		return;
@@ -24432,7 +24433,15 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool tempHideHotbar = false;
-	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)) 
+	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU 
+			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
+			|| (player.gui_mode == GUI_MODE_MAGIC)
+			|| (player.shopGUI.bOpen)
+			|| (player.inventoryUI.chestGUI.bOpen)
+			|| player.minimap.mapWindow
+			|| player.messageZone.logWindow
+			|| (GenericGUI[player.playernum].isGUIOpen())
+		) 
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideHotbar = true;
@@ -28415,6 +28424,13 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	auto baseBackgroundImg = baseFrame->findImage("chest base img");
 	auto lidBackgroundImg = baseFrame->findImage("chest lid img");
 
+	int playercount = 0;
+	for ( int c = 0; c < MAXPLAYERS; ++c ) {
+		if ( !client_disconnected[c] && players[c]->isLocalPlayer() ) {
+			++playercount;
+		}
+	}
+
 	if ( player.inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
 	{
 		if ( !player.inventoryUI.bCompactView )
@@ -28432,7 +28448,15 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		}
 		else
 		{
-			chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w;
+			if ( player.bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = chestFramePos.w + 210; // inventory width 210
+				chestFramePos.x = -chestFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				chestFramePos.x = player.camera_virtualWidth() - animx * chestFramePos.w;
+			}
 			if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )
@@ -28459,7 +28483,15 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 		}
 		else
 		{
-			chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w;
+			if ( player.bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = chestFramePos.w + 210; // inventory width 210
+				chestFramePos.x = player.camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				chestFramePos.x = -chestFramePos.w + animx * chestFramePos.w;
+			}
 			if ( player.bUseCompactGUIWidth() )
 			{
 				if ( player.inventoryUI.slideOutPercent >= .0001 )

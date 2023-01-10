@@ -2393,7 +2393,14 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				if ( GenericGUI[player].featherGUI.bOpen && GenericGUI[player].scribingToolItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				}
 			}
 			break;
 		case FOOD_BREAD:

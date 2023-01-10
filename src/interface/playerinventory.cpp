@@ -6774,9 +6774,10 @@ void Player::Inventory_t::updateInventory()
 		hideAndExit = true;
 	}
 
-	if ( (!chestFrame->isDisabled() && chestGUI.bOpen)
+	if ( !this->player.bAlignGUINextToInventoryCompact() &&
+		((!chestFrame->isDisabled() && chestGUI.bOpen)
 		|| (GenericGUI[player].isGUIOpen() && !(GenericGUI[player].itemfxGUI.bOpen))
-		|| shopGUI.bOpen )
+		|| shopGUI.bOpen) )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animPaperDollHide)) / 2.0;
@@ -8139,6 +8140,10 @@ void Player::Inventory_t::updateInventory()
 						else if ( justify == PANEL_JUSTIFY_RIGHT )
 						{
 							justify = PANEL_JUSTIFY_LEFT;
+						}
+						if ( this->player.bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+						{
+							justify = (justify == PANEL_JUSTIFY_RIGHT) ? PANEL_JUSTIFY_LEFT : PANEL_JUSTIFY_RIGHT;
 						}
 					}
 					if ( !bCompactView )
@@ -9657,8 +9662,8 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 	else if ( item->type == TOOL_TINKERING_KIT )
 	{
-		options.push_back(PROMPT_EQUIP);
 		options.push_back(PROMPT_TINKER);
+		options.push_back(PROMPT_EQUIP);
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}

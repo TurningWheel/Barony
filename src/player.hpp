@@ -655,6 +655,7 @@ public:
 	const bool isLocalPlayerAlive() const;
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
+	const bool bAlignGUINextToInventoryCompact() const; // if chest/shop etc appears alongside inventory as opposed to opposite of viewport in compact view
 	const bool usingCommand() const;
 	void clearGUIPointers();
 
