@@ -1767,6 +1767,10 @@ namespace ConsoleCommands {
 			return;
 		}
 		int numPlayers = 4;
+		if ( argc > 1 )
+		{
+			numPlayers = std::max(std::min(atoi(argv[1]), MAXPLAYERS), 2);
+		}
 		splitscreen = !splitscreen;
 
 		if (splitscreen)
