@@ -2175,7 +2175,7 @@ namespace MainMenu {
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
 		settings.environment_volume = 100.f;
-		settings.music_volume = 50.f;
+		settings.music_volume = 100.f;
 		settings.minimap_pings_enabled = true;
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
