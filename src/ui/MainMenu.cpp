@@ -16001,6 +16001,11 @@ bind_failed:
 #else
 		closeNetworkInterfaces();
 		directConnect = false;
+        
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
+        setHostname(buf);
+        
 #if defined(STEAMWORKS) && defined(USE_EOS)
 		if (LobbyHandler.crossplayEnabled) {
 			const char* prompt = "Would you like to host via\nEpic Online for crossplay?";

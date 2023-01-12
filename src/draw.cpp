@@ -1388,7 +1388,7 @@ void drawForeground(long camx, long camy)
 void drawClearBuffers()
 {
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	//drawRect(NULL, 0, 255);
+	drawRect(NULL, 0, 255);
 }
 
 /*-------------------------------------------------------------------------------
