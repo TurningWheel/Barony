@@ -13608,7 +13608,7 @@ bind_failed:
 #endif
 
             // lobby name
-            if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN && !directConnect) {
+            if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline || (type == LobbyType::LobbyJoined && !directConnect)) {
 		        auto text_box = banner->addImage(
 			        SDL_Rect{160, 10, 246, 36},
 			        0xffffffff,
@@ -13622,9 +13622,13 @@ bind_failed:
 		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+                
 #ifndef NINTENDO
-		        field->setEditable(type != LobbyType::LobbyJoined);
+                if (type == LobbyType::LobbyOnline) {
+                    field->setEditable(true);
+                }
 #endif
+                
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
 		        field->setSize(SDL_Rect{162, 14, 242, 28});
@@ -13655,15 +13659,19 @@ bind_failed:
 #endif // STEAMWORKS
                         }
 	                    });
-                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+                    if (directConnect) {
+                        field->setText(getHostname());
+                    } else {
+                        if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-                        field->setText(EOS.currentLobbyName);
+                            field->setText(EOS.currentLobbyName);
 #endif // USE_EOS
-                    }
-                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+                        }
+                        else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-                        field->setText(currentLobbyName);
+                            field->setText(currentLobbyName);
 #endif // STEAMWORKS
+                        }
                     }
                 }
                 field->setTickCallback([](Widget& widget){
@@ -13742,6 +13750,7 @@ bind_failed:
 						if (currentLobbyType == LobbyType::LobbyJoined) {
 							stringCopy(hostname, last_address, sizeof(hostname), sizeof(last_address));
 						} else {
+                            // this populates the (private) address field - not the lobby name!
 #ifdef NINTENDO
 							nxGetHostname(hostname, sizeof(hostname));
 #else
@@ -13797,7 +13806,7 @@ bind_failed:
 			    auto roomcode = banner->addField("roomcode", 128);
 			    roomcode->setHJustify(Field::justify_t::RIGHT);
 			    roomcode->setVJustify(Field::justify_t::CENTER);
-			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 260, 0, 256, 48});
+			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292, 0, 288, 48});
 		        roomcode->setFont(bigfont_outline);
 
 		        // privacy button
@@ -16029,6 +16038,10 @@ bind_failed:
 		soundActivate();
 		closeNetworkInterfaces();
 		directConnect = true;
+        
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
+        setHostname(buf);
 
 #ifdef NINTENDO
 		nxConnectToNetwork();
@@ -18501,8 +18514,13 @@ bind_failed:
 			if (!firstTimeTutorialPrompt()) {
 				soundActivate();
 			}
-#if defined(NINTENDO) && defined(USE_EOS)
+#ifdef NINTENDO
+#ifdef USE_EOS
 			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+#endif
+            char buf[32];
+            snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
+            setUsername(buf);
 #endif
 		    });
 		button->setTickCallback([](Widget& widget){
@@ -19752,5 +19770,26 @@ bind_failed:
             }
             });
 #endif
+    }
+                
+    /******************************************************************************/
+    
+    static std::string username;
+    static std::string hostname;
+    
+    const char* getUsername() {
+        return username.c_str();
+    }
+    
+    const char* getHostname() {
+        return hostname.c_str();
+    }
+    
+    void setUsername(const char* name) {
+        username = name;
+    }
+    
+    void setHostname(const char* name) {
+        hostname = name;
     }
 }

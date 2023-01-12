@@ -1297,10 +1297,8 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 		}
 
 		EOS_Connect_UserLoginInfo Info;
-		char buf[1024];
-		nxGetUsername(buf, sizeof(buf));
 		Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
-		Info.DisplayName = buf;
+		Info.DisplayName = MainMenu::getUsername();
 
 		EOS_Connect_LoginOptions Options;
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
@@ -3279,10 +3277,8 @@ static void nxTokenRequest()
 	Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN; // change this to steam etc for different account providers.
 
 	EOS_Connect_UserLoginInfo Info;
-	char buf[1024];
-	nxGetUsername(buf, sizeof(buf));
 	Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
-	Info.DisplayName = buf;
+	Info.DisplayName = MainMenu::getUsername();
 
 	EOS_Connect_LoginOptions Options;
 	Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;

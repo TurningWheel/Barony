@@ -73,6 +73,11 @@ namespace MainMenu {
 		HallOfTrials,
 	};
 
+    const char* getUsername();              // get local account name
+    const char* getHostname();              // get local host name
+    void setUsername(const char* name);     // set local account name
+    void setHostname(const char* name);     // set local hostname
+
 	int getMenuOwner();					// get current pause menu owner
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot
 	bool isPlayerSlotLocked(int index);	// checks whether a player slot has been locked out for joining
