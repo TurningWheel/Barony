@@ -779,6 +779,11 @@ public:
 			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
 			EOS_Platform_SetNetworkStatus(PlatformHandle, status);
 		}
+#ifdef NINTENDO
+		if (CurrentUserInfo.isValid() && CurrentUserInfo.isLoggedIn()) {
+			CrossplayAccountManager.logOut = true;
+		}
+#endif
 #endif
 	}
 

@@ -109,6 +109,7 @@ void Text::render() {
 
 #ifdef NINTENDO
 	// fixes weird crash in SDL_ttf when string length < 2
+	const bool addedSpace = false;
 	std::string spaces;
 	int num_spaces_needed = std::max(0, 2 - (int)strToRender.size());
 	while (num_spaces_needed) {

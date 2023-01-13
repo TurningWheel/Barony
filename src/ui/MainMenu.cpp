@@ -1386,7 +1386,9 @@ namespace MainMenu {
         );
     }
 
-    static void openDLCPrompt() {
+    static void openDLCPrompt(int which) {
+		static int dlcPromptIndex;
+		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
 		const char* window_text = "Would you like to browse this\nDLC in the online store?";
 		binaryPrompt(window_text, "Yes", "No",
@@ -1395,8 +1397,7 @@ namespace MainMenu {
 				soundActivate();
 				openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
 #elif defined(NINTENDO)
-				// TODO open e-Shop for Nintendo?
-				soundError();
+				nxShowDLCPage(dlcPromptIndex);
 #elif defined(USE_EOS)
 				soundActivate();
 				openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
@@ -5252,16 +5253,17 @@ bind_failed:
 			{Setting::Type::Slider, "turn_sensitivity_x"},
 			{Setting::Type::Slider, "turn_sensitivity_y"},
 			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"}
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
 		});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"}}
+			{Setting::Type::Slider, "turn_sensitivity_y"},
 			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"});
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
+		});
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
@@ -7157,6 +7159,10 @@ bind_failed:
 		currentLobbyType = LobbyType::None;
 
 	    closeNetworkInterfaces();
+
+#ifdef NINTENDO
+		nxEndParentalControls();
+#endif
 
 #ifdef STEAMWORKS
 	    if (currentLobby) {
@@ -9389,7 +9395,7 @@ bind_failed:
 					(!enabledDLCPack2 && c >= 5 && c <= 8)) {
 					// this class is not available to the player
 					button.setPressed(false);
-					openDLCPrompt();
+					openDLCPrompt(c >= 5 ? 1 : 0);
 					return;
 				} else {
 					soundToggle();
@@ -11981,8 +11987,10 @@ bind_failed:
 							soundError();
 							break;
 						case INVALID_REQUIREDLC1:
+							openDLCPrompt(0);
+							break;
 						case INVALID_REQUIREDLC2:
-							openDLCPrompt();
+							openDLCPrompt(1);
 							break;
 						}
 					} else {
@@ -14712,6 +14720,10 @@ bind_failed:
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
 
+#ifdef NINTENDO
+			nxEndParentalControls();
+#endif
+
 		    // remove parent window
 		    auto frame = static_cast<Frame*>(button.getParent());
 		    frame = static_cast<Frame*>(frame->getParent());
@@ -15951,6 +15963,11 @@ bind_failed:
 			textPrompt("host_lobby_prompt", "Creating Epic lobby...",
 				[](Widget&){
 				if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
+					if (!EOS.CurrentUserInfo.isValid() || !EOS.CurrentUserInfo.isLoggedIn()) {
+						closePrompt("host_lobby_prompt");
+						errorPrompt("Failed to host Epic lobby.", "Okay",
+							[](Button&) {soundCancel(); closeMono(); });
+					}
 					return;
 				} else {
 					if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
@@ -15999,6 +16016,13 @@ bind_failed:
 			closeMono();
 		});
 #else
+#ifdef NINTENDO
+		if (!nxBeginParentalControls())
+		{
+			// access to online play is not permitted
+			return;
+		}
+#endif
 		closeNetworkInterfaces();
 		directConnect = false;
         
@@ -16041,6 +16065,15 @@ bind_failed:
 
 	static void hostLANLobby(Button&) {
 		soundActivate();
+
+#ifdef NINTENDO
+		if (!nxBeginParentalControls())
+		{
+			// access to online play is not permitted
+			return;
+		}
+#endif
+
 		closeNetworkInterfaces();
 		directConnect = true;
         
@@ -16318,26 +16351,28 @@ bind_failed:
 
 		auto join_fn = [](Button& button){
 #ifdef NINTENDO
-			static Button* join_button;
-			join_button = &button;
-			nxConnectToNetwork();
-			textPrompt("lobby_browser_wait_prompt", "Connecting...",
-				[](Widget&) {
-					if (nxConnectingToNetwork()) {
-						return;
-					}
-					else {
-						if (nxConnectedToNetwork()) {
-							closePrompt("lobby_browser_wait_prompt");
-							createLobbyBrowser(*join_button);
+			if (nxBeginParentalControls()) {
+				static Button* join_button;
+				join_button = &button;
+				nxConnectToNetwork();
+				textPrompt("lobby_browser_wait_prompt", "Connecting...",
+					[](Widget&) {
+						if (nxConnectingToNetwork()) {
+							return;
 						}
 						else {
-							closePrompt("lobby_browser_wait_prompt");
-							errorPrompt("Network connection failed.", "Okay",
-								[](Button&) {soundCancel(); closeMono(); });
+							if (nxConnectedToNetwork()) {
+								closePrompt("lobby_browser_wait_prompt");
+								createLobbyBrowser(*join_button);
+							}
+							else {
+								closePrompt("lobby_browser_wait_prompt");
+								errorPrompt("Network connection failed.", "Okay",
+									[](Button&) {soundCancel(); closeMono(); });
+							}
 						}
-					}
-				});
+					});
+			}
 #else
 			createLobbyBrowser(button);
 #endif
@@ -16616,8 +16651,18 @@ bind_failed:
                     }
                     multiplayer = SINGLE;
 					clientnum = 0;
+#ifdef NINTENDO
+					if (nxBeginParentalControls()) {
+						createDummyMainMenu();
+						createLobbyBrowser(button);
+					} else {
+						// in-case lobby browser is not allowed, return to main menu
+						createMainMenu(false);
+					}
+#else
                     createDummyMainMenu();
                     createLobbyBrowser(button);
+#endif
                 }
 	        },
 	        [](Button& button) { // No button
@@ -18318,22 +18363,14 @@ bind_failed:
 			assert(main_menu_frame);
 		}
 
-        // just always enable DLC in debug. saves headaches
-#ifndef NDEBUG
-		//enabledDLCPack1 = true;
-		//enabledDLCPack2 = true;
+#ifdef NINTENDO
+		enabledDLCPack1 = nxCheckDLC(0);
+		enabledDLCPack2 = nxCheckDLC(1);
 #endif
 
 #ifdef STEAMWORKS
-		if ( SteamApps()->BIsDlcInstalled(1010820) )
-		{
-			enabledDLCPack1 = true;
-		}
-		if ( SteamApps()->BIsDlcInstalled(1010821) )
-		{
-			enabledDLCPack2 = true;
-		}
-#else
+		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
+		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
 #endif // STEAMWORKS
 
         if (!ingame) {
@@ -18922,7 +18959,7 @@ bind_failed:
 		        if (enabledDLCPack1 && enabledDLCPack2) {
                     openURLTryWithOverlay("https://turningwheelgames.com/blog/2022/11/qodbeta");
                 } else {
-					openDLCPrompt();
+					openDLCPrompt(enabledDLCPack1 ? 1 : 0);
                 }
 		        },
 		        [](Button&){ // banner #2
