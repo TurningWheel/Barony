@@ -10526,6 +10526,10 @@ void doEndgame() {
 	intro = true;
 	splitscreen = false;
 
+#ifdef NINTENDO
+	nxEndParentalControls();
+#endif
+
     // this is done so that save game screenshots get
     // reloaded after the game is done.
 	//Image::dumpCache();
