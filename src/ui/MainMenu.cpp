@@ -2954,7 +2954,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -3440,10 +3440,11 @@ namespace MainMenu {
 
 	static void settingsResolutionEntry(Frame::entry_t& entry) {
 		soundActivate();
-		int new_xres, new_yres;
-		sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+		int new_xres, new_yres, new_hz;
+		sscanf(entry.name.c_str(), "%d x %d @ %dhz", &new_xres, &new_yres, &new_hz);
 		allSettings.video.resolution_x = new_xres;
 		allSettings.video.resolution_y = new_yres;
+		allSettings.fps = new_hz;
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 		auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
@@ -3487,10 +3488,8 @@ namespace MainMenu {
 		    std::list<resolution>::iterator it;
 		    for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			    auto& res = *it;
-			    const int x = std::get<0>(res);
-			    const int y = std::get<1>(res);
 			    char buf[32];
-			    snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			    snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			    resolutions_formatted.push_back(std::string(buf));
 		    }
 
@@ -4893,13 +4892,12 @@ bind_failed:
 		std::list<resolution>::iterator it;
 		for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			auto& res = *it;
-			const int x = std::get<0>(res);
-			const int y = std::get<1>(res);
 			char buf[32];
-			snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.video.resolution_x == x && allSettings.video.resolution_y == y) {
+			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y &&
+				allSettings.fps == res.hz) {
 				selected_res = index;
 			}
 		}

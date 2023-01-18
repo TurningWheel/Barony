@@ -3955,7 +3955,7 @@ void handleMainMenu(bool mode)
 			for ( auto cur : resolutions )
 			{
 				int width, height;
-				std::tie (width, height) = cur;
+				//std::tie (width, height) = cur;
 				if ( settings_xres == width && settings_yres == height )
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", width, height);
@@ -11138,16 +11138,20 @@ void getResolutionList(int device_id, std::list<resolution>& resolutions)
 		    continue;
 		}
 
-		resolution res(mode.w, mode.h);
+		resolution res{mode.w, mode.h, mode.refresh_rate};
 		resolutions.push_back(res);
 	}
 
 	// sort first by xres and then by yres
-	resolutions.sort([](resolution a, resolution b) {
-		if (std::get<0>(a) == std::get<0>(b)) {
-			return std::get<1>(a) > std::get<1>(b);
+	resolutions.sort([](const resolution& a, const resolution& b) {
+		if (a.x == b.x) {
+			if (a.y == b.y) {
+				return a.hz > b.hz;
+			} else {
+				return a.y > b.y;
+			}
 		} else {
-			return std::get<0>(a) > std::get<0>(b);
+			return a.x > b.x;
 		}
 	});
 
