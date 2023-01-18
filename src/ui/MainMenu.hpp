@@ -31,10 +31,11 @@ namespace MainMenu {
 	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI
 
 	enum class FadeDestination : Uint8 {
-		None,
-		TitleScreen,
-		RootMainMenu,
-		Victory,
+		None,           // don't fade anywhere (???)
+		TitleScreen,    // fade to the title screen. ONLY use while not ingame!
+		RootMainMenu,   // return to main menu, save no score if ingame
+        Endgame,        // save a highscore and return to main menu
+		Victory,        // save a highscore and roll credits
 
 		// Story scenes:
 
@@ -55,6 +56,8 @@ namespace MainMenu {
 		EndingAutomaton,
 		EndingBeast,
 		EndingEvil,
+        
+        // Classic endings:
 
 		ClassicEndingHuman,
 		ClassicEndingAutomaton,
@@ -68,9 +71,9 @@ namespace MainMenu {
 
         // Game starts:
 
-		GameStart,
-		GameStartDummy,
-		HallOfTrials,
+		GameStart,          // used by servers and local games
+		GameStartDummy,     // used by clients to fade without really launching
+		HallOfTrials,       // used to launch a hall-of-trials map
 	};
 
     const char* getUsername();              // get local account name

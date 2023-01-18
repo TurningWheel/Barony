@@ -6130,13 +6130,13 @@ int main(int argc, char** argv)
 		{
 			loadDefaultConfig();
 		}
+        MainMenu::settingsReset();
+        MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
 		if ( load_successful ) {
 			MainMenu::settingsApply();
 		}
 		else {
-			MainMenu::settingsReset();
-			MainMenu::settingsApply();
 			skipintro = false;
 		}
 

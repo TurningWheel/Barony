@@ -8335,7 +8335,7 @@ void handleMainMenu(bool mode)
 		}
 		else if ( introstage == 5 )     // end game
 		{
-			doEndgame();
+			doEndgame(true);
 		}
 		else if ( introstage == 6 )     // introduction cutscene
 		{
@@ -10175,7 +10175,7 @@ void doCredits() {
 	}
 }
 
-void doEndgame() {
+void doEndgame(bool saveHighscore) {
 	int c, x;
 	bool endTutorial = false;
 	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
@@ -10271,7 +10271,7 @@ void doEndgame() {
 	}
 
 	// make a highscore!
-	if ( !endTutorial )
+	if ( !endTutorial && saveHighscore )
 	{
 		int saveScoreResult = saveScore();
 	}
