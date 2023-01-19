@@ -22,8 +22,8 @@ const Sint32 Frame::sliderSize = 16;
 
 int uiDefaultHeight = 720;
 
-static const int _virtualScreenMinWidth = 1280;
-static const int _virtualScreenMinHeight = 720;
+static const int _virtualScreenMinWidth = 120;
+static const int _virtualScreenMinHeight = 120;
 
 int Frame::_virtualScreenX = 0;
 int Frame::_virtualScreenY = 0;

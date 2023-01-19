@@ -11133,7 +11133,7 @@ void getResolutionList(int device_id, std::list<resolution>& resolutions)
 		SDL_GetDisplayMode(device_id, i, &mode);
 
 		// resolutions below 1024x768 are not supported
-		if ( mode.w < 1024 || mode.h < 720 )
+		if ( mode.w < 1024 || mode.h < 720 || mode.refresh_rate == 0 )
 		{
 		    continue;
 		}
@@ -11142,16 +11142,16 @@ void getResolutionList(int device_id, std::list<resolution>& resolutions)
 		resolutions.push_back(res);
 	}
 
-	// sort first by xres and then by yres
+	// sort first by hz, then xres, and then by yres
 	resolutions.sort([](const resolution& a, const resolution& b) {
-		if (a.x == b.x) {
-			if (a.y == b.y) {
-				return a.hz > b.hz;
-			} else {
+		if (a.hz == b.hz) {
+			if (a.x == b.x) {
 				return a.y > b.y;
+			} else {
+				return a.x > b.x;
 			}
 		} else {
-			return a.x > b.x;
+			return a.hz > b.hz;
 		}
 	});
 

@@ -285,7 +285,7 @@ struct resolution {
 	int y;
 	int hz;
 
-	bool operator==(const resolution& rhs) {
+	bool operator==(const resolution& rhs) const {
 		return x == rhs.x && y == rhs.y && hz == rhs.hz;
 	}
 };
