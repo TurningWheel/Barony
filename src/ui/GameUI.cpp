@@ -2264,7 +2264,7 @@ void updateAllyFollowerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -2777,7 +2777,7 @@ void updateAllyPlayerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() && players[player]->gui_mode != GUI_MODE_NONE )
 	{
 		baseFrame->setOpacity(0.0);
 		baseFrame->setInheritParentFrameOpacity(false);
@@ -3425,7 +3425,7 @@ void Player::HUD_t::updateUINavigation()
 	auto additionalGlyph = uiNavFrame->findImage("additional img");
 	additionalGlyph->disabled = true;
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIHeight() )
+		&& (!player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth()) )
 	{
 		if ( leftBumperModule != Player::GUI_t::MODULE_NONE )
 		{
@@ -3568,7 +3568,7 @@ void Player::HUD_t::updateUINavigation()
 	}
 
 	if ( inputs.hasController(player.playernum) && !inputs.getVirtualMouse(player.playernum)->draw_cursor
-		&& !player.bUseCompactGUIHeight() )
+		&& (!player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth()) )
 	{
 		if ( (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS
@@ -3874,16 +3874,16 @@ void Player::HUD_t::updateUINavigation()
 		auto& glyph = buttonAndGlyph.glyph;
 		glyph->disabled = true;
 
-		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor && inputs.hasController(player.playernum) )
 		{
 			button->setColor(makeColor(255, 255, 255, 255));
 		}
 		else
 		{
-			button->setColor(makeColor(255, 255, 255, 191));
+			button->setColor(makeColor(255, 255, 255, 255));
 		}
 
-		if ( player.bUseCompactGUIHeight() )
+		if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
 		{
 			if ( player.inventoryUI.chestGUI.bOpen )
 			{
@@ -3896,7 +3896,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( player.shopGUI.bOpen )
 			{
 				if ( buttonAndGlyph.inputName == "UINavRightTrigger" 
-					|| inputs.getVirtualMouse(player.playernum)->draw_cursor )
+					|| (inputs.getVirtualMouse(player.playernum)->draw_cursor && player.bUseCompactGUIWidth()) )
 				{
 					button->setInvisible(true);
 					continue;
@@ -3914,7 +3914,7 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) 
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIHeight()
+				&& (!player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth())
 				&& !GenericGUI[player.playernum].isGUIOpen()
 				&& !player.minimap.mapWindow
 				&& !player.messageZone.logWindow )
@@ -3944,12 +3944,29 @@ void Player::HUD_t::updateUINavigation()
 					}
 				}
 			}
-			else if ( player.bUseCompactGUIHeight() )
+			else if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
 			{
-				buttonPos.x = leftAlignX;
+				if ( !player.bUseCompactGUIWidth() )
+				{
+					// align next to inventory
+					buttonPos.x = leftAnchorX;
+				}
+				else
+				{
+					buttonPos.x = leftAlignX;
+				}
 				if ( numButtonsToShow < 4 )
 				{
 					buttonPos.y = topAlignY;
+					if ( !player.bUseCompactGUIWidth() )
+					{
+						if ( players[player.playernum]->hud.xpFrame )
+						{
+							SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
+							buttonPos.y = xpFramePos.y + 8;
+						}
+					}
+					
 					if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY )
 					{
 						if ( buttonAndGlyph.name == "items button" && player.inventory_mode == INVENTORY_MODE_ITEM )
@@ -3998,16 +4015,32 @@ void Player::HUD_t::updateUINavigation()
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum)
 				&& inputs.getVirtualMouse(player.playernum)->draw_cursor
-				&& !player.bUseCompactGUIHeight() )
+				&& (!player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth()) )
 			{
 				// leave disabled
 			}
-			else if ( player.bUseCompactGUIHeight() )
+			else if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
 			{
-				buttonPos.x = rightAlignX;
+				if ( !player.bUseCompactGUIWidth() )
+				{
+					// align next to right panel
+					buttonPos.x = rightAnchorX - buttonPos.w;
+				}
+				else
+				{
+					buttonPos.x = rightAlignX;
+				}
 				if ( numButtonsToShow < 4 )
 				{
 					buttonPos.y = topAlignY;
+					if ( !player.bUseCompactGUIWidth() )
+					{
+						if ( players[player.playernum]->hud.xpFrame )
+						{
+							SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
+							buttonPos.y = xpFramePos.y + 8;
+						}
+					}
 					if ( buttonAndGlyph.layoutMode == compactLayoutMode )
 					{
 						button->setDisabled(false);
@@ -6929,7 +6962,7 @@ void Player::HUD_t::updateActionPrompts()
 	}
 
 	static ConsoleVariable<bool> disableActionPrompts(
-	    "/disableprompts", false, "Disable action prompts in HUD");
+	    "/disableactionprompts", false, "Disable action prompts in HUD");
 
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -6938,8 +6971,10 @@ void Player::HUD_t::updateActionPrompts()
 	    }
 	}
 
-	if ( !bShowActionPrompts || playercount > 2 
-		|| (playercount == 2 /*&& *MainMenu::vertical_splitscreen*/ && !player.shootmode) 
+	static ConsoleVariable<int> actionPromptCompactHeightY("/actionpromptcompactheighty", 16);
+
+	if ( !bShowActionPrompts || playercount > 2
+		|| (playercount == 2 && (*MainMenu::vertical_splitscreen || !player.shootmode)) 
 		|| *disableActionPrompts )
 	{
 		actionPromptsFrame->setDisabled(true);
@@ -6971,8 +7006,8 @@ void Player::HUD_t::updateActionPrompts()
 	};
 
 	std::vector<PromptInfo> allPrompts;
-	std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
-	std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
+	const std::string blockBinding = Input::inputs[player.playernum].binding("Defend");
+	const std::string sneakBinding = Input::inputs[player.playernum].binding("Sneak");
 	const bool sneakingSeparateFromBlock = false;// blockBinding != sneakBinding;
 	if ( sneakingSeparateFromBlock )
 	{
@@ -7038,6 +7073,10 @@ void Player::HUD_t::updateActionPrompts()
 			promptPos.y = hudFrame->getSize().h + player.hotbar.getHotbarStartY2() - promptPos.h;
 			promptPos.y += maxHeight / 2;
 			promptPos.y += actionPromptOffsetY;
+			if ( player.bUseCompactGUIHeight() )
+			{
+				promptPos.y += *actionPromptCompactHeightY;
+			}
 			prompt->setSize(promptPos);
 
 			img->pos = iconPos;
@@ -7166,14 +7205,12 @@ void Player::HUD_t::updateActionPrompts()
 				pressed = true;
 			}*/
 
+			std::string bindingName = promptInfo.inputName.c_str();
 			if ( skillForPrompt == PRO_STEALTH && promptInfo.promptType == ACTION_PROMPT_OFFHAND )
 			{
-				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Sneak", pressed);
+				bindingName = "Sneak";
 			}
-			else
-			{
-				glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(promptInfo.inputName.c_str(), pressed);
-			}
+			glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(bindingName.c_str(), pressed);
 			glyph->disabled = prompt->isDisabled();
 			if ( !player.shootmode || player.gui_mode == GUI_MODE_FOLLOWERMENU || player.gui_mode == GUI_MODE_SIGN )
 			{
@@ -7193,7 +7230,11 @@ void Player::HUD_t::updateActionPrompts()
 				glyph->pos.h = (int)imgGet->getHeight();
 			}
 			glyph->pos.x = prompt->getSize().x + prompt->getSize().w / 2 - glyph->pos.w / 2; // center the x for the glyph
-			const int glyphToImgPadY = 0;
+			int glyphToImgPadY = 0;
+			if ( Input::inputs[player.playernum].input(bindingName.c_str()).type == Input::binding_t::bindtype_t::MOUSE_BUTTON )
+			{
+				glyphToImgPadY += 4;
+			}
 			int pressedOffset = 0;
 			/*if ( pressed )
 			{
@@ -7584,7 +7625,7 @@ void Player::MessageZone_t::processChatbox()
     static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
 	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
 	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
-    bool useBigFont = playercount == 1 || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	bool useBigFont = !players[player.playernum]->bUseCompactGUIHeight() && !players[player.playernum]->bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 	if ( *cvar_smallmessages )
 	{
 		useBigFont = false;
@@ -7714,8 +7755,17 @@ void Player::MessageZone_t::processChatbox()
 }
 
 ConsoleVariable<bool> shareMinimap("/shareminimap", true);
+ConsoleVariable<bool> cvar_minimap_prompt_vertical("/minimap_prompt_vertical", false);
 Frame* minimapFrame = nullptr; // shared minimap
 SDL_Rect Player::Minimap_t::sharedMinimapPos{ 0, 0, 0, 0 };
+int Player::Minimap_t::fullSize = 200;
+int Player::Minimap_t::compactSize = 200;
+int Player::Minimap_t::compact2pVerticalSize = 200;
+real_t Player::Minimap_t::fullBigScale = 100.0;
+real_t Player::Minimap_t::compactBigScale = 100.0;
+real_t Player::Minimap_t::compact2pVerticalBigScale = 100.0;
+bool Player::Minimap_t::bUpdateMainMenuSettingScale = false;
+real_t Player::Minimap_t::mainMenuSettingScale = 1.0;
 
 void doSharedMinimap() {
     if (!minimapFrame) {
@@ -7768,7 +7818,6 @@ static Frame* createMinimap(int player) {
     window->setSize(SDL_Rect{0, 0, 0, 0});
     window->setColor(0);
     window->setOwner(player);
-
     window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
         drawMinimap(widget.getOwner(), rect);
         });
@@ -7782,13 +7831,39 @@ static Frame* createMinimap(int player) {
 	    }
 
 	    widget.setInvisible(*shareMinimap && playercount > 2);
+		auto player = widget.getOwner();
+		auto& input = Input::inputs[player];
+		auto& minimap = players[player]->minimap;
+        bool reducedSize = playercount > 2 /*|| (playercount == 2 && *MainMenu::vertical_splitscreen)*/;
+		
+		minimap.bExpandPromptEnabled = true;
+		minimap.bScalePromptEnabled = false;
+		if ( !players[player]->shootmode )
+		{
+			minimap.bExpandPromptEnabled = false;
+			minimap.bScalePromptEnabled = false;
+		}
+		else if ( players[player]->worldUI.isEnabled()
+			&& players[player]->worldUI.bTooltipInView
+			&& players[player]->worldUI.tooltipsInRange.size() > 1 )
+		{
+			std::string scaleBinding = input.binding("Minimap Scale");
+			std::string expandBinding = input.binding("Toggle Minimap");
+			std::string cycleNextBinding = input.binding("Interact Tooltip Next");
+			std::string cyclePrevBinding = input.binding("Interact Tooltip Prev");
+			if ( scaleBinding == cycleNextBinding
+				|| scaleBinding == cyclePrevBinding )
+			{
+				minimap.bScalePromptEnabled = false;
+			}
+			if ( expandBinding == cycleNextBinding
+				|| expandBinding == cyclePrevBinding )
+			{
+				minimap.bExpandPromptEnabled = false;
+			}
+		}
 
-        bool reducedSize = playercount > 2 || (playercount == 2 && *MainMenu::vertical_splitscreen);
-
-        auto player = widget.getOwner();
-        auto& minimap = players[player]->minimap;
-        auto& input = Input::inputs[player];
-        if ( !gamePaused && players[player]->bControlEnabled 
+        if ( !gamePaused && players[player]->bControlEnabled && minimap.bScalePromptEnabled
 			&& !players[player]->usingCommand() && players[player]->shootmode && input.consumeBinaryToggle("Minimap Scale")) {
             if (minimap.scale > 75.0) {
                 minimap.real_scale = 75.0;
@@ -7833,13 +7908,29 @@ static Frame* createMinimap(int player) {
 
         real_t factor0 = 1.0 - sin(scale_ang);
         real_t factor1 = sin(scale_ang);
-        real_t scale_small = std::min(reducedSize ? 25.0 : 50.0, minimap.real_scale);
-        real_t scale_big = std::min(reducedSize ? 75.0 : 100.0, minimap.real_scale);
-
+        //real_t scale_small = std::min(reducedSize ? 25.0 : 50.0, minimap.real_scale);
+        //real_t scale_big = std::min(reducedSize ? 75.0 : 100.0, minimap.real_scale);
+		real_t scale_small = 50.0;
+		real_t scale_big = Player::Minimap_t::fullBigScale;
+		int maxSize = Player::Minimap_t::fullSize;
+		static ConsoleVariable<int> cvar_minimap_compact_offset_y("/minimap_compact_offset_y", 44);
+		int mapBigOffsetY = 0;
+		if ( players[player]->bUseCompactGUIHeight() ) // 2p wide
+		{
+			maxSize = Player::Minimap_t::compactSize;
+			scale_big = Player::Minimap_t::compactBigScale;
+			mapBigOffsetY = *cvar_minimap_compact_offset_y;
+		}
+		else if ( !players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() ) // 2p vertical
+		{
+			maxSize = Player::Minimap_t::compact2pVerticalSize;
+			scale_big = Player::Minimap_t::compact2pVerticalBigScale;
+		}
+		
 		{
 			real_t scale = factor0 * scale_small;
-			players[player]->minimap.minimapPos.w = (int)(scale * 4);
-			players[player]->minimap.minimapPos.h = (int)(scale * 4);
+			players[player]->minimap.minimapPos.w = (int)((scale / 100.0) * maxSize);
+			players[player]->minimap.minimapPos.h = (int)((scale / 100.0) * maxSize);
 		}
 
         scale = factor0 * scale_small + factor1 * scale_big;
@@ -7856,13 +7947,14 @@ static Frame* createMinimap(int player) {
 			mapHeightOffset = players[player]->hud.gameTimerFrame->getSize().h;
 		}
 
-        int x = factor0 * (parent->getSize().w - scale * 4) +
-            factor1 * (parent->getSize().w - scale * 4) / 2;
-        int y = factor0 * (parent->getSize().h - scale * 4 - mapHeightOffset) +
-            factor1 * (parent->getSize().h - scale * 4) / 2;
+		const int scaledSize = (int)((scale / 100.0) * maxSize);
+        int x = factor0 * (parent->getSize().w - scaledSize) +
+            factor1 * (parent->getSize().w - scaledSize) / 2;
+        int y = factor0 * (parent->getSize().h - scaledSize - mapHeightOffset) +
+            factor1 * (parent->getSize().h - scaledSize - mapBigOffsetY) / 2;
 
         auto frame = static_cast<Frame*>(&widget);
-        frame->setSize(SDL_Rect{x, y, (int)(minimap.scale * 4), (int)(minimap.scale * 4)});
+        frame->setSize(SDL_Rect{x, y, (int)(scaledSize), (int)(scaledSize)});
 		players[player]->minimap.minimapPos.x = x;
 		players[player]->minimap.minimapPos.y = y;
 		if ( frame->isInvisible() )
@@ -7871,7 +7963,7 @@ static Frame* createMinimap(int player) {
 		}
 		else
 		{
-			frame->setHollow(false);
+			frame->setHollow(true);
 		}
         });
 
@@ -7998,19 +8090,53 @@ void openMapWindow(int player) {
     const SDL_Rect size = parent->getSize();
     int _w = std::max(Frame::virtualScreenX / 2, size.w - 432);
     int _h = std::max(Frame::virtualScreenY / 2, size.h - 256);
+	int yoffset = 32;
 	const bool bCompact = players[player]->bUseCompactGUIHeight() || players[player]->bUseCompactGUIWidth();
 	if ( bCompact )
 	{
-		static ConsoleVariable<int> cvar_map_splitscreen_w("/map_splitscreen_wborder", 64);
-		static ConsoleVariable<int> cvar_map_splitscreen_h("/map_splitscreen_hborder", 64);
-		_w = size.w - *cvar_map_splitscreen_w;
-		_h = size.h - *cvar_map_splitscreen_h;
+		if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+		{
+			static ConsoleVariable<int> cvar_map_splitscreen_w("/map_splitscreen_wborder", 64);
+			static ConsoleVariable<int> cvar_map_splitscreen_h("/map_splitscreen_hborder", 16);
+			static ConsoleVariable<int> cvar_map_splitscreen_offset_y("/map_splitscreen_offset_y", 0);
+			_w = size.w - *cvar_map_splitscreen_w;
+			_h = size.h - *cvar_map_splitscreen_h;
+			yoffset = *cvar_map_splitscreen_offset_y;
+		}
+		else if ( players[player]->bUseCompactGUIHeight() )
+		{
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_wide_w("/map_splitscreen_2p_wide_wborder", 64);
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_wide_h("/map_splitscreen_2p_wide_hborder", 8);
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_wide_offset_y("/map_splitscreen_2p_wide_offset_y", 0);
+			_w = size.w - *cvar_map_splitscreen_2p_wide_w;
+			_h = size.h - *cvar_map_splitscreen_2p_wide_h;
+			yoffset = *cvar_map_splitscreen_2p_wide_offset_y;
+		}
+		else if ( players[player]->bUseCompactGUIWidth() )
+		{
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_tall_w("/map_splitscreen_2p_tall_wborder", 64);
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_tall_h("/map_splitscreen_2p_tall_hborder", 64);
+			static ConsoleVariable<int> cvar_map_splitscreen_2p_wide_offset_y("/map_splitscreen_2p_tall_offset_y", 0);
+			if ( *MainMenu::clipped_splitscreen )
+			{
+				*cvar_map_splitscreen_2p_tall_h = 156;
+				*cvar_map_splitscreen_2p_wide_offset_y = 2;
+			}
+			else
+			{
+				*cvar_map_splitscreen_2p_tall_h = 256;
+				*cvar_map_splitscreen_2p_wide_offset_y = 32;
+			}
+			_w = size.w - *cvar_map_splitscreen_2p_tall_w;
+			_h = size.h - *cvar_map_splitscreen_2p_tall_h;
+			yoffset = *cvar_map_splitscreen_2p_wide_offset_y;
+		}
 	}
     int w = std::min(_w, _h);
     int h = std::min(_w, _h);
     frame = parent->addFrame("minimap_window");
     frame->setOwner(player);
-    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - yoffset, w, h});
     frame->setBorderColor(makeColor(51, 33, 26, 255));
     frame->setColor(0);
     //frame->setBorder(2);
@@ -8369,21 +8495,27 @@ void openLogWindow(int player) {
     int h = std::max(Frame::virtualScreenY / 2, size.h - 256);
 	static ConsoleVariable<int> cvar_log_splitscreen_w("/log_splitscreen_wborder", 40);
 	static ConsoleVariable<int> cvar_log_splitscreen_h("/log_splitscreen_hborder", 64);
+	int yoffset = 32;
 	if ( (players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth())
 		|| players[player]->bUseCompactGUIWidth() )
 	{
 		w = size.w - *cvar_log_splitscreen_w;
-		h = size.h - *cvar_log_splitscreen_h;
+		if ( !(players[player]->bUseCompactGUIWidth() && !players[player]->bUseCompactGUIHeight()) ) // 2p tall splitscreen
+		{
+			h = size.h - *cvar_log_splitscreen_h;
+		}
 	}
 	else if ( players[player]->bUseCompactGUIHeight() )
 	{
-		w = std::max(Frame::virtualScreenX / 2, size.w - 432);
-		h = size.h - *cvar_log_splitscreen_h;
+		// 2p wide
+		w = size.w - 432;
+		h = size.h - 8;
+		yoffset = 0;
 	}
 
     frame = parent->addFrame("log_window");
     frame->setOwner(player);
-    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - 32, w, h});
+    frame->setSize(SDL_Rect{(size.w - w) / 2, (size.h - h) / 2 - yoffset, w, h});
     frame->setBorderColor(makeColor(51, 33, 26, 255));
     frame->setColor(makeColor(logBgColor->x, logBgColor->y, logBgColor->z, logBgColor->w));
     //frame->setBorder(2);
@@ -8431,7 +8563,7 @@ void openLogWindow(int player) {
 		LogScrollDown->disabled = true;
 
 		const bool bCompactWidth = players[player]->bUseCompactGUIWidth();
-		const bool twoPrompts = bCompactWidth;
+		const bool twoPrompts = bCompactWidth || (players[player]->bUseCompactGUIHeight() && !players[player]->bUseCompactGUIWidth() && *MainMenu::clipped_splitscreen);
 		struct TextAndGlyphs
 		{
 			Frame::image_t* img1;
@@ -9898,7 +10030,7 @@ bool Player::GUIDropdown_t::getDropDownAlignRight(const std::string& name)
 	if ( name == "drop_gold" )
 	{
 		if ( player.characterSheet.panelJustify == Player::PANEL_JUSTIFY_RIGHT 
-			&& player.bUseCompactGUIHeight() )
+			&& (player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth()) )
 		{
 			invert = true;
 		}
@@ -9965,7 +10097,7 @@ void Player::CharacterSheet_t::processCharacterSheet()
 	}
 
 	bool bCompactView = false;
-	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIHeight() )
+	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
@@ -18268,6 +18400,34 @@ void loadHUDSettingsJSON()
 						Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity = d["world_items"]["tooltip_opacity"].GetDouble();
 					}
 				}
+				if ( d.HasMember("minimap") )
+				{
+					if ( d["minimap"].HasMember("minimap_full_default_size") )
+					{
+						Player::Minimap_t::fullSize = d["minimap"]["minimap_full_default_size"].GetInt();
+					}
+					if ( d["minimap"].HasMember("minimap_compact_default_size") )
+					{
+						Player::Minimap_t::compactSize = d["minimap"]["minimap_compact_default_size"].GetInt();
+					}
+					if ( d["minimap"].HasMember("minimap_compact_2p_vertical_size") )
+					{
+						Player::Minimap_t::compact2pVerticalSize = d["minimap"]["minimap_compact_2p_vertical_size"].GetInt();
+					}
+
+					if ( d["minimap"].HasMember("minimap_full_big_scale") )
+					{
+						Player::Minimap_t::fullBigScale = d["minimap"]["minimap_full_big_scale"].GetDouble();
+					}
+					if ( d["minimap"].HasMember("minimap_compact_big_scale") )
+					{
+						Player::Minimap_t::compactBigScale = d["minimap"]["minimap_compact_big_scale"].GetDouble();
+					}
+					if ( d["minimap"].HasMember("minimap_compact_2p_vertical_big_scale") )
+					{
+						Player::Minimap_t::compact2pVerticalBigScale = d["minimap"]["minimap_compact_2p_vertical_big_scale"].GetDouble();
+					}
+				}
 				if ( d.HasMember("world_dialogue") )
 				{
 					if ( d["world_dialogue"].HasMember("types") )
@@ -21820,6 +21980,7 @@ void Player::HUD_t::resetBars()
 	}
 }
 
+
 void Player::HUD_t::updateMinimapPrompts()
 {
 	if ( !mapPromptFrame )
@@ -21831,7 +21992,7 @@ void Player::HUD_t::updateMinimapPrompts()
 		||*/ 
 		(::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
 		|| gamePaused 
-		|| player.bUseCompactGUIHeight()
+		|| (player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
 		|| !this->minimapFrame 
 		|| (this->minimapFrame && this->minimapFrame->isInvisible()) )
 	{
@@ -21845,16 +22006,16 @@ void Player::HUD_t::updateMinimapPrompts()
 	auto scalePrompt = imgPromptFrame->findImage("scale prompt");
 	scalePrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Minimap Scale");
 	scalePrompt->disabled = true;
-	if ( auto imgGet = Image::get(scalePrompt->path.c_str()) )
+	/*if ( auto imgGet = Image::get(scalePrompt->path.c_str()) )
 	{
 		scalePrompt->pos.w = imgGet->getWidth();
 		scalePrompt->pos.h = imgGet->getHeight();
 		maxHeight1 = std::max(maxHeight1, scalePrompt->pos.h);
 		scalePrompt->disabled = false;
-	}
+	}*/
 	auto scaleImg = imgPromptFrame->findImage("scale img");
 	scaleImg->disabled = true;
-	if ( !scalePrompt->disabled )
+	/*if ( !scalePrompt->disabled )
 	{
 		if ( auto imgGet = Image::get(scaleImg->path.c_str()) )
 		{
@@ -21863,7 +22024,7 @@ void Player::HUD_t::updateMinimapPrompts()
 			maxHeight1 = std::max(maxHeight1, scaleImg->pos.h);
 			scaleImg->disabled = false;
 		}
-	}
+	}*/
 	auto expandPrompt = imgPromptFrame->findImage("expand prompt");
 	expandPrompt->disabled = true;
 	expandPrompt->path = Input::inputs[player.playernum].getGlyphPathForBinding("Toggle Minimap");
@@ -21903,7 +22064,7 @@ void Player::HUD_t::updateMinimapPrompts()
 		return;
 	}
 
-	bool alignHorizontal = true;
+	bool alignHorizontal = !*cvar_minimap_prompt_vertical;
 	int imgX = -2;
 	int index = -1;
 	int lowestY = 0;
@@ -21958,6 +22119,14 @@ void Player::HUD_t::updateMinimapPrompts()
 			rightX = std::max(rightX, img->pos.x + img->pos.h);
 		}
 	}
+	if ( !player.minimap.bExpandPromptEnabled )
+	{
+		expandPrompt->disabled = true;
+	}
+	if ( !player.minimap.bScalePromptEnabled )
+	{
+		scalePrompt->disabled = true;
+	}
 
 	mapPromptFrame->setDisabled(false);
 
@@ -22001,6 +22170,17 @@ void Player::HUD_t::updateMinimapPrompts()
 				imgPromptFrame->setSize(imgPromptFramePos);
 			}
 			pos.x = hudFrame->getSize().w - pos.w;
+			if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
+			{
+				if ( imgs.size() > 2 )
+				{
+					pos.x += 16;
+				}
+				else
+				{
+					pos.x += 16;
+				}
+			}
 			pos.y = hudFrame->getSize().h - pos.h;
 		}
 		else
@@ -22031,10 +22211,28 @@ void Player::HUD_t::updateGameTimer()
 		return;
 	}
 
-	if ( !player.shootmode || !player.characterSheet.showGameTimerAlways || splitscreen )
+	bool overrideGameTimerSetting = false;
+	if ( splitscreen && !(player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
+		&& !player.shootmode && !FollowerMenu[player.playernum].followerMenuIsOpen()
+		&& player.gui_mode != GUI_MODE_NONE )
 	{
-		gameTimerFrame->setDisabled(true);
-		return;
+		if ( compactLayoutMode == COMPACT_LAYOUT_INVENTORY || player.bUseCompactGUIWidth() )
+		{
+			overrideGameTimerSetting = true;
+		}
+	}
+
+	if ( overrideGameTimerSetting )
+	{
+		// display on hud in splitscreen !shootmode
+	}
+	else
+	{
+		if ( !player.shootmode || (!player.characterSheet.showGameTimerAlways || splitscreen) )
+		{
+			gameTimerFrame->setDisabled(true);
+			return;
+		}
 	}
 
 	gameTimerFrame->setDisabled(false);
@@ -22076,6 +22274,10 @@ void Player::HUD_t::updateGameTimer()
 		SDL_Rect mapPromptPos = player.hud.mapPromptFrame->getSize();
 		pos.y = mapPromptPos.y + mapPromptPos.h / 2 - pos.h / 2;
 		pos.x = mapPromptPos.x - pos.w - 4;
+		if ( splitscreen && (player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth()) )
+		{
+			pos.x += 16;
+		}
 	}
 
 	if ( day > 0 )
@@ -22101,7 +22303,9 @@ void Player::HUD_t::updateXPBar()
 
 	bool bCompactWidth = false;
 	bool bCompactHeight = player.bUseCompactGUIHeight();
-	if ( player.bUseCompactGUIWidth() || (keystatus[SDLK_t] && enableDebugKeys) )
+	if ( player.bUseCompactGUIWidth() 
+		|| (keystatus[SDLK_t] && enableDebugKeys)
+		|| (!player.bUseCompactGUIWidth() && player.bUseCompactGUIHeight() && *MainMenu::clipped_splitscreen) )
 	{
 		bCompactWidth = true;
 	}
@@ -22121,7 +22325,8 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool tempHideXP = false;
-	if ( player.gui_mode == GUI_MODE_FOLLOWERMENU && player.bUseCompactGUIHeight() )
+	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
+		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideXP = true;
 	}
@@ -24433,7 +24638,8 @@ void Player::Hotbar_t::updateHotbar()
 	}
 
 	bool tempHideHotbar = false;
-	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU 
+	if ( player.bUseCompactGUIHeight()
+		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
 			|| (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode)
 			|| (player.gui_mode == GUI_MODE_MAGIC)
 			|| (player.shopGUI.bOpen)
@@ -24441,8 +24647,12 @@ void Player::Hotbar_t::updateHotbar()
 			|| player.minimap.mapWindow
 			|| player.messageZone.logWindow
 			|| (GenericGUI[player.playernum].isGUIOpen())
-		) 
-		&& player.bUseCompactGUIHeight() )
+		) )
+	{
+		tempHideHotbar = true;
+	}
+	else if ( (!player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
+		&& (player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET && !player.shootmode) )
 	{
 		tempHideHotbar = true;
 	}
@@ -26683,10 +26893,12 @@ void Player::SkillSheet_t::processSkillSheet()
 		if ( player.bUseCompactGUIWidth() && !player.bUseCompactGUIHeight() )
 		{
 			bSlideWindowsOnly = true; // 2 player vertical splitscreen, slide but don't use compact view
+			bUseCompactSkillsView = false;
 		}
 		else
 		{
 			bUseCompactSkillsView = true;
+			bSlideWindowsOnly = false;
 		}
 	}
 	else
@@ -26708,7 +26920,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			skillSlideDirection = -1;
 		}
 	}
-	if ( !bUseCompactSkillsView && !bSlideWindowsOnly )
+	if ( !bUseCompactSkillsView && !bSlideWindowsOnly || (bUseCompactSkillsView && !player.bUseCompactGUIWidth()) )
 	{
 		skillSlideAmount = 0.0;
 		skillSlideDirection = 0;
@@ -27648,13 +27860,13 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelDownAlt") )
 				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelDownAlt");
-					scrollInertia = std::min(scrollInertia + .05, .15);
+					//Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelDownAlt");
+					scrollInertia = std::min(scrollInertia + .05, .05);
 				}
 				if ( Input::inputs[player.playernum].binaryToggle("MenuMouseWheelUpAlt") )
 				{
-					Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelUpAlt");
-					scrollInertia = std::max(scrollInertia - .05, -.15);
+					//Input::inputs[player.playernum].consumeBinaryToggle("MenuMouseWheelUpAlt");
+					scrollInertia = std::max(scrollInertia - .05, -.05);
 				}
 			}
 			if ( Input::inputs[player.playernum].analog("MenuScrollDown") )
@@ -28534,7 +28746,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	// handle height changing..
 	{
 		int frameHeight = 236 + 16;
-		if ( !player.bUseCompactGUIHeight() )
+		if ( !player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth() )
 		{
 			chestFramePos.y = 130;
 		}
@@ -28987,6 +29199,21 @@ void Player::HUD_t::updateMinotaurWarning()
 	SDL_Rect sharedminimapPos{ 0, 0, 0, 0 };
 	SDL_Rect minimapPos{ 0, 0, 0, 0 };
 	Frame* minimap = nullptr;
+	bool leftAlignToMap = splitscreen
+		&& player.bUseCompactGUIHeight()
+		&& !player.bUseCompactGUIWidth();
+	int leftAlignYOffset = 16;
+	int leftAlignXOffset = 0;
+	int topAlignYOffset = 0;
+	if ( leftAlignToMap && *MainMenu::clipped_splitscreen && player.hud.actionPromptsFrame && !player.hud.actionPromptsFrame->isDisabled() )
+	{
+		leftAlignYOffset += 16;
+		leftAlignXOffset += 8;
+	}
+	else if ( !leftAlignToMap && *MainMenu::clipped_splitscreen && !player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth() )
+	{
+		topAlignYOffset = -8;
+	}
 	if ( minimap = player.hud.hudFrame->findFrame(minimapFrameName.c_str()) )
 	{
 		minimapPos.x = minotaurFrame->getSize().w - player.minimap.minimapPos.w;
@@ -28999,6 +29226,10 @@ void Player::HUD_t::updateMinotaurWarning()
 		else if ( player.hud.gameTimerFrame && !player.hud.gameTimerFrame->isDisabled() )
 		{
 			mapHeightOffset = player.hud.gameTimerFrame->getSize().h;
+		}
+		else if ( player.hud.actionPromptsFrame && !player.hud.actionPromptsFrame->isDisabled() )
+		{
+			leftAlignYOffset += 44;
 		}
 		minimapPos.y -= mapHeightOffset;
 	}
@@ -29246,10 +29477,20 @@ void Player::HUD_t::updateMinotaurWarning()
 			}
 			else if ( minotaurDisplay && minimap && !minimap->isInvisible() && minimapPos.x > 0 )
 			{
-				m.setAnimatePosition(
-					minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
-					minimapPos.y - imgSizeY - 16 - movementAmount,
-					imgSizeX, imgSizeY);
+				if ( leftAlignToMap )
+				{
+					m.setAnimatePosition(
+						minimapPos.x - imgSizeX - 16 + leftAlignXOffset - movementAmount,
+						minimapPos.y + minimapPos.h - imgSizeY - leftAlignYOffset - movementAmount,
+						imgSizeX, imgSizeY);
+				}
+				else
+				{
+					m.setAnimatePosition(
+						minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+						minimapPos.y - imgSizeY - 16 - topAlignYOffset - movementAmount,
+						imgSizeX, imgSizeY);
+				}
 			}
 			else
 			{
@@ -29377,9 +29618,20 @@ void Player::HUD_t::updateMinotaurWarning()
 		{
 			minotaurDisplay->setDisabled(flash);
 			minotaurDisplay->setOpacity(100.0 * std::max(0.25, std::min(1.0, m.animFlash)));
-			minotaurDisplay->setSize(SDL_Rect{ minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
-				minimapPos.y - imgSizeY - 16 - movementAmount,
-				imgSizeX, imgSizeY });
+
+			if ( leftAlignToMap )
+			{
+				minotaurDisplay->setSize(SDL_Rect{
+					minimapPos.x - imgSizeX - 16 + leftAlignXOffset - movementAmount,
+					minimapPos.y + minimapPos.h - imgSizeY - leftAlignYOffset - movementAmount,
+					imgSizeX, imgSizeY });
+			}
+			else
+			{
+				minotaurDisplay->setSize(SDL_Rect{ minimapPos.x + minimapPos.w - imgSizeX - 16 - movementAmount,
+					minimapPos.y - imgSizeY - 16 - topAlignYOffset - movementAmount,
+					imgSizeX, imgSizeY });
+			}
 		}
 		else
 		{

@@ -2105,7 +2105,17 @@ public:
 		static SDL_Rect sharedMinimapPos;
 		Frame* mapParentFrame = nullptr;
 		Frame* mapWindow = nullptr;
+		bool bScalePromptEnabled = false;
+		bool bExpandPromptEnabled = false;
 		void processMapFrame();
+		static int fullSize;
+		static int compactSize;
+		static bool bUpdateMainMenuSettingScale;
+		static real_t mainMenuSettingScale;
+		static int compact2pVerticalSize;
+		static real_t fullBigScale;
+		static real_t compactBigScale;
+		static real_t compact2pVerticalBigScale;
 	} minimap;
 };
 
