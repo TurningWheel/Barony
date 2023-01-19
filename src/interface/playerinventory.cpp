@@ -6757,7 +6757,8 @@ void Player::Inventory_t::updateInventory()
 	appraisal.updateAppraisalAnim();
 
 	bool bCompactView = false;
-	if ( (keystatus[SDLK_y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
+	if ( (keystatus[SDLK_y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight()
+		|| players[player]->bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
@@ -8750,7 +8751,19 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( true /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
+							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								// need to unequip
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+								players[player]->paperDoll.updateSlots();
+								if ( players[player]->paperDoll.isItemOnDoll(*item) )
+								{
+									// couldn't unequip, no more actions
+									Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
+								}
+							}
+
+							if ( Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -9804,12 +9817,17 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				it = options.erase(it);
 				continue;
 			}
+			if ( (tinkerOpen || featherOpen) && *it == PROMPT_DROP ) // no drop items in feather or tinker as they have inventory hacks
+			{
+				it = options.erase(it);
+				continue;
+			}
 			if ( alembicOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;
 			}
-			if ( featherOpen && GenericGUI[player].featherGUI.bDrawerOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
+			if ( featherOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;
