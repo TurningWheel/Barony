@@ -11474,7 +11474,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	}
 	drawerJustifyInverted = reversed;
 
-	if ( !player->bUseCompactGUIHeight() )
+	if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
 	{
 		tinkerFramePos.y = heightOffsetWhenNotCompact;
 	}
@@ -13982,7 +13982,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 
 	int potionAnimOffsetY = 0; // all animations tested at heightOffsetWhenNotCompact = 200, so needs offset
-	if ( !player->bUseCompactGUIHeight() )
+	if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
 	{
 		alchFramePos.y = heightOffsetWhenNotCompact;
 		potionAnimOffsetY = 200 - heightOffsetWhenNotCompact;
@@ -17840,7 +17840,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	drawerJustifyInverted = reversed;
 
 	int heightOffsetCompact = 0;
-	if ( !player->bUseCompactGUIHeight() )
+	if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
 	{
 		featherFramePos.y = heightOffsetWhenNotCompact;
 	}
@@ -17883,7 +17883,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			drawerFramePos.x = 0;
 		}
 
-		if ( !player->bUseCompactGUIHeight() )
+		if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
 		{
 			drawerFramePos.y = 54;
 		}
@@ -18047,7 +18047,11 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	}
 
 	// held qtys
-	int currentCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	int currentCharge = 0;
+	if ( parentGUI.scribingToolItem )
+	{
+		currentCharge = parentGUI.scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	}
 	auto currentChargeText = baseFrame->findField("current charge txt");
 	auto changeChargeText = baseFrame->findField("change charge txt");
 	{
@@ -20673,7 +20677,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	}
 
 	int heightOffsetCompact = 0;
-	if ( !player->bUseCompactGUIHeight() )
+	if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
 	{
 		itemFxFramePos.y = heightOffsetWhenNotCompact;
 	}
