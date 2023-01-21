@@ -2931,11 +2931,12 @@ void actPlayer(Entity* my)
 			keystatus[SDLK_KP_6] = 0;
 			if ( keystatus[SDLK_LALT] )
 			{
-				consoleCommand("/split_clipped false");
+				consoleCommand("/split_clipped true");
 			}
 			else
 			{
-				consoleCommand("/split_clipped true");
+				consoleCommand("/split_clipped false");
+				*MainMenu::vertical_splitscreen = !*MainMenu::vertical_splitscreen;
 			}
 			consoleCommand("/split_refresh");
 		}

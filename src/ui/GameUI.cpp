@@ -37,6 +37,8 @@ static const char* smallfont_no_outline = "fonts/pixel_maz_multiline.ttf#16#0";
 
 static ConsoleVariable<Vector4> mapBgColor("/map_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
 static ConsoleVariable<Vector4> logBgColor("/log_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
+static ConsoleVariable<bool> cvar_hotbar_compact_disable("/hotbar_compact_disable", false); // dont use compact at all
+static ConsoleVariable<bool> cvar_hotbar_compact_use_fullsize("/hotbar_compact_fullsize", true); // dont use extra compact view, just normal compact
 
 Frame* gameUIFrame[MAXPLAYERS] = { nullptr };
 bool newui = true;
@@ -7492,6 +7494,32 @@ void Player::HUD_t::processHUD()
 			checkControllerState(player.playernum);
 		}
 	}
+	static ConsoleVariable<int> cvar_ui_above_hotbar_y("/ui_above_hotbar_y", 56);
+	offsetHUDAboveHotbarHeight = 0;
+	if ( player.bUseCompactGUIWidth() )
+	{
+#ifndef NINTENDO
+		if ( inputs.hasController(player.playernum) )
+		{
+			if ( !*MainMenu::cvar_gamepad_facehotbar || *cvar_hotbar_compact_disable )
+			{
+				offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
+			}
+		}
+		else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+		{
+			if ( !*MainMenu::cvar_mkb_facehotbar || *cvar_hotbar_compact_disable )
+			{
+				offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
+			}
+		}
+#else
+		if ( !*MainMenu::cvar_gamepad_facehotbar || *cvar_hotbar_compact_disable )
+		{
+			offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
+		}
+#endif // NINTENDO
+	}
 
 	if ( !gamePaused && player.entity && player.shootmode )
 	{
@@ -7595,6 +7623,9 @@ void Player::MessageZone_t::createChatbox()
 	}
 }
 
+static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
+static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
+static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
 void Player::MessageZone_t::processChatbox()
 {
 	if (!chatFrame) {
@@ -7625,32 +7656,44 @@ void Player::MessageZone_t::processChatbox()
     static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
 	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
 	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
-	bool useBigFont = !players[player.playernum]->bUseCompactGUIHeight() && !players[player.playernum]->bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	useBigFont = !players[player.playernum]->bUseCompactGUIHeight() && !players[player.playernum]->bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 	if ( *cvar_smallmessages )
 	{
 		useBigFont = false;
 	}
-	bool useLeftAligned = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
+	leftAlignedMessages = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
 
 	if ( *alignment == "center" && *cvar_top_aligned && playercount <= 2 )
 	{
-		useLeftAligned = false;
+		leftAlignedMessages = false;
 	}
 
     bool pushPaddingX = !players[player.playernum]->shootmode &&
-        ((playercount == 1 && stats[player.playernum]->cloak && stats[player.playernum]->cloak->type == CLOAK_BACKPACK) ||
+        ((playercount == 1 
+			&& players[player.playernum]->inventoryUI.getSizeY() > players[player.playernum]->inventoryUI.DEFAULT_INVENTORY_SIZEY) ||
         (playercount == 2 && !*MainMenu::vertical_splitscreen));
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
-	const int leftAlignedBottomY = *cvar_messages_left_y;
+	int leftAlignedBottomY = *cvar_messages_left_y;
+	if ( players[player.playernum]->bUseCompactGUIHeight() )
+	{
+		if ( StatusEffectQueue[player.playernum].statusEffectFrame )
+		{
+			const int hungerIconSize = 64;
+			leftAlignedBottomY = players[player.playernum]->camera_virtualy2()
+				- (StatusEffectQueue[player.playernum].statusEffectFrame->getSize().y
+					+ StatusEffectQueue[player.playernum].statusEffectFrame->getSize().h
+					- hungerIconSize - 8);
+		}
+	}
 	const int topAlignedPaddingX = 8;
 	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
-	if ( players[player.playernum]->hud.xpFrame && !useLeftAligned && *alignment == "center" )
+	if ( players[player.playernum]->hud.xpFrame && !leftAlignedMessages && *alignment == "center" )
 	{
 		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
 		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
 	}
-	else if ( players[player.playernum]->hud.allyPlayerFrame && !useLeftAligned && *alignment == "left" && !splitscreen )
+	else if ( players[player.playernum]->hud.allyPlayerFrame && !leftAlignedMessages && *alignment == "left" && !splitscreen )
 	{
 		SDL_Rect allyPlayerPos = players[player.playernum]->hud.allyPlayerFrame->getSize();
 		if ( !players[player.playernum]->hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
@@ -7670,7 +7713,7 @@ void Player::MessageZone_t::processChatbox()
 		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
 
 
-	SDL_Rect messageBoxSize = useLeftAligned ?
+	SDL_Rect messageBoxSize = leftAlignedMessages ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
@@ -7694,7 +7737,7 @@ void Player::MessageZone_t::processChatbox()
 		}
 	}
 
-	const bool messageDrawDescending = !useLeftAligned;
+	const bool messageDrawDescending = !leftAlignedMessages;
 	const int entryPaddingY = playercount > 2 ? 0 : 4;
 
 	int currentY = messageDrawDescending ?
@@ -7706,6 +7749,7 @@ void Player::MessageZone_t::processChatbox()
 	auto end = notification_messages.end();
 	auto rit = notification_messages.rbegin();
 	auto rend = notification_messages.rend();
+	int textLinePadding = useBigFont ? 0 : -4;
 	for ( ; messageDrawDescending ? rit != rend : it != end; ++it, ++rit )
 	{
 	    Message* current = messageDrawDescending ? *rit : *it;
@@ -7724,12 +7768,18 @@ void Player::MessageZone_t::processChatbox()
 			entry->setColor(color);
 			entry->setText(current->text->data);
 			entry->setFont(useBigFont ? bigfont : smallfont);
-
+			entry->setPaddingPerLine(useBigFont ? 0 : *cvar_log_multiline_pady);
             Font* fontGet = Font::get(entry->getFont());
 			Text* textGet = entry->getTextObject();
 
 			int w = textGet->getWidth();
-			int h = textGet->getHeight() * current->text->lines;
+			int h = textGet->getHeight() * (current->text->lines + textLinePadding);
+			int textHeight = h;
+			if ( !useBigFont )
+			{
+				textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)textGet->getHeight()) * (int)current->text->lines + 2);
+				h = textHeight + *cvar_log_lineheight_offset;
+			}
 
 			if (!messageDrawDescending) {
 				currentY -= h;
@@ -7740,7 +7790,7 @@ void Player::MessageZone_t::processChatbox()
 			pos.x = 0;
 			pos.y = currentY;
 			pos.w = messageBoxFrame->getSize().w;
-			pos.h = h;
+			pos.h = textHeight;
 			entry->setSize(pos);
 
 			if (messageDrawDescending) {
@@ -7942,10 +7992,13 @@ static Frame* createMinimap(int player) {
 		{
 			mapHeightOffset = players[player]->hud.mapPromptFrame->getSize().h;
 		}
-		else if ( players[player]->hud.gameTimerFrame && !players[player]->hud.gameTimerFrame->isDisabled() )
+		else if ( players[player]->hud.gameTimerFrame && !players[player]->hud.gameTimerFrame->isDisabled()
+			// ignore if ui raised above hotbar and vertical split layout
+			&& (!(players[player]->hud.offsetHUDAboveHotbarHeight > 0 && splitscreen && !players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth())) )
 		{
 			mapHeightOffset = players[player]->hud.gameTimerFrame->getSize().h;
 		}
+		mapHeightOffset += players[player]->hud.offsetHUDAboveHotbarHeight;
 
 		const int scaledSize = (int)((scale / 100.0) * maxSize);
         int x = factor0 * (parent->getSize().w - scaledSize) +
@@ -8239,6 +8292,27 @@ void openMapWindow(int player) {
 			pos.h = image->getHeight();
 			image->drawColor(nullptr, pos, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
         }
+		else
+		{
+			auto frame = ((Frame*)(widget.getParent()))->getParent();
+			if ( Button* button = frame->findButton("close") )
+			{
+				if ( button->isHighlighted() )
+				{
+					players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_MAP);
+					if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_MAP )
+					{
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_MAP);
+					}
+					SDL_Rect pos = button->getAbsoluteSize();
+					// make sure to adjust absolute size to camera viewport
+					pos.x -= players[player]->camera_virtualx1();
+					pos.y -= players[player]->camera_virtualy1();
+					players[player]->hud.setCursorDisabled(false);
+					players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+				}
+			}
+		}
         });
 
 	minimap->setTickCallback([](Widget& widget){
@@ -8246,12 +8320,41 @@ void openMapWindow(int player) {
 	    auto& input = Input::inputs[player];
 	    auto minimap = static_cast<Frame*>(&widget);
 
-	    static ConsoleVariable<float> speed("/minimap_cursor_speed", 2.f);
+		auto frame = ((Frame*)(widget.getParent()))->getParent();
+		if ( Frame::image_t* closeGlyph = frame->findImage("close glyph") )
+		{
+			closeGlyph->disabled = true;
+			if ( inputs.hasController(player) && !inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				Button* closeBtn = frame->findButton("close");
+				SDL_Rect closeBtnPos = closeBtn->getSize();
+				closeBtn->setSize(closeBtnPos);
+
+				closeGlyph->path = Input::inputs[player].getGlyphPathForBinding("MinimapClose");
+				if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+				{
+					closeGlyph->pos.w = imgGet->getWidth();
+					closeGlyph->pos.h = imgGet->getHeight();
+					closeGlyph->disabled = false;
+				}
+				closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+				if ( closeGlyph->pos.x % 2 == 1 )
+				{
+					++closeGlyph->pos.x;
+				}
+				closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+			}
+		}
+
+	    static ConsoleVariable<float> speed("/minimap_cursor_speed", 4.f);
 
 	    // gamepad moves cursor with right stick
 	    auto& cursor = minimap_cursor[player];
-        cursor.x += (input.analog("MinimapRight") - input.analog("MinimapLeft")) * (*speed);
-        cursor.y += (input.analog("MinimapDown") - input.analog("MinimapUp")) * (*speed);
+		const real_t fpsScale = (60.f / std::max(1U, fpsLimit)); // ported from 60Hz
+		float leftright = (input.analog("MinimapRight") - input.analog("MinimapLeft"));
+		float updown = (input.analog("MinimapDown") - input.analog("MinimapUp"));
+        cursor.x += (leftright) * (*speed * fpsScale);
+        cursor.y += (updown) * (*speed * fpsScale);
         cursor.x = std::min(std::max((real_t)0, cursor.x), (real_t)minimap->getSize().w);
         cursor.y = std::min(std::max((real_t)0, cursor.y), (real_t)minimap->getSize().h);
         input.consumeBindingsSharedWithBinding("MinimapRight");
@@ -8323,6 +8426,11 @@ void openMapWindow(int player) {
     label->setFont(bigfont_outline);
     label->setText("Map");
 
+	auto closeGlyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		"", "close glyph");
+	closeGlyph->disabled = true;
+	closeGlyph->ontop = true;
+
     auto close_button = frame->addButton("close");
     close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
 	close_button->setColor(makeColor(255, 255, 255, 255));
@@ -8353,9 +8461,6 @@ static ConsoleCommand ccmd_log_clear("/log_clear", "Clears log history",
     list_FreeAll(&messages);
     });
 
-static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
-static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
-static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
 void addMessageToLogWindow(int player, string_t* string) {
     auto& frame = players[player]->messageZone.logWindow;
     if (!frame || !string) {
@@ -8755,6 +8860,31 @@ void openLogWindow(int player) {
 				}
 			}
 		}
+
+		if ( Frame::image_t* closeGlyph = frame->findImage("close glyph") )
+		{
+			closeGlyph->disabled = true;
+			if ( inputs.hasController(player) && !inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				Button* closeBtn = frame->findButton("close");
+				SDL_Rect closeBtnPos = closeBtn->getSize();
+				closeBtn->setSize(closeBtnPos);
+
+				closeGlyph->path = Input::inputs[player].getGlyphPathForBinding("LogClose");
+				if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+				{
+					closeGlyph->pos.w = imgGet->getWidth();
+					closeGlyph->pos.h = imgGet->getHeight();
+					closeGlyph->disabled = false;
+				}
+				closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+				if ( closeGlyph->pos.x % 2 == 1 )
+				{
+					++closeGlyph->pos.x;
+				}
+				closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+			}
+		}
         });
 
     // frame images
@@ -8826,6 +8956,11 @@ void openLogWindow(int player) {
     label->setFont(bigfont_outline);
     label->setText("Log");
 
+	auto closeGlyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
+		"", "close glyph");
+	closeGlyph->disabled = true;
+	closeGlyph->ontop = true;
+
     auto close_button = frame->addButton("close");
     close_button->setSize(SDL_Rect{frame->getSize().w - 30, 4, 26, 26});
 	close_button->setColor(makeColor(255, 255, 255, 255));
@@ -8853,6 +8988,28 @@ void openLogWindow(int player) {
 			players[player]->GUI.returnToPreviousActiveModule();
 		}
         });
+	close_button->setDrawCallback([](const Widget& widget, SDL_Rect rect)
+	{
+		Button* button = (Button*)(&widget);
+		const int player = button->getOwner();
+		if ( inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			if ( button->isHighlighted() )
+			{
+				players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_LOG);
+				if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_LOG )
+				{
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_LOG);
+				}
+				SDL_Rect pos = button->getAbsoluteSize();
+				// make sure to adjust absolute size to camera viewport
+				pos.x -= players[player]->camera_virtualx1();
+				pos.y -= players[player]->camera_virtualy1();
+				players[player]->hud.setCursorDisabled(false);
+				players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+			}
+		}
+	});
 
     auto help_left = frame->addField("help_left", 128);
     help_left->setSize(SDL_Rect{0, h - 32, w, 32});
@@ -21994,7 +22151,8 @@ void Player::HUD_t::updateMinimapPrompts()
 		|| gamePaused 
 		|| (player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
 		|| !this->minimapFrame 
-		|| (this->minimapFrame && this->minimapFrame->isInvisible()) )
+		|| (this->minimapFrame && this->minimapFrame->isInvisible())
+		|| player.hud.offsetHUDAboveHotbarHeight > 0 )
 	{
 		mapPromptFrame->setDisabled(true);
 		return;
@@ -22181,7 +22339,7 @@ void Player::HUD_t::updateMinimapPrompts()
 					pos.x += 16;
 				}
 			}
-			pos.y = hudFrame->getSize().h - pos.h;
+			pos.y = hudFrame->getSize().h - pos.h - player.hud.offsetHUDAboveHotbarHeight;
 		}
 		else
 		{
@@ -23929,6 +24087,7 @@ void Player::HUD_t::updateHPBar()
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
 	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
 	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.y -= player.hud.offsetHUDAboveHotbarHeight;
 	hpFrame->setSize(pos);
 
 	auto hpForegroundFrame = hpFrame->findFrame("hp foreground frame");
@@ -24270,6 +24429,7 @@ void Player::HUD_t::updateMPBar()
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
 	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
 	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
+	pos.y -= player.hud.offsetHUDAboveHotbarHeight;
 	mpFrame->setSize(pos);
 
 	auto mpForegroundFrame = mpFrame->findFrame("mp foreground frame");
@@ -24673,9 +24833,17 @@ void Player::Hotbar_t::updateHotbar()
 
 	bool bCompactView = false;
 	bool loweredY = false;
+	int compactDisableLeftRightOffsetX = 0;
 	if ( (keystatus[SDLK_u] && enableDebugKeys) || player.bUseCompactGUIWidth() )
 	{
-		bCompactView = true;
+		if ( !*cvar_hotbar_compact_disable )
+		{
+			bCompactView = true;
+		}
+		else
+		{
+			compactDisableLeftRightOffsetX = 8;
+		}
 		loweredY = true;
 	}
 	else if ( player.bUseCompactGUIHeight() )
@@ -24686,9 +24854,11 @@ void Player::Hotbar_t::updateHotbar()
 	int hotbarStartY2 = hotbarFrame->getSize().h + getHotbarStartY2(); // lower row (left/right)
 	hotbarStartY1 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
 	hotbarStartY2 += ((bCompactView || loweredY) ? hotbarCompactOffsetY : hotbarOffsetY);
-	const int hotbarCentreX = hotbarFrame->getSize().w / 2;
-	const int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : 0);
-	const int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : 0);
+
+	static ConsoleVariable<int> cvar_hotbar_splitscreen_center_x("/hotbar_splitscreen_center_x", 0);
+	const int hotbarCentreX = (hotbarFrame->getSize().w / 2) + *cvar_hotbar_splitscreen_center_x;
+	int hotbarCentreXLeft = hotbarCentreX - 148 + (bCompactView ? hotbarCompactOffsetX : compactDisableLeftRightOffsetX);
+	int hotbarCentreXRight = hotbarCentreX + 148 - (bCompactView ? hotbarCompactOffsetX : compactDisableLeftRightOffsetX);
 	hotbarStartY1 += animHide * abs(getHotbarStartY1());
 	hotbarStartY2 += animHide * abs(getHotbarStartY1());
 
@@ -24836,7 +25006,8 @@ void Player::Hotbar_t::updateHotbar()
 		int centreXLeft = hotbarCentreXLeft;
 		int centreXRight = hotbarCentreXRight;
 		int centreX = hotbarCentreX;
-		bool compactViewNavigation = (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !player.shootmode);
+		bool compactViewNavigation = (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && !player.shootmode)
+			|| *cvar_hotbar_compact_use_fullsize;
 		if ( bCompactView )
 		{
 			if ( compactViewNavigation )
@@ -24851,7 +25022,8 @@ void Player::Hotbar_t::updateHotbar()
 			{
 				compactViewOffset = pos.w * hotbarCompactSlotOverlapPercent;
 			}
-			compactInactiveSlotOffset = hotbarCompactInactiveSlotMovementX * selectedSlotAnimateCurrentValue;
+			compactInactiveSlotOffset = (hotbarCompactInactiveSlotMovementX + (*cvar_hotbar_compact_use_fullsize ? -6 : 0))
+				* selectedSlotAnimateCurrentValue;
 
 			if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
 			{
@@ -25167,10 +25339,22 @@ static void drawConsoleCommandBuffer() {
 	} else {
 	    snprintf(buf, sizeof(buf), "> %s", command_str);
 	}
-	auto text = Text::get(buf, "fonts/pixelmix.ttf#16#2",
+	auto text = Text::get(buf, players[commandPlayer]->messageZone.useBigFont ? "fonts/pixelmix.ttf#16#2" : "fonts/pixel_maz_multiline.ttf#16#2",
 	    0xffffffff, makeColor(0, 0, 0, 255));
 	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
-	const int printy = players[commandPlayer]->camera_virtualy2() - 192;
+	int printy = players[commandPlayer]->camera_virtualy2() - 192;
+	if ( players[commandPlayer]->messageZone.leftAlignedMessages && players[commandPlayer]->messageZone.chatFrame )
+	{
+		if ( Frame* messageBoxFrame = players[commandPlayer]->messageZone.chatFrame->findFrame("message box") )
+		{
+			printy = messageBoxFrame->getSize().y + messageBoxFrame->getSize().h + 4;
+			if ( !players[commandPlayer]->messageZone.useBigFont )
+			{
+				printy -= 4;
+			}
+			printy += players[commandPlayer]->camera_virtualy1();
+		}
+	}
 	text->draw(SDL_Rect{0,0,0,0}, SDL_Rect{printx, printy, 0, 0},
 	    SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 }
@@ -29223,7 +29407,9 @@ void Player::HUD_t::updateMinotaurWarning()
 		{
 			mapHeightOffset = player.hud.mapPromptFrame->getSize().h;
 		}
-		else if ( player.hud.gameTimerFrame && !player.hud.gameTimerFrame->isDisabled() )
+		else if ( player.hud.gameTimerFrame && !player.hud.gameTimerFrame->isDisabled()
+			// ignore if ui raised above hotbar and vertical split layout
+			&& (!(player.hud.offsetHUDAboveHotbarHeight > 0 && splitscreen && !player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())) )
 		{
 			mapHeightOffset = player.hud.gameTimerFrame->getSize().h;
 		}
@@ -29231,6 +29417,7 @@ void Player::HUD_t::updateMinotaurWarning()
 		{
 			leftAlignYOffset += 44;
 		}
+		mapHeightOffset += player.hud.offsetHUDAboveHotbarHeight;
 		minimapPos.y -= mapHeightOffset;
 	}
 	minimapPos.w = player.minimap.minimapPos.w;

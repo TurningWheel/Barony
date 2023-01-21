@@ -1590,6 +1590,7 @@ public:
 		static int actionPromptIconSize;
 		static int actionPromptIconOpacity;
 		static int actionPromptIconBackingOpacity;
+		int offsetHUDAboveHotbarHeight = 0;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
@@ -1717,6 +1718,8 @@ public:
 
 		static const int MESSAGE_MAX_ENTRIES = 20;
 		Frame* chatFrame = nullptr;
+		bool leftAlignedMessages = false;
+		bool useBigFont = false;
 		void createChatbox();
 		void processChatbox();
 
