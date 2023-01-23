@@ -306,7 +306,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass);
 void doQuitGame();
 void doNewGame(bool makeHighscore);
 void doCredits();
-void doEndgame();
+void doEndgame(bool saveHighscore);
 void doIntro();
 void doEndgameHerx();
 void doEndgameDevil();

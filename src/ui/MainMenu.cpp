@@ -5989,6 +5989,30 @@ bind_failed:
                 updateStats(button, score);
                 loadScore(score);
                 });
+            button->setTickCallback([](Widget& widget){
+                auto button = static_cast<Button*>(&widget);
+                auto list = static_cast<Frame*>(button->getParent());
+                if (button->isSelected()) {
+                    if (button->getSize().y < list->getActualSize().y) {
+                        auto next = button->getWidgetMovements().find("MenuDown");
+                        if (next != button->getWidgetMovements().end() && !next->second.empty()) {
+                            auto result = list->findButton(next->second.c_str());
+                            if (result) {
+                                result->select();
+                            }
+                        }
+                    }
+                    if (button->getSize().y + button->getSize().h >= list->getActualSize().y + list->getSize().h) {
+                        auto next = button->getWidgetMovements().find("MenuUp");
+                        if (next != button->getWidgetMovements().end() && !next->second.empty()) {
+                            auto result = list->findButton(next->second.c_str());
+                            if (result) {
+                                result->select();
+                            }
+                        }
+                    }
+                }
+                });
 
             if (index == 0) {
                 button->select();
@@ -16889,7 +16913,7 @@ bind_failed:
 						case 8: screenshot_path += "save_temple00.png"; break;
 						case 9: screenshot_path += "save_castle00.png"; break;
 						case 12: screenshot_path += "save_sokoban00.png"; break;
-						case 14: screenshot_path += "save_minotaur00.png"; break;
+						case 14: screenshot_path += "save_maze00.png"; break;
 						case 17: screenshot_path += "save_library00.png"; break;
 						case 19:
 						case 20: screenshot_path += "save_underworld00.png"; break;
@@ -18003,7 +18027,11 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				beginFade(MainMenu::FadeDestination::RootMainMenu);
+                if (saveGameExists(multiplayer == SINGLE)) {
+                    beginFade(MainMenu::FadeDestination::RootMainMenu);
+                } else {
+                    beginFade(MainMenu::FadeDestination::Endgame);
+                }
 			},
 			[](Button&){ // cancel
 				soundCancel();
@@ -18088,15 +18116,8 @@ bind_failed:
 			main_menu_fade_destination = FadeDestination::RootMainMenu;
 		} else {
 		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
+                assert(!ingame); // you're not supposed to use this destination while in-game!
 		        destroyMainMenu();
-				if (ingame) {
-#ifdef NINTENDO
-					if (!nxIsHandheldMode()) {
-						nxAssignControllers(1, 1, true, false, true, false, nullptr);
-					}
-#endif
-				    doEndgame();
-				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
@@ -18118,7 +18139,11 @@ bind_failed:
 						nxAssignControllers(1, 1, true, false, true, false, nullptr);
 					}
 #endif
-				    doEndgame();
+                    // end the game, but do NOT create a highscore.
+                    // this is because we are coming here from some unknown place.
+                    // presumably the current game has been saved, so we're not ending it.
+                    // just return to the main menu but don't save a score
+                    doEndgame(false);
 				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
@@ -18137,13 +18162,43 @@ bind_failed:
 				}
 #endif
 			}
+            else if (main_menu_fade_destination == FadeDestination::Endgame) {
+                destroyMainMenu();
+                if (ingame) {
+#ifdef NINTENDO
+                    if (!nxIsHandheldMode()) {
+                        nxAssignControllers(1, 1, true, false, true, false, nullptr);
+                    }
+#endif
+                    // end the game AND create a highscore!
+                    // this is because the game is well and truly done. There is no save file.
+                    // create a highscore as token of remembrance.
+                    doEndgame(true);
+                }
+                const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+                playMusic(intromusic[music], true, false, false);
+                createMainMenu(false);
+                if (saved_invite_lobby) {
+                    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
+                    saved_invite_lobby = nullptr;
+                }
+
+#ifndef NINTENDO
+                for (int c = 1; c < 4; ++c) {
+                    if (inputs.hasController(c)) {
+                        inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+                        Input::inputs[c].refresh();
+                    }
+                }
+#endif
+            }
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
 				if (!nxIsHandheldMode()) {
 					nxAssignControllers(1, 1, true, false, true, false, nullptr);
 				}
 #endif
-				doEndgame();
+				doEndgame(true);
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
