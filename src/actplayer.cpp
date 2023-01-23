@@ -5823,7 +5823,7 @@ void actPlayer(Entity* my)
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] && !intro )
 				{
 					// periodically set the telepath rendering flag.
 					mapCreature->monsterEntityRenderAsTelepath = 1;

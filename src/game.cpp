@@ -5602,7 +5602,7 @@ void drawAllPlayerCameras() {
 							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 							{
 								Entity* mapCreature = (Entity*)mapNode->element;
-								if ( mapCreature )
+								if ( mapCreature && !intro )
 								{
 									mapCreature->monsterEntityRenderAsTelepath = 1;
 								}
