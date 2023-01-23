@@ -702,7 +702,7 @@ static const int THROWN_GEM_MAX_STACK_QTY = 9;
 /*
  * Only compares items of the same type.
  */
-int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
+int itemCompare(const Item* item1, const Item* item2, bool checkAppearance, bool comparisonUsedForStacking = true);
 
 /*
  * Returns true if potion is harmful to the player.

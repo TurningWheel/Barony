@@ -5165,7 +5165,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				continue;
 			}
-			if (!itemCompare(item, item2, false))
+			if (!itemCompare(item, item2, false, false))
 			{
 				printlog("[Shops]: client %d bought item from shop (uid=%d)\n", client, uidnum);
 				if ( shopIsMysteriousShopkeeper(entity) )
@@ -5484,7 +5484,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				item->identified = slot->identified;
 			}
-			if ( !itemCompare(item, slot, false) )
+			if ( !itemCompare(item, slot, false, false) )
 			{
 				slot->appearance = item->appearance;
 				if ( onIdentify )

@@ -931,7 +931,7 @@ SDL_Surface* itemSprite(Item* const item)
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance)
+int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance, bool comparisonUsedForStacking)
 {
 	Sint32 model1 = 0;
 	Sint32 model2 = 0;
@@ -981,7 +981,10 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	}
 	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
-		return 1; // these items do not stack
+		if ( comparisonUsedForStacking )
+		{
+			return 1; // these items do not stack
+		}
 	}
 
 	if (item1->identified != item2->identified)
