@@ -3955,7 +3955,7 @@ void handleMainMenu(bool mode)
 			for ( auto cur : resolutions )
 			{
 				int width, height;
-				std::tie (width, height) = cur;
+				//std::tie (width, height) = cur;
 				if ( settings_xres == width && settings_yres == height )
 				{
 					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", width, height);
@@ -11133,21 +11133,25 @@ void getResolutionList(int device_id, std::list<resolution>& resolutions)
 		SDL_GetDisplayMode(device_id, i, &mode);
 
 		// resolutions below 1024x768 are not supported
-		if ( mode.w < 1024 || mode.h < 720 )
+		if ( mode.w < 1024 || mode.h < 720 || mode.refresh_rate == 0 )
 		{
 		    continue;
 		}
 
-		resolution res(mode.w, mode.h);
+		resolution res{mode.w, mode.h, mode.refresh_rate};
 		resolutions.push_back(res);
 	}
 
-	// sort first by xres and then by yres
-	resolutions.sort([](resolution a, resolution b) {
-		if (std::get<0>(a) == std::get<0>(b)) {
-			return std::get<1>(a) > std::get<1>(b);
+	// sort first by hz, then xres, and then by yres
+	resolutions.sort([](const resolution& a, const resolution& b) {
+		if (a.hz == b.hz) {
+			if (a.x == b.x) {
+				return a.y > b.y;
+			} else {
+				return a.x > b.x;
+			}
 		} else {
-			return std::get<0>(a) > std::get<0>(b);
+			return a.hz > b.hz;
 		}
 	});
 

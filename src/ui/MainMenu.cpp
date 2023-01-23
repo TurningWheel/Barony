@@ -42,6 +42,10 @@ namespace MainMenu {
 	bool cursor_delete_mode = false;
 	Frame* main_menu_frame = nullptr;
 
+    constexpr int MIN_FPS = 30;
+    constexpr int MAX_FPS = 300;
+    constexpr int AUTO_FPS = MAX_FPS + 1;
+
 	// ALL NEW menu options:
 	std::string current_audio_device;
 	float master_volume = 1.f;
@@ -56,6 +60,8 @@ namespace MainMenu {
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
+    ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
+    ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -239,6 +245,7 @@ namespace MainMenu {
 	struct Video {
 		int window_mode = 0; // 0 = windowed, 1 = borderless, 2 = fullscreen
 		int display_id = 0;
+        int hz = 0;
 		int resolution_x = 1280;
 		int resolution_y = 720;
 		bool vsync_enabled = true;
@@ -1951,6 +1958,7 @@ namespace MainMenu {
 		::display_id = display_id;
 		xres = std::max(resolution_x, 1024);
 		yres = std::max(resolution_y, 720);
+        *cvar_displayHz = hz;
 		verticalSync = vsync_enabled;
 		vidgamma = std::min(std::max(.5f, gamma / 100.f), 2.f);
 
@@ -1963,6 +1971,7 @@ namespace MainMenu {
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
+        settings.hz = *cvar_displayHz;
 		settings.vsync_enabled = verticalSync;
 		settings.gamma = vidgamma * 100.f;
 		return settings;
@@ -1973,10 +1982,11 @@ namespace MainMenu {
 	}
 
 	bool Video::serialize(FileInterface* file) {
-	    int version = 0;
+	    int version = 1;
 	    file->property("version", version);
 	    file->property("window_mode", window_mode);
 	    file->property("display_id", display_id);
+        file->propertyVersion("hz", version >= 1, hz);
 	    file->property("resolution_x", resolution_x);
 	    file->property("resolution_y", resolution_y);
 	    file->property("vsync_enabled", vsync_enabled);
@@ -2021,7 +2031,26 @@ namespace MainMenu {
 		*clipped_splitscreen = clipped_split_enabled;
 		TimerExperiments::bUseTimerInterpolation = use_frame_interpolation;
 		::fov = std::min(std::max(40.f, fov), 100.f);
-		fpsLimit = std::min(std::max(30.f, fps), 300.f);
+        *cvar_desiredFps = (int)fps;
+        if (*cvar_desiredFps == AUTO_FPS) {
+            if (*cvar_displayHz) {
+                fpsLimit = std::min(std::max(MIN_FPS, *cvar_displayHz), MAX_FPS);
+            } else {
+                SDL_DisplayMode mode;
+                int result = SDL_GetCurrentDisplayMode(::display_id, &mode);
+                if (!result && mode.refresh_rate) {
+                    fpsLimit = std::min(std::max(MIN_FPS, mode.refresh_rate), MAX_FPS);
+                } else {
+                    if (result) {
+                        printlog(SDL_GetError());
+                    }
+                    printlog("note: unknown display refresh rate, defaulting to 60hz");
+                    fpsLimit = 60;
+                }
+            }
+        } else {
+            fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
+        }
 		current_audio_device = audio_device;
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
@@ -2105,7 +2134,7 @@ namespace MainMenu {
 		settings.clipped_split_enabled = *clipped_splitscreen;
 		settings.use_frame_interpolation = TimerExperiments::bUseTimerInterpolation;
 		settings.fov = ::fov;
-		settings.fps = fpsLimit;
+		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
@@ -2170,7 +2199,7 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.use_frame_interpolation = true;
 		settings.fov = 60;
-		settings.fps = 60;
+		settings.fps = AUTO_FPS;
 		settings.audio_device = "";
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
@@ -2208,7 +2237,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 7;
+	    int version = 8;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2252,7 +2281,11 @@ namespace MainMenu {
             file->property("gamma", f);
         }
 		file->property("fov", fov);
-		file->property("fps", fps);
+        if (version < 8) {
+            fps = AUTO_FPS;
+        } else {
+            file->property("fps", fps);
+        }
 		file->propertyVersion("audio_device", version >= 4, audio_device);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
@@ -2954,7 +2987,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -3440,10 +3473,11 @@ namespace MainMenu {
 
 	static void settingsResolutionEntry(Frame::entry_t& entry) {
 		soundActivate();
-		int new_xres, new_yres;
-		sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+		int new_xres, new_yres, new_hz;
+		sscanf(entry.name.c_str(), "%d x %d @ %dhz", &new_xres, &new_yres, &new_hz);
 		allSettings.video.resolution_x = new_xres;
 		allSettings.video.resolution_y = new_yres;
+		allSettings.video.hz = new_hz;
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 		auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
@@ -3454,11 +3488,12 @@ namespace MainMenu {
 	}
 
 	static void settingsResolutionSmall(Button& button) {
-		settingsOpenDropdown(button, "resolution", DropdownType::Short, settingsResolutionEntry);
+        // wide short mode?
+		settingsOpenDropdown(button, "resolution", DropdownType::Wide, settingsResolutionEntry);
 	}
 
-	static void settingsResolutionBig(Button& button) {
-		settingsOpenDropdown(button, "resolution", DropdownType::Normal, settingsResolutionEntry);
+    static void settingsResolutionBig(Button& button) {
+		settingsOpenDropdown(button, "resolution", DropdownType::Wide, settingsResolutionEntry);
 	}
 
 	static void settingsDisplayDevice(Button& button) {
@@ -3487,10 +3522,8 @@ namespace MainMenu {
 		    std::list<resolution>::iterator it;
 		    for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			    auto& res = *it;
-			    const int x = std::get<0>(res);
-			    const int y = std::get<1>(res);
 			    char buf[32];
-			    snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			    snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			    resolutions_formatted.push_back(std::string(buf));
 		    }
 
@@ -3976,6 +4009,12 @@ namespace MainMenu {
 		return result;
 	}
 
+    static const char* sliderPercent(float v) {
+        static char buf[8];
+        snprintf(buf, sizeof(buf), "%d%%", (int)v);
+        return buf;
+    }
+
 	static int settingsAddSlider(
 		Frame& frame,
 		int y,
@@ -3985,7 +4024,7 @@ namespace MainMenu {
 		float value,
 		float minValue,
 		float maxValue,
-		bool percent,
+		const char* (*fmt)(float value),
 		void (*callback)(Slider&),
 		bool _short = false)
 	{
@@ -4001,27 +4040,21 @@ namespace MainMenu {
 		field->setSize(box->pos);
 		field->setJustify(Field::justify_t::CENTER);
 		field->setFont(smallfont_outline);
-		if (percent) {
-			field->setTickCallback([](Widget& widget){
-				auto field = static_cast<Field*>(&widget); assert(field);
-				auto frame = static_cast<Frame*>(widget.getParent());
-				auto name = std::string(widget.getName());
-				auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
-				auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
-				char buf[8]; snprintf(buf, sizeof(buf), "%d%%", (int)slider->getValue());
-				field->setText(buf);
-				});
-		} else {
-			field->setTickCallback([](Widget& widget){
-				auto field = static_cast<Field*>(&widget); assert(field);
-				auto frame = static_cast<Frame*>(widget.getParent());
-				auto name = std::string(widget.getName());
-				auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
-				auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
-				char buf[8]; snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
-				field->setText(buf);
-				});
-		}
+        field->setTickCallback([](Widget& widget){
+            auto field = static_cast<Field*>(&widget); assert(field);
+            auto frame = static_cast<Frame*>(widget.getParent());
+            auto name = std::string(widget.getName());
+            auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
+            auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
+            auto fmt = reinterpret_cast<const char* (*)(float)>(slider->getUserData());
+            if (fmt) {
+                field->setText(fmt(slider->getValue()));
+            } else {
+                char buf[8];
+                snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
+                field->setText(buf);
+            }
+            });
 		auto slider = frame.addSlider((fullname + "_slider").c_str());
 		slider->setOrientation(Slider::orientation_t::SLIDER_HORIZONTAL);
 		slider->setMinValue(minValue);
@@ -4046,6 +4079,7 @@ namespace MainMenu {
 		slider->addWidgetAction("MenuAlt1", "restore_defaults");
 		slider->addWidgetAction("MenuStart", "confirm_and_exit");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+        slider->setUserData(reinterpret_cast<void*>(fmt));
 		return result;
 	}
 
@@ -4368,24 +4402,24 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
-			allSettings.minimap.map_scale, 25, 100, true,
+            allSettings.minimap.map_scale, 25, 100, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			allSettings.minimap.icon_scale, 25, 200, true,
+			allSettings.minimap.icon_scale, 25, 200, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
 
 		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
 			"Set the opacity of the minimap's foreground.",
-			allSettings.minimap.foreground_opacity, 0, 100, true,
+			allSettings.minimap.foreground_opacity, 0, 100, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.foreground_opacity = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
 			"Set the opacity of the minimap's background.",
-			allSettings.minimap.background_opacity, 0, 100, true,
+			allSettings.minimap.background_opacity, 0, 100, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
 		hookSettings(*subwindow,
@@ -4817,7 +4851,7 @@ bind_failed:
 #ifndef NINTENDO
         y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
             "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
-            allSettings.ui_scale, 50.f, 100.f, true,
+            allSettings.ui_scale, 50.f, 100.f, sliderPercent,
             [](Slider& slider){soundSlider(true); allSettings.ui_scale = slider.getValue();});
         y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
             "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
@@ -4874,7 +4908,7 @@ bind_failed:
 #ifdef NINTENDO
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
 #else
-			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #endif
 			return;
 		}
@@ -4893,13 +4927,12 @@ bind_failed:
 		std::list<resolution>::iterator it;
 		for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			auto& res = *it;
-			const int x = std::get<0>(res);
-			const int y = std::get<1>(res);
 			char buf[32];
-			snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.video.resolution_x == x && allSettings.video.resolution_y == y) {
+			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y &&
+				allSettings.video.hz == res.hz) {
 				selected_res = index;
 			}
 		}
@@ -4923,14 +4956,14 @@ bind_failed:
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
+        y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
+            true, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
+            resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
             false, displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
-		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
-			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
-			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
-		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			false, modes, selected_mode, settingsWindowMode);
+        y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
+            false, modes, selected_mode, settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
@@ -4938,18 +4971,28 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
-			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
+			allSettings.video.gamma, 50, 200, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
-			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
+			allSettings.fov, 40, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
+        auto sliderFPS = [](float v) -> const char* {
+            if ((int)v == AUTO_FPS) {
+                return "Auto";
+            } else {
+                static char buf[8];
+                snprintf(buf, sizeof(buf), "%d", (int)v);
+                return buf;
+            }
+        };
+        
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
-			"Control the frame-rate limit of the game window.",
-			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
+			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
+			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
-			"Smooth player camera by interpolating camera movements over several frames.",
-			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed(); });
+			"Smooth player camera by interpolating camera movements over additional frames.",
+			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
@@ -4978,10 +5021,10 @@ bind_failed:
 			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
 			"Control size of in-world popups for items, gravestones and NPC dialogue.",
-			allSettings.world_tooltip_scale, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
+			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
 		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
 			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
-			allSettings.world_tooltip_scale_splitscreen, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
+			allSettings.world_tooltip_scale_splitscreen, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
@@ -4996,8 +5039,8 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,{
+            {Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "device"},
-			{Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "window_mode"},
 			{Setting::Type::Boolean, "vsync"},
 			{Setting::Type::Slider, "gamma"},
@@ -5017,8 +5060,8 @@ bind_failed:
 			{Setting::Type::Boolean, "light_flicker"},
 			});
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "resolution"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #else
 		hookSettings(*settings_subwindow,{
 			{Setting::Type::Slider, "gamma"},
@@ -5071,7 +5114,7 @@ bind_failed:
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 			if (!selected_device && allSettings.audio_device == guid_string) {
 				selected_device = c;
 			}
@@ -5091,27 +5134,27 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
+			allSettings.master_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
+			allSettings.gameplay_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
+			allSettings.ambient_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
+			allSettings.environment_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
+			allSettings.music_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 
@@ -5187,7 +5230,7 @@ bind_failed:
 		std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
+			allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
 			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
 			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
@@ -5227,10 +5270,10 @@ bind_failed:
 			gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
 			"Enable to invert left/right look controls of the player camera.",
@@ -18310,7 +18353,7 @@ bind_failed:
 #ifdef NINTENDO
 					settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
 #else
-		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #endif
                 },
                 [](Button&){ // no
@@ -18324,7 +18367,7 @@ bind_failed:
 #ifdef NINTENDO
 					settingsSelect(*settings_subwindow, { Setting::Type::Boolean, "vertical_split" });
 #else
-					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "device" });
+					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "resolution" });
 #endif
                 }, false, false); // yellow buttons
 

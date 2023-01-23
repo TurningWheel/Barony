@@ -280,7 +280,15 @@ extern Sint32 oldYres;
 extern button_t* revertResolutionButton;
 
 int getNumDisplays();
-typedef std::tuple<int, int> resolution;
+struct resolution {
+	int x;
+	int y;
+	int hz;
+
+	bool operator==(const resolution& rhs) const {
+		return x == rhs.x && y == rhs.y && hz == rhs.hz;
+	}
+};
 void getResolutionList(int device_id, std::list<resolution>&);
 void applySettings();
 void openConfirmResolutionWindow();
