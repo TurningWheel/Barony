@@ -781,7 +781,7 @@ bool Player::CharacterSheet_t::isSheetElementAllowedToNavigateTo(Player::Charact
 		return false;
 	}
 
-	if ( player.bUseCompactGUIHeight() )
+	if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
 	{
 		switch ( element )
 		{
@@ -828,7 +828,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	int currentElement = characterSheet_t.selectedElement;
 
 	bool bCompactView = false;
-	if ( this->player.bUseCompactGUIHeight() )
+	if ( this->player.bUseCompactGUIHeight() || this->player.bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
@@ -1249,6 +1249,12 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		return MODULE_NONE;
 	}
 
+	bool bCompactView = false;
+	if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
+	{
+		bCompactView = true;
+	}
+
 	if ( input.binaryToggle("UINavLeftBumper")
 		|| (checkLeftNavigation && checkDestinationOnly) )
 	{
@@ -1324,7 +1330,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_CHEST;
 			}
-			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || bCompactView )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1430,7 +1436,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			if ( bCompactView && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1463,7 +1469,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				if ( !checkDestinationOnly )
 				{
-					if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.bUseCompactGUIHeight() )
+					if ( !inputs.getUIInteraction(player.playernum)->selectedItem && bCompactView )
 					{
 						// code to bounce to the paper doll/inventory based on visual position
 						//if ( player.inventoryUI.getSelectedSlotY() <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5
@@ -1522,7 +1528,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_CHARACTERSHEET 
 			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			if ( bCompactView && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				// no action here
 				if ( !checkDestinationOnly )
@@ -1720,7 +1726,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 		else if ( activeModule == MODULE_HOTBAR )
 		{
-			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			if ( bCompactView && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				if ( !checkDestinationOnly )
 				{
@@ -1736,7 +1742,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 				return MODULE_CHARACTERSHEET;
 			}
-			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || player.bUseCompactGUIHeight() )
+			else if ( inputs.getUIInteraction(player.playernum)->selectedItem || bCompactView )
 			{
 				if ( player.inventory_mode == INVENTORY_MODE_SPELL 
 					&& (player.inventoryUI.spellPanel.bFirstTimeSnapCursor || checkDestinationOnly ) )
@@ -1756,7 +1762,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					if ( !checkDestinationOnly )
 					{
 						// code to bounce to the paper doll/inventory based on visual position
-						//if ( !inputs.getUIInteraction(player.playernum)->selectedItem && player.bUseCompactGUIHeight() )
+						//if ( !inputs.getUIInteraction(player.playernum)->selectedItem && bCompactView )
 						//{
 						//	if ( player.inventoryUI.getSelectedSlotY() <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5
 						//		&& player.inventoryUI.paperDollPanelJustify == Player::PANEL_JUSTIFY_LEFT )
@@ -1845,7 +1851,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		else if ( activeModule == MODULE_CHARACTERSHEET 
 			&& (player.characterSheet.isInteractable || checkDestinationOnly) )
 		{
-			if ( player.bUseCompactGUIHeight() && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
+			if ( bCompactView && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				// no action here
 				if ( !checkDestinationOnly )
