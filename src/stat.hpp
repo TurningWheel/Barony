@@ -325,6 +325,7 @@ public:
 		}
 	}
 	void setAttribute(std::string key, std::string value);
+	bool statusEffectRemovedByCureAilment(const int effect, Entity* my);
 };
 extern Stat* stats[MAXPLAYERS];
 
@@ -336,4 +337,3 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
 char* getSkillLangEntry(int skill);
-bool statusEffectRemovedByCureAilment(const int effect);

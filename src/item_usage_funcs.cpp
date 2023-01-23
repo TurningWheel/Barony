@@ -960,7 +960,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		if ( statusEffectRemovedByCureAilment(c) )
+		if ( stats->statusEffectRemovedByCureAilment(c, entity) )
 		{
 			if ( stats->EFFECTS[c] )
 			{
