@@ -3954,7 +3954,7 @@ void handleMainMenu(bool mode)
 			c=0;
 			for ( auto cur : resolutions )
 			{
-				int width, height;
+				int width = 0, height = 0;
 				//std::tie (width, height) = cur;
 				if ( settings_xres == width && settings_yres == height )
 				{
