@@ -6974,11 +6974,13 @@ void Player::HUD_t::updateActionPrompts()
 	}
 
 	static ConsoleVariable<int> actionPromptCompactHeightY("/actionpromptcompactheighty", 16);
+	bShowActionPrompts = !*disableActionPrompts;
 
 	if ( !bShowActionPrompts || playercount > 2
 		|| (playercount == 2 && (*MainMenu::vertical_splitscreen || !player.shootmode)) 
 		|| *disableActionPrompts )
 	{
+		bShowActionPrompts = false;
 		actionPromptsFrame->setDisabled(true);
 		return;
 	}
@@ -24068,7 +24070,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 }
 
 const int HPMPdividerThresholdInterval = 20;
-
+const int kHPMPWidthReduce2pWideClippedActionPrompts = 60;
 void Player::HUD_t::updateHPBar()
 {
 	if ( !hpFrame )
@@ -24085,6 +24087,13 @@ void Player::HUD_t::updateHPBar()
 
 	SDL_Rect pos = hpFrame->getSize();
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	if ( !player.bUseCompactGUIWidth() 
+		&& player.bUseCompactGUIHeight() && *MainMenu::clipped_splitscreen
+		&& bShowActionPrompts )
+	{
+		// shorten if action prompts visible in clipped wide mode
+		pos.w -= kHPMPWidthReduce2pWideClippedActionPrompts; 
+	}
 	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
 	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	pos.y -= player.hud.offsetHUDAboveHotbarHeight;
@@ -24427,6 +24436,13 @@ void Player::HUD_t::updateMPBar()
 
 	SDL_Rect pos = mpFrame->getSize();
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
+	if ( !player.bUseCompactGUIWidth()
+		&& player.bUseCompactGUIHeight() && *MainMenu::clipped_splitscreen
+		&& bShowActionPrompts )
+	{
+		// shorten if action prompts visible in clipped wide mode
+		pos.w -= kHPMPWidthReduce2pWideClippedActionPrompts; 
+	}
 	pos.x = HPMP_FRAME_START_X + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetX : hpmpbarOffsetX);
 	pos.y = hudFrame->getSize().h - HPMP_FRAME_START_Y + HPMP_FRAME_HEIGHT + ((bCompactWidth || bCompactHeight) ? hpmpbarCompactOffsetY : hpmpbarOffsetY);
 	pos.y -= player.hud.offsetHUDAboveHotbarHeight;
