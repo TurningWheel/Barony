@@ -5722,6 +5722,67 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		return;
 	}},
 
+	// the client repaired tinkering bots
+	{ 'REPT', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		Item* equipment = nullptr;
+
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				equipment = stats[player]->weapon;
+				break;
+			case 1:
+				equipment = stats[player]->helmet;
+				break;
+			case 2:
+				equipment = stats[player]->breastplate;
+				break;
+			case 3:
+				equipment = stats[player]->gloves;
+				break;
+			case 4:
+				equipment = stats[player]->shoes;
+				break;
+			case 5:
+				equipment = stats[player]->shield;
+				break;
+			case 6:
+				equipment = stats[player]->cloak;
+				break;
+			case 7:
+				equipment = stats[player]->mask;
+				break;
+			default:
+				equipment = nullptr;
+				break;
+		}
+
+		if ( !equipment )
+		{
+			return;
+		}
+		if ( !(equipment->type == TOOL_SENTRYBOT
+			|| equipment->type == TOOL_SPELLBOT
+			|| equipment->type == TOOL_DUMMYBOT
+			|| equipment->type == TOOL_GYROBOT) )
+		{
+			return;
+		}
+
+		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
+		{
+			equipment->status = EXCELLENT;
+		}
+		else if ( static_cast<int>(net_packet->data[6]) < BROKEN )
+		{
+			equipment->status = BROKEN;
+		}
+		equipment->status = static_cast<Status>(net_packet->data[6]);
+		equipment->appearance = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[7]));
+		return;
+	} },
+
 	// the client changed beatitude of equipment.
 	{'BEAT', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));

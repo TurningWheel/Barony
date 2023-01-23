@@ -9722,6 +9722,8 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 
 	if ( stats[gui_player] && players[gui_player] )
 	{
+		bool isEquipped = itemIsEquipped(item, gui_player);
+
 		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_GYROBOT )
 		{
 			if ( item->tinkeringBotIsMaxHealth() )
@@ -9754,33 +9756,92 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 				if ( tinkeringConsumeMaterialsForRepair(item, true) )
 				{
 					newStatus = std::min(static_cast<Status>(item->status + 1), maxStatus);
-					Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
-					if ( upgradedItem )
+					if ( !isEquipped )
 					{
-						achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-						Item* pickedUp = itemPickup(gui_player, upgradedItem);
-						if ( pickedUp && item->count == 1 )
+						Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+						if ( upgradedItem )
 						{
-							// item* will be consumed, so pickedUp can take the inventory slot of it.
-							pickedUp->x = item->x;
-							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
+							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
+							Item* pickedUp = itemPickup(gui_player, upgradedItem);
+							if ( pickedUp && item->count == 1 )
 							{
-								if ( hotbarSlot.item == item->uid )
+								// item* will be consumed, so pickedUp can take the inventory slot of it.
+								pickedUp->x = item->x;
+								pickedUp->y = item->y;
+								for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 								{
-									hotbarSlot.item = pickedUp->uid;
-								}
-								else if ( hotbarSlot.item == pickedUp->uid )
-								{
-									// this was auto placed by itemPickup just above, undo it.
-									hotbarSlot.item = 0;
+									if ( hotbarSlot.item == item->uid )
+									{
+										hotbarSlot.item = pickedUp->uid;
+									}
+									else if ( hotbarSlot.item == pickedUp->uid )
+									{
+										// this was auto placed by itemPickup just above, undo it.
+										hotbarSlot.item = 0;
+									}
 								}
 							}
+							free(upgradedItem);
 						}
-						free(upgradedItem);
+					}
+					else
+					{
+						item->status = newStatus;
+						item->appearance = ITEM_TINKERING_APPEARANCE;
+					}
+
+					if ( multiplayer == CLIENT && isEquipped )
+					{
+						// the client needs to inform the server that their equipment was repaired.
+						int armornum = 0;
+						if ( item == stats[gui_player]->weapon )
+						{
+							armornum = 0;
+						}
+						else if ( item == stats[gui_player]->helmet )
+						{
+							armornum = 1;
+						}
+						else if ( item == stats[gui_player]->breastplate )
+						{
+							armornum = 2;
+						}
+						else if ( item == stats[gui_player]->gloves )
+						{
+							armornum = 3;
+						}
+						else if ( item == stats[gui_player]->shoes )
+						{
+							armornum = 4;
+						}
+						else if ( item == stats[gui_player]->shield )
+						{
+							armornum = 5;
+						}
+						else if ( item == stats[gui_player]->cloak )
+						{
+							armornum = 6;
+						}
+						else if ( item == stats[gui_player]->mask )
+						{
+							armornum = 7;
+						}
+
+						strcpy((char*)net_packet->data, "REPT");
+						net_packet->data[4] = gui_player;
+						net_packet->data[5] = armornum;
+						net_packet->data[6] = item->status;
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[7]);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 11;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
 					messagePlayer(gui_player, MESSAGE_MISC, language[3683], items[item->type].getIdentifiedName());
-					consumeItem(item, gui_player);
+					if ( !isEquipped )
+					{
+						consumeItem(item, gui_player);
+					}
 					return true;
 				}
 			}
@@ -9807,33 +9868,91 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					{
 						repairedAppearance = ITEM_TINKERING_APPEARANCE;
 					}
-					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
-					if ( repairedItem )
+					if ( !isEquipped )
 					{
-						achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-						Item* pickedUp = itemPickup(gui_player, repairedItem);
-						if ( pickedUp && item->count == 1 )
+						Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
+						if ( repairedItem )
 						{
-							// item* will be consumed, so pickedUp can take the inventory slot of it.
-							pickedUp->x = item->x;
-							pickedUp->y = item->y;
-							for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
+							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
+							Item* pickedUp = itemPickup(gui_player, repairedItem);
+							if ( pickedUp && item->count == 1 )
 							{
-								if ( hotbarSlot.item == item->uid )
+								// item* will be consumed, so pickedUp can take the inventory slot of it.
+								pickedUp->x = item->x;
+								pickedUp->y = item->y;
+								for ( auto& hotbarSlot : players[gui_player]->hotbar.slots() )
 								{
-									hotbarSlot.item = pickedUp->uid;
-								}
-								else if ( hotbarSlot.item == pickedUp->uid )
-								{
-									// this was auto placed by itemPickup just above, undo it.
-									hotbarSlot.item = 0;
+									if ( hotbarSlot.item == item->uid )
+									{
+										hotbarSlot.item = pickedUp->uid;
+									}
+									else if ( hotbarSlot.item == pickedUp->uid )
+									{
+										// this was auto placed by itemPickup just above, undo it.
+										hotbarSlot.item = 0;
+									}
 								}
 							}
+							free(repairedItem);
 						}
-						free(repairedItem);
+					}
+					else
+					{
+						item->appearance = repairedAppearance;
+					}
+
+					if ( multiplayer == CLIENT && isEquipped )
+					{
+						// the client needs to inform the server that their equipment was repaired.
+						int armornum = 0;
+						if ( item == stats[gui_player]->weapon )
+						{
+							armornum = 0;
+						}
+						else if ( item == stats[gui_player]->helmet )
+						{
+							armornum = 1;
+						}
+						else if ( item == stats[gui_player]->breastplate )
+						{
+							armornum = 2;
+						}
+						else if ( item == stats[gui_player]->gloves )
+						{
+							armornum = 3;
+						}
+						else if ( item == stats[gui_player]->shoes )
+						{
+							armornum = 4;
+						}
+						else if ( item == stats[gui_player]->shield )
+						{
+							armornum = 5;
+						}
+						else if ( item == stats[gui_player]->cloak )
+						{
+							armornum = 6;
+						}
+						else if ( item == stats[gui_player]->mask )
+						{
+							armornum = 7;
+						}
+
+						strcpy((char*)net_packet->data, "REPT");
+						net_packet->data[4] = gui_player;
+						net_packet->data[5] = armornum;
+						net_packet->data[6] = item->status;
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[7]);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 11;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
 					messagePlayer(gui_player, MESSAGE_MISC, language[3682], items[item->type].getIdentifiedName());
-					consumeItem(item, gui_player);
+					if ( !isEquipped )
+					{
+						consumeItem(item, gui_player);
+					}
 					return true;
 				}
 			}
@@ -9858,7 +9977,6 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 			if ( tinkeringConsumeMaterialsForRepair(item, false) )
 			{
 				int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
-				bool isEquipped = itemIsEquipped(item, gui_player);
 				item->status = static_cast<Status>(repairedStatus);
 				messagePlayer(gui_player, MESSAGE_MISC, language[872], item->getName());
 				bool replaceTinkeringKit = false;
