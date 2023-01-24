@@ -963,7 +963,7 @@ public:
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
-	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
+	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
 	bool bEntityTooltipRequiresButtonHeld() const;

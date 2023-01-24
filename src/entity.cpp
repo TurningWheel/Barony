@@ -4644,6 +4644,7 @@ void Entity::handleEffects(Stat* myStats)
 		setEffect(EFF_TELEPATH, true, 60, true);
 	}
 
+	bool freeAction = false;
 	if ( player >= 0
 		&& myStats->mask != nullptr
 		&& (myStats->mask->type == TOOL_BLINDFOLD || myStats->mask->type == TOOL_BLINDFOLD_FOCUS || myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
@@ -4652,31 +4653,41 @@ void Entity::handleEffects(Stat* myStats)
 		setEffect(EFF_BLIND, true, 60, true);
 		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
-			bool cured = false;
-			if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_PARALYZED] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_WEBBED] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_WEBBED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( cured )
-			{
-				playSoundEntity(this, 168, 128);
-			}
+			freeAction = true;
+		}
+	}
+
+	if ( ticks % 45 == 0 && myStats->type == GOATMAN && myStats->EFFECTS[EFF_DRUNK] )
+	{
+		freeAction = true;
+	}
+
+	if ( freeAction )
+	{
+		bool cured = false;
+		if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_PARALYZED] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_WEBBED] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_WEBBED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( cured )
+		{
+			playSoundEntity(this, 168, 128);
 		}
 	}
 
@@ -5083,25 +5094,6 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
-	if ( entitystats->EFFECTS[EFF_DRUNK] )
-	{
-		switch ( entitystats->type )
-		{
-			case GOATMAN:
-				if ( my && my->behavior == &actMonster )
-				{
-					STR += 10; //Goatman love booze.
-				}
-				else if ( my && my->behavior == &actPlayer )
-				{
-					STR += 4;
-				}
-				break;
-			default:
-				++STR;
-				break;
-		}
-	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
 	{
 		STR += 8;
@@ -5109,6 +5101,25 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	if ( entitystats->EFFECTS[EFF_POTION_STR] )
 	{
 		STR += 5;
+	}
+	if ( entitystats->EFFECTS[EFF_DRUNK] )
+	{
+		switch ( entitystats->type )
+		{
+			case GOATMAN:
+				if ( my && my->behavior == &actMonster )
+				{
+					STR += std::max(10, static_cast<int>(STR * 0.25)); //Goatman love booze.
+				}
+				else if ( my && my->behavior == &actPlayer )
+				{
+					STR += std::max(4, static_cast<int>(STR * 0.25));
+				}
+				break;
+			default:
+				++STR;
+				break;
+		}
 	}
 	return STR;
 }
@@ -5296,15 +5307,8 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		switch ( entitystats->type )
 		{
 			case GOATMAN:
-			{
-				DEX -= 2;
-				int minusDex = DEX;
-				if ( minusDex > 0 )
-				{
-					DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
-				}
-			}
-			break;
+				DEX -= std::max(2, static_cast<int>(DEX * 0.25));
+				break;
 			default:
 				--DEX;
 				break;
@@ -5433,6 +5437,10 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += 8;
 	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && entitystats->type == GOATMAN )
+	{
+		CON += std::max(4, static_cast<int>(CON * 0.25));
+	}
 	return CON;
 }
 
@@ -5532,13 +5540,13 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 			INT += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
 		}
 	}
-	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
-	{
-		INT -= 8;
-	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
 	{
 		INT += 8;
+	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
+	{
+		INT -= std::max(8, static_cast<int>(INT * 0.25));
 	}
 	return INT;
 }
@@ -5771,7 +5779,7 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
-		CHR += 4;
+		CHR += std::max(4, static_cast<int>(CHR * .25));
 	}
 	return CHR;
 }
@@ -6251,7 +6259,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Stat* tmpStats = tmpEntity->getStats();
 						if ( tmpStats )
 						{
-							int explodeDmg = (10 + local_rng.rand() % 10 + myStats->LVL) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
+							int explodeDmg = (10 + local_rng.rand() % 10 + myStats->LVL) * Entity::getDamageTableMultiplier(tmpEntity, *tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 							Entity* gib = spawnGib(tmpEntity);
 							serverSpawnGibForClient(gib);
 							if ( tmpEntity->behavior == &actPlayer )
@@ -7566,16 +7574,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 				real_t weaponMultipliers = 0.0;
 				if ( weaponskill == PRO_UNARMED )
 				{
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_UNARMED);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_UNARMED);
 				}
 				else if ( weaponskill == PRO_RANGED )
 				{
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_RANGED);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_RANGED);
 				}
 				else if ( weaponskill >= 0 )
 				{
 					DamageTableType dmgType = static_cast<DamageTableType>(weaponskill - PRO_SWORD);
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, dmgType);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, dmgType);
 				}
 
 				bool dyrnwynSmite = false;
@@ -9723,7 +9731,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = (40 + myStats->HP) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * Entity::getDamageTableMultiplier(tmpEntity, *tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
@@ -19438,9 +19446,10 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 	return static_cast<Sint32>(1000 * manaPointPercentage);
 }
 
-real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageType)
+real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType)
 {
 	real_t damageMultiplier = damagetables[myStats.type][damageType];
+	real_t bonus = 0.0;
 	if ( myStats.EFFECTS[EFF_SHADOW_TAGGED] )
 	{
 		if ( myStats.type == LICH || myStats.type == LICH_FIRE || myStats.type == LICH_ICE
@@ -19454,7 +19463,11 @@ real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageTyp
 		}
 	}
 	//messagePlayer(0, "%f", damageMultiplier);
-	return damageMultiplier;
+	if ( myStats.type == GOATMAN && myStats.EFFECTS[EFF_DRUNK] )
+	{
+		bonus = -.2;
+	}
+	return std::max(0.0, damageMultiplier + bonus);
 }
 
 void Entity::createWorldUITooltip()

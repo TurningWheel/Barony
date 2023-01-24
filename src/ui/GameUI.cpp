@@ -5208,6 +5208,7 @@ const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
 const int StatusEffectQueue_t::kEffectBurning = -5;
 const int StatusEffectQueue_t::kEffectWanted = -6;
 const int StatusEffectQueue_t::kEffectWantedInShop = -7;
+const int StatusEffectQueue_t::kEffectFreeAction = -8;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5328,6 +5329,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	}
 
 	bool burning = false;
+	bool freeaction = false;
 	auto wantedLevel = ShopkeeperPlayerHostility.getWantedLevel(player);
 	bool wantedOutsideOfShop = false;
 	bool wantedInsideShop = false;
@@ -5342,6 +5344,17 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				insertEffect(kEffectBurning, -1);
 			}
 		}
+		if ( stats[player] &&
+			((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
+				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
+		{
+			freeaction = true;
+			if ( effectSet.find(kEffectFreeAction) == effectSet.end() )
+			{
+				insertEffect(kEffectFreeAction, -1);
+			}
+		}
+
 		int playerx = static_cast<int>(players[player]->entity->x) >> 4;
 		int playery = static_cast<int>(players[player]->entity->y) >> 4;
 		if ( playerx >= 0 && playerx < map.width && playery >= 0 && playery < map.height )
@@ -5395,6 +5408,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		if ( effectSet.find(kEffectBurning) != effectSet.end() )
 		{
 			deleteEffect(kEffectBurning);
+		}
+	}
+	if ( !freeaction )
+	{
+		if ( effectSet.find(kEffectFreeAction) != effectSet.end() )
+		{
+			deleteEffect(kEffectFreeAction);
 		}
 	}
 	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
@@ -13229,7 +13249,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_RES:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_base").c_str());
-					real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
 					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 					resistance = 100.0 - resistance;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_nobonus_format").c_str(), (int)resistance);
@@ -14013,7 +14033,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
 					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
 					baseResist = 100 - baseResist;
-					real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
 					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 					resistance = (100.0 - resistance);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance - baseResist);
@@ -15611,7 +15631,7 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
-		real_t resistance = 100.0 * hit.entity->getDamageTableMultiplier(*stats[player.playernum], DAMAGE_TABLE_MAGIC);
+		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
 		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 		resistance = -(resistance - 100.0);
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);

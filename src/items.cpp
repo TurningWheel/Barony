@@ -3654,7 +3654,7 @@ bool Item::doesPotionHarmAlliesOnThrown() const
 	return true;
 }
 
-Sint32 Item::potionGetEffectHealth() const
+Sint32 Item::potionGetEffectHealth(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3704,7 +3704,7 @@ Sint32 Item::potionGetEffectHealth() const
 
 	return heal;
 }
-Sint32 Item::potionGetEffectDamage() const
+Sint32 Item::potionGetEffectDamage(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3732,7 +3732,7 @@ Sint32 Item::potionGetEffectDamage() const
 	return damage;
 }
 
-Sint32 Item::potionGetEffectDurationMinimum() const
+Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3746,7 +3746,14 @@ Sint32 Item::potionGetEffectDurationMinimum() const
 		case POTION_WATER:
 			break;
 		case POTION_BOOZE:
-			duration = 2000;
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 7500; // 2.5 mins
+			}
+			else
+			{
+				duration = 2000;
+			}
 			break;
 		case POTION_JUICE:
 			break;
@@ -3798,7 +3805,7 @@ Sint32 Item::potionGetEffectDurationMinimum() const
 	return duration;
 }
 
-Sint32 Item::potionGetEffectDurationMaximum() const
+Sint32 Item::potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3812,7 +3819,14 @@ Sint32 Item::potionGetEffectDurationMaximum() const
 		case POTION_WATER:
 			break;
 		case POTION_BOOZE:
-			duration = 3000;
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 10500; // 3.5 mins
+			}
+			else
+			{
+				duration = 3000;
+			}
 			break;
 		case POTION_JUICE:
 			break;
@@ -3864,13 +3878,13 @@ Sint32 Item::potionGetEffectDurationMaximum() const
 	return duration;
 }
 
-Sint32 Item::potionGetEffectDurationRandom() const
+Sint32 Item::potionGetEffectDurationRandom(Entity* my, Stat* myStats) const
 {
-	Sint32 range = std::max(1, potionGetEffectDurationMaximum() - potionGetEffectDurationMinimum());
-	return potionGetEffectDurationMinimum() + (local_rng.rand() % (range));
+	Sint32 range = std::max(1, potionGetEffectDurationMaximum(my, myStats) - potionGetEffectDurationMinimum(my, myStats));
+	return potionGetEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
-Sint32 Item::potionGetCursedEffectDurationMinimum() const
+Sint32 Item::potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3934,7 +3948,7 @@ Sint32 Item::potionGetCursedEffectDurationMinimum() const
 	return duration;
 }
 
-Sint32 Item::potionGetCursedEffectDurationMaximum() const
+Sint32 Item::potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3998,10 +4012,10 @@ Sint32 Item::potionGetCursedEffectDurationMaximum() const
 	return duration;
 }
 
-Sint32 Item::potionGetCursedEffectDurationRandom() const
+Sint32 Item::potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const
 {
-	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
-	return potionGetCursedEffectDurationMinimum() + (local_rng.rand() % (range));
+	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum(my, myStats) - potionGetCursedEffectDurationMinimum(my, myStats));
+	return potionGetCursedEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
 Sint32 Item::getWeight() const

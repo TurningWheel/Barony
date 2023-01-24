@@ -2575,7 +2575,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		{
 			if ( item.type == POTION_HEALING || item.type == POTION_EXTRAHEALING || item.type == POTION_RESTOREMAGIC )
 			{
-				int healthVal = item.potionGetEffectHealth();
+				int healthVal = item.potionGetEffectHealth(players[player]->entity, stats[player]);
 
 				if ( item.type == POTION_HEALING )
 				{
@@ -2601,35 +2601,38 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					auto oldBeatitude = item.beatitude;
 					item.beatitude = std::max((Sint16)0, item.beatitude);
-					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND, 
+						item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 					item.beatitude = oldBeatitude;
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth(players[player]->entity, stats[player]));
 				}
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+				snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth(players[player]->entity, stats[player]));
 			}
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_DMG") )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDamage());
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDamage(players[player]->entity, stats[player]));
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_GOOD_EFFECT") )
 		{
 			auto oldBeatitude = item.beatitude;
 			item.beatitude = std::max((Sint16)0, item.beatitude);
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND, 
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 			item.beatitude = oldBeatitude;
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_BAD_EFFECT") )
 		{
 			auto oldBeatitude = item.beatitude;
 			item.beatitude = std::max((Sint16)0, item.beatitude);
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND,
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 			item.beatitude = oldBeatitude;
 		}
 	}
@@ -3100,8 +3103,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_polymorph_duration") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / (60 * TICKS_PER_SECOND),
-				item.potionGetEffectDurationMaximum() / (60 * TICKS_PER_SECOND) );
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / (60 * TICKS_PER_SECOND),
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / (60 * TICKS_PER_SECOND) );
 		}
 		else if ( detailTag.compare("potion_restoremagic_bonus") == 0 )
 		{
@@ -3141,7 +3144,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( item.type == POTION_CUREAILMENT )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 
-					item.potionGetEffectDurationRandom() / TICKS_PER_SECOND, getItemBeatitudeAdjective(item.beatitude).c_str());
+					item.potionGetEffectDurationRandom(players[player]->entity, stats[player]) / TICKS_PER_SECOND, getItemBeatitudeAdjective(item.beatitude).c_str());
 			}
 			else if ( item.type == POTION_WATER )
 			{

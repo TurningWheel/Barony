@@ -1191,7 +1191,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1306,7 +1306,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1491,7 +1491,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							if ( parent )
 							{
 								Stat* casterStats = parent->getStats();
@@ -1770,7 +1770,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							Entity* gib = spawnGib(hit.entity);
@@ -1994,7 +1994,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 
@@ -2423,7 +2423,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							Stat* casterStats = nullptr;
 							if ( parent )
 							{

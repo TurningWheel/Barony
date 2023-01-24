@@ -463,14 +463,14 @@ public:
 	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 
-	Sint32 potionGetEffectHealth() const;
-	Sint32 potionGetEffectDamage() const;
-	Sint32 potionGetEffectDurationMinimum() const;
-	Sint32 potionGetEffectDurationMaximum() const;
-	Sint32 potionGetEffectDurationRandom() const;
-	Sint32 potionGetCursedEffectDurationMinimum() const;
-	Sint32 potionGetCursedEffectDurationMaximum() const;
-	Sint32 potionGetCursedEffectDurationRandom() const;
+	Sint32 potionGetEffectHealth(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDamage(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationRandom(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const;
 
 	Sint32 getWeight() const;
 
