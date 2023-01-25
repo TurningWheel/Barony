@@ -607,6 +607,8 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void actDemonCeilingBuster(Entity* my)
 {
+    return; // don't do this anymore jan 16 2023
+    
 	double x, y;
 
 	// bust ceilings

@@ -432,7 +432,11 @@ void EOS_CALL EOSFuncs::OnCreateLobbyFinished(const EOS_Lobby_CreateLobbyCallbac
 	{
 		EOS.CurrentLobbyData.LobbyId = data->LobbyId;
 
-		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
+#ifdef NINTENDO
+		EOS.CurrentLobbyData.LobbyAttributes.lobbyName = MainMenu::getHostname();
+#else
+        EOS.CurrentLobbyData.LobbyAttributes.lobbyName = EOS.CurrentUserInfo.Name + "'s lobby";
+#endif
 		strncpy(EOS.currentLobbyName, EOS.CurrentLobbyData.LobbyAttributes.lobbyName.c_str(), 31);
 
 		Uint32 keygen = local_rng.uniform(0, (36 * 36 * 36 * 36) - 1); // limit of 'zzzz' as base-36 string
@@ -1303,10 +1307,8 @@ void EOSFuncs::initConnectLogin() // should not handle for Steam connect logins
 		}
 
 		EOS_Connect_UserLoginInfo Info;
-		char buf[1024];
-		nxGetUsername(buf, sizeof(buf));
 		Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
-		Info.DisplayName = buf;
+		Info.DisplayName = MainMenu::getUsername();
 
 		EOS_Connect_LoginOptions Options;
 		Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
@@ -3285,10 +3287,8 @@ static void nxTokenRequest()
 	Credentials.Type = EOS_EExternalCredentialType::EOS_ECT_NINTENDO_NSA_ID_TOKEN; // change this to steam etc for different account providers.
 
 	EOS_Connect_UserLoginInfo Info;
-	char buf[1024];
-	nxGetUsername(buf, sizeof(buf));
 	Info.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
-	Info.DisplayName = buf;
+	Info.DisplayName = MainMenu::getUsername();
 
 	EOS_Connect_LoginOptions Options;
 	Options.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;

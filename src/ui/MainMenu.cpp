@@ -42,6 +42,10 @@ namespace MainMenu {
 	bool cursor_delete_mode = false;
 	Frame* main_menu_frame = nullptr;
 
+    constexpr int MIN_FPS = 30;
+    constexpr int MAX_FPS = 300;
+    constexpr int AUTO_FPS = MAX_FPS + 1;
+
 	// ALL NEW menu options:
 	std::string current_audio_device;
 	float master_volume = 1.f;
@@ -56,6 +60,8 @@ namespace MainMenu {
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
+    ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
+    ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -85,7 +91,7 @@ namespace MainMenu {
 		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
-		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
+		{"Minimap Scale", "=", emptyBinding, emptyBinding},
 		{"Toggle Minimap", "`", "DpadY-", emptyBinding},
 		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
 		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
@@ -113,7 +119,14 @@ namespace MainMenu {
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
 
-    static bool resolution_changed = false;
+    // if anything but none, causes the video mode to change
+    // and reopens the settings menu to the specified tab
+    enum VideoRefresh : int {
+        None = 0,
+        General = 1 << 0,
+        Video = 1 << 1,
+    };
+    static int video_refresh = VideoRefresh::None;
 
 	static FadeDestination main_menu_fade_destination = FadeDestination::None;
 	static std::string tutorial_map_destination;
@@ -232,6 +245,7 @@ namespace MainMenu {
 	struct Video {
 		int window_mode = 0; // 0 = windowed, 1 = borderless, 2 = fullscreen
 		int display_id = 0;
+        int hz = 0;
 		int resolution_x = 1280;
 		int resolution_y = 720;
 		bool vsync_enabled = true;
@@ -241,18 +255,20 @@ namespace MainMenu {
 		static inline Video reset();
 		bool serialize(FileInterface*);
 	};
-	static Video old_video;
+	static struct Video old_video;
 
     // All menu options combined
 	struct AllSettings {
 	    std::vector<std::pair<std::string, std::string>> mods;
 	    bool crossplay_enabled;
-	    bool fast_restart;
+	    bool fast_restart = false;
 		float world_tooltip_scale = 100.f;
 		float world_tooltip_scale_splitscreen = 150.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		bool use_on_release_enabled;
+        bool ui_filter_enabled = false;
+        float ui_scale = 100.f;
 		Minimap minimap;
 		bool show_messages_enabled;
 		Messages show_messages;
@@ -265,7 +281,7 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
-		Video video;
+        struct Video video;
 		bool use_frame_interpolation = true;
 		bool vertical_split_enabled;
 		bool staggered_split_enabled;
@@ -305,7 +321,7 @@ namespace MainMenu {
 		bool cheats_enabled;
 		bool skipintro;
 		int port_number;
-		inline bool save(); // true if video needs restart
+		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
 		bool serialize(FileInterface*);
@@ -485,7 +501,7 @@ namespace MainMenu {
 
 /******************************************************************************/
 
-	static void settingsUI(Button&);
+	static void settingsGeneral(Button&);
 	static void settingsVideo(Button&);
 	static void settingsAudio(Button&);
 	static void settingsControls(Button&);
@@ -1377,7 +1393,9 @@ namespace MainMenu {
         );
     }
 
-    static void openDLCPrompt() {
+    static void openDLCPrompt(int which) {
+		static int dlcPromptIndex;
+		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
 		const char* window_text = "Would you like to browse this\nDLC in the online store?";
 		binaryPrompt(window_text, "Yes", "No",
@@ -1386,8 +1404,7 @@ namespace MainMenu {
 				soundActivate();
 				openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
 #elif defined(NINTENDO)
-				// TODO open e-Shop for Nintendo?
-				soundError();
+				nxShowDLCPage(dlcPromptIndex);
 #elif defined(USE_EOS)
 				soundActivate();
 				openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
@@ -1941,32 +1958,35 @@ namespace MainMenu {
 		::display_id = display_id;
 		xres = std::max(resolution_x, 1024);
 		yres = std::max(resolution_y, 720);
+        *cvar_displayHz = hz;
 		verticalSync = vsync_enabled;
 		vidgamma = std::min(std::max(.5f, gamma / 100.f), 2.f);
 
 		return result;
 	}
 
-	inline Video Video::load() {
+	inline struct Video Video::load() {
 	    Video settings;
 		settings.window_mode = fullscreen ? 2 : (borderless ? 1 : 0);
 		settings.display_id = ::display_id;
 		settings.resolution_x = xres;
 		settings.resolution_y = yres;
+        settings.hz = *cvar_displayHz;
 		settings.vsync_enabled = verticalSync;
 		settings.gamma = vidgamma * 100.f;
 		return settings;
 	}
 
-	inline Video Video::reset() {
+	inline struct Video Video::reset() {
 	    return Video();
 	}
 
 	bool Video::serialize(FileInterface* file) {
-	    int version = 0;
+	    int version = 1;
 	    file->property("version", version);
 	    file->property("window_mode", window_mode);
 	    file->property("display_id", display_id);
+        file->propertyVersion("hz", version >= 1, hz);
 	    file->property("resolution_x", resolution_x);
 	    file->property("resolution_y", resolution_y);
 	    file->property("vsync_enabled", vsync_enabled);
@@ -1978,7 +1998,8 @@ namespace MainMenu {
 
 	static AllSettings allSettings;
 
-	inline bool AllSettings::save() {
+	inline int AllSettings::save() {
+        int result = VideoRefresh::None;
         gamemods_mountedFilepaths = mods;
 		*cvar_fastRestart = fast_restart;
 		*cvar_worldtooltip_scale = world_tooltip_scale;
@@ -1987,6 +2008,12 @@ namespace MainMenu {
 		inventory_sorting.save();
 		right_click_protect = !use_on_release_enabled;
 		minimap.save();
+        const bool oldUIFilter = *ui_filter;
+        const int oldUIDefaultHeight = uiDefaultHeight;
+        *ui_filter = ui_filter_enabled;
+        uiDefaultHeight = 1440 - 720 * ((ui_scale - 50.f) / 50.f);
+        result |= (oldUIFilter != *ui_filter || oldUIDefaultHeight != uiDefaultHeight) ?
+            VideoRefresh::General : VideoRefresh::None;
 		disable_messages = !show_messages_enabled;
 		show_messages.save();
 		hide_playertags = !show_player_nametags_enabled;
@@ -1998,13 +2025,32 @@ namespace MainMenu {
 		shaking = shaking_enabled;
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
-		bool result = video.save();
+		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
 		*clipped_splitscreen = clipped_split_enabled;
 		TimerExperiments::bUseTimerInterpolation = use_frame_interpolation;
 		::fov = std::min(std::max(40.f, fov), 100.f);
-		fpsLimit = std::min(std::max(30.f, fps), 300.f);
+        *cvar_desiredFps = (int)fps;
+        if (*cvar_desiredFps == AUTO_FPS) {
+            if (*cvar_displayHz) {
+                fpsLimit = std::min(std::max(MIN_FPS, *cvar_displayHz), MAX_FPS);
+            } else {
+                SDL_DisplayMode mode;
+                int result = SDL_GetCurrentDisplayMode(::display_id, &mode);
+                if (!result && mode.refresh_rate) {
+                    fpsLimit = std::min(std::max(MIN_FPS, mode.refresh_rate), MAX_FPS);
+                } else {
+                    if (result) {
+                        printlog(SDL_GetError());
+                    }
+                    printlog("note: unknown display refresh rate, defaulting to 60hz");
+                    fpsLimit = 60;
+                }
+            }
+        } else {
+            fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
+        }
 		current_audio_device = audio_device;
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
@@ -2069,6 +2115,8 @@ namespace MainMenu {
 		settings.inventory_sorting = InventorySorting::load();
 		settings.use_on_release_enabled = !right_click_protect;
 		settings.minimap = Minimap::load();
+        settings.ui_scale = 100.f - 50.f * ((uiDefaultHeight - 720) / 720.f);
+        settings.ui_filter_enabled = *ui_filter;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
 		settings.show_player_nametags_enabled = !hide_playertags;
@@ -2086,7 +2134,7 @@ namespace MainMenu {
 		settings.clipped_split_enabled = *clipped_splitscreen;
 		settings.use_frame_interpolation = TimerExperiments::bUseTimerInterpolation;
 		settings.fov = ::fov;
-		settings.fps = fpsLimit;
+		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
@@ -2151,13 +2199,13 @@ namespace MainMenu {
 		settings.staggered_split_enabled = false;
 		settings.use_frame_interpolation = true;
 		settings.fov = 60;
-		settings.fps = 60;
+		settings.fps = AUTO_FPS;
 		settings.audio_device = "";
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
 		settings.environment_volume = 100.f;
-		settings.music_volume = 50.f;
+		settings.music_volume = 100.f;
 		settings.minimap_pings_enabled = true;
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
@@ -2189,21 +2237,17 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 6;
+	    int version = 8;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
-		if (file->isReading()) {
-		    if (version >= 2) {
-		        file->property("fast_restart", fast_restart);
-		    }
-		} else {
-		    file->property("fast_restart", fast_restart);
-		}
+		file->propertyVersion("fast_restart", version >= 2, fast_restart);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
 		file->property("inventory_sorting", inventory_sorting);
 		file->property("use_on_release_enabled", use_on_release_enabled);
 		file->property("minimap", minimap);
+        file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);
+        file->propertyVersion("ui_scale", version >= 7, ui_scale);
 		file->property("show_messages_enabled", show_messages_enabled);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
 		file->property("show_hud_enabled", show_hud_enabled);
@@ -2214,45 +2258,35 @@ namespace MainMenu {
 		file->property("shaking_enabled", shaking_enabled);
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
-		if (file->isReading()) {
-		    if (version >= 1) {
-		        file->property("video", video);
-	            file->property("vertical_split_enabled", vertical_split_enabled);
-		        if (version >= 2) {
-		            file->property("clipped_split_enabled", clipped_split_enabled);
-		            file->property("staggered_split_enabled", staggered_split_enabled);
-		        }
-				if ( version >= 6 )
-				{
-					file->property("use_frame_interpolation", use_frame_interpolation);
-				}
-		    } else {
-		        int i = 0;
-		        float f = 0.f;
-		        bool b = false;
-		        file->property("window_mode", i);
-		        file->property("resolution_x", i);
-		        file->property("resolution_y", i);
-		        file->property("vsync_enabled", b);
-		        file->property("vertical_split_enabled", vertical_split_enabled);
-		        file->property("gamma", f);
-		    }
-		} else {
-		    file->property("video", video);
-	        file->property("vertical_split_enabled", vertical_split_enabled);
-	        file->property("clipped_split_enabled", clipped_split_enabled);
-	        file->property("staggered_split_enabled", staggered_split_enabled);
-			file->property("use_frame_interpolation", use_frame_interpolation);
-		}
+        if (version >= 1) {
+            file->property("video", video);
+            file->property("vertical_split_enabled", vertical_split_enabled);
+            if (version >= 2) {
+                file->property("clipped_split_enabled", clipped_split_enabled);
+                file->property("staggered_split_enabled", staggered_split_enabled);
+            }
+            if ( version >= 6 )
+            {
+                file->property("use_frame_interpolation", use_frame_interpolation);
+            }
+        } else {
+            int i = 0;
+            float f = 0.f;
+            bool b = false;
+            file->property("window_mode", i);
+            file->property("resolution_x", i);
+            file->property("resolution_y", i);
+            file->property("vsync_enabled", b);
+            file->property("vertical_split_enabled", vertical_split_enabled);
+            file->property("gamma", f);
+        }
 		file->property("fov", fov);
-		file->property("fps", fps);
-		if (file->isReading()) {
-		    if (version >= 4) {
-		    	file->property("audio_device", audio_device);
-			}
-		} else {
-			file->property("audio_device", audio_device);
-		}
+        if (version < 8) {
+            fps = AUTO_FPS;
+        } else {
+            file->property("fps", fps);
+        }
+		file->propertyVersion("audio_device", version >= 4, audio_device);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
@@ -2262,25 +2296,14 @@ namespace MainMenu {
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
 		file->property("bindings", bindings);
-		if ( file->isReading() )
-		{
-			if ( version >= 5 )
-			{
-				file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
-				file->property("mkb_facehotbar", mkb_facehotbar);
-				file->property("gamepad_facehotbar", gamepad_facehotbar);
-				file->property("world_tooltip_scale", world_tooltip_scale);
-				file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
-			}
-		}
-		else
-		{
-			file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
-			file->property("mkb_facehotbar", mkb_facehotbar);
-			file->property("gamepad_facehotbar", gamepad_facehotbar);
-			file->property("world_tooltip_scale", world_tooltip_scale);
-			file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
-		}
+        if ( version >= 5 )
+        {
+            file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
+            file->property("mkb_facehotbar", mkb_facehotbar);
+            file->property("gamepad_facehotbar", gamepad_facehotbar);
+            file->property("world_tooltip_scale", world_tooltip_scale);
+            file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
+        }
 		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
@@ -2288,19 +2311,11 @@ namespace MainMenu {
 		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
 		file->property("turn_sensitivity_x", turn_sensitivity_x);
 		file->property("turn_sensitivity_y", turn_sensitivity_y);
-		if ( file->isReading() )
-		{
-			if ( version >= 6 )
-			{
-				file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
-				file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
-			}
-		}
-		else
-		{
-			file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
-			file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
-		}
+        if ( version >= 6 )
+        {
+            file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
+            file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+        }
 		file->property("classic_mode_enabled", classic_mode_enabled);
 		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
 		file->property("friendly_fire_enabled", friendly_fire_enabled);
@@ -2935,12 +2950,11 @@ namespace MainMenu {
 		const char* name;
 	};
 
-	bool settingsApply() {
-		bool reset_video = allSettings.save();
-
+	void settingsApply() {
+        video_refresh = allSettings.save();
+        
 		// change video mode
-		if (initialized && reset_video) {
-			resolution_changed = true;
+		if (initialized && (video_refresh & VideoRefresh::Video)) {
 		    int x = std::max(allSettings.video.resolution_x, 1024);
 		    int y = std::max(allSettings.video.resolution_y, 720);
 			if (!changeVideoMode(x, y)) {
@@ -2973,7 +2987,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -2982,13 +2996,11 @@ namespace MainMenu {
 #endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
 		}
-
-		return reset_video;
 	}
 
 	void settingsMount() {
 		allSettings = AllSettings::load();
-		if (!resolution_changed) {
+		if (!video_refresh) {
 	        old_video = allSettings.video;
 	    }
 	}
@@ -3461,10 +3473,11 @@ namespace MainMenu {
 
 	static void settingsResolutionEntry(Frame::entry_t& entry) {
 		soundActivate();
-		int new_xres, new_yres;
-		sscanf(entry.name.c_str(), "%d x %d", &new_xres, &new_yres);
+		int new_xres, new_yres, new_hz;
+		sscanf(entry.name.c_str(), "%d x %d @ %dhz", &new_xres, &new_yres, &new_hz);
 		allSettings.video.resolution_x = new_xres;
 		allSettings.video.resolution_y = new_yres;
+		allSettings.video.hz = new_hz;
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 		auto button = settings_subwindow->findButton("setting_resolution_dropdown_button"); assert(button);
@@ -3475,11 +3488,12 @@ namespace MainMenu {
 	}
 
 	static void settingsResolutionSmall(Button& button) {
-		settingsOpenDropdown(button, "resolution", DropdownType::Short, settingsResolutionEntry);
+        // wide short mode?
+		settingsOpenDropdown(button, "resolution", DropdownType::Wide, settingsResolutionEntry);
 	}
 
-	static void settingsResolutionBig(Button& button) {
-		settingsOpenDropdown(button, "resolution", DropdownType::Normal, settingsResolutionEntry);
+    static void settingsResolutionBig(Button& button) {
+		settingsOpenDropdown(button, "resolution", DropdownType::Wide, settingsResolutionEntry);
 	}
 
 	static void settingsDisplayDevice(Button& button) {
@@ -3508,10 +3522,8 @@ namespace MainMenu {
 		    std::list<resolution>::iterator it;
 		    for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			    auto& res = *it;
-			    const int x = std::get<0>(res);
-			    const int y = std::get<1>(res);
 			    char buf[32];
-			    snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			    snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			    resolutions_formatted.push_back(std::string(buf));
 		    }
 
@@ -3997,6 +4009,12 @@ namespace MainMenu {
 		return result;
 	}
 
+    static const char* sliderPercent(float v) {
+        static char buf[8];
+        snprintf(buf, sizeof(buf), "%d%%", (int)v);
+        return buf;
+    }
+
 	static int settingsAddSlider(
 		Frame& frame,
 		int y,
@@ -4006,7 +4024,7 @@ namespace MainMenu {
 		float value,
 		float minValue,
 		float maxValue,
-		bool percent,
+		const char* (*fmt)(float value),
 		void (*callback)(Slider&),
 		bool _short = false)
 	{
@@ -4022,27 +4040,21 @@ namespace MainMenu {
 		field->setSize(box->pos);
 		field->setJustify(Field::justify_t::CENTER);
 		field->setFont(smallfont_outline);
-		if (percent) {
-			field->setTickCallback([](Widget& widget){
-				auto field = static_cast<Field*>(&widget); assert(field);
-				auto frame = static_cast<Frame*>(widget.getParent());
-				auto name = std::string(widget.getName());
-				auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
-				auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
-				char buf[8]; snprintf(buf, sizeof(buf), "%d%%", (int)slider->getValue());
-				field->setText(buf);
-				});
-		} else {
-			field->setTickCallback([](Widget& widget){
-				auto field = static_cast<Field*>(&widget); assert(field);
-				auto frame = static_cast<Frame*>(widget.getParent());
-				auto name = std::string(widget.getName());
-				auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
-				auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
-				char buf[8]; snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
-				field->setText(buf);
-				});
-		}
+        field->setTickCallback([](Widget& widget){
+            auto field = static_cast<Field*>(&widget); assert(field);
+            auto frame = static_cast<Frame*>(widget.getParent());
+            auto name = std::string(widget.getName());
+            auto setting = name.substr(sizeof("setting_") - 1, name.size() - (sizeof("_text") - 1) - (sizeof("setting_") - 1));
+            auto slider = frame->findSlider((std::string("setting_") + setting + std::string("_slider")).c_str()); assert(slider);
+            auto fmt = reinterpret_cast<const char* (*)(float)>(slider->getUserData());
+            if (fmt) {
+                field->setText(fmt(slider->getValue()));
+            } else {
+                char buf[8];
+                snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
+                field->setText(buf);
+            }
+            });
 		auto slider = frame.addSlider((fullname + "_slider").c_str());
 		slider->setOrientation(Slider::orientation_t::SLIDER_HORIZONTAL);
 		slider->setMinValue(minValue);
@@ -4067,6 +4079,7 @@ namespace MainMenu {
 		slider->addWidgetAction("MenuAlt1", "restore_defaults");
 		slider->addWidgetAction("MenuStart", "confirm_and_exit");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+        slider->setUserData(reinterpret_cast<void*>(fmt));
 		return result;
 	}
 
@@ -4074,7 +4087,7 @@ namespace MainMenu {
 		/*if (settings_tab_name == button.getName()) {
 			return nullptr;
 		}*/
-		if (!resolution_changed) {
+		if (!video_refresh) {
 		    soundActivate();
 		}
 		settings_tab_name = button.getName();
@@ -4200,8 +4213,10 @@ namespace MainMenu {
 
 	static void settingsSelect(Frame& frame, const Setting& setting) {
 		auto names = getFullSettingNames(setting);
-		auto widget = frame.findWidget(names.first.c_str(), false); assert(widget);
-		widget->select();
+		auto widget = frame.findWidget(names.first.c_str(), false);
+        if (widget) {
+            widget->select();
+        }
 	}
 
 	static void genericSubwindowFinalizeBasic(Frame& frame, int y) {
@@ -4385,36 +4400,36 @@ namespace MainMenu {
 
 		y += settingsAddSubHeader(*subwindow, y, "scale_header", "Scale", true);
 
-		/*y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
+		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
-			allSettings.minimap.map_scale, 25, 100, true,
-			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);*/
+            allSettings.minimap.map_scale, 25, 100, sliderPercent,
+			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			allSettings.minimap.icon_scale, 25, 200, true,
+			allSettings.minimap.icon_scale, 25, 200, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
 
 		y += settingsAddSlider(*subwindow, y, "foreground_opacity", "Foreground opacity",
 			"Set the opacity of the minimap's foreground.",
-			allSettings.minimap.foreground_opacity, 0, 100, true,
+			allSettings.minimap.foreground_opacity, 0, 100, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.foreground_opacity = slider.getValue(); }, true);
 
 		y += settingsAddSlider(*subwindow, y, "background_opacity", "Background opacity",
 			"Set the opacity of the minimap's background.",
-			allSettings.minimap.background_opacity, 0, 100, true,
+			allSettings.minimap.background_opacity, 0, 100, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
 		hookSettings(*subwindow,
-			{/*{Setting::Type::Slider, "map_scale"},*/
+			{{Setting::Type::Slider, "map_scale"},
 			{Setting::Type::Slider, "icon_scale"},
 			{Setting::Type::Slider, "foreground_opacity"},
 			{Setting::Type::Slider, "background_opacity"},
 			});
-		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "icon_scale"});
-		settingsSelect(*subwindow, {Setting::Type::Slider, "icon_scale"});
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "map_scale"});
+		settingsSelect(*subwindow, {Setting::Type::Slider, "map_scale"});
 	}
 
 	static void settingsMessages(Button& button) {
@@ -4804,7 +4819,7 @@ bind_failed:
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
-	static void settingsUI(Button& button) {
+	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -4833,6 +4848,15 @@ bind_failed:
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "hud", "HUD Options");
+#ifndef NINTENDO
+        y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
+            "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
+            allSettings.ui_scale, 50.f, 100.f, sliderPercent,
+            [](Slider& slider){soundSlider(true); allSettings.ui_scale = slider.getValue();});
+        y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
+            "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
+            allSettings.ui_filter_enabled, [](Button& button){soundToggle(); allSettings.ui_filter_enabled = button.isPressed();});
+#endif
 		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
 			"Customize the appearance of the in-game minimap.",
 			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
@@ -4856,6 +4880,8 @@ bind_failed:
 			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Boolean, "use_on_release"},
+            {Setting::Type::Slider, "ui_scale"},
+            {Setting::Type::Boolean, "ui_filter"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
@@ -4882,7 +4908,7 @@ bind_failed:
 #ifdef NINTENDO
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
 #else
-			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+			settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #endif
 			return;
 		}
@@ -4901,13 +4927,12 @@ bind_failed:
 		std::list<resolution>::iterator it;
 		for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
 			auto& res = *it;
-			const int x = std::get<0>(res);
-			const int y = std::get<1>(res);
 			char buf[32];
-			snprintf(buf, sizeof(buf), "%d x %d", x, y);
+			snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.video.resolution_x == x && allSettings.video.resolution_y == y) {
+			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y &&
+				allSettings.video.hz == res.hz) {
 				selected_res = index;
 			}
 		}
@@ -4931,14 +4956,14 @@ bind_failed:
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
+        y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
+            true, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
+            resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
         y += settingsAddDropdown(*settings_subwindow, y, "device", "Device", "Change the current display device.",
             false, displays_formatted_ptrs, displays_formatted_ptrs[allSettings.video.display_id],
             settingsDisplayDevice);
-		y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
-			false, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
-			resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
-		y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
-			false, modes, selected_mode, settingsWindowMode);
+        y += settingsAddDropdown(*settings_subwindow, y, "window_mode", "Window Mode", "Change the current display mode.",
+            false, modes, selected_mode, settingsWindowMode);
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vsync", "Vertical Sync",
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
@@ -4946,18 +4971,28 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
-			allSettings.video.gamma, 50, 200, true, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
+			allSettings.video.gamma, 50, 200, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "fov", "Field of View",
 			"Adjust the vertical field-of-view of the in-game camera.",
-			allSettings.fov, 40, 100, false, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
+			allSettings.fov, 40, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.fov = slider.getValue();});
 #ifndef NINTENDO
+        auto sliderFPS = [](float v) -> const char* {
+            if ((int)v == AUTO_FPS) {
+                return "Auto";
+            } else {
+                static char buf[8];
+                snprintf(buf, sizeof(buf), "%d", (int)v);
+                return buf;
+            }
+        };
+        
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
-			"Control the frame-rate limit of the game window.",
-			allSettings.fps, 30, 300, false, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
+			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
+			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
 #endif
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
-			"Smooth player camera by interpolating camera movements over several frames.",
-			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed(); });
+			"Smooth player camera by interpolating camera movements over additional frames.",
+			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
@@ -4986,10 +5021,10 @@ bind_failed:
 			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
 		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
 			"Control size of in-world popups for items, gravestones and NPC dialogue.",
-			allSettings.world_tooltip_scale, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
+			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
 		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
 			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
-			allSettings.world_tooltip_scale_splitscreen, 100, 200, true, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
+			allSettings.world_tooltip_scale_splitscreen, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
@@ -5004,8 +5039,8 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,{
+            {Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "device"},
-			{Setting::Type::Dropdown, "resolution"},
 			{Setting::Type::Dropdown, "window_mode"},
 			{Setting::Type::Boolean, "vsync"},
 			{Setting::Type::Slider, "gamma"},
@@ -5025,8 +5060,8 @@ bind_failed:
 			{Setting::Type::Boolean, "light_flicker"},
 			});
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "device"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "resolution"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #else
 		hookSettings(*settings_subwindow,{
 			{Setting::Type::Slider, "gamma"},
@@ -5079,7 +5114,7 @@ bind_failed:
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 			if (!selected_device && allSettings.audio_device == guid_string) {
 				selected_device = c;
 			}
@@ -5099,27 +5134,27 @@ bind_failed:
 		y += settingsAddSubHeader(*settings_subwindow, y, "volume", "Volume");
 		y += settingsAddSlider(*settings_subwindow, y, "master_volume", "Master Volume",
 			"Adjust the volume of all sound sources equally.",
-			allSettings.master_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
+			allSettings.master_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
-			allSettings.gameplay_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
+			allSettings.gameplay_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
-			allSettings.ambient_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
+			allSettings.ambient_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
-			allSettings.environment_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
+			allSettings.environment_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
-			allSettings.music_volume, 0, 100, true, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
+			allSettings.music_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
 
@@ -5195,7 +5230,7 @@ bind_failed:
 		std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, false, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
+			allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
 		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
 			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
 			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
@@ -5235,10 +5270,10 @@ bind_failed:
 			gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
 			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+			allSettings.turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
 		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
 			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 25.f, 200.f, true, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+			allSettings.turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
 		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
 			"Enable to invert left/right look controls of the player camera.",
@@ -5261,16 +5296,17 @@ bind_failed:
 			{Setting::Type::Slider, "turn_sensitivity_x"},
 			{Setting::Type::Slider, "turn_sensitivity_y"},
 			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"}
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
 		});
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"}}
+			{Setting::Type::Slider, "turn_sensitivity_y"},
 			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"});
+			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
+		});
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
@@ -5952,6 +5988,30 @@ bind_failed:
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
+                });
+            button->setTickCallback([](Widget& widget){
+                auto button = static_cast<Button*>(&widget);
+                auto list = static_cast<Frame*>(button->getParent());
+                if (button->isSelected()) {
+                    if (button->getSize().y < list->getActualSize().y) {
+                        auto next = button->getWidgetMovements().find("MenuDown");
+                        if (next != button->getWidgetMovements().end() && !next->second.empty()) {
+                            auto result = list->findButton(next->second.c_str());
+                            if (result) {
+                                result->select();
+                            }
+                        }
+                    }
+                    if (button->getSize().y + button->getSize().h >= list->getActualSize().y + list->getSize().h) {
+                        auto next = button->getWidgetMovements().find("MenuUp");
+                        if (next != button->getWidgetMovements().end() && !next->second.empty()) {
+                            auto result = list->findButton(next->second.c_str());
+                            if (result) {
+                                result->select();
+                            }
+                        }
+                    }
+                }
                 });
 
             if (index == 0) {
@@ -7166,6 +7226,10 @@ bind_failed:
 		currentLobbyType = LobbyType::None;
 
 	    closeNetworkInterfaces();
+
+#ifdef NINTENDO
+		nxEndParentalControls();
+#endif
 
 #ifdef STEAMWORKS
 	    if (currentLobby) {
@@ -9398,7 +9462,7 @@ bind_failed:
 					(!enabledDLCPack2 && c >= 5 && c <= 8)) {
 					// this class is not available to the player
 					button.setPressed(false);
-					openDLCPrompt();
+					openDLCPrompt(c >= 5 ? 1 : 0);
 					return;
 				} else {
 					soundToggle();
@@ -9591,9 +9655,10 @@ bind_failed:
 		if (card) {
 			card->removeSelf();
 		}
-
+        
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{-2 + 320 * index, Frame::virtualScreenY - height, 324, height});
+		card->setSize(SDL_Rect{pos - 324 / 2, Frame::virtualScreenY - height, 324, height});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -11989,8 +12054,10 @@ bind_failed:
 							soundError();
 							break;
 						case INVALID_REQUIREDLC1:
+							openDLCPrompt(0);
+							break;
 						case INVALID_REQUIREDLC2:
-							openDLCPrompt();
+							openDLCPrompt(1);
 							break;
 						}
 					} else {
@@ -12584,8 +12651,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -12680,8 +12748,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -12949,8 +13018,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -13013,8 +13083,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -13137,8 +13208,9 @@ bind_failed:
 			card->removeSelf();
 		}
 
+        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
-		card->setSize(SDL_Rect{20 + 320 * index, Frame::virtualScreenY - 146 - 100, 280, 146});
+		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -13611,7 +13683,7 @@ bind_failed:
 #endif
 
             // lobby name
-            if (type != LobbyType::LobbyLocal && type != LobbyType::LobbyLAN && !directConnect) {
+            if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline || (type == LobbyType::LobbyJoined && !directConnect)) {
 		        auto text_box = banner->addImage(
 			        SDL_Rect{160, 10, 246, 36},
 			        0xffffffff,
@@ -13625,9 +13697,13 @@ bind_failed:
 		        field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 		        field->setSelectorOffset(SDL_Rect{-7, -7, 7, 7});
 		        field->setButtonsOffset(SDL_Rect{8, 0, 0, 0});
+                
 #ifndef NINTENDO
-		        field->setEditable(type != LobbyType::LobbyJoined);
+                if (type == LobbyType::LobbyOnline) {
+                    field->setEditable(true);
+                }
 #endif
+                
 		        field->setScroll(true);
 		        field->setGuide("Set a public name for this lobby.");
 		        field->setSize(SDL_Rect{162, 14, 242, 28});
@@ -13658,15 +13734,19 @@ bind_failed:
 #endif // STEAMWORKS
                         }
 	                    });
-                    if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+                    if (directConnect) {
+                        field->setText(getHostname());
+                    } else {
+                        if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
-                        field->setText(EOS.currentLobbyName);
+                            field->setText(EOS.currentLobbyName);
 #endif // USE_EOS
-                    }
-                    else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+                        }
+                        else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-                        field->setText(currentLobbyName);
+                            field->setText(currentLobbyName);
 #endif // STEAMWORKS
+                        }
                     }
                 }
                 field->setTickCallback([](Widget& widget){
@@ -13745,6 +13825,7 @@ bind_failed:
 						if (currentLobbyType == LobbyType::LobbyJoined) {
 							stringCopy(hostname, last_address, sizeof(hostname), sizeof(last_address));
 						} else {
+                            // this populates the (private) address field - not the lobby name!
 #ifdef NINTENDO
 							nxGetHostname(hostname, sizeof(hostname));
 #else
@@ -13800,7 +13881,7 @@ bind_failed:
 			    auto roomcode = banner->addField("roomcode", 128);
 			    roomcode->setHJustify(Field::justify_t::RIGHT);
 			    roomcode->setVJustify(Field::justify_t::CENTER);
-			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 260, 0, 256, 48});
+			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292, 0, 288, 48});
 		        roomcode->setFont(bigfont_outline);
 
 		        // privacy button
@@ -14705,6 +14786,10 @@ bind_failed:
 		    soundCancel();
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
+
+#ifdef NINTENDO
+			nxEndParentalControls();
+#endif
 
 		    // remove parent window
 		    auto frame = static_cast<Frame*>(button.getParent());
@@ -15945,6 +16030,11 @@ bind_failed:
 			textPrompt("host_lobby_prompt", "Creating Epic lobby...",
 				[](Widget&){
 				if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
+					if (!EOS.CurrentUserInfo.isValid() || !EOS.CurrentUserInfo.isLoggedIn()) {
+						closePrompt("host_lobby_prompt");
+						errorPrompt("Failed to host Epic lobby.", "Okay",
+							[](Button&) {soundCancel(); closeMono(); });
+					}
 					return;
 				} else {
 					if (EOS.CurrentLobbyData.LobbyCreationResult == EOS_EResult::EOS_Success) {
@@ -15993,8 +16083,20 @@ bind_failed:
 			closeMono();
 		});
 #else
+#ifdef NINTENDO
+		if (!nxBeginParentalControls())
+		{
+			// access to online play is not permitted
+			return;
+		}
+#endif
 		closeNetworkInterfaces();
 		directConnect = false;
+        
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
+        setHostname(buf);
+        
 #if defined(STEAMWORKS) && defined(USE_EOS)
 		if (LobbyHandler.crossplayEnabled) {
 			const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
@@ -16030,8 +16132,21 @@ bind_failed:
 
 	static void hostLANLobby(Button&) {
 		soundActivate();
+
+#ifdef NINTENDO
+		if (!nxBeginParentalControls())
+		{
+			// access to online play is not permitted
+			return;
+		}
+#endif
+
 		closeNetworkInterfaces();
 		directConnect = true;
+        
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
+        setHostname(buf);
 
 #ifdef NINTENDO
 		nxConnectToNetwork();
@@ -16303,26 +16418,28 @@ bind_failed:
 
 		auto join_fn = [](Button& button){
 #ifdef NINTENDO
-			static Button* join_button;
-			join_button = &button;
-			nxConnectToNetwork();
-			textPrompt("lobby_browser_wait_prompt", "Connecting...",
-				[](Widget&) {
-					if (nxConnectingToNetwork()) {
-						return;
-					}
-					else {
-						if (nxConnectedToNetwork()) {
-							closePrompt("lobby_browser_wait_prompt");
-							createLobbyBrowser(*join_button);
+			if (nxBeginParentalControls()) {
+				static Button* join_button;
+				join_button = &button;
+				nxConnectToNetwork();
+				textPrompt("lobby_browser_wait_prompt", "Connecting...",
+					[](Widget&) {
+						if (nxConnectingToNetwork()) {
+							return;
 						}
 						else {
-							closePrompt("lobby_browser_wait_prompt");
-							errorPrompt("Network connection failed.", "Okay",
-								[](Button&) {soundCancel(); closeMono(); });
+							if (nxConnectedToNetwork()) {
+								closePrompt("lobby_browser_wait_prompt");
+								createLobbyBrowser(*join_button);
+							}
+							else {
+								closePrompt("lobby_browser_wait_prompt");
+								errorPrompt("Network connection failed.", "Okay",
+									[](Button&) {soundCancel(); closeMono(); });
+							}
 						}
-					}
-				});
+					});
+			}
 #else
 			createLobbyBrowser(button);
 #endif
@@ -16601,8 +16718,18 @@ bind_failed:
                     }
                     multiplayer = SINGLE;
 					clientnum = 0;
+#ifdef NINTENDO
+					if (nxBeginParentalControls()) {
+						createDummyMainMenu();
+						createLobbyBrowser(button);
+					} else {
+						// in-case lobby browser is not allowed, return to main menu
+						createMainMenu(false);
+					}
+#else
                     createDummyMainMenu();
                     createLobbyBrowser(button);
+#endif
                 }
 	        },
 	        [](Button& button) { // No button
@@ -16786,7 +16913,7 @@ bind_failed:
 						case 8: screenshot_path += "save_temple00.png"; break;
 						case 9: screenshot_path += "save_castle00.png"; break;
 						case 12: screenshot_path += "save_sokoban00.png"; break;
-						case 14: screenshot_path += "save_minotaur00.png"; break;
+						case 14: screenshot_path += "save_maze00.png"; break;
 						case 17: screenshot_path += "save_library00.png"; break;
 						case 19:
 						case 20: screenshot_path += "save_underworld00.png"; break;
@@ -17413,7 +17540,7 @@ bind_failed:
 		settings->setTickCallback([](Widget& widget){
 			auto settings = static_cast<Frame*>(&widget);
 			std::vector<const char*> tabs = {
-				"UI",
+				"General",
 				"Video",
 				"Audio",
 				"Controls",
@@ -17450,7 +17577,7 @@ bind_failed:
 			void (*callback)(Button&);
 		};
 		std::vector<Option> tabs = {
-			{"UI", settingsUI},
+			{"General", settingsGeneral},
 			{"Video", settingsVideo},
 			{"Audio", settingsAudio},
 			{"Controls", settingsControls},
@@ -17523,14 +17650,14 @@ bind_failed:
 		tab_left->setWidgetBack("discard_and_exit");
 		tab_left->setWidgetPageLeft("tab_left");
 		tab_left->setWidgetPageRight("tab_right");
-		tab_left->setWidgetRight("UI");
+		tab_left->setWidgetRight("General");
 		tab_left->setWidgetDown("restore_defaults");
 		tab_left->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
 		tab_left->setCallback([](Button&){
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			std::vector<const char*> tabs = {
-				"UI",
+				"General",
 				"Video",
 				"Audio",
 				"Controls",
@@ -17568,7 +17695,7 @@ bind_failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
-		tab_right->setWidgetLeft("Controls");
+		tab_right->setWidgetLeft(intro ? "Online" : "Game");
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -17578,7 +17705,7 @@ bind_failed:
 				"Controls",
 				"Audio",
 				"Video",
-				"UI",
+				"General",
 			};
 			if (intro) {
 #ifndef NINTENDO
@@ -17624,7 +17751,7 @@ bind_failed:
 		restore_defaults->setWidgetBack("discard_and_exit");
 		restore_defaults->setWidgetPageLeft("tab_left");
 		restore_defaults->setWidgetPageRight("tab_right");
-		restore_defaults->setWidgetUp("UI");
+		restore_defaults->setWidgetUp("General");
 		restore_defaults->setWidgetRight("discard_and_exit");
 		restore_defaults->addWidgetAction("MenuAlt1", "restore_defaults");
 		restore_defaults->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -17636,7 +17763,7 @@ bind_failed:
 				"Controls",
 				"Audio",
 				"Video",
-				"UI",
+				"General",
 			};
 			if (intro) {
 				tabs.insert(tabs.begin(), "Online");
@@ -17700,7 +17827,8 @@ bind_failed:
 		confirm_and_exit->setColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		confirm_and_exit->setCallback([](Button& button){
-			if (!settingsApply()) {
+            settingsApply();
+			if (video_refresh == VideoRefresh::None) {
 			    // resolution confirm prompt makes this sound
 			    soundActivate();
 			}
@@ -17899,7 +18027,11 @@ bind_failed:
 				soundActivate();
 				destroyMainMenu();
 				createDummyMainMenu();
-				beginFade(MainMenu::FadeDestination::RootMainMenu);
+                if (saveGameExists(multiplayer == SINGLE)) {
+                    beginFade(MainMenu::FadeDestination::RootMainMenu);
+                } else {
+                    beginFade(MainMenu::FadeDestination::Endgame);
+                }
 			},
 			[](Button&){ // cancel
 				soundCancel();
@@ -17984,15 +18116,8 @@ bind_failed:
 			main_menu_fade_destination = FadeDestination::RootMainMenu;
 		} else {
 		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
+                assert(!ingame); // you're not supposed to use this destination while in-game!
 		        destroyMainMenu();
-				if (ingame) {
-#ifdef NINTENDO
-					if (!nxIsHandheldMode()) {
-						nxAssignControllers(1, 1, true, false, true, false, nullptr);
-					}
-#endif
-				    doEndgame();
-				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
@@ -18014,7 +18139,11 @@ bind_failed:
 						nxAssignControllers(1, 1, true, false, true, false, nullptr);
 					}
 #endif
-				    doEndgame();
+                    // end the game, but do NOT create a highscore.
+                    // this is because we are coming here from some unknown place.
+                    // presumably the current game has been saved, so we're not ending it.
+                    // just return to the main menu but don't save a score
+                    doEndgame(false);
 				}
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
@@ -18033,13 +18162,43 @@ bind_failed:
 				}
 #endif
 			}
+            else if (main_menu_fade_destination == FadeDestination::Endgame) {
+                destroyMainMenu();
+                if (ingame) {
+#ifdef NINTENDO
+                    if (!nxIsHandheldMode()) {
+                        nxAssignControllers(1, 1, true, false, true, false, nullptr);
+                    }
+#endif
+                    // end the game AND create a highscore!
+                    // this is because the game is well and truly done. There is no save file.
+                    // create a highscore as token of remembrance.
+                    doEndgame(true);
+                }
+                const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
+                playMusic(intromusic[music], true, false, false);
+                createMainMenu(false);
+                if (saved_invite_lobby) {
+                    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
+                    saved_invite_lobby = nullptr;
+                }
+
+#ifndef NINTENDO
+                for (int c = 1; c < 4; ++c) {
+                    if (inputs.hasController(c)) {
+                        inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
+                        Input::inputs[c].refresh();
+                    }
+                }
+#endif
+            }
 			else if (main_menu_fade_destination == FadeDestination::Victory) {
 #ifdef NINTENDO
 				if (!nxIsHandheldMode()) {
 					nxAssignControllers(1, 1, true, false, true, false, nullptr);
 				}
 #endif
-				doEndgame();
+				doEndgame(true);
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
@@ -18195,7 +18354,7 @@ bind_failed:
 	}
 
 	void doMainMenu(bool ingame) {
-        if (resolution_changed) {
+        if (video_refresh) {
 			Frame::guiResize(0, 0); // resize gui for new aspect ratio
             createMainMenu(!intro);
 
@@ -18205,8 +18364,14 @@ bind_failed:
             auto settings_button = buttons->findButton("Settings"); assert(settings_button);
             settings_button->activate();
             auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-            auto video = settings->findButton("Video"); assert(video);
-            video->activate();
+            if (video_refresh & VideoRefresh::Video) {
+                auto video = settings->findButton("Video"); assert(video);
+                video->activate();
+            }
+            else if (video_refresh & VideoRefresh::General) {
+                auto general = settings->findButton("General"); assert(general);
+                general->activate();
+            }
 
             // setup timeout to revert resolution
             char buf[256];
@@ -18243,7 +18408,7 @@ bind_failed:
 #ifdef NINTENDO
 					settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
 #else
-		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "device"});
+		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
 #endif
                 },
                 [](Button&){ // no
@@ -18257,7 +18422,7 @@ bind_failed:
 #ifdef NINTENDO
 					settingsSelect(*settings_subwindow, { Setting::Type::Boolean, "vertical_split" });
 #else
-					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "device" });
+					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "resolution" });
 #endif
                 }, false, false); // yellow buttons
 
@@ -18280,7 +18445,7 @@ bind_failed:
             }
 
             // at the end so that old_video is not overwritten
-            resolution_changed = false;
+            video_refresh = VideoRefresh::None;
         }
 
 		if (!main_menu_frame) {
@@ -18296,22 +18461,14 @@ bind_failed:
 			assert(main_menu_frame);
 		}
 
-        // just always enable DLC in debug. saves headaches
-#ifndef NDEBUG
-		//enabledDLCPack1 = true;
-		//enabledDLCPack2 = true;
+#ifdef NINTENDO
+		enabledDLCPack1 = nxCheckDLC(0);
+		enabledDLCPack2 = nxCheckDLC(1);
 #endif
 
 #ifdef STEAMWORKS
-		if ( SteamApps()->BIsDlcInstalled(1010820) )
-		{
-			enabledDLCPack1 = true;
-		}
-		if ( SteamApps()->BIsDlcInstalled(1010821) )
-		{
-			enabledDLCPack2 = true;
-		}
-#else
+		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
+		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
 #endif // STEAMWORKS
 
         if (!ingame) {
@@ -18497,8 +18654,13 @@ bind_failed:
 			if (!firstTimeTutorialPrompt()) {
 				soundActivate();
 			}
-#if defined(NINTENDO) && defined(USE_EOS)
+#ifdef NINTENDO
+#ifdef USE_EOS
 			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+#endif
+            char buf[32];
+            snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
+            setUsername(buf);
 #endif
 		    });
 		button->setTickCallback([](Widget& widget){
@@ -18789,10 +18951,7 @@ bind_failed:
 
 		const int num_options = options.size();
 
-		if (ingame) {
-			y = (Frame::virtualScreenY - num_options * 32) / 2;
-			++y; // fix aliasing nonsense
-		}
+        y = (Frame::virtualScreenY - num_options * 32) / 2 + 1;
 		main_menu_buttons_height = y;
 
 		auto buttons = main_menu_frame->addFrame("buttons");
@@ -18898,7 +19057,7 @@ bind_failed:
 		        if (enabledDLCPack1 && enabledDLCPack2) {
                     openURLTryWithOverlay("https://turningwheelgames.com/blog/2022/11/qodbeta");
                 } else {
-					openDLCPrompt();
+					openDLCPrompt(enabledDLCPack1 ? 1 : 0);
                 }
 		        },
 		        [](Button&){ // banner #2
@@ -19751,5 +19910,26 @@ bind_failed:
             }
             });
 #endif
+    }
+                
+    /******************************************************************************/
+    
+    static std::string username;
+    static std::string hostname;
+    
+    const char* getUsername() {
+        return username.c_str();
+    }
+    
+    const char* getHostname() {
+        return hostname.c_str();
+    }
+    
+    void setUsername(const char* name) {
+        username = name;
+    }
+    
+    void setHostname(const char* name) {
+        hostname = name;
     }
 }

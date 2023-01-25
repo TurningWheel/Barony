@@ -5676,7 +5676,7 @@ void drawAllPlayerCameras() {
 				DebugStats.drawWorldT3 = std::chrono::high_resolution_clock::now();
 				if ( !players[c]->entity->isBlind() )
 				{
-				    raycast(&camera, minimap); // update minimap
+				    raycast(camera, minimap); // update minimap
 				}
 				DebugStats.drawWorldT4 = std::chrono::high_resolution_clock::now();
 				glDrawWorld(&camera, REALCOLORS);
@@ -5696,7 +5696,7 @@ void drawAllPlayerCameras() {
 							    camera.x = players[i]->entity->x / 16.0;
 							    camera.y = players[i]->entity->y / 16.0;
 							    camera.ang = players[i]->entity->yaw;
-							    raycast(&camera, minimap); // update minimap from other players' perspectives
+							    raycast(camera, minimap); // update minimap from other players' perspectives
 							    camera.x = x;
 							    camera.y = y;
 							    camera.ang = ang;
@@ -6142,6 +6142,15 @@ int main(int argc, char** argv)
 			}
 			exit(1);
 		}
+        
+        // init sdl
+        Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+        init_flags |= SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+        if (SDL_Init(init_flags) == -1)
+        {
+            printlog("failed to initialize SDL: %s\n", SDL_GetError());
+            return 1;
+        }
 
 		Input::defaultBindings();
 
@@ -6154,13 +6163,13 @@ int main(int argc, char** argv)
 		{
 			loadDefaultConfig();
 		}
+        MainMenu::settingsReset();
+        MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
 		if ( load_successful ) {
 			MainMenu::settingsApply();
 		}
 		else {
-			MainMenu::settingsReset();
-			MainMenu::settingsApply();
 			skipintro = false;
 		}
 

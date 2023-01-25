@@ -302,11 +302,10 @@ int initGame()
 
 		updateLoadingScreen(94);
 
-#ifdef NINTENDO_DEBUG
-		//#error "No DLC support on SWITCH yet :(" //TODO: Resolve this.
-		enabledDLCPack1 = true;
-		enabledDLCPack2 = true;
-#endif
+//#ifdef NINTENDO_DEBUG
+		//enabledDLCPack1 = true;
+		//enabledDLCPack2 = true;
+//#endif
 
 #if defined(USE_EOS) || defined(STEAMWORKS)
 #else

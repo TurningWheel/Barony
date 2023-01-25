@@ -26,15 +26,18 @@ namespace MainMenu {
 	extern ConsoleVariable<bool> cvar_gamepad_facehotbar;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
+    extern ConsoleVariable<int> cvar_desiredFps;
+    extern ConsoleVariable<int> cvar_displayHz;
 	
 	static constexpr const char* emptyBinding = "[unbound]"; // string appended to default empty bindings
 	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI
 
 	enum class FadeDestination : Uint8 {
-		None,
-		TitleScreen,
-		RootMainMenu,
-		Victory,
+		None,           // don't fade anywhere (???)
+		TitleScreen,    // fade to the title screen. ONLY use while not ingame!
+		RootMainMenu,   // return to main menu, save no score if ingame
+        Endgame,        // save a highscore and return to main menu
+		Victory,        // save a highscore and roll credits
 
 		// Story scenes:
 
@@ -55,6 +58,8 @@ namespace MainMenu {
 		EndingAutomaton,
 		EndingBeast,
 		EndingEvil,
+        
+        // Classic endings:
 
 		ClassicEndingHuman,
 		ClassicEndingAutomaton,
@@ -68,10 +73,15 @@ namespace MainMenu {
 
         // Game starts:
 
-		GameStart,
-		GameStartDummy,
-		HallOfTrials,
+		GameStart,          // used by servers and local games
+		GameStartDummy,     // used by clients to fade without really launching
+		HallOfTrials,       // used to launch a hall-of-trials map
 	};
+
+    const char* getUsername();              // get local account name
+    const char* getHostname();              // get local host name
+    void setUsername(const char* name);     // set local account name
+    void setHostname(const char* name);     // set local hostname
 
 	int getMenuOwner();					// get current pause menu owner
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot
@@ -80,7 +90,7 @@ namespace MainMenu {
 	bool isMenuOpen();					// checks whether the menu is open
 	void beginFade(FadeDestination);    // begins a fade transition to a specific destination
 
-	bool settingsApply();	// write settings to global variables (true if video mode changed)
+	void settingsApply();	// write settings to global variables (true if video mode changed)
 	void settingsMount();	// read settings from global variables
 	bool settingsSave();	// write settings to disk (true if succeeded)
 	bool settingsLoad();	// read settings from disk (true if succeeded)

@@ -6681,17 +6681,10 @@ void deleteMultiplayerSaveGames()
 
 void handleScanPacket() {
     if (directConnect) {
-        char hostname[256] = { '\0' };
-#ifdef NINTENDO
-		nxGetUsername(hostname, sizeof(hostname));
-#else
-        (void)gethostname(hostname, sizeof(hostname));
-        hostname[sizeof(hostname) - 1] = '\0';
-#endif
-        Uint32 hostname_len = (Uint32)strlen(hostname);
+        Uint32 hostname_len = (Uint32)strlen(MainMenu::getHostname());
         SDLNet_Write32(hostname_len, &net_packet->data[4]);
         for (int c = 0; c < hostname_len; ++c) {
-            net_packet->data[8 + c] = hostname[c];
+            net_packet->data[8 + c] = MainMenu::getHostname()[c];
         }
         Uint32 offset = 8 + hostname_len;
         int numplayers = 0;
