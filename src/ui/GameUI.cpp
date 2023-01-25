@@ -3083,7 +3083,14 @@ void createHotbar(const int player)
 		itemSlot->setSize(slot->getSize());
 
 		char numStr[4];
-		snprintf(numStr, sizeof(numStr), "%d", i + 1);
+		if ( i + 1 == 10 )
+		{
+			snprintf(numStr, sizeof(numStr), "%d", 0);
+		}
+		else
+		{
+			snprintf(numStr, sizeof(numStr), "%d", i + 1);
+		}
 		auto text = slot->addField("slot num text", 4);
 		text->setText(numStr);
 		text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
@@ -3824,6 +3831,19 @@ void Player::HUD_t::updateUINavigation()
 	auto statusButtonGlyph = uiNavFrame->findImage("status button glyph");
 	auto skillsButton = uiNavFrame->findButton("skills button");
 	auto skillsButtonGlyph = uiNavFrame->findImage("skills button glyph");
+
+	static ConsoleVariable<bool> cvar_spell_unread_blink("/spell_unread_blink", true);
+	if ( *cvar_spell_unread_blink 
+		&& player.magic.bHasUnreadNewSpell && ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2 )
+	{
+		magicButton->setTextColor(hudColors.characterSheetGreen);
+		magicButton->setTextHighlightColor(hudColors.characterSheetGreen);
+	}
+	else
+	{
+		magicButton->setTextColor(makeColor(255, 255, 255, 255));
+		magicButton->setTextHighlightColor(makeColor(255, 255, 255, 255));
+	}
 
 	struct ButtonsAndGlyphs {
 		std::string name;
@@ -6967,6 +6987,8 @@ int Player::HUD_t::actionPromptBackingSize = 44;
 int Player::HUD_t::actionPromptIconSize = 32;
 int Player::HUD_t::actionPromptIconOpacity = 255;
 int Player::HUD_t::actionPromptIconBackingOpacity = 255;
+static ConsoleVariable<bool> disableActionPrompts(
+	"/disableactionprompts", false, "Disable action prompts in HUD");
 void Player::HUD_t::updateActionPrompts()
 {
 	if ( !hudFrame )
@@ -6983,8 +7005,6 @@ void Player::HUD_t::updateActionPrompts()
 		}
 	}
 
-	static ConsoleVariable<bool> disableActionPrompts(
-	    "/disableactionprompts", false, "Disable action prompts in HUD");
 
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -6994,14 +7014,24 @@ void Player::HUD_t::updateActionPrompts()
 	}
 
 	static ConsoleVariable<int> actionPromptCompactHeightY("/actionpromptcompactheighty", 16);
-	bShowActionPrompts = !*disableActionPrompts;
+	bShowActionPrompts = *disableActionPrompts;
+	bShortHPMPForActionBars = false;
 
-	if ( !bShowActionPrompts || playercount > 2
-		|| (playercount == 2 && (*MainMenu::vertical_splitscreen || !player.shootmode)) 
+	if ( playercount == 2 && !*MainMenu::vertical_splitscreen 
+		&& !*disableActionPrompts && *MainMenu::clipped_splitscreen )
+	{
+		bShortHPMPForActionBars = true;
+	}
+
+	if ( playercount > 2
+		|| (playercount == 2 
+			&& (*MainMenu::vertical_splitscreen 
+				|| !player.shootmode 
+				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
-		bShowActionPrompts = false;
 		actionPromptsFrame->setDisabled(true);
+		bShowActionPrompts = false;
 		return;
 	}
 	actionPromptsFrame->setDisabled(false);
@@ -16828,13 +16858,15 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					img->pos.x = 10;
 					img->pos.y = 2;
-					if ( players[player]->hotbar.slots()[NUM_HOTBAR_SLOTS - 1].item == item->uid )
+
+					// to push to right of "10" text if we label that
+					/*if ( players[player]->hotbar.slots()[NUM_HOTBAR_SLOTS - 1].item == item->uid )
 					{
 						if ( slotFrame && slotFrame->getParent() && !strcmp(slotFrame->getParent()->getName(), "hotbar slot 9") )
 						{
 							img->pos.x += 6;
 						}
-					}
+					}*/
 				}
 				img->disabled = false;
 				auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
@@ -24109,7 +24141,7 @@ void Player::HUD_t::updateHPBar()
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
 	if ( !player.bUseCompactGUIWidth() 
 		&& player.bUseCompactGUIHeight() && *MainMenu::clipped_splitscreen
-		&& bShowActionPrompts )
+		&& bShortHPMPForActionBars )
 	{
 		// shorten if action prompts visible in clipped wide mode
 		pos.w -= kHPMPWidthReduce2pWideClippedActionPrompts; 
@@ -24458,7 +24490,7 @@ void Player::HUD_t::updateMPBar()
 	pos.w = HPMP_FRAME_WIDTH + (bCompactWidth ? hpmpbarCompactOffsetWidth : hpmpbarOffsetWidth);
 	if ( !player.bUseCompactGUIWidth()
 		&& player.bUseCompactGUIHeight() && *MainMenu::clipped_splitscreen
-		&& bShowActionPrompts )
+		&& bShortHPMPForActionBars )
 	{
 		// shorten if action prompts visible in clipped wide mode
 		pos.w -= kHPMPWidthReduce2pWideClippedActionPrompts; 

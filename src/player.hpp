@@ -1559,6 +1559,7 @@ public:
 			shieldSwitch = false;
 		}
 		bool bShowActionPrompts = true;
+		bool bShortHPMPForActionBars = false;
 		enum ActionPrompts : int
 		{
 			ACTION_PROMPT_MAINHAND,
@@ -1614,7 +1615,7 @@ public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
 		list_t spellList; //All of the player's spells are stored here.
-
+		bool bHasUnreadNewSpell = false;
 		Magic_t(Player& p) : player(p)
 		{
 			spellList.first = nullptr;

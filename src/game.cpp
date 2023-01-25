@@ -2587,6 +2587,7 @@ void gameLogic(void)
 
 			for ( int player = 0; player < MAXPLAYERS; ++player )
 			{
+				players[player]->magic.bHasUnreadNewSpell = false;
 				if ( !players[player]->isLocalPlayer() )
 				{
 					continue;
@@ -2601,6 +2602,12 @@ void gameLogic(void)
 					{
 						continue;
 					}
+
+					if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+					{
+						players[player]->magic.bHasUnreadNewSpell = true;
+					}
+
 					// unlock achievements for special collected items
 					switch ( item->type )
 					{
@@ -3159,6 +3166,7 @@ void gameLogic(void)
 			}
 
 			int bloodCount = 0;
+			players[clientnum]->magic.bHasUnreadNewSpell = false;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -3167,6 +3175,11 @@ void gameLogic(void)
 				{
 					continue;
 				}
+				if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+				{
+					players[clientnum]->magic.bHasUnreadNewSpell = true;
+				}
+
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
