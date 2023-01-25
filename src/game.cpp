@@ -1909,6 +1909,13 @@ void gameLogic(void)
 							if ( follower )
 							{
 								Stat* followerStats = follower->getStats();
+								if ( (int)follower->monsterSpecialAttackUnequipSafeguard > 0 )
+								{
+									// force deinit of special attacks to not be invalid state on next level.
+									//messagePlayer(0, MESSAGE_DEBUG, "Cleared monster special");
+									follower->handleMonsterSpecialAttack(followerStats, nullptr, 0.0, true);
+								}
+
 								if ( followerStats )
 								{
 									node_t* newNode = list_AddNodeLast(&tempFollowers[c]);

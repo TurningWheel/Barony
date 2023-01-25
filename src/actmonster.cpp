@@ -3593,10 +3593,21 @@ void actMonster(Entity* my)
 		if ( myStats->type != LICH 
 			&& myStats->type != DEVIL 
 			&& myStats->type != LICH_ICE
-			&& myStats->type != LICH_FIRE
-			&& my->monsterSpecialTimer > 0 )
+			&& myStats->type != LICH_FIRE )
 		{
-			--my->monsterSpecialTimer;
+			if ( my->monsterSpecialTimer > 0 )
+			{
+				--my->monsterSpecialTimer;
+			}
+			if ( (int)my->monsterSpecialAttackUnequipSafeguard > 0 )
+			{
+				my->monsterSpecialAttackUnequipSafeguard -= 1.0;
+				if ( (int)my->monsterSpecialAttackUnequipSafeguard <= 0 )
+				{
+					//messagePlayer(0, MESSAGE_DEBUG, "Cleared monster special");
+					my->handleMonsterSpecialAttack(myStats, nullptr, 0.0, true);
+				}
+			}
 		}
 
 		if ( my->monsterAllySpecialCooldown > 0 )
@@ -7703,7 +7714,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			|| (this->monsterHitTime >= HITRATE * 2 && myStats->type == LICH_ICE)
 			)
 		{
-			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist);
+			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist, false);
 			if ( !shouldAttack )
 			{
 				// handleMonsterSpecialAttack processed an action where the monster should not try to attack this frame.
@@ -8335,7 +8346,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 	return true;
 }
 
-bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
+bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist, bool forceDeinit)
 {
 	int specialRoll = 0;
 	node_t* node = nullptr;
@@ -8355,7 +8366,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 			return true;
 		}
 
-		if ( this->monsterSpecialTimer == 0 )
+		if ( this->monsterSpecialTimer == 0 && !forceDeinit )
 		{
 			if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 
 				&& (monsterSpecialState == MONSTER_SPELLCAST_GENERIC || monsterSpecialState == MONSTER_SPELLCAST_GENERIC2) )
@@ -8386,7 +8397,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 			switch ( myStats->type )
 			{
 				case KOBOLD:
-					if ( hasrangedweapon || myStats->weapon == nullptr )
+					if ( (hasrangedweapon && !(myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK)) || myStats->weapon == nullptr )
 					{
 						specialRoll = local_rng.rand() % 20;
 						//messagePlayer(0, "Rolled: %d", specialRoll);
@@ -8688,10 +8699,16 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				default:
 					break;
 			}
+
+			if ( monsterSpecialTimer > 0 )
+			{
+				monsterSpecialAttackUnequipSafeguard = (real_t)TICKS_PER_SECOND * 2;
+			}
 		}
-		else if ( this->monsterSpecialTimer > 0 )
+		else if ( this->monsterSpecialTimer > 0 || forceDeinit )
 		{
 			bool shouldAttack = true;
+			bool deinitSuccess = false;
 
 			if ( myStats->MISC_FLAGS[STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS] > 0 )
 			{
@@ -8700,25 +8717,28 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					monsterSpecialState = MONSTER_SPELLCAST_GENERIC2;
 					return true;
 				}
-				else if ( monsterSpecialState == MONSTER_SPELLCAST_GENERIC2 )
+				else if ( monsterSpecialState == MONSTER_SPELLCAST_GENERIC2 || forceDeinit )
 				{
 					monsterSpecialState = 0;
 					node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						monsterSpecialAttackUnequipSafeguard = (real_t)MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE;
 						return true;
 					}
 					node = itemNodeInInventory(myStats, -1, MAGICSTAFF); // find weapon to re-equip
 					if ( node != nullptr )
 					{
 						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						monsterSpecialAttackUnequipSafeguard = (real_t)MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE;
 						return true;
 					}
 					else
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 					}
+					monsterSpecialAttackUnequipSafeguard = (real_t)MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE;
 					return true;
 				}
 			}
@@ -8735,9 +8755,10 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
 					}
+					deinitSuccess = true;
 					break;
 				case SUCCUBUS:
-					if ( monsterSpecialState == SUCCUBUS_CHARM )
+					if ( monsterSpecialState == SUCCUBUS_CHARM || forceDeinit )
 					{
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
@@ -8750,22 +8771,24 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						deinitSuccess = true;
 					}
 					break;
 				case SPIDER:
-					if ( monsterSpecialState == SPIDER_CAST )
+					if ( monsterSpecialState == SPIDER_CAST || forceDeinit )
 					{
 						monsterSpecialState = 0;
 						serverUpdateEntitySkill(this, 33); // for clients to handle animation
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						shouldAttack = false;
+						deinitSuccess = true;
 					}
 					break;
 				case INSECTOID:
-					if ( monsterSpecialState == INSECTOID_ACID )
+					if ( monsterSpecialState == INSECTOID_ACID || forceDeinit )
 					{
 						monsterSpecialState = 0;
-						serverUpdateEntitySkill(this, 33); // for clients to handle animation
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
@@ -8776,6 +8799,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
 						shouldAttack = false;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						deinitSuccess = true;
 					}
 					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
@@ -8790,10 +8815,13 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
 						}
 						shouldAttack = false;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						deinitSuccess = true;
 					}
 					break;
 				case COCKATRICE:
 					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					deinitSuccess = true;
 					break;
 				case INCUBUS:
 					if ( monsterSpecialState == INCUBUS_CONFUSION )
@@ -8809,6 +8837,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
 					else if ( monsterSpecialState == INCUBUS_STEAL )
 					{
@@ -8823,6 +8853,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
 					else if ( monsterSpecialState == INCUBUS_TELEPORT_STEAL )
 					{
@@ -8832,7 +8864,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						// this flag will be cleared in incubusChooseWeapon
 					}
-					else if ( monsterSpecialState == INCUBUS_CHARM )
+					else if ( monsterSpecialState == INCUBUS_CHARM || forceDeinit )
 					{
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
@@ -8845,11 +8877,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
-					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				case VAMPIRE:
-					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA || forceDeinit )
 					{
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
@@ -8862,6 +8895,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
 					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
 					{
@@ -8876,11 +8911,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
-					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				case SHADOW:
-					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
+					if ( monsterSpecialState == SHADOW_SPELLCAST || forceDeinit ) //TODO: This code is destroying spells?
 					{
 						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
 						//messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
@@ -8899,11 +8935,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						shouldAttack = false;
 						monsterSpecialState = 0;
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
-					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				case GOATMAN:
-					if ( monsterSpecialState == GOATMAN_POTION )
+					if ( monsterSpecialState == GOATMAN_POTION || forceDeinit )
 					{
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
@@ -8916,6 +8953,8 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
 					else if ( monsterSpecialState == GOATMAN_THROW )
 					{
@@ -8930,12 +8969,19 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
 					}
-					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				default:
 					break;
 			}
+
+			if ( deinitSuccess )
+			{
+				monsterSpecialAttackUnequipSafeguard = (real_t)MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE;
+			}
+
 			// Whether monster should attack following the unequip action.
 			return shouldAttack;
 		}
