@@ -1007,6 +1007,7 @@ static const int SHADOW_TELEPORT_ONLY = 2;
 //--Generic
 static const int MONSTER_SPELLCAST_GENERIC = 100;
 static const int MONSTER_SPELLCAST_GENERIC2 = 101;
+static const int MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE = 0;
 
 //--Lich Attacks--
 static const int LICH_ATK_VERTICAL_SINGLE = 0;
