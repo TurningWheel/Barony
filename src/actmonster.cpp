@@ -4683,6 +4683,7 @@ timeToGoAgain:
 									{
 										// asplode the rock
 										magicDig(nullptr, nullptr, 0, 1);
+										hit.entity = nullptr;
 									}
 									else
 									{
@@ -5754,6 +5755,7 @@ timeToGoAgain:
 								{
 									// asplode the rock
 									magicDig(nullptr, nullptr, 0, 1);
+									hit.entity = nullptr;
 								}
 								else if ( hit.entity->behavior == &actMonster )
 								{

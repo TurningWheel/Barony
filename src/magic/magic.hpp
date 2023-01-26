@@ -545,7 +545,7 @@ void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
-void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
+bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);

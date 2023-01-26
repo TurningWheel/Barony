@@ -5635,16 +5635,32 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 	spawnExplosion(x, y, -4 + local_rng.rand() % 8);
 }
 
-void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
+bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 {
 	if ( !hit.entity )
 	{
 		if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 		{
-			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+			if ( MFLAG_DISABLEDIGGING )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+				}
+				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
+			}
+			else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+				|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+			{
+				// no effect for lava/water tiles.
+			}
+			else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					messagePlayer(parent->skill[2], MESSAGE_HINT, language[706]);
+				}
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
 			else
@@ -5714,8 +5730,10 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				}
 
 				generatePathMaps();
+				return true;
 			}
 		}
+		return false;
 	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{
@@ -5787,5 +5805,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 			boulderSokobanOnDestroy(false);
 		}
+		return true;
 	}
+	return false;
 }

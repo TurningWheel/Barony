@@ -9956,39 +9956,41 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 					{
-						magicDig(this, nullptr, 0, 0);
-						playSoundPos(hit.x, hit.y, 67, 128); // bust wall
-						if ( player >= 0 && myStats->type == TROLL )
+						if ( magicDig(this, nullptr, 0, 0) )
 						{
-							serverUpdatePlayerGameplayStats(player, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_BREAK_WALL);
-						}
-						for ( int c = 0; c < 5; c++ )
-						{
-							Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
-							entity->sizex = 1;
-							entity->sizey = 1;
-							entity->x = hit.x + (-4 + local_rng.rand() % 9);
-							entity->y = hit.y + (-4 + local_rng.rand() % 9);
-							entity->z = 7.5;
-							entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
-							entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-
-							entity->vel_x = 0.2 * cos(entity->yaw);
-							entity->vel_y = 0.2 * sin(entity->yaw);
-							entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
-
-							entity->skill[0] = 50; // particle life
-							entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
-
-							entity->behavior = &actParticleRock;
-							entity->flags[PASSABLE] = true;
-							entity->flags[NOUPDATE] = true;
-							entity->flags[UNCLICKABLE] = true;
-							if ( multiplayer != CLIENT )
+							playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+							if ( player >= 0 && myStats->type == TROLL )
 							{
-								entity_uids--;
+								serverUpdatePlayerGameplayStats(player, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_BREAK_WALL);
 							}
-							entity->setUID(-3);
+							for ( int c = 0; c < 5; c++ )
+							{
+								Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
+								entity->sizex = 1;
+								entity->sizey = 1;
+								entity->x = hit.x + (-4 + local_rng.rand() % 9);
+								entity->y = hit.y + (-4 + local_rng.rand() % 9);
+								entity->z = 7.5;
+								entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+								entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+
+								entity->vel_x = 0.2 * cos(entity->yaw);
+								entity->vel_y = 0.2 * sin(entity->yaw);
+								entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
+
+								entity->skill[0] = 50; // particle life
+								entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+								entity->behavior = &actParticleRock;
+								entity->flags[PASSABLE] = true;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[UNCLICKABLE] = true;
+								if ( multiplayer != CLIENT )
+								{
+									entity_uids--;
+								}
+								entity->setUID(-3);
+							}
 						}
 					}
 					else
@@ -10003,10 +10005,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
 							bool degradePickaxe = true;
-							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+							if ( MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = makeColorRGB(255, 0, 255);
-								messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+								if ( this->behavior == &actPlayer )
+								{
+									messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+								}
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
@@ -10016,6 +10021,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// no effect for lava/water tiles.
 								degradePickaxe = false;
+							}
+							else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
+							{
+								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+								messagePlayer(player, MESSAGE_HINT, language[706]);
 							}
 							else
 							{
@@ -10099,7 +10109,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 							}
-
 						}
 						else
 						{

@@ -802,6 +802,24 @@ int getMapPossibleLocationY2()
 	return map.height - perimeter;
 }
 
+bool mapTileDiggable(const int x, const int y)
+{
+	if ( swimmingtiles[map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height]]
+		|| lavatiles[map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+	{
+		return false;
+	}
+	if ( !strncmp(map.name, "Hell", 4) )
+	{
+		if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
+			|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 /*-------------------------------------------------------------------------------
 
 	generateDungeon

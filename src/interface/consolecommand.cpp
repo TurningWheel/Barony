@@ -4393,5 +4393,86 @@ namespace ConsoleCommands {
 			}
 		}
 	});
+
+	static ConsoleCommand ccmd_mesh_collider_debug("/mesh_collider_debug", "", []CCMD{
+		node_t* tmpNode = NULL;
+		Entity* tmpEnt = NULL;
+		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
+		{
+			tmpEnt = (Entity*)tmpNode->element;
+			if ( tmpEnt->behavior == &actColliderDecoration )
+			{
+				if ( tmpEnt->colliderHasCollision == 1 )
+				{
+					messagePlayer(clientnum, MESSAGE_DEBUG, "Collider: %d | z: %4.2f | pos: x: %d y: %d", 
+						tmpEnt->sprite, tmpEnt->z, (int)tmpEnt->x / 16, (int)tmpEnt->y / 16);
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_mesh_collider_verify_and_crash_game("/mesh_collider_verify_and_crash_game", "", []CCMD{
+#ifndef NINTENDO
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();
+			if ( /*foundNumber &&*/ PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->sprite == 179 )
+						{
+							int x = (int)(entity->x) / 16;
+							int y = (int)(entity->y) / 16;
+							if ( entity->colliderDecorationModel == 1203
+								|| entity->colliderDecorationModel == 1204 )
+							{
+								real_t z = entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+								if ( z > -8.51 && z < -8.49 )
+								{
+									if ( entity->colliderHasCollision == 0 )
+									{
+										printlog("[Collider Verify]: x: %d y: %d has no collision in map %s", x, y, f.c_str());
+									}
+								}
+							}
+							else if ( entity->colliderDecorationModel == 1197
+								|| entity->colliderDecorationModel == 1198 )
+							{
+								real_t z = entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+								if ( z > 7.49 || z < 7.51 )
+								{
+									if ( entity->colliderHasCollision == 0 )
+									{
+										printlog("[Collider Verify]: x: %d y: %d has no collision in map %s", x, y, f.c_str());
+									}
+								}
+							}
+							else if ( entity->colliderDecorationModel > 1206 )
+							{
+								printlog("[Collider Verify]: x: %d y: %d has wrong mesh: %d in map %s", x, y, entity->colliderDecorationModel, f.c_str());
+							}
+							if ( entity->colliderHasCollision && (entity->colliderSizeX == 0 || entity->colliderSizeY == 0) )
+							{
+								printlog("[Collider Verify]: x: %d y: %d has 0 collision size (x: %d, y: %d), mesh: %d in map %s", 
+									x, y, entity->colliderSizeX, entity->colliderSizeY, entity->colliderDecorationModel, f.c_str());
+							}
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+	});
 }
 
