@@ -1734,8 +1734,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					if ( c == 0 )
 					{
 						// 7x7, pick random location across all map.
-						x = getMapPossibleLocationX1() + (map_rng.rand() % 6) * 7;
-						y = getMapPossibleLocationY1() + (map_rng.rand() % 6) * 7;
+						x = getMapPossibleLocationX1() + (1 + map_rng.rand() % 4) * 7;
+						y = getMapPossibleLocationY1() + (1 + map_rng.rand() % 4) * 7;
 					}
 					else if ( secretlevelexit && c == 1 )
 					{
@@ -3111,14 +3111,35 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			{
 				bool nopath = false;
 				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
-				/*if ( !hellLadderFix )
+				std::vector<Entity*> tempPassableEntities;
+				if ( hellLadderFix )
 				{
-					hellLadderFix = !strncmp(map.name, "Caves", 4);
-				}*/
+					for ( node = map.entities->first; node != NULL; node = node->next )
+					{
+						if ( entity2 = (Entity*)node->element )
+						{
+							if ( entity2->sprite == 19 || entity2->sprite == 20
+								|| entity2->sprite == 113 || entity2->sprite == 114 )
+							{
+								int entx = entity2->x / 16;
+								int enty = entity2->y / 16;
+								if ( !entity2->flags[PASSABLE] )
+								{
+									if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+										&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+									{
+										tempPassableEntities.push_back(entity2);
+										entity2->flags[PASSABLE] = true;
+									}
+								}
+							}
+						}
+					}
+				}
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
-					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point, and door frame not picked. so use default sprite 1
+					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
 					{
 						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
@@ -3132,6 +3153,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 						break;
 					}
+				}
+				for ( auto ent : tempPassableEntities )
+				{
+					ent->flags[PASSABLE] = false;
 				}
 				if ( nopath )
 				{
