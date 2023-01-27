@@ -3222,6 +3222,34 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
+	else if ( tooltipType.compare("tooltip_tool_skeletonkey") == 0 )
+	{
+		Sint32 PER = statGetPER(stats[player], players[player]->entity);
+		if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
+		{
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
+			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			{
+				chance = 0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_tool_decoy") == 0 )
+	{
+		if ( detailTag.compare("tool_decoy_range") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), decoyBoxRange);
+		}
+		else
+		{
+			return;
+		}
+	}
 	else if ( tooltipType.find("tooltip_food") != std::string::npos )
 	{
 		if ( detailTag.compare("food_puke_chance") == 0 )
