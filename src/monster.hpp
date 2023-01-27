@@ -1122,7 +1122,7 @@ public:
 	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
 	void serverSendClientUpdate(const bool force = false);
 	void reset();
-	void resetPlayerHostility(const int player);
+	void resetPlayerHostility(const int player, bool clearAll = false);
 	ShopkeeperPlayerHostility_t();
 	bool isPlayerEnemy(const int player);
 	void setWantedLevel(PlayerRaceHostility_t& h, WantedLevel wantedLevel, Entity* shopkeeper, bool primaryPlayerCheck);

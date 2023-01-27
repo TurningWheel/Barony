@@ -222,7 +222,7 @@ ShopkeeperPlayerHostility_t::ShopkeeperPlayerHostility_t()
 	reset();
 };
 
-void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player)
+void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player, bool clearAll)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
 	Monster type = stats[player]->type;
@@ -234,6 +234,21 @@ void ShopkeeperPlayerHostility_t::resetPlayerHostility(const int player)
 		}
 		h->wantedLevel = NO_WANTED_LEVEL;
 		h->bRequiresNetUpdate = true;
+	}
+	if ( clearAll )
+	{
+		for ( auto h2 = playerHostility[player].begin(); h2 != playerHostility[player].end(); ++h2 )
+		{
+			if ( h2->first == type )
+			{
+				continue;
+			}
+			if ( h2->second.wantedLevel != NO_WANTED_LEVEL )
+			{
+				h2->second.wantedLevel = NO_WANTED_LEVEL;
+				h2->second.bRequiresNetUpdate = true;
+			}
+		}
 	}
 }
 

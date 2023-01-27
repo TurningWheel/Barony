@@ -2115,7 +2115,7 @@ void gameLogic(void)
 						// undo shopkeeper grudge
 						for ( c = 0; c < MAXPLAYERS; ++c )
 						{
-							ShopkeeperPlayerHostility.resetPlayerHostility(c);
+							ShopkeeperPlayerHostility.resetPlayerHostility(c, true);
 						}
 					}
 
