@@ -5062,17 +5062,6 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR--;
 		}
 	}
-	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
-	{
-		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-		{
-			STR += 3; // player cursed vampiric bonus
-		}
-		else
-		{
-			STR += 5;
-		}
-	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
@@ -5099,9 +5088,20 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		STR += 8;
 	}
+	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+		{
+			STR += 3; // player cursed vampiric bonus
+		}
+		else
+		{
+			STR += (std::max(5, STR / 4));
+		}
+	}
 	if ( entitystats->EFFECTS[EFF_POTION_STR] )
 	{
-		STR += 5;
+		STR += (std::max(5, STR / 4));
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
@@ -5206,6 +5206,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			if ( my && entitystats->type == VAMPIRE && my->behavior == &actMonster )
 			{
 				DEX += 3; // monster vampires
+			}
+			if ( my && my->behavior == &actPlayer )
+			{
+				DEX += (std::max(0, DEX / 4));
 			}
 		}
 	}
@@ -5701,7 +5705,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->EFFECTS[EFF_POTION_STR] )
 	{
-		PER -= 5;
+		PER -= std::max(5, PER / 2);
 	}
 	return PER;
 }
