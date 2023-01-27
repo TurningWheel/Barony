@@ -576,16 +576,22 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right arm
 			case 5:
-				entity->x += 5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
-				entity->y += 5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x += (limbs[DEMON][7][0]) * cos(my->yaw + PI / 2) - (limbs[DEMON][7][1]) * cos(my->yaw);
+				entity->y += (limbs[DEMON][7][0]) * sin(my->yaw + PI / 2) - (limbs[DEMON][7][1]) * sin(my->yaw);
+				entity->z += 2.75 + limbs[DEMON][7][2];
 				entity->yaw += MONSTER_WEAPONYAW;
+				entity->focalx = limbs[DEMON][4][0];
+				entity->focaly = limbs[DEMON][4][1];
+				entity->focalz = limbs[DEMON][4][2];
 				break;
 			// left arm
 			case 6:
-				entity->x -= 5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
-				entity->y -= 5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x -= (limbs[DEMON][7][0]) * cos(my->yaw + PI / 2) + (limbs[DEMON][7][1]) * cos(my->yaw);
+				entity->y -= (limbs[DEMON][7][0]) * sin(my->yaw + PI / 2) + (limbs[DEMON][7][1]) * sin(my->yaw);
+				entity->z += 2.75 + limbs[DEMON][7][2];
+				entity->focalx = limbs[DEMON][5][0];
+				entity->focaly = limbs[DEMON][5][1];
+				entity->focalz = limbs[DEMON][5][2];
 				break;
 			default:
 				break;
