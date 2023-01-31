@@ -134,6 +134,7 @@ struct StatusEffectQueue_t
 	static const int kEffectBurning;
 	static const int kEffectWanted;
 	static const int kEffectWantedInShop;
+	static const int kEffectFreeAction;
 
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

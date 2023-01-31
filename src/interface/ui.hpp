@@ -24,21 +24,26 @@ class UIToastNotification
 	friend class UIToastNotificationManager_t;
 
 public:
+	void resetUIPointers()
+	{
+		frame = nullptr;
+		headerField = nullptr;
+		mainField = nullptr;
+		progressField = nullptr;
+		closeButton = nullptr;
+		actionButton = nullptr;
+		frameImage = nullptr;
+		progressBar = nullptr;
+		progressBarBackground = nullptr;
+	}
+
 	UIToastNotification(const char* image) :
 		notificationImage(image)
 	{}
 	~UIToastNotification() {
 		if (frame) {
 			frame->removeSelf();
-			frame = nullptr;
-			headerField = nullptr;
-			mainField = nullptr;
-			progressField = nullptr;
-			closeButton = nullptr;
-			actionButton = nullptr;
-			frameImage = nullptr;
-			progressBar = nullptr;
-			progressBarBackground = nullptr;
+			resetUIPointers();
 		}
 	}
 
@@ -223,13 +228,24 @@ public:
 			achievementsCheck = true;
 		}
 	}
-	void term()
+	void term(const bool clearNotifications)
 	{
 		if (!bIsInit) {
 			return;
 		}
 		bIsInit = false;
-		allNotifications.clear();
+		if ( clearNotifications )
+		{
+			allNotifications.clear();
+		}
+		else
+		{
+			for ( auto& n : allNotifications )
+			{
+				n.isInit = false;
+				n.resetUIPointers();
+			}
+		}
 		if (frame) {
 			frame->removeSelf();
 			frame = nullptr;

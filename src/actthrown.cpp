@@ -740,18 +740,10 @@ void actThrown(Entity* my)
 							{
 								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
 								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-25% of armor taken into account
-								if ( item->type == BOOMERANG )
-								{
-									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
-								}
 								enemyAC *= bypassArmor;
 							}
 							else
 							{
-								if ( item->type == BOOMERANG )
-								{
-									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
-								}
 								enemyAC *= .5;
 							}
 
@@ -895,7 +887,8 @@ void actThrown(Entity* my)
 									if ( hit.entity->behavior == &actMonster && parent && parent->behavior == &actPlayer )
 									{
 										if ( parentStats->type == GOATMAN
-											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN)
+											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN
+												|| hitstats->type == INCUBUS || hitstats->type == SUCCUBUS )
 											&& hitstats->leader_uid == 0 )
 										{
 											if ( forceFollower(*parent, *hit.entity) )
@@ -1411,6 +1404,7 @@ void actThrown(Entity* my)
 				switch ( item->type )
 				{
 					case POTION_FIRESTORM:
+						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						if ( hit.entity->behavior == &actBoulder )
 						{
 							if ( hit.entity->sprite == 989 || hit.entity->sprite == 990 )
@@ -1421,8 +1415,8 @@ void actThrown(Entity* my)
 							{
 								magicDig(parent, my, 2, 4);
 							}
+							hit.entity = nullptr;
 						}
-						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;
 					case POTION_ICESTORM:
 						spawnMagicTower(parent, my->x, my->y, SPELL_COLD, hit.entity);

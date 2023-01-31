@@ -20,6 +20,7 @@ See LICENSE for details.
 #ifndef EDITOR
 #include "ui/MainMenu.hpp"
 #include "shops.hpp"
+#include "interface/ui.hpp"
 #endif
 
 MonsterStatCustomManager monsterStatCustomManager;
@@ -2574,7 +2575,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		{
 			if ( item.type == POTION_HEALING || item.type == POTION_EXTRAHEALING || item.type == POTION_RESTOREMAGIC )
 			{
-				int healthVal = item.potionGetEffectHealth();
+				int healthVal = item.potionGetEffectHealth(players[player]->entity, stats[player]);
 
 				if ( item.type == POTION_HEALING )
 				{
@@ -2600,35 +2601,38 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					auto oldBeatitude = item.beatitude;
 					item.beatitude = std::max((Sint16)0, item.beatitude);
-					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND, 
+						item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 					item.beatitude = oldBeatitude;
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+					snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth(players[player]->entity, stats[player]));
 				}
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth());
+				snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectHealth(players[player]->entity, stats[player]));
 			}
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_DMG") )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDamage());
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDamage(players[player]->entity, stats[player]));
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_GOOD_EFFECT") )
 		{
 			auto oldBeatitude = item.beatitude;
 			item.beatitude = std::max((Sint16)0, item.beatitude);
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND, 
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 			item.beatitude = oldBeatitude;
 		}
 		else if ( items[item.type].hasAttribute("POTION_TYPE_BAD_EFFECT") )
 		{
 			auto oldBeatitude = item.beatitude;
 			item.beatitude = std::max((Sint16)0, item.beatitude);
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / TICKS_PER_SECOND, item.potionGetEffectDurationMaximum() / TICKS_PER_SECOND);
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / TICKS_PER_SECOND,
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / TICKS_PER_SECOND);
 			item.beatitude = oldBeatitude;
 		}
 	}
@@ -3099,8 +3103,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("potion_polymorph_duration") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum() / (60 * TICKS_PER_SECOND),
-				item.potionGetEffectDurationMaximum() / (60 * TICKS_PER_SECOND) );
+			snprintf(buf, sizeof(buf), str.c_str(), item.potionGetEffectDurationMinimum(players[player]->entity, stats[player]) / (60 * TICKS_PER_SECOND),
+				item.potionGetEffectDurationMaximum(players[player]->entity, stats[player]) / (60 * TICKS_PER_SECOND) );
 		}
 		else if ( detailTag.compare("potion_restoremagic_bonus") == 0 )
 		{
@@ -3140,7 +3144,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( item.type == POTION_CUREAILMENT )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 
-					item.potionGetEffectDurationRandom() / TICKS_PER_SECOND, getItemBeatitudeAdjective(item.beatitude).c_str());
+					item.potionGetEffectDurationRandom(players[player]->entity, stats[player]) / TICKS_PER_SECOND, getItemBeatitudeAdjective(item.beatitude).c_str());
 			}
 			else if ( item.type == POTION_WATER )
 			{
@@ -3212,6 +3216,34 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				chance = (100 - 100 / (static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1))); // lockpick automatons
 			}
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_tool_skeletonkey") == 0 )
+	{
+		Sint32 PER = statGetPER(stats[player], players[player]->entity);
+		if ( detailTag.compare("lockpick_arrow_disarm") == 0 )
+		{
+			int chance = (100 - 100 / (std::max(1, static_cast<int>(stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10)))); // disarm arrow traps
+			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+			{
+				chance = 0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType.compare("tooltip_tool_decoy") == 0 )
+	{
+		if ( detailTag.compare("tool_decoy_range") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), decoyBoxRange);
 		}
 		else
 		{
@@ -6792,6 +6824,194 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 				hotbar_t.slots()[matchingItems[itemAndSlot.first].slotnum].item = matchingItems[itemAndSlot.first].item->uid;
 			}
 		}
+	}
+}
+
+LocalAchievements_t LocalAchievements;
+
+void LocalAchievements_t::readFromFile()
+{
+	const std::string filename = "savegames/achievements.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("achievements") || !d.HasMember("statistics") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	LocalAchievements.init();
+
+	for ( auto achievement = d["achievements"].MemberBegin(); achievement != d["achievements"].MemberEnd(); ++achievement )
+	{
+		auto& ach = LocalAchievements.achievements[achievement->name.GetString()];
+		ach.name = achievement->name.GetString();
+		ach.unlocked = achievement->value["unlocked"].GetBool();
+		ach.unlockTime = achievement->value["unlock_time"].GetInt64();
+		achievementUnlockTime[ach.name] = ach.unlockTime;
+		if ( ach.unlocked )
+		{
+			achievementUnlockedLookup.insert(ach.name);
+		}
+	}
+
+	for ( auto statistic = d["statistics"].MemberBegin(); statistic != d["statistics"].MemberEnd(); ++statistic )
+	{
+		std::string statStr = statistic->name.GetString();
+		const int statNum = stoi(statStr);
+		auto& stat = LocalAchievements.statistics[statNum];
+		stat.value = statistic->value["progress"].GetInt();
+	}
+
+	for ( int statNum = 0; statNum < NUM_STEAM_STATISTICS; ++statNum )
+	{
+		if ( steamStatAchStringsAndMaxVals[statNum].first != "BARONY_ACH_NONE" )
+		{
+			auto find = achievementProgress.find(steamStatAchStringsAndMaxVals[statNum].first);
+			if ( find == achievementProgress.end() )
+			{
+				achievementProgress.emplace(std::make_pair(std::string(steamStatAchStringsAndMaxVals[statNum].first), statNum));
+			}
+			else
+			{
+				find->second = statNum;
+			}
+		}
+		g_SteamStats[statNum].m_iValue = LocalAchievements.statistics[statNum].value;
+	}
+}
+
+void LocalAchievements_t::writeToFile()
+{
+	std::string outputDir = "/savegames/";
+	if ( !PHYSFS_getRealDir(outputDir.c_str()) )
+	{
+		printlog("[JSON]: LocalAchievements_t: %s directory not found", outputDir.c_str());
+		return;
+	}
+	std::string outputPath = PHYSFS_getRealDir(outputDir.c_str());
+	outputPath.append(PHYSFS_getDirSeparator());
+	std::string fileName = "savegames/achievements.json";
+	outputPath.append(fileName.c_str());
+
+	rapidjson::Document exportDocument;
+	exportDocument.SetObject();
+
+	const int VERSION = 1;
+
+	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
+	rapidjson::Value allAchObj(rapidjson::kObjectType);
+	for ( auto& ach : achievementNames )
+	{
+		if ( LocalAchievements.achievements.find(ach.first) == LocalAchievements.achievements.end() )
+		{
+			continue;
+		}
+		auto& achData = LocalAchievements.achievements[ach.first];
+
+		rapidjson::Value namekey(ach.first.c_str(), exportDocument.GetAllocator());
+		allAchObj.AddMember(namekey, rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+		auto& obj = allAchObj[ach.first.c_str()];
+		obj.AddMember("unlocked", achData.unlocked, exportDocument.GetAllocator());
+		obj.AddMember("unlock_time", achData.unlockTime, exportDocument.GetAllocator());
+	}
+	CustomHelpers::addMemberToRoot(exportDocument, "achievements", allAchObj);
+
+	rapidjson::Value allStatObj(rapidjson::kObjectType);
+	for ( int i = 0; i < NUM_STEAM_STATISTICS; ++i )
+	{
+		if ( LocalAchievements.statistics.find(i) == LocalAchievements.statistics.end() )
+		{
+			continue;
+		}
+		auto& statData = LocalAchievements.statistics[i];
+
+		std::string statNum = std::to_string(i);
+		rapidjson::Value namekey(statNum.c_str(), exportDocument.GetAllocator());
+		allStatObj.AddMember(namekey, rapidjson::Value(rapidjson::kObjectType), exportDocument.GetAllocator());
+		auto& obj = allStatObj[statNum.c_str()];
+		obj.AddMember("progress", statData.value, exportDocument.GetAllocator());
+	}
+	CustomHelpers::addMemberToRoot(exportDocument, "statistics", allStatObj);
+
+	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+		return;
+	}
+	rapidjson::StringBuffer os;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	exportDocument.Accept(writer);
+	fp->write(os.GetString(), sizeof(char), os.GetSize());
+	FileIO::close(fp);
+
+	printlog("[JSON]: Successfully wrote json file %s", outputPath.c_str());
+	return;
+}
+
+void LocalAchievements_t::init()
+{
+	LocalAchievements.achievements.clear();
+	for ( auto& ach : achievementNames )
+	{
+		LocalAchievements.achievements[ach.first].unlocked = false;
+		LocalAchievements.achievements[ach.first].unlockTime = 0;
+		LocalAchievements.achievements[ach.first].name = ach.first;
+	}
+	LocalAchievements.statistics.clear();
+	for ( int i = 0; i < NUM_STEAM_STATISTICS; ++i )
+	{
+		LocalAchievements.statistics[i].value = 0;
+	}
+}
+
+void LocalAchievements_t::updateAchievement(const char* name, const bool unlocked)
+{
+	if ( achievements.find(name) != achievements.end() )
+	{
+		auto& ach = achievements[name];
+		bool oldUnlocked = ach.unlocked;
+		ach.unlocked = unlocked;
+		if ( ach.unlocked && !oldUnlocked )
+		{
+			auto t = time(nullptr);
+			ach.unlockTime = t;
+
+			UIToastNotificationManager.createAchievementNotification(name);
+		}
+	}
+}
+
+void LocalAchievements_t::updateStatistic(const int stat_num, const int value)
+{
+	if ( statistics.find(stat_num) != statistics.end() )
+	{
+		auto& stat = statistics[stat_num];
+		stat.value = value;
 	}
 }
 #endif // !EDITOR

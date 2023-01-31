@@ -1542,7 +1542,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int numEffectsCured = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{
-						if ( statusEffectRemovedByCureAilment(c) )
+						if ( stats[i] && stats[i]->statusEffectRemovedByCureAilment(c, players[i]->entity) )
 						{
 							if ( stats[i]->EFFECTS[c] )
 							{
@@ -1602,7 +1602,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									if ( statusEffectRemovedByCureAilment(c) )
+									if ( target_stat->statusEffectRemovedByCureAilment(c, entity) )
 									{
 										if ( target_stat->EFFECTS[c] )
 										{

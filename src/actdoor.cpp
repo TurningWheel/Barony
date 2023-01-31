@@ -229,6 +229,10 @@ void actDoor(Entity* my)
 			{
 				entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
 			}
+			real_t oldmyx = my->x;
+			real_t oldmyy = my->y;
+			my->x = (static_cast<int>(my->x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+			my->y = (static_cast<int>(my->y) >> 4) * 16.0 + 8.0;
 			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 			{
 				list_t* currentList = *it;
@@ -239,13 +243,32 @@ void actDoor(Entity* my)
 					{
 						continue;
 					}
-					if ( entityInsideEntity(my, entity) )
+
+					bool insideEntity = false;
+					if ( entity->behavior == &actDoor )
+					{
+						real_t oldx = entity->x;
+						real_t oldy = entity->y;
+						entity->x = (static_cast<int>(entity->x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+						entity->y = (static_cast<int>(entity->y) >> 4) * 16.0 + 8.0;
+						insideEntity = entityInsideEntity(my, entity);
+						entity->x = oldx;
+						entity->y = oldy;
+					}
+					else
+					{
+						insideEntity = entityInsideEntity(my, entity);
+					}
+
+					if ( insideEntity )
 					{
 						somebodyinside = true;
 						break;
 					}
 				}
 			}
+			my->x = oldmyx;
+			my->y = oldmyy;
 			if ( !somebodyinside )
 			{
 				my->focaly = 0;

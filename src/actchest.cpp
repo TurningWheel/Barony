@@ -1435,7 +1435,7 @@ bool Entity::removeItemFromChestServer(Item* item, int count)
 		{
 			return false;
 		}
-		if (!itemCompare(item, item2, false))
+		if (!itemCompare(item, item2, false, false))
 		{
 			if (count < item2->count)
 			{

@@ -1191,7 +1191,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1306,7 +1306,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
@@ -1491,7 +1491,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							if ( parent )
 							{
 								Stat* casterStats = parent->getStats();
@@ -1770,7 +1770,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							Entity* gib = spawnGib(hit.entity);
@@ -1994,7 +1994,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 
@@ -2423,7 +2423,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+							damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 							Stat* casterStats = nullptr;
 							if ( parent )
 							{
@@ -5635,16 +5635,32 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 	spawnExplosion(x, y, -4 + local_rng.rand() % 8);
 }
 
-void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
+bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 {
 	if ( !hit.entity )
 	{
 		if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 		{
-			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+			if ( MFLAG_DISABLEDIGGING )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+				}
+				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
+			}
+			else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+				|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+			{
+				// no effect for lava/water tiles.
+			}
+			else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					messagePlayer(parent->skill[2], MESSAGE_HINT, language[706]);
+				}
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
 			else
@@ -5714,8 +5730,10 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				}
 
 				generatePathMaps();
+				return true;
 			}
 		}
+		return false;
 	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{
@@ -5787,5 +5805,7 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 			boulderSokobanOnDestroy(false);
 		}
+		return true;
 	}
+	return false;
 }

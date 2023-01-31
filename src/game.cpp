@@ -1909,6 +1909,13 @@ void gameLogic(void)
 							if ( follower )
 							{
 								Stat* followerStats = follower->getStats();
+								if ( (int)follower->monsterSpecialAttackUnequipSafeguard > 0 )
+								{
+									// force deinit of special attacks to not be invalid state on next level.
+									//messagePlayer(0, MESSAGE_DEBUG, "Cleared monster special");
+									follower->handleMonsterSpecialAttack(followerStats, nullptr, 0.0, true);
+								}
+
 								if ( followerStats )
 								{
 									node_t* newNode = list_AddNodeLast(&tempFollowers[c]);
@@ -2108,7 +2115,7 @@ void gameLogic(void)
 						// undo shopkeeper grudge
 						for ( c = 0; c < MAXPLAYERS; ++c )
 						{
-							ShopkeeperPlayerHostility.resetPlayerHostility(c);
+							ShopkeeperPlayerHostility.resetPlayerHostility(c, true);
 						}
 					}
 
@@ -2382,6 +2389,9 @@ void gameLogic(void)
 
                     // save at end of level change
 					saveGame();
+#ifdef LOCAL_ACHIEVEMENTS
+					LocalAchievements_t::writeToFile();
+#endif
 					break;
 				}
 			}
@@ -2584,6 +2594,7 @@ void gameLogic(void)
 
 			for ( int player = 0; player < MAXPLAYERS; ++player )
 			{
+				players[player]->magic.bHasUnreadNewSpell = false;
 				if ( !players[player]->isLocalPlayer() )
 				{
 					continue;
@@ -2598,6 +2609,12 @@ void gameLogic(void)
 					{
 						continue;
 					}
+
+					if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+					{
+						players[player]->magic.bHasUnreadNewSpell = true;
+					}
+
 					// unlock achievements for special collected items
 					switch ( item->type )
 					{
@@ -2617,7 +2634,7 @@ void gameLogic(void)
 							break;
 					}
 
-					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == VAMPIRE && stats[player]->appearance == 0 )
+					if ( item->type == FOOD_BLOOD && stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 					{
 						bloodCount += item->count;
 						if ( bloodCount >= 20 )
@@ -3156,6 +3173,7 @@ void gameLogic(void)
 			}
 
 			int bloodCount = 0;
+			players[clientnum]->magic.bHasUnreadNewSpell = false;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -3164,6 +3182,11 @@ void gameLogic(void)
 				{
 					continue;
 				}
+				if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+				{
+					players[clientnum]->magic.bHasUnreadNewSpell = true;
+				}
+
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
@@ -3191,7 +3214,7 @@ void gameLogic(void)
 					}
 				}
 
-				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == VAMPIRE && stats[clientnum]->appearance == 0 )
+				if ( item->type == FOOD_BLOOD && stats[clientnum]->playerRace == RACE_VAMPIRE && stats[clientnum]->appearance == 0 )
 				{
 					bloodCount += item->count;
 					if ( bloodCount >= 20 )
@@ -4793,6 +4816,7 @@ void ingameHud()
 	        // toggle minimap
 		    // player not needed to be alive
             if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE
+				&& players[player]->minimap.bExpandPromptEnabled
 				&& input.consumeBinaryToggle("Toggle Minimap") )
             {
                 openMinimap(player);
@@ -5598,7 +5622,7 @@ void drawAllPlayerCameras() {
 							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 							{
 								Entity* mapCreature = (Entity*)mapNode->element;
-								if ( mapCreature )
+								if ( mapCreature && !intro )
 								{
 									mapCreature->monsterEntityRenderAsTelepath = 1;
 								}

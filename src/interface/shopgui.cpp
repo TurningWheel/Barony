@@ -1105,7 +1105,7 @@ void Player::ShopGUI_t::updateShop()
 		}
 	}
 
-	if ( !player.bUseCompactGUIHeight() )
+	if ( !player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth() )
 	{
 		shopFramePos.y = heightOffsetWhenNotCompact;
 	}

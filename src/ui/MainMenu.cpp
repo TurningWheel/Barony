@@ -91,7 +91,7 @@ namespace MainMenu {
 		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
-		{"Minimap Scale", "=", emptyBinding, emptyBinding},
+		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
 		{"Toggle Minimap", "`", "DpadY-", emptyBinding},
 		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
 		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
@@ -4400,10 +4400,10 @@ namespace MainMenu {
 
 		y += settingsAddSubHeader(*subwindow, y, "scale_header", "Scale", true);
 
-		y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
+		/*y += settingsAddSlider(*subwindow, y, "map_scale", "Map scale",
 			"Scale the map to be larger or smaller.",
             allSettings.minimap.map_scale, 25, 100, sliderPercent,
-			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);
+			[](Slider& slider){ allSettings.minimap.map_scale = slider.getValue(); }, true);*/
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
@@ -4423,13 +4423,13 @@ namespace MainMenu {
 			[](Slider& slider){ allSettings.minimap.background_opacity = slider.getValue(); }, true);
 
 		hookSettings(*subwindow,
-			{{Setting::Type::Slider, "map_scale"},
+			{/*{Setting::Type::Slider, "map_scale"},*/
 			{Setting::Type::Slider, "icon_scale"},
 			{Setting::Type::Slider, "foreground_opacity"},
 			{Setting::Type::Slider, "background_opacity"},
 			});
-		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "map_scale"});
-		settingsSelect(*subwindow, {Setting::Type::Slider, "map_scale"});
+		settingsSubwindowFinalize(*subwindow, y, {Setting::Type::Slider, "icon_scale"});
+		settingsSelect(*subwindow, {Setting::Type::Slider, "icon_scale"});
 	}
 
 	static void settingsMessages(Button& button) {

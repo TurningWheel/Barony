@@ -759,6 +759,7 @@ void actBoulder(Entity* my)
 				{
 					magicDig(nullptr, nullptr, 2, 4);
 				}
+				hit.entity = nullptr;
 				printlog("notice: boulder stopped path to exit, removed.");
 				return;
 			}
@@ -809,6 +810,11 @@ void actBoulder(Entity* my)
 
 							if ( !foundPathToExit )
 							{
+								Entity* ohitentity = hit.entity;
+								if ( hit.entity == my )
+								{
+									ohitentity = nullptr;
+								}
 								hit.entity = my;
 
 								// spawn luckstone
@@ -849,6 +855,7 @@ void actBoulder(Entity* my)
 								{
 									magicDig(nullptr, nullptr, 2, 4);
 								}
+								hit.entity = ohitentity;
 								printlog("notice: boulder stopped path to exit, removed.");
 								return;
 							}

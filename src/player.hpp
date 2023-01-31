@@ -655,6 +655,7 @@ public:
 	const bool isLocalPlayerAlive() const;
 	const bool bUseCompactGUIWidth() const;
 	const bool bUseCompactGUIHeight() const;
+	const bool bAlignGUINextToInventoryCompact() const; // if chest/shop etc appears alongside inventory as opposed to opposite of viewport in compact view
 	const bool usingCommand() const;
 	void clearGUIPointers();
 
@@ -1558,6 +1559,7 @@ public:
 			shieldSwitch = false;
 		}
 		bool bShowActionPrompts = true;
+		bool bShortHPMPForActionBars = false;
 		enum ActionPrompts : int
 		{
 			ACTION_PROMPT_MAINHAND,
@@ -1589,6 +1591,7 @@ public:
 		static int actionPromptIconSize;
 		static int actionPromptIconOpacity;
 		static int actionPromptIconBackingOpacity;
+		int offsetHUDAboveHotbarHeight = 0;
 		void updateEnemyBar(Frame* whichFrame);
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
@@ -1612,7 +1615,7 @@ public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
 		list_t spellList; //All of the player's spells are stored here.
-
+		bool bHasUnreadNewSpell = false;
 		Magic_t(Player& p) : player(p)
 		{
 			spellList.first = nullptr;
@@ -1716,6 +1719,8 @@ public:
 
 		static const int MESSAGE_MAX_ENTRIES = 20;
 		Frame* chatFrame = nullptr;
+		bool leftAlignedMessages = false;
+		bool useBigFont = false;
 		void createChatbox();
 		void processChatbox();
 
@@ -2104,7 +2109,17 @@ public:
 		static SDL_Rect sharedMinimapPos;
 		Frame* mapParentFrame = nullptr;
 		Frame* mapWindow = nullptr;
+		bool bScalePromptEnabled = false;
+		bool bExpandPromptEnabled = false;
 		void processMapFrame();
+		static int fullSize;
+		static int compactSize;
+		static bool bUpdateMainMenuSettingScale;
+		static real_t mainMenuSettingScale;
+		static int compact2pVerticalSize;
+		static real_t fullBigScale;
+		static real_t compactBigScale;
+		static real_t compact2pVerticalBigScale;
 	} minimap;
 };
 

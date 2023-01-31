@@ -530,7 +530,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		glDisable(GL_BLEND);
 	}
 
-	if ( entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
+	if ( entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) )
 	{
 		glDepthRange(0, 0.1);
 	}
@@ -570,7 +570,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	{
 		if ( !entity->flags[OVERDRAW] )
 		{
-			if ( entity->monsterEntityRenderAsTelepath == 1 )
+			if ( entity->monsterEntityRenderAsTelepath == 1 && !intro )
 			{
 				if ( camera->globalLightModifierActive )
 				{

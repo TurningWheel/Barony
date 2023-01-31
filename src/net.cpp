@@ -2174,6 +2174,9 @@ static void changeLevel() {
 	}
 
 	saveGame();
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements_t::writeToFile();
+#endif
 	printlog("Done.\n");
 
 	if ( !strncmp(map.name, "Mages Guild", 11) )
@@ -4758,17 +4761,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			strcpy((char*)net_packet->data, "ITMU");
 			SDLNet_Write32(uid, &net_packet->data[4]);
 
-			Uint32 itemTypeAndIdentified = (static_cast<Uint16>(entity->skill[10]) << 16); // type
-			itemTypeAndIdentified |= static_cast<Uint16>(entity->skill[15]); // identified
+			Uint32 itemTypeAndIdentified = ((static_cast<Uint16>(entity->skill[10]) & 0xFFFF) << 16); // type
+			itemTypeAndIdentified |= (static_cast<Uint16>(entity->skill[15]) & 0xFFFF); // identified
 
 			SDLNet_Write32(itemTypeAndIdentified, &net_packet->data[8]);
 
 			Uint32 statusBeatitudeQuantityAppearance = 0;
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[11]) << 24); // status
-			statusBeatitudeQuantityAppearance |= (static_cast<Sint8>(entity->skill[12]) << 16); // beatitude
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(entity->skill[13]) << 8); // quantity
+			statusBeatitudeQuantityAppearance |= ((static_cast<Uint8>(entity->skill[11]) & 0xFF) << 24); // status
+			statusBeatitudeQuantityAppearance |= ((static_cast<Sint8>(entity->skill[12]) & 0xFF) << 16); // beatitude
+			statusBeatitudeQuantityAppearance |= ((static_cast<Uint8>(entity->skill[13]) & 0xFF) << 8); // quantity
 			Uint8 appearance = entity->skill[14] % items[entity->skill[10]].variations;
-			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance)); // appearance
+			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance) & 0xFF); // appearance
 
 			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
 
@@ -5162,7 +5165,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				continue;
 			}
-			if (!itemCompare(item, item2, false))
+			if (!itemCompare(item, item2, false, false))
 			{
 				printlog("[Shops]: client %d bought item from shop (uid=%d)\n", client, uidnum);
 				if ( shopIsMysteriousShopkeeper(entity) )
@@ -5424,6 +5427,77 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 	}},
 
+	// update appearance of item
+	{ 'EQUA', []() {
+		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		auto item = newItem(
+			static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			nullptr);
+
+		const bool onIdentify = net_packet->data[27];
+		Item* slot = nullptr;
+
+		switch ( net_packet->data[26] )
+		{
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+				slot = stats[client]->weapon;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+				slot = stats[client]->shield;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+				slot = stats[client]->mask;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+				slot = stats[client]->helmet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+				slot = stats[client]->gloves;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+				slot = stats[client]->shoes;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+				slot = stats[client]->breastplate;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+				slot = stats[client]->cloak;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+				slot = stats[client]->amulet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+				slot = stats[client]->ring;
+				break;
+			default:
+				break;
+		}
+
+		if ( slot )
+		{
+			if ( onIdentify )
+			{
+				item->identified = slot->identified;
+			}
+			if ( !itemCompare(item, slot, false, false) )
+			{
+				slot->appearance = item->appearance;
+				if ( onIdentify )
+				{
+					slot->identified = true;
+				}
+			}
+		}
+
+		free(item);
+		item = nullptr;
+	} },
+
 	// apply item to entity
 	{'APIT', [](){
 		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
@@ -5647,6 +5721,67 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		equipment->status = static_cast<Status>(net_packet->data[6]);
 		return;
 	}},
+
+	// the client repaired tinkering bots
+	{ 'REPT', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		Item* equipment = nullptr;
+
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				equipment = stats[player]->weapon;
+				break;
+			case 1:
+				equipment = stats[player]->helmet;
+				break;
+			case 2:
+				equipment = stats[player]->breastplate;
+				break;
+			case 3:
+				equipment = stats[player]->gloves;
+				break;
+			case 4:
+				equipment = stats[player]->shoes;
+				break;
+			case 5:
+				equipment = stats[player]->shield;
+				break;
+			case 6:
+				equipment = stats[player]->cloak;
+				break;
+			case 7:
+				equipment = stats[player]->mask;
+				break;
+			default:
+				equipment = nullptr;
+				break;
+		}
+
+		if ( !equipment )
+		{
+			return;
+		}
+		if ( !(equipment->type == TOOL_SENTRYBOT
+			|| equipment->type == TOOL_SPELLBOT
+			|| equipment->type == TOOL_DUMMYBOT
+			|| equipment->type == TOOL_GYROBOT) )
+		{
+			return;
+		}
+
+		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
+		{
+			equipment->status = EXCELLENT;
+		}
+		else if ( static_cast<int>(net_packet->data[6]) < BROKEN )
+		{
+			equipment->status = BROKEN;
+		}
+		equipment->status = static_cast<Status>(net_packet->data[6]);
+		equipment->appearance = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[7]));
+		return;
+	} },
 
 	// the client changed beatitude of equipment.
 	{'BEAT', [](){

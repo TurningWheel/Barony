@@ -395,6 +395,7 @@ extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 void mapLevel(int player);
 void mapFoodOnLevel(int player);
+bool mapTileDiggable(const int x, const int y);
 
 class TileEntityListHandler
 {
