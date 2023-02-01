@@ -1844,6 +1844,51 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 	}
 
+	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_SUCCESS_UNEQUIP;
+
+	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
+	if ( unequipForDropping )
+	{
+		checkInventorySpaceForPaperDoll = false;
+	}
+	struct ItemDetailsForServer
+	{
+		ItemType type = WOODEN_SHIELD;
+		Status status = EXCELLENT;
+		Sint16 beatitude = 0;
+		Sint16 count = 1;
+		Uint32 appearance = 0;
+		bool identified = false;
+		bool sendToServer = false;
+		void setItem(Item& item)
+		{
+			type = item.type;
+			status = item.status;
+			beatitude = item.beatitude;
+			count = item.count;
+			appearance = item.appearance;
+			identified = item.identified;
+			sendToServer = true;
+		}
+		void send()
+		{
+			if ( multiplayer != CLIENT ) { return; }
+			strcpy((char*)net_packet->data, "USEI");
+			SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+			SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
+			net_packet->data[24] = identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	};
+	ItemDetailsForServer itemDetailsForServer;
+
 	if ( multiplayer == CLIENT && !intro )
 	{
 		if ( item->unableToEquipDueToSwapWeaponTimer(player) && itemCategory(item) != POTION )
@@ -1854,18 +1899,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 		else
 		{
-			strcpy((char*)net_packet->data, "USEI");
-			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
-			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
-			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
-			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
-			SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
-			net_packet->data[24] = item->identified;
-			net_packet->data[25] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			itemDetailsForServer.setItem(*item);
 		}
 	}
 
@@ -1884,14 +1918,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				tryLearnPotionRecipe = true;
 			}
 		}
-	}
-
-	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP;
-
-	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
-	if ( unequipForDropping )
-	{
-		checkInventorySpaceForPaperDoll = false;
 	}
 
 	switch ( item->type )
@@ -2487,6 +2513,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	if ( players[player]->isLocalPlayer() )
 	{
+		if ( checkInventorySpaceForPaperDoll && equipItemResult == EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			itemDetailsForServer.sendToServer = false;
+		}
+
+		if ( itemDetailsForServer.sendToServer )
+		{
+			itemDetailsForServer.send();
+		}
 		if ( drankPotion && usedBy
 			&& (players[player] && players[player]->entity)
 			&& players[player]->entity == usedBy )
