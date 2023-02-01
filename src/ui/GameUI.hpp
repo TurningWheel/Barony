@@ -135,7 +135,17 @@ struct StatusEffectQueue_t
 	static const int kEffectWanted;
 	static const int kEffectWantedInShop;
 	static const int kEffectFreeAction;
-
+	static const int kEffectLesserWarning;
+	static const int kEffectDisabledHPRegen;
+	static const int kEffectResistBurning;
+	static const int kEffectResistPoison;
+	static const int kEffectSlowDigestion;
+	static const int kEffectStrangulation;
+	static const int kEffectWarning;
+	static const int kEffectWaterBreathing;
+	static const int kEffectConflict;
+	static const int kEffectWaterWalking;
+	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;
 	int player = -1;

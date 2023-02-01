@@ -140,6 +140,61 @@ AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::FollowerBars_t::mpBar;
 AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::PlayerBars_t::hpBar;
 AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::PlayerBars_t::mpBar;
 
+struct MessageZoneSettings_t
+{
+	enum HotbarTypes_t : int {
+		HOTBAR_CLASSIC,
+		HOTBAR_MODERN_GAMEPAD,
+		HOTBAR_MODERN_KEYBOARD
+	};
+	struct MessageSettings_t
+	{
+		HotbarTypes_t hotbarType = HOTBAR_CLASSIC;
+		Player::MessageZone_t::ChatAlignment_t alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+		enum LayoutType_t : int {
+			LAYOUT_DEFAULT,
+			LAYOUT_COMPACT
+		};
+		struct Layout_t
+		{
+			LayoutType_t layoutType = LAYOUT_DEFAULT;
+			int offsetY = 0;
+			int maxMessages = 10;
+		};
+		std::map<LayoutType_t, Layout_t> layouts;
+	};
+	std::map<HotbarTypes_t, std::map<Player::MessageZone_t::ChatAlignment_t, MessageSettings_t>> settings;
+	MessageSettings_t& addSetting(const HotbarTypes_t _hotbarType, const Player::MessageZone_t::ChatAlignment_t _alignment)
+	{
+		settings[_hotbarType][_alignment] = MessageSettings_t();
+		auto& setting = settings[_hotbarType][_alignment];
+		setting.hotbarType = _hotbarType;
+		setting.alignment = _alignment;
+		return setting;
+	}
+	MessageSettings_t::Layout_t& getLayout(const int player, const Player::MessageZone_t::ChatAlignment_t _alignment)
+	{
+		bool compact = players[player]->bUseCompactGUIHeight();
+		auto layout = compact ? MessageSettings_t::LayoutType_t::LAYOUT_COMPACT : MessageSettings_t::LayoutType_t::LAYOUT_DEFAULT;
+		if ( players[player]->hotbar.useHotbarFaceMenu )
+		{
+			if ( inputs.hasController(player) )
+			{
+				return settings[HOTBAR_MODERN_GAMEPAD][_alignment].layouts[layout];
+			}
+			else
+			{
+				return settings[HOTBAR_MODERN_KEYBOARD][_alignment].layouts[layout];
+			}
+		}
+		else
+		{
+			return settings[HOTBAR_CLASSIC][_alignment].layouts[layout];
+		}
+	}
+};
+MessageZoneSettings_t messageZoneSettings;
+
 std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
 	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
 real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
@@ -5225,10 +5280,20 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
-const int StatusEffectQueue_t::kEffectBurning = -5;
-const int StatusEffectQueue_t::kEffectWanted = -6;
-const int StatusEffectQueue_t::kEffectWantedInShop = -7;
+const int StatusEffectQueue_t::kEffectWanted = -5;
+const int StatusEffectQueue_t::kEffectWantedInShop = -6;
+const int StatusEffectQueue_t::kEffectBurning = -7;
 const int StatusEffectQueue_t::kEffectFreeAction = -8;
+const int StatusEffectQueue_t::kEffectLesserWarning = -9;
+const int StatusEffectQueue_t::kEffectDisabledHPRegen = -10;
+const int StatusEffectQueue_t::kEffectResistBurning = -11;
+const int StatusEffectQueue_t::kEffectResistPoison = -12;
+const int StatusEffectQueue_t::kEffectSlowDigestion = -13;
+const int StatusEffectQueue_t::kEffectStrangulation = -14;
+const int StatusEffectQueue_t::kEffectWarning = -15;
+const int StatusEffectQueue_t::kEffectWaterBreathing = -16;
+const int StatusEffectQueue_t::kEffectConflict = -17;
+const int StatusEffectQueue_t::kEffectWaterWalking = -18;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5348,30 +5413,77 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	bool burning = false;
-	bool freeaction = false;
 	auto wantedLevel = ShopkeeperPlayerHostility.getWantedLevel(player);
 	bool wantedOutsideOfShop = false;
 	bool wantedInsideShop = false;
 	bool inshop = false;
+
+	std::map<int, bool> miscEffects;
+	for ( int i = kEffectBurning; i >= kEffectWaterWalking; --i )
+	{
+		miscEffects[i] = false;
+	}
 	if ( players[player] && players[player]->entity )
 	{
 		if ( players[player]->entity->flags[BURNING] )
 		{
-			burning = true;
-			if ( effectSet.find(kEffectBurning) == effectSet.end() )
-			{
-				insertEffect(kEffectBurning, -1);
-			}
+			miscEffects[kEffectBurning] = true;
 		}
-		if ( stats[player] &&
-			((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
-				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
+		if ( stats[player] )
 		{
-			freeaction = true;
-			if ( effectSet.find(kEffectFreeAction) == effectSet.end() )
+			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+			if ( ((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
+				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
 			{
-				insertEffect(kEffectFreeAction, -1);
+				miscEffects[kEffectFreeAction] = true;
+			}
+			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
+			{
+				miscEffects[kEffectLesserWarning] = true;
+			}
+			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					miscEffects[kEffectDisabledHPRegen] = true;
+				}
+			}
+			if ( stats[player]->breastplate && stats[player]->breastplate->type == MACHINIST_APRON )
+			{
+				miscEffects[kEffectResistBurning] = true;
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_POISONRESISTANCE )
+			{
+				miscEffects[kEffectResistPoison] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_SLOWDIGESTION
+				&& (stats[player]->ring->beatitude >= 0 || cursedItemIsBuff) )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					miscEffects[kEffectSlowDigestion] = true;
+				}
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION )
+			{
+				miscEffects[kEffectStrangulation] = true;
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_WATERBREATHING )
+			{
+				miscEffects[kEffectWaterBreathing] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_WARNING )
+			{
+				miscEffects[kEffectWarning] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_CONFLICT )
+			{
+				miscEffects[kEffectConflict] = true;
+			}
+			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
+				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
+			{
+				miscEffects[kEffectWaterWalking] = true;
 			}
 		}
 
@@ -5423,20 +5535,25 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 		}
 	}
-	if ( !burning )
+
+	for ( int i = kEffectBurning; i >= kEffectWaterWalking; --i )
 	{
-		if ( effectSet.find(kEffectBurning) != effectSet.end() )
+		if ( miscEffects[i] == false )
 		{
-			deleteEffect(kEffectBurning);
+			if ( effectSet.find(i) != effectSet.end() )
+			{
+				deleteEffect(i);
+			}
+		}
+		else
+		{
+			if ( effectSet.find(i) == effectSet.end() )
+			{
+				insertEffect(i, -1);
+			}
 		}
 	}
-	if ( !freeaction )
-	{
-		if ( effectSet.find(kEffectFreeAction) != effectSet.end() )
-		{
-			deleteEffect(kEffectFreeAction);
-		}
-	}
+
 	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
 	{
 		if ( effectSet.find(kEffectWanted) != effectSet.end() )
@@ -7026,7 +7143,7 @@ void Player::HUD_t::updateActionPrompts()
 	if ( playercount > 2
 		|| (playercount == 2 
 			&& (*MainMenu::vertical_splitscreen 
-				|| !player.shootmode 
+				/*|| !player.shootmode */
 				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
@@ -7195,7 +7312,8 @@ void Player::HUD_t::updateActionPrompts()
 				textPos.w = textGetLongestLine->getWidth();
 				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height();
 				textPos.x = promptPos.x + promptPos.w / 2 - textPos.w / 2;
-				textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4;
+				//textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4; -- top aligned
+				textPos.y = promptPos.y + imgBacking->pos.y + imgBacking->pos.h + 1;
 				promptText->setSize(textPos);
 			}
 
@@ -7678,16 +7796,18 @@ void Player::MessageZone_t::createChatbox()
 static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
 static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
 static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
+const char* Player::MessageZone_t::bigfont = "fonts/pixelmix.ttf#16#2";
+const char* Player::MessageZone_t::smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
 void Player::MessageZone_t::processChatbox()
 {
 	if (!chatFrame) {
 		createChatbox();
 	}
 
-	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
-		players[player.playernum]->camera_virtualy1(),
-		players[player.playernum]->camera_virtualWidth(),
-		players[player.playernum]->camera_virtualHeight() });
+	chatFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+		player.camera_virtualy1(),
+		player.camera_virtualWidth(),
+		player.camera_virtualHeight() });
 
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -7705,67 +7825,135 @@ void Player::MessageZone_t::processChatbox()
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
 	static ConsoleVariable<bool> cvar_smallmessages("/smallmessages", false);
-    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+    //static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
+	//static ConsoleVariable<std::string> alignment("/alignmessages", "");
+	static ConsoleVariable<std::string> cvar_setalignment("/alignmessages", "");
 	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
-	useBigFont = !players[player.playernum]->bUseCompactGUIHeight() && !players[player.playernum]->bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	useBigFont = !player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 	if ( *cvar_smallmessages )
 	{
 		useBigFont = false;
 	}
-	leftAlignedMessages = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
 
-	if ( *alignment == "center" && *cvar_top_aligned && playercount <= 2 )
+	if ( *cvar_setalignment == "left" )
 	{
-		leftAlignedMessages = false;
+		messageAlignment = ALIGN_LEFT_BOTTOM;
+	}
+	else if ( *cvar_setalignment == "top" )
+	{
+		messageAlignment = ALIGN_LEFT_TOP;
+	}
+	else if ( *cvar_setalignment == "center" )
+	{
+		messageAlignment = ALIGN_CENTER_BOTTOM;
 	}
 
-    bool pushPaddingX = !players[player.playernum]->shootmode &&
-        ((playercount == 1 
-			&& players[player.playernum]->inventoryUI.getSizeY() > players[player.playernum]->inventoryUI.DEFAULT_INVENTORY_SIZEY) ||
+	actualAlignment = ALIGN_LEFT_BOTTOM;
+	if ( player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth() )
+	{
+		actualAlignment = ALIGN_LEFT_TOP;
+	}
+	else if ( messageAlignment == ALIGN_CENTER_BOTTOM )
+	{
+		if ( !player.bUseCompactGUIHeight() )
+		{
+			// allowed in tall or singleplayer
+			actualAlignment = messageAlignment;
+		}
+		else
+		{
+			actualAlignment = ALIGN_LEFT_TOP; // else default to top-left in wide 2-player
+			if ( !player.shootmode 
+				&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+			{
+				actualAlignment = ALIGN_LEFT_BOTTOM;
+			}
+		}
+	}
+	else if ( messageAlignment == ALIGN_LEFT_BOTTOM )
+	{
+		actualAlignment = messageAlignment; // ok in all configs
+	}
+	else if ( messageAlignment == ALIGN_LEFT_TOP )
+	{
+		actualAlignment = messageAlignment;
+		if ( playercount <= 2 && !player.shootmode
+			&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+		{
+			actualAlignment = ALIGN_LEFT_BOTTOM;
+		}
+	}
+
+	switch ( actualAlignment )
+	{
+		case ALIGN_CENTER_BOTTOM:
+			bottomAlignedMessages = true;
+			break;
+		case ALIGN_LEFT_BOTTOM:
+			bottomAlignedMessages = true;
+			break;
+		case ALIGN_LEFT_TOP:
+			bottomAlignedMessages = false;
+			break;
+		default:
+			break;
+	}
+
+    bool pushPaddingX = !player.shootmode
+		&& actualAlignment != ALIGN_CENTER_BOTTOM
+		&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP)
+        && ((playercount == 1 
+			&& player.inventoryUI.getSizeY() > player.inventoryUI.DEFAULT_INVENTORY_SIZEY) ||
         (playercount == 2 && !*MainMenu::vertical_splitscreen));
+
+	auto& messageLayoutSetting = messageZoneSettings.getLayout(player.playernum, actualAlignment);
+	MESSAGE_MAX_ENTRIES = messageLayoutSetting.maxMessages;
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	int leftAlignedBottomY = *cvar_messages_left_y;
-	if ( players[player.playernum]->bUseCompactGUIHeight() )
+	leftAlignedBottomY += messageLayoutSetting.offsetY;
+	if ( player.bUseCompactGUIHeight() )
 	{
 		if ( StatusEffectQueue[player.playernum].statusEffectFrame )
 		{
 			const int hungerIconSize = 64;
-			leftAlignedBottomY = players[player.playernum]->camera_virtualy2()
-				- (StatusEffectQueue[player.playernum].statusEffectFrame->getSize().y
-					+ StatusEffectQueue[player.playernum].statusEffectFrame->getSize().h
-					- hungerIconSize - 8);
+			if ( actualAlignment == ALIGN_LEFT_BOTTOM )
+			{
+				leftAlignedBottomY = players[player.playernum]->camera_virtualy2()
+					- (StatusEffectQueue[player.playernum].statusEffectFrame->getSize().y
+						+ StatusEffectQueue[player.playernum].statusEffectFrame->getSize().h
+						- hungerIconSize - 8);
+			}
 		}
 	}
 	const int topAlignedPaddingX = 8;
-	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
-	if ( players[player.playernum]->hud.xpFrame && !leftAlignedMessages && *alignment == "center" )
+	int topAlignedPaddingY = 8;
+	if ( player.hud.allyPlayerFrame && actualAlignment == ALIGN_LEFT_TOP && !splitscreen )
 	{
-		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
-		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
-	}
-	else if ( players[player.playernum]->hud.allyPlayerFrame && !leftAlignedMessages && *alignment == "left" && !splitscreen )
-	{
-		SDL_Rect allyPlayerPos = players[player.playernum]->hud.allyPlayerFrame->getSize();
-		if ( !players[player.playernum]->hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
+		SDL_Rect allyPlayerPos = player.hud.allyPlayerFrame->getSize();
+		if ( !player.hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
 		{
 			topAlignedPaddingY = 4 + allyPlayerPos.y + allyPlayerPos.h;
 		}
 	}
+	if ( player.hud.xpFrame && actualAlignment == ALIGN_LEFT_TOP )
+	{
+		SDL_Rect xpFramePos = player.hud.xpFrame->getSize();
+		topAlignedPaddingY = std::max(topAlignedPaddingY, 4 + std::max(xpFramePos.y, 0) + xpFramePos.h);
+	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
 	    topAlignedPaddingY,
-		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
-		players[player.playernum]->camera_virtualHeight() - topAlignedPaddingY };
+		player.camera_virtualWidth() - topAlignedPaddingX * 2,
+		player.camera_virtualHeight() - topAlignedPaddingY };
 	SDL_Rect messageboxLeftAlignedPos{
 	    leftAlignedPaddingX,
 	    0,
-	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX * 2,
-		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
+		player.camera_virtualWidth() - leftAlignedPaddingX * 2,
+		player.camera_virtualHeight() - leftAlignedBottomY };
 
 
-	SDL_Rect messageBoxSize = leftAlignedMessages ?
+	SDL_Rect messageBoxSize = bottomAlignedMessages ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
@@ -7777,25 +7965,22 @@ void Player::MessageZone_t::processChatbox()
 			entry->setDisabled(true);
 
 			// set alignment
-			if (*alignment == "left") {
-				entry->setHJustify(Field::justify_t::LEFT);
-			} else if (*alignment == "center") {
+			if ( actualAlignment == ALIGN_CENTER_BOTTOM ) {
 				entry->setHJustify(Field::justify_t::CENTER);
-			} else if (*alignment == "right") {
-			    entry->setHJustify(Field::justify_t::RIGHT);
 			} else {
 				entry->setHJustify(Field::justify_t::LEFT);
 			}
 		}
 	}
 
-	const bool messageDrawDescending = !leftAlignedMessages;
+	const bool messageDrawDescending = (actualAlignment == ALIGN_LEFT_TOP);
 	const int entryPaddingY = playercount > 2 ? 0 : 4;
 
 	int currentY = messageDrawDescending ?
 	    0 : messageBoxSize.h;
 
 	int index = 0;
+	int currentline = 0;
 
 	auto it = notification_messages.begin();
 	auto end = notification_messages.end();
@@ -7805,7 +7990,7 @@ void Player::MessageZone_t::processChatbox()
 	for ( ; messageDrawDescending ? rit != rend : it != end; ++it, ++rit )
 	{
 	    Message* current = messageDrawDescending ? *rit : *it;
-		if (index >= MESSAGE_MAX_ENTRIES)
+		if ( currentline >= MESSAGE_MAX_ENTRIES)
 		{
 			break;
 		}
@@ -7851,6 +8036,7 @@ void Player::MessageZone_t::processChatbox()
 			}
 		}
 		++index;
+		currentline += current->text->lines;
 	}
 
 	messageBoxFrame->setSize(messageBoxSize);
@@ -16897,10 +17083,15 @@ void createInventoryTooltipFrame(const int player)
 		return;
 	}
 
-	char name[32];
-	snprintf(name, sizeof(name), "player tooltip container %d", player);
+	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
+	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
+	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
 	if ( !players[player]->inventoryUI.tooltipContainerFrame )
 	{
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", player);
 		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
 		players[player]->inventoryUI.tooltipContainerFrame->setSize(
 			SDL_Rect{ players[player]->camera_virtualx1(),
@@ -16911,9 +17102,38 @@ void createInventoryTooltipFrame(const int player)
 		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
 		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
 	}
-	snprintf(name, sizeof(name), "player tooltip %d", player);
+	if ( !players[player]->inventoryUI.titleOnlyTooltipFrame )
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "player title only tooltip %d", player);
+		players[player]->inventoryUI.titleOnlyTooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
+		auto tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipFrame->setHollow(true);
+		tooltipFrame->setDisabled(true);
+		tooltipFrame->setInheritParentFrameOpacity(false);
+
+		auto tooltipTextField = tooltipFrame->addField("title only header", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(headerFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::CENTER);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		tooltipTextField->setTextColor(hudColors.characterSheetGreen);
+		tooltipTextField->setPaddingPerLine(-2);
+
+		Uint32 color = makeColor(255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly.png", "tooltip top background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly.png", "tooltip top left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png", "tooltip top right");
+	}
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip %d", player);
 		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
@@ -16949,11 +17169,6 @@ void createInventoryTooltipFrame(const int player)
 		color, "*#images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
 		color, "*#images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
-
-	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
-	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
-	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
-	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -17220,6 +17435,7 @@ void createInventoryTooltipFrame(const int player)
 	auto tooltipPromptImg = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inventory mouse tooltip prompt img");
 	tooltipPromptImg->disabled = true;
 
+	char name[32];
 	snprintf(name, sizeof(name), "player interact %d", player);
 	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
 	{
@@ -18637,6 +18853,67 @@ void loadHUDSettingsJSON()
 					if ( d["minimap"].HasMember("minimap_compact_2p_vertical_big_scale") )
 					{
 						Player::Minimap_t::compact2pVerticalBigScale = d["minimap"]["minimap_compact_2p_vertical_big_scale"].GetDouble();
+					}
+				}
+				if ( d.HasMember("messages") )
+				{
+					messageZoneSettings.settings.clear();
+					std::vector<std::pair<const char*, MessageZoneSettings_t::HotbarTypes_t>> hotbarTypeStrings = {
+						{"classic_hotbar", MessageZoneSettings_t::HOTBAR_CLASSIC },
+						{"modern_hotbar_keyboard", MessageZoneSettings_t::HOTBAR_MODERN_KEYBOARD },
+						{"modern_hotbar_gamepad", MessageZoneSettings_t::HOTBAR_MODERN_GAMEPAD }
+					};
+
+					for ( auto pair : hotbarTypeStrings )
+					{
+						if ( d["messages"].HasMember(pair.first) )
+						{
+							for ( rapidjson::Value::ConstMemberIterator itr = d["messages"][pair.first].MemberBegin();
+								itr != d["messages"][pair.first].MemberEnd(); ++itr )
+							{
+								std::string alignmentStr = itr->name.GetString();
+								auto alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+								if ( alignmentStr == "left_top" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_LEFT_TOP;
+								}
+								else if ( alignmentStr == "left_bottom" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+								}
+								else if ( alignmentStr == "center_bottom" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_CENTER_BOTTOM;
+								}
+								else
+								{
+									continue;
+								}
+
+								auto& setting = messageZoneSettings.addSetting(pair.second, alignment);
+								for ( rapidjson::Value::ConstMemberIterator itr2 = itr->value.MemberBegin();
+									itr2 != itr->value.MemberEnd(); ++itr2 )
+								{
+									std::string layoutStr = itr2->name.GetString();
+									auto layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_DEFAULT;
+									if ( layoutStr == "default" )
+									{
+										layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_DEFAULT;
+									}
+									else if ( layoutStr == "compact_height" )
+									{
+										layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_COMPACT;
+									}
+									else
+									{
+										continue;
+									}
+									setting.layouts[layout].layoutType = layout;
+									setting.layouts[layout].offsetY = itr2->value["y_offset"].GetInt();
+									setting.layouts[layout].maxMessages = itr2->value["max_messages"].GetInt();
+								}
+							}
+						}
 					}
 				}
 				if ( d.HasMember("world_dialogue") )
@@ -21356,7 +21633,7 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 
 void Player::Inventory_t::updateInventoryItemTooltip()
 {
-	if ( !tooltipFrame || !frame )
+	if ( !tooltipFrame || !frame || !titleOnlyTooltipFrame )
 	{
 		return;
 	}
@@ -21383,6 +21660,28 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 	else
 	{
 		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+	}
+
+	if ( static_cast<int>(titleOnlyTooltipFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.titleOnlyOpacitySetpoint == 0 )
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.titleOnlyOpacityAnimate)) / (5);
+			tooltipDisplay.titleOnlyOpacityAnimate -= setpointDiff;
+			tooltipDisplay.titleOnlyOpacityAnimate = std::max(0.0, tooltipDisplay.titleOnlyOpacityAnimate);
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.titleOnlyOpacityAnimate)) / (1);
+			tooltipDisplay.titleOnlyOpacityAnimate += setpointDiff;
+			tooltipDisplay.titleOnlyOpacityAnimate = std::min(1.0, tooltipDisplay.titleOnlyOpacityAnimate);
+		}
+		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
+	}
+	else
+	{
+		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
 	}
 
 	if ( tooltipPromptFrame )
@@ -24997,6 +25296,8 @@ void Player::Hotbar_t::updateHotbar()
 	{
 		cancelPromptTxt->setDisabled(false);
 		cancelPromptTxt->setText(language[3063]);
+		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_y("/hotbar_cancel_prompt_y", -6);
+		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_x("/hotbar_cancel_prompt_x", 29);
 		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarCancel");
 		if ( auto imgGet = Image::get(cancelPromptGlyph->path.c_str()) )
 		{
@@ -25005,8 +25306,8 @@ void Player::Hotbar_t::updateHotbar()
 			cancelPromptGlyph->disabled = false;
 		}
 		SDL_Rect promptTxtPos = cancelPromptTxt->getSize();
-		promptTxtPos.x = hotbarCentreX;
-		promptTxtPos.y = hotbarStartY1 + getSlotSize();
+		promptTxtPos.x = hotbarCentreX + *cvar_hotbar_cancel_prompt_x;
+		promptTxtPos.y = hotbarStartY1 + getSlotSize() - 2;
 		if ( auto textGet = cancelPromptTxt->getTextObject() )
 		{
 			promptTxtPos.x -= textGet->getWidth() / 2;
@@ -25016,7 +25317,7 @@ void Player::Hotbar_t::updateHotbar()
 				++promptTxtPos.x;
 			}
 		}
-		cancelPromptGlyph->pos.y = promptTxtPos.y;
+		cancelPromptGlyph->pos.y = promptTxtPos.y + *cvar_hotbar_cancel_prompt_y;
 		cancelPromptGlyph->pos.x = promptTxtPos.x - 4 - cancelPromptGlyph->pos.w;
 		cancelPromptTxt->setSize(promptTxtPos);
 	}
@@ -25152,7 +25453,18 @@ void Player::Hotbar_t::updateHotbar()
 				case 1:
 					pos.x = centreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 2:
 					pos.x = centreXLeft + (pos.w / 2 - 2) - compactViewOffset;
@@ -25186,7 +25498,18 @@ void Player::Hotbar_t::updateHotbar()
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
 					pos.x = centreX - pos.w / 2;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
@@ -25219,7 +25542,18 @@ void Player::Hotbar_t::updateHotbar()
 				case 7:
 					pos.x = centreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 8:
 					pos.x = centreXRight + (pos.w / 2 - 2) - compactViewOffset;
@@ -25411,7 +25745,8 @@ static void drawConsoleCommandBuffer() {
 	    0xffffffff, makeColor(0, 0, 0, 255));
 	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
 	int printy = players[commandPlayer]->camera_virtualy2() - 192;
-	if ( players[commandPlayer]->messageZone.leftAlignedMessages && players[commandPlayer]->messageZone.chatFrame )
+	if ( players[commandPlayer]->messageZone.actualAlignment == Player::MessageZone_t::ALIGN_LEFT_BOTTOM 
+		&& players[commandPlayer]->messageZone.chatFrame )
 	{
 		if ( Frame* messageBoxFrame = players[commandPlayer]->messageZone.chatFrame->findFrame("message box") )
 		{
