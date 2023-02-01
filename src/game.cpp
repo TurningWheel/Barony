@@ -4933,13 +4933,20 @@ void ingameHud()
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Defend")) )
 			    {
 				    allowCasting = true;
-				    if ( tryHotbarQuickCast == false ) 
+				    if ( tryHotbarQuickCast == false )
 					{
 						if ( hotbarFaceMenuOpen )
 						{
 							allowCasting = false;
 						}
 				    }
+					else
+					{
+						if ( !players[player]->hotbar.faceMenuQuickCastEnabled && !tryInventoryQuickCast )
+						{
+							allowCasting = false;
+						}
+					}
 
 				    if ( allowCasting && input.binaryToggle("Defend") && hasSpellbook && players[player] && players[player]->entity )
 				    {
@@ -5144,8 +5151,8 @@ void ingameHud()
 		{
 			continue;
 		}
-		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
+		players[player]->messageZone.processChatbox();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
