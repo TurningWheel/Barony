@@ -173,13 +173,14 @@ void Player::MessageZone_t::updateMessages()
 
 	// limit the number of onscreen messages to reduce spam
 	int c = 0;
+	int currentline = 0;
 	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++)
 	{
 		Message *msg = *it;
 
-		// Start fading all messages beyond index 10 immediately
+		// Start fading all messages beyond index immediately
 		c++;
-		if (c > 10 && msg->time_displayed < MESSAGE_PREFADE_TIME)
+		if ( currentline >= MESSAGE_MAX_ENTRIES - 2 && msg->time_displayed < MESSAGE_PREFADE_TIME)
 		{
 			msg->time_displayed = MESSAGE_PREFADE_TIME;
 		}
@@ -191,6 +192,15 @@ void Player::MessageZone_t::updateMessages()
 		if (msg->time_displayed >= MESSAGE_PREFADE_TIME)
 		{
 			msg->alpha -= MESSAGE_FADE_RATE;
+		}
+
+		if ( msg->text )
+		{
+			currentline += msg->text->lines;
+		}
+		else
+		{
+			++currentline;
 		}
 	}
 	// Remove all completely faded messages
