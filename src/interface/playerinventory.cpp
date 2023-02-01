@@ -4393,6 +4393,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		return;
 	}
 
+	auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+	
 	static const char* bigfont = "fonts/pixelmix.ttf#18";
 
 	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
@@ -4473,24 +4475,39 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	const int imgTopBackgroundDefaultHeight = 28;
 	const int imgTopBackground2XHeight = 42;
 
+	bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
 	bool doShortTooltip = false;
 	if ( players[player]->shootmode )
 	{
 		doShortTooltip = true;
-		if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
+		if ( doTitleOnlyTooltip )
 		{
-			bUpdateDisplayedTooltip = true;
+			if ( !tooltipDisplayedSettings.displayingTitleOnlyTooltip )
+			{
+				bUpdateDisplayedTooltip = true;
+			}
+			tooltipDisplayedSettings.displayingTitleOnlyTooltip = true;
+			tooltipDisplayedSettings.displayingShortFormTooltip = false;
 		}
-		tooltipDisplayedSettings.displayingShortFormTooltip = true;
+		else
+		{
+			if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
+			{
+				bUpdateDisplayedTooltip = true;
+			}
+			tooltipDisplayedSettings.displayingShortFormTooltip = true;
+			tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
+		}
 	}
 	else
 	{
 		doShortTooltip = false;
-		if ( tooltipDisplayedSettings.displayingShortFormTooltip )
+		if ( tooltipDisplayedSettings.displayingShortFormTooltip || tooltipDisplayedSettings.displayingTitleOnlyTooltip )
 		{
 			bUpdateDisplayedTooltip = true;
 		}
 		tooltipDisplayedSettings.displayingShortFormTooltip = false;
+		tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
 	}
 
 	bool isItemFromInventory = false;
@@ -4567,10 +4584,16 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		&& Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
 	{
 		expandBindingPressed = true;
-		if ( !players[player]->shootmode && item->identified )
+		if ( !players[player]->shootmode && item->identified && !doTitleOnlyTooltip
+			&& !doShortTooltip )
 		{
 			tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
 		}
+	}
+
+	if ( !doTitleOnlyTooltip )
+	{
+		titleOnlyFrame->setDisabled(true);
 	}
 
 	auto& appraisal = players[player]->inventoryUI.appraisal;
@@ -4717,6 +4740,106 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 			}
 		}
+
+		if ( doTitleOnlyTooltip )
+		{
+			auto titleOnlyTxt = titleOnlyFrame->findField("title only header");
+			std::string title = buf;
+			if ( itemCategory(item) != BOOK && !(itemCategory(item) == SCROLL && !item->identified) )
+			{
+				std::replace(title.begin(), title.end(), '\n', ' ');
+			}
+			titleOnlyTxt->setText(title.c_str());
+			bool bigTooltip = false;
+			SDL_Rect txtPos = titleOnlyTxt->getSize();
+			int padx = 10;
+			txtPos.x = padx * 2;
+			txtPos.y = pady + 1;
+			txtPos.h = 24;
+			if ( false /*&& players[player]->messageZone.useBigFont*/ )
+			{
+				titleOnlyTxt->setFont(players[player]->messageZone.bigfont);
+				bigTooltip = true;
+				txtPos.h = 44;
+				txtPos.y = pady * 2 + 2;
+			}
+			else
+			{
+				titleOnlyTxt->setFont(players[player]->messageZone.smallfont);
+			}
+			if ( auto textGet = Text::get(titleOnlyTxt->getLongestLine().c_str(), titleOnlyTxt->getFont(),
+				titleOnlyTxt->getTextColor(), titleOnlyTxt->getOutlineColor()) )
+			{
+				txtPos.w = textGet->getWidth();
+				if ( titleOnlyTxt->getNumTextLines() > 1 )
+				{
+					txtPos.h = 44;
+					bigTooltip = true;
+				}
+			}
+			titleOnlyTxt->setSize(txtPos);
+			SDL_Rect tooltipPos{ x, y, txtPos.w + padx * 4, 0 };
+			tooltipPos.x -= tooltipPos.w / 2;
+			if ( tooltipPos.x % 2 == 1 )
+			{
+				++tooltipPos.x;
+				++tooltipPos.w;
+			}
+
+			auto tm = titleOnlyFrame->findImage("tooltip top background");
+			tm->disabled = true;
+			auto tl = titleOnlyFrame->findImage("tooltip top left");
+			tl->disabled = true;
+			auto tr = titleOnlyFrame->findImage("tooltip top right");
+			tr->disabled = true;
+			if ( bigTooltip )
+			{
+				tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly2x.png";
+				tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly2x.png";
+				tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly2x.png";
+			}
+			else
+			{
+				tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly.png";
+				tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly.png";
+				tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png";
+			}
+			if ( auto imgGet = Image::get(tm->path.c_str()) )
+			{
+				tm->pos.w = imgGet->getWidth();
+				tm->pos.h = imgGet->getHeight();
+			}
+			if ( auto imgGet = Image::get(tl->path.c_str()) )
+			{
+				tl->pos.w = imgGet->getWidth();
+				tl->pos.h = imgGet->getHeight();
+				tooltipPos.h = tl->pos.h;
+			}
+			if ( auto imgGet = Image::get(tr->path.c_str()) )
+			{
+				tr->pos.w = imgGet->getWidth();
+				tr->pos.h = imgGet->getHeight();
+			}
+			static ConsoleVariable<Vector4> cvar_titleOnlyColor("/tooltip_title_only_color", Vector4{ 188, 154, 114, 255 });
+			if ( enableDebugKeys && !keystatus[SDLK_h] )
+			{
+				titleOnlyTxt->setTextColor(makeColor(
+					cvar_titleOnlyColor->x,
+					cvar_titleOnlyColor->y,
+					cvar_titleOnlyColor->z,
+					cvar_titleOnlyColor->w));
+				tl->disabled = false;
+				tl->pos.x = 0;
+				tm->disabled = false;
+				tm->pos.x = tl->pos.x + tl->pos.w;
+				tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
+				tr->disabled = false;
+				tr->pos.x = tm->pos.x + tm->pos.w;
+			}
+			titleOnlyFrame->setSize(tooltipPos);
+			goto TOOLTIP_FINALIZE_LABEL;
+		}
+
 		txtHeader->setText(buf);
 		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
 			txtHeader->getTextColor(), txtHeader->getOutlineColor());
@@ -6230,10 +6353,21 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		imgMiddleBackground->pos.h = imgMiddleBackgroundLeft->pos.h;
 	}
 
-	tooltipDisplayedSettings.opacitySetpoint = 0;
-	tooltipDisplayedSettings.opacityAnimate = 1.0;
-	frameMain->setDisabled(false);
-	frameMain->setOpacity(100.0);
+TOOLTIP_FINALIZE_LABEL:
+	if ( !doTitleOnlyTooltip )
+	{
+		tooltipDisplayedSettings.opacitySetpoint = 0;
+		tooltipDisplayedSettings.opacityAnimate = 1.0;
+		frameMain->setDisabled(false);
+		frameMain->setOpacity(100.0);
+	}
+	else
+	{
+		tooltipDisplayedSettings.opacitySetpoint = 0;
+		tooltipDisplayedSettings.opacityAnimate = 0.0;
+		frameMain->setDisabled(true);
+		frameMain->setOpacity(0.0);
+	}
 
 	//inputs.getUIInteraction(player)->itemMenuItem = item->uid;
 	// quick prompt stuff here.
@@ -6241,6 +6375,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	frameTooltipPrompt->setDisabled(true);
 	if ( !*cvar_hideGlyphs
+		&& !doTitleOnlyTooltip
 		&& !players[player]->GUI.isDropdownActive()
 		&& !selectedItem
 		&& !inputs.getVirtualMouse(player)->draw_cursor 
@@ -6392,6 +6527,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			promptPos.y = frameMain->getSize().y + frameMain->getSize().h - 2;
 			frameTooltipPrompt->setSize(promptPos);
 		}
+	}
+
+	if ( doTitleOnlyTooltip )
+	{
+		tooltipDisplayedSettings.titleOnlyOpacitySetpoint = 0;
+		tooltipDisplayedSettings.titleOnlyOpacityAnimate = 1.0;
+		titleOnlyFrame->setDisabled(false);
+		titleOnlyFrame->setOpacity(100.0);
 	}
 }
 

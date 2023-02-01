@@ -1226,11 +1226,11 @@ void drawStatus(int player)
 									{
 										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 										}
 									}
 								}
@@ -1245,11 +1245,11 @@ void drawStatus(int player)
 								{
 									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 									}
 								}
 							}
@@ -2207,11 +2207,11 @@ void drawStatus(int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
 			}
 		}
@@ -2734,9 +2734,58 @@ void drawStatusNew(const int player)
 						tooltipOpen = true;
 						tooltipSlotFrame = hotbarSlotFrame;
 						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);
-						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
+
+						auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
+						if ( players[player]->inventoryUI.itemTooltipDisplay.displayingTitleOnlyTooltip )
+						{
+							tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+						}
+
+						SDL_Rect tooltipPos = tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
+						if ( players[player]->inventoryUI.itemTooltipDisplay.displayingTitleOnlyTooltip )
+						{
+							int highestSlotY = players[player]->camera_virtualy2();
+							for ( int num2 = 0; num2 < NUM_HOTBAR_SLOTS; ++num2 )
+							{
+								if ( auto slotFrame = hotbar_t.getHotbarSlotFrame(num2) )
+								{
+									if ( !slotFrame->isDisabled() )
+									{
+										highestSlotY = std::min(highestSlotY, slotFrame->getSize().y);
+									}
+								}
+							}
+							if ( hotbar_t.useHotbarFaceMenu )
+							{
+								static ConsoleVariable<int> cvar_tooltip_title_only_facemenu_y("/tooltip_title_only_facemenu_y", 4);
+								if ( inputs.hasController(player) )
+								{
+									tooltipPos.y -= 12 * hotbar_t.selectedSlotAnimateCurrentValue;
+								}
+								else
+								{
+									tooltipPos.y = highestSlotY - tooltipPos.h - 8;
+									tooltipPos.x = hotbar_t.hotbarFrame->getSize().w / 2 - tooltipPos.w / 2;
+									if ( tooltipPos.x % 2 == 1 )
+									{
+										++tooltipPos.x;
+									}
+								}
+								tooltipPos.y += *cvar_tooltip_title_only_facemenu_y;
+							}
+							else
+							{
+								static ConsoleVariable<int> cvar_tooltip_title_only_y("/tooltip_title_only_y", 8);
+								tooltipPos.x = hotbar_t.hotbarFrame->getSize().w / 2 - tooltipPos.w / 2;
+								tooltipPos.y += *cvar_tooltip_title_only_y;
+								if ( tooltipPos.x % 2 == 1 )
+								{
+									++tooltipPos.x;
+								}
+							}
+						}
 						if ( tooltipPos.x < 0 )
 						{
 							tooltipPos.x = 0;
@@ -2745,7 +2794,7 @@ void drawStatusNew(const int player)
 						{
 							tooltipPos.x -= (tooltipPos.x + tooltipPos.w) - players[player]->inventoryUI.tooltipContainerFrame->getSize().w;
 						}
-						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
+						tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
 							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
 							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
@@ -3453,11 +3502,11 @@ void drawStatusNew(const int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
 			}
 		}
