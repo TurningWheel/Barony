@@ -3816,7 +3816,12 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool bDoingActionHideTooltips = false;
-		if ( !players[player]->shootmode || radialMenuOpen )
+		if ( players[player]->hotbar.useHotbarFaceMenu
+			&& players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE )
+		{
+			bDoingActionHideTooltips = true;
+		}
+		else if ( !players[player]->shootmode || radialMenuOpen )
 		{
 			bDoingActionHideTooltips = true;
 		}
@@ -4312,7 +4317,14 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				}
 				if ( hasSpellBook && allowCasting )
 				{
-					promptString = language[4079];
+					if ( player.bUseCompactGUIHeight() )
+					{
+						promptString = language[4318];
+					}
+					else
+					{
+						promptString = language[4079];
+					}
 					return PRO_MAGIC;
 				}
 
@@ -5982,6 +5994,7 @@ void Player::clearGUIPointers()
 	inventoryUI.tooltipContainerFrame = nullptr;
 	inventoryUI.frame = nullptr;
 	inventoryUI.tooltipFrame = nullptr;
+	inventoryUI.titleOnlyTooltipFrame = nullptr;
 	inventoryUI.interactFrame = nullptr;
 	inventoryUI.interactBlockClickFrame = nullptr;
 	inventoryUI.tooltipPromptFrame = nullptr;

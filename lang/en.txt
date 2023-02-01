@@ -5003,7 +5003,7 @@ Increased Dexterity and movement speed#
 3615 Your trap failed to teleport the %s!#
 3616 Your trap failed to teleport %s!#
 3617 Your %s destroys the %s!#
-3618 Your %s hits the the %s!#
+3618 Your %s hits the %s!#
 3619 Light:#
 3620 [Off]#
 3621 [Faint]#
@@ -6399,5 +6399,6 @@ for accessory to violence!#
 4315 Page Up/Down#
 4316 Scroll Up/Down#
 4317 Your %s failed to detect a suitable landing spot.#
+4318 Book Cast#
 
 4399 end#
