@@ -151,6 +151,11 @@ void Player::BookGUI_t::updateBookGUI()
 		createBookGUI();
 	}
 
+	bookFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
+		players[player.playernum]->camera_virtualy1(),
+		players[player.playernum]->camera_virtualWidth(),
+		players[player.playernum]->camera_virtualHeight() });
+
 	bool errorOpening = false;
 	int bookIndex = getBook(openBookName);
 	if ( !allBooks.empty() && allBooks.size() >= bookIndex )
@@ -207,6 +212,7 @@ void Player::BookGUI_t::updateBookGUI()
 	getColor(fade->color, &r, &g, &b, &a);
 	a = 128 * bookFadeInAnimationY;
 	fade->color = makeColor( r, g, b, a);
+	fade->pos = SDL_Rect{ 0, 0, bookFrame->getSize().w, bookFrame->getSize().h };
 
 	int baseY = (bookFrame->getSize().h / 2 - bookSize.h / 2);
 	bookSize.y = -bookSize.h + bookFadeInAnimationY * (baseY + bookSize.h);
