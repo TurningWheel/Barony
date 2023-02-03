@@ -2685,7 +2685,7 @@ void gameLogic(void)
 					else
 					{
 						if ( auto_appraise_new_items && players[player]->inventoryUI.appraisal.timer == 0 
-							&& !(item->identified) )
+							&& !(item->identified) && players[player]->inventoryUI.appraisal.appraisalPossible(item) )
 						{
 							int appraisal_time = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
 							if ( appraisal_time < auto_appraise_lowest_time[player] )
@@ -3256,7 +3256,8 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 && !(item->identified) )
+					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 
+						&& !(item->identified) && players[clientnum]->inventoryUI.appraisal.appraisalPossible(item) )
 					{
 						int appraisal_time = players[clientnum]->inventoryUI.appraisal.getAppraisalTime(item);
 						if (appraisal_time < auto_appraise_lowest_time[clientnum])

@@ -1232,6 +1232,7 @@ void drawStatus(int player)
 										{
 											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 										}
+										playSoundPlayer(player, 90, 64);
 									}
 								}
 							}
@@ -1251,6 +1252,7 @@ void drawStatus(int player)
 									{
 										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 									}
+									playSoundPlayer(player, 90, 64);
 								}
 							}
 							used = true;
@@ -2213,6 +2215,7 @@ void drawStatus(int player)
 				{
 					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 	}
@@ -3508,6 +3511,7 @@ void drawStatusNew(const int player)
 				{
 					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 	}

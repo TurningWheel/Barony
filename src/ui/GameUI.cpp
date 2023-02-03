@@ -5294,6 +5294,7 @@ const int StatusEffectQueue_t::kEffectWarning = -15;
 const int StatusEffectQueue_t::kEffectWaterBreathing = -16;
 const int StatusEffectQueue_t::kEffectConflict = -17;
 const int StatusEffectQueue_t::kEffectWaterWalking = -18;
+const int StatusEffectQueue_t::kEffectLifesaving = -19;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5327,6 +5328,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 		}
 	}
+
 	for ( auto& eff : effectSet )
 	{
 		if ( eff >= kSpellEffectOffset && (eff - kSpellEffectOffset) == SPELL_SHADOW_TAG )
@@ -5379,7 +5381,37 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	    else
 	    {
-		    if ( stats[player]->EFFECTS[i] )
+			bool effectActive = stats[player]->EFFECTS[i];
+			if ( i == EFF_LEVITATING && !effectActive )
+			{
+				bool tmp = stats[player]->EFFECTS[EFF_FLUTTER];
+				stats[player]->EFFECTS[EFF_FLUTTER] = false;
+				effectActive = isLevitating(stats[player]);
+				stats[player]->EFFECTS[EFF_FLUTTER] = tmp;
+			}
+			else if ( i == EFF_MAGICREFLECT && !effectActive )
+			{
+				if ( stats[player]->amulet )
+				{
+					if ( stats[player]->amulet->type == AMULET_MAGICREFLECTION )
+					{
+						effectActive = true;
+					}
+				}
+				if ( stats[player]->cloak )
+				{
+					if ( stats[player]->cloak->type == CLOAK_MAGICREFLECTION )
+					{
+						effectActive = true;
+					}
+				}
+			}
+			else if ( i == EFF_INVISIBLE && !effectActive && players[player]->entity )
+			{
+				effectActive = players[player]->entity->isInvisible();
+			}
+
+		    if ( effectActive )
 		    {
 			    if ( effectSet.find(i) == effectSet.end() )
 			    {
@@ -5419,7 +5451,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectWaterWalking; --i )
+	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -5485,6 +5517,12 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectWaterWalking] = true;
 			}
+			if ( (stats[player]->amulet && stats[player]->amulet->type == AMULET_LIFESAVING)
+				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0) 
+					|| stats[player]->type == SKELETON) && stats[player]->MP >= 75) )
+			{
+				miscEffects[kEffectLifesaving] = true;
+			}
 		}
 
 		int playerx = static_cast<int>(players[player]->entity->x) >> 4;
@@ -5536,7 +5574,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectWaterWalking; --i )
+	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -19650,6 +19688,7 @@ bool takeAllChestGUIAction(const int player)
 	else if ( pickedUpItems == 0 && numItems > 0 )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[4100]);
+		playSoundPlayer(player, 90, 64);
 	}
 
 	return true;
@@ -20963,7 +21002,38 @@ void Player::Inventory_t::updateItemContextMenu()
 	{
 		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
 		{
-			activateItemContextMenuOption(item, options[itemMenuSelected]);
+			if ( options[itemMenuSelected] == ItemContextMenuPrompts::PROMPT_DROP
+				&& player.paperDoll.isItemOnDoll(*item) )
+			{
+				// need to unequip
+				player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+				player.paperDoll.updateSlots();
+				if ( player.paperDoll.isItemOnDoll(*item) )
+				{
+					// couldn't unequip, no more actions
+				}
+				else
+				{
+					// successfully unequipped, let's drop it.
+					bool droppedAll = false;
+					while ( item && item->count > 1 )
+					{
+						droppedAll = dropItem(item, player.playernum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
+					}
+					if ( !droppedAll )
+					{
+						dropItem(item, player.playernum);
+					}
+				}
+			}
+			else
+			{
+				activateItemContextMenuOption(item, options[itemMenuSelected]);
+			}
 		}
 		//Close the menu.
 		itemMenuOpen = false;
@@ -21119,6 +21189,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// no space
 								tryAddToInventory = false;
 								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								playSoundPlayer(player, 90, 64);
 								break;
 							}
 
@@ -21203,6 +21274,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// no space
 								tryAddToInventory = false;
 								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								playSoundPlayer(player, 90, 64);
 								break;
 							}
 							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
@@ -21273,6 +21345,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 									// no space
 									tryAddToChest = false;
 									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									playSoundPlayer(player, 90, 64);
 									break;
 								}
 
@@ -21344,6 +21417,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 									// no space
 									tryAddToChest = false;
 									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									playSoundPlayer(player, 90, 64);
 									break;
 								}
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
@@ -21377,6 +21451,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		else
 		{
 			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+			playSoundPlayer(player, 90, 64);
 		}
 		if ( !emptiedSlot && (inputs.getUIInteraction(player)->itemMenuOpen || players[player]->inventoryUI.bCompactView) )
 		{
@@ -21442,6 +21517,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		else if ( item->type == TOOL_TINKERING_KIT )
@@ -21455,11 +21531,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				else
 				{
 					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
 				}
 			}
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		else
@@ -21471,6 +21549,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		return;
@@ -21490,6 +21569,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			if ( item->status == BROKEN )
 			{
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // don't try equip broken stuff
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 
@@ -21532,6 +21612,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
+			playSoundPlayer(player, 90, 64);
 		}
 		return;
 	}
@@ -21551,6 +21632,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
+			playSoundPlayer(player, 90, 64);
 		}
 		return;
 	}
@@ -23588,6 +23670,12 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	if ( enemyDetails->displayOnHUD && whichFrame == enemyBarFrameHUD )
 	{
 		doAnimation = false;
+	}
+
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		enemyDetails->enemy_timer = ticks;
+		return;
 	}
 
 	if ( doAnimation && !enemyDetails->displayOnHUD && !enemyDetails->expired && enemyDetails->animator.setpoint <= 0 )

@@ -67,6 +67,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 	{
 		// no backpack space
 		messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+		playSoundPlayer(player, 90, 64);
 		return false;
 	}
 
@@ -3026,6 +3027,7 @@ void releaseChestItem(const int player)
 				if ( selectedItem->status == BROKEN )
 				{
 					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], selectedItem->getName()); // don't try equip broken stuff
+					playSoundPlayer(player, 90, 64);
 					toggleclick = false;
 				}
 				else if ( !disableItemUsage )
@@ -3083,6 +3085,7 @@ void releaseChestItem(const int player)
 					messagePlayer(player, 
 						MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, 
 						language[3432]); // unable to use in current form message.
+					playSoundPlayer(player, 90, 64);
 					toggleclick = false;
 				}
 			}
@@ -3158,6 +3161,7 @@ void releaseChestItem(const int player)
 						{
 							// no space
 							messagePlayer(player, MESSAGE_INVENTORY, language[727], selectedItem->getName()); // no room
+							playSoundPlayer(player, 90, 64);
 							break;
 						}
 						newInventoryItem = takeItemFromChest(player, selectedItem, amountToPlace, nullptr, true);
@@ -3373,6 +3377,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 					{
 						// can't drag off into inventory, no slots available
 						messagePlayer(player, MESSAGE_INVENTORY, language[3997], selectedItem->getName());
+						playSoundPlayer(player, 90, 64);
 						selectedItem = nullptr;
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 						toggleclick = false;
