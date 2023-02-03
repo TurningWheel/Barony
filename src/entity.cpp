@@ -7371,30 +7371,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.entity->behavior == &actDoor )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[666]);
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[666]);
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[667]);
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[667]);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(player, MESSAGE_COMBAT, language[669]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[669]);
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(player, MESSAGE_COMBAT, language[668]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[668]);
 								break;
 							case FURNITURE_BED:
-								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2505]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2505]);
 								break;
 							case FURNITURE_BUNKBED:
-								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2506]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2506]);
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(player, MESSAGE_COMBAT, language[2509], language[2507]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2507]);
 								break;
 							default:
 								break;
@@ -8883,7 +8883,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else
 								{
 									// normal hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
 								}
 							}
 
@@ -8907,7 +8907,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( damage == 0 )
 							{
 								// blow bounces off
-								messagePlayer(player, MESSAGE_COMBAT, language[691]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[691]);
 							}
 							else
 							{
@@ -9054,7 +9054,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else
 								{
 									// normal hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
 								}
 							}
 
@@ -9080,11 +9080,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// blow bounces off
 								if ( hitstats->sex )
 								{
-									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT_BASIC);
 								}
 								else
 								{
-									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT_BASIC);
 								}
 							}
 							else
@@ -9418,10 +9418,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else
 					{
 						// display 'blow bounces off' message
-						//messagePlayer(playerhit, language[700]);
 						if ( !statusInflicted )
 						{
-							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
+							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT_BASIC);
 						}
 						if ( myStats->type == COCKATRICE && hitstats->defending )
 						{
@@ -14617,6 +14616,14 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 					return false;
 				}
 				break;
+			case EFF_CONFUSED:
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == MINOTAUR )
+				{
+					return false;
+				}
+				break;
 			case EFF_ASLEEP:
 			case EFF_PARALYZED:
 			case EFF_PACIFY:
@@ -17259,6 +17266,9 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		case MSG_COMBAT:
 			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 			break;
+		case MSG_COMBAT_BASIC:
+			messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
+			break;
 		case MSG_OBITUARY:
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
@@ -17281,7 +17291,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			messagePlayerColor(player, MESSAGE_HINT, color, msgGeneric, getMonsterLocalizedName((Monster)monsterType).c_str());
 			break;
 		case MSG_ATTACKS:
-			messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric,
+			messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgGeneric,
 				getMonsterLocalizedName((Monster)monsterType).c_str(),
 				getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			break;
@@ -17329,6 +17339,20 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name);
 			}
 			break;
+		case MSG_COMBAT_BASIC:
+			if ( namedMonsterAsGeneric )
+			{
+				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgGeneric, monsterStats.name);
+			}
+			else if ( monsterType < KOBOLD ) //Original monster count
+			{
+				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgNamed, monsterStats.name);
+			}
+			else if ( monsterType >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgNamed, monsterStats.name);
+			}
+			break;
 		case MSG_OBITUARY:
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
@@ -17367,11 +17391,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		case MSG_ATTACKS:
 			if ( namedMonsterAsGeneric )
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
+				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgGeneric, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
 			else
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
+				messagePlayerColor(player, MESSAGE_COMBAT_BASIC, color, msgNamed, monsterStats.name, getMonsterLocalizedInjury((Monster)monsterType).c_str());
 			}
 			break;
 		case MSG_STEAL_WEAPON:

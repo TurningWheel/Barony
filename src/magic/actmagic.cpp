@@ -24,6 +24,7 @@
 #include "../scores.hpp"
 #include "../prng.hpp"
 #include "magic.hpp"
+#include "../mod_tools.hpp"
 
 void actMagiclightBall(Entity* my)
 {
@@ -530,6 +531,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					return;
 				}
 			}
+			else if ( spell->ID == SPELL_NONE )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 
 			node = spell->elements.first;
 			//element = (spellElement_t *) spell->elements->first->element;
@@ -674,89 +681,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				//if (hit.entity != NULL) {
 				Stat* hitstats = nullptr;
 				int player = -1;
+
+				// count reflection
+				int reflection = 0;
 				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
-					if ( hit.entity->behavior == &actPlayer )
-					{
-						bool skipMessage = false;
-						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
-						{
-							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
-							{
-								skipMessage = true;
-							}
-						}
-
-						player = hit.entity->skill[2];
-						if ( my->actmagicCastByTinkerTrap == 1 )
-						{
-							skipMessage = true;
-						}
-						if ( !skipMessage )
-						{
-							Uint32 color = makeColorRGB(255, 0, 0);
-							messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
-						}
-						if ( hitstats )
-						{
-							entityHealth = hitstats->HP;
-						}
-					}
-					if ( parent && hitstats )
-					{
-						if ( parent->behavior == &actPlayer )
-						{
-							Uint32 color = makeColorRGB(0, 255, 0);
-							if ( strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
-							{
-								if ( my->actmagicCastByTinkerTrap == 1 )
-								{
-									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
-								}
-								else
-								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
-								}
-							}
-						}
-					}
 				}
-
-				// Handling reflecting the missile
-				int reflection = 0;
 				if ( hitstats )
 				{
-					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer )
-					{
-						/* no longer in use */
-						/*bool founddevil = false;
-						node_t* tempNode;
-						for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
-						{
-							Entity* tempEntity = (Entity*)tempNode->element;
-							if ( tempEntity->behavior == &actMonster )
-							{
-								Stat* stats = tempEntity->getStats();
-								if ( stats )
-								{
-									if ( stats->type == DEVIL )
-									{
-										founddevil = true;
-										break;
-									}
-								}
-							}
-						}
-						if ( !founddevil )
-						{
-							reflection = 3;
-						}*/
-					}
-					else if ( parent && 
-							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-								|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
-								|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
+					if ( parent &&
+						((hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
+							|| ((hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE)
+							|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
 							)
 						)
 					{
@@ -796,34 +733,105 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				if ( reflection )
+
+				bool yourSpellHitsTheMonster = false;
+				bool youAreHitByASpell = false;
+				if ( hit.entity )
 				{
-					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
-					playSoundEntity(hit.entity, 166, 128);
-					if ( hit.entity )
+					if ( hit.entity->behavior == &actPlayer )
 					{
-						if ( hit.entity->behavior == &actPlayer )
+						bool skipMessage = false;
+						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
 						{
-							if ( !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
 							{
-								Uint32 color = makeColorRGB(0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
-							}
-							if ( !spellIsReflectingMagic )
-							{
-								messagePlayer(player, MESSAGE_COMBAT, language[379]);
-							}
-							else
-							{
-								messagePlayer(player, MESSAGE_COMBAT, language[2475]);
+								skipMessage = true;
 							}
 						}
+
+						player = hit.entity->skill[2];
+						if ( my->actmagicCastByTinkerTrap == 1 )
+						{
+							skipMessage = true;
+						}
+						if ( !skipMessage )
+						{
+							Uint32 color = makeColorRGB(255, 0, 0);
+							messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
+							youAreHitByASpell = true;
+						}
+						if ( hitstats )
+						{
+							entityHealth = hitstats->HP;
+						}
 					}
-					if ( parent )
+					if ( parent && hitstats )
 					{
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[379]);
+							Uint32 color = makeColorRGB(0, 255, 0);
+							if ( strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
+							{
+								if ( my->actmagicCastByTinkerTrap == 1 )
+								{
+									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
+								}
+								else
+								{
+									if ( reflection == 0 )
+									{
+										yourSpellHitsTheMonster = true;
+										if ( ItemTooltips.bSpellHasBasicHitMessage(spell->ID) )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT_BASIC);
+										}
+										else
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// Handling reflecting the missile
+				if ( reflection )
+				{
+					spell_t* spellIsReflectingMagic = nullptr;
+					if ( hit.entity )
+					{
+						spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
+						playSoundEntity(hit.entity, 166, 128);
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							if ( youAreHitByASpell )
+							{
+								if ( !spellIsReflectingMagic )
+								{
+									messagePlayer(player, MESSAGE_COMBAT, language[379]); // but it bounces off!
+								}
+								else
+								{
+									messagePlayer(player, MESSAGE_COMBAT, language[2475]); // but it bounces off!
+								}
+							}
+						}
+					}
+					if ( parent && hitstats )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( yourSpellHitsTheMonster )
+							{
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[379]); // but it bounces off!
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255), 
+									*hitstats, language[4322], language[4323], MSG_COMBAT); // your spell bounces off the monster!
+							}
 						}
 					}
 					if ( hit.side == HORIZONTAL )
@@ -1156,22 +1164,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 				// check for magic resistance...
 				// resistance stacks diminishingly
-				//TODO: EFFECTS[EFF_MAGICRESIST]
 				int resistance = 0;
 				if ( hit.entity )
 				{
 					resistance = Entity::getMagicResistance(hit.entity->getStats());
-				}
-				
-				if ( resistance > 0 )
-				{
-					if ( parent )
-					{
-						if ( parent->behavior == &actPlayer )
-						{
-							messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[386]);
-						}
-					}
+
+					// TODO - magic impact weak/strong messages?
 				}
 
 				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
@@ -1447,10 +1445,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if (hit.entity)
 					{
 						// Attempt to set the Entity on fire
+						bool wasBurning = hit.entity->flags[BURNING];
 						hit.entity->SetEntityOnFire();
 
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
+							if ( hit.entity->flags[BURNING] && !wasBurning )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), language[4324]);
+								}
+							}
+
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
@@ -1686,29 +1693,39 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 174, 64);
-							hitstats->EFFECTS[EFF_CONFUSED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
+							int duration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							duration /= (1 + (int)resistance);
 
-							// If the Entity hit is a Player, update their status to be Slowed
-							if ( hit.entity->behavior == &actPlayer )
+							if ( hit.entity->setEffect(EFF_CONFUSED, true, duration, false) )
 							{
-								serverUpdateEffects(hit.entity->skill[2]);
-							}
-
-							hit.entity->skill[1] = 0; //Remove the monster's target.
-							if ( parent )
-							{
-								Uint32 color = makeColorRGB(0, 255, 0);
-								if ( parent->behavior == &actPlayer )
+								if ( hit.entity->behavior == &actMonster )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
+									hit.entity->monsterTarget = 0; // monsters forget what they're doing
+								}
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
+									}
+								}
+								Uint32 color = makeColorRGB(255, 0, 0);
+								if ( player >= 0 )
+								{
+									messagePlayerColor(player, MESSAGE_COMBAT, color, language[392]);
 								}
 							}
-							Uint32 color = makeColorRGB(255, 0, 0);
-							if ( player >= 0 )
+							else
 							{
-								messagePlayerColor(player, MESSAGE_COMBAT, color, language[392]);
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(255, 0, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+									}
+								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
@@ -1935,7 +1952,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent )
 									{
-										Uint32 color = makeColorRGB(0, 255, 0);
+										Uint32 color = makeColorRGB(255, 0, 0);
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
@@ -2167,10 +2184,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
 								}
+							}
 							if ( player >= 0 )
 							{
 								messagePlayer(player, MESSAGE_COMBAT, language[401]);
@@ -2370,36 +2389,41 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 						{
-							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							effectDuration /= (1 + (int)resistance);
+							int oldDuration = !hitstats->EFFECTS[EFF_PARALYZED] ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
 								if ( hit.entity->behavior == &actPlayer )
 								{
 									serverUpdateEffects(hit.entity->skill[2]);
 								}
-								// update enemy bar for attacker
-								if ( parent )
+								
+								// notify if effect wasn't active with identical duration, few ticks leeway
+								if ( abs(hitstats->EFFECTS_TIMERS[EFF_PARALYZED] - oldDuration) > 10 ) 
 								{
-									Uint32 color = makeColorRGB(0, 255, 0);
-									if ( parent->behavior == &actPlayer )
+									playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+									if ( parent )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+										Uint32 color = makeColorRGB(0, 255, 0);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+										}
 									}
-								}
 
-								Uint32 color = makeColorRGB(255, 0, 0);
-								if ( player >= 0 )
-								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2422]);
+									Uint32 color = makeColorRGB(255, 0, 0);
+									if ( player >= 0 )
+									{
+										messagePlayerColor(player, MESSAGE_COMBAT, color, language[2422]);
+									}
 								}
 							}
 							else
 							{
 								if ( parent )
 								{
-									Uint32 color = makeColorRGB(0, 255, 0);
+									Uint32 color = makeColorRGB(255, 0, 0);
 									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);

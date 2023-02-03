@@ -405,7 +405,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				}
 			}
 			//playSoundEntity(&my, 173, 64);
-			playSoundEntity(hit.entity, 249, 64);
 			//playSoundEntity(hit.entity, 28, 64);
 
 			Stat* hitstats = hit.entity->getStats();
@@ -430,11 +429,27 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				parent->killedByMonsterObituary(hit.entity);
 			}
 
+			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_POISONED];
+			int duration = 6 * TICKS_PER_SECOND;
+			duration /= (1 + (int)resistance);
+			bool recentlyHitBySameSpell = false;
 			if ( !hasamulet )
 			{
 				hitstats->EFFECTS[EFF_POISONED] = true;
-				hitstats->EFFECTS_TIMERS[EFF_POISONED] = 300; // 6 seconds.
-				hitstats->EFFECTS_TIMERS[EFF_POISONED] /= (1 + (int)resistance);
+				hitstats->EFFECTS_TIMERS[EFF_POISONED] = duration; // 6 seconds.
+				if ( abs(duration - previousDuration) > 10 ) // message if not recently acidified
+				{
+					recentlyHitBySameSpell = false;
+				}
+				else
+				{
+					recentlyHitBySameSpell = true;
+				}
+			}
+			
+			if ( !recentlyHitBySameSpell )
+			{
+				playSoundEntity(hit.entity, 249, 64);
 			}
 			/*hitstats->EFFECTS[EFF_SLOW] = true;
 			hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -449,7 +464,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2431], language[2430], MSG_COMBAT);
+					if ( !recentlyHitBySameSpell )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2431], language[2430], MSG_COMBAT);
+					}
 				}
 			}
 
@@ -478,7 +496,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, language[2432]);
+				if ( !recentlyHitBySameSpell )
+				{
+					messagePlayerColor(player, MESSAGE_COMBAT, color, language[2432]);
+				}
 			}
 
 			if ( hitstats->HP > 0 )
@@ -664,14 +685,14 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			if ( parent )
 			{
 				// update enemy bar for attacker
-				if ( !strcmp(hitstats->name, "") )
+				/*if ( !strcmp(hitstats->name, "") )
 				{
 					updateEnemyBar(parent, target, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 				}
 				else
 				{
 					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
-				}
+				}*/
 				target->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 				target->monsterFearfulOfUid = parent->getUID();
 
@@ -753,7 +774,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			duration /= (1 + resistance);
 			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
 			{
-				if ( duration - previousDuration > 10 )
+				if ( abs(duration - previousDuration) > 10 )
 				{
 					playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
 				}
@@ -788,7 +809,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				Uint32 color = makeColorRGB(0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					if ( duration - previousDuration > 10 ) // message if not recently webbed
+					if ( abs(duration - previousDuration) > 10 ) // message if not recently webbed
 					{
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
 					}
@@ -804,7 +825,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			}
 			if ( player >= 0 )
 			{
-				if ( duration - previousDuration > 10 ) // message if not recently webbed
+				if ( abs(duration - previousDuration) > 10 ) // message if not recently webbed
 				{
 					messagePlayerColor(player, MESSAGE_COMBAT, color, language[3431]);
 				}
@@ -854,14 +875,14 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 			}
 
 			// update enemy bar for attacker
-			if ( !strcmp(hitstats->name, "") )
+			/*if ( !strcmp(hitstats->name, "") )
 			{
 				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-			}
+			}*/
 
 			Uint32 color = makeColorRGB(255, 0, 0);
 
@@ -1385,14 +1406,14 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
 						}
 						// update enemy bar for attacker
-						if ( !strcmp(hitstats->name, "") )
+						/*if ( !strcmp(hitstats->name, "") )
 						{
 							updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 						}
 						else
 						{
 							updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-						}
+						}*/
 					}
 				}
 			}
@@ -1539,20 +1560,20 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
-							if ( currentCharmedFollowerCount > 0 )
+							if ( currentCharmedFollowerCount > 0 && hit.entity->monsterAllyGetPlayerLeader() != parent )
 							{
 								messagePlayer(parent->skill[2], MESSAGE_MISC, language[3327]);
 							}
 						}
 						// update enemy bar for attacker
-						if ( !strcmp(hitstats->name, "") )
+						/*if ( !strcmp(hitstats->name, "") )
 						{
 							updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 						}
 						else
 						{
 							updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-						}
+						}*/
 					}
 					if ( hitstats->type == SHOPKEEPER && parent && parent->behavior == &actPlayer )
 					{
@@ -2453,7 +2474,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				}
 
 				// update enemy bar for attacker
-				if ( hitstats )
+				/*if ( hitstats )
 				{
 					if ( !strcmp(hitstats->name, "") )
 					{
@@ -2463,7 +2484,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					{
 						updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
-				}
+				}*/
 			}
 			return true;
 		}
@@ -2541,14 +2562,14 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			// update enemy bar for attacker
-			if ( !strcmp(hitstats->name, "") )
+			/*if ( !strcmp(hitstats->name, "") )
 			{
 				updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP);
 			}
 			else
 			{
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-			}
+			}*/
 
 			Uint32 color = makeColorRGB(255, 0, 0);
 			int player = -1;

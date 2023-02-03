@@ -1094,6 +1094,7 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 			{
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
 			}
+			playSoundPlayer(player, 90, 64);
 			item->identified = true;
 			return nullptr;
 		}
@@ -1499,11 +1500,11 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[378], language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[675]);
 				}
 			}
 		}

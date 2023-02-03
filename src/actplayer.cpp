@@ -3575,10 +3575,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( itemCategory(tempItem) == GEM )
-						{
-							messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[3240], tempItem->description());
-						}
+						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[3240], tempItem->description());
 					}
 
 					//Attempt a level up.

@@ -343,11 +343,11 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[674]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[378], language[674]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[674]);
 				}
 			}
 			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);

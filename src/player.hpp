@@ -1059,6 +1059,7 @@ public:
 			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
+			bool appraisalPossible(Item* item); // if possible with current skill and stats
 			real_t animAppraisal = 0.0;
 			Uint32 animStartTick = 0;
 			Uint32 itemNotifyUpdatedThisTick = 0;
