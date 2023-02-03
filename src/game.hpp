@@ -345,7 +345,7 @@ void drawAllPlayerCameras();
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
-#define XPSHARERANGE 256
+#define XPSHARERANGE 99999
 
 // function prototypes for charclass.c:
 void initClass(int player);
