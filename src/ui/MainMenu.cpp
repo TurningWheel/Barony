@@ -19070,9 +19070,15 @@ bind_failed:
 			for (int c = 0; c < num_banners; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = banners->addButton(name.c_str());
-				banner->setSize(SDL_Rect{0, c * 92, 472, 76});
 				banner->setBackground(banner_images[c][0]);
 				banner->setBackgroundHighlighted(banner_images[c][1]);
+				SDL_Rect bannerPos = SDL_Rect{ 0, c * 92, 472, 76 };
+				if ( auto imgGet = Image::get(banner_images[c][0]) )
+				{
+					bannerPos.w = imgGet->getWidth();
+					bannerPos.x = 472 / 2 - bannerPos.w / 2;
+				}
+				banner->setSize(bannerPos);
 				banner->setCallback(banner_funcs[c]);
 		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
 				banner->setColor(uint32ColorWhite);
