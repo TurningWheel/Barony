@@ -4816,15 +4816,38 @@ void ingameHud()
         {
 	        // toggle minimap
 		    // player not needed to be alive
-            if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE
-				&& players[player]->minimap.bExpandPromptEnabled
-				&& input.consumeBinaryToggle("Toggle Minimap") )
-            {
-                openMinimap(player);
-            }
-
             // map window bind
-            if ( input.consumeBinaryToggle("Open Map") )
+			if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+			{
+				if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+				{
+					players[player]->minimap.bExpandPromptEnabled = true;
+					if ( players[player]->worldUI.isEnabled()
+						&& players[player]->worldUI.bTooltipInView
+						&& players[player]->worldUI.tooltipsInRange.size() > 1 )
+					{
+						std::string expandBinding = input.binding("Toggle Minimap");
+						std::string cycleNextBinding = input.binding("Interact Tooltip Next");
+						std::string cyclePrevBinding = input.binding("Interact Tooltip Prev");
+						if ( expandBinding == cycleNextBinding
+							|| expandBinding == cyclePrevBinding )
+						{
+							players[player]->minimap.bExpandPromptEnabled = false;
+						}
+					}
+					if ( input.consumeBinaryToggle("Toggle Minimap") && players[player]->minimap.bExpandPromptEnabled )
+					{
+						openMapWindow(player);
+					}
+				}
+				else if ( players[player]->minimap.bExpandPromptEnabled
+					&& input.consumeBinaryToggle("Toggle Minimap") )
+				{
+					openMinimap(player);
+				}
+			}
+
+			if ( input.consumeBinaryToggle("Open Map") )
             {
                 openMapWindow(player);
             }

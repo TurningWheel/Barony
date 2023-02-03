@@ -22699,14 +22699,35 @@ void Player::HUD_t::updateMinimapPrompts()
 		return;
 	}
 
-	if ( /*(!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
-		||*/ 
-		(::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
-		|| gamePaused 
-		|| (player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
-		|| !this->minimapFrame 
-		|| (this->minimapFrame && this->minimapFrame->isInvisible())
-		|| player.hud.offsetHUDAboveHotbarHeight > 0 )
+	bool showPrompts = false;
+	if ( gamePaused )
+	{
+		showPrompts = false;
+	}
+	else if ( ::minimapFrame && !::minimapFrame->isInvisible() )
+	{
+		if ( player.hud.offsetHUDAboveHotbarHeight > 0 || !player.shootmode )
+		{
+			showPrompts = false;
+		}
+		else
+		{
+			showPrompts = true;
+		}
+	}
+	else if ( this->minimapFrame && !this->minimapFrame->isInvisible() )
+	{
+		if ( player.hud.offsetHUDAboveHotbarHeight > 0 )
+		{
+			showPrompts = false;
+		}
+		else
+		{
+			showPrompts = true;
+		}
+	}
+
+	if ( !showPrompts )
 	{
 		mapPromptFrame->setDisabled(true);
 		return;
