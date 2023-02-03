@@ -195,6 +195,39 @@ struct MessageZoneSettings_t
 };
 MessageZoneSettings_t messageZoneSettings;
 
+struct DamageIndicatorSettings_t
+{
+	enum LayoutType_t : int {
+		LAYOUT_DEFAULT,
+		LAYOUT_2P_WIDE,
+		LAYOUT_2P_TALL,
+		LAYOUT_4P
+	};
+	struct Layout_t
+	{
+		int image_size = 3;
+		int radius_x = 200;
+		int radius_y = 200;
+	};
+	std::map<LayoutType_t, Layout_t> settings;
+	real_t fadeSpeed = 1.0;
+	Uint32 fadeAfterTicks = HITRATE;
+	Uint32 deleteAfterTicks = 45;
+	std::string indicatorDamageFramePaths[4] = {
+		"images/ui/HUD/indicators/damageB",
+		"images/ui/HUD/indicators/damage",
+		"images/ui/HUD/indicators/damage",
+		"images/ui/HUD/indicators/damage"
+	};
+	std::string indicatorBlockedFramePaths[4] = {
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked"
+	};
+};
+DamageIndicatorSettings_t damageIndicatorSettings;
+
 std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
 	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
 real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
@@ -18893,6 +18926,92 @@ void loadHUDSettingsJSON()
 						Player::Minimap_t::compact2pVerticalBigScale = d["minimap"]["minimap_compact_2p_vertical_big_scale"].GetDouble();
 					}
 				}
+				if ( d.HasMember("damage_indicators") )
+				{
+					damageIndicatorSettings.settings.clear();
+					if ( d["damage_indicators"].HasMember("delete_after_ticks") )
+					{
+						damageIndicatorSettings.deleteAfterTicks = d["damage_indicators"]["delete_after_ticks"].GetUint();
+					}
+					if ( d["damage_indicators"].HasMember("fade_after_ticks") )
+					{
+						damageIndicatorSettings.fadeAfterTicks = d["damage_indicators"]["fade_after_ticks"].GetUint();
+					}
+					if ( d["damage_indicators"].HasMember("fade_speed") )
+					{
+						damageIndicatorSettings.fadeSpeed = d["damage_indicators"]["fade_speed"].GetDouble();
+					}
+					if ( d["damage_indicators"].HasMember("animation_on_damage") )
+					{
+						int index = 0;
+						for ( auto it = d["damage_indicators"]["animation_on_damage"].Begin(); it != d["damage_indicators"]["animation_on_damage"].End(); ++it )
+						{
+							damageIndicatorSettings.indicatorDamageFramePaths[index] = it->GetString();
+							++index;
+							if ( index >= 4 )
+							{
+								break;
+							}
+						}
+					}
+					if ( d["damage_indicators"].HasMember("animation_on_blocking") )
+					{
+						int index = 0;
+						for ( auto it = d["damage_indicators"]["animation_on_blocking"].Begin(); it != d["damage_indicators"]["animation_on_blocking"].End(); ++it )
+						{
+							damageIndicatorSettings.indicatorBlockedFramePaths[index] = it->GetString();
+							++index;
+							if ( index >= 4 )
+							{
+								break;
+							}
+						}
+					}
+					if ( d["damage_indicators"].HasMember("layout_default") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].image_size
+							= d["damage_indicators"]["layout_default"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].radius_x
+							= d["damage_indicators"]["layout_default"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].radius_y
+							= d["damage_indicators"]["layout_default"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_2p_tall") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].image_size
+							= d["damage_indicators"]["layout_2p_tall"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].radius_x
+							= d["damage_indicators"]["layout_2p_tall"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].radius_y
+							= d["damage_indicators"]["layout_2p_tall"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_2p_wide") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].image_size
+							= d["damage_indicators"]["layout_2p_wide"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].radius_x
+							= d["damage_indicators"]["layout_2p_wide"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].radius_y
+							= d["damage_indicators"]["layout_2p_wide"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_4p") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].image_size
+							= d["damage_indicators"]["layout_4p"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].radius_x
+							= d["damage_indicators"]["layout_4p"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].radius_y
+							= d["damage_indicators"]["layout_4p"]["radius_y"].GetInt();
+					}
+				}
 				if ( d.HasMember("messages") )
 				{
 					messageZoneSettings.settings.clear();
@@ -24510,6 +24629,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 const int HPMPdividerThresholdInterval = 20;
 const int kHPMPWidthReduce2pWideClippedActionPrompts = 60;
+//static ConsoleVariable<int> cvar_hpanimdebug("/hpmpanimdebug", 1);
 void Player::HUD_t::updateHPBar()
 {
 	if ( !hpFrame )
@@ -24743,8 +24863,8 @@ void Player::HUD_t::updateHPBar()
 	hpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
 	auto hpProgressEndCapFlash = hpForegroundFrame->findImage("hp img progress endcap flash");
 	hpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
-	const int numAnimationFrames = HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2;
+	const int framesPerAnimation = (HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	const int numAnimationFrames = (HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2)/* * *cvar_hpanimdebug*/;
 	if ( HPBar.flashTicks > 0 )
 	{
 		//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, HPBarFlashTicks, HPBarFlashAnimState);
@@ -24811,11 +24931,11 @@ void Player::HUD_t::updateHPBar()
 				else
 				{
 					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
-					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F04.png";
 					Uint8 r, g, b, a;
 					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
-					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit))/* / (real_t)(*cvar_hpanimdebug)*/;
 					decrement *= fpsScale;
 					a = std::max(0, (int)a - decrement);
 					hpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -25082,8 +25202,8 @@ void Player::HUD_t::updateMPBar()
 	mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
-	const int numAnimationFrames = MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2;
+	const int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	const int numAnimationFrames = (MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2)/* * *cvar_hpanimdebug*/;
 	if ( MPBar.flashTicks > 0 )
 	{
 		if ( MPBar.flashAnimState > numAnimationFrames || mpProgress->disabled )
@@ -25196,7 +25316,7 @@ void Player::HUD_t::updateMPBar()
 				else
 				{
 					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F04.png";
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
@@ -31487,4 +31607,194 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::blitDialogue
 		}
 	}
 	return dialogueTooltipSurface;
+}
+
+void handleDamageIndicatorTicks()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto& ind : DamageIndicatorHandler.indicators[i] )
+		{
+			if ( ind.ticks > 0 )
+			{
+				--ind.ticks;
+			}
+		}
+	}
+}
+
+void DamageIndicatorHandler_t::update()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto it = indicators[i].begin(); it != indicators[i].end(); )
+		{
+			it->process();
+			if ( it->expired )
+			{
+				it = indicators[i].erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+}
+void DamageIndicatorHandler_t::insert(const int player, const real_t _x, const real_t _y, const bool damaged)
+{
+	for ( auto it = indicators[player].begin(); it != indicators[player].end(); ++it )
+	{
+		if ( !it->expired && it->x == _x && it->y == _y && it->hitDealtDamage == damaged )
+		{
+			// matching, delete this one
+			indicators[player].erase(it);
+			break;
+		}
+	}
+	indicators[player].push_back(DamageIndicator_t(player));
+	auto& i = indicators[player].at(indicators[player].size() - 1);
+	i.alpha = 255.0;
+	i.ticks = damageIndicatorSettings.deleteAfterTicks;
+	i.x = _x;
+	i.y = _y;
+	i.flashTicks = ::ticks;
+	i.flashAnimState = -1;
+	i.hitDealtDamage = damaged;
+}
+
+static ConsoleVariable<int> cvar_indicatoranimdebug("/indicatoranimdebug", 1);
+
+void DamageIndicatorHandler_t::DamageIndicator_t::process()
+{
+	if ( expired )
+	{
+		return;
+	}
+	double tangent = atan2(y / 16 - cameras[player].y, x / 16 - cameras[player].x);
+	double angle = tangent - cameras[player].ang;
+	angle += 3 * PI / 2;
+	while ( angle >= PI )
+	{
+		angle -= PI * 2;
+	}
+	while ( angle < -PI )
+	{
+		angle += PI * 2;
+	}
+
+	const int framesPerAnimation = 1 * *cvar_indicatoranimdebug;
+	const int numAnimationFrames = damageIndicatorSettings.deleteAfterTicks * *cvar_indicatoranimdebug;
+	auto layout = DamageIndicatorSettings_t::LAYOUT_DEFAULT;
+	if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_4P;
+	}
+	else if ( !players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_2P_TALL;
+	}
+	else if ( players[player]->bUseCompactGUIHeight() && !players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_2P_WIDE;
+	}
+	size = damageIndicatorSettings.settings[layout].image_size;
+	auto& indicatorDamagePaths = damageIndicatorSettings.indicatorDamageFramePaths;
+	auto& indicatorBlockPaths = damageIndicatorSettings.indicatorBlockedFramePaths;
+	std::string imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+	if ( flashTicks > 0 )
+	{
+		if ( flashAnimState > numAnimationFrames )
+		{
+			flashTicks = 0;
+			flashAnimState = -1;
+			alpha = 0.0;
+		}
+		else
+		{
+			if ( ::ticks == flashTicks )
+			{
+				flashAnimState = 1;
+				flashProcessedOnTick = ::ticks;
+			}
+			else if ( (flashProcessedOnTick != ::ticks)
+				&& (::ticks > flashTicks)
+				&& (::ticks - flashTicks) % framesPerAnimation == 0 )
+			{
+				++flashAnimState;
+				flashProcessedOnTick = ::ticks;
+			}
+
+			if ( flashAnimState <= 6 )
+			{
+				alpha = 255.0;
+			}
+
+			if ( flashAnimState == 0 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+			}
+			else if ( flashAnimState >= 1 && flashAnimState <= 2 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+			}
+			else if ( flashAnimState == 3 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[2] : indicatorBlockPaths[2];
+			}
+			else if ( flashAnimState >= 4 && flashAnimState <= 5 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[1] : indicatorBlockPaths[1];
+			}
+			else if ( flashAnimState == 6 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[3] : indicatorBlockPaths[3];
+			}
+			else if ( flashAnimState >= damageIndicatorSettings.fadeAfterTicks )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+				int decrement = 20;
+				real_t fpsScale = (60.f / std::max(1U, fpsLimit)) / damageIndicatorSettings.fadeSpeed;
+				decrement *= fpsScale;
+				alpha = std::max(0, (int)alpha - decrement);
+			}
+		}
+	}
+
+	switch ( size )
+	{
+		case 3:
+			imagePath += "_3x.png";
+			break;
+		case 2:
+			imagePath += "_2x.png";
+			break;
+		case 1:
+		default:
+			imagePath += "_1x.png";
+			break;
+	}
+
+	if ( auto imgGet = Image::get(imagePath.c_str()) )
+	{
+		SDL_Rect pos;
+		pos.x = players[player]->camera_midx();
+		pos.y = players[player]->camera_midy();
+		const float factorX = (float)xres / Frame::virtualScreenX;
+		const float factorY = (float)yres / Frame::virtualScreenY;
+		pos.x += damageIndicatorSettings.settings[layout].radius_x * cos(angle) * factorX;
+		pos.y += damageIndicatorSettings.settings[layout].radius_y * sin(angle) * factorY;
+		pos.w = imgGet->getWidth() * factorX;
+		pos.h = imgGet->getHeight() * factorY;
+		if ( stats[player]->HP > 0 )
+		{
+			const SDL_Rect viewport{ 0, 0, xres, yres };
+			imgGet->drawSurfaceRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
+		}
+	}
+
+	if ( alpha <= 0 || ticks == 0 )
+	{
+		expired = true;
+	}
 }

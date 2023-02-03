@@ -6756,11 +6756,11 @@ int main(int argc, char** argv)
 				}
 				if ( !nohud )
 				{
+					DamageIndicatorHandler.update();
 					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
-							handleDamageIndicators(player);
 							players[player]->messageZone.drawMessages();
 						}
 					}
