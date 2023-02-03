@@ -4474,5 +4474,34 @@ namespace ConsoleCommands {
 		}
 #endif
 	});
+
+	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		for ( int i = SPELL_FORCEBOLT; i < NUM_SPELLS; ++i )
+		{
+			auto spell = getSpellFromID(i);
+			std::string tags;
+			for ( auto tag : ItemTooltips.spellItems[i].spellTagsStr )
+			{
+				tags += tag;
+				tags += ' ';
+			}
+			messagePlayer(clientnum, MESSAGE_DEBUG, "[%s]: Type: %s", ItemTooltips.spellItems[i].internalName.c_str(), tags.c_str());
+			castSpell(players[clientnum]->entity->getUID(),
+				spell, false, false, false);
+		}
+	});
 }
 
