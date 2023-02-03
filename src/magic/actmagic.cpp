@@ -757,8 +757,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( !skipMessage )
 						{
 							Uint32 color = makeColorRGB(255, 0, 0);
-							messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
-							youAreHitByASpell = true;
+							if ( reflection == 0 )
+							{
+								messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
+								youAreHitByASpell = true;
+							}
 						}
 						if ( hitstats )
 						{
@@ -816,6 +819,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									messagePlayer(player, MESSAGE_COMBAT, language[2475]); // but it bounces off!
 								}
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_COMBAT, language[4325]); // you reflected a spell!
 							}
 						}
 					}
@@ -1445,19 +1452,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if (hit.entity)
 					{
 						// Attempt to set the Entity on fire
-						bool wasBurning = hit.entity->flags[BURNING];
 						hit.entity->SetEntityOnFire();
 
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( hit.entity->flags[BURNING] && !wasBurning )
-							{
-								if ( hit.entity->behavior == &actPlayer )
-								{
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), language[4324]);
-								}
-							}
-
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
@@ -2372,10 +2370,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
 								}
+							}
 							if ( player >= 0 )
 							{
 								messagePlayer(player, MESSAGE_COMBAT, language[401]);

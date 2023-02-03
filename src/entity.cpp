@@ -3008,7 +3008,7 @@ void Entity::handleEffects(Stat* myStats)
 
 			for ( i = 0; i < 3; i++ )
 			{
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[623 + increasestat[i]]);
+				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[623 + increasestat[i]]);
 				switch ( increasestat[i] )
 				{
 					case STAT_STR: // STR
@@ -4227,7 +4227,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 
 				// Give the Player feedback on being hurt
-				messagePlayer(player, MESSAGE_STATUS, language[644]); // "It burns! It burns!"
+				messagePlayer(player, MESSAGE_SPAM_MISC, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
@@ -17178,6 +17178,11 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 			if ( this->getStats() == nullptr )
 			{
 				return; // The Entity was set on fire, it does not have Stats, so it is on fire for maximum duration
+			}
+
+			if ( this->behavior == &actPlayer )
+			{
+				messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), language[4324]);
 			}
 
 			// Determine decrease in time on fire based on the Entity's CON
