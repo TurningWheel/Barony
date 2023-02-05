@@ -927,7 +927,7 @@ namespace MainMenu {
 		return back_button;
 	}
 
-	static Frame* createPrompt(const char* name, bool small = true) {
+	static Frame* createPrompt(const char* name, bool issmall = true) {
 	    if (!main_menu_frame) {
 	        return nullptr;
 	    }
@@ -944,7 +944,7 @@ namespace MainMenu {
 		auto frame = dimmer->addFrame(name);
 		frame->setColor(0);
 		frame->setBorder(0);
-		if (small) {
+		if ( issmall ) {
 		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		    frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		    frame->addImage(
@@ -1345,11 +1345,11 @@ namespace MainMenu {
 	    const char* name,
 	    const char* window_text,
 	    void (*tick_callback)(Widget&),
-	    bool small = true
+	    bool issmall = true
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name, small);
+	    Frame* frame = createPrompt(name, issmall);
 	    if (!frame) {
 	        return nullptr;
 	    }
