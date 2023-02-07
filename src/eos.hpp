@@ -82,23 +82,18 @@ public:
 
 	class CrossplayAccounts_t
 	{
-		enum PromptTypes : int
-		{
-			PROMPT_CLOSED,
-			PROMPT_SETUP,
-			PROMPT_ABOUT
-		};
 	public:
 		EOS_ContinuanceToken continuanceToken = nullptr;
 		EOS_EResult connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 		EOS_EResult connectLoginCompleted = EOS_EResult::EOS_NotConfigured;
+		bool promptActive = false;
+		bool acceptedEula = false;
 
+		bool trySetupFromSettingsMenu = false;
 		bool awaitingConnectCallback = false;
 		bool awaitingCreateUserCallback = false;
 		bool awaitingAppTicketResponse = false;
 
-		bool acceptedEula = false;
-		bool trySetupFromSettingsMenu = false;
 		bool logOut = false;
 		bool autologin = false;
 
@@ -108,6 +103,7 @@ public:
 		void acceptCrossplay();
 		void denyCrossplay();
 		void viewPrivacyPolicy();
+		bool isLoggingIn();
 
 		void resetOnFailure();
 		static void retryCrossplaySetupOnFailure();
@@ -124,7 +120,7 @@ public:
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
-	bool bFriendsOnly = false; // if true the current lobby can only be found by friends
+	bool bFriendsOnly = true; // if true the current lobby can only be found by friends
 	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
@@ -778,12 +774,14 @@ public:
 			oldStatus = available;
 			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
 			EOS_Platform_SetNetworkStatus(PlatformHandle, status);
-		}
 #ifdef NINTENDO
-		if (CurrentUserInfo.isValid() && CurrentUserInfo.isLoggedIn()) {
-			CrossplayAccountManager.logOut = true;
-		}
+			if (!available) {
+				if (CurrentUserInfo.isValid() && CurrentUserInfo.isLoggedIn()) {
+					CrossplayAccountManager.logOut = true;
+				}
+			}
 #endif
+		}
 #endif
 	}
 
