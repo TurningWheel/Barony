@@ -1857,11 +1857,7 @@ void EOSFuncs::createLobby()
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
-#ifdef NINTENDO
 	CreateOptions.bPresenceEnabled = false;
-#else
-	CreateOptions.bPresenceEnabled = true;
-#endif
 	CreateOptions.bAllowInvites = true;
 	CreateOptions.BucketId = EOS_LOBBY_SEARCH_BUCKET_ID;
 	CreateOptions.bDisableHostMigration = true;
