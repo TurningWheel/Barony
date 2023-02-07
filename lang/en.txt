@@ -1871,14 +1871,10 @@ Connection denied:
 
 1378 The server is already full.#
 1379 Game version mismatch.#
-1380 Server is not running
-a saved game.#
-1381 Server is running
-a saved game.#
-1382 Client save does not match
-server save.#
-1383 Client seed does not match
-server seed.#
+1380 Lobby does not require a savegame.#
+1381 Compatible savegame required.#
+1382 Savegames do not match.#
+1383 Savegames do not match.#
 1384 Bad response from server.#
 
 1385
