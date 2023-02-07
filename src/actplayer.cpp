@@ -2917,20 +2917,28 @@ void actPlayer(Entity* my)
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_7] )
 		{
 			keystatus[SDLK_KP_7] = 0;
+			consoleCommand("/disable_controller_reconnect true");
 			consoleCommand("/splitscreen");
 		}
 		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_8] )
 		{
 			keystatus[SDLK_KP_8] = 0;
-			if ( !players[PLAYER_NUM]->inventoryUI.chestGUI.bOpen )
+			consoleCommand("/disable_controller_reconnect true");
+			consoleCommand("/splitscreen 2");
+		}
+		if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_6] )
+		{
+			keystatus[SDLK_KP_6] = 0;
+			if ( keystatus[SDLK_LALT] )
 			{
-				players[PLAYER_NUM]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
-				players[PLAYER_NUM]->inventoryUI.chestGUI.openChest();
+				consoleCommand("/split_clipped true");
 			}
 			else
 			{
-				players[PLAYER_NUM]->inventoryUI.chestGUI.closeChest();
+				consoleCommand("/split_clipped false");
+				*MainMenu::vertical_splitscreen = !*MainMenu::vertical_splitscreen;
 			}
+			consoleCommand("/split_refresh");
 		}
 	    if ( keystatus[SDLK_LCTRL] && keystatus[SDLK_KP_9] )
 	    {
@@ -3443,9 +3451,15 @@ void actPlayer(Entity* my)
 						// if items are the same, check to see if they should stack
 						if ( item2->shouldItemStack(PLAYER_NUM) )
 						{
-							if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+							if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 							{
 								// dont try to move our equipped item - it's an edge case to crash
+								if ( tempItem->appearance == item2->appearance )
+								{
+									// items are the same (incl. appearance!)
+									// if they shouldn't stack, we need to change appearance of the new item.
+									appearancesOfSimilarItems.insert(item2->appearance);
+								}
 								continue;
 							}
 
@@ -3476,29 +3490,15 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( tempItem && !appearancesOfSimilarItems.empty() )
+				if ( tempItem  )
 				{
-					Uint32 originalAppearance = tempItem->appearance;
-					int originalVariation = originalAppearance % items[tempItem->type].variations;
+					if ( !appearancesOfSimilarItems.empty() )
+					{
+						Uint32 originalAppearance = tempItem->appearance;
+						int originalVariation = originalAppearance % items[tempItem->type].variations;
 
-					int tries = 100;
-					// we need to find a unique appearance within the list.
-					tempItem->appearance = local_rng.rand();
-					if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-					{
-						// we need to match the variation for the new appearance, take the difference so new varation matches
-						int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-						if ( tempItem->appearance < change ) // underflow protection
-						{
-							tempItem->appearance += items[tempItem->type].variations;
-						}
-						tempItem->appearance -= change;
-						int newVariation = tempItem->appearance % items[tempItem->type].variations;
-						assert(newVariation == originalVariation);
-					}
-					auto it = appearancesOfSimilarItems.find(tempItem->appearance);
-					while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-					{
+						int tries = 100;
+						// we need to find a unique appearance within the list.
 						tempItem->appearance = local_rng.rand();
 						if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
 						{
@@ -3512,8 +3512,30 @@ void actPlayer(Entity* my)
 							int newVariation = tempItem->appearance % items[tempItem->type].variations;
 							assert(newVariation == originalVariation);
 						}
-						it = appearancesOfSimilarItems.find(tempItem->appearance);
-						--tries;
+						auto it = appearancesOfSimilarItems.find(tempItem->appearance);
+						while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+						{
+							tempItem->appearance = local_rng.rand();
+							if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+							{
+								// we need to match the variation for the new appearance, take the difference so new varation matches
+								int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+								if ( tempItem->appearance < change ) // underflow protection
+								{
+									tempItem->appearance += items[tempItem->type].variations;
+								}
+								tempItem->appearance -= change;
+								int newVariation = tempItem->appearance % items[tempItem->type].variations;
+								assert(newVariation == originalVariation);
+							}
+							it = appearancesOfSimilarItems.find(tempItem->appearance);
+							--tries;
+						}
+					}
+
+					if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
+					{
+						clientSendAppearanceUpdateToServer(PLAYER_NUM, tempItem, true);
 					}
 				}
 			}
@@ -3628,12 +3650,24 @@ void actPlayer(Entity* my)
 									if ( tempItem->count >= (maxStack - 1) )
 									{
 										// identified item is at max count so don't stack, abort.
-										break;
+										if ( tempItem->appearance == item2->appearance )
+										{
+											// items are the same (incl. appearance!)
+											// if they shouldn't stack, we need to change appearance of the new item.
+											appearancesOfSimilarItems.insert(item2->appearance);
+										}
+										continue;
 									}
-									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 									{
 										// dont try to move our equipped item - it's an edge case to crash
-										break;
+										if ( tempItem->appearance == item2->appearance )
+										{
+											// items are the same (incl. appearance!)
+											// if they shouldn't stack, we need to change appearance of the new item.
+											appearancesOfSimilarItems.insert(item2->appearance);
+										}
+										continue;
 									}
 									if ( item2->count >= (maxStack - 1) )
 									{
@@ -3695,9 +3729,15 @@ void actPlayer(Entity* my)
 								// if items are the same, check to see if they should stack
 								else if ( item2->shouldItemStack(PLAYER_NUM) )
 								{
-									if ( itemIsEquipped(tempItem, PLAYER_NUM) )
+									if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 									{
 										// dont try to move our equipped item - it's an edge case to crash
+										if ( tempItem->appearance == item2->appearance )
+										{
+											// items are the same (incl. appearance!)
+											// if they shouldn't stack, we need to change appearance of the new item.
+											appearancesOfSimilarItems.insert(item2->appearance);
+										}
 										continue;
 									}
 									item2->count += tempItem->count;
@@ -3797,6 +3837,11 @@ void actPlayer(Entity* my)
 									it = appearancesOfSimilarItems.find(tempItem->appearance);
 									--tries;
 								}
+
+							}
+							if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
+							{
+								clientSendAppearanceUpdateToServer(PLAYER_NUM, tempItem, true);
 							}
 						}
 					}
@@ -5778,7 +5823,7 @@ void actPlayer(Entity* my)
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] && !intro )
 				{
 					// periodically set the telepath rendering flag.
 					mapCreature->monsterEntityRenderAsTelepath = 1;

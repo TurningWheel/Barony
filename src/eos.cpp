@@ -119,10 +119,12 @@ void EOS_CALL EOSFuncs::ConnectLoginCompleteCallback(const EOS_Connect_LoginCall
 		EOSFuncs::logInfo("Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 
 		// load achievement data
+#ifndef LOCAL_ACHIEVEMENTS
 		if ( !EOS.Achievements.bAchievementsInit )
 		{
 			EOS.loadAchievementData();
 		}
+#endif
 
 	    // cache friend data
         EOS.queryFriends();
@@ -176,10 +178,12 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 #endif
 #ifdef NINTENDO
 		// load achievement data
+#ifndef LOCAL_ACHIEVEMENTS
 		if ( !EOS.Achievements.bAchievementsInit )
 		{
 			EOS.loadAchievementData();
 		}
+#endif
 #endif
 		EOSFuncs::logInfo("Crossplay Connect Login Callback success: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 	}
@@ -224,10 +228,12 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 		EOSFuncs::logInfo("OnCreateUserCallback success, new user: %s", EOS.CurrentUserInfo.getProductUserIdStr());
 
 		// load achievement data
+#ifndef LOCAL_ACHIEVEMENTS
 		if ( !EOS.Achievements.bAchievementsInit )
 		{
 			EOS.loadAchievementData();
 		}
+#endif
 
 	    // cache friend data
         EOS.queryFriends();

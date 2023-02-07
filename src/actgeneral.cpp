@@ -621,6 +621,38 @@ void actColliderDecoration(Entity* my)
 		return;
 	}
 	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
+	if ( multiplayer != CLIENT )
+	{
+		bool checkWallDeletion = false;
+		if ( my->colliderHasCollision == 1 )
+		{
+			if ( my->sprite == 1203 || my->sprite == 1204 )
+			{
+				if ( my->z > -8.51 && my->z < -8.49 )
+				{
+					checkWallDeletion = true;
+				}
+			}
+			else if ( my->sprite == 1197 || my->sprite == 1198 )
+			{
+				if ( my->z > 7.49 || my->z < 7.51 )
+				{
+					checkWallDeletion = true;
+				}
+			}
+		}
+		if ( checkWallDeletion )
+		{
+			int x = static_cast<int>(my->x) >> 4;
+			int y = static_cast<int>(my->y) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "[Collider]: Destroyed self at x: %d, y: %d", x, y);
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
 }
 
 void actFloorDecoration(Entity* my)

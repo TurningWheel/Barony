@@ -220,6 +220,7 @@ public:
 	real_t& monsterKnockbackTangentDir; //fskill[11]
 	real_t& playerStrafeVelocity; //fskill[12]
 	real_t& playerStrafeDir; //fskill[13]
+	real_t& monsterSpecialAttackUnequipSafeguard; //fskill[14]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
@@ -777,7 +778,7 @@ public:
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
 	// monster special attack handler, returns true if monster should attack after calling this function.
-	bool handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	bool handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist, bool forceDeinit);
 	// monster attack handler
 	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
@@ -963,7 +964,7 @@ public:
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
-	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
+	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
 	bool bEntityTooltipRequiresButtonHeld() const;

@@ -595,6 +595,7 @@ public:
 		bool animPromptMoveLeft = false;
 		real_t animInvalidAction = 0.0;
 		Uint32 animInvalidActionTicks = 0;
+		bool drawerJustifyInverted = false;
 		enum InvalidActionFeedback_t : int
 		{
 			INVALID_ACTION_NONE,
@@ -748,6 +749,7 @@ public:
 		bool bDrawerOpen = false;
 		Uint32 inscribeSuccessTicks = 0;
 		std::string inscribeSuccessName = "";
+		bool drawerJustifyInverted = false;
 
 		real_t scrollPercent = 0.0;
 		real_t scrollInertia = 0.0;

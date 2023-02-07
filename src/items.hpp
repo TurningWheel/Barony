@@ -463,14 +463,14 @@ public:
 	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 
-	Sint32 potionGetEffectHealth() const;
-	Sint32 potionGetEffectDamage() const;
-	Sint32 potionGetEffectDurationMinimum() const;
-	Sint32 potionGetEffectDurationMaximum() const;
-	Sint32 potionGetEffectDurationRandom() const;
-	Sint32 potionGetCursedEffectDurationMinimum() const;
-	Sint32 potionGetCursedEffectDurationMaximum() const;
-	Sint32 potionGetCursedEffectDurationRandom() const;
+	Sint32 potionGetEffectHealth(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDamage(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetEffectDurationRandom(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const;
+	Sint32 potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const;
 
 	Sint32 getWeight() const;
 
@@ -634,6 +634,7 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* item, bool checkI
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
 EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
 enum ItemStackResults : int
 {
@@ -701,7 +702,7 @@ static const int THROWN_GEM_MAX_STACK_QTY = 9;
 /*
  * Only compares items of the same type.
  */
-int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
+int itemCompare(const Item* item1, const Item* item2, bool checkAppearance, bool comparisonUsedForStacking = true);
 
 /*
  * Returns true if potion is harmful to the player.

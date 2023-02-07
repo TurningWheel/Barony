@@ -931,7 +931,7 @@ SDL_Surface* itemSprite(Item* const item)
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance)
+int itemCompare(const Item* const item1, const Item* const item2, bool checkAppearance, bool comparisonUsedForStacking)
 {
 	Sint32 model1 = 0;
 	Sint32 model2 = 0;
@@ -981,7 +981,10 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	}
 	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
-		return 1; // these items do not stack
+		if ( comparisonUsedForStacking )
+		{
+			return 1; // these items do not stack
+		}
 	}
 
 	if (item1->identified != item2->identified)
@@ -2393,7 +2396,14 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			}
 			else
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				if ( GenericGUI[player].featherGUI.bOpen && GenericGUI[player].scribingToolItem == item )
+				{
+					GenericGUI[player].closeGUI();
+				}
+				else
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_SCRIBING, item);
+				}
 			}
 			break;
 		case FOOD_BREAD:
@@ -3644,7 +3654,7 @@ bool Item::doesPotionHarmAlliesOnThrown() const
 	return true;
 }
 
-Sint32 Item::potionGetEffectHealth() const
+Sint32 Item::potionGetEffectHealth(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3694,7 +3704,7 @@ Sint32 Item::potionGetEffectHealth() const
 
 	return heal;
 }
-Sint32 Item::potionGetEffectDamage() const
+Sint32 Item::potionGetEffectDamage(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3722,7 +3732,7 @@ Sint32 Item::potionGetEffectDamage() const
 	return damage;
 }
 
-Sint32 Item::potionGetEffectDurationMinimum() const
+Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3736,7 +3746,14 @@ Sint32 Item::potionGetEffectDurationMinimum() const
 		case POTION_WATER:
 			break;
 		case POTION_BOOZE:
-			duration = 2000;
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 7500; // 2.5 mins
+			}
+			else
+			{
+				duration = 2000;
+			}
 			break;
 		case POTION_JUICE:
 			break;
@@ -3788,7 +3805,7 @@ Sint32 Item::potionGetEffectDurationMinimum() const
 	return duration;
 }
 
-Sint32 Item::potionGetEffectDurationMaximum() const
+Sint32 Item::potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3802,7 +3819,14 @@ Sint32 Item::potionGetEffectDurationMaximum() const
 		case POTION_WATER:
 			break;
 		case POTION_BOOZE:
-			duration = 3000;
+			if ( myStats && myStats->type == GOATMAN )
+			{
+				duration = 10500; // 3.5 mins
+			}
+			else
+			{
+				duration = 3000;
+			}
 			break;
 		case POTION_JUICE:
 			break;
@@ -3854,13 +3878,13 @@ Sint32 Item::potionGetEffectDurationMaximum() const
 	return duration;
 }
 
-Sint32 Item::potionGetEffectDurationRandom() const
+Sint32 Item::potionGetEffectDurationRandom(Entity* my, Stat* myStats) const
 {
-	Sint32 range = std::max(1, potionGetEffectDurationMaximum() - potionGetEffectDurationMinimum());
-	return potionGetEffectDurationMinimum() + (local_rng.rand() % (range));
+	Sint32 range = std::max(1, potionGetEffectDurationMaximum(my, myStats) - potionGetEffectDurationMinimum(my, myStats));
+	return potionGetEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
-Sint32 Item::potionGetCursedEffectDurationMinimum() const
+Sint32 Item::potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3924,7 +3948,7 @@ Sint32 Item::potionGetCursedEffectDurationMinimum() const
 	return duration;
 }
 
-Sint32 Item::potionGetCursedEffectDurationMaximum() const
+Sint32 Item::potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const
 {
 	if ( itemCategory(this) != POTION )
 	{
@@ -3988,10 +4012,10 @@ Sint32 Item::potionGetCursedEffectDurationMaximum() const
 	return duration;
 }
 
-Sint32 Item::potionGetCursedEffectDurationRandom() const
+Sint32 Item::potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const
 {
-	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum() - potionGetCursedEffectDurationMinimum());
-	return potionGetCursedEffectDurationMinimum() + (local_rng.rand() % (range));
+	Sint32 range = std::max(1, potionGetCursedEffectDurationMaximum(my, myStats) - potionGetCursedEffectDurationMinimum(my, myStats));
+	return potionGetCursedEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
 Sint32 Item::getWeight() const
@@ -5741,6 +5765,29 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 			equipResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 		}
 	}
+}
+
+void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify)
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !item || !itemIsEquipped(item, player) || items[item->type].item_slot == NO_EQUIP )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "EQUA");
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = items[item->type].item_slot;
+	net_packet->data[27] = onIdentify;
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,

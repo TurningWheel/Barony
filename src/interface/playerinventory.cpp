@@ -6757,7 +6757,8 @@ void Player::Inventory_t::updateInventory()
 	appraisal.updateAppraisalAnim();
 
 	bool bCompactView = false;
-	if ( (keystatus[SDLK_y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight() )
+	if ( (keystatus[SDLK_y] && enableDebugKeys) || players[player]->bUseCompactGUIHeight()
+		|| players[player]->bUseCompactGUIWidth() )
 	{
 		bCompactView = true;
 	}
@@ -6774,9 +6775,10 @@ void Player::Inventory_t::updateInventory()
 		hideAndExit = true;
 	}
 
-	if ( (!chestFrame->isDisabled() && chestGUI.bOpen)
+	if ( !this->player.bAlignGUINextToInventoryCompact() &&
+		((!chestFrame->isDisabled() && chestGUI.bOpen)
 		|| (GenericGUI[player].isGUIOpen() && !(GenericGUI[player].itemfxGUI.bOpen))
-		|| shopGUI.bOpen )
+		|| shopGUI.bOpen) )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animPaperDollHide)) / 2.0;
@@ -8140,6 +8142,10 @@ void Player::Inventory_t::updateInventory()
 						{
 							justify = PANEL_JUSTIFY_LEFT;
 						}
+						if ( this->player.bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+						{
+							justify = (justify == PANEL_JUSTIFY_RIGHT) ? PANEL_JUSTIFY_LEFT : PANEL_JUSTIFY_RIGHT;
+						}
 					}
 					if ( !bCompactView )
 					{
@@ -8745,7 +8751,19 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems() )
 						{
-							if ( true /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
+							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							{
+								// need to unequip
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+								players[player]->paperDoll.updateSlots();
+								if ( players[player]->paperDoll.isItemOnDoll(*item) )
+								{
+									// couldn't unequip, no more actions
+									Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
+								}
+							}
+
+							if ( Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -9657,8 +9675,8 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 	else if ( item->type == TOOL_TINKERING_KIT )
 	{
-		options.push_back(PROMPT_EQUIP);
 		options.push_back(PROMPT_TINKER);
+		options.push_back(PROMPT_EQUIP);
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}
@@ -9799,12 +9817,17 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				it = options.erase(it);
 				continue;
 			}
+			if ( (tinkerOpen || featherOpen) && *it == PROMPT_DROP ) // no drop items in feather or tinker as they have inventory hacks
+			{
+				it = options.erase(it);
+				continue;
+			}
 			if ( alembicOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;
 			}
-			if ( featherOpen && GenericGUI[player].featherGUI.bDrawerOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
+			if ( featherOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;

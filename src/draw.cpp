@@ -1465,6 +1465,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         
         const int posx = (int)camera.x;
         const int posy = (int)camera.y; // integer coordinates
+		if ( posx == 0 && posy == 0 ) { return result; } // camera not initialized
         const real_t fracx = camera.x - posx;
         const real_t fracy = camera.y - posy; // fraction coordinates
 

@@ -421,7 +421,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
-			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -548,7 +548,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				hasamulet = true;
 			}
 			damage /= (1 + (int)resistance);
-			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -999,7 +999,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
-			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
+			damage *= Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 
 			if ( parent )
 			{
@@ -1650,6 +1650,10 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	            DUMMYBOT
 	        };
 			typesToSkip.insert(targetStats->type);
+			if ( target->monsterAllyGetPlayerLeader() )
+			{
+				typesToSkip.insert(SHADOW);
+			}
 
 			std::vector<Monster> possibleTypes;
 			for ( int i = 0; i < NUMMONSTERS; ++i )

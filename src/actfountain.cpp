@@ -190,12 +190,12 @@ void actFountain(Entity* my)
 								break;
 							case 4:
 							case 5:
+							case 6:
 								potionDropQuantity = 2;
 								break;
-							case 6:
+							case 7:
 								potionDropQuantity = 3;
 								break;
-							case 7:
 							case 8:
 							case 9:
 								// nothing

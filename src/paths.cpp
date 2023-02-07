@@ -149,6 +149,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 		return 1;
 	}
 
+	// entities not passable during this stage normally, hell generation makes entry gates passable
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
@@ -158,8 +159,8 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 		}
 		if ( entity->sprite == 14		// fountain
 			|| entity->sprite == 15		// sink
-			|| entity->sprite == 19		// gate
-			|| entity->sprite == 20		// gate 2
+			|| (entity->sprite == 19 && !entity->flags[PASSABLE]) // gate
+			|| (entity->sprite == 20 && !entity->flags[PASSABLE]) // gate 2
 			|| entity->sprite == 39		// head stone
 			|| entity->sprite == 44		// boulder?
 			|| entity->sprite == 106 	// power crystal

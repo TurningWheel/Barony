@@ -1269,14 +1269,13 @@ int Stat::getPassiveShieldBonus(bool checkShield) const
 	}
 }
 
-bool statusEffectRemovedByCureAilment(const int effect)
+bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 {
 	switch ( effect )
 	{
 		case EFF_ASLEEP:
 		case EFF_POISONED:
 		case EFF_CONFUSED:
-		case EFF_DRUNK:
 		case EFF_BLIND:
 		case EFF_GREASY:
 		case EFF_MESSY:
@@ -1288,6 +1287,17 @@ bool statusEffectRemovedByCureAilment(const int effect)
 		case EFF_FEAR:
 		case EFF_DISORIENTED:
 			return true;
+			break;
+		case EFF_DRUNK:
+			if ( this->type == GOATMAN
+				|| (my && my->behavior == &actPlayer 
+					&& playerRace == RACE_GOATMAN && appearance == 0) )
+			{
+				return false;
+			}
+			return true;
+			break;
+		default:
 			break;
 	}
 	return false;

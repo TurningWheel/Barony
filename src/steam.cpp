@@ -31,6 +31,7 @@
 #endif
 
 #define STEAMDEBUG
+//#define DEBUG_ACHIEVEMENTS
 
 #ifdef STEAMWORKS
 
@@ -826,9 +827,13 @@ void steamAchievement(const char* achName)
 		SteamUserStats()->SetAchievement(achName);
 		SteamUserStats()->StoreStats();
 #else
-#ifdef USE_EOS
+
+#ifdef LOCAL_ACHIEVEMENTS
+		LocalAchievements.updateAchievement(achName, true);
+#elif USE_EOS
 		EOS.unlockAchievement(achName);
 #endif
+
 #endif
 		achievementUnlockedLookup.insert(std::string(achName));
 		achievementUnlockTime.emplace(std::make_pair(std::string(achName), time(nullptr)));
@@ -1130,9 +1135,13 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 #ifdef STEAMWORKS
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
 #else
-#ifdef USE_EOS
+
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements.updateStatistic(statisticNum, g_SteamStats[statisticNum].m_iValue);
+#elif USE_EOS
 	EOS.ingestStat(statisticNum, g_SteamStats[statisticNum].m_iValue);
 #endif
+
 #endif
 	if ( indicateProgress )
 	{
@@ -1206,7 +1215,7 @@ void indicateAchievementProgressAndUnlock(const char* achName, int currentValue,
 {
 #ifdef STEAMWORKS
 	SteamUserStats()->IndicateAchievementProgress(achName, currentValue, maxValue);
-#elif defined USE_EOS
+#elif (defined USE_EOS || defined LOCAL_ACHIEVEMENTS)
 	UIToastNotificationManager.createStatisticUpdateNotification(achName, currentValue, maxValue);
 #endif
 	if ( currentValue == maxValue )
@@ -1217,7 +1226,7 @@ void indicateAchievementProgressAndUnlock(const char* achName, int currentValue,
 
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 {
-#if (!defined STEAMWORKS && !defined USE_EOS)
+#if (!defined STEAMWORKS && !defined USE_EOS && !defined LOCAL_ACHIEVEMENTS)
 	return;
 #else
 

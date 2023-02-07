@@ -142,6 +142,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterKnockbackTangentDir(fskill[11]),
 	playerStrafeVelocity(fskill[12]),
 	playerStrafeDir(fskill[13]),
+	monsterSpecialAttackUnequipSafeguard(fskill[14]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -4644,6 +4645,7 @@ void Entity::handleEffects(Stat* myStats)
 		setEffect(EFF_TELEPATH, true, 60, true);
 	}
 
+	bool freeAction = false;
 	if ( player >= 0
 		&& myStats->mask != nullptr
 		&& (myStats->mask->type == TOOL_BLINDFOLD || myStats->mask->type == TOOL_BLINDFOLD_FOCUS || myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
@@ -4652,31 +4654,41 @@ void Entity::handleEffects(Stat* myStats)
 		setEffect(EFF_BLIND, true, 60, true);
 		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
-			bool cured = false;
-			if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_PARALYZED] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( myStats->EFFECTS_TIMERS[EFF_WEBBED] > 0 )
-			{
-				cured = true;
-				myStats->EFFECTS_TIMERS[EFF_WEBBED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
-			}
-			if ( cured )
-			{
-				playSoundEntity(this, 168, 128);
-			}
+			freeAction = true;
+		}
+	}
+
+	if ( ticks % 45 == 0 && myStats->type == GOATMAN && myStats->EFFECTS[EFF_DRUNK] )
+	{
+		freeAction = true;
+	}
+
+	if ( freeAction )
+	{
+		bool cured = false;
+		if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_PARALYZED] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_SLOW] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_SLOW] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( myStats->EFFECTS_TIMERS[EFF_WEBBED] > 0 )
+		{
+			cured = true;
+			myStats->EFFECTS_TIMERS[EFF_WEBBED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+		}
+		if ( cured )
+		{
+			playSoundEntity(this, 168, 128);
 		}
 	}
 
@@ -5050,17 +5062,6 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR--;
 		}
 	}
-	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
-	{
-		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-		{
-			STR += 3; // player cursed vampiric bonus
-		}
-		else
-		{
-			STR += 5;
-		}
-	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
@@ -5083,6 +5084,25 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
+	{
+		STR += 8;
+	}
+	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+		{
+			STR += 3; // player cursed vampiric bonus
+		}
+		else
+		{
+			STR += (std::max(5, STR / 4));
+		}
+	}
+	if ( entitystats->EFFECTS[EFF_POTION_STR] )
+	{
+		STR += (std::max(5, STR / 4));
+	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
 		switch ( entitystats->type )
@@ -5090,25 +5110,17 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			case GOATMAN:
 				if ( my && my->behavior == &actMonster )
 				{
-					STR += 10; //Goatman love booze.
+					STR += std::max(10, static_cast<int>(STR * 0.25)); //Goatman love booze.
 				}
 				else if ( my && my->behavior == &actPlayer )
 				{
-					STR += 4;
+					STR += std::max(4, static_cast<int>(STR * 0.25));
 				}
 				break;
 			default:
 				++STR;
 				break;
 		}
-	}
-	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
-	{
-		STR += 8;
-	}
-	if ( entitystats->EFFECTS[EFF_POTION_STR] )
-	{
-		STR += 5;
 	}
 	return STR;
 }
@@ -5194,6 +5206,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			if ( my && entitystats->type == VAMPIRE && my->behavior == &actMonster )
 			{
 				DEX += 3; // monster vampires
+			}
+			if ( my && my->behavior == &actPlayer )
+			{
+				DEX += (std::max(0, DEX / 4));
 			}
 		}
 	}
@@ -5296,15 +5312,8 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		switch ( entitystats->type )
 		{
 			case GOATMAN:
-			{
-				DEX -= 2;
-				int minusDex = DEX;
-				if ( minusDex > 0 )
-				{
-					DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
-				}
-			}
-			break;
+				DEX -= std::max(2, static_cast<int>(DEX * 0.25));
+				break;
 			default:
 				--DEX;
 				break;
@@ -5433,6 +5442,10 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += 8;
 	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && entitystats->type == GOATMAN )
+	{
+		CON += std::max(4, static_cast<int>(CON * 0.25));
+	}
 	return CON;
 }
 
@@ -5532,13 +5545,13 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 			INT += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
 		}
 	}
-	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
-	{
-		INT -= 8;
-	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
 	{
 		INT += 8;
+	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
+	{
+		INT -= std::max(8, static_cast<int>(INT * 0.25));
 	}
 	return INT;
 }
@@ -5692,7 +5705,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->EFFECTS[EFF_POTION_STR] )
 	{
-		PER -= 5;
+		PER -= std::max(5, PER / 2);
 	}
 	return PER;
 }
@@ -5771,7 +5784,7 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
-		CHR += 4;
+		CHR += std::max(4, static_cast<int>(CHR * .25));
 	}
 	return CHR;
 }
@@ -6251,7 +6264,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Stat* tmpStats = tmpEntity->getStats();
 						if ( tmpStats )
 						{
-							int explodeDmg = (10 + local_rng.rand() % 10 + myStats->LVL) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
+							int explodeDmg = (10 + local_rng.rand() % 10 + myStats->LVL) * Entity::getDamageTableMultiplier(tmpEntity, *tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 							Entity* gib = spawnGib(tmpEntity);
 							serverSpawnGibForClient(gib);
 							if ( tmpEntity->behavior == &actPlayer )
@@ -7566,16 +7579,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 				real_t weaponMultipliers = 0.0;
 				if ( weaponskill == PRO_UNARMED )
 				{
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_UNARMED);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_UNARMED);
 				}
 				else if ( weaponskill == PRO_RANGED )
 				{
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_RANGED);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_RANGED);
 				}
 				else if ( weaponskill >= 0 )
 				{
 					DamageTableType dmgType = static_cast<DamageTableType>(weaponskill - PRO_SWORD);
-					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, dmgType);
+					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, dmgType);
 				}
 
 				bool dyrnwynSmite = false;
@@ -7809,7 +7822,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
 							{
-								damage *= amount; // Parashu sometimes multiplier damage
+								if ( !shapeshifted )
+								{
+									damage *= amount; // Parashu sometimes multiplier damage
+								}
 								parashuProc = true;
 							}
 						}
@@ -9720,7 +9736,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = (40 + myStats->HP) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * Entity::getDamageTableMultiplier(tmpEntity, *tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
@@ -9944,39 +9960,41 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 					{
-						magicDig(this, nullptr, 0, 0);
-						playSoundPos(hit.x, hit.y, 67, 128); // bust wall
-						if ( player >= 0 && myStats->type == TROLL )
+						if ( magicDig(this, nullptr, 0, 0) )
 						{
-							serverUpdatePlayerGameplayStats(player, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_BREAK_WALL);
-						}
-						for ( int c = 0; c < 5; c++ )
-						{
-							Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
-							entity->sizex = 1;
-							entity->sizey = 1;
-							entity->x = hit.x + (-4 + local_rng.rand() % 9);
-							entity->y = hit.y + (-4 + local_rng.rand() % 9);
-							entity->z = 7.5;
-							entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
-							entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-
-							entity->vel_x = 0.2 * cos(entity->yaw);
-							entity->vel_y = 0.2 * sin(entity->yaw);
-							entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
-
-							entity->skill[0] = 50; // particle life
-							entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
-
-							entity->behavior = &actParticleRock;
-							entity->flags[PASSABLE] = true;
-							entity->flags[NOUPDATE] = true;
-							entity->flags[UNCLICKABLE] = true;
-							if ( multiplayer != CLIENT )
+							playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+							if ( player >= 0 && myStats->type == TROLL )
 							{
-								entity_uids--;
+								serverUpdatePlayerGameplayStats(player, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_BREAK_WALL);
 							}
-							entity->setUID(-3);
+							for ( int c = 0; c < 5; c++ )
+							{
+								Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
+								entity->sizex = 1;
+								entity->sizey = 1;
+								entity->x = hit.x + (-4 + local_rng.rand() % 9);
+								entity->y = hit.y + (-4 + local_rng.rand() % 9);
+								entity->z = 7.5;
+								entity->yaw = c * 2 * PI / 5;//(local_rng.rand() % 360) * PI / 180.0;
+								entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+
+								entity->vel_x = 0.2 * cos(entity->yaw);
+								entity->vel_y = 0.2 * sin(entity->yaw);
+								entity->vel_z = 3;// 0.25 - (local_rng.rand() % 5) / 10.0;
+
+								entity->skill[0] = 50; // particle life
+								entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+								entity->behavior = &actParticleRock;
+								entity->flags[PASSABLE] = true;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[UNCLICKABLE] = true;
+								if ( multiplayer != CLIENT )
+								{
+									entity_uids--;
+								}
+								entity->setUID(-3);
+							}
 						}
 					}
 					else
@@ -9991,10 +10009,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
 							bool degradePickaxe = true;
-							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+							if ( MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = makeColorRGB(255, 0, 255);
-								messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+								if ( this->behavior == &actPlayer )
+								{
+									messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+								}
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
@@ -10004,6 +10025,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// no effect for lava/water tiles.
 								degradePickaxe = false;
+							}
+							else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
+							{
+								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+								messagePlayer(player, MESSAGE_HINT, language[706]);
 							}
 							else
 							{
@@ -10087,7 +10113,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 							}
-
 						}
 						else
 						{
@@ -14844,7 +14869,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
 						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
 				}
-				if (target.behavior == &actPlayer)
+				if (target.behavior == &actPlayer && targetStats->type != HUMAN && targetStats->type != AUTOMATON )
 				{
 					steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 				}
@@ -19435,9 +19460,10 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 	return static_cast<Sint32>(1000 * manaPointPercentage);
 }
 
-real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageType)
+real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType)
 {
 	real_t damageMultiplier = damagetables[myStats.type][damageType];
+	real_t bonus = 0.0;
 	if ( myStats.EFFECTS[EFF_SHADOW_TAGGED] )
 	{
 		if ( myStats.type == LICH || myStats.type == LICH_FIRE || myStats.type == LICH_ICE
@@ -19451,7 +19477,11 @@ real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageTyp
 		}
 	}
 	//messagePlayer(0, "%f", damageMultiplier);
-	return damageMultiplier;
+	if ( myStats.type == GOATMAN && myStats.EFFECTS[EFF_DRUNK] )
+	{
+		bonus = -.2;
+	}
+	return std::max(0.0, damageMultiplier + bonus);
 }
 
 void Entity::createWorldUITooltip()

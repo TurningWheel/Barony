@@ -510,7 +510,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	int oldHP = stat->HP;
 	if ( stat )
 	{
-		damage *= triggered->getDamageTableMultiplier(*stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
+		damage *= Entity::getDamageTableMultiplier(triggered, *stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
 	}
 	bool wasAsleep = false;
 	if ( stat )

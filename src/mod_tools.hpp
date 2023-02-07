@@ -3094,4 +3094,27 @@ struct ClassHotbarConfig_t
 	static void writeToFile(HotbarConfigType fileWriteType, HotbarConfigWriteMode writeMode);
 	static void init();
 };
+
+struct LocalAchievements_t
+{
+	struct Achievement_t
+	{
+		std::string name;
+		bool unlocked = false;
+		int64_t unlockTime = 0;
+	};
+	struct Statistic_t
+	{
+		std::string name;
+		int value = 0;
+	};
+	std::map<std::string, Achievement_t> achievements;
+	std::map<int, Statistic_t> statistics;
+	static void readFromFile();
+	static void writeToFile();
+	static void init();
+	void updateAchievement(const char* name, const bool unlocked);
+	void updateStatistic(const int stat_num, const int value);
+};
+extern LocalAchievements_t LocalAchievements;
 #endif // !EDITOR

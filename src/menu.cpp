@@ -10147,6 +10147,10 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements_t::writeToFile();
+#endif
+
 	// kick off the main loop!
 	pauseGame(1, 0);
 	loading = false;
@@ -10680,6 +10684,10 @@ void doEndgame(bool saveHighscore) {
 			EOS.leaveLobby();
 		}
 	}
+#endif
+
+#ifdef LOCAL_ACHIEVEMENTS
+	LocalAchievements.writeToFile();
 #endif
 }
 

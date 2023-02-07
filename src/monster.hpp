@@ -1007,6 +1007,7 @@ static const int SHADOW_TELEPORT_ONLY = 2;
 //--Generic
 static const int MONSTER_SPELLCAST_GENERIC = 100;
 static const int MONSTER_SPELLCAST_GENERIC2 = 101;
+static const int MONSTER_SPECIAL_SAFEGUARD_TIMER_BASE = 0;
 
 //--Lich Attacks--
 static const int LICH_ATK_VERTICAL_SINGLE = 0;
@@ -1121,7 +1122,7 @@ public:
 	PlayerRaceHostility_t* getPlayerHostility(const int player, Monster overrideType = NOTHING);
 	void serverSendClientUpdate(const bool force = false);
 	void reset();
-	void resetPlayerHostility(const int player);
+	void resetPlayerHostility(const int player, bool clearAll = false);
 	ShopkeeperPlayerHostility_t();
 	bool isPlayerEnemy(const int player);
 	void setWantedLevel(PlayerRaceHostility_t& h, WantedLevel wantedLevel, Entity* shopkeeper, bool primaryPlayerCheck);
