@@ -2741,7 +2741,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			if (!victory)
 			{
 				printlog("The remote server has shut down.\n");
-				MainMenu::disconnectedFromServer("The remote host has shutdown.");
+				MainMenu::disconnectedFromServer("The host player\nhas ended the game.");
 			}
 		}
 	}},

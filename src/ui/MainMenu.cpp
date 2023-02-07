@@ -1040,6 +1040,14 @@ namespace MainMenu {
 		field->setWidgetBack("cancel");
 		field->setWidgetDown("okay");
 		field->select();
+		field->setTickCallback([](Widget& widget) {
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selectedWidget) {
+				auto field = static_cast<Field*>(&widget);
+				field->select();
+			}
+			});
 
 		auto okay = frame->addButton("okay");
 		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
@@ -1131,6 +1139,14 @@ namespace MainMenu {
 		okay->setWidgetBack("cancel");
 		okay->setCallback(okay_callback);
 		okay->select();
+		okay->setTickCallback([](Widget& widget) {
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selectedWidget) {
+				auto button = static_cast<Button*>(&widget);
+				button->select();
+			}
+			});
 
 		auto cancel = frame->addButton("cancel");
 		cancel->setSize(SDL_Rect{leftRed ? 196 : 188, 78, rightRed ? 130 : 108, 52});
@@ -1234,6 +1250,14 @@ namespace MainMenu {
 		auto selected = frame->findButton("option2");
 		if (selected) {
 		    selected->select();
+			selected->setTickCallback([](Widget& widget){
+				assert(main_menu_frame);
+				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+				if (!selectedWidget) {
+					auto button = static_cast<Button*>(&widget);
+					button->select();
+				}
+				});
 		}
 
 		return frame;
@@ -1280,6 +1304,14 @@ namespace MainMenu {
 		cancel->setCallback(cancel_callback);
 		cancel->setWidgetBack("cancel");
 		cancel->select();
+		cancel->setTickCallback([](Widget& widget) {
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selectedWidget) {
+				auto button = static_cast<Button*>(&widget);
+				button->select();
+			}
+			});
 
 		return frame;
 	}
@@ -1315,6 +1347,14 @@ namespace MainMenu {
 		okay->setText(okay_text);
 		okay->setCallback(okay_callback);
 		okay->select();
+		okay->setTickCallback([](Widget& widget) {
+			assert(main_menu_frame);
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if (!selectedWidget) {
+				auto button = static_cast<Button*>(&widget);
+				button->select();
+			}
+			});
 
 		return frame;
 	}
@@ -1381,6 +1421,16 @@ namespace MainMenu {
             });
     };
 
+	static void systemErrorPrompt(const char* str) {
+#ifdef NINTENDO
+		char buf[1024];
+		snprintf(buf, sizeof(buf), "%s\n\nPlease try again later.", str);
+		nxErrorPrompt(str, buf, 22222);
+#else
+		connectionErrorPrompt(str);
+#endif
+	}
+
     static void disconnectPrompt(const char* text) {
         errorPrompt(
             text,
@@ -1394,6 +1444,13 @@ namespace MainMenu {
     }
 
     static void openDLCPrompt(int which) {
+#ifdef NINTENDO
+		// For now, DLC is disabled for the 1.0 build.
+		// This is because we can't setup store pages for our DLC yet,
+		// So this feature simply won't pass lot-check until later.
+		soundError();
+		return;
+#else
 		static int dlcPromptIndex;
 		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
@@ -1517,6 +1574,7 @@ namespace MainMenu {
                 soundCancel();
                 closeTextField();
             });
+#endif
 #endif
     }
 
@@ -1646,6 +1704,134 @@ namespace MainMenu {
 		sliderRight->ontop = true;
 
 		return window;
+	}
+
+/******************************************************************************/
+
+	static bool isConnectedToEpic() {
+#ifdef USE_EOS
+		return EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid();
+#else
+		return false;
+#endif
+	}
+
+	static void logoutOfEpic() {
+#ifdef USE_EOS
+		LobbyHandler.crossplayEnabled = false;
+		EOS.CrossplayAccountManager.logOut = true;
+#endif
+	}
+
+	typedef void (*LoginCallback)(bool);
+	static void loginToEpic(LoginCallback callback) {
+		static LoginCallback cb;
+		cb = callback;
+#ifndef USE_EOS
+		if (cb) {
+			cb(false);
+		}
+#else
+#ifdef NINTENDO
+		if (isConnectedToEpic()) {
+			if (cb) {
+				cb(true);
+			}
+		} else {
+			static bool attemptedConnection;
+			attemptedConnection = false;
+			nxConnectToNetwork();
+			cancellablePrompt("connect_eos_prompt", "Connecting\n...", "Cancel",
+				[](Widget& widget) {
+				const char* str;
+				auto part = ticks % TICKS_PER_SECOND;
+				auto text = static_cast<Field*>(&widget);
+				if (part < TICKS_PER_SECOND / 5) {
+					str = "Connecting\n.";
+				} else if (part < 2 * TICKS_PER_SECOND / 5) {
+					str = "Connecting\n..";
+				} else if (part < 3 * TICKS_PER_SECOND / 5) {
+					str = "Connecting\n...";
+				} else if (part < 4 * TICKS_PER_SECOND / 5) {
+					str = "Connecting\n....";
+				} else {
+					str = "Connecting\n.....";
+				}
+				text->setText(str);
+
+				if (nxConnectingToNetwork()) {
+					// wait for NX connection to finish
+					return;
+				}
+				else {
+					if (nxConnectedToNetwork()) {
+						if (isConnectedToEpic()) {
+							printlog("[NX] successfully logged into EOS");
+							closePrompt("connect_eos_prompt");
+							if (cb) {
+								cb(true);
+							}
+						}
+						else {
+							if (EOS.CrossplayAccountManager.isLoggingIn()) {
+								// wait for EOS login to finish
+								return;
+							} else {
+								if (!attemptedConnection) {
+									attemptedConnection = true;
+
+									char buf[32];
+									snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
+									setUsername(buf);
+
+									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+									EOS.StatGlobalManager.queryGlobalStatUser();
+									printlog("[NX] logging into EOS");
+								} else {
+									logoutOfEpic();
+									printlog("[NX] EOS login failed");
+									closePrompt("connect_eos_prompt");
+									if (cb) {
+										cb(false);
+									}
+								}
+							}
+						}
+					}
+					else {
+						if (nxDisplayNetworkError()) {
+							printlog("[NX] Displaying network error");
+							nxConnectToNetwork();
+						}
+						else {
+							logoutOfEpic();
+							printlog("[NX] failed to establish network connection, EOS connection failed");
+							closePrompt("connect_eos_prompt");
+							if (cb) {
+								cb(false);
+							}
+						}
+					}
+				}},
+				[](Button&){ // cancel
+					logoutOfEpic();
+					closePrompt("connect_eos_prompt");
+					if (cb) {
+						cb(false);
+					}
+				});
+		}
+#else // NINTENDO
+		if (!isConnectedToEpic()) {
+			char buf[32];
+			snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
+			setUsername(buf);
+
+			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+			EOS.StatGlobalManager.queryGlobalStatUser();
+		}
+#endif // !NINTENDO
+#endif // USE_EOS
 	}
 
 /******************************************************************************/
@@ -2092,12 +2278,11 @@ namespace MainMenu {
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
-		    EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+			loginToEpic(nullptr);
 	    }
 	    else if ( !crossplay_enabled && LobbyHandler.crossplayEnabled )
 	    {
-		    LobbyHandler.crossplayEnabled = false;
-		    EOS.CrossplayAccountManager.logOut = true;
+			logoutOfEpic();
 	    }
 #endif
 
@@ -2895,12 +3080,12 @@ namespace MainMenu {
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Our Kickstarter Backers\n"
-			u8"Sterling Rathbun\n"
+			u8"Kevin White\n"
 			u8"Julian Seeger\n"
 			u8"Mathias Golinelli\n"
-			u8"Jesse Riddle\n"
-			u8"Kevin White\n"
+			u8"Sterling Rathbun\n"
 			u8"Desiree Colborn\n"
+			u8"Jesse Riddle\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Learn more at https://www.github.com/TurningWheel/Barony\n"
@@ -4989,10 +5174,10 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
 			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
-#endif
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
 			"Smooth player camera by interpolating camera movements over additional frames.",
 			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed();});
+#endif
 		y += settingsAddBooleanOption(*settings_subwindow, y, "vertical_split", "Vertical Splitscreen",
 			"For splitscreen with two-players: divide the screen along a vertical line rather than a horizontal one.",
 			allSettings.vertical_split_enabled, [](Button& button){soundToggle(); allSettings.vertical_split_enabled = button.isPressed();});
@@ -5066,20 +5251,21 @@ bind_failed:
 		hookSettings(*settings_subwindow,{
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
-			{Setting::Type::Boolean, "use_frame_interpolation"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
 			{Setting::Type::Boolean, "content_control"},
 			{Setting::Type::Boolean, "colorblind_mode"},
 			{Setting::Type::Boolean, "arachnophobia_filter"},
+			{Setting::Type::Slider, "world_tooltip_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Boolean, "shaking"},
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
 			});
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "vertical_split"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
+		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "gamma"});
+		settingsSelect(*settings_subwindow, {Setting::Type::Slider, "gamma"});
 #endif
 	}
 
@@ -5482,7 +5668,11 @@ bind_failed:
 
 		auto banner = window->addField("banner", 128);
 		banner->setFont(banner_font);
+#ifdef NINTENDO
+		banner->setText("HIGHSCORES");
+#else
 		banner->setText("LEADERBOARDS");
+#endif
 		banner->setSize(SDL_Rect{330, 30, 338, 24});
 		banner->setJustify(Field::justify_t::CENTER);
 
@@ -7229,6 +7419,7 @@ bind_failed:
 
 #ifdef NINTENDO
 		nxEndParentalControls();
+		logoutOfEpic();
 #endif
 
 #ifdef STEAMWORKS
@@ -7341,7 +7532,7 @@ bind_failed:
 					disconnectFromLobby();
 					destroyMainMenu();
 					createMainMenu(false);
-					connectionErrorPrompt("You have been timed out:\nno response from remote host.");
+					timedOut();
 				}
 			}
 		}
@@ -8059,7 +8250,7 @@ bind_failed:
                 disconnectFromLobby();
 	            destroyMainMenu();
 	            createMainMenu(false);
-                connectionErrorPrompt("You have been disconnected\nfrom the remote server.");
+                connectionErrorPrompt("The lobby has been closed\nby the host.");
 		    } else {
 		        char buf[1024];
 		        snprintf(buf, sizeof(buf), "*** %s has left the game ***", players[playerDisconnected]->getAccountName());
@@ -8079,7 +8270,7 @@ bind_failed:
             disconnectFromLobby();
             destroyMainMenu();
             createMainMenu(false);
-            connectionErrorPrompt("You have been kicked\nfrom the remote server.");
+            connectionErrorPrompt("You have been kicked\nfrom the lobby.");
 	    }},
 
 	    // got a chat message
@@ -8579,13 +8770,13 @@ bind_failed:
             int seconds = diff / TICKS_PER_SECOND;
             auto text = static_cast<Field*>(&widget);
             if (part < TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds", seconds);
+                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds", seconds);
             } else if (part < 2 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds.", seconds);
+                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds.", seconds);
             } else if (part < 3 * TICKS_PER_SECOND / 4) {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds..", seconds);
+                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds..", seconds);
             } else {
-                snprintf(buf, sizeof(buf), "Connecting to server...\n\n%ds...", seconds);
+                snprintf(buf, sizeof(buf), "Joining lobby...\n\n%ds...", seconds);
             }
             text->setText(buf);
 
@@ -8604,7 +8795,7 @@ bind_failed:
 			                dimmer->removeSelf();
 
 			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
-			                connectionErrorPrompt(error_str.c_str());
+							connectionErrorPrompt(error_str.c_str());
 			                connectingToLobbyStatus = EResult::k_EResultOK;
 			                return;
 		                }
@@ -8644,7 +8835,7 @@ bind_failed:
 			                dimmer->removeSelf();
 
 			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(EOS.ConnectingToLobbyStatus));
-			                connectionErrorPrompt(error_str.c_str());
+							connectionErrorPrompt(error_str.c_str());
 			                EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
 			                return;
 		                }
@@ -8733,6 +8924,12 @@ bind_failed:
 		                lobby = getLobbyEpic(address);
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
+#ifdef STEAMWORKS
+						if (LobbyHandler.crossplayEnabled) {
+							// can't join an epic lobby if crossplay is not enabled
+							return false;
+						}
+#endif
 		                // save address for next time
 		                stringCopyUnsafe(last_address, address, sizeof(last_address));
                         memcpy(EOS.lobbySearchByCode, address + 1, 4);
@@ -8749,11 +8946,7 @@ bind_failed:
 	                        EOSFuncs::LobbyParameters_t::LobbyJoinOptions::LOBBY_JOIN_FIRST_SEARCH_RESULT,
 	                        "");
                         EOS.LobbySearchResults.useLobbyCode = false;
-#ifdef STEAMWORKS
-	                    return LobbyHandler.crossplayEnabled;
-#else
                         return true;
-#endif
 	                }
 		        }
 		        else if (pLobby) {
@@ -8780,7 +8973,7 @@ bind_failed:
 			}
 #endif
 	        closePrompt("connect_prompt");
-	        connectionErrorPrompt("Failed to connect to lobby.\nInvalid room code.");
+	        connectionErrorPrompt("Unable to join lobby.\nInvalid room code.");
 	        multiplayer = SINGLE;
 	        disconnectFromLobby();
 	        return false;
@@ -8821,7 +9014,7 @@ bind_failed:
 			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
 			    printlog(buf);
 			    closePrompt("connect_prompt");
-			    connectionErrorPrompt(buf);
+				systemErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
 			    return false;
@@ -8834,7 +9027,7 @@ bind_failed:
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
 			    printlog(buf);
 			    closePrompt("connect_prompt");
-			    connectionErrorPrompt(buf);
+				systemErrorPrompt(buf);
 			    multiplayer = SINGLE;
 			    disconnectFromLobby();
 			    return false;
@@ -8847,7 +9040,7 @@ bind_failed:
 
 	    // connection initiation failed for unknown reason
 	    closePrompt("connect_prompt");
-	    connectionErrorPrompt("Failed to connect to lobby");
+	    connectionErrorPrompt("Failed to join lobby.");
 	    multiplayer = SINGLE;
 	    disconnectFromLobby();
 	    return false;
@@ -12248,6 +12441,8 @@ bind_failed:
 #ifdef NINTENDO
 		if (currentLobbyType == LobbyType::LobbyLocal) {
 			name_field->setEditable(true);
+		} else {
+			name_field->setHideGlyphs(true);
 		}
 #else
 		name_field->setEditable(true);
@@ -12296,6 +12491,23 @@ bind_failed:
 		randomize_name->setWidgetLeft("name");
 		randomize_name->setWidgetDown("game_settings");
 		static auto randomize_name_fn = [](Button& button, int index) {
+#ifdef NINTENDO
+			auto& names = stats[index]->sex == sex_t::MALE ?
+				randomPlayerNamesMale : randomPlayerNamesFemale;
+			int choice;
+			for (choice = 0; choice < names.size() - 1; ++choice) {
+				if (names[choice] == stats[index]->name) {
+					++choice;
+					break;
+				}
+			}
+			choice = choice % names.size();
+			auto name = names[choice].c_str();
+			name_field_fn(name, index);
+			auto card = static_cast<Frame*>(button.getParent());
+			auto field = card->findField("name"); assert(field);
+			field->setText(name);
+#else
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
 			auto choice = RNG.uniform(0, names.size() - 1);
@@ -12304,6 +12516,7 @@ bind_failed:
 			auto card = static_cast<Frame*>(button.getParent());
 			auto field = card->findField("name"); assert(field);
 			field->setText(name);
+#endif
 		};
 		randomize_name->setCallback([](Button& button){soundActivate(); randomize_name_fn(button, button.getOwner());});
 		
@@ -13960,6 +14173,7 @@ bind_failed:
 		}
 
 		if (type == LobbyType::LobbyLocal) {
+			multiplayer = SINGLE;
 			createStartButton(0);
 			createStartButton(1);
 			createStartButton(2);
@@ -14649,17 +14863,16 @@ bind_failed:
 			LAN,
 		};
 		static BrowserMode mode;
-#if defined(STEAMWORKS)
+#if defined(NINTENDO)
+		mode = BrowserMode::LAN;
+		directConnect = true;
+#elif defined(STEAMWORKS)
 		mode = BrowserMode::Online;
 		directConnect = false;
 #elif defined(USE_EOS)
-		if (EOS.CurrentUserInfo.isLoggedIn()) {
-			mode = BrowserMode::Online;
-			directConnect = false;
-		} else {
-			mode = BrowserMode::LAN;
-			directConnect = true;
-		}
+		const bool connected = isConnectedToEpic();
+		mode = connected ? BrowserMode::Online : BrowserMode::LAN;
+		directConnect = !connected;
 #else
         mode = BrowserMode::LAN;
 		directConnect = true;
@@ -14782,6 +14995,7 @@ bind_failed:
 		    });
 
 		(void)createBackWidget(window, [](Button& button){
+			multiplayer = SINGLE;
 		    loadingsavegame = 0;
 		    soundCancel();
 		    closeNetworkInterfaces();
@@ -14789,6 +15003,7 @@ bind_failed:
 
 #ifdef NINTENDO
 			nxEndParentalControls();
+			logoutOfEpic();
 #endif
 
 		    // remove parent window
@@ -15018,7 +15233,7 @@ bind_failed:
 		online_tab->setWidgetBack("back_button");
 		online_tab->setWidgetRight("lan_tab");
 		online_tab->setWidgetDown("names");
-#if defined(STEAMWORKS) && defined(USE_EOS)
+#if defined(STEAMWORKS)
 		online_tab->setCallback([](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
@@ -15029,21 +15244,52 @@ bind_failed:
 			refresh_fn(button);
 			});
 #elif defined(USE_EOS)
-		if (EOS.CurrentUserInfo.isLoggedIn()) {
+#if defined(NINTENDO)
+		online_tab->setCallback([](Button& button) {
+			if (nxBeginParentalControls()) {
+				static Button* store_button;
+				store_button = static_cast<Button*>(&button);
+
+				auto callback = [](bool success){
+					if (success) {
+						auto frame = static_cast<Frame*>(store_button->getParent());
+						auto interior = frame->findImage("interior");
+						interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
+						mode = BrowserMode::Online;
+						directConnect = false;
+						refresh_fn(*store_button);
+					} else {
+						errorPrompt("Unable to connect to Epic Online\nOnline play is not available.", "Okay", [](Button&) {closeMono(); });
+						multiplayer = SINGLE;
+						soundError();
+					}
+				};
+
+				if (isConnectedToEpic()) {
+					callback(true);
+				} else {
+					loginToEpic(callback);
+				}
+			} else {
+				soundError();
+			}
+			});
+#else
+		if (isConnectedToEpic()) {
 			online_tab->setCallback([](Button& button) {
 				auto frame = static_cast<Frame*>(button.getParent());
 				auto interior = frame->findImage("interior");
-
 				interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
 				mode = BrowserMode::Online;
 				directConnect = false;
 				refresh_fn(button);
 				});
 		} else {
-			online_tab->setCallback([](Button& button) {soundError(); });
+			online_tab->setCallback([](Button& button){soundError();});
 			online_tab->setTextColor(makeColor(127, 127, 127, 255));
 			online_tab->setTextHighlightColor(makeColor(127, 127, 127, 255));
 		}
+#endif // NINTENDO
 #else
 		online_tab->setCallback([](Button& button){soundError();});
 		online_tab->setTextColor(makeColor(127, 127, 127, 255));
@@ -15073,6 +15319,9 @@ bind_failed:
 		lan_tab->setWidgetRight("refresh");
 		lan_tab->setWidgetDown("names");
 		lan_tab->setCallback([](Button& button){
+#ifdef NINTENDO
+			nxEndParentalControls();
+#endif
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
 #if defined(STEAMWORKS) && defined(USE_EOS)
@@ -15168,7 +15417,7 @@ bind_failed:
                     if (connectToServer(lobby.address.c_str(), nullptr,
                         directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                         // we only want to deselect the button if the
-                        // "connecting to server" prompt actually raises
+                        // "joining lobby" prompt actually raises
                         button.deselect();
                     }
                 } else {
@@ -15475,11 +15724,10 @@ bind_failed:
 		crossplay->setCallback([](Button& button) {
 			soundToggle();
 			if (button.isPressed() && !LobbyHandler.crossplayEnabled) {
-				EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
+				loginToEpic(nullptr);
 			}
 			else if (!button.isPressed() && LobbyHandler.crossplayEnabled) {
-				LobbyHandler.crossplayEnabled = false;
-				EOS.CrossplayAccountManager.logOut = true;
+				logoutOfEpic();
 			}
 			});
 #else
@@ -15905,6 +16153,8 @@ bind_failed:
     }
 
 	static void createPlayWindow() {
+		multiplayer = SINGLE;
+
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
 		dimmer->setActualSize(dimmer->getSize());
@@ -16030,10 +16280,22 @@ bind_failed:
 			textPrompt("host_lobby_prompt", "Creating Epic lobby...",
 				[](Widget&){
 				if (EOS.CurrentLobbyData.bAwaitingCreationCallback) {
-					if (!EOS.CurrentUserInfo.isValid() || !EOS.CurrentUserInfo.isLoggedIn()) {
+					if (!isConnectedToEpic()) {
 						closePrompt("host_lobby_prompt");
+#ifdef NINTENDO
+						// this way if something fucked up
+						// (eg user is stuck in lobby in backend)
+						// the user state will be reset
+						logoutOfEpic();
+						nxErrorPrompt(
+							"Failed to host Epic lobby.",
+							"Failed to host Epic lobby.\n\n"
+							"Please try again later.",
+							33333);
+#else
 						errorPrompt("Failed to host Epic lobby.", "Okay",
 							[](Button&) {soundCancel(); closeMono(); });
+#endif
 					}
 					return;
 				} else {
@@ -16041,8 +16303,20 @@ bind_failed:
 						createLobby(LobbyType::LobbyOnline);
 					} else {
 						closePrompt("host_lobby_prompt");
+#ifdef NINTENDO
+						// this way if something fucked up
+						// (eg user is stuck in lobby in backend)
+						// the user state will be reset
+						logoutOfEpic();
+						nxErrorPrompt(
+							"Failed to host Epic lobby.",
+							"Failed to host Epic lobby.\n\n"
+							"Please try again later.",
+							44444);
+#else
 						errorPrompt("Failed to host Epic lobby.", "Okay",
 							[](Button&){soundCancel(); closeMono();});
+#endif
 					}
 				}
 				});
@@ -16079,67 +16353,73 @@ bind_failed:
 	static void hostOnlineLobby(Button&) {
 #if !defined(STEAMWORKS) && !defined(USE_EOS)
 		errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&){
+			multiplayer = SINGLE;
 			soundCancel();
 			closeMono();
 		});
 #else
+		auto completion = [](bool connected){
+			closeNetworkInterfaces();
+			directConnect = false;
+
+			char buf[32];
+			snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
+			setHostname(buf);
+
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			if (LobbyHandler.crossplayEnabled) {
+				const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
+				binaryPrompt(prompt, "Yes", "No",
+					[](Button&) { // yes
+						closeBinary();
+						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+						createOnlineLobby();
+					},
+					[](Button&) { // no
+						closeBinary();
+						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+						createOnlineLobby();
+					}, false, false);
+			}
+			else {
+				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+				createOnlineLobby();
+			}
+#elif defined(USE_EOS)
+			if (connected) {
+				createOnlineLobby();
+			}
+			else {
+				errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&) {
+					soundCancel();
+					closeMono();
+					});
+#ifdef NINTENDO
+				nxEndParentalControls();
+				logoutOfEpic();
+#endif
+			}
+#else
+#error What kind of build is this?
+#endif
+#endif
+		};
+
 #ifdef NINTENDO
 		if (!nxBeginParentalControls())
 		{
 			// access to online play is not permitted
+			soundError();
 			return;
 		}
-#endif
-		closeNetworkInterfaces();
-		directConnect = false;
-        
-        char buf[32];
-        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
-        setHostname(buf);
-        
-#if defined(STEAMWORKS) && defined(USE_EOS)
-		if (LobbyHandler.crossplayEnabled) {
-			const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
-			binaryPrompt(prompt, "Yes", "No",
-			[](Button&){ // yes
-				closeBinary();
-				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-				createOnlineLobby();
-			},
-			[](Button&){ // no
-				closeBinary();
-				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-				createOnlineLobby();
-			}, false, false);
-		} else {
-			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-			createOnlineLobby();
-		}
-#elif defined(USE_EOS)
-		if (EOS.CurrentUserInfo.isLoggedIn()) {
-			createOnlineLobby();
-		} else {
-			errorPrompt("Unable to host lobby\nOnline play is not available.", "Okay", [](Button&) {
-				soundCancel();
-				closeMono();
-			});
-		}
+		loginToEpic(completion);
 #else
-		createOnlineLobby();
-#endif
+		completion(true);
 #endif
 	}
 
 	static void hostLANLobby(Button&) {
 		soundActivate();
-
-#ifdef NINTENDO
-		if (!nxBeginParentalControls())
-		{
-			// access to online play is not permitted
-			return;
-		}
-#endif
 
 		closeNetworkInterfaces();
 		directConnect = true;
@@ -16148,7 +16428,8 @@ bind_failed:
         snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
         setHostname(buf);
 
-#ifdef NINTENDO
+#if 0
+//#if defined(NINTENDO)
 		nxConnectToNetwork();
 		textPrompt("host_lobby_prompt", "Creating WiFi lobby...",
 			[](Widget&) {
@@ -16323,7 +16604,7 @@ bind_failed:
 		local_button->setWidgetSearchParent(window->getName());
 		local_button->setWidgetBack("back_button");
 		local_button->setWidgetDown("host_lan");
-		local_button->setCallback([](Button&){soundActivate(); createLobby(LobbyType::LobbyLocal);});
+		local_button->setCallback([](Button&){soundActivate(); multiplayer = SINGLE; createLobby(LobbyType::LobbyLocal);});
 
 		// default button to select when no other is
 		local_button->setTickCallback([](Widget& widget){
@@ -16374,7 +16655,7 @@ bind_failed:
 		auto host_online_button = window->addButton("host_online");
 		host_online_button->setSize(SDL_Rect{96, 232, 164, 62});
 		host_online_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
-#if defined(STEAMWORKS)
+#if defined(STEAMWORKS) || defined(NINTENDO)
 		host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
 		host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 		host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -16382,7 +16663,7 @@ bind_failed:
 		host_online_button->setTextColor(makeColor(255, 255, 255, 255));
 		host_online_button->setTextHighlightColor(makeColor(255, 255, 255, 255));
 #elif defined(USE_EOS)
-		if (EOS.CurrentUserInfo.isLoggedIn()) {
+		if (isConnectedToEpic()) {
 			host_online_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Select_00.png");
 			host_online_button->setBackgroundActivated("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Down_00.png");
 			host_online_button->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -16416,35 +16697,6 @@ bind_failed:
 		    "host_online_image"
 		);
 
-		auto join_fn = [](Button& button){
-#ifdef NINTENDO
-			if (nxBeginParentalControls()) {
-				static Button* join_button;
-				join_button = &button;
-				nxConnectToNetwork();
-				textPrompt("lobby_browser_wait_prompt", "Connecting...",
-					[](Widget&) {
-						if (nxConnectingToNetwork()) {
-							return;
-						}
-						else {
-							if (nxConnectedToNetwork()) {
-								closePrompt("lobby_browser_wait_prompt");
-								createLobbyBrowser(*join_button);
-							}
-							else {
-								closePrompt("lobby_browser_wait_prompt");
-								errorPrompt("Network connection failed.", "Okay",
-									[](Button&) {soundCancel(); closeMono(); });
-							}
-						}
-					});
-			}
-#else
-			createLobbyBrowser(button);
-#endif
-		};
-
 		auto join_button = window->addButton("join");
 		join_button->setSize(SDL_Rect{96, 326, 164, 62});
 		join_button->setBackground("*images/ui/Main Menus/Play/NewGameConnectivity/ButtonStandard/Button_Standard_Default_00.png");
@@ -16457,7 +16709,7 @@ bind_failed:
 		join_button->setWidgetSearchParent(window->getName());
 		join_button->setWidgetBack("back_button");
 		join_button->setWidgetUp("host_online");
-		join_button->setCallback(join_fn);
+		join_button->setCallback(createLobbyBrowser);
 
 		(void)window->addImage(
 		    SDL_Rect{270, 324, 120, 68},
@@ -16718,18 +16970,8 @@ bind_failed:
                     }
                     multiplayer = SINGLE;
 					clientnum = 0;
-#ifdef NINTENDO
-					if (nxBeginParentalControls()) {
-						createDummyMainMenu();
-						createLobbyBrowser(button);
-					} else {
-						// in-case lobby browser is not allowed, return to main menu
-						createMainMenu(false);
-					}
-#else
                     createDummyMainMenu();
                     createLobbyBrowser(button);
-#endif
                 }
 	        },
 	        [](Button& button) { // No button
@@ -17397,7 +17639,11 @@ bind_failed:
 			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
 #endif
 #endif
+#ifdef NINTENDO
+			{"Leaderboards", "HIGHSCORES", archivesLeaderboards},
+#else
 			{"Leaderboards", "LEADERBOARDS", archivesLeaderboards},
+#endif
 			{"Story Introduction", "STORY INTRODUCTION", archivesStoryIntroduction},
 			{"Credits", "CREDITS", archivesCredits},
 			{"Back to Main Menu", "BACK TO MAIN MENU", archivesBackToMainMenu}
@@ -18116,13 +18362,27 @@ bind_failed:
 			main_menu_fade_destination = FadeDestination::RootMainMenu;
 		} else {
 		    if (main_menu_fade_destination == FadeDestination::TitleScreen) {
-                assert(!ingame); // you're not supposed to use this destination while in-game!
+				if (ingame) {
+#ifdef NINTENDO
+					if (!nxIsHandheldMode()) {
+						nxAssignControllers(1, 1, true, false, true, false, nullptr);
+					}
+#endif
+					// end the game, but do NOT create a highscore.
+					// this is because we are coming here from some unknown place.
+					// presumably the current game has been saved, so we're not ending it.
+					// just return to the main menu but don't save a score
+					doEndgame(false);
+				}
+
+				// return to title screen
 		        destroyMainMenu();
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createTitleScreen();
 
 #ifndef NINTENDO
+				// unbind controllers
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
@@ -18132,8 +18392,8 @@ bind_failed:
 #endif
 		    }
 			else if (main_menu_fade_destination == FadeDestination::RootMainMenu) {
-				destroyMainMenu();
 				if (ingame) {
+					// end current game
 #ifdef NINTENDO
 					if (!nxIsHandheldMode()) {
 						nxAssignControllers(1, 1, true, false, true, false, nullptr);
@@ -18145,15 +18405,21 @@ bind_failed:
                     // just return to the main menu but don't save a score
                     doEndgame(false);
 				}
+
+				// return to menu
+				destroyMainMenu();
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 				createMainMenu(false);
+
+				// join lobby we've been invited to
 				if (saved_invite_lobby) {
 				    connectToServer(nullptr, saved_invite_lobby, LobbyType::LobbyOnline);
 				    saved_invite_lobby = nullptr;
 				}
 
 #ifndef NINTENDO
+				// unbind controllers
 				for (int c = 1; c < 4; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
@@ -18498,7 +18764,8 @@ bind_failed:
 		auto vmouse = intro ? cmouse : inputs.getVirtualMouse(getMenuOwner());
 		cmouse->draw_cursor = !vmouse->lastMovementFromController;
 
-		if (fadeout && fadealpha >= 255) {
+		static ConsoleVariable<bool> cvar_disableFadeFinished("/test_disable_fade_finished", false);
+		if (fadeout && fadealpha >= 255 && !*cvar_disableFadeFinished) {
             handleFadeFinished(ingame);
         }
 	}
@@ -18548,17 +18815,6 @@ bind_failed:
 		main_menu_frame->setActualSize(SDL_Rect{0, 0, main_menu_frame->getSize().w, main_menu_frame->getSize().h});
 		main_menu_frame->setColor(0);
 		main_menu_frame->setTickCallback(tickMainMenu);
-
-		// logout at the start screen
-#if defined(NINTENDO) && defined(USE_EOS)
-		if (LobbyHandler.crossplayEnabled) {
-			LobbyHandler.crossplayEnabled = false;
-			EOS.CrossplayAccountManager.logOut = true;
-		}
-		if (!nxConnectedToNetwork()) {
-			nxConnectToNetwork();
-		}
-#endif
 
 		const auto title_scale = 4.0;
 		auto title_img = Image::get("*images/system/title.png");
@@ -18654,14 +18910,6 @@ bind_failed:
 			if (!firstTimeTutorialPrompt()) {
 				soundActivate();
 			}
-#ifdef NINTENDO
-#ifdef USE_EOS
-			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
-#endif
-            char buf[32];
-            snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
-            setUsername(buf);
-#endif
 		    });
 		button->setTickCallback([](Widget& widget){
 			const int pace = TICKS_PER_SECOND * 4;
@@ -18771,7 +19019,7 @@ bind_failed:
 #endif
 
 	void createMainMenu(bool ingame) {
-		if (!ingame) {
+		if (!ingame) { 
 			clientnum = 0;
 			inputs.setPlayerIDAllowedKeyboard(clientnum);
 		}
@@ -18983,11 +19231,15 @@ bind_failed:
 				});
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
+#ifdef NINTENDO
+			button->setWidgetDown(options[forward].name);
+#else
 			if (ingame || c + 1 < num_options) {
 			    button->setWidgetDown(options[forward].name);
 			} else {
 			    button->setWidgetDown("banner1");
 			}
+#endif
 			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
@@ -19030,6 +19282,7 @@ bind_failed:
 		);
 
 		if (!ingame) {
+#ifndef NINTENDO
 		    const char* banner_images[][2] = {
 		        {
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
@@ -19103,6 +19356,7 @@ bind_failed:
 				auto dimmer = main_menu_frame->findFrame("dimmer");
 				widget.setInvisible(dimmer != nullptr);
 				});
+#endif
 
 			char buf[64];
 			const char date[] = __DATE__;
@@ -19202,6 +19456,36 @@ bind_failed:
 	            pauseGame(2, 0);
 	        }
 	    }
+	}
+
+	void timedOut() {
+#ifdef NINTENDO
+		multiplayer = SINGLE;
+		disconnectFromLobby();
+		destroyMainMenu();
+		createDummyMainMenu();
+		if (!intro) {
+			pauseGame(2, 0);
+		}
+		beginFade(FadeDestination::RootMainMenu);
+		logoutOfEpic();
+		if (intro) {
+			nxErrorPrompt(
+				"The network connection to the game has been lost.",
+				"The network connection to the game has been lost.\n\n"
+				"Please re-establish your network connection and try again later.",
+				11111);
+		} else {
+			nxErrorPrompt(
+				"The network connection to the game has been lost.",
+				"The network connection to the game has been lost.\n\n"
+				"All game progress up to the current dungeon level has been saved.\n\n"
+				"Please re-establish your network connection and try again later.",
+				11111);
+		}
+#else
+		disconnectedFromServer("Timeout: your connection\nhas been lost.");
+#endif
 	}
 
     void openGameoverWindow(int player, bool tutorial) {
@@ -19859,10 +20143,10 @@ bind_failed:
             "for the purpose of enabling crossplay.";
 #elif defined(NINTENDO)
 		const char* prompt =
-			"Enabling online play allows you to host and join\n"
-			"online lobbies hosted via Epic Games, Inc.\n"
+			"Would you like to link your device to an online\n"
+			"account hosted by Epic Games, Inc. to play online?\n"
 			"\n"
-			"By clicking Accept, you agree to share some info\n"
+			"By choosing Accept, you agree to share some info\n"
 			"about your Nintendo console with Epic Games, Inc.\n"
 			"for the purpose of enabling online play.";
 #else
@@ -19879,7 +20163,7 @@ bind_failed:
             "Accept", "View\nPrivacy Policy", "Deny",
             [](Button&){ // accept
             soundActivate();
-            closeTrinary();
+			closeTrinary();
             EOS.CrossplayAccountManager.acceptCrossplay();
             },
             [](Button&){ // view privacy policy
@@ -19888,7 +20172,7 @@ bind_failed:
             },
             [](Button&){ // deny
             soundCancel();
-            closeTrinary();
+			closeTrinary();
             EOS.CrossplayAccountManager.denyCrossplay();
 
             // turn off button
@@ -19911,6 +20195,12 @@ bind_failed:
             });
 #endif
     }
+
+	static ConsoleCommand ccmd_testCrossplayPrompt(
+		"/test_crossplay_prompt", "Test the crossplay prompt",
+		[](int argc, const char** argv) {
+			crossplayPrompt();
+		});
                 
     /******************************************************************************/
     

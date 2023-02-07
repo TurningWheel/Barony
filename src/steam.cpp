@@ -1623,6 +1623,9 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		snprintf(svFlagsChar, 15, "%d", svFlags);
 		SteamMatchmaking()->SetLobbyData(*lobby, "svFlags", svFlagsChar);
 
+		// set the lobby open for friends only by default
+		SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
+
 		// set load game status on lobby
 		char loadingsavegameChar[16];
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);

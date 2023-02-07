@@ -10,6 +10,11 @@
 
 EOSFuncs EOS;
 
+bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
+{
+	return true;
+}
+
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
 	return true;

@@ -191,6 +191,7 @@ void EOS_CALL EOSFuncs::ConnectLoginCrossplayCompleteCallback(const EOS_Connect_
 			CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
 			CreateUserOptions.ContinuanceToken = data->ContinuanceToken;
 
+			EOS.CrossplayAccountManager.awaitingCreateUserCallback = true;
 			EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
 			EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, OnCreateUserCrossplayCallback);
 		}
@@ -242,6 +243,7 @@ void EOS_CALL EOSFuncs::OnCreateUserCallback(const EOS_Connect_CreateUserCallbac
 
 void EOS_CALL EOSFuncs::OnCreateUserCrossplayCallback(const EOS_Connect_CreateUserCallbackInfo* data)
 {
+	EOS.CrossplayAccountManager.awaitingCreateUserCallback = false;
 	EOS.CrossplayAccountManager.connectLoginStatus = EOS_EResult::EOS_NotConfigured;
 	if ( !data )
 	{
@@ -1206,13 +1208,6 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	auto networkStatus = nxConnectedToNetwork() ?
 		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
 	auto networkSetRes = EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
-	logInfo("EOS_Platform_SetNetworkStatus: %d", networkSetRes);
-	auto getNet = EOS_Platform_GetNetworkStatus(PlatformHandle);
-	logInfo("EOS_Platform_GetNetworkStatus: %d", getNet);
-	if (!nxConnectedToNetwork())
-	{
-		nxConnectToNetwork();
-	}
 #endif
 
 	if ( !PlatformHandle )
@@ -1262,7 +1257,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 #endif
 #endif
 
-#if defined(STEAMWORKS) || defined(NINTENDO)
+#if defined(STEAMWORKS)
 	EOS.StatGlobalManager.queryGlobalStatUser();
 #endif
 	return true;
@@ -1856,7 +1851,11 @@ void EOSFuncs::createLobby()
 	CreateOptions.LocalUserId = CurrentUserInfo.getProductUserIdHandle();
 	CreateOptions.MaxLobbyMembers = MAXPLAYERS;
 	CreateOptions.PermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+#ifdef NINTENDO
+	CreateOptions.bPresenceEnabled = false;
+#else
 	CreateOptions.bPresenceEnabled = true;
+#endif
 	CreateOptions.bAllowInvites = true;
 	CreateOptions.BucketId = EOS_LOBBY_SEARCH_BUCKET_ID;
 	CreateOptions.bDisableHostMigration = true;
@@ -1865,7 +1864,7 @@ void EOSFuncs::createLobby()
 	CreateOptions.LobbyId = nullptr;
 
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
-	bFriendsOnly = false;
+	bFriendsOnly = true;
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
 	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;
@@ -3204,7 +3203,8 @@ void EOSFuncs::LobbySearchResults_t::sortResults()
 
 void EOSFuncs::Accounts_t::handleLogin()
 {
-#if defined(STEAMWORKS) || defined(NINTENDO) // or nintendo, can return early
+#if defined(STEAMWORKS) || defined(NINTENDO)
+	// can return early
 	return;
 #endif
 
@@ -3265,7 +3265,9 @@ void EOSFuncs::Accounts_t::handleLogin()
 
 void EOSFuncs::CrossplayAccounts_t::createNotification()
 {
+#ifndef NINTENDO
 	UIToastNotificationManager.createEpicCrossplayLoginNotification();
+#endif
 }
 
 #ifdef NINTENDO
@@ -3356,12 +3358,6 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 			buttonCloseSubwindow(nullptr);
 		}
 	}
-#ifdef NINTENDO
-	if (!nxConnectedToNetwork()) {
-		printlog("[NX] not connected to network, can't login to EOS");
-		initLogin = false;
-	}
-#endif
 
 	if ( initLogin )
 	{
@@ -3371,10 +3367,12 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 		awaitingAppTicketResponse = true;
 		EOSFuncs::logInfo("Crossplay login request started...");
 #elif defined(NINTENDO)
-		createNotification();
-		awaitingAppTicketResponse = true;
-		nxTokenRequest();
-		EOSFuncs::logInfo("NX Crossplay login request started...");
+		if (nxConnectedToNetwork()) {
+			awaitingAppTicketResponse = true;
+			nxTokenRequest();
+		} else {
+			printlog("[NX] not connected to network, can't login to EOS");
+		}
 #endif // STEAMWORKS
 		return;
 	}
@@ -3392,6 +3390,9 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 		if ( connectLoginCompleted != EOS_EResult::EOS_Success )
 		{
 			connectLoginCompleted = EOS_EResult::EOS_Success;
+			LobbyHandler.crossplayEnabled = true;
+
+#ifndef NINTENDO
 			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
 			if ( n )
 			{
@@ -3407,7 +3408,7 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 				n->updateCardEvent(true, false);
 				n->setIdleSeconds(5);
 			}
-			LobbyHandler.crossplayEnabled = true;
+#endif
 		}
 		return;
 	}
@@ -3421,38 +3422,38 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 	{
 		if ( connectLoginStatus == EOS_EResult::EOS_InvalidUser )
 		{
+#ifndef NINTENDO
 			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
 			if ( n )
 			{
 				n->actionFlags &= ~(UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->showMainCard();
-#ifdef STEAMWORKS
-				n->setSecondaryText("New Steam user.\nAccept EULA to proceed.");
-#else
 				n->setSecondaryText("New user.\nAccept EULA to proceed.");
-#endif
 				n->updateCardEvent(false, true);
 				n->setIdleSeconds(10);
 			}
+#endif
 			EOSFuncs::logInfo("New EOS user, awaiting user response.");
 			createDialogue();
 		}
 		else
 		{
+#ifndef NINTENDO
 			UIToastNotification* n = UIToastNotificationManager.getNotificationSingle(UIToastNotification::CardType::UI_CARD_CROSSPLAY_ACCOUNT);
 			// update the status here.
 			if ( n )
 			{
-				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
 				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_AUTO_HIDE);
 				char buf[128] = "";
 				snprintf(buf, sizeof(buf), "Setup has failed.\nError code: %d\n", static_cast<int>(connectLoginStatus));
 				n->showMainCard();
 				n->setSecondaryText(buf);
 				n->updateCardEvent(false, true);
-				n->buttonAction = &EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure;
 				n->setIdleSeconds(10);
+				n->actionFlags |= (UIToastNotification::ActionFlags::UI_NOTIFICATION_ACTION_BUTTON);
+				n->buttonAction = &EOSFuncs::CrossplayAccounts_t::retryCrossplaySetupOnFailure;
 			}
+#endif
 			EOSFuncs::logError("Crossplay setup has failed. Error code: %d", static_cast<int>(connectLoginStatus));
 			resetOnFailure();
 		}
@@ -3477,6 +3478,7 @@ void EOSFuncs::CrossplayAccounts_t::resetOnFailure()
 
 void EOSFuncs::CrossplayAccounts_t::acceptCrossplay()
 {
+	promptActive = false;
 	acceptedEula = true;
 	if ( continuanceToken )
 	{
@@ -3484,6 +3486,7 @@ void EOSFuncs::CrossplayAccounts_t::acceptCrossplay()
 		CreateUserOptions.ApiVersion = EOS_CONNECT_CREATEUSER_API_LATEST;
 		CreateUserOptions.ContinuanceToken = continuanceToken;
 
+		awaitingCreateUserCallback = true;
 		EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
 		EOS_Connect_CreateUser(EOS.ConnectHandle, &CreateUserOptions, nullptr, EOSFuncs::OnCreateUserCrossplayCallback);
 
@@ -3498,6 +3501,8 @@ void EOSFuncs::CrossplayAccounts_t::acceptCrossplay()
 
 void EOSFuncs::CrossplayAccounts_t::denyCrossplay()
 {
+	promptActive = false;
+	acceptedEula = false;
 	logOut = true;
 	resetOnFailure();
 	EOSFuncs::logInfo("Crossplay account link has been denied by user");
@@ -3510,7 +3515,18 @@ void EOSFuncs::CrossplayAccounts_t::viewPrivacyPolicy()
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
 {
+	promptActive = true;
     MainMenu::crossplayPrompt();
+}
+
+bool EOSFuncs::CrossplayAccounts_t::isLoggingIn()
+{
+	return
+		promptActive |
+		trySetupFromSettingsMenu |
+		awaitingConnectCallback |
+		awaitingAppTicketResponse |
+		awaitingCreateUserCallback;
 }
 
 std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
