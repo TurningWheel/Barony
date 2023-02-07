@@ -3575,10 +3575,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( itemCategory(tempItem) == GEM )
-						{
-							messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[3240], tempItem->description());
-						}
+						messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, language[3240], tempItem->description());
 					}
 
 					//Attempt a level up.
@@ -5660,12 +5657,12 @@ void actPlayer(Entity* my)
 			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
 			CHAR_DRUNK++;
-			int drunkInterval = 180;
+			int drunkInterval = TICKS_PER_SECOND * 6;
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 			{
-				if ( PLAYER_ALIVETIME < 800 )
+				if ( PLAYER_ALIVETIME < TICKS_PER_SECOND * 16 )
 				{
-					drunkInterval = 300;
+					drunkInterval = TICKS_PER_SECOND * 6;
 				}
 				else
 				{

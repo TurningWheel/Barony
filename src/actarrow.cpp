@@ -699,7 +699,7 @@ void actArrow(Entity* my)
 							else
 							{
 								// you shot the %s!
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT_BASIC);
 							}
 							if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 							{
@@ -734,22 +734,22 @@ void actArrow(Entity* my)
 								if ( my->sprite == PROJECTILE_ROCK_SPRITE )
 								{
 									// rock.
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[2512]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, language[2512]);
 								}
 								else if (my->sprite == PROJECTILE_BOLT_SPRITE )
 								{
 									// bolt.
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[2511]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, language[2511]);
 								}
 								else
 								{
 									// arrow.
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[451]);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, language[451]);
 								}
 							}
 							else
 							{
-								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[451]);
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, language[451]);
 							}
 						}
 
@@ -922,7 +922,7 @@ void actArrow(Entity* my)
 							else if ( hit.entity->behavior == &actPlayer )
 							{
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[451]); // you are hit by an arrow!
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, language[451]); // you are hit by an arrow!
 							}
 						}
 					}
@@ -941,7 +941,7 @@ void actArrow(Entity* my)
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, language[452]); // player notified no damage.
+							messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, language[452]); // player notified no damage.
 						}
 						if ( parent && parent->behavior == &actPlayer )
 						{
@@ -949,16 +949,16 @@ void actArrow(Entity* my)
 							{
 								if ( hitstats->sex )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[449]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[449]);
 								}
 								else
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[450]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[450]);
 								}
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[447]);
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[447]);
 							}
 						}
 					}

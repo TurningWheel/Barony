@@ -1022,6 +1022,7 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 
 -------------------------------------------------------------------------------*/
 
+Uint32 dropItemSfxTicks[MAXPLAYERS] = { 0 };
 bool dropItem(Item* const item, const int player, const bool notifyMessage)
 {
 	if (!item)
@@ -1048,6 +1049,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			{
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
 			}
+			playSoundPlayer(player, 90, 64);
 			return false;
 		}
 	}
@@ -1075,7 +1077,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 		{
 			item->count = 10;
-			messagePlayer(player, MESSAGE_INVENTORY, language[1088], item->description());
+			messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
 			item->count = oldcount - 10;
 		}
 		else if ( itemTypeIsQuiver(item->type) )
@@ -1083,7 +1085,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
 			}
 			item->count = 0;
 			/*if ( oldcount >= 10 )
@@ -1100,7 +1102,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 			item->count = 1;
 			if ( notifyMessage )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY, language[1088], item->description());
+				messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
 			}
 			item->count = oldcount - 1;
 		}
@@ -1170,8 +1172,12 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
-		// play sound
-		playSoundEntity( players[player]->entity, 47 + local_rng.rand() % 3, 64 );
+		// play sound - not in the same tick
+		if ( ticks - dropItemSfxTicks[player] > 1 )
+		{
+			playSoundEntity( players[player]->entity, 47 + local_rng.rand() % 3, 64 );
+		}
+		dropItemSfxTicks[player] = ticks;
 
 		// unequip the item
 		Item** slot = itemSlot(stats[player], item);
@@ -1196,7 +1202,7 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage)
 					item->count = qtyToDrop;
 					if ( notifyMessage )
 					{
-						messagePlayer(player, MESSAGE_INVENTORY, language[1088], item->description());
+						messagePlayer(player, MESSAGE_SPAM_MISC, language[1088], item->description());
 					}
 					item->count = oldcount - qtyToDrop;
 					if ( item->count <= 0 )
@@ -1598,6 +1604,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 						{
 							messagePlayer(player, MESSAGE_EQUIPMENT, language[1089], (*slot)->getName());
 						}
+						playSoundPlayer(player, 90, 64);
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1705,6 +1712,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 						{
 							messagePlayer(player, MESSAGE_EQUIPMENT, language[1089], (*slot)->getName());
 						}
+						playSoundPlayer(player, 90, 64);
 					}
 					(*slot)->identified = true;
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
@@ -1718,6 +1726,10 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					{
 						// no backpack space
 						messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+						if ( players[player]->isLocalPlayer() )
+						{
+							playSoundPlayer(player, 90, 64);
+						}
 						return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 					}
 				}
@@ -1810,11 +1822,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 	if ( item->status == BROKEN && player >= 0 && players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName());
+		playSoundPlayer(player, 90, 64);
 		return;
 	}
 	if ( item->type == FOOD_CREAMPIE && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, MESSAGE_EQUIPMENT, language[3874]); // can't eat while equipped.
+		playSoundPlayer(player, 90, 64);
 		return;
 	}
 
@@ -1839,10 +1853,56 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if ( !havetinopener )
 			{
 				messagePlayer(player, MESSAGE_HINT, language[1093]);
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 		}
 	}
+
+	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_SUCCESS_UNEQUIP;
+
+	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
+	if ( unequipForDropping )
+	{
+		checkInventorySpaceForPaperDoll = false;
+	}
+	struct ItemDetailsForServer
+	{
+		ItemType type = WOODEN_SHIELD;
+		Status status = EXCELLENT;
+		Sint16 beatitude = 0;
+		Sint16 count = 1;
+		Uint32 appearance = 0;
+		bool identified = false;
+		bool sendToServer = false;
+		void setItem(Item& item)
+		{
+			type = item.type;
+			status = item.status;
+			beatitude = item.beatitude;
+			count = item.count;
+			appearance = item.appearance;
+			identified = item.identified;
+			sendToServer = true;
+		}
+		void send()
+		{
+			if ( multiplayer != CLIENT ) { return; }
+			strcpy((char*)net_packet->data, "USEI");
+			SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(count), &net_packet->data[16]);
+			SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
+			net_packet->data[24] = identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+	};
+	ItemDetailsForServer itemDetailsForServer;
 
 	if ( multiplayer == CLIENT && !intro )
 	{
@@ -1854,18 +1914,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 		else
 		{
-			strcpy((char*)net_packet->data, "USEI");
-			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
-			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
-			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
-			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
-			SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
-			net_packet->data[24] = item->identified;
-			net_packet->data[25] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			itemDetailsForServer.setItem(*item);
 		}
 	}
 
@@ -1884,14 +1933,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				tryLearnPotionRecipe = true;
 			}
 		}
-	}
-
-	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP;
-
-	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
-	if ( unequipForDropping )
-	{
-		checkInventorySpaceForPaperDoll = false;
 	}
 
 	switch ( item->type )
@@ -2079,6 +2120,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case POTION_EMPTY:
 			messagePlayer(player, MESSAGE_HINT, language[2359]);
+			if ( players[player]->isLocalPlayer() )
+			{
+				playSoundPlayer(player, 90, 64);
+			}
 			break;
 		case POTION_POLYMORPH:
 		{
@@ -2446,6 +2491,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					else
 					{
 						messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, language[970]);
+						playSoundPlayer(player, 90, 64);
 					}
 				}
 			}
@@ -2487,6 +2533,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	if ( players[player]->isLocalPlayer() )
 	{
+		if ( checkInventorySpaceForPaperDoll && equipItemResult == EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			itemDetailsForServer.sendToServer = false;
+		}
+
+		if ( itemDetailsForServer.sendToServer )
+		{
+			itemDetailsForServer.send();
+		}
 		if ( drankPotion && usedBy
 			&& (players[player] && players[player]->entity)
 			&& players[player]->entity == usedBy )
@@ -5703,6 +5758,7 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 			if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 			{
 				messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 		}

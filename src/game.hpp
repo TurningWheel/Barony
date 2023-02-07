@@ -127,6 +127,8 @@ enum MessageType : Uint32 {
 	MESSAGE_HINT = 1u << 9, // special text cues and descriptive messages
 	MESSAGE_OBITUARY = 1u << 10, // character death announcement
 	MESSAGE_CHATTER = 1u << 11, // NPC chatter
+	MESSAGE_SPAM_MISC = 1u << 28, // misc spammy messages "dropped item" "it burns!" 
+	MESSAGE_COMBAT_BASIC = 1u << 29, // basic combat 'the skeleton hits!' 'you hit the skeleton!'
 	MESSAGE_DEBUG = 1u << 30, // debug only messages
 	MESSAGE_MISC = 1u << 31, // miscellaneous messages
 };
@@ -343,7 +345,7 @@ void drawAllPlayerCameras();
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
-#define XPSHARERANGE 256
+#define XPSHARERANGE 99999
 
 // function prototypes for charclass.c:
 void initClass(int player);

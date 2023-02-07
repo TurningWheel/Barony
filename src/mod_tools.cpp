@@ -854,6 +854,10 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.spellTags.insert(SPELL_TAG_CURE);
 			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BASIC_HIT_MESSAGE" )
+			{
+				t.spellTags.insert(SPELL_TAG_BASIC_HIT_MESSAGE);
+			}
 		}
 
 		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
@@ -1601,6 +1605,19 @@ bool ItemTooltips_t::bIsSpellDamageOrHealingType(spell_t* spell)
 		|| spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_DAMAGE) != spellItems[spell->ID].spellTags.end() )
 	{
 		return true;
+	}
+	return false;
+}
+
+bool ItemTooltips_t::bSpellHasBasicHitMessage(const int spellID)
+{
+	if ( spellItems.find(spellID) != spellItems.end() )
+	{
+		auto& entry = spellItems[spellID];
+		if ( entry.spellTags.find(SPELL_TAG_BASIC_HIT_MESSAGE) != entry.spellTags.end() )
+		{
+			return true;
+		}
 	}
 	return false;
 }

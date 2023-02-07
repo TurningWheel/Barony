@@ -855,6 +855,15 @@ void actThrown(Entity* my)
 							default:
 								break;
 						}
+
+						if ( ignorePotion )
+						{
+							if ( parent && parent->behavior == &actPlayer && itemCategory(item) == POTION )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[4320], language[4321], MSG_COMBAT);
+							}
+						}
 					}
 					else
 					{
@@ -1075,18 +1084,18 @@ void actThrown(Entity* my)
 									{
 										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
 										}
 										else
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
 										}
 									}
 								}
 								else if ( hit.entity->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[588], itemname); // hit by a flying
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
@@ -1354,10 +1363,10 @@ void actThrown(Entity* my)
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[447]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[447]);
 								}
 							}
 						}
@@ -1373,16 +1382,16 @@ void actThrown(Entity* my)
 							}
 							else
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[449]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[449]);
 									}
 									else
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[450]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT_BASIC, language[450]);
 									}
 								}
 							}
@@ -1392,7 +1401,7 @@ void actThrown(Entity* my)
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = makeColorRGB(255, 0, 0);
-					messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, color, language[588], itemname);
+					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[588], itemname); // hit by a flying
 					if ( damage == 0 && !wasPotion )
 					{
 						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, language[452]);

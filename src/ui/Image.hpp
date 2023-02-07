@@ -33,6 +33,14 @@ public:
 	//! @param color a 32-bit color to mix with the image
 	void drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const;
 
+	//! draws surface with rotation and given color
+	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
+	//! @param dest the location and size by which the image should be drawn
+	//! @param viewport the viewport dimensions
+	//! @param color a 32-bit color to mix with the image
+	//! @param angle rotation
+	void drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle);
+
 	//! bind this image as the active GL texture
 	void bind() const;
 
@@ -52,7 +60,7 @@ public:
 	//! @param viewport the viewport dimensions
 	//! @param color a 32-bit color to mix with the image
 	static void drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color);
-
+	
 	const char*				getName() const { return name.c_str(); }
 	virtual const bool		isStreamable() const { return true; }
 	const GLuint			getTexID() const { return texid; }

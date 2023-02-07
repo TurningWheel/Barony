@@ -357,6 +357,41 @@ SDL_Surface* identifyGUI_img;
 //	}
 //} //updateIdentifyGUI()
 
+bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( item->identified ) { return false; }
+
+	if ( stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
+	{
+		if ( item->type == GEM_GLASS )
+		{
+			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL] 
+				+ statGetPER(stats[player.playernum], player.entity) * 5) >= 100 )
+			{
+				return true;
+			}
+		}
+		else
+		{
+			if ( (stats[player.playernum]->PROFICIENCIES[PRO_APPRAISAL]
+				+ statGetPER(stats[player.playernum], player.entity) * 5) >= items[item->type].value / 10 )
+			{
+				return true;
+			}
+		}
+	}
+	else
+	{
+		return true;
+	}
+	return false;
+}
+
 void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 {
 	if (!item)
@@ -367,6 +402,14 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	{
 		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[319], item->getName());
 		old_item = 0;
+		playSoundPlayer(player.playernum, 90, 64);
+		return;
+	}
+	else if ( !appraisalPossible(item) )
+	{
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[3240], item->description());
+		old_item = 0;
+		playSoundPlayer(player.playernum, 90, 64);
 		return;
 	}
 

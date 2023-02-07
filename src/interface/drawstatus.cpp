@@ -23,142 +23,7 @@
 #include "../colors.hpp"
 #include "../mod_tools.hpp"
 #include "../ui/GameUI.hpp"
-
-/*-------------------------------------------------------------------------------
-
-	handleDamageIndicators
-
-	draws damage indicators, fades them, culls them, etc.
-
--------------------------------------------------------------------------------*/
-
-void handleDamageIndicators(int player)
-{
-	node_t* node, *nextnode;
-	for ( node = damageIndicators[player].first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
-
-		double tangent = atan2( damageIndicator->y / 16 - cameras[player].y, damageIndicator->x / 16 - cameras[player].x );
-		double angle = tangent - cameras[player].ang;
-		angle += 3 * PI / 2;
-		while ( angle >= PI )
-		{
-			angle -= PI * 2;
-		}
-		while ( angle < -PI )
-		{
-			angle += PI * 2;
-		}
-		SDL_Rect pos;
-		pos.x = players[player]->camera_midx();
-		pos.y = players[player]->camera_midy();
-		pos.x += 200 * cos(angle);
-		pos.y += 200 * sin(angle);
-		pos.w = damage_bmp->w;
-		pos.h = damage_bmp->h;
-		if ( stats[player]->HP > 0 )
-		{
-			drawImageRotatedAlpha( damage_bmp, NULL, &pos, angle, (Uint8)(damageIndicator->alpha * 255) );
-		}
-
-		damageIndicator->alpha = std::min(damageIndicator->ticks, 120) / 120.f;
-		if ( damageIndicator->alpha <= 0 )
-		{
-			list_RemoveNode(node);
-		}
-	}
-}
-
-void handleDamageIndicatorTicks()
-{
-	node_t* node;
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		for ( node = damageIndicators[i].first; node != NULL; node = node->next )
-		{
-			damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
-			damageIndicator->ticks--;
-		}
-	}
-}
-
-/*-------------------------------------------------------------------------------
-
-	newDamageIndicator
-
-	creates a new damage indicator on the hud
-
--------------------------------------------------------------------------------*/
-
-damageIndicator_t* newDamageIndicator(const int player, double x, double y)
-{
-	damageIndicator_t* damageIndicator;
-
-	// allocate memory for the indicator
-	if ( (damageIndicator = (damageIndicator_t*) malloc(sizeof(damageIndicator_t))) == NULL )
-	{
-		printlog( "failed to allocate memory for new damage indicator!\n" );
-		exit(1);
-	}
-
-	// add the indicator to the list of indicators
-	damageIndicator->node = list_AddNodeLast(&damageIndicators[player]);
-	damageIndicator->node->element = damageIndicator;
-	damageIndicator->node->deconstructor = &defaultDeconstructor;
-	damageIndicator->node->size = sizeof(damageIndicator_t);
-
-	damageIndicator->x = x;
-	damageIndicator->y = y;
-	damageIndicator->alpha = 1.f;
-	damageIndicator->ticks = 120; // two seconds
-
-	return damageIndicator;
-}
-
-/*-------------------------------------------------------------------------------
-
-	updateEnemyBarColor
-
-	updates the enemy hp bar color depending on an entities status effects
-
--------------------------------------------------------------------------------*/
-
-void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Stat &targetStats)
-{
-	if ( targetStats.EFFECTS[EFF_POISONED] )
-	{
-		if ( colorblind )
-		{
-			enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(0, 0, 64); // Display blue
-		}
-		else
-		{
-			enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(0, 64, 0); // Display green
-		}
-	}
-	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(112, 112, 0);
-	}
-	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(92, 0, 92);
-	}
-	else if ( targetStats.EFFECTS[EFF_PACIFY] )
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(128, 32, 80);
-	}
-	else if ( targetStats.EFFECTS[EFF_BLIND] )
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = makeColorRGB(64, 64, 64);
-	}
-	else
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
-	}
-}
+#include "../ui/Image.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -232,50 +97,23 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	Stat* stats = target->getStats();
 	if ( stats )
 	{
-		if ( stats->HP != stats->OLDHP )
+		bool tookDamage = stats->HP != stats->OLDHP;
+		if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
 		{
-			if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
-			{
-				newDamageIndicator(playertarget, source->x, source->y);
-			}
-			else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
-			{
-				strcpy((char*)net_packet->data, "DAMI");
-				SDLNet_Write32(source->x, &net_packet->data[4]);
-				SDLNet_Write32(source->y, &net_packet->data[8]);
-				net_packet->address.host = net_clients[playertarget - 1].host;
-				net_packet->address.port = net_clients[playertarget - 1].port;
-				net_packet->len = 12;
-				sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
-			}
+			DamageIndicatorHandler.insert(playertarget, source->x, source->y, tookDamage);
 		}
-
-		if ( player >= 0 )
+		else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
 		{
-			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
+			strcpy((char*)net_packet->data, "DAMI");
+			SDLNet_Write32(source->x, &net_packet->data[4]);
+			SDLNet_Write32(source->y, &net_packet->data[8]);
+			net_packet->data[12] = tookDamage ? 1 : 0;
+			net_packet->address.host = net_clients[playertarget - 1].host;
+			net_packet->address.port = net_clients[playertarget - 1].port;
+			net_packet->len = 13;
+			sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
 		}
 	}
-	else if ( player >= 0 && players[player]->isLocalPlayer() )
-	{
-		enemyHPDamageBarHandler[player].enemy_bar_client_color = 0;
-	}
-
-	//if ( player >= 0 )
-	//{
-	//	if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
-	//	{
-	//		// if new target or timer expired, get new OLDHP value.
-	//		if ( stats )
-	//		{
-	//			enemy_oldhp = stats->OLDHP;
-	//		}
-	//	}
-	//	if ( !stats )
-	//	{
-	//		enemy_oldhp = hp; // chairs/tables and things.
-	//	}
-	//	enemy_lastuid = target->getUID();
-	//}
 
 	int oldhp = 0;
 	if ( stats )
@@ -326,13 +164,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 		if ( stats )
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp,
-				enemyHPDamageBarHandler[p].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick);
 		}
 		else
 		{
-			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp,
-				enemyHPDamageBarHandler[p].enemy_bar_client_color, target->getUID(), name, lowPriorityTick);
+			enemyHPDamageBarHandler[p].addEnemyToList(hp, maxhp, oldhp, target->getUID(), name, lowPriorityTick);
 		}
 	}
 	
@@ -1226,12 +1062,13 @@ void drawStatus(int player)
 									{
 										if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 										}
 										else
 										{
-											messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+											messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 										}
+										playSoundPlayer(player, 90, 64);
 									}
 								}
 							}
@@ -1245,12 +1082,13 @@ void drawStatus(int player)
 								{
 									if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 									}
 									else
 									{
-										messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+										messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 									}
+									playSoundPlayer(player, 90, 64);
 								}
 							}
 							used = true;
@@ -2207,12 +2045,13 @@ void drawStatus(int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 	}
@@ -2734,9 +2573,58 @@ void drawStatusNew(const int player)
 						tooltipOpen = true;
 						tooltipSlotFrame = hotbarSlotFrame;
 						players[player]->hud.updateFrameTooltip(item, src.x, src.y, players[player]->PANEL_JUSTIFY_LEFT);
-						SDL_Rect tooltipPos = players[player]->inventoryUI.tooltipFrame->getSize();
+
+						auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
+						if ( players[player]->inventoryUI.itemTooltipDisplay.displayingTitleOnlyTooltip )
+						{
+							tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+						}
+
+						SDL_Rect tooltipPos = tooltipFrame->getSize();
 						tooltipPos.x = src.x - tooltipPos.w / 2;
 						tooltipPos.y = src.y - tooltipPos.h;
+						if ( players[player]->inventoryUI.itemTooltipDisplay.displayingTitleOnlyTooltip )
+						{
+							int highestSlotY = players[player]->camera_virtualy2();
+							for ( int num2 = 0; num2 < NUM_HOTBAR_SLOTS; ++num2 )
+							{
+								if ( auto slotFrame = hotbar_t.getHotbarSlotFrame(num2) )
+								{
+									if ( !slotFrame->isDisabled() )
+									{
+										highestSlotY = std::min(highestSlotY, slotFrame->getSize().y);
+									}
+								}
+							}
+							if ( hotbar_t.useHotbarFaceMenu )
+							{
+								static ConsoleVariable<int> cvar_tooltip_title_only_facemenu_y("/tooltip_title_only_facemenu_y", 4);
+								if ( inputs.hasController(player) )
+								{
+									tooltipPos.y -= 12 * hotbar_t.selectedSlotAnimateCurrentValue;
+								}
+								else
+								{
+									tooltipPos.y = highestSlotY - tooltipPos.h - 8;
+									tooltipPos.x = hotbar_t.hotbarFrame->getSize().w / 2 - tooltipPos.w / 2;
+									if ( tooltipPos.x % 2 == 1 )
+									{
+										++tooltipPos.x;
+									}
+								}
+								tooltipPos.y += *cvar_tooltip_title_only_facemenu_y;
+							}
+							else
+							{
+								static ConsoleVariable<int> cvar_tooltip_title_only_y("/tooltip_title_only_y", 8);
+								tooltipPos.x = hotbar_t.hotbarFrame->getSize().w / 2 - tooltipPos.w / 2;
+								tooltipPos.y += *cvar_tooltip_title_only_y;
+								if ( tooltipPos.x % 2 == 1 )
+								{
+									++tooltipPos.x;
+								}
+							}
+						}
 						if ( tooltipPos.x < 0 )
 						{
 							tooltipPos.x = 0;
@@ -2745,7 +2633,7 @@ void drawStatusNew(const int player)
 						{
 							tooltipPos.x -= (tooltipPos.x + tooltipPos.w) - players[player]->inventoryUI.tooltipContainerFrame->getSize().w;
 						}
-						players[player]->inventoryUI.tooltipFrame->setSize(tooltipPos);
+						tooltipFrame->setSize(tooltipPos);
 						if ( players[player]->inventoryUI.tooltipPromptFrame
 							&& !players[player]->inventoryUI.tooltipPromptFrame->isDisabled()
 							&& !(players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_FULL 
@@ -3453,12 +3341,13 @@ void drawStatusNew(const int player)
 			{
 				if ( client_classes[player] == CLASS_SHAMAN && item->type == SPELL_ITEM )
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3488]); // unable to use with current level.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3488]); // unable to use with current level.
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_COMBAT, language[3432]); // unable to use in current form message.
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 				}
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 	}

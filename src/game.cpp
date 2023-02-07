@@ -2685,7 +2685,7 @@ void gameLogic(void)
 					else
 					{
 						if ( auto_appraise_new_items && players[player]->inventoryUI.appraisal.timer == 0 
-							&& !(item->identified) )
+							&& !(item->identified) && players[player]->inventoryUI.appraisal.appraisalPossible(item) )
 						{
 							int appraisal_time = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
 							if ( appraisal_time < auto_appraise_lowest_time[player] )
@@ -3256,7 +3256,8 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 && !(item->identified) )
+					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 
+						&& !(item->identified) && players[clientnum]->inventoryUI.appraisal.appraisalPossible(item) )
 					{
 						int appraisal_time = players[clientnum]->inventoryUI.appraisal.getAppraisalTime(item);
 						if (appraisal_time < auto_appraise_lowest_time[clientnum])
@@ -4819,15 +4820,38 @@ void ingameHud()
         {
 	        // toggle minimap
 		    // player not needed to be alive
-            if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE
-				&& players[player]->minimap.bExpandPromptEnabled
-				&& input.consumeBinaryToggle("Toggle Minimap") )
-            {
-                openMinimap(player);
-            }
-
             // map window bind
-            if ( input.consumeBinaryToggle("Open Map") )
+			if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+			{
+				if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+				{
+					players[player]->minimap.bExpandPromptEnabled = true;
+					if ( players[player]->worldUI.isEnabled()
+						&& players[player]->worldUI.bTooltipInView
+						&& players[player]->worldUI.tooltipsInRange.size() > 1 )
+					{
+						std::string expandBinding = input.binding("Toggle Minimap");
+						std::string cycleNextBinding = input.binding("Interact Tooltip Next");
+						std::string cyclePrevBinding = input.binding("Interact Tooltip Prev");
+						if ( expandBinding == cycleNextBinding
+							|| expandBinding == cyclePrevBinding )
+						{
+							players[player]->minimap.bExpandPromptEnabled = false;
+						}
+					}
+					if ( input.consumeBinaryToggle("Toggle Minimap") && players[player]->minimap.bExpandPromptEnabled )
+					{
+						openMapWindow(player);
+					}
+				}
+				else if ( players[player]->minimap.bExpandPromptEnabled
+					&& input.consumeBinaryToggle("Toggle Minimap") )
+				{
+					openMinimap(player);
+				}
+			}
+
+			if ( input.consumeBinaryToggle("Open Map") )
             {
                 openMapWindow(player);
             }
@@ -4937,13 +4961,20 @@ void ingameHud()
 			    if (tryHotbarQuickCast || input.binaryToggle("Cast Spell") || (hasSpellbook && input.binaryToggle("Defend")) )
 			    {
 				    allowCasting = true;
-				    if ( tryHotbarQuickCast == false ) 
+				    if ( tryHotbarQuickCast == false )
 					{
 						if ( hotbarFaceMenuOpen )
 						{
 							allowCasting = false;
 						}
 				    }
+					else
+					{
+						if ( !players[player]->hotbar.faceMenuQuickCastEnabled && !tryInventoryQuickCast )
+						{
+							allowCasting = false;
+						}
+					}
 
 				    if ( allowCasting && input.binaryToggle("Defend") && hasSpellbook && players[player] && players[player]->entity )
 				    {
@@ -5148,8 +5179,8 @@ void ingameHud()
 		{
 			continue;
 		}
-		players[player]->messageZone.processChatbox();
 		players[player]->hud.processHUD();
+		players[player]->messageZone.processChatbox();
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();
@@ -6760,11 +6791,11 @@ int main(int argc, char** argv)
 				}
 				if ( !nohud )
 				{
+					DamageIndicatorHandler.update();
 					for ( int player = 0; player < MAXPLAYERS; ++player )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
-							handleDamageIndicators(player);
 							players[player]->messageZone.drawMessages();
 						}
 					}

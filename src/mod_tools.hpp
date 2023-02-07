@@ -2639,7 +2639,8 @@ class ItemTooltips_t
 		SPELL_TAG_UTILITY,
 		SPELL_TAG_STATUS_EFFECT,
 		SPELL_TAG_HEALING,
-		SPELL_TAG_CURE
+		SPELL_TAG_CURE,
+		SPELL_TAG_BASIC_HIT_MESSAGE
 	};
 
 	struct spellItem_t
@@ -2745,6 +2746,7 @@ public:
 	real_t getSpellSustainCostPerSecond(int spellID);
 	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
 	bool bIsSpellDamageOrHealingType(spell_t* spell);
+	bool bSpellHasBasicHitMessage(const int spellID);
 
 	void formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute);
 	void formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str);

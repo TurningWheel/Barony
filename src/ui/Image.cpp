@@ -190,6 +190,75 @@ void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, co
 	glPopMatrix();
 }
 
+void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle)
+{
+	if ( !surf ) {
+		return;
+	}
+
+	// read color
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	if ( !a ) {
+		return;
+	}
+
+	// set GL state
+	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+
+	// push projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+
+	// push model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glTranslatef(dest.x, viewport.h - dest.y, 0);
+	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
+
+	// for the use of a whole image
+	SDL_Rect secondsrc;
+	if ( src == nullptr ) {
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = surf->w;
+		secondsrc.h = surf->h;
+		src = &secondsrc;
+	}
+
+	// bind texture
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(-dest.w / 2, dest.h / 2);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(-dest.w / 2, -dest.h / 2);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.w / 2, -dest.h / 2);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.w / 2, dest.h / 2);
+	glEnd();
+
+	// unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glColor4f(1.f, 1.f, 1.f, 1.f);
+
+	// pop matrices
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+}
+
 static std::unordered_map<std::string, Image*> hashed_images;
 static const size_t IMAGE_BUDGET = 1 * 1024 * 1024 * 512; // in bytes
 static size_t IMAGE_VOLUME = 0; // in bytes

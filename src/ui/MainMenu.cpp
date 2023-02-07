@@ -927,7 +927,7 @@ namespace MainMenu {
 		return back_button;
 	}
 
-	static Frame* createPrompt(const char* name, bool small = true) {
+	static Frame* createPrompt(const char* name, bool issmall = true) {
 	    if (!main_menu_frame) {
 	        return nullptr;
 	    }
@@ -944,7 +944,7 @@ namespace MainMenu {
 		auto frame = dimmer->addFrame(name);
 		frame->setColor(0);
 		frame->setBorder(0);
-		if (small) {
+		if ( issmall ) {
 		    frame->setSize(SDL_Rect{(Frame::virtualScreenX - 364) / 2, (Frame::virtualScreenY - 176) / 2, 364, 176});
 		    frame->setActualSize(SDL_Rect{0, 0, 364, 176});
 		    frame->addImage(
@@ -1385,11 +1385,11 @@ namespace MainMenu {
 	    const char* name,
 	    const char* window_text,
 	    void (*tick_callback)(Widget&),
-	    bool small = true
+	    bool issmall = true
 	    ) {
 		soundActivate();
 
-	    Frame* frame = createPrompt(name, small);
+	    Frame* frame = createPrompt(name, issmall);
 	    if (!frame) {
 	        return nullptr;
 	    }
@@ -19323,9 +19323,15 @@ bind_failed:
 			for (int c = 0; c < num_banners; ++c) {
 				std::string name = std::string("banner") + std::to_string(c + 1);
 				auto banner = banners->addButton(name.c_str());
-				banner->setSize(SDL_Rect{0, c * 92, 472, 76});
 				banner->setBackground(banner_images[c][0]);
 				banner->setBackgroundHighlighted(banner_images[c][1]);
+				SDL_Rect bannerPos = SDL_Rect{ 0, c * 92, 472, 76 };
+				if ( auto imgGet = Image::get(banner_images[c][0]) )
+				{
+					bannerPos.w = imgGet->getWidth();
+					bannerPos.x = 472 / 2 - bannerPos.w / 2;
+				}
+				banner->setSize(bannerPos);
 				banner->setCallback(banner_funcs[c]);
 		        banner->setButtonsOffset(SDL_Rect{0, 8, 0, 0});
 				banner->setColor(uint32ColorWhite);

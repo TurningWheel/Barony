@@ -26,6 +26,37 @@ typedef struct damageIndicator_t
 	Sint32 ticks; // birthtime of the damage indicator
 } damageIndicator_t;
 extern list_t damageIndicators[MAXPLAYERS];
+struct DamageIndicatorHandler_t
+{
+	struct DamageIndicator_t
+	{
+		int player = -1;
+		real_t x = 0.0; // x and y of the attacker in world coordinates
+		real_t y = 0.0;
+		real_t alpha = 0.0;
+		Uint32 ticks = 0;
+		Uint32 animateTicks = 0;
+		Uint32 uid = 0;
+
+		int size = 0;
+		int w = 0;
+		int h = 0;
+		Uint32 flashTicks = 0;
+		Uint32 flashProcessedOnTick = 0;
+		int flashAnimState = -1;
+		bool hitDealtDamage = false;
+		bool expired = false;
+		DamageIndicator_t(const int _player)
+		{
+			player = _player;
+		}
+		void process();
+	};
+	void update();
+	void insert(const int player, const real_t _x, const real_t _y, const bool damaged);
+	std::vector<DamageIndicator_t> indicators[MAXPLAYERS];
+};
+extern DamageIndicatorHandler_t DamageIndicatorHandler;
 
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
@@ -81,7 +112,6 @@ public:
 		Sint32 enemy_maxhp = 0;
 		Sint32 enemy_oldhp = 0;
 		Uint32 enemy_timer = 0;
-		Uint32 enemy_bar_color = 0;
 		Uint32 enemy_uid = 0;
 		Uint32 enemy_statusEffects1 = 0;
 		Uint32 enemy_statusEffects2 = 0;
@@ -95,7 +125,7 @@ public:
 		real_t depletionAnimationPercent = 100.0;
 		float glWorldOffsetY = 0.0;
 		EnemyHPDetails() {};
-		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, const char* name, bool isLowPriority)
+		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, const char* name, bool isLowPriority)
 		{
 			if ( Entity* entity = uidToEntity(uid) )
 			{
@@ -111,7 +141,6 @@ public:
 			depletionAnimationPercent =
 				enemy_oldhp / static_cast<real_t>(enemy_maxhp);
 			enemy_timer = ticks;
-			enemy_bar_color = color;
 			lowPriorityTick = isLowPriority;
 			shouldDisplay = true;
 			enemy_name = name;
@@ -130,9 +159,8 @@ public:
 		void updateWorldCoordinates();
 	};
 
-	Uint32 enemy_bar_client_color = 0;
 	std::unordered_map<Uint32, EnemyHPDetails> HPBars;
-	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority);
+	void addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority);
 	void displayCurrentHPBar(const int player);
 	void cullExpiredHPBars();
 	EnemyHPDetails* getMostRecentHPBar(int index = 0);
@@ -207,7 +235,6 @@ void freeInterfaceResources();
 void clickDescription(const int player, Entity* entity);
 void consoleCommand(char const * const command);
 void drawMinimap(const int player, SDL_Rect rect);
-void handleDamageIndicators(const int player);
 void handleDamageIndicatorTicks();
 void drawStatus(const int player);
 void drawStatusNew(const int player);
@@ -221,7 +248,6 @@ void updateAppraisalItemBox(const int player);
 void updateShopWindow(const int player);
 bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
-damageIndicator_t* newDamageIndicator(const int player, double x, double y);
 
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems(const int player);

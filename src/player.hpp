@@ -789,6 +789,7 @@ public:
 		Frame* frame = nullptr;
 		Frame* tooltipContainerFrame = nullptr;
 		Frame* tooltipFrame = nullptr;
+		Frame* titleOnlyTooltipFrame = nullptr;
 		Frame* interactFrame = nullptr;
 		Frame* interactBlockClickFrame = nullptr;
 		Frame* tooltipPromptFrame = nullptr;
@@ -925,6 +926,8 @@ public:
 
 			int opacitySetpoint = 100;
 			real_t opacityAnimate = 1.0;
+			int titleOnlyOpacitySetpoint = 100;
+			real_t titleOnlyOpacityAnimate = 1.0;
 			real_t expandAnimate = 1.0;
 			int expandSetpoint = 1;
 			real_t expandCurrent = 1.0;
@@ -937,6 +940,7 @@ public:
 			bool isItemSameAsCurrent(const int player, Item* newItem);
 			void updateItem(const int player, Item* newItem);
 			bool displayingShortFormTooltip = false;
+			bool displayingTitleOnlyTooltip = false;
 			ItemTooltipDisplay_t();
 		};
 		ItemTooltipDisplay_t itemTooltipDisplay;
@@ -1055,6 +1059,7 @@ public:
 			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
+			bool appraisalPossible(Item* item); // if possible with current skill and stats
 			real_t animAppraisal = 0.0;
 			Uint32 animStartTick = 0;
 			Uint32 itemNotifyUpdatedThisTick = 0;
@@ -1717,10 +1722,20 @@ public:
 		//Maximum number of messages displayed on screen at once before the oldest message is automatically deleted.
 		int getMaxTotalLines();
 
-		static const int MESSAGE_MAX_ENTRIES = 20;
+		int MESSAGE_MAX_ENTRIES = 20;
 		Frame* chatFrame = nullptr;
-		bool leftAlignedMessages = false;
+		bool bottomAlignedMessages = false;
 		bool useBigFont = false;
+		static const char* bigfont;
+		static const char* smallfont;
+		enum ChatAlignment_t : int
+		{
+			ALIGN_CENTER_BOTTOM,
+			ALIGN_LEFT_BOTTOM,
+			ALIGN_LEFT_TOP
+		};
+		ChatAlignment_t messageAlignment = ALIGN_CENTER_BOTTOM;
+		ChatAlignment_t actualAlignment = ALIGN_CENTER_BOTTOM;
 		void createChatbox();
 		void processChatbox();
 

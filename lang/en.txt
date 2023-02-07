@@ -626,7 +626,7 @@ thou makest use of them.#
 383 Your amulet is destroyed!#
 384 Your shield is damaged!#
 385 Your shield is destroyed!#
-386 But the spell is resisted!#
+386 DEPRECATED#
 387 Your spell destroys the door!#
 388 Your spell destroys the chair!#
 389 Your spell destroys the table!#
@@ -869,7 +869,7 @@ thou makest use of them.#
 "Han shot first."
 "It's true!"#
 544 "Did you know?"
-"Rainbow Dash is best pony."
+"Rainbow pony is best pony."
 "It's true!"#
 545 "Did you know?"
 "Spider venom fades in ten seconds."
@@ -1099,7 +1099,7 @@ You should call a plumber!#
 697 You killed %s!#
 698 The %s %s!#
 699 %s %s!#
-700 But their blow bounces off!#
+700 DEPRECATED#
 701 You're bleeding!#
 702 The %s is bleeding!#
 703 %s is bleeding!#
@@ -1148,10 +1148,9 @@ Press 'Okay' to return to the main menu.#
 732 Okay#
 733 Random Character#
 734 Welcome to Barony, %s.#
-735 Press <%s> to review your inventory.#
-736 Press <%s> to use objects.
-#
-737 You have entered the dungeon.#
+735 DEPRECATED#
+736 DEPRECATED#
+737 DEPRECATED#
 738 Please do not pirate this game!
 
 Our work lives and dies by the support of
@@ -3127,10 +3126,8 @@ but it retracts beyond your might!#
 2424 The %s is severely wounded!#
 2425 You are severely wounded!#
 2426 Trio Missile#
-2427 You feel energy go out from you as you
-dominate %s into your service!#
-2428 You feel energy go out from you as you
-dominate the %s into your service!#
+2427 You dominate %s into your service!#
+2428 You dominate the %s into your service!#
 2429 You are unable to dominate this one.#
 2430 %s is sprayed with corrosive acid!#
 2431 The %s is sprayed with corrosive acid!#
@@ -3168,7 +3165,7 @@ dominate the %s into your service!#
 2472 You feel magic weaken against you.#
 2473 You feel magic bounce off you.#
 2474 Failed to sustain spell (reflect magic).#
-2475 But you feel some energy go out and it bounces off!#
+2475 But it bounces off!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
 2477 You are imbued with vampiric might!#
@@ -4213,7 +4210,8 @@ magic boomerang to ensure they never have to fight toe-to-toe.
 Difficulty: Hard#
 
 3239 Skill number invalid!#
-3240 Your appraisal is not high enough to identify "%s".#
+3240 Your appraisal is not high enough to identify
+ "%s".#
 3241 You feel the curse lift as you incant the spell...#
 3242 The tomes' knowledge grants you control over the curse!#
 3243 Begone from my shop, %s %s!#
@@ -4999,7 +4997,7 @@ Increased Dexterity and movement speed#
 3615 Your trap failed to teleport the %s!#
 3616 Your trap failed to teleport %s!#
 3617 Your %s destroys the %s!#
-3618 Your %s hits the the %s!#
+3618 Your %s hits the %s!#
 3619 Light:#
 3620 [Off]#
 3621 [Faint]#
@@ -6395,5 +6393,13 @@ for accessory to violence!#
 4315 Page Up/Down#
 4316 Scroll Up/Down#
 4317 Your %s failed to detect a suitable landing spot.#
+4318 Book Cast#
+4319 Unable to appraise#
+4320 The potion had no effect on the %s!#
+4321 The potion had no effect on %s!#
+4322 Your spell bounces off the %s!#
+4323 Your spell bounces off %s!#
+4324 You are suddenly burning!#
+4325 You reflected a spell!#
 
 4399 end#

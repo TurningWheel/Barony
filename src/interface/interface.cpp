@@ -149,6 +149,7 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 const int inscriptionSlotHeight = 40;
 
+DamageIndicatorHandler_t DamageIndicatorHandler;
 EnemyHPDamageBarHandler enemyHPDamageBarHandler[MAXPLAYERS];
 FollowerRadialMenu FollowerMenu[MAXPLAYERS];
 GenericGUIMenu GenericGUI[MAXPLAYERS];
@@ -10912,7 +10913,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 	}
 }
 
-void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 color, Uint32 uid, const char* name, bool isLowPriority)
+void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 oldHP, Uint32 uid, const char* name, bool isLowPriority)
 {
 	auto find = HPBars.find(uid);
 	EnemyHPDetails* details = nullptr;
@@ -10921,7 +10922,6 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 		// uid exists in list.
 		(*find).second.enemy_hp = HP;
 		(*find).second.enemy_maxhp = maxHP;
-		(*find).second.enemy_bar_color = color;
 		(*find).second.lowPriorityTick = isLowPriority;
 		if ( !isLowPriority )
 		{
@@ -10936,7 +10936,7 @@ void EnemyHPDamageBarHandler::addEnemyToList(Sint32 HP, Sint32 maxHP, Sint32 old
 	}
 	else
 	{
-		HPBars.insert(std::make_pair(uid, EnemyHPDetails(uid, HP, maxHP, oldHP, color, name, isLowPriority)));
+		HPBars.insert(std::make_pair(uid, EnemyHPDetails(uid, HP, maxHP, oldHP, name, isLowPriority)));
 		auto find = HPBars.find(uid);
 		details = &(*find).second;
 		details->animator.previousSetpoint = details->enemy_oldhp;

@@ -140,6 +140,94 @@ AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::FollowerBars_t::mpBar;
 AllyStatusBarSettings_t::HPBar_t AllyStatusBarSettings_t::PlayerBars_t::hpBar;
 AllyStatusBarSettings_t::MPBar_t AllyStatusBarSettings_t::PlayerBars_t::mpBar;
 
+struct MessageZoneSettings_t
+{
+	enum HotbarTypes_t : int {
+		HOTBAR_CLASSIC,
+		HOTBAR_MODERN_GAMEPAD,
+		HOTBAR_MODERN_KEYBOARD
+	};
+	struct MessageSettings_t
+	{
+		HotbarTypes_t hotbarType = HOTBAR_CLASSIC;
+		Player::MessageZone_t::ChatAlignment_t alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+		enum LayoutType_t : int {
+			LAYOUT_DEFAULT,
+			LAYOUT_COMPACT
+		};
+		struct Layout_t
+		{
+			LayoutType_t layoutType = LAYOUT_DEFAULT;
+			int offsetY = 0;
+			int maxMessages = 10;
+		};
+		std::map<LayoutType_t, Layout_t> layouts;
+	};
+	std::map<HotbarTypes_t, std::map<Player::MessageZone_t::ChatAlignment_t, MessageSettings_t>> settings;
+	MessageSettings_t& addSetting(const HotbarTypes_t _hotbarType, const Player::MessageZone_t::ChatAlignment_t _alignment)
+	{
+		settings[_hotbarType][_alignment] = MessageSettings_t();
+		auto& setting = settings[_hotbarType][_alignment];
+		setting.hotbarType = _hotbarType;
+		setting.alignment = _alignment;
+		return setting;
+	}
+	MessageSettings_t::Layout_t& getLayout(const int player, const Player::MessageZone_t::ChatAlignment_t _alignment)
+	{
+		bool compact = players[player]->bUseCompactGUIHeight();
+		auto layout = compact ? MessageSettings_t::LayoutType_t::LAYOUT_COMPACT : MessageSettings_t::LayoutType_t::LAYOUT_DEFAULT;
+		if ( players[player]->hotbar.useHotbarFaceMenu )
+		{
+			if ( inputs.hasController(player) )
+			{
+				return settings[HOTBAR_MODERN_GAMEPAD][_alignment].layouts[layout];
+			}
+			else
+			{
+				return settings[HOTBAR_MODERN_KEYBOARD][_alignment].layouts[layout];
+			}
+		}
+		else
+		{
+			return settings[HOTBAR_CLASSIC][_alignment].layouts[layout];
+		}
+	}
+};
+MessageZoneSettings_t messageZoneSettings;
+
+struct DamageIndicatorSettings_t
+{
+	enum LayoutType_t : int {
+		LAYOUT_DEFAULT,
+		LAYOUT_2P_WIDE,
+		LAYOUT_2P_TALL,
+		LAYOUT_4P
+	};
+	struct Layout_t
+	{
+		int image_size = 3;
+		int radius_x = 200;
+		int radius_y = 200;
+	};
+	std::map<LayoutType_t, Layout_t> settings;
+	real_t fadeSpeed = 1.0;
+	Uint32 fadeAfterTicks = HITRATE;
+	Uint32 deleteAfterTicks = 45;
+	std::string indicatorDamageFramePaths[4] = {
+		"images/ui/HUD/indicators/damageB",
+		"images/ui/HUD/indicators/damage",
+		"images/ui/HUD/indicators/damage",
+		"images/ui/HUD/indicators/damage"
+	};
+	std::string indicatorBlockedFramePaths[4] = {
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked",
+		"images/ui/HUD/indicators/damage_blocked"
+	};
+};
+DamageIndicatorSettings_t damageIndicatorSettings;
+
 std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
 	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
 real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
@@ -5225,10 +5313,21 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
-const int StatusEffectQueue_t::kEffectBurning = -5;
-const int StatusEffectQueue_t::kEffectWanted = -6;
-const int StatusEffectQueue_t::kEffectWantedInShop = -7;
+const int StatusEffectQueue_t::kEffectWanted = -5;
+const int StatusEffectQueue_t::kEffectWantedInShop = -6;
+const int StatusEffectQueue_t::kEffectBurning = -7;
 const int StatusEffectQueue_t::kEffectFreeAction = -8;
+const int StatusEffectQueue_t::kEffectLesserWarning = -9;
+const int StatusEffectQueue_t::kEffectDisabledHPRegen = -10;
+const int StatusEffectQueue_t::kEffectResistBurning = -11;
+const int StatusEffectQueue_t::kEffectResistPoison = -12;
+const int StatusEffectQueue_t::kEffectSlowDigestion = -13;
+const int StatusEffectQueue_t::kEffectStrangulation = -14;
+const int StatusEffectQueue_t::kEffectWarning = -15;
+const int StatusEffectQueue_t::kEffectWaterBreathing = -16;
+const int StatusEffectQueue_t::kEffectConflict = -17;
+const int StatusEffectQueue_t::kEffectWaterWalking = -18;
+const int StatusEffectQueue_t::kEffectLifesaving = -19;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5262,6 +5361,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 		}
 	}
+
 	for ( auto& eff : effectSet )
 	{
 		if ( eff >= kSpellEffectOffset && (eff - kSpellEffectOffset) == SPELL_SHADOW_TAG )
@@ -5314,7 +5414,37 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	    else
 	    {
-		    if ( stats[player]->EFFECTS[i] )
+			bool effectActive = stats[player]->EFFECTS[i];
+			if ( i == EFF_LEVITATING && !effectActive )
+			{
+				bool tmp = stats[player]->EFFECTS[EFF_FLUTTER];
+				stats[player]->EFFECTS[EFF_FLUTTER] = false;
+				effectActive = isLevitating(stats[player]);
+				stats[player]->EFFECTS[EFF_FLUTTER] = tmp;
+			}
+			else if ( i == EFF_MAGICREFLECT && !effectActive )
+			{
+				if ( stats[player]->amulet )
+				{
+					if ( stats[player]->amulet->type == AMULET_MAGICREFLECTION )
+					{
+						effectActive = true;
+					}
+				}
+				if ( stats[player]->cloak )
+				{
+					if ( stats[player]->cloak->type == CLOAK_MAGICREFLECTION )
+					{
+						effectActive = true;
+					}
+				}
+			}
+			else if ( i == EFF_INVISIBLE && !effectActive && players[player]->entity )
+			{
+				effectActive = players[player]->entity->isInvisible();
+			}
+
+		    if ( effectActive )
 		    {
 			    if ( effectSet.find(i) == effectSet.end() )
 			    {
@@ -5348,30 +5478,83 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	bool burning = false;
-	bool freeaction = false;
 	auto wantedLevel = ShopkeeperPlayerHostility.getWantedLevel(player);
 	bool wantedOutsideOfShop = false;
 	bool wantedInsideShop = false;
 	bool inshop = false;
+
+	std::map<int, bool> miscEffects;
+	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
+	{
+		miscEffects[i] = false;
+	}
 	if ( players[player] && players[player]->entity )
 	{
 		if ( players[player]->entity->flags[BURNING] )
 		{
-			burning = true;
-			if ( effectSet.find(kEffectBurning) == effectSet.end() )
-			{
-				insertEffect(kEffectBurning, -1);
-			}
+			miscEffects[kEffectBurning] = true;
 		}
-		if ( stats[player] &&
-			((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
-				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
+		if ( stats[player] )
 		{
-			freeaction = true;
-			if ( effectSet.find(kEffectFreeAction) == effectSet.end() )
+			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
+			if ( ((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
+				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
 			{
-				insertEffect(kEffectFreeAction, -1);
+				miscEffects[kEffectFreeAction] = true;
+			}
+			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
+			{
+				miscEffects[kEffectLesserWarning] = true;
+			}
+			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					miscEffects[kEffectDisabledHPRegen] = true;
+				}
+			}
+			if ( stats[player]->breastplate && stats[player]->breastplate->type == MACHINIST_APRON )
+			{
+				miscEffects[kEffectResistBurning] = true;
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_POISONRESISTANCE )
+			{
+				miscEffects[kEffectResistPoison] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_SLOWDIGESTION
+				&& (stats[player]->ring->beatitude >= 0 || cursedItemIsBuff) )
+			{
+				if ( !(svFlags & SV_FLAG_HUNGER) )
+				{
+					miscEffects[kEffectSlowDigestion] = true;
+				}
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION )
+			{
+				miscEffects[kEffectStrangulation] = true;
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_WATERBREATHING )
+			{
+				miscEffects[kEffectWaterBreathing] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_WARNING )
+			{
+				miscEffects[kEffectWarning] = true;
+			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_CONFLICT )
+			{
+				miscEffects[kEffectConflict] = true;
+			}
+			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
+				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
+			{
+				miscEffects[kEffectWaterWalking] = true;
+			}
+			if ( (stats[player]->amulet && stats[player]->amulet->type == AMULET_LIFESAVING)
+				|| (((stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0) 
+					|| stats[player]->type == SKELETON) && stats[player]->MP >= 75) )
+			{
+				miscEffects[kEffectLifesaving] = true;
 			}
 		}
 
@@ -5423,20 +5606,25 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 		}
 	}
-	if ( !burning )
+
+	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
 	{
-		if ( effectSet.find(kEffectBurning) != effectSet.end() )
+		if ( miscEffects[i] == false )
 		{
-			deleteEffect(kEffectBurning);
+			if ( effectSet.find(i) != effectSet.end() )
+			{
+				deleteEffect(i);
+			}
+		}
+		else
+		{
+			if ( effectSet.find(i) == effectSet.end() )
+			{
+				insertEffect(i, -1);
+			}
 		}
 	}
-	if ( !freeaction )
-	{
-		if ( effectSet.find(kEffectFreeAction) != effectSet.end() )
-		{
-			deleteEffect(kEffectFreeAction);
-		}
-	}
+
 	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
 	{
 		if ( effectSet.find(kEffectWanted) != effectSet.end() )
@@ -7026,7 +7214,7 @@ void Player::HUD_t::updateActionPrompts()
 	if ( playercount > 2
 		|| (playercount == 2 
 			&& (*MainMenu::vertical_splitscreen 
-				|| !player.shootmode 
+				/*|| !player.shootmode */
 				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
@@ -7195,7 +7383,8 @@ void Player::HUD_t::updateActionPrompts()
 				textPos.w = textGetLongestLine->getWidth();
 				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height();
 				textPos.x = promptPos.x + promptPos.w / 2 - textPos.w / 2;
-				textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4;
+				//textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4; -- top aligned
+				textPos.y = promptPos.y + imgBacking->pos.y + imgBacking->pos.h + 1;
 				promptText->setSize(textPos);
 			}
 
@@ -7678,16 +7867,18 @@ void Player::MessageZone_t::createChatbox()
 static ConsoleVariable<int> cvar_log_lineheight_offset("/log_lineheight_offset", -6);
 static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 24);
 static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
+const char* Player::MessageZone_t::bigfont = "fonts/pixelmix.ttf#16#2";
+const char* Player::MessageZone_t::smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
 void Player::MessageZone_t::processChatbox()
 {
 	if (!chatFrame) {
 		createChatbox();
 	}
 
-	chatFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
-		players[player.playernum]->camera_virtualy1(),
-		players[player.playernum]->camera_virtualWidth(),
-		players[player.playernum]->camera_virtualHeight() });
+	chatFrame->setSize(SDL_Rect{ player.camera_virtualx1(),
+		player.camera_virtualy1(),
+		player.camera_virtualWidth(),
+		player.camera_virtualHeight() });
 
 	int playercount = 0;
 	for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -7705,67 +7896,135 @@ void Player::MessageZone_t::processChatbox()
 	static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 	static const char* smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
 	static ConsoleVariable<bool> cvar_smallmessages("/smallmessages", false);
-    static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
-	static ConsoleVariable<std::string> alignment("/alignmessages", "left");
+    //static ConsoleVariable<bool> cvar_top_aligned("/topmessages", false);
+	//static ConsoleVariable<std::string> alignment("/alignmessages", "");
+	static ConsoleVariable<std::string> cvar_setalignment("/alignmessages", "");
 	static ConsoleVariable<int> cvar_messages_left_y("/messages_left_y", 200);
-	useBigFont = !players[player.playernum]->bUseCompactGUIHeight() && !players[player.playernum]->bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
+	useBigFont = !player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth();// || (playercount == 2 && !*MainMenu::vertical_splitscreen);
 	if ( *cvar_smallmessages )
 	{
 		useBigFont = false;
 	}
-	leftAlignedMessages = (!(*cvar_top_aligned) || !player.shootmode) && playercount <= 2;
 
-	if ( *alignment == "center" && *cvar_top_aligned && playercount <= 2 )
+	if ( *cvar_setalignment == "left" )
 	{
-		leftAlignedMessages = false;
+		messageAlignment = ALIGN_LEFT_BOTTOM;
+	}
+	else if ( *cvar_setalignment == "top" )
+	{
+		messageAlignment = ALIGN_LEFT_TOP;
+	}
+	else if ( *cvar_setalignment == "center" )
+	{
+		messageAlignment = ALIGN_CENTER_BOTTOM;
 	}
 
-    bool pushPaddingX = !players[player.playernum]->shootmode &&
-        ((playercount == 1 
-			&& players[player.playernum]->inventoryUI.getSizeY() > players[player.playernum]->inventoryUI.DEFAULT_INVENTORY_SIZEY) ||
+	actualAlignment = ALIGN_LEFT_BOTTOM;
+	if ( player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth() )
+	{
+		actualAlignment = ALIGN_LEFT_TOP;
+	}
+	else if ( messageAlignment == ALIGN_CENTER_BOTTOM )
+	{
+		if ( !player.bUseCompactGUIHeight() )
+		{
+			// allowed in tall or singleplayer
+			actualAlignment = messageAlignment;
+		}
+		else
+		{
+			actualAlignment = ALIGN_LEFT_TOP; // else default to top-left in wide 2-player
+			if ( !player.shootmode 
+				&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+			{
+				actualAlignment = ALIGN_LEFT_BOTTOM;
+			}
+		}
+	}
+	else if ( messageAlignment == ALIGN_LEFT_BOTTOM )
+	{
+		actualAlignment = messageAlignment; // ok in all configs
+	}
+	else if ( messageAlignment == ALIGN_LEFT_TOP )
+	{
+		actualAlignment = messageAlignment;
+		if ( playercount <= 2 && !player.shootmode
+			&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP) )
+		{
+			actualAlignment = ALIGN_LEFT_BOTTOM;
+		}
+	}
+
+	switch ( actualAlignment )
+	{
+		case ALIGN_CENTER_BOTTOM:
+			bottomAlignedMessages = true;
+			break;
+		case ALIGN_LEFT_BOTTOM:
+			bottomAlignedMessages = true;
+			break;
+		case ALIGN_LEFT_TOP:
+			bottomAlignedMessages = false;
+			break;
+		default:
+			break;
+	}
+
+    bool pushPaddingX = !player.shootmode
+		&& actualAlignment != ALIGN_CENTER_BOTTOM
+		&& (player.gui_mode == GUI_MODE_INVENTORY || player.gui_mode == GUI_MODE_SHOP)
+        && ((playercount == 1 
+			&& player.inventoryUI.getSizeY() > player.inventoryUI.DEFAULT_INVENTORY_SIZEY) ||
         (playercount == 2 && !*MainMenu::vertical_splitscreen));
+
+	auto& messageLayoutSetting = messageZoneSettings.getLayout(player.playernum, actualAlignment);
+	MESSAGE_MAX_ENTRIES = messageLayoutSetting.maxMessages;
 
 	const int leftAlignedPaddingX = pushPaddingX ? 240 : 8;
 	int leftAlignedBottomY = *cvar_messages_left_y;
-	if ( players[player.playernum]->bUseCompactGUIHeight() )
+	leftAlignedBottomY += messageLayoutSetting.offsetY;
+	if ( player.bUseCompactGUIHeight() )
 	{
 		if ( StatusEffectQueue[player.playernum].statusEffectFrame )
 		{
 			const int hungerIconSize = 64;
-			leftAlignedBottomY = players[player.playernum]->camera_virtualy2()
-				- (StatusEffectQueue[player.playernum].statusEffectFrame->getSize().y
-					+ StatusEffectQueue[player.playernum].statusEffectFrame->getSize().h
-					- hungerIconSize - 8);
+			if ( actualAlignment == ALIGN_LEFT_BOTTOM )
+			{
+				leftAlignedBottomY = players[player.playernum]->camera_virtualy2()
+					- (StatusEffectQueue[player.playernum].statusEffectFrame->getSize().y
+						+ StatusEffectQueue[player.playernum].statusEffectFrame->getSize().h
+						- hungerIconSize - 8);
+			}
 		}
 	}
 	const int topAlignedPaddingX = 8;
-	int topAlignedPaddingY = playercount > 2 ? 32 : 8;
-	if ( players[player.playernum]->hud.xpFrame && !leftAlignedMessages && *alignment == "center" )
+	int topAlignedPaddingY = 8;
+	if ( player.hud.allyPlayerFrame && actualAlignment == ALIGN_LEFT_TOP && !splitscreen )
 	{
-		SDL_Rect xpFramePos = players[player.playernum]->hud.xpFrame->getSize();
-		topAlignedPaddingY = 4 + xpFramePos.y + xpFramePos.h;
-	}
-	else if ( players[player.playernum]->hud.allyPlayerFrame && !leftAlignedMessages && *alignment == "left" && !splitscreen )
-	{
-		SDL_Rect allyPlayerPos = players[player.playernum]->hud.allyPlayerFrame->getSize();
-		if ( !players[player.playernum]->hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
+		SDL_Rect allyPlayerPos = player.hud.allyPlayerFrame->getSize();
+		if ( !player.hud.allyPlayerFrame->isDisabled() && allyPlayerPos.h > 0 )
 		{
 			topAlignedPaddingY = 4 + allyPlayerPos.y + allyPlayerPos.h;
 		}
 	}
+	if ( player.hud.xpFrame && actualAlignment == ALIGN_LEFT_TOP )
+	{
+		SDL_Rect xpFramePos = player.hud.xpFrame->getSize();
+		topAlignedPaddingY = std::max(topAlignedPaddingY, 4 + std::max(xpFramePos.y, 0) + xpFramePos.h);
+	}
 	SDL_Rect messageboxTopAlignedPos{
 	    topAlignedPaddingX,
 	    topAlignedPaddingY,
-		players[player.playernum]->camera_virtualWidth() - topAlignedPaddingX * 2,
-		players[player.playernum]->camera_virtualHeight() - topAlignedPaddingY };
+		player.camera_virtualWidth() - topAlignedPaddingX * 2,
+		player.camera_virtualHeight() - topAlignedPaddingY };
 	SDL_Rect messageboxLeftAlignedPos{
 	    leftAlignedPaddingX,
 	    0,
-	    players[player.playernum]->camera_virtualWidth() - leftAlignedPaddingX * 2,
-		players[player.playernum]->camera_virtualHeight() - leftAlignedBottomY };
+		player.camera_virtualWidth() - leftAlignedPaddingX * 2,
+		player.camera_virtualHeight() - leftAlignedBottomY };
 
 
-	SDL_Rect messageBoxSize = leftAlignedMessages ?
+	SDL_Rect messageBoxSize = bottomAlignedMessages ?
 	    messageboxLeftAlignedPos : messageboxTopAlignedPos;
 
 	for ( int i = 0; i < MESSAGE_MAX_ENTRIES; ++i )
@@ -7777,25 +8036,22 @@ void Player::MessageZone_t::processChatbox()
 			entry->setDisabled(true);
 
 			// set alignment
-			if (*alignment == "left") {
-				entry->setHJustify(Field::justify_t::LEFT);
-			} else if (*alignment == "center") {
+			if ( actualAlignment == ALIGN_CENTER_BOTTOM ) {
 				entry->setHJustify(Field::justify_t::CENTER);
-			} else if (*alignment == "right") {
-			    entry->setHJustify(Field::justify_t::RIGHT);
 			} else {
 				entry->setHJustify(Field::justify_t::LEFT);
 			}
 		}
 	}
 
-	const bool messageDrawDescending = !leftAlignedMessages;
+	const bool messageDrawDescending = (actualAlignment == ALIGN_LEFT_TOP);
 	const int entryPaddingY = playercount > 2 ? 0 : 4;
 
 	int currentY = messageDrawDescending ?
 	    0 : messageBoxSize.h;
 
 	int index = 0;
+	int currentline = 0;
 
 	auto it = notification_messages.begin();
 	auto end = notification_messages.end();
@@ -7805,7 +8061,7 @@ void Player::MessageZone_t::processChatbox()
 	for ( ; messageDrawDescending ? rit != rend : it != end; ++it, ++rit )
 	{
 	    Message* current = messageDrawDescending ? *rit : *it;
-		if (index >= MESSAGE_MAX_ENTRIES)
+		if ( currentline >= MESSAGE_MAX_ENTRIES)
 		{
 			break;
 		}
@@ -7851,6 +8107,7 @@ void Player::MessageZone_t::processChatbox()
 			}
 		}
 		++index;
+		currentline += current->text->lines;
 	}
 
 	messageBoxFrame->setSize(messageBoxSize);
@@ -16897,10 +17154,15 @@ void createInventoryTooltipFrame(const int player)
 		return;
 	}
 
-	char name[32];
-	snprintf(name, sizeof(name), "player tooltip container %d", player);
+	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
+	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
+	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
 	if ( !players[player]->inventoryUI.tooltipContainerFrame )
 	{
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip container %d", player);
 		players[player]->inventoryUI.tooltipContainerFrame = gameUIFrame[player]->addFrame(name);
 		players[player]->inventoryUI.tooltipContainerFrame->setSize(
 			SDL_Rect{ players[player]->camera_virtualx1(),
@@ -16911,9 +17173,38 @@ void createInventoryTooltipFrame(const int player)
 		players[player]->inventoryUI.tooltipContainerFrame->setDisabled(false);
 		players[player]->inventoryUI.tooltipContainerFrame->setInheritParentFrameOpacity(false);
 	}
-	snprintf(name, sizeof(name), "player tooltip %d", player);
+	if ( !players[player]->inventoryUI.titleOnlyTooltipFrame )
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "player title only tooltip %d", player);
+		players[player]->inventoryUI.titleOnlyTooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
+		auto tooltipFrame = players[player]->inventoryUI.titleOnlyTooltipFrame;
+		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipFrame->setHollow(true);
+		tooltipFrame->setDisabled(true);
+		tooltipFrame->setInheritParentFrameOpacity(false);
+
+		auto tooltipTextField = tooltipFrame->addField("title only header", 1024);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(headerFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::CENTER);
+		tooltipTextField->setVJustify(Field::justify_t::TOP);
+		tooltipTextField->setTextColor(hudColors.characterSheetGreen);
+		tooltipTextField->setPaddingPerLine(-2);
+
+		Uint32 color = makeColor(255, 255, 255, 255);
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, tooltipFrame->getSize().w, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly.png", "tooltip top background");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly.png", "tooltip top left");
+		tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 28 },
+			color, "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png", "tooltip top right");
+	}
 	if ( !players[player]->inventoryUI.tooltipFrame )
 	{
+		char name[32];
+		snprintf(name, sizeof(name), "player tooltip %d", player);
 		players[player]->inventoryUI.tooltipFrame = players[player]->inventoryUI.tooltipContainerFrame->addFrame(name);
 		auto tooltipFrame = players[player]->inventoryUI.tooltipFrame;
 		tooltipFrame->setSize(SDL_Rect{ 0, 0, 0, 0 });
@@ -16949,11 +17240,6 @@ void createInventoryTooltipFrame(const int player)
 		color, "*#images/ui/Inventory/tooltips/Hover_BL01.png", "tooltip bottom left");
 	tooltipFrame->addImage(SDL_Rect{ 0, 0, 16, 26 },
 		color, "*#images/ui/Inventory/tooltips/Hover_BR01.png", "tooltip bottom right");
-
-	//const std::string headerFont = "fonts/pixelmix.ttf#14#2";
-	//const std::string bodyFont = "fonts/pixelmix.ttf#12#2";
-	const std::string headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
-	const std::string bodyFont = "fonts/pixel_maz_multiline.ttf#16#2";
 
 	auto tooltipTextField = tooltipFrame->addField("inventory mouse tooltip header", 1024);
 	tooltipTextField->setText("Nothing");
@@ -17220,6 +17506,7 @@ void createInventoryTooltipFrame(const int player)
 	auto tooltipPromptImg = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inventory mouse tooltip prompt img");
 	tooltipPromptImg->disabled = true;
 
+	char name[32];
 	snprintf(name, sizeof(name), "player interact %d", player);
 	if ( auto interactFrame = gameUIFrame[player]->addFrame(name) )
 	{
@@ -18639,6 +18926,153 @@ void loadHUDSettingsJSON()
 						Player::Minimap_t::compact2pVerticalBigScale = d["minimap"]["minimap_compact_2p_vertical_big_scale"].GetDouble();
 					}
 				}
+				if ( d.HasMember("damage_indicators") )
+				{
+					damageIndicatorSettings.settings.clear();
+					if ( d["damage_indicators"].HasMember("delete_after_ticks") )
+					{
+						damageIndicatorSettings.deleteAfterTicks = d["damage_indicators"]["delete_after_ticks"].GetUint();
+					}
+					if ( d["damage_indicators"].HasMember("fade_after_ticks") )
+					{
+						damageIndicatorSettings.fadeAfterTicks = d["damage_indicators"]["fade_after_ticks"].GetUint();
+					}
+					if ( d["damage_indicators"].HasMember("fade_speed") )
+					{
+						damageIndicatorSettings.fadeSpeed = d["damage_indicators"]["fade_speed"].GetDouble();
+					}
+					if ( d["damage_indicators"].HasMember("animation_on_damage") )
+					{
+						int index = 0;
+						for ( auto it = d["damage_indicators"]["animation_on_damage"].Begin(); it != d["damage_indicators"]["animation_on_damage"].End(); ++it )
+						{
+							damageIndicatorSettings.indicatorDamageFramePaths[index] = it->GetString();
+							++index;
+							if ( index >= 4 )
+							{
+								break;
+							}
+						}
+					}
+					if ( d["damage_indicators"].HasMember("animation_on_blocking") )
+					{
+						int index = 0;
+						for ( auto it = d["damage_indicators"]["animation_on_blocking"].Begin(); it != d["damage_indicators"]["animation_on_blocking"].End(); ++it )
+						{
+							damageIndicatorSettings.indicatorBlockedFramePaths[index] = it->GetString();
+							++index;
+							if ( index >= 4 )
+							{
+								break;
+							}
+						}
+					}
+					if ( d["damage_indicators"].HasMember("layout_default") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].image_size
+							= d["damage_indicators"]["layout_default"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].radius_x
+							= d["damage_indicators"]["layout_default"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_DEFAULT].radius_y
+							= d["damage_indicators"]["layout_default"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_2p_tall") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].image_size
+							= d["damage_indicators"]["layout_2p_tall"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].radius_x
+							= d["damage_indicators"]["layout_2p_tall"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_TALL].radius_y
+							= d["damage_indicators"]["layout_2p_tall"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_2p_wide") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].image_size
+							= d["damage_indicators"]["layout_2p_wide"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].radius_x
+							= d["damage_indicators"]["layout_2p_wide"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_2P_WIDE].radius_y
+							= d["damage_indicators"]["layout_2p_wide"]["radius_y"].GetInt();
+					}
+					if ( d["damage_indicators"].HasMember("layout_4p") )
+					{
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P] =
+							DamageIndicatorSettings_t::Layout_t();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].image_size
+							= d["damage_indicators"]["layout_4p"]["image_size"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].radius_x
+							= d["damage_indicators"]["layout_4p"]["radius_x"].GetInt();
+						damageIndicatorSettings.settings[DamageIndicatorSettings_t::LAYOUT_4P].radius_y
+							= d["damage_indicators"]["layout_4p"]["radius_y"].GetInt();
+					}
+				}
+				if ( d.HasMember("messages") )
+				{
+					messageZoneSettings.settings.clear();
+					std::vector<std::pair<const char*, MessageZoneSettings_t::HotbarTypes_t>> hotbarTypeStrings = {
+						{"classic_hotbar", MessageZoneSettings_t::HOTBAR_CLASSIC },
+						{"modern_hotbar_keyboard", MessageZoneSettings_t::HOTBAR_MODERN_KEYBOARD },
+						{"modern_hotbar_gamepad", MessageZoneSettings_t::HOTBAR_MODERN_GAMEPAD }
+					};
+
+					for ( auto pair : hotbarTypeStrings )
+					{
+						if ( d["messages"].HasMember(pair.first) )
+						{
+							for ( rapidjson::Value::ConstMemberIterator itr = d["messages"][pair.first].MemberBegin();
+								itr != d["messages"][pair.first].MemberEnd(); ++itr )
+							{
+								std::string alignmentStr = itr->name.GetString();
+								auto alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+								if ( alignmentStr == "left_top" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_LEFT_TOP;
+								}
+								else if ( alignmentStr == "left_bottom" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_LEFT_BOTTOM;
+								}
+								else if ( alignmentStr == "center_bottom" )
+								{
+									alignment = Player::MessageZone_t::ALIGN_CENTER_BOTTOM;
+								}
+								else
+								{
+									continue;
+								}
+
+								auto& setting = messageZoneSettings.addSetting(pair.second, alignment);
+								for ( rapidjson::Value::ConstMemberIterator itr2 = itr->value.MemberBegin();
+									itr2 != itr->value.MemberEnd(); ++itr2 )
+								{
+									std::string layoutStr = itr2->name.GetString();
+									auto layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_DEFAULT;
+									if ( layoutStr == "default" )
+									{
+										layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_DEFAULT;
+									}
+									else if ( layoutStr == "compact_height" )
+									{
+										layout = MessageZoneSettings_t::MessageSettings_t::LAYOUT_COMPACT;
+									}
+									else
+									{
+										continue;
+									}
+									setting.layouts[layout].layoutType = layout;
+									setting.layouts[layout].offsetY = itr2->value["y_offset"].GetInt();
+									setting.layouts[layout].maxMessages = itr2->value["max_messages"].GetInt();
+								}
+							}
+						}
+					}
+				}
 				if ( d.HasMember("world_dialogue") )
 				{
 					if ( d["world_dialogue"].HasMember("types") )
@@ -19373,6 +19807,7 @@ bool takeAllChestGUIAction(const int player)
 	else if ( pickedUpItems == 0 && numItems > 0 )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[4100]);
+		playSoundPlayer(player, 90, 64);
 	}
 
 	return true;
@@ -20686,7 +21121,38 @@ void Player::Inventory_t::updateItemContextMenu()
 	{
 		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
 		{
-			activateItemContextMenuOption(item, options[itemMenuSelected]);
+			if ( options[itemMenuSelected] == ItemContextMenuPrompts::PROMPT_DROP
+				&& player.paperDoll.isItemOnDoll(*item) )
+			{
+				// need to unequip
+				player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+				player.paperDoll.updateSlots();
+				if ( player.paperDoll.isItemOnDoll(*item) )
+				{
+					// couldn't unequip, no more actions
+				}
+				else
+				{
+					// successfully unequipped, let's drop it.
+					bool droppedAll = false;
+					while ( item && item->count > 1 )
+					{
+						droppedAll = dropItem(item, player.playernum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
+					}
+					if ( !droppedAll )
+					{
+						dropItem(item, player.playernum);
+					}
+				}
+			}
+			else
+			{
+				activateItemContextMenuOption(item, options[itemMenuSelected]);
+			}
 		}
 		//Close the menu.
 		itemMenuOpen = false;
@@ -20842,6 +21308,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// no space
 								tryAddToInventory = false;
 								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								playSoundPlayer(player, 90, 64);
 								break;
 							}
 
@@ -20926,6 +21393,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 								// no space
 								tryAddToInventory = false;
 								messagePlayer(player, MESSAGE_INVENTORY, language[727], item->getName()); // no room
+								playSoundPlayer(player, 90, 64);
 								break;
 							}
 							Item* inventoryItem = takeItemFromChest(player, item, amountToPlace, nullptr, true);
@@ -20996,6 +21464,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 									// no space
 									tryAddToChest = false;
 									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									playSoundPlayer(player, 90, 64);
 									break;
 								}
 
@@ -21067,6 +21536,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 									// no space
 									tryAddToChest = false;
 									messagePlayer(player, MESSAGE_INVENTORY, language[4098], item->getName()); // no room
+									playSoundPlayer(player, 90, 64);
 									break;
 								}
 								Item* itemInChest = openedChest[player]->addItemToChestFromInventory(player, item, amountToPlace, true, nullptr);
@@ -21100,6 +21570,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		else
 		{
 			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+			playSoundPlayer(player, 90, 64);
 		}
 		if ( !emptiedSlot && (inputs.getUIInteraction(player)->itemMenuOpen || players[player]->inventoryUI.bCompactView) )
 		{
@@ -21165,6 +21636,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		else if ( item->type == TOOL_TINKERING_KIT )
@@ -21178,11 +21650,13 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				else
 				{
 					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
 				}
 			}
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		else
@@ -21194,6 +21668,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			else
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		return;
@@ -21213,6 +21688,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			if ( item->status == BROKEN )
 			{
 				messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // don't try equip broken stuff
+				playSoundPlayer(player, 90, 64);
 				return;
 			}
 
@@ -21255,6 +21731,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
+			playSoundPlayer(player, 90, 64);
 		}
 		return;
 	}
@@ -21274,6 +21751,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			{
 				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, language[3432]); // unable to use in current form message.
 			}
+			playSoundPlayer(player, 90, 64);
 		}
 		return;
 	}
@@ -21356,7 +21834,7 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 
 void Player::Inventory_t::updateInventoryItemTooltip()
 {
-	if ( !tooltipFrame || !frame )
+	if ( !tooltipFrame || !frame || !titleOnlyTooltipFrame )
 	{
 		return;
 	}
@@ -21383,6 +21861,28 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 	else
 	{
 		tooltipFrame->setOpacity(tooltipDisplay.opacitySetpoint);
+	}
+
+	if ( static_cast<int>(titleOnlyTooltipFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
+	{
+		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		if ( tooltipDisplay.titleOnlyOpacitySetpoint == 0 )
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.titleOnlyOpacityAnimate)) / (5);
+			tooltipDisplay.titleOnlyOpacityAnimate -= setpointDiff;
+			tooltipDisplay.titleOnlyOpacityAnimate = std::max(0.0, tooltipDisplay.titleOnlyOpacityAnimate);
+		}
+		else
+		{
+			real_t setpointDiff = fpsScale * std::max(.05, (1.0 - tooltipDisplay.titleOnlyOpacityAnimate)) / (1);
+			tooltipDisplay.titleOnlyOpacityAnimate += setpointDiff;
+			tooltipDisplay.titleOnlyOpacityAnimate = std::min(1.0, tooltipDisplay.titleOnlyOpacityAnimate);
+		}
+		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacityAnimate * 100);
+	}
+	else
+	{
+		titleOnlyTooltipFrame->setOpacity(tooltipDisplay.titleOnlyOpacitySetpoint);
 	}
 
 	if ( tooltipPromptFrame )
@@ -22199,14 +22699,35 @@ void Player::HUD_t::updateMinimapPrompts()
 		return;
 	}
 
-	if ( /*(!player.shootmode && player.gui_mode != GUI_MODE_FOLLOWERMENU)
-		||*/ 
-		(::minimapFrame && !::minimapFrame->isInvisible()) // shared minimap active
-		|| gamePaused 
-		|| (player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth())
-		|| !this->minimapFrame 
-		|| (this->minimapFrame && this->minimapFrame->isInvisible())
-		|| player.hud.offsetHUDAboveHotbarHeight > 0 )
+	bool showPrompts = false;
+	if ( gamePaused )
+	{
+		showPrompts = false;
+	}
+	else if ( ::minimapFrame && !::minimapFrame->isInvisible() )
+	{
+		if ( player.hud.offsetHUDAboveHotbarHeight > 0 || !player.shootmode )
+		{
+			showPrompts = false;
+		}
+		else
+		{
+			showPrompts = true;
+		}
+	}
+	else if ( this->minimapFrame && !this->minimapFrame->isInvisible() )
+	{
+		if ( player.hud.offsetHUDAboveHotbarHeight > 0 )
+		{
+			showPrompts = false;
+		}
+		else
+		{
+			showPrompts = true;
+		}
+	}
+
+	if ( !showPrompts )
 	{
 		mapPromptFrame->setDisabled(true);
 		return;
@@ -23291,6 +23812,12 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		doAnimation = false;
 	}
 
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		enemyDetails->enemy_timer = ticks;
+		return;
+	}
+
 	if ( doAnimation && !enemyDetails->displayOnHUD && !enemyDetails->expired && enemyDetails->animator.setpoint <= 0 )
 	{
 		if ( ticks - enemyDetails->enemy_timer >= EnemyHPDamageBarHandler::shortDistanceHPBarFadeTicks )
@@ -24123,6 +24650,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 const int HPMPdividerThresholdInterval = 20;
 const int kHPMPWidthReduce2pWideClippedActionPrompts = 60;
+//static ConsoleVariable<int> cvar_hpanimdebug("/hpmpanimdebug", 1);
 void Player::HUD_t::updateHPBar()
 {
 	if ( !hpFrame )
@@ -24356,8 +24884,8 @@ void Player::HUD_t::updateHPBar()
 	hpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_00.png";
 	auto hpProgressEndCapFlash = hpForegroundFrame->findImage("hp img progress endcap flash");
 	hpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
-	const int numAnimationFrames = HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2;
+	const int framesPerAnimation = (HPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	const int numAnimationFrames = (HPBar.flashType == FLASH_ON_DAMAGE ? 20 : 2)/* * *cvar_hpanimdebug*/;
 	if ( HPBar.flashTicks > 0 )
 	{
 		//messagePlayer(0, MESSAGE_DEBUG, "ticks: %d, animticks: %d, state: %d", ticks, HPBarFlashTicks, HPBarFlashAnimState);
@@ -24424,11 +24952,11 @@ void Player::HUD_t::updateHPBar()
 				else
 				{
 					hpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPMid_00.png";
-					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F00.png";
+					hpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_HPEnd_F04.png";
 					Uint8 r, g, b, a;
 					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
-					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					real_t fpsScale = (60.f / std::max(1U, fpsLimit))/* / (real_t)(*cvar_hpanimdebug)*/;
 					decrement *= fpsScale;
 					a = std::max(0, (int)a - decrement);
 					hpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -24695,8 +25223,8 @@ void Player::HUD_t::updateMPBar()
 	mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2;
-	const int numAnimationFrames = MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2;
+	const int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	const int numAnimationFrames = (MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2)/* * *cvar_hpanimdebug*/;
 	if ( MPBar.flashTicks > 0 )
 	{
 		if ( MPBar.flashAnimState > numAnimationFrames || mpProgress->disabled )
@@ -24809,7 +25337,7 @@ void Player::HUD_t::updateMPBar()
 				else
 				{
 					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F04.png";
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
@@ -24997,6 +25525,8 @@ void Player::Hotbar_t::updateHotbar()
 	{
 		cancelPromptTxt->setDisabled(false);
 		cancelPromptTxt->setText(language[3063]);
+		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_y("/hotbar_cancel_prompt_y", -6);
+		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_x("/hotbar_cancel_prompt_x", 29);
 		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarCancel");
 		if ( auto imgGet = Image::get(cancelPromptGlyph->path.c_str()) )
 		{
@@ -25005,8 +25535,8 @@ void Player::Hotbar_t::updateHotbar()
 			cancelPromptGlyph->disabled = false;
 		}
 		SDL_Rect promptTxtPos = cancelPromptTxt->getSize();
-		promptTxtPos.x = hotbarCentreX;
-		promptTxtPos.y = hotbarStartY1 + getSlotSize();
+		promptTxtPos.x = hotbarCentreX + *cvar_hotbar_cancel_prompt_x;
+		promptTxtPos.y = hotbarStartY1 + getSlotSize() - 2;
 		if ( auto textGet = cancelPromptTxt->getTextObject() )
 		{
 			promptTxtPos.x -= textGet->getWidth() / 2;
@@ -25016,7 +25546,7 @@ void Player::Hotbar_t::updateHotbar()
 				++promptTxtPos.x;
 			}
 		}
-		cancelPromptGlyph->pos.y = promptTxtPos.y;
+		cancelPromptGlyph->pos.y = promptTxtPos.y + *cvar_hotbar_cancel_prompt_y;
 		cancelPromptGlyph->pos.x = promptTxtPos.x - 4 - cancelPromptGlyph->pos.w;
 		cancelPromptTxt->setSize(promptTxtPos);
 	}
@@ -25152,7 +25682,18 @@ void Player::Hotbar_t::updateHotbar()
 				case 1:
 					pos.x = centreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 2:
 					pos.x = centreXLeft + (pos.w / 2 - 2) - compactViewOffset;
@@ -25186,7 +25727,18 @@ void Player::Hotbar_t::updateHotbar()
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
 					pos.x = centreX - pos.w / 2;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 5:
 					pos.y = hotbarStartY1;
@@ -25219,7 +25771,18 @@ void Player::Hotbar_t::updateHotbar()
 				case 7:
 					pos.x = centreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight");
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight",
+						faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT);
+					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT
+						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
+					{
+						glyph->color = makeColor(255, 255, 255, 255 * (1.0 - selectedSlotAnimateCurrentValue / 2));
+						//glyph->disabled = true;
+					}
+					else
+					{
+						glyph->color = 0xFFFFFFFF;
+					}
 					break;
 				case 8:
 					pos.x = centreXRight + (pos.w / 2 - 2) - compactViewOffset;
@@ -25411,7 +25974,8 @@ static void drawConsoleCommandBuffer() {
 	    0xffffffff, makeColor(0, 0, 0, 255));
 	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
 	int printy = players[commandPlayer]->camera_virtualy2() - 192;
-	if ( players[commandPlayer]->messageZone.leftAlignedMessages && players[commandPlayer]->messageZone.chatFrame )
+	if ( players[commandPlayer]->messageZone.actualAlignment == Player::MessageZone_t::ALIGN_LEFT_BOTTOM 
+		&& players[commandPlayer]->messageZone.chatFrame )
 	{
 		if ( Frame* messageBoxFrame = players[commandPlayer]->messageZone.chatFrame->findFrame("message box") )
 		{
@@ -31064,4 +31628,194 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::blitDialogue
 		}
 	}
 	return dialogueTooltipSurface;
+}
+
+void handleDamageIndicatorTicks()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto& ind : DamageIndicatorHandler.indicators[i] )
+		{
+			if ( ind.ticks > 0 )
+			{
+				--ind.ticks;
+			}
+		}
+	}
+}
+
+void DamageIndicatorHandler_t::update()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto it = indicators[i].begin(); it != indicators[i].end(); )
+		{
+			it->process();
+			if ( it->expired )
+			{
+				it = indicators[i].erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+}
+void DamageIndicatorHandler_t::insert(const int player, const real_t _x, const real_t _y, const bool damaged)
+{
+	for ( auto it = indicators[player].begin(); it != indicators[player].end(); ++it )
+	{
+		if ( !it->expired && it->x == _x && it->y == _y && it->hitDealtDamage == damaged )
+		{
+			// matching, delete this one
+			indicators[player].erase(it);
+			break;
+		}
+	}
+	indicators[player].push_back(DamageIndicator_t(player));
+	auto& i = indicators[player].at(indicators[player].size() - 1);
+	i.alpha = 255.0;
+	i.ticks = damageIndicatorSettings.deleteAfterTicks;
+	i.x = _x;
+	i.y = _y;
+	i.flashTicks = ::ticks;
+	i.flashAnimState = -1;
+	i.hitDealtDamage = damaged;
+}
+
+static ConsoleVariable<int> cvar_indicatoranimdebug("/indicatoranimdebug", 1);
+
+void DamageIndicatorHandler_t::DamageIndicator_t::process()
+{
+	if ( expired )
+	{
+		return;
+	}
+	double tangent = atan2(y / 16 - cameras[player].y, x / 16 - cameras[player].x);
+	double angle = tangent - cameras[player].ang;
+	angle += 3 * PI / 2;
+	while ( angle >= PI )
+	{
+		angle -= PI * 2;
+	}
+	while ( angle < -PI )
+	{
+		angle += PI * 2;
+	}
+
+	const int framesPerAnimation = 1 * *cvar_indicatoranimdebug;
+	const int numAnimationFrames = damageIndicatorSettings.deleteAfterTicks * *cvar_indicatoranimdebug;
+	auto layout = DamageIndicatorSettings_t::LAYOUT_DEFAULT;
+	if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_4P;
+	}
+	else if ( !players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_2P_TALL;
+	}
+	else if ( players[player]->bUseCompactGUIHeight() && !players[player]->bUseCompactGUIWidth() )
+	{
+		layout = DamageIndicatorSettings_t::LAYOUT_2P_WIDE;
+	}
+	size = damageIndicatorSettings.settings[layout].image_size;
+	auto& indicatorDamagePaths = damageIndicatorSettings.indicatorDamageFramePaths;
+	auto& indicatorBlockPaths = damageIndicatorSettings.indicatorBlockedFramePaths;
+	std::string imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+	if ( flashTicks > 0 )
+	{
+		if ( flashAnimState > numAnimationFrames )
+		{
+			flashTicks = 0;
+			flashAnimState = -1;
+			alpha = 0.0;
+		}
+		else
+		{
+			if ( ::ticks == flashTicks )
+			{
+				flashAnimState = 1;
+				flashProcessedOnTick = ::ticks;
+			}
+			else if ( (flashProcessedOnTick != ::ticks)
+				&& (::ticks > flashTicks)
+				&& (::ticks - flashTicks) % framesPerAnimation == 0 )
+			{
+				++flashAnimState;
+				flashProcessedOnTick = ::ticks;
+			}
+
+			if ( flashAnimState <= 6 )
+			{
+				alpha = 255.0;
+			}
+
+			if ( flashAnimState == 0 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+			}
+			else if ( flashAnimState >= 1 && flashAnimState <= 2 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+			}
+			else if ( flashAnimState == 3 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[2] : indicatorBlockPaths[2];
+			}
+			else if ( flashAnimState >= 4 && flashAnimState <= 5 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[1] : indicatorBlockPaths[1];
+			}
+			else if ( flashAnimState == 6 )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[3] : indicatorBlockPaths[3];
+			}
+			else if ( flashAnimState >= damageIndicatorSettings.fadeAfterTicks )
+			{
+				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
+				int decrement = 20;
+				real_t fpsScale = (60.f / std::max(1U, fpsLimit)) / damageIndicatorSettings.fadeSpeed;
+				decrement *= fpsScale;
+				alpha = std::max(0, (int)alpha - decrement);
+			}
+		}
+	}
+
+	switch ( size )
+	{
+		case 3:
+			imagePath += "_3x.png";
+			break;
+		case 2:
+			imagePath += "_2x.png";
+			break;
+		case 1:
+		default:
+			imagePath += "_1x.png";
+			break;
+	}
+
+	if ( auto imgGet = Image::get(imagePath.c_str()) )
+	{
+		SDL_Rect pos;
+		pos.x = players[player]->camera_midx();
+		pos.y = players[player]->camera_midy();
+		const float factorX = (float)xres / Frame::virtualScreenX;
+		const float factorY = (float)yres / Frame::virtualScreenY;
+		pos.x += damageIndicatorSettings.settings[layout].radius_x * cos(angle) * factorX;
+		pos.y += damageIndicatorSettings.settings[layout].radius_y * sin(angle) * factorY;
+		pos.w = imgGet->getWidth() * factorX;
+		pos.h = imgGet->getHeight() * factorY;
+		if ( stats[player]->HP > 0 )
+		{
+			const SDL_Rect viewport{ 0, 0, xres, yres };
+			imgGet->drawSurfaceRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
+		}
+	}
+
+	if ( alpha <= 0 || ticks == 0 )
+	{
+		expired = true;
+	}
 }
