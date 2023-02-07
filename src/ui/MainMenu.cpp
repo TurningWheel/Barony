@@ -16402,8 +16402,8 @@ bind_failed:
 #else
 #error What kind of build is this?
 #endif
-#endif
 		};
+#endif
 
 #ifdef NINTENDO
 		if (!nxBeginParentalControls())
@@ -16413,7 +16413,7 @@ bind_failed:
 			return;
 		}
 		loginToEpic(completion);
-#else
+#elif defined(STEAMWORKS) || defined(USE_EOS)
 		completion(true);
 #endif
 	}
