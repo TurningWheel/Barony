@@ -2740,7 +2740,7 @@ void gameLogic(void)
 				{
 					// additional 15 seconds (disconnect time)
 					messageLocalPlayers(MESSAGE_MISC, language[730]);
-                    MainMenu::disconnectedFromServer("You have been timed out:\nno response from remote host.");
+					MainMenu::timedOut();
 					client_disconnected[0] = true;
 				}
 			}
@@ -3611,7 +3611,11 @@ bool handleEvents(void)
 
 #if defined(NINTENDO) && defined(USE_EOS)
 	if (initialized && !loading) {
-		EOS.SetNetworkAvailable(nxConnectedToNetwork());
+		const bool connected = nxConnectedToNetwork();
+		EOS.SetNetworkAvailable(connected);
+		if (multiplayer != SINGLE && !connected && !directConnect) {
+			MainMenu::timedOut();
+		}
 	}
 #endif
 
@@ -5739,115 +5743,179 @@ void drawAllPlayerCameras() {
 
 static void doConsoleCommands() {
 	Input& input = Input::inputs[clientnum]; // commands - uses local clientnum only
-	bool& bControlEnabled = players[clientnum]->bControlEnabled;
-	if (((input.binaryToggle("Chat") && !intro && !movie) || (input.binaryToggle("Console Command") && !inputstr)) && !command && bControlEnabled)
-	{
-		cursorflash = ticks;
-		command = true;
-		if ( !input.binaryToggle("Console Command") )
-		{
-			strcpy(command_str, "");
-		}
-		else
-		{
-			strcpy(command_str, "/");
-		}
-		inputstr = command_str;
+	const bool controlEnabled = players[clientnum]->bControlEnabled && !movie && !intro;
 
+#if defined(NINTENDO) && defined(NINTENDO_DEBUG)
+	// activate console
+	if (input.binaryToggle("ConsoleCommand1") &&
+		input.binaryToggle("ConsoleCommand2") &&
+		input.binaryToggle("ConsoleCommand3"))
+	{
+		input.consumeBinary("ConsoleCommand1");
+		input.consumeBinary("ConsoleCommand2");
+		input.consumeBinary("ConsoleCommand3");
+		auto result = nxKeyboard("Enter console command");
+		if (result.success)
+		{
+			char temp[128];
+			strncpy(temp, result.str.c_str(), 128);
+			temp[127] = '\0';
+			messagePlayer(clientnum, MESSAGE_MISC, temp);
+			consoleCommand(temp);
+		}
+	}
+#else
+	// check for input to start/stop a command (enter / return keystroke, or chat binding)
+	bool confirm = false;
+	if (controlEnabled) {
+		if (input.getPlayerControlType() != Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
+			if (keystatus[SDLK_RETURN]) {
+				keystatus[SDLK_RETURN] = 0;
+				confirm = true;
+			}
+			if (Input::keys[SDLK_RETURN]) {
+				Input::keys[SDLK_RETURN] = 0;
+				confirm = true;
+			}
+		}
 		if (input.consumeBinaryToggle("Chat")) {
 			input.consumeBindingsSharedWithBinding("Chat");
+			confirm = true;
 		}
-
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
+			confirm = true;
+		}
+	}
+
+	if (confirm && !command) // begin a command
+	{
+		// start typing a command
+		if ( input.binary("Console Command") ) {
+			strcpy(command_str, "/");
+		} else {
+			strcpy(command_str, "");
+		}
+		inputstr = command_str;
+		inputlen = 127;
+		command = true;
+		cursorflash = ticks;
+		if (!SDL_IsTextInputActive()) {
+			SDL_StartTextInput();
 		}
 
-		keystatus[SDLK_RETURN] = 0;
-		Input::keys[SDLK_RETURN] = 0;
-
-		SDL_StartTextInput();
-
 		// clear follower menu entities.
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) )
-			{
+		for ( int i = 0; i < MAXPLAYERS; ++i ) {
+			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) ) {
 				FollowerMenu[i].closeFollowerMenuGUI();
 			}
 		}
 	}
-	else if (command)
+	else if (command) // finish a command
 	{
-		int commandPlayer = clientnum;
-		if ( multiplayer == SINGLE )
+		// check for cancel keystroke (always ESC)
+		if ( keystatus[SDLK_ESCAPE] )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( inputs.bPlayerUsingKeyboardControl(i) )
-				{
+			keystatus[SDLK_ESCAPE] = 0;
+			chosen_command = nullptr;
+			command = false;
+		}
+
+		// check for forced cancel
+		if ( !controlEnabled )
+		{
+			if (SDL_IsTextInputActive()) {
+				SDL_StopTextInput();
+			}
+			inputstr = nullptr;
+			inputlen = 0;
+			chosen_command = nullptr;
+			command = false;
+		}
+
+		// set player issuing command
+		int commandPlayer = clientnum;
+		if (multiplayer == SINGLE) {
+			for (int i = 0; i < MAXPLAYERS; ++i) {
+				if (inputs.bPlayerUsingKeyboardControl(i)) {
 					commandPlayer = i;
 					break;
 				}
 			}
 		}
 
-		if ( !SDL_IsTextInputActive() )
-		{
+		// set inputstr
+		if (!SDL_IsTextInputActive()) {
 			SDL_StartTextInput();
-			inputstr = command_str;
 		}
-		//strncpy(command_str,inputstr,127);
+		inputstr = command_str;
 		inputlen = 127;
-		if ( keystatus[SDLK_ESCAPE] )   // escape
+
+		// issue command
+		if (confirm)
 		{
-			keystatus[SDLK_ESCAPE] = 0;
-			chosen_command = NULL;
-			command = false;
-		}
-		if ( !players[commandPlayer]->bControlEnabled )
-		{
-			chosen_command = NULL;
-			command = false;
-		}
-		else if ( keystatus[SDLK_RETURN] )   // enter
-		{
-			if (input.consumeBinaryToggle("Chat")) {
-				input.consumeBindingsSharedWithBinding("Chat");
+			// no longer accepting input
+			if (SDL_IsTextInputActive()) {
+				SDL_StopTextInput();
 			}
-			if (input.consumeBinaryToggle("Console Command")) {
-				input.consumeBindingsSharedWithBinding("Console Command");
-			}
-		    keystatus[SDLK_RETURN] = 0;
-		    Input::keys[SDLK_RETURN] = 0;
+			inputstr = nullptr;
+			inputlen = 0;
 			command = false;
 
+			// sanitize strings (remove format codes)
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
 
 			if ( multiplayer != CLIENT )
 			{
-				if ( command_str[0] == '/' )
+				if ( command_str[0] == '/' ) // slash invokes a command procedure
 				{
-					// backslash invokes command procedure
 					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
 					consoleCommand(command_str);
 				}
-				else
+				else if (multiplayer == CLIENT) // send message as a client
 				{
-					if ( strcmp(command_str, "") )
+					if (strcmp(command_str, ""))
 					{
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = makeColor( 0, 255, 255, 255);
+						Uint32 color = makeColor(0, 255, 255, 255);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-						    playSound(238, 64);
+							playSound(238, 64);
 						}
-						if ( multiplayer == SERVER )
+
+						// send message to server
+						strcpy((char*)net_packet->data, "MSGS");
+						net_packet->data[4] = commandPlayer;
+						SDLNet_Write32(color, &net_packet->data[5]);
+						strcpy((char*)(&net_packet->data[9]), command_str);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 9 + strlen(command_str) + 1;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						strcpy(command_str, "");
+					}
+				}
+				else // servers (or singleplayer) broadcast typed messages
+				{
+					if (strcmp(command_str, ""))
+					{
+						char chatstring[256];
+						strcpy(chatstring, language[739]);
+						strcat(chatstring, command_str);
+						Uint32 color = makeColor(0, 255, 255, 255);
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+							playSound(238, 64);
+						}
+						if (multiplayer == SERVER)
 						{
 							// send message to all clients
-							for ( int c = 1; c < MAXPLAYERS; c++ )
+							for (int c = 1; c < MAXPLAYERS; c++)
 							{
-								if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+								if (client_disconnected[c] || players[c]->isLocalPlayer())
 								{
 									continue;
 								}
@@ -5878,45 +5946,9 @@ static void doConsoleCommands() {
 					}
 				}
 			}
-			else
-			{
-				if ( command_str[0] == '/' )
-				{
-					// backslash invokes command procedure
-					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
-					consoleCommand(command_str);
-				}
-				else
-				{
-					if ( strcmp(command_str, "") )
-					{
-						char chatstring[256];
-						strcpy(chatstring, language[739]);
-						strcat(chatstring, command_str);
-						Uint32 color = makeColor( 0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-						    playSound(238, 64);
-						}
 
-						// send message to server
-						strcpy((char*)net_packet->data, "MSGS");
-						net_packet->data[4] = commandPlayer;
-						SDLNet_Write32(color, &net_packet->data[5]);
-						strcpy((char*)(&net_packet->data[9]), command_str);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9 + strlen(command_str) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
-					}
-					else
-					{
-						strcpy(command_str, "");
-					}
-				}
-			}
-			//In either case, save this in the command history.
-			if ( strcmp(command_str, "") )
-			{
+			// save this in the command history
+			if ( command_str[0] ) {
 				saveCommand(command_str);
 			}
 			chosen_command = NULL;
@@ -5924,15 +5956,15 @@ static void doConsoleCommands() {
 	}
 	else
 	{
-		if ( inputstr == command_str )
-		{
+		// make sure not to create text input events
+		if ( inputstr == command_str ) {
 			inputstr = nullptr;
 		}
-		if ( !inputstr && SDL_IsTextInputActive() )
-		{
+		if ( !inputstr && SDL_IsTextInputActive() ) {
 			SDL_StopTextInput();
 		}
 	}
+#endif // NINTENDO
 }
 
 #include <stdio.h>
@@ -6250,7 +6282,9 @@ int main(int argc, char** argv)
 		setDefaultPlayerConducts();
 
 #ifdef NINTENDO
-		nxAssignControllers(1, 1, true, false, true, false, nullptr);
+		if (!nxIsHandheldMode()) {
+			nxAssignControllers(1, 1, true, false, true, false, nullptr);
+		}
 		for (int c = 0; c < 4; ++c) {
 			game_controllers[c].open(0, c); // first parameter is not used by Nintendo.
 			bindControllerToPlayer(c, c);
@@ -6495,7 +6529,7 @@ int main(int argc, char** argv)
 					{
 						// draws the menu level "backdrop"
 						drawClearBuffers();
-						if ( !MainMenu::isCutsceneActive() )
+						if ( !MainMenu::isCutsceneActive() && fadealpha < 255 )
 						{
 							menucam.winx = 0;
 							menucam.winy = 0;
@@ -6575,28 +6609,6 @@ int main(int argc, char** argv)
 				handleLevelMusic();
 #endif
 				DebugStats.t4Music = std::chrono::high_resolution_clock::now();
-
-#ifdef NINTENDO
-				// activate console
-				auto& input = Input::inputs[clientnum];
-				if (input.binaryToggle("ConsoleCommand1") &&
-					input.binaryToggle("ConsoleCommand2") &&
-					input.binaryToggle("ConsoleCommand3"))
-				{
-					input.consumeBinary("ConsoleCommand1");
-					input.consumeBinary("ConsoleCommand2");
-					input.consumeBinary("ConsoleCommand3");
-					auto result = nxKeyboard("Enter console command");
-					if (result.success)
-					{
-						char temp[128];
-						strncpy(temp, result.str.c_str(), 128);
-						temp[127] = '\0';
-						messagePlayer(clientnum, MESSAGE_MISC, temp);
-						consoleCommand(temp);
-					}
-				}
-#endif
 
 				// toggling the game menu
 				bool doPause = false;
@@ -6722,7 +6734,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-				if ( !MainMenu::isCutsceneActive() )
+				if ( !MainMenu::isCutsceneActive() && fadealpha < 255 )
 				{
 					drawAllPlayerCameras();
 				}
