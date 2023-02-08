@@ -16366,7 +16366,10 @@ bind_failed:
 			snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
 			setHostname(buf);
 
-#if defined(STEAMWORKS) && defined(USE_EOS)
+#if defined(STEAMWORKS) && !defined(USE_EOS)
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			createOnlineLobby();
+#elif defined(STEAMWORKS) && defined(USE_EOS)
 			if (LobbyHandler.crossplayEnabled) {
 				const char* prompt = "Would you like to host via\nEpic Online for crossplay?";
 				binaryPrompt(prompt, "Yes", "No",
@@ -16400,7 +16403,7 @@ bind_failed:
 #endif
 			}
 #else
-#error What kind of build is this?
+#error what kind of build is this?
 #endif
 		};
 #endif
