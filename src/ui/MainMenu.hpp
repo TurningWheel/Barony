@@ -34,7 +34,7 @@ namespace MainMenu {
 
 	enum class FadeDestination : Uint8 {
 		None,           // don't fade anywhere (???)
-		TitleScreen,    // fade to the title screen. ONLY use while not ingame!
+		TitleScreen,    // fade to the title screen
 		RootMainMenu,   // return to main menu, save no score if ingame
         Endgame,        // save a highscore and return to main menu
 		Victory,        // save a highscore and roll credits
@@ -111,4 +111,5 @@ namespace MainMenu {
 	void receivedInvite(void*);                                     // called when a player receives an invite to a lobby (EOS or Steam)
 	void setupSplitscreen();                                        // used to resize player game views, for example if a player drops or we change the aspect ratio
 	void crossplayPrompt();                                         // user chose to activate crossplay
+	void timedOut();												// special disconnection event that may display a system error message
 }
