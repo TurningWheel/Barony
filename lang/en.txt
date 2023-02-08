@@ -6401,5 +6401,6 @@ for accessory to violence!#
 4323 Your spell bounces off %s!#
 4324 You are suddenly burning!#
 4325 You reflected a spell!#
+4326 Next interaction...#
 
 4399 end#
