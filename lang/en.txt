@@ -1006,11 +1006,11 @@ You should call a plumber!#
  You feel faint.#
 614 You stop bleeding.#
 615 Your %s ability has improved.#
-616 You now have basic skill in %s#
-617 You are now skilled in %s#
-618 You are now an expert in %s#
-619 You are now a master in %s#
-620 You are now a legend in %s#
+616 You now have basic skill in %s.#
+617 You are now skilled in %s.#
+618 You are now an expert in %s.#
+619 You are now a master in %s.#
+620 You are now a legend in %s.#
 621 Your very life force is transformed into magical energy.#
 622 Level up!#
 623 You feel strong!#
