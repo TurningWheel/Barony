@@ -1387,6 +1387,7 @@ public:
 	    Frame* controllerFrame = nullptr;
 		Frame* hudFrame = nullptr;
 		Frame* xpFrame = nullptr;
+		Frame* levelupFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
 		Frame* minimapFrame = nullptr;
@@ -1486,6 +1487,21 @@ public:
 			int flashAnimState = -1;
 			AnimateFlashEffects_t flashType = FLASH_ON_DAMAGE;
 		};
+		struct XPInfo_t
+		{
+			enum XPCycleInfo : int
+			{
+				CYCLE_NONE,
+				CYCLE_LVL,
+				CYCLE_XP
+			};
+			XPCycleInfo cycleStatus = CYCLE_NONE;
+			real_t fade = 1.0;
+			Uint32 cycleTicks = 0;
+			Uint32 cycleProcessedOnTick = 0;
+			bool fadeIn = true;
+		};
+		XPInfo_t xpInfo;
 		Bar_t xpBar;
 		Bar_t HPBar;
 		Bar_t MPBar;

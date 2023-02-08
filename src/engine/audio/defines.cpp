@@ -60,9 +60,10 @@ FMOD::Channel* music_channel2 = nullptr;
 FMOD::Channel* music_resume = nullptr;
 
 FMOD::ChannelGroup* sound_group = nullptr;
-FMOD::ChannelGroup* soundAmbient_group = NULL;
-FMOD::ChannelGroup* soundEnvironment_group = NULL;
+FMOD::ChannelGroup* soundAmbient_group = nullptr;
+FMOD::ChannelGroup* soundEnvironment_group = nullptr;
 FMOD::ChannelGroup* music_group = nullptr;
+FMOD::ChannelGroup* notification_group = nullptr;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;

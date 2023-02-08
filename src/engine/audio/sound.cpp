@@ -61,8 +61,10 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	sound_group->setVolume(master * gameplay);
 	soundAmbient_group->setVolume(master * ambient);
 	soundEnvironment_group->setVolume(master * environment);
+	notification_group->setVolume(master * music);
 }
 
+static ConsoleVariable<float> cvar_sfx_notification_music_fade("/sfx_notification_music_fade", 0.5f);
 void sound_update(int player, int index, int numplayers)
 {
 	if (no_sound)
@@ -97,6 +99,12 @@ void sound_update(int player, int index, int numplayers)
 
 	if (player == 0) {
 		//Fade in the currently playing music.
+		bool notificationPlaying = false;
+		if ( notification_group )
+		{
+			notification_group->isPlaying(&notificationPlaying);
+		}
+
 		if (music_channel)
 		{
 			playing = false;
@@ -106,7 +114,16 @@ void sound_update(int player, int index, int numplayers)
 				float volume = 1.0f;
 				music_channel->getVolume(&volume);
 
-				if (volume < 1.0f)
+				if ( notificationPlaying && volume > 0.0f )
+				{
+					volume -= fadeout_increment * 5;
+					if ( volume < *cvar_sfx_notification_music_fade )
+					{
+						volume = *cvar_sfx_notification_music_fade;
+					}
+					music_channel->setVolume(volume);
+				}
+				else if (volume < 1.0f)
 				{
 					volume += fadein_increment * 2;
 					if (volume > 1.0f)
@@ -374,6 +391,7 @@ OPENAL_CHANNELGROUP *sound_group = NULL;
 OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
 OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
 OPENAL_CHANNELGROUP *music_group = NULL;
+OPENAL_CHANNELGROUP *notification_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
@@ -462,14 +480,17 @@ int initOPENAL()
 	soundAmbient_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	soundEnvironment_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	music_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
+	notification_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	memset(sound_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(soundAmbient_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(soundEnvironment_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(music_group, 0, sizeof(OPENAL_CHANNELGROUP));
+	memset(notification_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	sound_group->volume = 1.0f;
 	soundAmbient_group->volume = 1.0f;
 	soundEnvironment_group->volume = 1.0f;
 	music_group->volume = 1.0f;
+	notification_group->volume = 1.0f;
 
 	memset(openal_sounds, 0, sizeof(openal_sounds));
 	lower_freechannel = 0;
@@ -559,6 +580,7 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	OPENAL_ChannelGroup_SetVolume(sound_group, master * gameplay);
 	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, master * ambient);
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
+	OPENAL_ChannelGroup_SetVolume(notification_group, master * gameplay);
 }
 
 void sound_update(int player, int index, int numplayers)

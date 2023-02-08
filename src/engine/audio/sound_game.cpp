@@ -77,6 +77,41 @@ FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol)
 	return nullptr;
 }
 
+FMOD::Channel* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol)
+{
+	if ( no_sound )
+	{
+		return nullptr;
+	}
+
+
+	if ( player < 0 || player >= MAXPLAYERS )   //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+	{
+		return nullptr;
+	}
+	if ( players[player]->isLocalPlayer() )
+	{
+		return playSoundNotification(snd, vol);
+	}
+	else if ( multiplayer == SERVER )
+	{
+		if ( client_disconnected[player] || player <= 0 )
+		{
+			return nullptr;
+		}
+		memcpy(net_packet->data, "SNDN", 4);
+		SDLNet_Write16(snd, &net_packet->data[4]);
+		net_packet->data[6] = vol;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return nullptr;
+	}
+
+	return nullptr;
+}
+
 /*-------------------------------------------------------------------------------
 
 	playSoundPos
@@ -263,6 +298,44 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol)
 	channel->setMode(FMOD_3D_HEADRELATIVE);
 
 	if (FMODErrorCheck())
+	{
+		return nullptr;
+	}
+	channel->setPaused(false);
+	return channel;
+}
+
+FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol)
+{
+	if ( no_sound )
+	{
+		return nullptr;
+	}
+#ifndef SOUND
+	return nullptr;
+#endif
+	if ( !fmod_system || snd < 0 || snd >= numsounds || !getChannelGroupForSoundIndex(snd) )
+	{
+		return nullptr;
+	}
+	if ( sounds[snd] == nullptr || vol == 0 )
+	{
+		return nullptr;
+	}
+	FMOD::Channel* channel;
+	fmod_result = fmod_system->playSound(sounds[snd], notification_group, true, &channel);
+	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
+	FMOD_VECTOR position;
+	position.x = 0;
+	position.y = 0;
+	position.z = 0;
+
+	channel->set3DAttributes(&position, nullptr);
+	//FMOD_Channel_SetChannelGroup(channel, sound_group);
+	channel->setVolume(vol / 255.f);
+	channel->setMode(FMOD_3D_HEADRELATIVE);
+
+	if ( FMODErrorCheck() )
 	{
 		return nullptr;
 	}

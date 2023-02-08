@@ -671,11 +671,7 @@ void actMinotaurTimer(Entity* my)
 
 		if ( spawnedsomebody )
 		{
-#ifdef MUSIC
-			fadein_increment = default_fadein_increment * 20;
-			fadeout_increment = default_fadeout_increment * 5;
-			playMusic( sounds[175], false, true, false);
-#endif
+			playSoundNotification(175, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				Uint32 color = makeColorRGB(0, 255, 255);

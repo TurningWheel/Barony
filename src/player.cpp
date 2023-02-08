@@ -2874,6 +2874,7 @@ void Player::init() // for use on new/restart game, UI related
 	characterSheet.setDefaultCharacterSheetBox();
 	paperDoll.clear();
 	minotaurWarning[playernum].deinit();
+	levelUpAnimation[playernum].lvlUps.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -6023,6 +6024,7 @@ void Player::clearGUIPointers()
     hud.controllerFrame = nullptr;
 	hud.hudFrame = nullptr;
 	hud.xpFrame = nullptr;
+	hud.levelupFrame = nullptr;
 	hud.hpFrame = nullptr;
 	hud.mpFrame = nullptr;
 	hud.minimapFrame = nullptr;

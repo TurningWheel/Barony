@@ -228,6 +228,9 @@ struct DamageIndicatorSettings_t
 };
 DamageIndicatorSettings_t damageIndicatorSettings;
 
+std::vector<int> LevelUpAnimBreakpoints;
+LevelUpAnimation_t levelUpAnimation[MAXPLAYERS];
+
 std::map<Player::WorldUI_t::WorldTooltipDialogue_t::DialogueType_t, 
 	Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::Setting_t> Player::WorldUI_t::WorldTooltipDialogue_t::WorldDialogueSettings_t::settings;
 real_t Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod = 0.0;
@@ -254,6 +257,8 @@ int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
+
+void updateLevelUpFrame(const int player);
 
 void capitalizeString(std::string& str)
 {
@@ -3106,10 +3111,10 @@ void createXPBar(const int player)
 	auto endCapRight = hud_t.xpFrame->addImage(endCapPos, 0xFFFFFFFF, "*#images/ui/HUD/xpbar/HUD_Bars_ExpCap2_00.png", "xp img endcap right");
 	endCapRight->ontop = true;
 
-	const int textWidth = 48;
+	const int textWidth = 72;
 	auto font = "fonts/pixel_maz.ttf#32#2";
 	auto textStatic = hud_t.xpFrame->addField("xp text static", 16);
-	textStatic->setText("/ 100");
+	textStatic->setText("/ 100 XP");
 	textStatic->setOntop(true);
 	textStatic->setSize(SDL_Rect{ pos.w / 2 - 4, 0, textWidth, pos.h }); // x - 4 to center the slash
 	textStatic->setFont(font);
@@ -3125,6 +3130,26 @@ void createXPBar(const int player)
 	text->setVJustify(Field::justify_t::CENTER);
 	text->setHJustify(Field::justify_t::RIGHT);
 	text->setColor(makeColor( 255, 255, 255, 255));
+
+	auto textLevel = hud_t.xpFrame->addField("xp text lvl", 64);
+	textLevel->setText("");
+	textLevel->setOntop(true);
+	textLevel->setDisabled(true);
+	textLevel->setSize(SDL_Rect{ 0, 0, 0, pos.h }); // x - 4 to center the slash
+	textLevel->setFont(font);
+	textLevel->setVJustify(Field::justify_t::CENTER);
+	textLevel->setHJustify(Field::justify_t::LEFT);
+	textLevel->setColor(makeColor(255, 255, 255, 255));
+
+	auto textClass = hud_t.xpFrame->addField("xp text class", 64);
+	textClass->setText("");
+	textClass->setOntop(true);
+	textClass->setDisabled(true);
+	textClass->setSize(SDL_Rect{ 0, 0, 0, pos.h }); // x - 4 to center the slash
+	textClass->setFont(font);
+	textClass->setVJustify(Field::justify_t::CENTER);
+	textClass->setHJustify(Field::justify_t::LEFT);
+	textClass->setColor(makeColor(255, 255, 255, 255));
 }
 
 void createHotbar(const int player)
@@ -7829,6 +7854,7 @@ void Player::HUD_t::processHUD()
 		updateEnemyBar2(enemyBarFrame, &HPBar.second);
 	}
 	updateStatusEffectQueue(player.playernum);
+	updateLevelUpFrame(player.playernum);
 }
 
 void Player::MessageZone_t::createChatbox()
@@ -18926,6 +18952,14 @@ void loadHUDSettingsJSON()
 						Player::Minimap_t::compact2pVerticalBigScale = d["minimap"]["minimap_compact_2p_vertical_big_scale"].GetDouble();
 					}
 				}
+				if ( d.HasMember("levelup_anim_curve") )
+				{
+					LevelUpAnimBreakpoints.clear();
+					for ( auto it = d["levelup_anim_curve"].Begin(); it != d["levelup_anim_curve"].End(); ++it )
+					{
+						LevelUpAnimBreakpoints.push_back(it->GetInt());
+					}
+				}
 				if ( d.HasMember("damage_indicators") )
 				{
 					damageIndicatorSettings.settings.clear();
@@ -22661,6 +22695,11 @@ void Player::Inventory_t::processInventory()
 
 void Player::HUD_t::resetBars()
 {
+	xpInfo.cycleProcessedOnTick = 0;
+	xpInfo.cycleStatus = XPInfo_t::CYCLE_NONE;
+	xpInfo.cycleTicks = 0;
+	xpInfo.fade = 1.0;
+	xpInfo.fadeIn = true;
 	if ( xpFrame )
 	{
 		xpBar.animateSetpoint = std::min(100, stats[player.playernum]->EXP) * 10;
@@ -23058,7 +23097,11 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool tempHideXP = false;
-	if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
+	if ( !levelUpAnimation[player.playernum].lvlUps.empty() && !levelUpAnimation[player.playernum].lvlUps[0].titleFinishAnim )
+	{
+		tempHideXP = true;
+	}
+	else if ( (player.gui_mode == GUI_MODE_FOLLOWERMENU || player.minimap.mapWindow || player.messageZone.logWindow)
 		&& player.bUseCompactGUIHeight() )
 	{
 		tempHideXP = true;
@@ -23153,6 +23196,10 @@ void Player::HUD_t::updateXPBar()
 			xpBar.animateValue = std::min(static_cast<real_t>(xpBar.animateSetpoint * 10.0), xpBar.animateValue);
 			//messagePlayer(0, "%.2f | %.2f", diff, scaledIncrement);
 		}
+		else if ( xpBar.animateValue > xpBar.animateSetpoint * 10 )
+		{
+			xpBar.animateValue = xpBar.animateSetpoint * 10; // invalid state, reset progress bar
+		}
 		//else if ( xpBar.animateValue > xpBar.animateSetpoint * 10 )
 		//{
 		//	real_t fpsScale = (144.f / std::max(1U, fpsLimit));
@@ -23172,18 +23219,203 @@ void Player::HUD_t::updateXPBar()
 		//}
 	}
 
-	char playerXPText[16];
-	snprintf(playerXPText, sizeof(playerXPText), "%.f", xpBar.animateValue / 10);
-	
-	auto xpText = xpFrame->findField("xp text current");
-	xpText->setText(playerXPText);
-	SDL_Rect xpTextPos = xpText->getSize();
-	xpTextPos.x = pos.w / 2 - (4 * 2) - xpTextPos.w;
-	xpText->setSize(xpTextPos);
-	auto xpTextStatic = xpFrame->findField("xp text static");
-	SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
-	xpTextStaticPos.x = pos.w / 2 - 4;
-	xpTextStatic->setSize(xpTextStaticPos);
+	//if ( xpInfo.cycleProcessedOnTick != ticks )
+	//{
+	//	++xpInfo.cycleTicks;
+	//}
+
+	//if ( bCompactWidth )
+	//{
+	//	if ( xpInfo.cycleStatus == XPInfo_t::CYCLE_NONE )
+	//	{
+	//		xpInfo.cycleStatus = XPInfo_t::CYCLE_LVL;
+	//	}
+
+	//	if ( !xpInfo.fadeIn )
+	//	{
+	//		xpInfo.cycleTicks = 0;
+	//	}
+
+	//	if ( xpInfo.cycleTicks > 0 && 
+	//		(xpInfo.cycleTicks >= TICKS_PER_SECOND * 5 || xpBar.animateState != ANIMATE_NONE) )
+	//	{
+	//		xpInfo.fadeIn = false;
+	//	}
+
+	//	if ( !xpInfo.fadeIn )
+	//	{
+	//		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	//		real_t setpointDiffX = fpsScale * std::max(.1, (xpInfo.fade)) / (2.5);
+	//		xpInfo.fade -= setpointDiffX;
+	//		xpInfo.fade = std::max(0.0, xpInfo.fade);
+	//		if ( xpInfo.fade <= 0.0 )
+	//		{
+	//			if ( xpInfo.cycleStatus == XPInfo_t::CYCLE_LVL )
+	//			{
+	//				xpInfo.cycleStatus = XPInfo_t::CYCLE_XP;
+	//			}
+	//			else
+	//			{
+	//				xpInfo.cycleStatus = XPInfo_t::CYCLE_LVL;
+	//			}
+	//			xpInfo.fadeIn = true;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	//		real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - xpInfo.fade)) / (2.5);
+	//		xpInfo.fade += setpointDiffX;
+	//		xpInfo.fade = std::min(1.0, xpInfo.fade);
+	//	}
+
+	//	messagePlayer(0, MESSAGE_DEBUG, "%f", xpInfo.fade);
+	//}
+	//else
+	{
+		xpInfo.cycleStatus = XPInfo_t::CYCLE_NONE;
+		xpInfo.cycleTicks = 0;
+		xpInfo.fade = 1.0;
+	}
+
+	{
+		char playerXPText[16];
+		
+		auto xpTextStatic = xpFrame->findField("xp text static");
+		SDL_Rect xpTextStaticPos = xpTextStatic->getSize();
+
+		int offsetx = pos.w / 2 - xpTextStaticPos.w - 24;
+		static ConsoleVariable<int> cvar_asdasd("/xp_txt", 0);
+		if ( bCompactWidth )
+		{
+			xpTextStatic->setDisabled(true);
+			//offsetx += *cvar_asdasd;
+			snprintf(playerXPText, sizeof(playerXPText), "%.f XP", xpBar.animateValue / 10);
+		}
+		else
+		{
+			snprintf(playerXPText, sizeof(playerXPText), "%.f", xpBar.animateValue / 10);
+			xpTextStatic->setDisabled(false);
+		}
+
+		xpTextStaticPos.x = pos.w / 2 - 4 + offsetx;
+		xpTextStatic->setSize(xpTextStaticPos);
+		auto xpText = xpFrame->findField("xp text current");
+		xpText->setText(playerXPText);
+		SDL_Rect xpTextPos = xpText->getSize();
+		if ( bCompactWidth )
+		{
+			xpTextPos.x = pos.w - 32 - xpTextPos.w;
+		}
+		else
+		{
+			xpTextPos.x = pos.w / 2 - (4 * 2) - xpTextPos.w + offsetx;
+		}
+		xpText->setSize(xpTextPos);
+
+		if ( xpInfo.cycleStatus != XPInfo_t::CYCLE_NONE )
+		{
+			Uint8 r, g, b, a;
+			getColor(xpText->getColor(), &r, &g, &b, &a);
+			if ( xpInfo.cycleStatus == XPInfo_t::CYCLE_XP )
+			{
+				a = 255 * xpInfo.fade;
+			}
+			else
+			{
+				a = 0;
+			}
+			xpText->setColor(makeColor(r, g, b, a));
+			xpTextStatic->setColor(makeColor(r, g, b, a));
+		}
+	}
+
+	{
+		auto textLevel = xpFrame->findField("xp text lvl");
+		textLevel->setDisabled(false);
+		char textLevelBuf[64];
+		snprintf(textLevelBuf, sizeof(textLevelBuf), "LVL %d", stats[player.playernum]->LVL);
+		textLevel->setText(textLevelBuf);
+		SDL_Rect textPos = textLevel->getSize();
+
+		if ( auto textGet = textLevel->getTextObject() )
+		{
+			textPos.w = textGet->getWidth();
+		}
+		textPos.x = 32;
+		textLevel->setSize(textPos);
+		
+		{
+			if ( xpInfo.cycleStatus != XPInfo_t::CYCLE_NONE )
+			{
+				Uint8 r, g, b, a;
+				getColor(textLevel->getColor(), &r, &g, &b, &a);
+				if ( xpInfo.cycleStatus == XPInfo_t::CYCLE_LVL )
+				{
+					a = 255 * xpInfo.fade;
+				}
+				else
+				{
+					a = 0;
+				}
+				textLevel->setColor(makeColor(r, g, b, a));
+			}
+		}
+
+		auto textClass = xpFrame->findField("xp text class");
+		textClass->setDisabled(true);
+		if ( !bCompactWidth )
+		{
+			std::string classname = playerClassLangEntry(client_classes[player.playernum], player.playernum);
+			if ( !classname.empty() )
+			{
+				capitalizeString(classname);
+				textClass->setText(classname.c_str());
+				textClass->setDisabled(false);
+			}
+			if ( true )
+			{
+				textClass->setColor(0xFFFFFFFF);
+			}
+			else if ( client_classes[player.playernum] >= CLASS_CONJURER && client_classes[player.playernum] <= CLASS_BREWER )
+			{
+				textClass->setColor(hudColors.characterDLC1ClassText);
+			}
+			else if ( client_classes[player.playernum] >= CLASS_MACHINIST && client_classes[player.playernum] <= CLASS_HUNTER )
+			{
+				textClass->setColor(hudColors.characterDLC2ClassText);
+			}
+			else
+			{
+				textClass->setColor(hudColors.characterBaseClassText);
+			}
+			{
+				SDL_Rect textPos2 = textClass->getSize();
+				if ( auto textGet = textClass->getTextObject() )
+				{
+					textPos2.w = textGet->getWidth();
+				}
+				textPos2.x = textPos.x + textPos.w + 8;
+				textClass->setSize(textPos2);
+
+				if ( xpInfo.cycleStatus != XPInfo_t::CYCLE_NONE )
+				{
+					Uint8 r, g, b, a;
+					getColor(textClass->getColor(), &r, &g, &b, &a);
+					if ( xpInfo.cycleStatus == XPInfo_t::CYCLE_LVL )
+					{
+						a = 255 * xpInfo.fade;
+					}
+					else
+					{
+						a = 0;
+					}
+					textClass->setColor(makeColor(r, g, b, a));
+				}
+			}
+		}
+	}
+
 
 	real_t percent = xpBar.animateValue / 1000.0;
 	xpProgress->pos.w = std::max(1, static_cast<int>((xpBg->pos.w - xpProgressEndCap->pos.w) * percent));
@@ -31817,5 +32049,659 @@ void DamageIndicatorHandler_t::DamageIndicator_t::process()
 	if ( alpha <= 0 || ticks == 0 )
 	{
 		expired = true;
+	}
+}
+
+void createLevelUpFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.levelupFrame = hud_t.hudFrame->addFrame("levelup");
+	hud_t.levelupFrame->setHollow(true);
+	hud_t.levelupFrame->setInheritParentFrameOpacity(false);
+	hud_t.levelupFrame->setOpacity(100.0);
+	hud_t.levelupFrame->setDisabled(true);
+
+	auto lvlupImg = hud_t.levelupFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/ui/HUD/lvluptext.png", "lvl up img");
+	lvlupImg->disabled = true;
+
+	auto statsFrame = hud_t.levelupFrame->addFrame("stats");
+	statsFrame->setDisabled(true);
+	statsFrame->setHollow(true);
+	char name[32];
+	std::string font = "fonts/pixelmix.ttf#16#2";
+	for ( int i = 0; i < 6; ++i )
+	{
+		snprintf(name, sizeof(name), "stat %d", i);
+		auto statFrame = statsFrame->addFrame(name);
+		statFrame->setDisabled(true);
+		statFrame->setHollow(true);
+		statFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "stat img");
+
+		auto statCurrentTxt = statFrame->addField("stat current", 32);
+		statCurrentTxt->setFont(font.c_str());
+		statCurrentTxt->setHJustify(Field::justify_t::RIGHT);
+		statCurrentTxt->setVJustify(Field::justify_t::TOP);
+		statCurrentTxt->setText("0");
+
+		auto statIncreaseTxt = statFrame->addField("stat increase", 32);
+		statIncreaseTxt->setFont(font.c_str());
+		statIncreaseTxt->setHJustify(Field::justify_t::LEFT);
+		statIncreaseTxt->setVJustify(Field::justify_t::TOP);
+		statIncreaseTxt->setText("0");
+	}
+}
+
+void LevelUpAnimation_t::addLevelUp(const int currentLvl, const int increaseLvl, std::vector<LevelUp_t::StatUp_t>& statInfo)
+{
+	if ( lvlUps.size() > 2 )
+	{
+		// stack everything onto the back
+		auto& lvlUp = lvlUps.back();
+		for ( auto& info : statInfo )
+		{
+			for ( auto& currentInfo : lvlUp.statUps )
+			{
+				if ( currentInfo.whichStat == info.whichStat )
+				{
+					currentInfo.increaseStat += info.increaseStat;
+				}
+			}
+		}
+	}
+	else
+	{
+		bool inProgress = !lvlUps.empty();
+		lvlUps.push_back(LevelUp_t(currentLvl, increaseLvl));
+		auto& lvlUp = lvlUps.back();
+		if ( inProgress )
+		{
+			// skip some animation
+			lvlUp.titleFinishAnim = true;
+			lvlUp.animTitleFade = 1.0;
+		}
+
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			for ( auto& statUp : statInfo )
+			{
+				if ( statUp.whichStat == i )
+				{
+					lvlUp.statUps.push_back(statUp);
+				}
+			}
+		}
+	}
+}
+
+void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int desty, int destw, int desth)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = destw;
+	animateSetpointH = desth;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int desty)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = 0;
+	animateSetpointH = 0;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int player)
+{
+	real_t animspeed = 5.0 / (4.0);
+	static ConsoleVariable<float> cvar_lvlup_speed("/lvlup_speed", .5);
+	static ConsoleVariable<float> cvar_lvlup_bounce("/lvlup_bounce", 1.0 /*2.5*/);
+	static ConsoleVariable<float> cvar_lvlup_animfall("/lvlup_animfall", 0.5/*2.0*/);
+	animspeed *= *cvar_lvlup_speed;
+	int movementAmount = 0;
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		movementAmount = 0;
+	}
+
+	if ( ticks != processedOnTick )
+	{
+		processedOnTick = ticks;
+		++ticksActive;
+	}
+
+	const real_t largestScaling = 2.0;
+	real_t midScaling = 2.0;
+	const int normalSize = 28;
+	const int baseEffectPosX = baseX;
+	const int baseEffectPosY = baseY;
+
+	switch ( notificationState )
+	{
+		case STATE_1:
+			if ( notificationStateInit == STATE_1 )
+			{
+				notificationStateInit = STATE_2;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount,
+					baseEffectPosY - movementAmount,
+					normalSize, normalSize);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_2;
+			}
+			animspeed *= .01;
+			break;
+		case STATE_2:
+			if ( notificationStateInit == STATE_2 )
+			{
+				notificationStateInit = STATE_3;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount - (largestScaling - 1.0) * normalSize / 2,
+					baseEffectPosY - movementAmount - (largestScaling - 1.0) * normalSize / 2,
+					normalSize * largestScaling,
+					normalSize * largestScaling);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_3;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_3:
+			if ( notificationStateInit == STATE_3 )
+			{
+				midScaling = 1.0;
+				notificationStateInit = STATE_4;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount - (midScaling - 1.0) * normalSize / 2,
+					baseEffectPosY - movementAmount - (midScaling - 1.0) * normalSize / 2,
+					normalSize * midScaling,
+					normalSize * midScaling);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_4;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_4:
+			if ( notificationStateInit == STATE_4 )
+			{
+				notificationStateInit = STATE_END;
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( notificationTargetPosition.x != animateSetpointX
+				|| notificationTargetPosition.y != animateSetpointY
+				|| notificationTargetPosition.w != animateSetpointW
+				|| notificationTargetPosition.h != animateSetpointH )
+			{
+				// re update this as our target moved.
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_END;
+			}
+			animspeed *= 2.0;
+			break;
+		case STATE_END:
+		{
+			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			if ( ticksActive >= TICKS_PER_SECOND )
+			{
+				real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animCurrentStat)) / (2.5 * *cvar_lvlup_animfall);
+				animCurrentStat += setpointDiffX;
+				animCurrentStat = std::min(1.0, animCurrentStat);
+
+				if ( animCurrentStat >= 1.0 )
+				{
+					const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+					real_t setpointDiffX = fpsScale * 1.0 / (10.0 * *cvar_lvlup_bounce);
+					animIncreaseStat += setpointDiffX;
+					animIncreaseStat = std::min(1.0, animIncreaseStat);
+				}
+			}
+			return;
+		}
+		default:
+			break;
+	}
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	animAngle += fpsScale * std::max(.1, (1.0 - animAngle)) / (5.0);
+	animAngle = std::min(1.0, animAngle);
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
+	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - animateW)) / (animspeed);
+	real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - animateH)) / (animspeed);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+	animateW += setpointDiffW;
+	animateH += setpointDiffH;
+	animateW = std::min(1.0, animateW);
+	animateH = std::min(1.0, animateH);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+	int destW = animateSetpointW - animateStartW;
+	int destH = animateSetpointH - animateStartH;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+	pos.w = animateStartW + destW * animateW;
+	pos.h = animateStartH + destH * animateH;
+}
+
+void LevelUpAnimation_t::LevelUp_t::animateTitle(SDL_Rect basePos)
+{
+	if ( ticksActive == 0 )
+	{
+		titleAnimatePos = basePos;
+	}
+
+	static ConsoleVariable<int> cvar_lvlup_title_ticks("/lvlup_title_ticks", 15);
+	static ConsoleVariable<int> cvar_lvlup_title_fade_ticks("/lvlup_title_fade_ticks", TICKS_PER_SECOND);
+	real_t anim = std::min(1.0, ticksActive / (real_t)*cvar_lvlup_title_ticks);
+	real_t grow = 1.0;
+
+	real_t curvePosition = (LevelUpAnimBreakpoints[anim * (LevelUpAnimBreakpoints.size() - 1)]) / 100.0;
+
+	//titleAnimatePos.x = basePos.x - anim * (grow) * basePos.w / 2;
+	//titleAnimatePos.y = basePos.y - anim * (grow) * basePos.h / 2;
+	//titleAnimatePos.w = basePos.w + anim * grow * basePos.w;
+	//titleAnimatePos.h = basePos.h + anim * grow * basePos.h;
+	titleAnimatePos.x = basePos.x - curvePosition * basePos.w / 2;
+	titleAnimatePos.y = basePos.y - curvePosition * basePos.h / 2;
+	titleAnimatePos.w = basePos.w + curvePosition * basePos.w;
+	titleAnimatePos.h = basePos.h + curvePosition * basePos.h;
+
+	if ( ticksActive >= *cvar_lvlup_title_fade_ticks )
+	{
+		titleFinishAnim = true;
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		animTitleFade += fpsScale * std::max(.1, (1.0 - animTitleFade)) / (5.0);
+		animTitleFade = std::min(1.0, animTitleFade);
+
+		titleAnimatePos.y += animTitleFade * titleAnimatePos.h;
+	}
+}
+
+void updateLevelUpFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	if ( !hud_t.levelupFrame )
+	{
+		createLevelUpFrame(player);
+	}
+
+	if ( !hud_t.levelupFrame )
+	{
+		return;
+	}
+
+	if ( !players[player]->isLocalPlayer() )
+	{
+		hud_t.levelupFrame->setDisabled(true);
+		return;
+	}
+
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		return;
+	}
+
+	auto frame = hud_t.levelupFrame;
+	auto& lvlUpAnimation = levelUpAnimation[player];
+
+	static ConsoleVariable<int> cvar_lvlup_debug("/lvlup_debug", 0);
+	if ( *cvar_lvlup_debug > 0 )
+	{
+		std::vector<int> statPicks;
+		std::vector<unsigned int> statWeight = { 1, 1, 1, 1, 1, 1 };
+		if ( *cvar_lvlup_debug != 1 )
+		{
+			for ( int i = 0; i < std::min(*cvar_lvlup_debug, NUMSTATS); ++i )
+			{
+				int stat = local_rng.discrete(statWeight.data(), statWeight.size());
+				statWeight[stat] = 0;
+				statPicks.push_back(stat);
+			}
+		}
+		else
+		{
+			for ( int i = 0; i < 3; ++i )
+			{
+				int stat = local_rng.discrete(statWeight.data(), statWeight.size());
+				statWeight[stat] = 0;
+				statPicks.push_back(stat);
+			}
+		}
+		int currentStat = 0;
+		int increaseStat = 1;
+		std::vector<LevelUpAnimation_t::LevelUp_t::StatUp_t> StatUps;
+		for ( int i = 0; i < statPicks.size(); ++i )
+		{
+			if ( *cvar_lvlup_debug != 1 )
+			{
+				increaseStat = local_rng.rand() % 2;
+			}
+			switch ( statPicks[i] )
+			{
+				case STAT_STR:
+					currentStat = stats[player]->STR;
+					break;
+				case STAT_DEX:
+					currentStat = stats[player]->DEX;
+					break;
+				case STAT_CON:
+					currentStat = stats[player]->CON;
+					break;
+				case STAT_INT:
+					currentStat = stats[player]->INT;
+					break;
+				case STAT_PER:
+					currentStat = stats[player]->PER;
+					break;
+				case STAT_CHR:
+					currentStat = stats[player]->CHR;
+					break;
+				default:
+					break;
+			}
+
+			StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(statPicks[i], currentStat, increaseStat));
+		}
+
+		/*lvlUpAnimation.lvlUps.clear();*/
+		lvlUpAnimation.addLevelUp(stats[player]->LVL, 1, StatUps);
+
+		for ( auto& lvlUp : lvlUpAnimation.lvlUps )
+		{
+			messagePlayer(player, MESSAGE_DEBUG, "Lvl: [%d %d]", lvlUp.currentLvl, lvlUp.increaseLvl);
+			for ( auto& statUp : lvlUp.statUps )
+			{
+				messagePlayer(player, MESSAGE_DEBUG, "Stat: %d: [%d %d]", statUp.whichStat, statUp.currentStat, statUp.increaseStat);
+			}
+		}
+		*cvar_lvlup_debug = 0;
+	}
+
+	if ( lvlUpAnimation.lvlUps.empty() )
+	{
+		hud_t.levelupFrame->setDisabled(true);
+		return;
+	}
+
+	if ( lvlUpAnimation.lvlUps.front().expired )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		lvlUpAnimation.lvlUps.front().fadeout += fpsScale * std::max(.1, (1.0 - lvlUpAnimation.lvlUps.front().fadeout)) / (5.0);
+		lvlUpAnimation.lvlUps.front().fadeout = std::min(1.0, lvlUpAnimation.lvlUps.front().fadeout);
+		hud_t.levelupFrame->setOpacity(hud_t.levelupFrame->getParent()->getOpacity() 
+			* (1.0 - lvlUpAnimation.lvlUps.front().fadeout));
+		if ( lvlUpAnimation.lvlUps.front().fadeout >= 1.0 )
+		{
+			lvlUpAnimation.lvlUps.pop_front();
+		}
+	}
+
+	if ( lvlUpAnimation.lvlUps.empty() )
+	{
+		hud_t.levelupFrame->setDisabled(true);
+		return;
+	}
+
+	auto& lvlUp = lvlUpAnimation.lvlUps.front();
+
+	static ConsoleVariable<int> cvar_lvlup_angle("/lvlup_angle", 16);
+	static ConsoleVariable<int> cvar_lvlup_falldist("/lvlup_falldist", 64);
+	static ConsoleVariable<int> cvar_lvlup_currentstatY("/lvlup_currentstatY", -10);
+	static ConsoleVariable<int> cvar_lvlup_increasestatY("/lvlup_increasestatY", 0);
+
+	if ( !lvlUp.expired )
+	{
+		hud_t.levelupFrame->setOpacity(hud_t.levelupFrame->getParent()->getOpacity());
+	}
+	hud_t.levelupFrame->setDisabled(false);
+	const int frameWidth = 600;
+
+
+	auto lvlupImg = hud_t.levelupFrame->findImage("lvl up img");
+	lvlupImg->disabled = false;
+	if ( auto imgGet = Image::get(lvlupImg->path.c_str()) )
+	{
+		lvlupImg->pos.w = imgGet->getWidth();
+		lvlupImg->pos.h = imgGet->getHeight();
+		lvlupImg->pos.x = frameWidth / 2 - lvlupImg->pos.w / 2;
+		lvlupImg->pos.y = 0;
+	}
+
+	SDL_Rect statsFramePos{ frameWidth / 2, 0, 0, 200 };
+	auto statsFrame = hud_t.levelupFrame->findFrame("stats");
+	statsFrame->setDisabled(true);
+
+	lvlUp.animateTitle(lvlupImg->pos);
+	lvlupImg->pos = lvlUp.titleAnimatePos;
+	lvlupImg->color = makeColor(255, 255, 255, 255 * (1.0 - lvlUp.animTitleFade));
+	if ( lvlUp.titleFinishAnim )
+	{
+		statsFrame->setDisabled(false);
+	}
+
+	int index = 0;
+	SDL_Rect statFramePos{ 0, 0, 0, 200 };
+	const int statSpacing = 64;
+	int statStartX = 100;
+	std::vector<int> statPosX;
+	auto prevNotificationState = LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_END;
+	for ( auto statFrame : statsFrame->getFrames() )
+	{
+		if ( statsFrame->isDisabled() )
+		{
+			statFrame->setDisabled(true);
+			continue;
+		}
+		int currentIndex = index;
+		++index;
+		if ( currentIndex >= lvlUp.statUps.size() )
+		{
+			statFrame->setDisabled(true);
+			continue;
+		}
+		auto& statUp = lvlUp.statUps[currentIndex];
+		auto statImg = statFrame->findImage("stat img");
+		statImg->path = "";
+		statImg->disabled = true;
+		switch ( statUp.whichStat )
+		{
+			case STAT_STR:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_str_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_STR_00A.png";
+				break;
+			case STAT_DEX:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_dex_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_DEX_00A.png";
+				break;
+			case STAT_CON:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_con_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_CON_00A.png";
+				break;
+			case STAT_INT:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_int_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_INT_00A.png";
+				break;
+			case STAT_PER:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_per_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_PER_00A.png";
+				break;
+			case STAT_CHR:
+				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_chr_path");
+				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_CHA_00A.png";
+				break;
+			default:
+				break;
+		}
+
+		char buf[32] = "";
+
+		if ( statImg->path == "" ) { continue; }
+
+		if ( auto imgGet = Image::get(statImg->path.c_str()) )
+		{
+			statImg->pos.w = imgGet->getWidth();
+			statImg->pos.h = imgGet->getHeight();
+			statImg->disabled = false;
+		}
+		statImg->pos.x = 32;
+		statImg->pos.y = 40 - statImg->pos.h / 2;
+
+		snprintf(buf, sizeof(buf), "%+d", statUp.increaseStat);
+		auto statIncreaseTxt = statFrame->findField("stat increase");
+		statIncreaseTxt->setDisabled(statUp.increaseStat == 0);
+		statIncreaseTxt->setText(buf);
+		if ( auto textGet = statIncreaseTxt->getTextObject() )
+		{
+			SDL_Rect pos;
+			pos.x = statImg->pos.x + statImg->pos.w + 8;
+			pos.y = 32;
+			pos.w = std::max(40, (int)textGet->getWidth());
+			pos.h = std::max(24, (int)textGet->getHeight());
+
+			statIncreaseTxt->setColor(makeColor(255, 255, 255, (1.0 - statUp.animCurrentStat) * statUp.animAngle * 255));
+			pos.x += -*cvar_lvlup_angle * cos(PI / 2 + (3 * statUp.animAngle * (PI / 2)));
+			pos.y += (*cvar_lvlup_angle) - (*cvar_lvlup_angle * sin(PI / 2 + (3 * statUp.animAngle * (PI / 2))));
+			pos.y += *cvar_lvlup_increasestatY;
+			statIncreaseTxt->setSize(pos);
+		}
+
+		snprintf(buf, sizeof(buf), "%d", statUp.currentStat + statUp.increaseStat);
+		auto statCurrentTxt = statFrame->findField("stat current");
+		statCurrentTxt->setDisabled(!(statUp.ticksActive >= TICKS_PER_SECOND * 1));
+		statCurrentTxt->setText(buf);
+		if ( auto textGet = statCurrentTxt->getTextObject() )
+		{
+			SDL_Rect pos;
+			pos.w = textGet->getWidth();
+			pos.h = textGet->getHeight();
+			pos.x = statImg->pos.x + statImg->pos.w / 2 - pos.w / 2;
+			pos.y = statImg->pos.y + statImg->pos.h + 4;
+			pos.y += *cvar_lvlup_currentstatY;
+			if ( statUp.increaseStat != 0 )
+			{
+				pos.y += -((1.0 - statUp.animCurrentStat) * *cvar_lvlup_falldist);
+				pos.y += -4 + 4 * (cos(statUp.animIncreaseStat * 2 * PI));
+			}
+			statCurrentTxt->setSize(pos);
+
+			Uint8 r, g, b, a;
+			getColor(0xFFFFFFFF, &r, &g, &b, &a);
+			statCurrentTxt->setColor(makeColor(r, g, b, statUp.animCurrentStat * a));
+		}
+
+		statFramePos.w = 120;
+		statFrame->setSize(statFramePos);
+
+		statPosX.push_back(statFramePos.x + statImg->pos.x + statImg->pos.w / 2);
+		statFramePos.x += statSpacing;
+
+		if ( !statUp.init && (prevNotificationState == LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_END
+			|| prevNotificationState >= LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_3) )
+		{
+			statUp.notificationTargetPosition.x = statImg->pos.x;
+			statUp.notificationTargetPosition.y = statImg->pos.y;
+			statUp.notificationTargetPosition.w = statImg->pos.w;
+			statUp.notificationTargetPosition.h = statImg->pos.h;
+			statUp.baseX = statImg->pos.x;
+			statUp.baseY = statImg->pos.y;
+			statUp.pos.x = statUp.baseX;
+			statUp.pos.y = statUp.baseY;
+			statUp.pos.w = statImg->pos.w;
+			statUp.pos.h = statImg->pos.h;
+			statUp.init = true;
+		}
+
+		if ( statUp.init )
+		{
+			statUp.animateNotification(player);
+			statFrame->setDisabled(false);
+		}
+		else
+		{
+			statFrame->setDisabled(true);
+		}
+		statImg->pos = statUp.pos;
+		statsFramePos.w = statFramePos.x + statFramePos.w;
+		statStartX += statSpacing;
+
+		prevNotificationState = statUp.notificationState;
+	}
+
+	int midpoint = 0;
+	if ( statPosX.size() > 1 )
+	{
+		if ( statPosX.size() % 2 == 1 )
+		{
+			midpoint = statPosX[size_t(statPosX.size() / 2)];
+		}
+		else
+		{
+			size_t midIndex1 = std::max((size_t)0, (statPosX.size() / 2) - 1);
+			size_t midIndex2 = (statPosX.size() / 2);
+			midpoint = statPosX[midIndex1] + (statPosX[midIndex2] - statPosX[midIndex1]) / 2;
+		}
+		statsFramePos.x -= midpoint;
+	}
+	else if ( statPosX.size() == 1 )
+	{
+		statsFramePos.x -= statPosX[0];
+	}
+	else
+	{
+		statsFramePos.x -= statsFramePos.w / 2;
+	}
+	if ( statsFramePos.x % 2 == 1 )
+	{
+		++statsFramePos.x;
+	}
+	statsFrame->setSize(statsFramePos);
+	if ( ticks != lvlUp.processedOnTick )
+	{
+		lvlUp.processedOnTick = ticks;
+		++lvlUp.ticksActive;
+	}
+
+	static ConsoleVariable<int> cvar_lvlup_framey("/lvlup_framey", 16);
+	SDL_Rect levelUpFramePos{ hud_t.levelupFrame->getParent()->getSize().w / 2 - frameWidth / 2, *cvar_lvlup_framey,
+		frameWidth, std::max(lvlupImg->pos.y + lvlupImg->pos.h, statsFramePos.y + statsFramePos.h)};
+	levelUpFramePos.y += lvlUp.fadeout * *cvar_lvlup_falldist;
+	hud_t.levelupFrame->setSize(levelUpFramePos);
+
+	if ( lvlUp.ticksActive >= TICKS_PER_SECOND * 4 )
+	{
+		lvlUp.expired = true;
 	}
 }

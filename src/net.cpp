@@ -3027,6 +3027,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    (Uint8)net_packet->data[6]);
 	}},
 
+	// play sound notification global
+	{ 'SNDN', []() {
+		playSoundNotification(
+			SDLNet_Read16(&net_packet->data[4]),
+			(Uint8)net_packet->data[6]);
+	} },
+
 	// play sound entity local
 	{'SNEL', [](){
 		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
@@ -3478,11 +3485,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		else if ( !strncmp(msg, language[1114], 28) ) // Zap brigade music
 		{
-#ifdef MUSIC
-			fadein_increment = default_fadein_increment * 20;
-			fadeout_increment = default_fadeout_increment * 5;
-			playMusic( sounds[175], false, true, false );
-#endif
+			playSoundNotification(175, 128);
 		}
 		else if ( (strstr(msg, language[1160])) != NULL )
 		{
@@ -3578,6 +3581,45 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_INT + NUMSTATS] = (Uint8)net_packet->data[14];
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_PER + NUMSTATS] = (Uint8)net_packet->data[15];
 		stats[clientnum]->PLAYER_LVL_STAT_TIMER[STAT_CHR + NUMSTATS] = (Uint8)net_packet->data[16];
+
+		std::vector<LevelUpAnimation_t::LevelUp_t::StatUp_t> StatUps;
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 )
+			{
+				int increase = 1;
+				if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
+				{
+					++increase;
+				}
+				int currentStat = 0;
+				switch ( i )
+				{
+					case STAT_STR:
+						currentStat = stats[clientnum]->STR;
+						break;
+					case STAT_DEX:
+						currentStat = stats[clientnum]->DEX;
+						break;
+					case STAT_CON:
+						currentStat = stats[clientnum]->CON;
+						break;
+					case STAT_INT:
+						currentStat = stats[clientnum]->INT;
+						break;
+					case STAT_PER:
+						currentStat = stats[clientnum]->PER;
+						break;
+					case STAT_CHR:
+						currentStat = stats[clientnum]->CHR;
+						break;
+					default:
+						break;
+				}
+				StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(i, currentStat - increase, increase));
+			}
+		}
+		levelUpAnimation[clientnum].addLevelUp(stats[clientnum]->LVL - 1, 1, StatUps);
 	}},
 
 	// killed a monster

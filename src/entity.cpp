@@ -34,6 +34,7 @@ See LICENSE for details.
 #include <arm_neon.h>
 #endif
 #include "ui/MainMenu.hpp"
+#include "ui/GameUI.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1666,6 +1667,32 @@ void Entity::increaseSkill(int skill, bool notify)
 		if ( notify )
 		{
 			messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[615], getSkillLangEntry(skill));
+			static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 532);
+			static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 533);
+			static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
+			if ( *cvar_skill_sfx >= 0 )
+			{
+				if ( skill == PRO_SPELLCASTING
+					|| skill == PRO_MAGIC )
+				{
+					playSoundPlayer(player, *cvar_skill_magic_sfx, 128);
+				}
+				else if ( skill == PRO_RANGED
+					|| skill == PRO_SWORD
+					|| skill == PRO_POLEARM 
+					|| skill == PRO_AXE 
+					|| skill == PRO_MACE 
+					|| skill == PRO_UNARMED
+					|| skill == PRO_SHIELD
+					)
+				{
+					playSoundPlayer(player, *cvar_skill_combat_sfx, 128);
+				}
+				else
+				{
+					playSoundPlayer(player, *cvar_skill_sfx, 128);
+				}
+			}
 		}
 		switch ( myStats->PROFICIENCIES[skill] )
 		{
@@ -2796,7 +2823,9 @@ void Entity::handleEffects(Stat* myStats)
 
 		Uint32 color = makeColorRGB(255, 255, 0);
 		messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[622]);
-		playSoundPlayer(player, 97, 128);
+
+		static ConsoleVariable<int> cvar_lvlup_sfx("/lvlup_sfx", 526);
+		playSoundNotificationPlayer(player, *cvar_lvlup_sfx, 255);
 
 		// increase MAXHP/MAXMP
 		myStats->MAXHP += HP_MOD;
@@ -2988,7 +3017,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = makeColorRGB(0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
-							playSoundEntity(this, 97, 128);
+							playSoundEntity(this, *cvar_lvlup_sfx, 128);
 							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 						}
 					}
@@ -3006,18 +3035,21 @@ void Entity::handleEffects(Stat* myStats)
 			bool rolledBonusStat = false;
 			int statIconTicks = 250;
 
+			std::vector<LevelUpAnimation_t::LevelUp_t::StatUp_t> StatUps;
 			for ( i = 0; i < 3; i++ )
 			{
 				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[623 + increasestat[i]]);
 				switch ( increasestat[i] )
 				{
 					case STAT_STR: // STR
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->STR, 1));
 						myStats->STR++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->STR++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3026,12 +3058,14 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						break;
 					case STAT_DEX: // DEX
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->DEX, 1));
 						myStats->DEX++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->DEX++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3040,12 +3074,14 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						break;
 					case STAT_CON: // CON
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CON, 1));
 						myStats->CON++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->CON++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3054,12 +3090,14 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						break;
 					case STAT_INT: // INT
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->INT, 1));
 						myStats->INT++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->INT++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3068,12 +3106,14 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						break;
 					case STAT_PER: // PER
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->PER, 1));
 						myStats->PER++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->PER++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3082,12 +3122,14 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						break;
 					case STAT_CHR: // CHR
+						StatUps.push_back(LevelUpAnimation_t::LevelUp_t::StatUp_t(increasestat[i], myStats->CHR, 1));
 						myStats->CHR++;
 						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
 						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
 							if ( local_rng.rand() % 5 == 0 )
 							{
+								StatUps.at(StatUps.size() - 1).increaseStat += 1;
 								myStats->CHR++;
 								rolledBonusStat = true;
 								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
@@ -3109,6 +3151,11 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC, this);
 				}
+			}
+
+			if ( players[player]->isLocalPlayer() )
+			{
+				levelUpAnimation[player].addLevelUp(stats[player]->LVL, 1, StatUps);
 			}
 		}
 

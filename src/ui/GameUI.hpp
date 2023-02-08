@@ -302,3 +302,78 @@ struct MinotaurWarning_t
 	void deinit();
 };
 extern MinotaurWarning_t minotaurWarning[MAXPLAYERS];
+
+struct LevelUpAnimation_t
+{
+	struct LevelUp_t
+	{
+		int currentLvl = -1;
+		int increaseLvl = -1;
+		Uint32 ticksActive = 0;
+		Uint32 processedOnTick = 0;
+		struct StatUp_t
+		{
+			int whichStat = -1;
+			int currentStat = -1;
+			int increaseStat = -1;
+			StatUp_t(const int _numstat, const int _currentStat, const int _increaseStat)
+			{
+				whichStat = _numstat;
+				currentStat = _currentStat;
+				increaseStat = _increaseStat;
+			};
+			void animateNotification(const int player);
+
+			real_t animateX = 0.0;
+			real_t animateY = 0.0;
+			real_t animateW = 0.0;
+			real_t animateH = 0.0;
+			int animateSetpointX = 0;
+			int animateSetpointY = 0;
+			int animateSetpointW = 0;
+			int animateSetpointH = 0;
+			int animateStartX = 0;
+			int animateStartY = 0;
+			int animateStartW = 0;
+			int animateStartH = 0;
+			real_t animAngle = 0.0;
+			real_t animCurrentStat = 0.0;
+			real_t animIncreaseStat = 0.0;
+			int baseX = 0;
+			int baseY = 0;
+			Uint32 ticksActive = 0;
+			Uint32 processedOnTick = 0;
+			SDL_Rect pos{ 0, 0, 0, 0 };
+			SDL_Rect notificationTargetPosition{ 0, 0, 24, 24 };
+			bool init = false;
+			enum NotificationStates_t : int
+			{
+				STATE_1,
+				STATE_2,
+				STATE_3,
+				STATE_4,
+				STATE_END
+			};
+			NotificationStates_t notificationState = STATE_1;
+			NotificationStates_t notificationStateInit = STATE_1;
+			void setAnimatePosition(int destx, int desty);
+			void setAnimatePosition(int destx, int desty, int destw, int desth);
+		};
+		std::deque<StatUp_t> statUps;
+		LevelUp_t(const int _currentLvl, const int _increaseLvl)
+		{
+			currentLvl = _currentLvl;
+			increaseLvl = _increaseLvl;
+		}
+		SDL_Rect titleAnimatePos;
+		real_t animTitleFade = 0.0;
+		real_t fadeout = 0.0;
+		bool expired = false;
+		bool titleFinishAnim = false;
+		void animateTitle(SDL_Rect basePos);
+	};
+	std::deque<LevelUp_t> lvlUps;
+	void addLevelUp(const int currentLvl, const int addLvl, std::vector<LevelUp_t::StatUp_t>& statInfo);
+};
+
+extern LevelUpAnimation_t levelUpAnimation[MAXPLAYERS];

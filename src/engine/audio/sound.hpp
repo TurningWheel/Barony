@@ -83,7 +83,7 @@ extern FMOD::Sound* hamletmusic;
 extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD::ChannelGroup* sound_group, *music_group;
-extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group;
+extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *notification_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -98,11 +98,13 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent);
 void freeSoundResources();
 
 FMOD::Channel* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundEntity(Entity* entity, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundEntityLocal(Entity* entity, Uint16 snd, Uint8 vol);
 FMOD::Channel* playSound(Uint16 snd, Uint8 vol);
+FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
 // all parameters should be in ranges of [0.0 - 1.0]
@@ -179,7 +181,7 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
-extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *notification_group;
 
 int initOPENAL();
 int closeOPENAL();
