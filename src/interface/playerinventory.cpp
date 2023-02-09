@@ -4826,21 +4826,18 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				tr->pos.h = imgGet->getHeight();
 			}
 			static ConsoleVariable<Vector4> cvar_titleOnlyColor("/tooltip_title_only_color", Vector4{ 188, 154, 114, 255 });
-			if ( enableDebugKeys && !keystatus[SDLK_h] )
-			{
-				titleOnlyTxt->setTextColor(makeColor(
-					cvar_titleOnlyColor->x,
-					cvar_titleOnlyColor->y,
-					cvar_titleOnlyColor->z,
-					cvar_titleOnlyColor->w));
-				tl->disabled = false;
-				tl->pos.x = 0;
-				tm->disabled = false;
-				tm->pos.x = tl->pos.x + tl->pos.w;
-				tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
-				tr->disabled = false;
-				tr->pos.x = tm->pos.x + tm->pos.w;
-			}
+			titleOnlyTxt->setTextColor(makeColor(
+				cvar_titleOnlyColor->x,
+				cvar_titleOnlyColor->y,
+				cvar_titleOnlyColor->z,
+				cvar_titleOnlyColor->w));
+			tl->disabled = false;
+			tl->pos.x = 0;
+			tm->disabled = false;
+			tm->pos.x = tl->pos.x + tl->pos.w;
+			tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
+			tr->disabled = false;
+			tr->pos.x = tm->pos.x + tm->pos.w;
 			titleOnlyFrame->setSize(tooltipPos);
 			goto TOOLTIP_FINALIZE_LABEL;
 		}
