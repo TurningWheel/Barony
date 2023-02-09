@@ -64,7 +64,10 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	notification_group->setVolume(master * music);
 }
 
-static ConsoleVariable<float> cvar_sfx_notification_music_fade("/sfx_notification_music_fade", 0.5f);
+#ifndef EDITOR
+	static ConsoleVariable<float> cvar_sfx_notification_music_fade("/sfx_notification_music_fade", 0.5f);
+#endif // !EDITOR
+
 void sound_update(int player, int index, int numplayers)
 {
 	if (no_sound)
@@ -114,6 +117,17 @@ void sound_update(int player, int index, int numplayers)
 				float volume = 1.0f;
 				music_channel->getVolume(&volume);
 
+#ifdef EDITOR
+				if ( volume < 1.0f )
+				{
+					volume += fadein_increment * 2;
+					if ( volume > 1.0f )
+					{
+						volume = 1.0f;
+					}
+					music_channel->setVolume(volume);
+				}
+#else
 				if ( notificationPlaying && volume > 0.0f )
 				{
 					volume -= fadeout_increment * 5;
@@ -132,6 +146,7 @@ void sound_update(int player, int index, int numplayers)
 					}
 					music_channel->setVolume(volume);
 				}
+#endif
 			}
 		}
 
