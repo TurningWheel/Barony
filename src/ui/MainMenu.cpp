@@ -16368,6 +16368,7 @@ bind_failed:
 
 #if defined(STEAMWORKS) && !defined(USE_EOS)
 			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			createOnlineLobby();
 #elif defined(STEAMWORKS) && defined(USE_EOS)
 			if (LobbyHandler.crossplayEnabled) {
@@ -16376,16 +16377,19 @@ bind_failed:
 					[](Button&) { // yes
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 						createOnlineLobby();
 					},
 					[](Button&) { // no
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 						createOnlineLobby();
 					}, false, false);
 			}
 			else {
 				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 				createOnlineLobby();
 			}
 #elif defined(USE_EOS)

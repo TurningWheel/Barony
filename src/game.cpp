@@ -5774,7 +5774,7 @@ void drawAllPlayerCameras() {
 
 static void doConsoleCommands() {
 	Input& input = Input::inputs[clientnum]; // commands - uses local clientnum only
-	const bool controlEnabled = players[clientnum]->bControlEnabled && !movie && !intro;
+	const bool controlEnabled = players[clientnum]->bControlEnabled && !movie;
 
 #if defined(NINTENDO) && defined(NINTENDO_DEBUG)
 	// activate console
@@ -5815,7 +5815,9 @@ static void doConsoleCommands() {
 		}
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
-			confirm = true;
+            if (!command) {
+                confirm = true;
+            }
 		}
 	}
 
@@ -5896,86 +5898,87 @@ static void doConsoleCommands() {
 			// sanitize strings (remove format codes)
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
 
-			if ( multiplayer != CLIENT )
-			{
-				if ( command_str[0] == '/' ) // slash invokes a command procedure
-				{
-					messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
-					consoleCommand(command_str);
-				}
-				else if (multiplayer == CLIENT) // send message as a client
-				{
-					if (strcmp(command_str, ""))
-					{
-						char chatstring[256];
-						strcpy(chatstring, language[739]);
-						strcat(chatstring, command_str);
-						Uint32 color = makeColor(0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
-						}
+            // process string
+            if (command_str[0] == '/') // slash invokes a command procedure
+            {
+                messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
+                consoleCommand(command_str);
+            }
+            else if (!intro) // can't send messages in multiplayer
+            {
+                if (multiplayer == CLIENT) // send message as a client
+                {
+                    if (strcmp(command_str, ""))
+                    {
+                        char chatstring[256];
+                        strcpy(chatstring, language[739]);
+                        strcat(chatstring, command_str);
+                        Uint32 color = makeColor(0, 255, 255, 255);
+                        if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+                            playSound(238, 64);
+                        }
 
-						// send message to server
-						strcpy((char*)net_packet->data, "MSGS");
-						net_packet->data[4] = commandPlayer;
-						SDLNet_Write32(color, &net_packet->data[5]);
-						strcpy((char*)(&net_packet->data[9]), command_str);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9 + strlen(command_str) + 1;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
-					}
-					else
-					{
-						strcpy(command_str, "");
-					}
-				}
-				else // servers (or singleplayer) broadcast typed messages
-				{
-					if (strcmp(command_str, ""))
-					{
-						char chatstring[256];
-						strcpy(chatstring, language[739]);
-						strcat(chatstring, command_str);
-						Uint32 color = makeColor(0, 255, 255, 255);
-						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-							playSound(238, 64);
-						}
-						if (multiplayer == SERVER)
-						{
-							// send message to all clients
-							for (int c = 1; c < MAXPLAYERS; c++)
-							{
-								if (client_disconnected[c] || players[c]->isLocalPlayer())
-								{
-									continue;
-								}
-								strcpy((char*)net_packet->data, "MSGS");
-								// strncpy() does not copy N bytes if a terminating null is encountered first
-								// see http://www.cplusplus.com/reference/cstring/strncpy/
-								// see https://en.cppreference.com/w/c/string/byte/strncpy
-								// GCC throws a warning (intended) when the length argument to strncpy() in any
-								// way depends on strlen(src) to discourage this (and related) construct(s).
-
-								strncpy(chatstring, stats[0]->name, 10);
-								chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
-								strcat(chatstring, ": ");
-								strcat(chatstring, command_str);
-								SDLNet_Write32(color, &net_packet->data[4]);
-								SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
-								strcpy((char*)(&net_packet->data[12]), chatstring);
-								net_packet->address.host = net_clients[c - 1].host;
-								net_packet->address.port = net_clients[c - 1].port;
-								net_packet->len = 12 + strlen(chatstring) + 1;
-								sendPacketSafe(net_sock, -1, net_packet, c - 1);
-							}
-						}
-					}
-					else
-					{
-						strcpy(command_str, "");
-					}
-				}
+                        // send message to server
+                        strcpy((char*)net_packet->data, "MSGS");
+                        net_packet->data[4] = commandPlayer;
+                        SDLNet_Write32(color, &net_packet->data[5]);
+                        strcpy((char*)(&net_packet->data[9]), command_str);
+                        net_packet->address.host = net_server.host;
+                        net_packet->address.port = net_server.port;
+                        net_packet->len = 9 + strlen(command_str) + 1;
+                        sendPacketSafe(net_sock, -1, net_packet, 0);
+                    }
+                    else
+                    {
+                        strcpy(command_str, "");
+                    }
+                }
+                else // servers (or singleplayer) broadcast typed messages
+                {
+                    if (strcmp(command_str, ""))
+                    {
+                        char chatstring[256];
+                        strcpy(chatstring, language[739]);
+                        strcat(chatstring, command_str);
+                        Uint32 color = makeColor(0, 255, 255, 255);
+                        if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+                            playSound(238, 64);
+                        }
+                        if (multiplayer == SERVER)
+                        {
+                            // send message to all clients
+                            for (int c = 1; c < MAXPLAYERS; c++)
+                            {
+                                if (client_disconnected[c] || players[c]->isLocalPlayer())
+                                {
+                                    continue;
+                                }
+                                strcpy((char*)net_packet->data, "MSGS");
+                                // strncpy() does not copy N bytes if a terminating null is encountered first
+                                // see http://www.cplusplus.com/reference/cstring/strncpy/
+                                // see https://en.cppreference.com/w/c/string/byte/strncpy
+                                // GCC throws a warning (intended) when the length argument to strncpy() in any
+                                // way depends on strlen(src) to discourage this (and related) construct(s).
+                                
+                                strncpy(chatstring, stats[0]->name, 10);
+                                chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+                                strcat(chatstring, ": ");
+                                strcat(chatstring, command_str);
+                                SDLNet_Write32(color, &net_packet->data[4]);
+                                SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
+                                strcpy((char*)(&net_packet->data[12]), chatstring);
+                                net_packet->address.host = net_clients[c - 1].host;
+                                net_packet->address.port = net_clients[c - 1].port;
+                                net_packet->len = 12 + strlen(chatstring) + 1;
+                                sendPacketSafe(net_sock, -1, net_packet, c - 1);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        strcpy(command_str, "");
+                    }
+                }
 			}
 
 			// save this in the command history
