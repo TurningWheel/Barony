@@ -3172,7 +3172,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -3742,7 +3742,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
 				allSettings.audio_device = guid_string;
 				fmod_system->setDriver(index);
 			}
@@ -5300,7 +5300,7 @@ bind_failed:
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
 			if (!selected_device && allSettings.audio_device == guid_string) {
 				selected_device = c;
 			}
