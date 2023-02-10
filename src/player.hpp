@@ -1502,6 +1502,14 @@ public:
 			bool fadeIn = true;
 		};
 		XPInfo_t xpInfo;
+		struct InteractPrompt_t
+		{
+			real_t promptAnim = 0.0;
+			Uint32 activeTicks = 0;
+			Uint32 processedOnTick = 0;
+			real_t cycleAnim = 1.0;
+		};
+		InteractPrompt_t interactPrompt;
 		Bar_t xpBar;
 		Bar_t HPBar;
 		Bar_t MPBar;

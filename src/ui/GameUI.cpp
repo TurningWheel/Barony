@@ -6487,6 +6487,12 @@ void createWorldTooltipPrompts(const int player)
 	text->setDisabled(true);
 	text->setSize(SDL_Rect{ 0, 0, 0, 0 });
 
+	auto text2 = worldTooltipFrame->addField("prompt cycle text", 256);
+	text2->setFont(promptFont);
+	text2->setText("");
+	text2->setDisabled(true);
+	text2->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
 	const int iconSize = 24;
 	SDL_Rect iconPos{ 0, 0, iconSize, iconSize };
 
@@ -6501,6 +6507,10 @@ void createWorldTooltipPrompts(const int player)
 	auto glyphAdditional = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "glyph img 2");
 	glyphAdditional->disabled = true;
+
+	auto glyphAdditional2 = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "images/system/white.png", "glyph img 3");
+	glyphAdditional2->disabled = true;
 
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
@@ -6544,6 +6554,10 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	cursor->disabled = true;
 	auto text = worldTooltipFrame->findField("prompt text");
 	text->setDisabled(true);
+	auto textCycle = worldTooltipFrame->findField("prompt cycle text");
+	textCycle->setDisabled(true);
+	auto glyphCycle = worldTooltipFrame->findImage("glyph img 3");
+	glyphCycle->disabled = true;
 
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
@@ -7095,6 +7109,121 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	{
 		promptPos.w = std::max(cursor->pos.x + cursor->pos.w, promptPos.w);
 		promptPos.h = std::max(cursor->pos.y + cursor->pos.h, promptPos.h);
+	}
+	if ( player.worldUI.isEnabled() )
+	{
+		if ( !text->isDisabled() && !glyph->disabled && player.worldUI.tooltipsInRange.size() > 1 )
+		{
+			if ( Input::inputs[player.playernum].input("Interact Tooltip Next").type != Input::binding_t::bindtype_t::INVALID )
+			{
+				auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Interact Tooltip Next", false);
+				auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Interact Tooltip Next", true);
+
+				if ( ticks % 50 < 25 )
+				{
+					glyphCycle->path = glyphPathPressed;
+					if ( auto imgGet = Image::get(glyphCycle->path.c_str()) )
+					{
+						glyphCycle->disabled = false;
+						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
+						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						if ( glyphCycle->pos.x % 2 == 1 )
+						{
+							++glyphCycle->pos.x;
+						}
+						if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+						{
+							const int unpressedHeight = imgGetUnpressed->getHeight();
+							if ( unpressedHeight != glyphCycle->pos.h )
+							{
+								glyphCycle->pos.y -= (glyphCycle->pos.h - unpressedHeight);
+							}
+
+							/*if ( unpressedHeight != nominalGlyphHeight )
+							{
+								glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+							}*/
+						}
+						textPos.x += glyph->pos.w;
+					}
+				}
+				else
+				{
+					glyphCycle->path = glyphPathUnpressed;
+					if ( auto imgGet = Image::get(glyphCycle->path.c_str()) )
+					{
+						glyphCycle->disabled = false;
+						glyphCycle->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+						glyphCycle->pos.y = glyph->pos.y + glyph->pos.h + 4;
+						glyphCycle->pos.x = glyph->pos.x + glyph->pos.w / 2 - glyphCycle->pos.w / 2;
+						if ( glyphCycle->pos.x % 2 == 1 )
+						{
+							++glyphCycle->pos.x;
+						}
+					}
+				}
+
+				if ( !glyphCycle->disabled )
+				{
+					//glyphCycle->pos.x += 16;
+					//interactPrompt.promptAnim = 1.0;
+					glyphCycle->color = makeColor(255, 255, 255, 255 * interactPrompt.promptAnim);
+					textCycle->setText(language[4326]);
+					textCycle->setColor(makeColor(255, 255, 255, 255 * interactPrompt.promptAnim));
+					SDL_Rect textPos = text->getSize();
+					textPos.x = glyphCycle->pos.x + glyphCycle->pos.w + 4;
+					textPos.y = glyphCycle->pos.y + 2;
+
+					if ( auto imgGet = Image::get(glyphPathPressed.c_str()) )
+					{
+						if ( imgGet->getHeight() != glyphCycle->pos.h )
+						{
+							textPos.y += (glyphCycle->pos.h - imgGet->getHeight()) / 2;
+						}
+					}
+					if ( glyphCycle->pos.h != nominalGlyphHeight )
+					{
+						textPos.y += (glyphCycle->pos.h - nominalGlyphHeight) / 2;
+					}
+					textPos.w = textCycle->getTextObject()->getWidth();
+					glyphCycle->pos.y += 4 * sin(interactPrompt.cycleAnim * PI);
+					textPos.y += 4 * sin(interactPrompt.cycleAnim * PI);
+					textCycle->setSize(textPos);
+					textCycle->setDisabled(false);
+
+					promptPos.w = std::max(textPos.x + textPos.w, promptPos.w);
+					promptPos.h = std::max(textPos.y + textPos.h, promptPos.h);
+					promptPos.w = std::max(glyphCycle->pos.x + glyphCycle->pos.w, promptPos.w);
+					promptPos.h = std::max(glyphCycle->pos.y + glyphCycle->pos.h, promptPos.h);
+
+					if ( interactPrompt.processedOnTick != ticks )
+					{
+						interactPrompt.processedOnTick = ticks;
+						++interactPrompt.activeTicks;
+					}
+
+					if ( interactPrompt.activeTicks > TICKS_PER_SECOND / 10 )
+					{
+						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						real_t setpointDiff = fpsScale * std::max(.1, (1.0 - interactPrompt.promptAnim)) / 2.5;
+						interactPrompt.promptAnim += setpointDiff;
+						interactPrompt.promptAnim = std::min(1.0, interactPrompt.promptAnim);
+					}
+				}
+
+				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				real_t setpointDiff = fpsScale * 0.15;
+				interactPrompt.cycleAnim += setpointDiff;
+				interactPrompt.cycleAnim = std::min(1.0, interactPrompt.cycleAnim);
+			}
+		}
+	}
+	if ( textCycle->isDisabled() )
+	{
+		interactPrompt.promptAnim = 0.0;
+		interactPrompt.activeTicks = 0;
+		interactPrompt.cycleAnim = 1.0;
 	}
 	worldTooltipFrame->setSize(promptPos);
 	worldTooltipFrame->setDisabled(false);
@@ -8458,6 +8587,7 @@ void openMapWindow(int player) {
     }
 
 	players[player]->GUI.previousModule = players[player]->GUI.activeModule;
+	bool bOldShootmode = players[player]->shootmode;
 	if ( players[player]->shootmode )
 	{
 		players[player]->openStatusScreen(GUI_MODE_NONE,
@@ -8609,9 +8739,12 @@ void openMapWindow(int player) {
 	minimap_cursor[player].x = map_size / 2;
 	minimap_cursor[player].y = map_size / 2;
 
-	if ( !inputs.getVirtualMouse(player)->draw_cursor )
+	if ( !bOldShootmode && players[player]->GUI.previousModule == Player::GUI_t::MODULE_CHARACTERSHEET )
 	{
-		Input::inputs[player].consumeBinary("MinimapPing");
+		if ( !inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			Input::inputs[player].consumeBinary("MinimapPing"); // clicked from button
+		}
 	}
 
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){

@@ -3888,11 +3888,13 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
 				players[player]->worldUI.cycleToPreviousTooltip();
+				players[player]->hud.interactPrompt.cycleAnim = 0.0;
 			}
 			if ( cycleNext )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
 				players[player]->worldUI.cycleToNextTooltip();
+				players[player]->hud.interactPrompt.cycleAnim = 0.0;
 			}
 		}
 
