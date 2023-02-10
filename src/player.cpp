@@ -3989,7 +3989,7 @@ void Player::WorldUI_t::handleTooltips()
 				return lhs.second < rhs.second;
 			}
 			);
-			if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_RESCAN )
+			if ( players[player]->worldUI.tooltipView == TOOLTIP_VIEW_RESCAN || players[player]->worldUI.tooltipView == TOOLTIP_VIEW_FREE )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_LOCKED;
 			}
@@ -3999,8 +3999,14 @@ void Player::WorldUI_t::handleTooltips()
 			if ( players[player]->worldUI.tooltipsInRange.empty() )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-				return;
+				continue;
 			}
+			if ( bDoingActionHideTooltips )
+			{
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+				continue;
+			}
+
 			real_t currentYaw = players[player]->entity->yaw;
 			while ( currentYaw >= 4 * PI )
 			{
@@ -4019,19 +4025,19 @@ void Player::WorldUI_t::handleTooltips()
 				if ( magnitude > 0.0 )
 				{
 					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_FREE;
-					return;
+					continue;
 				}
 			}
 			if ( abs(yawDiff) > PI / 16 )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-				return;
+				continue;
 			}
 			if ( FollowerMenu[player].selectMoveTo && FollowerMenu[player].optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
 				// rescan constantly
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-				return;
+				continue;
 			}
 
 			std::array<char*, 3> salvageStrings = { language[3999], language[4006], language[4008] };
@@ -4045,25 +4051,22 @@ void Player::WorldUI_t::handleTooltips()
 					{
 						// rescan, out of date string.
 						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-						return;
+						continue;
 					}
 				}
-				else
-				{
-					if ( foundTinkeringKit )
-					{
-						// rescan, out of date string.
-						players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-						return;
-					}
-				}
+			}
+			if ( foundTinkeringKit && !foundSalvageString )
+			{
+				// rescan, out of date string.
+				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+				continue;
 			}
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
 				if ( players[player]->worldUI.tooltipInRange(*tooltip.first) < 0.01 )
 				{
 					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-					return;
+					continue;
 				}
 			}
 		}
