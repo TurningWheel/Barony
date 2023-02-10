@@ -4821,7 +4821,7 @@ void ingameHud()
 	        // toggle minimap
 		    // player not needed to be alive
             // map window bind
-			if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+			if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
 			{
 				if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
 				{
@@ -4844,7 +4844,7 @@ void ingameHud()
 						openMapWindow(player);
 					}
 				}
-				else if ( players[player]->minimap.bExpandPromptEnabled
+				else if ( players[player]->shootmode && players[player]->minimap.bExpandPromptEnabled
 					&& input.consumeBinaryToggle("Toggle Minimap") )
 				{
 					openMinimap(player);
