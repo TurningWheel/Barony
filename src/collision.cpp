@@ -61,7 +61,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 
 	Input& input = Input::inputs[player];
 
-	if ( gamePaused || movie )
+	if ( gamePaused || movie || !players[player] || !players[player]->entity || players[player]->entity->ticks < (TICKS_PER_SECOND / 10) )
 	{
 		input.consumeBinaryToggle("Use");
 		return nullptr;
