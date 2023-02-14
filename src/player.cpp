@@ -6030,6 +6030,7 @@ void Player::clearGUIPointers()
 	hud.hudFrame = nullptr;
 	hud.xpFrame = nullptr;
 	hud.levelupFrame = nullptr;
+	hud.skillupFrame = nullptr;
 	hud.hpFrame = nullptr;
 	hud.mpFrame = nullptr;
 	hud.minimapFrame = nullptr;

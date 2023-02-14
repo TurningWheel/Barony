@@ -259,6 +259,7 @@ int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
 void updateLevelUpFrame(const int player);
+void updateSkillUpFrame(const int player);
 
 void capitalizeString(std::string& str)
 {
@@ -7984,6 +7985,7 @@ void Player::HUD_t::processHUD()
 	}
 	updateStatusEffectQueue(player.playernum);
 	updateLevelUpFrame(player.playernum);
+	updateSkillUpFrame(player.playernum);
 }
 
 void Player::MessageZone_t::createChatbox()
@@ -32836,5 +32838,747 @@ void updateLevelUpFrame(const int player)
 	if ( lvlUp.ticksActive >= TICKS_PER_SECOND * 4 )
 	{
 		lvlUp.expired = true;
+	}
+}
+
+SkillUpAnimation_t skillUpAnimation[MAXPLAYERS];
+
+void createSkillUpFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	hud_t.skillupFrame = hud_t.hudFrame->addFrame("skillup");
+	hud_t.skillupFrame->setHollow(true);
+	hud_t.skillupFrame->setInheritParentFrameOpacity(false);
+	hud_t.skillupFrame->setOpacity(100.0);
+	hud_t.skillupFrame->setDisabled(true);
+
+	auto skillsFrame = hud_t.skillupFrame->addFrame("skills");
+	skillsFrame->setDisabled(true);
+	skillsFrame->setHollow(true);
+	char name[32];
+	std::string font = "fonts/pixelmix.ttf#16#2";
+
+	auto skillFrame = skillsFrame->addFrame("skill");
+	skillFrame->setDisabled(true);
+	skillFrame->setHollow(true);
+
+	//skillFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill fade");
+	skillFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill bg img");
+	skillFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill border img");
+	skillFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "skill img");
+
+	auto skillCurrentTxt = skillFrame->addField("skill current", 32);
+	skillCurrentTxt->setFont(font.c_str());
+	skillCurrentTxt->setHJustify(Field::justify_t::RIGHT);
+	skillCurrentTxt->setVJustify(Field::justify_t::TOP);
+	skillCurrentTxt->setText("0");
+
+	auto skillCurrentOldTxt = skillFrame->addField("skill current old", 32);
+	skillCurrentOldTxt->setFont(font.c_str());
+	skillCurrentOldTxt->setHJustify(Field::justify_t::RIGHT);
+	skillCurrentOldTxt->setVJustify(Field::justify_t::TOP);
+	skillCurrentOldTxt->setText("0");
+
+	auto skillIncreaseTxt = skillFrame->addField("skill increase", 32);
+	skillIncreaseTxt->setFont(font.c_str());
+	skillIncreaseTxt->setHJustify(Field::justify_t::LEFT);
+	skillIncreaseTxt->setVJustify(Field::justify_t::TOP);
+	skillIncreaseTxt->setText("0");
+
+	std::string font2 = "fonts/pixel_maz.ttf#32#2";
+	auto skillNameTxt = skillFrame->addField("skill name txt", 64);
+	skillNameTxt->setFont(font2.c_str());
+	skillNameTxt->setHJustify(Field::justify_t::RIGHT);
+	skillNameTxt->setVJustify(Field::justify_t::TOP);
+	skillNameTxt->setText("");
+
+	/*auto lvlupImg = hud_t.levelupFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/ui/HUD/lvluptext.png", "lvl up img");
+	lvlupImg->disabled = true;
+
+	auto statsFrame = hud_t.levelupFrame->addFrame("stats");
+	statsFrame->setDisabled(true);
+	statsFrame->setHollow(true);
+	char name[32];
+	std::string font = "fonts/pixelmix.ttf#16#2";
+	for ( int i = 0; i < 6; ++i )
+	{
+		snprintf(name, sizeof(name), "stat %d", i);
+		auto statFrame = statsFrame->addFrame(name);
+		statFrame->setDisabled(true);
+		statFrame->setHollow(true);
+		statFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "stat img");
+
+		auto statCurrentTxt = statFrame->addField("stat current", 32);
+		statCurrentTxt->setFont(font.c_str());
+		statCurrentTxt->setHJustify(Field::justify_t::RIGHT);
+		statCurrentTxt->setVJustify(Field::justify_t::TOP);
+		statCurrentTxt->setText("0");
+
+		auto statIncreaseTxt = statFrame->addField("stat increase", 32);
+		statIncreaseTxt->setFont(font.c_str());
+		statIncreaseTxt->setHJustify(Field::justify_t::LEFT);
+		statIncreaseTxt->setVJustify(Field::justify_t::TOP);
+		statIncreaseTxt->setText("0");
+	}*/
+}
+
+void SkillUpAnimation_t::SkillUp_t::setAnimatePosition(int destx, int desty, int destw, int desth)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = destw;
+	animateSetpointH = desth;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void SkillUpAnimation_t::SkillUp_t::setAnimatePosition(int destx, int desty)
+{
+	animateStartX = pos.x;
+	animateStartY = pos.y;
+	animateStartW = pos.w;
+	animateStartH = pos.h;
+	animateSetpointX = destx;
+	animateSetpointY = desty;
+	animateSetpointW = 0;
+	animateSetpointH = 0;
+	animateX = 0.0;
+	animateY = 0.0;
+	animateW = 0.0;
+	animateH = 0.0;
+}
+
+void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
+{
+	real_t animspeed = 5.0 / (4.0);
+	static ConsoleVariable<float> cvar_skillup_speed("/skillup_speed", .5);
+	static ConsoleVariable<float> cvar_skillup_bounce("/skillup_bounce", 1.0 /*2.5*/);
+	static ConsoleVariable<float> cvar_skillup_animfall("/skillup_animfall", 0.5/*2.0*/);
+	animspeed *= *cvar_skillup_speed;
+	int movementAmount = 0;
+	if ( players[player]->bUseCompactGUIHeight() )
+	{
+		movementAmount = 0;
+	}
+
+	if ( ticks != processedOnTick )
+	{
+		processedOnTick = ticks;
+		++ticksActive;
+	}
+
+	const real_t largestScaling = 2.0;
+	real_t midScaling = 2.0;
+	const int normalSize = 24;
+	const int baseEffectPosX = baseX;
+	const int baseEffectPosY = baseY;
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	if ( notificationState >= STATE_4 )
+	{
+		real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animBackground)) / (2.5);
+		animBackground += setpointDiffX;
+		animBackground = std::min(1.0, animBackground);
+	}
+
+	animAngle += fpsScale * std::max(.1, (1.0 - animAngle)) / (5.0);
+	animAngle = std::min(1.0, animAngle);
+
+	switch ( notificationState )
+	{
+		case STATE_1:
+			if ( notificationStateInit == STATE_1 )
+			{
+				notificationStateInit = STATE_2;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount,
+					baseEffectPosY - movementAmount,
+					normalSize, normalSize);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_2;
+			}
+			animspeed *= .01;
+			break;
+		case STATE_2:
+			if ( notificationStateInit == STATE_2 )
+			{
+				notificationStateInit = STATE_3;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount - (largestScaling - 1.0) * normalSize / 2,
+					baseEffectPosY - movementAmount - (largestScaling - 1.0) * normalSize / 2,
+					normalSize * largestScaling,
+					normalSize * largestScaling);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_3;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_3:
+			if ( notificationStateInit == STATE_3 )
+			{
+				midScaling = 1.0;
+				notificationStateInit = STATE_4;
+				setAnimatePosition(
+					baseEffectPosX - movementAmount - (midScaling - 1.0) * normalSize / 2,
+					baseEffectPosY - movementAmount - (midScaling - 1.0) * normalSize / 2,
+					normalSize * midScaling,
+					normalSize * midScaling);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_4;
+			}
+			animspeed *= 4.0;
+			break;
+		case STATE_4:
+			if ( notificationStateInit == STATE_4 )
+			{
+				notificationStateInit = STATE_END;
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( notificationTargetPosition.x != animateSetpointX
+				|| notificationTargetPosition.y != animateSetpointY
+				|| notificationTargetPosition.w != animateSetpointW
+				|| notificationTargetPosition.h != animateSetpointH )
+			{
+				// re update this as our target moved.
+				setAnimatePosition(notificationTargetPosition.x,
+					notificationTargetPosition.y,
+					notificationTargetPosition.w,
+					notificationTargetPosition.h);
+			}
+			if ( animateX >= 1.0 )
+			{
+				notificationState = STATE_END;
+			}
+			animspeed *= 2.0;
+			break;
+		case STATE_END:
+		{
+			if ( ticksActive >= TICKS_PER_SECOND )
+			{
+				real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animCurrentStat)) / (2.5 * *cvar_skillup_animfall);
+				animCurrentStat += setpointDiffX;
+				animCurrentStat = std::min(1.0, animCurrentStat);
+
+				if ( animCurrentStat >= 1.0 )
+				{
+					real_t setpointDiffX = fpsScale * 1.0 / (10.0 * *cvar_skillup_bounce);
+					animIncreaseStat += setpointDiffX;
+					animIncreaseStat = std::min(1.0, animIncreaseStat);
+				}
+			}
+			return;
+		}
+		default:
+			break;
+	}
+
+	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
+	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
+	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - animateW)) / (animspeed);
+	real_t setpointDiffH = fpsScale * std::max(.1, (1.0 - animateH)) / (animspeed);
+	animateX += setpointDiffX;
+	animateY += setpointDiffY;
+	animateX = std::min(1.0, animateX);
+	animateY = std::min(1.0, animateY);
+	animateW += setpointDiffW;
+	animateH += setpointDiffH;
+	animateW = std::min(1.0, animateW);
+	animateH = std::min(1.0, animateH);
+
+	int destX = animateSetpointX - animateStartX;
+	int destY = animateSetpointY - animateStartY;
+	int destW = animateSetpointW - animateStartW;
+	int destH = animateSetpointH - animateStartH;
+
+	pos.x = animateStartX + destX * animateX;
+	pos.y = animateStartY + destY * animateY;
+	pos.w = animateStartW + destW * animateW;
+	pos.h = animateStartH + destH * animateH;
+}
+
+void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill)
+{
+	for ( auto& s : skillUps )
+	{
+		if ( s.whichSkill != _numSkill )
+		{
+			continue;
+		}
+		if ( s.expired )
+		{
+			continue;
+		}
+		int diff = std::max(0, (_currentSkill + _increaseSkill) - (s.currentSkill + s.increaseSkill));
+		if ( diff > 0 )
+		{
+			if ( s.ticksActive >= TICKS_PER_SECOND )
+			{
+				// update current value
+				s.currentSkill = _currentSkill;
+				s.increaseSkill = _increaseSkill;
+			}
+			else
+			{
+				s.increaseSkill += diff;
+			}
+			s.ticksActive = 0;
+			s.animAngle = 0.0;
+			s.animCurrentStat = 0.0;
+			s.animIncreaseStat = 0.0;
+			return;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	skillUps.push_back(SkillUp_t(_numSkill, _currentSkill, _increaseSkill));
+}
+
+void updateSkillUpFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	if ( !hud_t.skillupFrame )
+	{
+		createSkillUpFrame(player);
+	}
+
+	if ( !hud_t.skillupFrame )
+	{
+		return;
+	}
+
+	if ( !players[player]->isLocalPlayer() )
+	{
+		hud_t.skillupFrame->setDisabled(true);
+		return;
+	}
+
+	if ( gamePaused && multiplayer == SINGLE )
+	{
+		return;
+	}
+
+	auto frame = hud_t.skillupFrame;
+	auto& skillUpAnim = skillUpAnimation[player];
+
+	if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+
+		int skill = PRO_APPRAISAL; local_rng.rand() % NUMPROFICIENCIES;
+		int currentSkill = stats[player]->PROFICIENCIES[skill];
+		int increaseSkill = 1;
+		skillUpAnim.addSkillUp(skill, currentSkill, increaseSkill);
+		//skillUpAnim.skillUps.push_back(SkillUpAnimation_t::SkillUp_t(skill, currentSkill, increaseSkill));
+		++stats[player]->PROFICIENCIES[skill];
+	}
+
+	if ( skillUpAnim.skillUps.empty() || levelUpAnimation[player].lvlUps.size() > 0 )
+	{
+		hud_t.skillupFrame->setDisabled(true);
+		return;
+	}
+	
+	if ( skillUpAnim.skillUps.front().expired )
+	{
+		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		skillUpAnim.skillUps.front().fadeout += fpsScale * std::max(.1, (1.0 - skillUpAnim.skillUps.front().fadeout)) / (5.0);
+		skillUpAnim.skillUps.front().fadeout = std::min(1.0, skillUpAnim.skillUps.front().fadeout);
+		hud_t.skillupFrame->setOpacity(hud_t.skillupFrame->getParent()->getOpacity()
+			* (1.0 - skillUpAnim.skillUps.front().fadeout));
+		if ( skillUpAnim.skillUps.front().fadeout >= 1.0 )
+		{
+			skillUpAnim.skillUps.pop_front();
+		}
+	}
+
+	if ( skillUpAnim.skillUps.empty() )
+	{
+		hud_t.skillupFrame->setDisabled(true);
+		return;
+	}
+
+	auto& skillUp = skillUpAnim.skillUps.front();
+
+	static ConsoleVariable<int> cvar_skillup_angle("/skillup_angle", 16);
+	static ConsoleVariable<int> cvar_skillup_falldist("/skillup_falldist", 64);
+	static ConsoleVariable<int> cvar_skillup_currentstatY("/skillup_currentstatY", -10);
+	static ConsoleVariable<int> cvar_skillup_increasestatY("/skillup_increasestatY", 0);
+
+	if ( !skillUp.expired )
+	{
+		hud_t.skillupFrame->setOpacity(hud_t.skillupFrame->getParent()->getOpacity());
+	}
+	hud_t.skillupFrame->setDisabled(false);
+	const int frameWidth = 600;
+
+	//auto lvlupImg = hud_t.levelupFrame->findImage("lvl up img");
+	//lvlupImg->disabled = false;
+	//if ( auto imgGet = Image::get(lvlupImg->path.c_str()) )
+	//{
+	//	lvlupImg->pos.w = imgGet->getWidth();
+	//	lvlupImg->pos.h = imgGet->getHeight();
+	//	lvlupImg->pos.x = frameWidth / 2 - lvlupImg->pos.w / 2;
+	//	lvlupImg->pos.y = 0;
+	//}
+
+	SDL_Rect skillsFramePos{ frameWidth / 2, 0, 0, 200 };
+	auto skillsFrame = hud_t.skillupFrame->findFrame("skills");
+	skillsFrame->setDisabled(false);
+
+	//lvlUp.animateTitle(lvlupImg->pos);
+	//lvlupImg->pos = lvlUp.titleAnimatePos;
+	//lvlupImg->color = makeColor(255, 255, 255, 255 * (1.0 - lvlUp.animTitleFade));
+	//if ( lvlUp.titleFinishAnim )
+	//{
+	//	statsFrame->setDisabled(false);
+	//}
+
+	int index = 0;
+	SDL_Rect skillFramePos{ 0, 0, 0, 400 };
+	const int skillSpacing = 64;
+	int skillStartX = 100;
+	std::vector<int> skillPosX;
+	auto prevNotificationState = SkillUpAnimation_t::SkillUp_t::NotificationStates_t::STATE_END;
+	for ( auto skillFrame : skillsFrame->getFrames() )
+	{
+		if ( skillsFrame->isDisabled() )
+		{
+			skillFrame->setDisabled(true);
+			continue;
+		}
+		int currentIndex = index;
+		++index;
+		if ( currentIndex >= skillUpAnim.skillUps.size() )
+		{
+			skillFrame->setDisabled(true);
+			continue;
+		}
+		auto& skillUp = skillUpAnim.skillUps[currentIndex];
+		auto skillImg = skillFrame->findImage("skill img");
+		auto skillBorderImg = skillFrame->findImage("skill border img");
+		auto skillBgImg = skillFrame->findImage("skill bg img");
+		//auto fadebg = skillFrame->findImage("skill fade");
+		//fadebg->path = "images/ui/HUD/HUD_SkillUp_Fade_00.png";
+		//fadebg->disabled = false;
+		skillImg->path = "";
+		skillImg->disabled = true;
+		skillBorderImg->disabled = true;
+		skillBgImg->disabled = true;
+		int skillsheetIndex = -1;
+		auto skillCurrentTxt = skillFrame->findField("skill current");
+		auto skillCurrentOldTxt = skillFrame->findField("skill current old");
+
+		char buf[32] = "";
+		snprintf(buf, sizeof(buf), "%d", skillUp.currentSkill + skillUp.increaseSkill);
+		skillCurrentTxt->setDisabled(!(skillUp.ticksActive >= TICKS_PER_SECOND * 1));
+		skillCurrentTxt->setText(buf);
+
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			++skillsheetIndex;
+			if ( skill.skillId == skillUp.whichSkill )
+			{
+				skillImg->path = skill.skillIconPath;
+				int currentskill = skillCurrentTxt->isDisabled() ? skillUp.currentSkill : skillUp.currentSkill + skillUp.increaseSkill;
+				if ( currentskill >= SKILL_LEVEL_LEGENDARY )
+				{
+					skillImg->path = skill.skillIconPathLegend;
+					skillCurrentTxt->setColor(Player::SkillSheet_t::skillSheetData.legendTextColor);
+					skillCurrentOldTxt->setColor(Player::SkillSheet_t::skillSheetData.legendTextColor);
+					skillBorderImg->path = Player::SkillSheet_t::skillSheetData.iconBgPathLegend;
+					skillBgImg->path = "*images/ui/HUD/HUD_SkillUp_BG100_00.png";
+				}
+				else if ( currentskill >= SKILL_LEVEL_EXPERT )
+				{
+					skillCurrentTxt->setColor(Player::SkillSheet_t::skillSheetData.expertTextColor);
+					skillCurrentOldTxt->setColor(Player::SkillSheet_t::skillSheetData.expertTextColor);
+					skillBorderImg->path = Player::SkillSheet_t::skillSheetData.iconBgPathExpert;
+					skillBgImg->path = "*images/ui/HUD/HUD_SkillUp_BG60_00.png";
+				}
+				else if ( currentskill >= SKILL_LEVEL_BASIC )
+				{
+					skillCurrentTxt->setColor(Player::SkillSheet_t::skillSheetData.noviceTextColor);
+					skillCurrentOldTxt->setColor(Player::SkillSheet_t::skillSheetData.noviceTextColor);
+					skillBorderImg->path = Player::SkillSheet_t::skillSheetData.iconBgPathNovice;
+					skillBgImg->path = "*images/ui/HUD/HUD_SkillUp_BG20_00.png";
+				}
+				else
+				{
+					skillCurrentTxt->setColor(Player::SkillSheet_t::skillSheetData.defaultTextColor);
+					skillCurrentOldTxt->setColor(Player::SkillSheet_t::skillSheetData.defaultTextColor);
+					skillBorderImg->path = Player::SkillSheet_t::skillSheetData.iconBgPathDefault;
+					skillBgImg->path = "*images/ui/HUD/HUD_SkillUp_BG_00.png";
+				}
+				break;
+			}
+		}
+
+		if ( skillImg->path == "" ) { continue; }
+
+		if ( auto imgGet = Image::get(skillImg->path.c_str()) )
+		{
+			skillImg->pos.w = imgGet->getWidth();
+			skillImg->pos.h = imgGet->getHeight();
+			skillImg->disabled = false;
+		}
+		skillImg->pos.x = 140;
+		skillImg->pos.y = 40 - skillImg->pos.h / 2;
+
+		if ( auto imgGet = Image::get(skillBorderImg->path.c_str()) )
+		{
+			skillBorderImg->pos.w = imgGet->getWidth();
+			skillBorderImg->pos.h = imgGet->getHeight();
+			skillBorderImg->disabled = false;
+			skillBorderImg->pos.x = skillImg->pos.x + skillImg->pos.w / 2 - skillBorderImg->pos.w / 2;
+			skillBorderImg->pos.y = skillImg->pos.y + skillImg->pos.h / 2 - skillBorderImg->pos.h / 2;
+		}
+
+		snprintf(buf, sizeof(buf), "%+d", skillUp.increaseSkill);
+		auto skillIncreaseTxt = skillFrame->findField("skill increase");
+		skillIncreaseTxt->setDisabled(skillUp.increaseSkill == 0);
+		skillIncreaseTxt->setText(buf);
+		if ( auto textGet = skillIncreaseTxt->getTextObject() )
+		{
+			SDL_Rect pos;
+			pos.x = skillImg->pos.x + skillImg->pos.w + 8;
+			pos.y = 32;
+			pos.w = std::max(40, (int)textGet->getWidth());
+			pos.h = std::max(24, (int)textGet->getHeight());
+
+			skillIncreaseTxt->setColor(makeColor(255, 255, 255, (1.0 - skillUp.animCurrentStat) * skillUp.animAngle * 255));
+			pos.x += -*cvar_skillup_angle * cos(PI / 2 + (3 * skillUp.animAngle * (PI / 2)));
+			pos.x += (skillBgImg->pos.w - skillBorderImg->pos.w) * skillUp.animBackground;
+			pos.y += (*cvar_skillup_angle) - (*cvar_skillup_angle * sin(PI / 2 + (3 * skillUp.animAngle * (PI / 2))));
+			pos.y += *cvar_skillup_increasestatY;
+			skillIncreaseTxt->setSize(pos);
+		}
+
+		if ( auto imgGet = Image::get(skillBgImg->path.c_str()) )
+		{
+			skillBgImg->pos.w = imgGet->getWidth();
+			skillBgImg->pos.h = imgGet->getHeight();
+			skillBgImg->disabled = false;
+			skillBgImg->pos.x = skillBorderImg->pos.x - skillBorderImg->pos.w + skillBorderImg->pos.w * skillUp.animBackground;
+			skillBgImg->pos.y = skillBorderImg->pos.y;
+			skillBgImg->color = makeColor(255, 255, 255, skillUp.animBackground * 255);
+		}
+
+		/*auto skillGleam = skillFrame->findImage("skill gleam");
+		skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_00.png";
+		skillGleam->pos.w = 24;
+		skillGleam->pos.h = 24;
+		skillGleam->pos.x = skillImg->pos.x;
+		skillGleam->pos.y = skillImg->pos.y;
+		const int gleam = ((ticks % TICKS_PER_SECOND) / 5) % 5;
+		switch ( gleam )
+		{
+			case 0:
+				skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_00.png";
+				break;
+			case 1:
+				skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_01.png";
+				break;
+			case 2:
+				skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_02.png";
+				break;
+			case 3:
+				skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_03.png";
+				break;
+			case 4:
+				skillGleam->path = "*#images/ui/HUD/HUD_SkillUp_Gleam_04.png";
+				break;
+			default:
+				break;
+		}*/
+
+		skillCurrentOldTxt->setDisabled(true);
+		if ( skillCurrentTxt->isDisabled() )
+		{
+			skillCurrentOldTxt->setDisabled(false);
+			snprintf(buf, sizeof(buf), "%d", skillUp.currentSkill);
+			skillCurrentOldTxt->setText(buf);
+			if ( auto textGet = skillCurrentOldTxt->getTextObject() )
+			{
+				SDL_Rect pos;
+				pos.w = textGet->getWidth();
+				pos.h = textGet->getHeight();
+				pos.x = skillBgImg->pos.x + skillBgImg->pos.w - pos.w - 12;
+				pos.y = skillBgImg->pos.y + 8;
+				skillCurrentOldTxt->setSize(pos);
+
+				Uint8 r, g, b, a;
+				getColor(skillCurrentOldTxt->getColor(), &r, &g, &b, &a);
+				skillCurrentOldTxt->setColor(makeColor(r, g, b, skillUp.animBackground * a));
+			}
+		}
+		else if ( auto textGet = skillCurrentTxt->getTextObject() )
+		{
+			SDL_Rect pos;
+			pos.w = textGet->getWidth();
+			pos.h = textGet->getHeight();
+			if ( keystatus[SDLK_h] )
+			{
+				pos.x = skillImg->pos.x + skillImg->pos.w / 2 - pos.w / 2;
+				pos.y = skillImg->pos.y + skillImg->pos.h + 4;
+				pos.y += *cvar_skillup_currentstatY;
+			}
+			else
+			{
+				pos.x = skillBgImg->pos.x + skillBgImg->pos.w - pos.w - 12;
+				pos.y = skillBgImg->pos.y + 8;
+			}
+			if ( skillUp.increaseSkill != 0 )
+			{
+				pos.y += -((1.0 - skillUp.animCurrentStat) * *cvar_skillup_falldist);
+				pos.y += -4 + 4 * (cos(skillUp.animIncreaseStat * 2 * PI));
+			}
+			skillCurrentTxt->setSize(pos);
+
+			Uint8 r, g, b, a;
+			getColor(skillCurrentTxt->getColor(), &r, &g, &b, &a);
+			skillCurrentTxt->setColor(makeColor(r, g, b, skillUp.animCurrentStat * a));
+		}
+
+		skillFramePos.w = std::max(120, (int)(skillBgImg->pos.x + skillBgImg->pos.w));
+		skillFrame->setSize(skillFramePos);
+
+		skillPosX.push_back(skillFramePos.x + skillImg->pos.x + skillImg->pos.w / 2 + ((skillBgImg->pos.w - skillBorderImg->pos.w) * skillUp.animBackground / 2));
+
+		auto skillNameTxt = skillFrame->findField("skill name txt");
+		skillNameTxt->setDisabled(true);
+		if ( !keystatus[SDLK_f] )
+		{
+			char buf[64];
+			snprintf(buf, sizeof(buf), "%s Increased!", Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
+			skillNameTxt->setText(buf);
+			if ( auto textGet = skillNameTxt->getTextObject() )
+			{
+				skillNameTxt->setDisabled(false);
+				SDL_Rect pos = skillNameTxt->getSize();
+				pos.w = textGet->getWidth();
+				pos.h = textGet->getHeight();
+				pos.y = 0;
+				pos.x = skillPosX[skillPosX.size() - 1] - pos.w / 2;
+				skillNameTxt->setSize(pos);
+
+				Uint8 r, g, b, a;
+				getColor(0xFFFFFFFF, &r, &g, &b, &a);
+				skillNameTxt->setColor(makeColor(r, g, b, skillUp.animBackground * a));
+
+				skillFramePos.w = std::max(skillFramePos.w, (int)(pos.x + pos.w));
+				skillFrame->setSize(skillFramePos);
+			}
+		}
+
+		skillFramePos.x += skillSpacing;
+
+		if ( !skillUp.init && (prevNotificationState == LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_END
+			|| prevNotificationState >= LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_3) )
+		{
+			skillUp.notificationTargetPosition.x = skillImg->pos.x;
+			skillUp.notificationTargetPosition.y = skillImg->pos.y;
+			skillUp.notificationTargetPosition.w = skillImg->pos.w;
+			skillUp.notificationTargetPosition.h = skillImg->pos.h;
+			skillUp.baseX = skillImg->pos.x;
+			skillUp.baseY = skillImg->pos.y;
+			skillUp.pos.x = skillUp.baseX;
+			skillUp.pos.y = skillUp.baseY;
+			skillUp.pos.w = skillImg->pos.w;
+			skillUp.pos.h = skillImg->pos.h;
+			skillUp.init = true;
+		}
+
+		if ( skillUp.init )
+		{
+			skillUp.animateNotification(player);
+			skillFrame->setDisabled(false);
+		}
+		else
+		{
+			skillFrame->setDisabled(true);
+		}
+		skillImg->pos = skillUp.pos;
+		{
+			int newWidth = skillBorderImg->pos.w * (skillImg->pos.w / 24.0);
+			int newHeight = skillBorderImg->pos.h * (skillImg->pos.h / 24.0);
+			skillBorderImg->pos.x -= (newWidth - skillBorderImg->pos.w) / 2;
+			skillBorderImg->pos.y -= (newHeight - skillBorderImg->pos.h) / 2;
+			skillBorderImg->pos.w = newWidth;
+			skillBorderImg->pos.h = newHeight;
+		}
+		skillsFramePos.w = skillFramePos.x + skillFramePos.w;
+		skillsFramePos.w = std::max(skillsFramePos.w, skillBgImg->pos.x + skillBgImg->pos.w);
+		skillStartX += skillSpacing;
+
+		prevNotificationState = skillUp.notificationState;
+
+		//fadebg->pos.x = 0;
+		//fadebg->pos.y = 0;
+		//fadebg->pos.w = skillsFramePos.w;
+		//fadebg->pos.h = skillsFramePos.h;
+		//fadebg->color = makeColor(255, 255, 255, 255 * skillUp.animBackground);
+	}
+
+	int midpoint = 0;
+	if ( skillPosX.size() > 1 )
+	{
+		if ( skillPosX.size() % 2 == 1 )
+		{
+			midpoint = skillPosX[size_t(skillPosX.size() / 2)];
+		}
+		else
+		{
+			size_t midIndex1 = std::max((size_t)0, (skillPosX.size() / 2) - 1);
+			size_t midIndex2 = (skillPosX.size() / 2);
+			midpoint = skillPosX[midIndex1] + (skillPosX[midIndex2] - skillPosX[midIndex1]) / 2;
+		}
+		skillsFramePos.x -= midpoint;
+	}
+	else if ( skillPosX.size() == 1 )
+	{
+		skillsFramePos.x -= skillPosX[0];
+	}
+	else
+	{
+		skillsFramePos.x -= skillsFramePos.w / 2;
+	}
+	if ( skillsFramePos.x % 2 == 1 )
+	{
+		++skillsFramePos.x;
+	}
+	skillsFrame->setSize(skillsFramePos);
+	if ( ticks != skillUp.processedOnTick )
+	{
+		skillUp.processedOnTick = ticks;
+		++skillUp.ticksActive;
+	}
+
+	static ConsoleVariable<int> cvar_skillup_framey("/skillup_framey", 48);
+	SDL_Rect levelUpFramePos{ hud_t.skillupFrame->getParent()->getSize().w / 2 - frameWidth / 2, *cvar_skillup_framey,
+		frameWidth, skillsFramePos.y + skillsFramePos.h };
+	levelUpFramePos.y += skillUp.fadeout * *cvar_skillup_falldist;
+	hud_t.skillupFrame->setSize(levelUpFramePos);
+
+	if ( skillUp.ticksActive >= TICKS_PER_SECOND * 3 )
+	{
+		skillUp.expired = true;
 	}
 }

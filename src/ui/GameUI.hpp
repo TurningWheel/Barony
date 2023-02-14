@@ -377,3 +377,63 @@ struct LevelUpAnimation_t
 };
 
 extern LevelUpAnimation_t levelUpAnimation[MAXPLAYERS];
+
+struct SkillUpAnimation_t
+{
+	struct SkillUp_t
+	{
+		int whichSkill = -1;
+		int currentSkill = -1;
+		int increaseSkill = -1;
+		SkillUp_t(const int _numSkill, const int _currentSkill, const int _increaseSkill)
+		{
+			whichSkill = _numSkill;
+			currentSkill = _currentSkill;
+			increaseSkill = _increaseSkill;
+		};
+		void animateNotification(const int player);
+
+		real_t animateX = 0.0;
+		real_t animateY = 0.0;
+		real_t animateW = 0.0;
+		real_t animateH = 0.0;
+		int animateSetpointX = 0;
+		int animateSetpointY = 0;
+		int animateSetpointW = 0;
+		int animateSetpointH = 0;
+		int animateStartX = 0;
+		int animateStartY = 0;
+		int animateStartW = 0;
+		int animateStartH = 0;
+		real_t animAngle = 0.0;
+		real_t animCurrentStat = 0.0;
+		real_t animIncreaseStat = 0.0;
+		real_t animBackground = 0.0;
+		int baseX = 0;
+		int baseY = 0;
+		Uint32 ticksActive = 0;
+		Uint32 processedOnTick = 0;
+		SDL_Rect pos{ 0, 0, 0, 0 };
+		SDL_Rect notificationTargetPosition{ 0, 0, 24, 24 };
+		bool init = false;
+		enum NotificationStates_t : int
+		{
+			STATE_1,
+			STATE_2,
+			STATE_3,
+			STATE_4,
+			STATE_END
+		};
+		NotificationStates_t notificationState = STATE_1;
+		NotificationStates_t notificationStateInit = STATE_1;
+		void setAnimatePosition(int destx, int desty);
+		void setAnimatePosition(int destx, int desty, int destw, int desth);
+
+		real_t fadeout = 0.0;
+		bool expired = false;
+	};
+	std::deque<SkillUp_t> skillUps;
+	void addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill);
+};
+
+extern SkillUpAnimation_t skillUpAnimation[MAXPLAYERS];

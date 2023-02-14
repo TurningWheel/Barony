@@ -1388,6 +1388,7 @@ public:
 		Frame* hudFrame = nullptr;
 		Frame* xpFrame = nullptr;
 		Frame* levelupFrame = nullptr;
+		Frame* skillupFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
 		Frame* minimapFrame = nullptr;
