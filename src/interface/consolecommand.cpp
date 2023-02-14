@@ -1186,7 +1186,7 @@ namespace ConsoleCommands {
 					while (stats[clientnum]->PROFICIENCIES[c] < 100)
 					{
 						//++stats[clientnum]->PROFICIENCIES[c];
-						players[clientnum]->entity->increaseSkill(c);
+						players[clientnum]->entity->increaseSkill(c, false);
 					}
 				}
 			}
@@ -1226,7 +1226,7 @@ namespace ConsoleCommands {
 				while (stats[clientnum]->PROFICIENCIES[c] < 100)
 				{
 					//++stats[clientnum]->PROFICIENCIES[c];
-					players[clientnum]->entity->increaseSkill(c);
+					players[clientnum]->entity->increaseSkill(c, false);
 				}
 			}
 		}
