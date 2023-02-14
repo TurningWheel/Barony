@@ -4825,7 +4825,7 @@ void ingameHud()
 			{
 				if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
 				{
-					players[player]->minimap.bExpandPromptEnabled = true;
+					players[player]->minimap.bExpandPromptEnabled = players[player]->shootmode || players[player]->gui_mode == GUI_MODE_NONE;
 					if ( players[player]->worldUI.isEnabled()
 						&& players[player]->worldUI.bTooltipInView
 						&& players[player]->worldUI.tooltipsInRange.size() > 1 )
@@ -5181,6 +5181,8 @@ void ingameHud()
 		}
 		players[player]->hud.processHUD();
 		players[player]->messageZone.processChatbox();
+		updateSkillUpFrame(player);
+		updateLevelUpFrame(player);
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();

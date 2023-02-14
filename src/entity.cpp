@@ -1668,34 +1668,7 @@ void Entity::increaseSkill(int skill, bool notify)
 		{
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[615], getSkillLangEntry(skill));
-				static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 532);
-				static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 533);
-				static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
-				if ( *cvar_skill_sfx >= 0 )
-				{
-					if ( skill == PRO_SPELLCASTING
-						|| skill == PRO_MAGIC )
-					{
-						playSoundPlayer(player, *cvar_skill_magic_sfx, 128);
-					}
-					else if ( skill == PRO_RANGED
-						|| skill == PRO_SWORD
-						|| skill == PRO_POLEARM 
-						|| skill == PRO_AXE 
-						|| skill == PRO_MACE 
-						|| skill == PRO_UNARMED
-						|| skill == PRO_SHIELD
-						)
-					{
-						playSoundPlayer(player, *cvar_skill_combat_sfx, 128);
-					}
-					else
-					{
-						playSoundPlayer(player, *cvar_skill_sfx, 128);
-					}
-				}
-
+				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[615], getSkillLangEntry(skill));
 				if ( players[player]->isLocalPlayer() )
 				{
 					skillUpAnimation[player].addSkillUp(skill, myStats->PROFICIENCIES[skill] - 1, 1);
@@ -2830,7 +2803,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		Uint32 color = makeColorRGB(255, 255, 0);
-		messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[622]);
+		messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[622]);
 
 		static ConsoleVariable<int> cvar_lvlup_sfx("/lvlup_sfx", 526);
 		playSoundNotificationPlayer(player, *cvar_lvlup_sfx, 255);
@@ -3153,7 +3126,7 @@ void Entity::handleEffects(Stat* myStats)
 				// broadcast a player levelled up to other players.
 				if ( i != player )
 				{
-					if ( client_disconnected[i] )
+					if ( client_disconnected[i] || multiplayer == SINGLE )
 					{
 						continue;
 					}

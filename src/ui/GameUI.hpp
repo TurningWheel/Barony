@@ -378,6 +378,8 @@ struct LevelUpAnimation_t
 
 extern LevelUpAnimation_t levelUpAnimation[MAXPLAYERS];
 
+void updateLevelUpFrame(const int player);
+void updateSkillUpFrame(const int player);
 struct SkillUpAnimation_t
 {
 	struct SkillUp_t
@@ -413,6 +415,8 @@ struct SkillUpAnimation_t
 		int baseY = 0;
 		Uint32 ticksActive = 0;
 		Uint32 processedOnTick = 0;
+		Uint32 preDelayTicks = 5;
+		Uint32 ticksToLive = 3 * TICKS_PER_SECOND;
 		SDL_Rect pos{ 0, 0, 0, 0 };
 		SDL_Rect notificationTargetPosition{ 0, 0, 24, 24 };
 		bool init = false;
@@ -432,8 +436,11 @@ struct SkillUpAnimation_t
 		real_t fadeout = 0.0;
 		bool expired = false;
 	};
+	real_t animFrameFadeIn = 1.0;
 	std::deque<SkillUp_t> skillUps;
 	void addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill);
+	size_t getSkillUpIndexToDisplay();
+	SkillUp_t& getSkillUpToDisplay();
 };
 
 extern SkillUpAnimation_t skillUpAnimation[MAXPLAYERS];

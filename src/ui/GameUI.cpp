@@ -3523,6 +3523,16 @@ void Player::HUD_t::updateUINavigation()
 	uiNavFrame->setDisabled(false);
 	uiNavFrame->setSize(SDL_Rect{ 0, 0, hudFrame->getSize().w, hudFrame->getSize().h });
 
+	if ( player.bUseCompactGUIWidth() &&
+		(player.hud.levelupFrame && !player.hud.levelupFrame->isDisabled()) )
+	{
+		uiNavFrame->setInvisible(true);
+	}
+	else
+	{
+		uiNavFrame->setInvisible(false);
+	}
+
 	auto leftBumperModule = player.GUI.handleModuleNavigation(true, true);
 	auto leftBumperTxt = uiNavFrame->findField("left bumper txt");
 	leftBumperTxt->setDisabled(true);
@@ -7984,8 +7994,6 @@ void Player::HUD_t::processHUD()
 		updateEnemyBar2(enemyBarFrame, &HPBar.second);
 	}
 	updateStatusEffectQueue(player.playernum);
-	updateLevelUpFrame(player.playernum);
-	updateSkillUpFrame(player.playernum);
 }
 
 void Player::MessageZone_t::createChatbox()
@@ -8005,6 +8013,7 @@ void Player::MessageZone_t::createChatbox()
 		chatFrame = chatMainFrame;
 		Frame* messages = chatMainFrame->addFrame("message box");
 		messages->setHollow(true);
+		messages->setInheritParentFrameOpacity(false);
 
 		static const char* bigfont = "fonts/pixelmix.ttf#16#2";
 		SDL_Rect entryPos{ 0, 0, messages->getSize().w, messages->getSize().h };
@@ -8026,6 +8035,7 @@ static ConsoleVariable<int> cvar_log_lineheight_min("/log_lineheight_minimum", 2
 static ConsoleVariable<int> cvar_log_multiline_pady("/log_multiline_pady", -4);
 const char* Player::MessageZone_t::bigfont = "fonts/pixelmix.ttf#16#2";
 const char* Player::MessageZone_t::smallfont = "fonts/pixel_maz_multiline.ttf#16#2";
+static ConsoleVariable<int> cvar_message_fade_min("/message_fade_min", 25);
 void Player::MessageZone_t::processChatbox()
 {
 	if (!chatFrame) {
@@ -8126,6 +8136,22 @@ void Player::MessageZone_t::processChatbox()
 		default:
 			break;
 	}
+
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	if ( player.bUseCompactGUIWidth() && actualAlignment == ALIGN_LEFT_TOP &&
+		((player.hud.levelupFrame && !player.hud.levelupFrame->isDisabled())
+		|| (player.hud.skillupFrame && !player.hud.skillupFrame->isDisabled())) )
+	{
+		animFade -= fpsScale * std::max(.1, (animFade)) / (2.5);
+		animFade = std::max(0.0, animFade);
+	}
+	else
+	{
+		animFade += fpsScale * std::max(.1, (1.0 - animFade)) / (5.0);
+		animFade = std::min(1.0, animFade);
+	}
+
+	messageBoxFrame->setOpacity(*cvar_message_fade_min + (100.0 - *cvar_message_fade_min) * animFade);
 
     bool pushPaddingX = !player.shootmode
 		&& actualAlignment != ALIGN_CENTER_BOTTOM
@@ -9416,7 +9442,10 @@ void openLogWindow(int player) {
 
     for (auto node = messages.first; node != nullptr; node = node->next) {
         auto string = (string_t*)node->element;
-        addMessageToLogWindow(player, string);
+		if ( string->player == player )
+		{
+			addMessageToLogWindow(player, string);
+		}
     }
 
     auto label = frame->addField("label", 64);
@@ -16183,6 +16212,7 @@ void Player::Hotbar_t::processHotbar()
 		hotbarFrame->setHollow(true);
 		hotbarFrame->setBorder(0);
 		hotbarFrame->setOwner(player.playernum);
+		hotbarFrame->setInheritParentFrameOpacity(false);
 		createHotbar(player.playernum);
 	}
 	hotbarFrame->setSize(SDL_Rect{ 0, 0,
@@ -17874,6 +17904,15 @@ void createInventoryTooltipFrame(const int player)
 			SDL_Rect{ interactGlyph3->pos.x - (glyphSizeW / 2), interactGlyph2->pos.y,
 			glyphSizeW, glyphSizeH },
 			0xFFFFFFFF, "", "glyph 4");
+
+		auto grabIcon = promptFrame->addImage(
+			SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/Inventory_Grab.png", "grab icon");
+		grabIcon->disabled = true;
+		auto dropIcon = promptFrame->addImage(
+			SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "*#images/ui/Inventory/tooltips/Inventory_Drop.png", "drop icon");
+		dropIcon->disabled = true;
 
 		const int textWidth = 200;
 		const int textHeight = glyphSizeH + 8;
@@ -22247,6 +22286,19 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_HOTBAR )
+		{
+			if ( player.hotbar.hotbarFrame && player.hotbar.hotbarFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( player.hotbar.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
 		else if ( cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
 		{
 			if ( spellFrame->isDisabled() || player.inventory_mode != INVENTORY_MODE_SPELL )
@@ -25760,6 +25812,7 @@ void Player::Hotbar_t::updateHotbar()
 		return;
 	}
 
+	hotbarFrame->setOpacity(hotbarFrame->getParent()->getOpacity());
 	bool tempHideHotbar = false;
 	if ( player.bUseCompactGUIHeight()
 		&& (player.gui_mode == GUI_MODE_FOLLOWERMENU
@@ -25785,6 +25838,7 @@ void Player::Hotbar_t::updateHotbar()
 		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHide)) / 2.5;
 		animHide += setpointDiff;
 		animHide = std::min(1.0, animHide);
+		isInteractable = true;
 	}
 	else
 	{
@@ -25792,6 +25846,16 @@ void Player::Hotbar_t::updateHotbar()
 		real_t setpointDiff = fpsScale * std::max(.1, (animHide)) / 2.5;
 		animHide -= setpointDiff;
 		animHide = std::max(0.0, animHide);
+		if ( animHide <= 0.001 )
+		{
+			isInteractable = true;
+		}
+	}
+
+	if ( player.bUseCompactGUIHeight() && player.bUseCompactGUIWidth() 
+		&& !player.shootmode && player.GUI.activeModule != Player::GUI_t::MODULE_HOTBAR )
+	{
+		hotbarFrame->setOpacity(75.0);
 	}
 
 	bool bCompactView = false;
@@ -30796,6 +30860,10 @@ void Player::HUD_t::updateMinotaurWarning()
 					//pos.x -= abs(diff) + 4;
 					pos.x = players[0]->camera_virtualx1() + players[0]->camera_virtualWidth() - pos.w - 4;
 					pos.y = players[0]->camera_virtualy1() + players[0]->camera_virtualHeight() - pos.h - 4;
+					if ( players[0]->hud.mapPromptFrame && !players[0]->hud.mapPromptFrame->isDisabled() )
+					{
+						pos.y -= players[0]->hud.mapPromptFrame->getSize().h;
+					}
 					minotaurSharedDisplay->setSize(pos);
 				}
 			}
@@ -32190,11 +32258,12 @@ void DamageIndicatorHandler_t::DamageIndicator_t::process()
 void createLevelUpFrame(const int player)
 {
 	auto& hud_t = players[player]->hud;
-	hud_t.levelupFrame = hud_t.hudFrame->addFrame("levelup");
+	hud_t.levelupFrame = gameUIFrame[player]->addFrame("levelup");
 	hud_t.levelupFrame->setHollow(true);
 	hud_t.levelupFrame->setInheritParentFrameOpacity(false);
 	hud_t.levelupFrame->setOpacity(100.0);
 	hud_t.levelupFrame->setDisabled(true);
+	hud_t.levelupFrame->setOwner(player);
 
 	auto lvlupImg = hud_t.levelupFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/ui/HUD/lvluptext.png", "lvl up img");
 	lvlupImg->disabled = true;
@@ -32321,7 +32390,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 
 	const real_t largestScaling = 2.0;
 	real_t midScaling = 2.0;
-	const int normalSize = 28;
+	const int normalSize = 36;
 	const int baseEffectPosX = baseX;
 	const int baseEffectPosY = baseY;
 
@@ -32493,12 +32562,12 @@ void updateLevelUpFrame(const int player)
 		createLevelUpFrame(player);
 	}
 
-	if ( !hud_t.levelupFrame )
+	if ( !hud_t.levelupFrame || !hud_t.hudFrame )
 	{
 		return;
 	}
 
-	if ( !players[player]->isLocalPlayer() )
+	if ( !players[player]->isLocalPlayer() || hud_t.hudFrame->isDisabled() )
 	{
 		hud_t.levelupFrame->setDisabled(true);
 		return;
@@ -32596,7 +32665,7 @@ void updateLevelUpFrame(const int player)
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
 		lvlUpAnimation.lvlUps.front().fadeout += fpsScale * std::max(.1, (1.0 - lvlUpAnimation.lvlUps.front().fadeout)) / (5.0);
 		lvlUpAnimation.lvlUps.front().fadeout = std::min(1.0, lvlUpAnimation.lvlUps.front().fadeout);
-		hud_t.levelupFrame->setOpacity(hud_t.levelupFrame->getParent()->getOpacity() 
+		hud_t.levelupFrame->setOpacity(hud_t.hudFrame->getOpacity() 
 			* (1.0 - lvlUpAnimation.lvlUps.front().fadeout));
 		if ( lvlUpAnimation.lvlUps.front().fadeout >= 1.0 )
 		{
@@ -32619,7 +32688,7 @@ void updateLevelUpFrame(const int player)
 
 	if ( !lvlUp.expired )
 	{
-		hud_t.levelupFrame->setOpacity(hud_t.levelupFrame->getParent()->getOpacity());
+		hud_t.levelupFrame->setOpacity(hud_t.hudFrame->getOpacity());
 	}
 	hud_t.levelupFrame->setDisabled(false);
 	const int frameWidth = 600;
@@ -32675,27 +32744,22 @@ void updateLevelUpFrame(const int player)
 		{
 			case STAT_STR:
 				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_str_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_STR_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_STR_00.png";
 				break;
 			case STAT_DEX:
-				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_dex_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_DEX_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_DEX_00.png";
 				break;
 			case STAT_CON:
-				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_con_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_CON_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_CON_00.png";
 				break;
 			case STAT_INT:
-				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_int_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_INT_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_INT_00.png";
 				break;
 			case STAT_PER:
-				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_per_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_PER_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_PER_00.png";
 				break;
 			case STAT_CHR:
-				//statImg->path = Player::CharacterSheet_t::getHoverTextString("icon_chr_path");
-				statImg->path = "images/ui/Main Menus/Leaderboards/AA_Icon_CHA_00A.png";
+				statImg->path = "images/ui/HUD/HUD_StatUp_CHA_00.png";
 				break;
 			default:
 				break;
@@ -32830,8 +32894,10 @@ void updateLevelUpFrame(const int player)
 	}
 
 	static ConsoleVariable<int> cvar_lvlup_framey("/lvlup_framey", 16);
-	SDL_Rect levelUpFramePos{ hud_t.levelupFrame->getParent()->getSize().w / 2 - frameWidth / 2, *cvar_lvlup_framey,
+	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, *cvar_lvlup_framey,
 		frameWidth, std::max(lvlupImg->pos.y + lvlupImg->pos.h, statsFramePos.y + statsFramePos.h)};
+	levelUpFramePos.x += players[player]->camera_virtualx1();
+	levelUpFramePos.y += players[player]->camera_virtualy1();
 	levelUpFramePos.y += lvlUp.fadeout * *cvar_lvlup_falldist;
 	hud_t.levelupFrame->setSize(levelUpFramePos);
 
@@ -32846,11 +32912,12 @@ SkillUpAnimation_t skillUpAnimation[MAXPLAYERS];
 void createSkillUpFrame(const int player)
 {
 	auto& hud_t = players[player]->hud;
-	hud_t.skillupFrame = hud_t.hudFrame->addFrame("skillup");
+	hud_t.skillupFrame = gameUIFrame[player]->addFrame("skillup");
 	hud_t.skillupFrame->setHollow(true);
 	hud_t.skillupFrame->setInheritParentFrameOpacity(false);
 	hud_t.skillupFrame->setOpacity(100.0);
 	hud_t.skillupFrame->setDisabled(true);
+	hud_t.skillupFrame->setOwner(player);
 
 	auto skillsFrame = hud_t.skillupFrame->addFrame("skills");
 	skillsFrame->setDisabled(true);
@@ -33111,6 +33178,58 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	pos.h = animateStartH + destH * animateH;
 }
 
+SkillUpAnimation_t::SkillUp_t& SkillUpAnimation_t::getSkillUpToDisplay()
+{
+	return skillUps.at(getSkillUpIndexToDisplay());
+}
+
+size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
+{
+	size_t index = 0;
+	std::priority_queue<std::pair<int, size_t>> priority;
+	for ( auto& skillUp : skillUps )
+	{
+		if ( skillUp.init )
+		{
+			return index;
+		}
+		switch ( skillUp.whichSkill )
+		{
+			case PRO_RANGED:
+			case PRO_SWORD:
+			case PRO_MACE:
+			case PRO_AXE:
+			case PRO_POLEARM:
+			case PRO_SHIELD:
+			case PRO_UNARMED:
+				priority.push(std::make_pair(10, index));
+				break;
+			case PRO_MAGIC:
+			case PRO_STEALTH:
+				priority.push(std::make_pair(5, index));
+				break;
+			case PRO_SPELLCASTING:
+				priority.push(std::make_pair(4, index));
+				break;
+			case PRO_LOCKPICKING:
+			case PRO_TRADING:
+			case PRO_LEADERSHIP:
+			case PRO_ALCHEMY:
+				priority.push(std::make_pair(2, index));
+				break;
+			case PRO_SWIMMING:
+				priority.push(std::make_pair(1, index));
+				break;
+			case PRO_APPRAISAL:
+			default:
+				priority.push(std::make_pair(0, index));
+				break;
+		}
+		++index;
+	}
+	return priority.top().second;
+}
+
 void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill)
 {
 	for ( auto& s : skillUps )
@@ -33149,6 +33268,40 @@ void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill
 	}
 
 	skillUps.push_back(SkillUp_t(_numSkill, _currentSkill, _increaseSkill));
+	Uint32 ticksToLive = 3 * TICKS_PER_SECOND;
+	switch ( _numSkill )
+	{
+		case PRO_RANGED:
+		case PRO_SWORD:
+		case PRO_MACE:
+		case PRO_AXE:
+		case PRO_POLEARM:
+		case PRO_SHIELD:
+		case PRO_UNARMED:
+			ticksToLive = 4 * TICKS_PER_SECOND;
+			break;
+		case PRO_MAGIC:
+		case PRO_STEALTH:
+			ticksToLive = 4 * TICKS_PER_SECOND;
+			break;
+		case PRO_SPELLCASTING:
+			ticksToLive = 3 * TICKS_PER_SECOND;
+			break;
+		case PRO_LOCKPICKING:
+		case PRO_TRADING:
+		case PRO_LEADERSHIP:
+		case PRO_ALCHEMY:
+			ticksToLive = 3 * TICKS_PER_SECOND;
+			break;
+		case PRO_SWIMMING:
+			ticksToLive = 2 * TICKS_PER_SECOND;
+			break;
+		case PRO_APPRAISAL:
+		default:
+			ticksToLive = 2 * TICKS_PER_SECOND;
+			break;
+	}
+	skillUps.at(skillUps.size() - 1).ticksToLive = ticksToLive;
 }
 
 void updateSkillUpFrame(const int player)
@@ -33159,12 +33312,12 @@ void updateSkillUpFrame(const int player)
 		createSkillUpFrame(player);
 	}
 
-	if ( !hud_t.skillupFrame )
+	if ( !hud_t.skillupFrame || !hud_t.hudFrame )
 	{
 		return;
 	}
 
-	if ( !players[player]->isLocalPlayer() )
+	if ( !players[player]->isLocalPlayer() || hud_t.hudFrame->isDisabled() )
 	{
 		hud_t.skillupFrame->setDisabled(true);
 		return;
@@ -33178,7 +33331,7 @@ void updateSkillUpFrame(const int player)
 	auto frame = hud_t.skillupFrame;
 	auto& skillUpAnim = skillUpAnimation[player];
 
-	if ( keystatus[SDLK_g] )
+	if ( enableDebugKeys && keystatus[SDLK_g] )
 	{
 		keystatus[SDLK_g] = 0;
 
@@ -33192,20 +33345,31 @@ void updateSkillUpFrame(const int player)
 
 	if ( skillUpAnim.skillUps.empty() || levelUpAnimation[player].lvlUps.size() > 0 )
 	{
+		if ( levelUpAnimation[player].lvlUps.size() > 0 )
+		{
+			skillUpAnim.animFrameFadeIn = 0.0;
+		}
+		hud_t.skillupFrame->setDisabled(true);
+		return;
+	}
+
+	if ( players[player]->bUseCompactGUIWidth() && players[player]->gui_mode != GUI_MODE_NONE )
+	{
 		hud_t.skillupFrame->setDisabled(true);
 		return;
 	}
 	
-	if ( skillUpAnim.skillUps.front().expired )
+	auto& skillUpCheck = skillUpAnim.getSkillUpToDisplay();
+	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	if ( skillUpCheck.expired )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		skillUpAnim.skillUps.front().fadeout += fpsScale * std::max(.1, (1.0 - skillUpAnim.skillUps.front().fadeout)) / (5.0);
-		skillUpAnim.skillUps.front().fadeout = std::min(1.0, skillUpAnim.skillUps.front().fadeout);
-		hud_t.skillupFrame->setOpacity(hud_t.skillupFrame->getParent()->getOpacity()
-			* (1.0 - skillUpAnim.skillUps.front().fadeout));
-		if ( skillUpAnim.skillUps.front().fadeout >= 1.0 )
+		skillUpCheck.fadeout += fpsScale * std::max(.1, (1.0 - skillUpCheck.fadeout)) / (5.0);
+		skillUpCheck.fadeout = std::min(1.0, skillUpCheck.fadeout);
+		hud_t.skillupFrame->setOpacity(hud_t.hudFrame->getOpacity()
+			* (1.0 - skillUpCheck.fadeout) * skillUpAnim.animFrameFadeIn);
+		if ( skillUpCheck.fadeout >= 1.0 )
 		{
-			skillUpAnim.skillUps.pop_front();
+			skillUpAnim.skillUps.erase(skillUpAnim.skillUps.begin() + skillUpAnim.getSkillUpIndexToDisplay());
 		}
 	}
 
@@ -33215,7 +33379,7 @@ void updateSkillUpFrame(const int player)
 		return;
 	}
 
-	auto& skillUp = skillUpAnim.skillUps.front();
+	auto& skillUp = skillUpAnim.getSkillUpToDisplay();
 
 	static ConsoleVariable<int> cvar_skillup_angle("/skillup_angle", 16);
 	static ConsoleVariable<int> cvar_skillup_falldist("/skillup_falldist", 64);
@@ -33224,7 +33388,9 @@ void updateSkillUpFrame(const int player)
 
 	if ( !skillUp.expired )
 	{
-		hud_t.skillupFrame->setOpacity(hud_t.skillupFrame->getParent()->getOpacity());
+		skillUpAnim.animFrameFadeIn += fpsScale * std::max(.1, (1.0 - skillUpAnim.animFrameFadeIn)) / (5.0);
+		skillUpAnim.animFrameFadeIn = std::min(1.0, skillUpAnim.animFrameFadeIn);
+		hud_t.skillupFrame->setOpacity(hud_t.hudFrame->getOpacity() * skillUpAnim.animFrameFadeIn);
 	}
 	hud_t.skillupFrame->setDisabled(false);
 	const int frameWidth = 600;
@@ -33264,14 +33430,10 @@ void updateSkillUpFrame(const int player)
 			skillFrame->setDisabled(true);
 			continue;
 		}
-		int currentIndex = index;
-		++index;
-		if ( currentIndex >= skillUpAnim.skillUps.size() )
+		if ( skillUp.preDelayTicks > 0 )
 		{
-			skillFrame->setDisabled(true);
 			continue;
 		}
-		auto& skillUp = skillUpAnim.skillUps[currentIndex];
 		auto skillImg = skillFrame->findImage("skill img");
 		auto skillBorderImg = skillFrame->findImage("skill border img");
 		auto skillBgImg = skillFrame->findImage("skill bg img");
@@ -33434,13 +33596,13 @@ void updateSkillUpFrame(const int player)
 			SDL_Rect pos;
 			pos.w = textGet->getWidth();
 			pos.h = textGet->getHeight();
-			if ( keystatus[SDLK_h] )
+			/*if ( keystatus[SDLK_h] )
 			{
 				pos.x = skillImg->pos.x + skillImg->pos.w / 2 - pos.w / 2;
 				pos.y = skillImg->pos.y + skillImg->pos.h + 4;
 				pos.y += *cvar_skillup_currentstatY;
 			}
-			else
+			else*/
 			{
 				pos.x = skillBgImg->pos.x + skillBgImg->pos.w - pos.w - 12;
 				pos.y = skillBgImg->pos.y + 8;
@@ -33464,7 +33626,6 @@ void updateSkillUpFrame(const int player)
 
 		auto skillNameTxt = skillFrame->findField("skill name txt");
 		skillNameTxt->setDisabled(true);
-		if ( !keystatus[SDLK_f] )
 		{
 			char buf[64];
 			snprintf(buf, sizeof(buf), "%s Increased!", Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
@@ -33490,8 +33651,7 @@ void updateSkillUpFrame(const int player)
 
 		skillFramePos.x += skillSpacing;
 
-		if ( !skillUp.init && (prevNotificationState == LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_END
-			|| prevNotificationState >= LevelUpAnimation_t::LevelUp_t::StatUp_t::NotificationStates_t::STATE_3) )
+		if ( !skillUp.init )
 		{
 			skillUp.notificationTargetPosition.x = skillImg->pos.x;
 			skillUp.notificationTargetPosition.y = skillImg->pos.y;
@@ -33504,6 +33664,33 @@ void updateSkillUpFrame(const int player)
 			skillUp.pos.w = skillImg->pos.w;
 			skillUp.pos.h = skillImg->pos.h;
 			skillUp.init = true;
+
+			static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 532);
+			static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 533);
+			static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
+			if ( *cvar_skill_sfx >= 0 )
+			{
+				if ( skillUp.whichSkill == PRO_SPELLCASTING
+					|| skillUp.whichSkill == PRO_MAGIC )
+				{
+					playSoundPlayer(player, *cvar_skill_magic_sfx, 128);
+				}
+				else if ( skillUp.whichSkill == PRO_RANGED
+					|| skillUp.whichSkill == PRO_SWORD
+					|| skillUp.whichSkill == PRO_POLEARM
+					|| skillUp.whichSkill == PRO_AXE
+					|| skillUp.whichSkill == PRO_MACE
+					|| skillUp.whichSkill == PRO_UNARMED
+					|| skillUp.whichSkill == PRO_SHIELD
+					)
+				{
+					playSoundPlayer(player, *cvar_skill_combat_sfx, 128);
+				}
+				else
+				{
+					playSoundPlayer(player, *cvar_skill_sfx, 128);
+				}
+			}
 		}
 
 		if ( skillUp.init )
@@ -33527,8 +33714,6 @@ void updateSkillUpFrame(const int player)
 		skillsFramePos.w = skillFramePos.x + skillFramePos.w;
 		skillsFramePos.w = std::max(skillsFramePos.w, skillBgImg->pos.x + skillBgImg->pos.w);
 		skillStartX += skillSpacing;
-
-		prevNotificationState = skillUp.notificationState;
 
 		//fadebg->pos.x = 0;
 		//fadebg->pos.y = 0;
@@ -33568,16 +33753,29 @@ void updateSkillUpFrame(const int player)
 	if ( ticks != skillUp.processedOnTick )
 	{
 		skillUp.processedOnTick = ticks;
-		++skillUp.ticksActive;
+		if ( skillUp.preDelayTicks > 0 )
+		{
+			--skillUp.preDelayTicks;
+		}
+		else
+		{
+			++skillUp.ticksActive;
+		}
 	}
 
 	static ConsoleVariable<int> cvar_skillup_framey("/skillup_framey", 48);
-	SDL_Rect levelUpFramePos{ hud_t.skillupFrame->getParent()->getSize().w / 2 - frameWidth / 2, *cvar_skillup_framey,
+	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, *cvar_skillup_framey,
 		frameWidth, skillsFramePos.y + skillsFramePos.h };
+	levelUpFramePos.x += players[player]->camera_virtualx1();
+	levelUpFramePos.y += players[player]->camera_virtualy1();
 	levelUpFramePos.y += skillUp.fadeout * *cvar_skillup_falldist;
+	if ( players[player]->bUseCompactGUIWidth() || players[player]->bUseCompactGUIHeight() )
+	{
+		levelUpFramePos.y += -16;
+	}
 	hud_t.skillupFrame->setSize(levelUpFramePos);
 
-	if ( skillUp.ticksActive >= TICKS_PER_SECOND * 3 )
+	if ( skillUp.ticksActive >= skillUp.ticksToLive )
 	{
 		skillUp.expired = true;
 	}
