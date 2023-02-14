@@ -219,18 +219,32 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 bool mouseInBoundsRealtimeCoords(int, int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
-void warpMouseToSelectedHotbarSlot(const int player)
+bool warpMouseToSelectedHotbarSlot(const int player)
 {
 	if ( players[player]->shootmode == true)
 	{
-		return;
+		return false;
 	}
 
 	if ( auto hotbarSlotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar) )
 	{
-		hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
-		return;
+		if ( !players[player]->hotbar.isInteractable )
+		{
+			players[player]->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_HOTBAR;
+			players[player]->inventoryUI.cursor.queuedFrameToWarpTo = hotbarSlotFrame;
+			return false;
+		}
+		else
+		{
+			//messagePlayer(0, "[Debug]: select item warped");
+			players[player]->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			players[player]->inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+			hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
+		}
+		return true;
 	}
+
+	return false;
 }
 
 void drawHPMPBars(int player)

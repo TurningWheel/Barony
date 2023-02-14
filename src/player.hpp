@@ -1749,6 +1749,7 @@ public:
 
 		int MESSAGE_MAX_ENTRIES = 20;
 		Frame* chatFrame = nullptr;
+		real_t animFade = 1.0;
 		bool bottomAlignedMessages = false;
 		bool useBigFont = false;
 		static const char* bigfont;
@@ -2017,6 +2018,7 @@ public:
 		SDL_Rect hotbarBox;
 		Frame* hotbarFrame = nullptr;
 		real_t selectedSlotAnimateCurrentValue = 0.0;
+		bool isInteractable = false;
 
 		struct Cursor_t
 		{

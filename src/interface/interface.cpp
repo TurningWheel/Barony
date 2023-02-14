@@ -766,7 +766,7 @@ static void genericgui_deselect_fn(Widget& widget) {
 
 void saveCommand(char* content)
 {
-	newString(&command_history, 0xFFFFFFFF, ticks, content);
+	newString(&command_history, 0xFFFFFFFF, ticks, -1, content);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1218,7 +1218,19 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
-		warpMouseToSelectedHotbarSlot(player.playernum);
+		auto& inventoryUI = player.inventoryUI;
+		if ( warpMouseToSelectedHotbarSlot(player.playernum)
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto hotbarSlotFrame = player.hotbar.getHotbarSlotFrame(player.hotbar.current_hotbar) )
+			{
+				SDL_Rect pos = hotbarSlotFrame->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
 		return true;
 	}
 	else if ( activeModule == MODULE_CHARACTERSHEET )

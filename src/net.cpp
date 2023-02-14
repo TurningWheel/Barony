@@ -394,7 +394,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	if ( localPlayer )
 	{
 	    printlog("%s\n", str);
-	    auto string = newString(&messages, color, completionTime, str);
+	    auto string = newString(&messages, color, completionTime, player, str);
 	    addMessageToLogWindow(player, string);
 	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 	    {

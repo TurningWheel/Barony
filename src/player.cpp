@@ -2875,6 +2875,7 @@ void Player::init() // for use on new/restart game, UI related
 	paperDoll.clear();
 	minotaurWarning[playernum].deinit();
 	levelUpAnimation[playernum].lvlUps.clear();
+	skillUpAnimation[playernum].skillUps.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
