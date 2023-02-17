@@ -219,18 +219,32 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 bool mouseInBoundsRealtimeCoords(int, int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
-void warpMouseToSelectedHotbarSlot(const int player)
+bool warpMouseToSelectedHotbarSlot(const int player)
 {
 	if ( players[player]->shootmode == true)
 	{
-		return;
+		return false;
 	}
 
 	if ( auto hotbarSlotFrame = players[player]->hotbar.getHotbarSlotFrame(players[player]->hotbar.current_hotbar) )
 	{
-		hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
-		return;
+		if ( !players[player]->hotbar.isInteractable )
+		{
+			players[player]->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_HOTBAR;
+			players[player]->inventoryUI.cursor.queuedFrameToWarpTo = hotbarSlotFrame;
+			return false;
+		}
+		else
+		{
+			//messagePlayer(0, "[Debug]: select item warped");
+			players[player]->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			players[player]->inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+			hotbarSlotFrame->warpMouseToFrame(player, (Inputs::SET_CONTROLLER));
+		}
+		return true;
 	}
+
+	return false;
 }
 
 void drawHPMPBars(int player)
@@ -3373,79 +3387,79 @@ void drawStatusNew(const int player)
 	
 	// stat increase icons
 
-	SDL_Rect pos;
-	pos.w = 64;
-	pos.h = 64;
-	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
-	pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
+	//SDL_Rect pos;
+	//pos.w = 64;
+	//pos.h = 64;
+	//pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+	//pos.y = players[player]->characterSheet.skillsSheetBox.h + (32 + pos.h * 2 + 3); // 131px from end of prof window.
 
-	if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
-		&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
-	{
-		pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
-	}
+	//if ( (!shootmode || players[player]->characterSheet.lock_right_sidebar) && players[player]->characterSheet.proficienciesPage == 1
+	//	&& pos.y < (players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16) )
+	//{
+	//	pos.y = players[player]->characterSheet.partySheetBox.y + players[player]->characterSheet.partySheetBox.h + 16;
+	//}
 
-	if ( splitscreen )
-	{
-		// todo - adjust position.
-		pos.w = 48;
-		pos.h = 48;
-		pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
-		pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
-	}
-	else
-	{
-		if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
-		{
-			pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
-		}
-	}
+	//if ( splitscreen )
+	//{
+	//	// todo - adjust position.
+	//	pos.w = 48;
+	//	pos.h = 48;
+	//	pos.x = players[player]->camera_x2() - pos.w * 3 - 9;
+	//	pos.y = players[player]->characterSheet.skillsSheetBox.h + (16 + pos.h * 2 + 3);
+	//}
+	//else
+	//{
+	//	if ( pos.y + pos.h > (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) ) // check if overlapping minimap
+	//	{
+	//		pos.y = (players[player]->camera_y2() - minimaps[player].y - minimaps[player].h) - (64 + 3); // align above minimap
+	//	}
+	//}
 
-	SDL_Surface *tmp_bmp = NULL;
+	//SDL_Surface *tmp_bmp = NULL;
 
-	for ( i = 0; i < NUMSTATS; i++ )
-	{
-		if ( stats[player] && stats[player]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
-		{
-			stats[player]->PLAYER_LVL_STAT_TIMER[i]--;
+	//for ( i = 0; i < NUMSTATS; i++ )
+	//{
+	//	if ( stats[player] && stats[player]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
+	//	{
+	//		stats[player]->PLAYER_LVL_STAT_TIMER[i]--;
 
-			switch ( i )
-			{
-				// prepare the stat image.
-				case STAT_STR:
-					tmp_bmp = str_bmp64u;
-					break;
-				case STAT_DEX:
-					tmp_bmp = dex_bmp64u;
-					break;
-				case STAT_CON:
-					tmp_bmp = con_bmp64u;
-					break;
-				case STAT_INT:
-					tmp_bmp = int_bmp64u;
-					break;
-				case STAT_PER:
-					tmp_bmp = per_bmp64u;
-					break;
-				case STAT_CHR:
-					tmp_bmp = chr_bmp64u;
-					break;
-				default:
-					break;
-			}
-			drawImageScaled(tmp_bmp, NULL, &pos);
-			if ( stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
-			{
-				// bonus stat acheived, draw additional stat icon above.
-				pos.y -= 64 + 3;
-				drawImageScaled(tmp_bmp, NULL, &pos);
-				pos.y += 64 + 3;
-				stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
-			}
+	//		switch ( i )
+	//		{
+	//			// prepare the stat image.
+	//			case STAT_STR:
+	//				tmp_bmp = str_bmp64u;
+	//				break;
+	//			case STAT_DEX:
+	//				tmp_bmp = dex_bmp64u;
+	//				break;
+	//			case STAT_CON:
+	//				tmp_bmp = con_bmp64u;
+	//				break;
+	//			case STAT_INT:
+	//				tmp_bmp = int_bmp64u;
+	//				break;
+	//			case STAT_PER:
+	//				tmp_bmp = per_bmp64u;
+	//				break;
+	//			case STAT_CHR:
+	//				tmp_bmp = chr_bmp64u;
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//		drawImageScaled(tmp_bmp, NULL, &pos);
+	//		if ( stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
+	//		{
+	//			// bonus stat acheived, draw additional stat icon above.
+	//			pos.y -= 64 + 3;
+	//			drawImageScaled(tmp_bmp, NULL, &pos);
+	//			pos.y += 64 + 3;
+	//			stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
+	//		}
 
-			pos.x += pos.h + 3;
-		}
-	}
+	//		pos.x += pos.h + 3;
+	//	}
+	//}
 }
 
 int drawSpellTooltip(const int player, spell_t* spell, Item* item, SDL_Rect* src)

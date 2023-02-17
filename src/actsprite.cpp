@@ -207,11 +207,11 @@ void actSpriteWorldTooltip(Entity* my)
 			}
 			if ( bFound && index >= 0 && index < players[i]->worldUI.tooltipsInRange.size() )
 			{
-				players[i]->worldUI.tooltipsInRange.erase(players[i]->worldUI.tooltipsInRange.begin() + index);
-				if ( players[i]->worldUI.bTooltipActiveForPlayer(*my) )
+				if ( players[i]->worldUI.bTooltipActiveForPlayer(*my) && players[i]->worldUI.tooltipsInRange.size() > 1 )
 				{
 					players[i]->worldUI.cycleToNextTooltip();
 				}
+				players[i]->worldUI.tooltipsInRange.erase(players[i]->worldUI.tooltipsInRange.begin() + index);
 			}
 		}
 

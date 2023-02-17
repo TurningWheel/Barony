@@ -2279,7 +2279,7 @@ void gameLogic(void)
 
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
-									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT_BASIC);
 									monster->flags[USERFLAG2] = true;
 									serverUpdateEntityFlag(monster, USERFLAG2);
 									/*if (!monsterally[HUMAN][monsterStats->type])
@@ -2346,7 +2346,7 @@ void gameLogic(void)
 								}
 								else
 								{
-									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT);
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT_BASIC);
 								}
 							}
 							if ( gyrobotEntity && !allyRobotNodes.empty() )
@@ -4821,11 +4821,11 @@ void ingameHud()
 	        // toggle minimap
 		    // player not needed to be alive
             // map window bind
-			if ( players[player]->shootmode && players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
+			if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
 			{
 				if ( players[player]->bUseCompactGUIHeight() && players[player]->bUseCompactGUIWidth() )
 				{
-					players[player]->minimap.bExpandPromptEnabled = true;
+					players[player]->minimap.bExpandPromptEnabled = players[player]->shootmode || players[player]->gui_mode == GUI_MODE_NONE;
 					if ( players[player]->worldUI.isEnabled()
 						&& players[player]->worldUI.bTooltipInView
 						&& players[player]->worldUI.tooltipsInRange.size() > 1 )
@@ -4844,7 +4844,7 @@ void ingameHud()
 						openMapWindow(player);
 					}
 				}
-				else if ( players[player]->minimap.bExpandPromptEnabled
+				else if ( players[player]->shootmode && players[player]->minimap.bExpandPromptEnabled
 					&& input.consumeBinaryToggle("Toggle Minimap") )
 				{
 					openMinimap(player);
@@ -5181,6 +5181,8 @@ void ingameHud()
 		}
 		players[player]->hud.processHUD();
 		players[player]->messageZone.processChatbox();
+		updateSkillUpFrame(player);
+		updateLevelUpFrame(player);
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
 		players[player]->hotbar.processHotbar();

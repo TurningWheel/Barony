@@ -1130,7 +1130,7 @@ void actThrown(Entity* my)
 						{
 							if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 							{
-								if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+								if ( true/*client_classes[parent->skill[2]] == CLASS_BREWER*/ )
 								{
 									steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
 								}

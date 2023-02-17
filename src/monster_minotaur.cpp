@@ -261,9 +261,23 @@ void minotaurDie(Entity* my)
 
 	my->spawnBlood();
 
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	if ( multiplayer == SINGLE )
 	{
-		playSoundPlayer(c, 114, 128);
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			if ( players[c]->isLocalPlayer() )
+			{
+				playSoundPlayer(c, 114, 128);
+				break;
+			}
+		}
+	}
+	else
+	{
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
+			playSoundPlayer(c, 114, 128);
+		}
 	}
 
 	my->removeMonsterDeathNodes();
@@ -623,10 +637,24 @@ void actMinotaurTrap(Entity* my)
 				MINOTAURTRAP_FIRED = 1;
 				if ( strcmp(map.name, "Hell Boss") )
 				{
-					int c;
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					bool playedSound = false;
+					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+						if ( multiplayer == SINGLE )
+						{
+							if ( players[c]->isLocalPlayer() )
+							{
+								if ( !playedSound )
+								{
+									playSoundPlayer(c, 107 + local_rng.rand() % 3, 128);
+								}
+								playedSound = true;
+							}
+						}
+						else
+						{
+							playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+						}
 						Uint32 color = makeColorRGB(255, 128, 0);
 						messagePlayerColor(c, MESSAGE_HINT, color, language[1113]);
 					}
@@ -671,11 +699,7 @@ void actMinotaurTimer(Entity* my)
 
 		if ( spawnedsomebody )
 		{
-#ifdef MUSIC
-			fadein_increment = default_fadein_increment * 20;
-			fadeout_increment = default_fadeout_increment * 5;
-			playMusic( sounds[175], false, true, false);
-#endif
+			playSoundNotification(175, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				Uint32 color = makeColorRGB(0, 255, 255);
@@ -699,9 +723,24 @@ void actMinotaurTimer(Entity* my)
 		if ( monster )
 		{
 			int c;
+			bool playedSound = false;
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 107 + local_rng.rand() % 3, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer( c, 107 + local_rng.rand() % 3, 128 );
+				}
 				Uint32 color = makeColorRGB(255, 128, 0);
 				messagePlayerColor(c, MESSAGE_HINT, color, language[1115]);
 			}
@@ -711,19 +750,49 @@ void actMinotaurTimer(Entity* my)
 	if ( MINOTAURTIMER_ACTIVE && MINOTAURTIMER_LIFE >= MINOTAURTIMER_ACTIVE + TICKS_PER_SECOND * 3 )
 	{
 		int c;
+		bool playedSound = false;
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
 			if ( currentlevel < 25 )
 			{
-				playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer(c, 120 + local_rng.rand() % 3, 128);
+				}
 				Uint32 color = makeColorRGB(255, 0, 255);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[1116]);
 				messagePlayerColor(c, MESSAGE_WORLD, color, language[73]);
 			}
 			else
 			{
-				playSoundPlayer(c, 375, 128);
-				playSoundPlayer(c, 379, 128);
+				if ( multiplayer == SINGLE )
+				{
+					if ( players[c]->isLocalPlayer() )
+					{
+						if ( !playedSound )
+						{
+							playSoundPlayer(c, 375, 128);
+							playSoundPlayer(c, 379, 128);
+						}
+						playedSound = true;
+					}
+				}
+				else
+				{
+					playSoundPlayer(c, 375, 128);
+					playSoundPlayer(c, 379, 128);
+				}
 				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[1116]);
 				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorOrange, language[73]);
 				messagePlayerColor(c, MESSAGE_WORLD, uint32ColorBaronyBlue, language[73]);

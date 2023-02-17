@@ -2743,6 +2743,7 @@ public:
 	std::string getSpellIconPath(const int player, Item& item);
 	std::string getCostOfSpellString(const int player, Item& item);
 	std::string& getSpellTypeString(const int player, Item& item);
+	node_t* getSpellNodeFromSpellID(int spellID);
 	real_t getSpellSustainCostPerSecond(int spellID);
 	int getSpellDamageOrHealAmount(const int player, spell_t* spell, Item* spellbook);
 	bool bIsSpellDamageOrHealingType(spell_t* spell);

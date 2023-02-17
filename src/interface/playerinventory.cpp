@@ -4826,21 +4826,18 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				tr->pos.h = imgGet->getHeight();
 			}
 			static ConsoleVariable<Vector4> cvar_titleOnlyColor("/tooltip_title_only_color", Vector4{ 188, 154, 114, 255 });
-			if ( enableDebugKeys && !keystatus[SDLK_h] )
-			{
-				titleOnlyTxt->setTextColor(makeColor(
-					cvar_titleOnlyColor->x,
-					cvar_titleOnlyColor->y,
-					cvar_titleOnlyColor->z,
-					cvar_titleOnlyColor->w));
-				tl->disabled = false;
-				tl->pos.x = 0;
-				tm->disabled = false;
-				tm->pos.x = tl->pos.x + tl->pos.w;
-				tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
-				tr->disabled = false;
-				tr->pos.x = tm->pos.x + tm->pos.w;
-			}
+			titleOnlyTxt->setTextColor(makeColor(
+				cvar_titleOnlyColor->x,
+				cvar_titleOnlyColor->y,
+				cvar_titleOnlyColor->z,
+				cvar_titleOnlyColor->w));
+			tl->disabled = false;
+			tl->pos.x = 0;
+			tm->disabled = false;
+			tm->pos.x = tl->pos.x + tl->pos.w;
+			tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
+			tr->disabled = false;
+			tr->pos.x = tm->pos.x + tm->pos.w;
 			titleOnlyFrame->setSize(tooltipPos);
 			goto TOOLTIP_FINALIZE_LABEL;
 		}
@@ -6410,11 +6407,18 @@ TOOLTIP_FINALIZE_LABEL:
 				auto txt = frameTooltipPrompt->findField(fieldName);
 				if ( img && txt )
 				{
-					Uint8 r, g, b, a;
-					getColor(img->color, &r, &g, &b, &a);
-					a = 128;
-					img->disabled = false; // unused glyphs will show as partially opaque
-					img->color = makeColor( r, g, b, a);
+					if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+					{
+						img->disabled = true;
+					}
+					else
+					{
+						Uint8 r, g, b, a;
+						getColor(img->color, &r, &g, &b, &a);
+						a = 128;
+						img->disabled = false; // unused glyphs will show as partially opaque
+						img->color = makeColor( r, g, b, a);
+					}
 					txt->setDisabled(true);
 					promptFrames.push_back(std::make_pair(img, txt));
 				}
@@ -6423,6 +6427,7 @@ TOOLTIP_FINALIZE_LABEL:
 			std::set<int> promptsAvailable;
 
 			// set the text and button prompts from the available options
+			bool dropEnabled = false;
 			for ( auto& option : options )
 			{
 				char imgName[16];
@@ -6435,39 +6440,112 @@ TOOLTIP_FINALIZE_LABEL:
 				auto img = frameTooltipPrompt->findImage(imgName);
 				auto txt = frameTooltipPrompt->findField(fieldName);
 				img->disabled = false;
-				Uint8 r, g, b, a;
-				getColor(img->color, &r, &g, &b, &a);
-				a = 255;
-				img->color = makeColor( r, g, b, a);
-				txt->setDisabled(false);
+				img->color = 0xFFFFFFFF;
+				if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+				{
+					if ( option == ItemContextMenuPrompts::PROMPT_DROP || option == ItemContextMenuPrompts::PROMPT_GRAB )
+					{
+						if ( option == ItemContextMenuPrompts::PROMPT_DROP )
+						{
+							dropEnabled = true;
+						}
+						txt->setDisabled(true);
+						img->path = Input::inputs[player].getGlyphPathForBinding(getContextMenuOptionBindingName(player, option).c_str());
+						continue;
+					}
+				}
+
 				img->path = Input::inputs[player].getGlyphPathForBinding(getContextMenuOptionBindingName(player, option).c_str());
+				txt->setDisabled(false);
 				txt->setText(getContextMenuLangEntry(player, option, *item));
 			}
 
 			int alignx1 = xres;
-			int index = 1;
-			for ( auto& pair : promptFrames )
+
+			if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
 			{
-				auto& img = pair.first;
-				auto& txt = pair.second;
-				if ( img->path == "" )
+				auto& useGlyph = promptFrames[3].first;
+				auto& useTxt = promptFrames[3].second;
+
+				useGlyph->pos = promptFrames[2].first->pos;
+				useTxt->setSize(promptFrames[2].second->getSize());
+				alignx1 = useGlyph->pos.x;
+				auto dropIcon = frameTooltipPrompt->findImage("drop icon");
+				dropIcon->disabled = true;
+				if ( dropEnabled )
 				{
-					img->path = Input::inputs[player].getGlyphPathForBinding(getBindingNameForMissingTooltipPrompts(index).c_str());
-				}
-				if ( !txt->isDisabled() )
-				{
-					if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
-						txt->getTextColor(), txt->getOutlineColor()) )
+					dropIcon->disabled = false;
+					if ( auto imgGet = Image::get(dropIcon->path.c_str()) )
 					{
-						if ( txt->getHJustify() == Field::justify_t::RIGHT )
+						dropIcon->pos.w = imgGet->getWidth();
+						dropIcon->pos.h = imgGet->getWidth();
+						dropIcon->pos.x = alignx1 - dropIcon->pos.w - 16;
+						dropIcon->pos.y = useGlyph->pos.y + useGlyph->pos.h / 2 - dropIcon->pos.h / 2 - 2;
+						if ( dropIcon->pos.y % 2 == 1 )
 						{
-							// find the furthest left text
-							const unsigned int textWidth = textGet->getWidth();
-							alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textWidth, alignx1);
+							++dropIcon->pos.y;
+						}
+
+						auto& dropGlyph = promptFrames[0].first;
+						dropGlyph->pos = useGlyph->pos;
+						dropGlyph->pos.x = dropIcon->pos.x - dropGlyph->pos.w - 4;
+						alignx1 = std::min(alignx1, dropGlyph->pos.x);
+					}
+				}
+
+				auto grabIcon = frameTooltipPrompt->findImage("grab icon");
+				grabIcon->disabled = false;
+				if ( auto imgGet = Image::get(grabIcon->path.c_str()) )
+				{
+					grabIcon->pos.w = imgGet->getWidth();
+					grabIcon->pos.h = imgGet->getWidth();
+					if ( dropEnabled )
+					{
+						grabIcon->pos.x = alignx1 - grabIcon->pos.w - 6;
+					}
+					else
+					{
+						grabIcon->pos.x = alignx1 - grabIcon->pos.w - 16;
+					}
+					grabIcon->pos.y = useGlyph->pos.y + useGlyph->pos.h / 2 - grabIcon->pos.h / 2 - 2;
+					if ( grabIcon->pos.y % 2 == 1 )
+					{
+						++grabIcon->pos.y;
+					}
+
+					auto& grabGlyph = promptFrames[1].first;
+					grabGlyph->pos = useGlyph->pos;
+					grabGlyph->pos.x = grabIcon->pos.x - grabGlyph->pos.w - 4;
+					alignx1 = std::min(alignx1, grabGlyph->pos.x);
+				}
+			}
+			else
+			{
+				int index = 0;
+				for ( auto& pair : promptFrames )
+				{
+					++index;
+					auto& img = pair.first;
+					auto& txt = pair.second;
+					if ( img->path == "" )
+					{
+						img->path = Input::inputs[player].getGlyphPathForBinding(getBindingNameForMissingTooltipPrompts(index).c_str());
+					}
+
+					if ( !txt->isDisabled() )
+					{
+						if ( auto textGet = Text::get(txt->getText(), txt->getFont(),
+							txt->getTextColor(), txt->getOutlineColor()) )
+						{
+							if ( txt->getHJustify() == Field::justify_t::RIGHT )
+							{
+								// find the furthest left text
+								const unsigned int textWidth = textGet->getWidth();
+								alignx1 = std::min(txt->getSize().x + txt->getSize().w - (int)textWidth, alignx1);
+							}
 						}
 					}
 				}
-				++index;
 			}
 
 			// shift everything by the further left text as anchor
@@ -6481,6 +6559,14 @@ TOOLTIP_FINALIZE_LABEL:
 				SDL_Rect txtSize = txt->getSize();
 				txtSize.x += offset;
 				txt->setSize(txtSize);
+			}
+			if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+			{
+				auto dropIcon = frameTooltipPrompt->findImage("drop icon");
+				auto grabIcon = frameTooltipPrompt->findImage("grab icon");
+				int offset = -(alignx1 - 8);
+				dropIcon->pos.x += offset;
+				grabIcon->pos.x += offset;
 			}
 
 			// find the furthest right text for the width of the frame
@@ -6526,6 +6612,21 @@ TOOLTIP_FINALIZE_LABEL:
 				bottomRight->pos.x = bottomCenter->pos.x + bottomCenter->pos.w;
 
 				promptPos.w = middleRight->pos.x + middleRight->pos.w;
+
+				if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
+				{
+					auto& useGlyph = promptFrames[2].first;
+					bottomCenter->pos.y = useGlyph->pos.y + useGlyph->pos.h + 2;
+					bottomLeft->pos.y = bottomCenter->pos.y;
+					bottomRight->pos.y = bottomCenter->pos.y;
+
+					promptPos.h = bottomCenter->pos.y + bottomCenter->pos.h;
+
+					middleCenter->pos.h = bottomCenter->pos.y - 4;
+					middleLeft->pos.h = bottomCenter->pos.y;
+					middleRight->pos.h = bottomCenter->pos.y;
+					middleBottom->pos.y = bottomCenter->pos.y - 2;
+				}
 			}
 
 			promptPos.x = frameMain->getSize().x + frameMain->getSize().w - 6 - promptPos.w;
@@ -6699,14 +6800,14 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP) )
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		real_t setpointDiff = fpsScale * std::max(.01, (1.0 - slideOutPercent)) / 2.0;
+		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - slideOutPercent)) / 2.0;
 		slideOutPercent += setpointDiff;
 		slideOutPercent = std::min(1.0, slideOutPercent);
 	}
 	else
 	{
 		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
-		real_t setpointDiff = fpsScale * std::max(.01, (slideOutPercent)) / 2.0;
+		real_t setpointDiff = fpsScale * std::max(.1, (slideOutPercent)) / 2.0;
 		slideOutPercent -= setpointDiff;
 		slideOutPercent = std::max(0.0, slideOutPercent);
 	}
@@ -6791,7 +6892,8 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 
 	// mouse hovering over inventory frames in compact view - if we're on hotbar, refocus the inventory/spells panel
 	if ( (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR || player.GUI.activeModule == Player::GUI_t::MODULE_SHOP)
-		&& inputs.bPlayerUsingKeyboardControl(player.playernum) && bCompactView )
+		&& inputs.bPlayerUsingKeyboardControl(player.playernum) && bCompactView
+		&& cursor.queuedModule != Player::GUI_t::MODULE_HOTBAR )
 	{
 		if (player.GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
 			&& !isInteractable )

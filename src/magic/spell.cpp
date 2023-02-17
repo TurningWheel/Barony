@@ -20,6 +20,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../mod_tools.hpp"
+#include "../ui/GameUI.hpp"
 
 list_t channeledSpells[MAXPLAYERS];
 
@@ -349,6 +350,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 				// can't learn, already have it.
 				messagePlayer(player, MESSAGE_STATUS, language[439], new_spell->getSpellName());
 				spellDeconstructor((void*)new_spell);
+				playSoundPlayer(player, 90, 64);
 				return false;
 			}
 		}
@@ -369,11 +371,13 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	{
 		messagePlayer(player, MESSAGE_PROGRESSION, language[440]);
 		spellDeconstructor((void*)new_spell);
+		playSoundPlayer(player, 90, 64);
 		return false;
 	}
 	if ( !intro )
 	{
 		messagePlayer(player, MESSAGE_PROGRESSION, language[441], new_spell->getSpellName());
+		skillUpAnimation[player].addSpellLearned(new_spell->ID);
 	}
 	node = list_AddNodeLast(&players[player]->magic.spellList);
 	node->element = new_spell;

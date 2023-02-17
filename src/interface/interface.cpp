@@ -766,7 +766,7 @@ static void genericgui_deselect_fn(Widget& widget) {
 
 void saveCommand(char* content)
 {
-	newString(&command_history, 0xFFFFFFFF, ticks, content);
+	newString(&command_history, 0xFFFFFFFF, ticks, -1, content);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1218,7 +1218,19 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 	}
 	else if ( activeModule == MODULE_HOTBAR )
 	{
-		warpMouseToSelectedHotbarSlot(player.playernum);
+		auto& inventoryUI = player.inventoryUI;
+		if ( warpMouseToSelectedHotbarSlot(player.playernum)
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto hotbarSlotFrame = player.hotbar.getHotbarSlotFrame(player.hotbar.current_hotbar) )
+			{
+				SDL_Rect pos = hotbarSlotFrame->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					inventoryUI.getSlotSize(), inventoryUI.getSlotSize(), moveCursorInstantly);
+			}
+		}
 		return true;
 	}
 	else if ( activeModule == MODULE_CHARACTERSHEET )
@@ -20987,7 +20999,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				{
 					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem) )
 					{
-						if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID) )
+						if ( node_t* spellImageNode = ItemTooltips.getSpellNodeFromSpellID(spell->ID) )
 						{
 							string_t* string = (string_t*)spellImageNode->element;
 							if ( string )
@@ -21017,8 +21029,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			}
 			else if ( parentGUI.itemEffectUsingSpellbook && items[parentGUI.itemEffectItemType].category == SPELLBOOK )
 			{
-				if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images,
-					getSpellIDFromSpellbook(static_cast<ItemType>(parentGUI.itemEffectItemType))) )
+				if ( node_t* spellImageNode = 
+					ItemTooltips.getSpellNodeFromSpellID(getSpellIDFromSpellbook(static_cast<ItemType>(parentGUI.itemEffectItemType))) )
 				{
 					string_t* string = (string_t*)spellImageNode->element;
 					if ( string )
