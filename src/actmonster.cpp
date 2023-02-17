@@ -2664,7 +2664,7 @@ void actMonster(Entity* my)
 
 		if ( playerFollower < MAXPLAYERS && !skipObituary )
 		{
-			messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[2589], MSG_OBITUARY);
+			messagePlayerMonsterEvent(playerFollower, 0xFFFFFFFF, *myStats, language[1499], language[2589], MSG_OBITUARY);
 		}
 
 		// drop gold
