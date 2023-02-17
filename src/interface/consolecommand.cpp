@@ -2905,7 +2905,10 @@ namespace ConsoleCommands {
 		for (auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it)
 		{
 			spell_t* spell = *it;
+			bool oldIntro = intro;
+			intro = true;
 			bool learned = addSpell(spell->ID, clientnum, true);
+			intro = oldIntro;
 		}
 		return;
 		});
@@ -3658,7 +3661,10 @@ namespace ConsoleCommands {
 		for (auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it)
 		{
 			spell_t* spell = *it;
+			bool oldIntro = intro;
+			intro = true;
 			bool learned = addSpell(spell->ID, clientnum, true);
+			intro = oldIntro;
 		}
 		return;
 		});
@@ -3673,7 +3679,10 @@ namespace ConsoleCommands {
 		for (auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it)
 		{
 			spell_t* spell = *it;
+			bool oldIntro = intro;
+			intro = true;
 			bool learned = addSpell(spell->ID, clientnum, true);
+			intro = oldIntro;
 		}
 		return;
 		});
