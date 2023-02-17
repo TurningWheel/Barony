@@ -20999,7 +20999,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				{
 					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem) )
 					{
-						if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID) )
+						if ( node_t* spellImageNode = ItemTooltips.getSpellNodeFromSpellID(spell->ID) )
 						{
 							string_t* string = (string_t*)spellImageNode->element;
 							if ( string )
@@ -21029,8 +21029,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			}
 			else if ( parentGUI.itemEffectUsingSpellbook && items[parentGUI.itemEffectItemType].category == SPELLBOOK )
 			{
-				if ( node_t* spellImageNode = list_Node(&items[SPELL_ITEM].images,
-					getSpellIDFromSpellbook(static_cast<ItemType>(parentGUI.itemEffectItemType))) )
+				if ( node_t* spellImageNode = 
+					ItemTooltips.getSpellNodeFromSpellID(getSpellIDFromSpellbook(static_cast<ItemType>(parentGUI.itemEffectItemType))) )
 				{
 					string_t* string = (string_t*)spellImageNode->element;
 					if ( string )

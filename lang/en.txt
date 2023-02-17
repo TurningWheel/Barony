@@ -6402,5 +6402,7 @@ for accessory to violence!#
 4324 You are suddenly burning!#
 4325 You reflected a spell!#
 4326 Next interaction...#
+4327 %s Increased!#
+4328 Spell Learned!#
 
 4399 end#

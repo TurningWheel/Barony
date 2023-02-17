@@ -2805,8 +2805,7 @@ void Entity::handleEffects(Stat* myStats)
 		Uint32 color = makeColorRGB(255, 255, 0);
 		messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[622]);
 
-		static ConsoleVariable<int> cvar_lvlup_sfx("/lvlup_sfx", 526);
-		playSoundNotificationPlayer(player, *cvar_lvlup_sfx, 255);
+		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 
 		// increase MAXHP/MAXMP
 		myStats->MAXHP += HP_MOD;
@@ -2998,7 +2997,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = makeColorRGB(0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
-							playSoundEntity(this, *cvar_lvlup_sfx, 128);
+							playSoundEntity(this, *cvar_lvlup_ally_sfx, 128);
 							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 						}
 					}
@@ -7334,24 +7333,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest )
 			{
 				int axe = 0;
+				int damage = 1;
+				int weaponskill = -1;
 				if ( myStats->weapon && !shapeshifted )
 				{
-					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE
-						|| myStats->weapon->type == CRYSTAL_BATTLEAXE )
+					weaponskill = getWeaponSkill(myStats->weapon);
+					if ( weaponskill == PRO_AXE )
 					{
-						axe = 1; // axes do extra damage to doors :)
+						axe = (myStats->PROFICIENCIES[PRO_AXE] / 20);
+						if ( myStats->PROFICIENCIES[PRO_AXE] >= SKILL_LEVEL_LEGENDARY )
+						{
+							axe = 9;
+						}
 					}
 				}
 				else
 				{
-					axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
-					if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
+					weaponskill = PRO_UNARMED;
+					if ( hit.entity->behavior != &::actChest )
 					{
-						axe = 7;
-					}
-					if ( charge > MAXCHARGE / 2 )
-					{
-						axe *= 3;
+						axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
+						if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
+						{
+							axe = 9;
+						}
 					}
 				}
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -7364,28 +7369,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						axe = std::min(axe + 50, 50);
 					}
-				}
-				if ( hit.entity->behavior != &::actChest )
-				{
-					if ( charge < MAXCHARGE / 2 )
-					{
-						hit.entity->skill[4] -= 1 + axe; // decrease door/furniture health
-					}
-					else
-					{
-						hit.entity->skill[4] -= 2 + axe; // decrease door/furniture health extra
-					}
+					damage += axe;
 				}
 				else
 				{
-					if ( charge < MAXCHARGE / 2 )
+					damage += axe;
+					if ( charge >= MAXCHARGE / 2 )
 					{
-						hit.entity->skill[3] -= 1 + axe; // decrease chest health
+						damage *= 2;
 					}
-					else
-					{
-						hit.entity->skill[3] -= 2 + axe; // decrease chest health extra
-					}
+				}
+				if ( hit.entity->behavior != &::actChest )
+				{
+					hit.entity->skill[4] -= damage; // decrease door/furniture health
+				}
+				else
+				{
+					hit.entity->skill[3] -= damage; // decrease chest health extra
 				}
 				if ( whip )
 				{
@@ -17313,7 +17313,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				{
 					messagePlayerColor(c, MESSAGE_OBITUARY, color, msgNamed, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
-				else
+				else if ( multiplayer != SINGLE )
 				{
 					messagePlayerColor(c, MESSAGE_OBITUARY, color, msgGeneric, stats[player]->name, getMonsterLocalizedName((Monster)monsterType).c_str(), monsterStats.obituary);
 				}
@@ -17399,14 +17399,17 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 					{
 						messagePlayerColor(c, MESSAGE_OBITUARY, color, msgNamed, monsterStats.name, monsterStats.obituary);
 					}
-					else
+					else if ( multiplayer != SINGLE )
 					{
 						messagePlayerColor(c, MESSAGE_OBITUARY, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
 					}
 				}
 				else
 				{
-					messagePlayerColor(c, MESSAGE_OBITUARY, color, "%s %s", monsterStats.name, monsterStats.obituary);
+					if ( c == player || multiplayer != SINGLE )
+					{
+						messagePlayerColor(c, MESSAGE_OBITUARY, color, "%s %s", monsterStats.name, monsterStats.obituary);
+					}
 				}
 			}
 			break;

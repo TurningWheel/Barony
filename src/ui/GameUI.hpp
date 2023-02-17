@@ -387,11 +387,17 @@ struct SkillUpAnimation_t
 		int whichSkill = -1;
 		int currentSkill = -1;
 		int increaseSkill = -1;
+		int spellID = 0;
 		SkillUp_t(const int _numSkill, const int _currentSkill, const int _increaseSkill)
 		{
 			whichSkill = _numSkill;
 			currentSkill = _currentSkill;
 			increaseSkill = _increaseSkill;
+		};
+		SkillUp_t(const int _spellID)
+		{
+			spellID = _spellID;
+			isSpell = true;
 		};
 		void animateNotification(const int player);
 
@@ -432,13 +438,17 @@ struct SkillUpAnimation_t
 		NotificationStates_t notificationStateInit = STATE_1;
 		void setAnimatePosition(int destx, int desty);
 		void setAnimatePosition(int destx, int desty, int destw, int desth);
+		int getIconNominalSize();
 
 		real_t fadeout = 0.0;
 		bool expired = false;
+		bool isSpell = false;
 	};
+
 	real_t animFrameFadeIn = 1.0;
 	std::deque<SkillUp_t> skillUps;
 	void addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill);
+	void addSpellLearned(const int _spellID);
 	size_t getSkillUpIndexToDisplay();
 	SkillUp_t& getSkillUpToDisplay();
 };

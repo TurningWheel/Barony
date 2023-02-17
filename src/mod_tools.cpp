@@ -1948,6 +1948,36 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 #endif
 }
 
+node_t* ItemTooltips_t::getSpellNodeFromSpellID(int spellID)
+{
+	node_t* spellImageNode = nullptr;
+	if ( spellID >= NUM_SPELLS || spellID < SPELL_NONE )
+	{
+		return nullptr;
+	}
+
+	if ( arachnophobia_filter )
+	{
+		if ( spellID == SPELL_SPIDER_FORM )
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_FORM);
+		}
+		else if ( spellID == SPELL_SPRAY_WEB )
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_WEB);
+		}
+		else
+		{
+			spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+		}
+	}
+	else
+	{
+		spellImageNode = list_Node(&items[SPELL_ITEM].images, spellID);
+	}
+	return spellImageNode;
+}
+
 std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 {
 #ifdef EDITOR
@@ -1987,29 +2017,11 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item)
 		spell_t* spell = getSpellFromItem(player, &item);
 		if ( spell )
 		{
-	        if (arachnophobia_filter)
-	        {
-	            if (spell->ID == SPELL_SPIDER_FORM)
-	            {
-                    spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_FORM);
-	            }
-	            else if (spell->ID == SPELL_SPRAY_WEB)
-	            {
-                    spellImageNode = list_Node(&items[SPELL_ITEM].images, SPELL_CRAB_WEB);
-	            }
-	            else
-	            {
-                    spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
-	            }
-	        }
-	        else
-	        {
-	            spellImageNode = list_Node(&items[SPELL_ITEM].images, spell->ID);
-	        }
+			spellImageNode = getSpellNodeFromSpellID(spell->ID);
 		}
 		else
 		{
-			spellImageNode = list_Node(&items[SPELL_ITEM].images, 0);
+			spellImageNode = getSpellNodeFromSpellID(SPELL_NONE);
 		}
 	}
 	if ( spellImageNode )
