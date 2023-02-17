@@ -5341,6 +5341,7 @@ int saveGame(int saveIndex) {
 			player.conductPenniless = conductPenniless;
 			player.conductFoodless = conductFoodless;
 			player.conductVegetarian = conductVegetarian;
+			player.conductIlliterate = conductIlliterate;
 			for (int i = 0; i < NUM_CONDUCT_CHALLENGES; ++i) {
 				player.additionalConducts[i] = conductGameChallenges[i];
 			}
