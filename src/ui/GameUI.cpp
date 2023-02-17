@@ -33047,9 +33047,12 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	real_t oldAngle = animAngle;
 	animAngle += fpsScale * std::max(.1, (1.0 - animAngle)) / (5.0);
 	animAngle = std::min(1.0, animAngle);
-	if ( animAngle > 0.01 && oldAngle <= 0.0 )
+	if ( !isSpell )
 	{
-		playSound(*cvar_skill_ding_sfx + local_rng.rand() % 4, 64);
+		if ( animAngle > 0.01 && oldAngle <= 0.0 )
+		{
+			playSound(*cvar_skill_ding_sfx + local_rng.rand() % 4, 64);
+		}
 	}
 
 	switch ( notificationState )
