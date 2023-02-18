@@ -557,6 +557,7 @@ int audio_buffers = 512;
 real_t sfxvolume = 1.0;
 real_t sfxAmbientVolume = 1.0;
 real_t sfxEnvironmentVolume = 1.0;
+real_t sfxNotificationVolume = 1.0;
 real_t musvolume = 1.0;
 
 // fun stuff

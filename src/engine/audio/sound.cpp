@@ -50,18 +50,20 @@ bool FMODErrorCheck()
 	return false;
 }
 
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification) {
     master = std::min(std::max(0.0, master), 1.0);
     music = std::min(std::max(0.0, music / 2.0), 1.0); // music volume cut in half because the music is loud...
     gameplay = std::min(std::max(0.0, gameplay), 1.0);
     ambient = std::min(std::max(0.0, ambient), 1.0);
     environment = std::min(std::max(0.0, environment), 1.0);
+	notification = std::min(std::max(0.0, notification), 1.0);
 
 	music_group->setVolume(master * music);
 	sound_group->setVolume(master * gameplay);
 	soundAmbient_group->setVolume(master * ambient);
 	soundEnvironment_group->setVolume(master * environment);
-	notification_group->setVolume(master * music);
+	music_notification_group->setVolume(master * notification);
+	soundNotification_group->setVolume(master * notification);
 }
 
 #ifndef EDITOR
@@ -103,9 +105,9 @@ void sound_update(int player, int index, int numplayers)
 	if (player == 0) {
 		//Fade in the currently playing music.
 		bool notificationPlaying = false;
-		if ( notification_group )
+		if ( music_notification_group )
 		{
-			notification_group->isPlaying(&notificationPlaying);
+			music_notification_group->isPlaying(&notificationPlaying);
 		}
 
 		if (music_channel)
@@ -406,7 +408,7 @@ OPENAL_CHANNELGROUP *sound_group = NULL;
 OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
 OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
 OPENAL_CHANNELGROUP *music_group = NULL;
-OPENAL_CHANNELGROUP *notification_group = NULL;
+OPENAL_CHANNELGROUP *music_notification_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
@@ -495,17 +497,17 @@ int initOPENAL()
 	soundAmbient_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	soundEnvironment_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	music_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
-	notification_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
+	music_notification_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
 	memset(sound_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(soundAmbient_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(soundEnvironment_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	memset(music_group, 0, sizeof(OPENAL_CHANNELGROUP));
-	memset(notification_group, 0, sizeof(OPENAL_CHANNELGROUP));
+	memset(music_notification_group, 0, sizeof(OPENAL_CHANNELGROUP));
 	sound_group->volume = 1.0f;
 	soundAmbient_group->volume = 1.0f;
 	soundEnvironment_group->volume = 1.0f;
 	music_group->volume = 1.0f;
-	notification_group->volume = 1.0f;
+	music_notification_group->volume = 1.0f;
 
 	memset(openal_sounds, 0, sizeof(openal_sounds));
 	lower_freechannel = 0;
@@ -595,7 +597,7 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	OPENAL_ChannelGroup_SetVolume(sound_group, master * gameplay);
 	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, master * ambient);
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
-	OPENAL_ChannelGroup_SetVolume(notification_group, master * gameplay);
+	OPENAL_ChannelGroup_SetVolume(music_notification_group, master * gameplay);
 }
 
 void sound_update(int player, int index, int numplayers)

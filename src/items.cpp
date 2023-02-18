@@ -4428,7 +4428,7 @@ int Item::buyValue(const int player) const
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+	/*value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;*/
 
 	// result
 	value = std::max(1, value);

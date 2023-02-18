@@ -1944,6 +1944,10 @@ static void changeLevel() {
 	{
 		soundEnvironment_group->stop();
 	}
+	if ( soundNotification_group )
+	{
+		soundNotification_group->stop();
+	}
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{

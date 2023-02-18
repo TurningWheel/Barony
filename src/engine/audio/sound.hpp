@@ -83,7 +83,7 @@ extern FMOD::Sound* hamletmusic;
 extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD::ChannelGroup* sound_group, *music_group;
-extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *notification_group;
+extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_notification_group, *soundNotification_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
@@ -108,7 +108,7 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
 // all parameters should be in ranges of [0.0 - 1.0]
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment);
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification);
 
 bool loadMusic();
 void stopMusic();
@@ -181,7 +181,7 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
-extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *notification_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *music_notification_group;
 
 int initOPENAL();
 int closeOPENAL();

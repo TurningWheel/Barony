@@ -293,6 +293,7 @@ namespace MainMenu {
 		float gameplay_volume;
 		float ambient_volume;
 		float environment_volume;
+		float notification_volume;
 		float music_volume;
 		bool minimap_pings_enabled;
 		bool player_monster_sounds_enabled;
@@ -2242,6 +2243,7 @@ namespace MainMenu {
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
 		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), 1.f);
+		sfxNotificationVolume = std::min(std::max(0.f, notification_volume / 100.f), 1.f);
 		musvolume = std::min(std::max(0.f, music_volume / 100.f), 1.f);
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
@@ -2324,7 +2326,8 @@ namespace MainMenu {
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
-		settings.environment_volume = (float)sfxEnvironmentVolume* 100.f;
+		settings.environment_volume = (float)sfxEnvironmentVolume * 100.f;
+		settings.notification_volume = (float)sfxNotificationVolume * 100.f;
 		settings.music_volume = (float)musvolume * 100.f;
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
@@ -2390,6 +2393,7 @@ namespace MainMenu {
 		settings.gameplay_volume = 100.f;
 		settings.ambient_volume = 100.f;
 		settings.environment_volume = 100.f;
+		settings.notification_volume = 100.f;
 		settings.music_volume = 100.f;
 		settings.minimap_pings_enabled = true;
 		settings.player_monster_sounds_enabled = true;
@@ -2422,7 +2426,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 8;
+	    int version = 9;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2476,6 +2480,10 @@ namespace MainMenu {
 		file->property("gameplay_volume", gameplay_volume);
 		file->property("ambient_volume", ambient_volume);
 		file->property("environment_volume", environment_volume);
+		if ( version >= 9 )
+		{
+			file->property("notification_volume", notification_volume);
+		}
 		file->property("music_volume", music_volume);
 		file->property("minimap_pings_enabled", minimap_pings_enabled);
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
@@ -3179,7 +3187,7 @@ namespace MainMenu {
 			}
 			fmod_system->setDriver(selected_driver);
 #endif
-		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
+		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 		}
 	}
 
@@ -5322,27 +5330,32 @@ bind_failed:
 			"Adjust the volume of all sound sources equally.",
 			allSettings.master_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.master_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
-				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "gameplay_volume", "Gameplay Volume",
 			"Adjust the volume of most game sound effects.",
 			allSettings.gameplay_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.gameplay_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
-				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "ambient_volume", "Ambient Volume",
 			"Adjust the volume of ominous subterranean sound-cues.",
 			allSettings.ambient_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.ambient_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
-				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
 		y += settingsAddSlider(*settings_subwindow, y, "environment_volume", "Environment Volume",
 			"Adjust the volume of flowing water and lava.",
 			allSettings.environment_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.environment_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
-				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
+		y += settingsAddSlider(*settings_subwindow, y, "notification_volume", "Notification Volume",
+			"Adjust the volume of skill increase and level up notifications.",
+			allSettings.notification_volume, 0, 100, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.notification_volume = slider.getValue();
+		setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+			allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0); });
 		y += settingsAddSlider(*settings_subwindow, y, "music_volume", "Music Volume",
 			"Adjust the volume of the game's soundtrack.",
 			allSettings.music_volume, 0, 100, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.music_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
-				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0);});
+				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Options");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", "Minimap Pings",
@@ -5367,6 +5380,7 @@ bind_failed:
 			{Setting::Type::Slider, "gameplay_volume"},
 			{Setting::Type::Slider, "ambient_volume"},
 			{Setting::Type::Slider, "environment_volume"},
+			{Setting::Type::Slider, "notification_volume"},
 			{Setting::Type::Slider, "music_volume"},
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"},
@@ -5377,6 +5391,7 @@ bind_failed:
 			{Setting::Type::Slider, "gameplay_volume"},
 			{Setting::Type::Slider, "ambient_volume"},
 			{Setting::Type::Slider, "environment_volume"},
+			{Setting::Type::Slider, "notification_volume"},
 			{Setting::Type::Slider, "music_volume"},
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"}});
@@ -18046,7 +18061,7 @@ bind_failed:
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
-		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume);
+		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
