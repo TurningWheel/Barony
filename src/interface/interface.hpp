@@ -1126,7 +1126,7 @@ typedef struct hotbar_slot_t
 // Used for such things as dragging and dropping items. Uses realtime (mousex/mousey) coords as may be dragging
 hotbar_slot_t* getCurrentHotbarUnderMouse(int player, int* outSlotNum = nullptr);
 
-void warpMouseToSelectedHotbarSlot(const int player);
+bool warpMouseToSelectedHotbarSlot(const int player);
 
 /*
  * True = automatically place items you pick up in your hotbar.

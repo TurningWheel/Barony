@@ -337,7 +337,7 @@ light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 
 -------------------------------------------------------------------------------*/
 
-string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const content, ...)
+string_t* newString(list_t* list, Uint32 color, Uint32 time, int player, char const * const content, ...)
 {
 	string_t* string;
 	char str[1024] = { 0 };
@@ -363,6 +363,7 @@ string_t* newString(list_t* list, Uint32 color, Uint32 time, char const * const 
     string->time = time;
 	string->color = color;
 	string->lines = 1;
+	string->player = player;
 	if ( content != NULL )
 	{
 #ifndef EDITOR

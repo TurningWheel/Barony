@@ -93,6 +93,12 @@ bool initSoundEngine()
 			printlog("[FMOD]: Failed to create sound environment channel group.\n");
 			no_sound = true;
 		}
+		fmod_result = fmod_system->createChannelGroup(nullptr, &notification_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create notification channel group.\n");
+			no_sound = true;
+		}
 		
 		fmod_result = fmod_system->createChannelGroup(nullptr, &music_group);
 		if (FMODErrorCheck())

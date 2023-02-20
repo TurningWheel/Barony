@@ -1387,6 +1387,8 @@ public:
 	    Frame* controllerFrame = nullptr;
 		Frame* hudFrame = nullptr;
 		Frame* xpFrame = nullptr;
+		Frame* levelupFrame = nullptr;
+		Frame* skillupFrame = nullptr;
 		Frame* hpFrame = nullptr;
 		Frame* mpFrame = nullptr;
 		Frame* minimapFrame = nullptr;
@@ -1486,6 +1488,29 @@ public:
 			int flashAnimState = -1;
 			AnimateFlashEffects_t flashType = FLASH_ON_DAMAGE;
 		};
+		struct XPInfo_t
+		{
+			enum XPCycleInfo : int
+			{
+				CYCLE_NONE,
+				CYCLE_LVL,
+				CYCLE_XP
+			};
+			XPCycleInfo cycleStatus = CYCLE_NONE;
+			real_t fade = 1.0;
+			Uint32 cycleTicks = 0;
+			Uint32 cycleProcessedOnTick = 0;
+			bool fadeIn = true;
+		};
+		XPInfo_t xpInfo;
+		struct InteractPrompt_t
+		{
+			real_t promptAnim = 0.0;
+			Uint32 activeTicks = 0;
+			Uint32 processedOnTick = 0;
+			real_t cycleAnim = 1.0;
+		};
+		InteractPrompt_t interactPrompt;
 		Bar_t xpBar;
 		Bar_t HPBar;
 		Bar_t MPBar;
@@ -1724,6 +1749,7 @@ public:
 
 		int MESSAGE_MAX_ENTRIES = 20;
 		Frame* chatFrame = nullptr;
+		real_t animFade = 1.0;
 		bool bottomAlignedMessages = false;
 		bool useBigFont = false;
 		static const char* bigfont;
@@ -1992,6 +2018,7 @@ public:
 		SDL_Rect hotbarBox;
 		Frame* hotbarFrame = nullptr;
 		real_t selectedSlotAnimateCurrentValue = 0.0;
+		bool isInteractable = false;
 
 		struct Cursor_t
 		{
