@@ -372,24 +372,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 					}
 
 					// set color
-		            Uint32 color;
-					if (colorblind) {
-						switch (ping.player) {
-						case 0: color = uint32ColorPlayer1_colorblind; break;
-						case 1: color = uint32ColorPlayer2_colorblind; break;
-						case 2: color = uint32ColorPlayer3_colorblind; break;
-						case 3: color = uint32ColorPlayer4_colorblind; break;
-						default: color = uint32ColorPlayerX_colorblind; break;
-						}
-					} else {
-						switch (ping.player) {
-						case 0: color = uint32ColorPlayer1; break;
-						case 1: color = uint32ColorPlayer2; break;
-						case 2: color = uint32ColorPlayer3; break;
-						case 3: color = uint32ColorPlayer4; break;
-						default: color = uint32ColorPlayerX; break;
-						}
-					}
+		            Uint32 color = playerColor(ping.player, colorblind, false);
 			        uint8_t r, g, b, a;
 			        getColor(color, &r, &g, &b, &a);
 			        color = makeColor(r, g, b, alpha);
@@ -428,188 +411,177 @@ void drawMinimap(const int player, SDL_Rect rect)
 	}
 
 	// draw minotaur, players, and allies
-	for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+	for ( int c = 0; c < 2; ++c )
 	{
-		Entity* entity = (Entity*)node->element;
-		int drawMonsterAlly = -1;
-		int foundplayer = -1;
-		if ( entity->behavior == &actPlayer )
+		for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
 		{
-			foundplayer = entity->skill[2];
-		}
-		else if ( entity->behavior == &actMonster )
-		{
-			if ( entity->monsterAllyIndex >= 0 )
+			Entity* entity = (Entity*)node->element;
+			int drawMonsterAlly = -1;
+			int foundplayer = -1;
+			if ( c == 1 && entity->behavior != &actPlayer )
 			{
-				drawMonsterAlly = entity->monsterAllyIndex;
+				continue; // render nothing but players on second pass
 			}
-		}
-		if ( drawMonsterAlly >= 0 || foundplayer >= 0 || entity->sprite == 239)
-		{
-			Uint32 color = 0;
-			Uint32 color_edge = 0;
-			if ( foundplayer >= 0 ) {
-				color_edge = uint32ColorWhite;
-
-				bool foundShadowTaggedEntity = false;
-				if ( splitscreen )
+			else if ( c == 0 && entity->behavior == &actPlayer )
+			{
+				continue; // render anything *but* players on first pass
+			}
+			else if ( entity->behavior == &actPlayer )
+			{
+				foundplayer = entity->skill[2];
+			}
+			else if ( entity->behavior == &actMonster )
+			{
+				if ( entity->monsterAllyIndex >= 0 )
 				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
+					drawMonsterAlly = entity->monsterAllyIndex;
+				}
+			}
+			if ( drawMonsterAlly >= 0 || foundplayer >= 0 || entity->sprite == 239)
+			{
+				Uint32 color = 0;
+				Uint32 color_edge = 0;
+				if ( foundplayer >= 0 ) {
+					color_edge = uint32ColorWhite;
+
+					bool foundShadowTaggedEntity = false;
+					if ( splitscreen )
 					{
-						if ( players[i] && players[i]->entity
-							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( players[i] && players[i]->entity
+								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+							{
+								foundShadowTaggedEntity = true;
+								break;
+							}
+						}
+					}
+					else
+					{
+						if ( players[player] && players[player]->entity
+							&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
 						{
 							foundShadowTaggedEntity = true;
-							break;
 						}
 					}
-				}
-				else
-				{
-					if ( players[player] && players[player]->entity
-						&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
-					{
-						foundShadowTaggedEntity = true;
-					}
-				}
-				if ( foundShadowTaggedEntity ) {
-					color = uint32ColorPlayerX; // grey
-				} else {
-					if (colorblind) {
-						switch (foundplayer) {
-						case 0: color = uint32ColorPlayer1_colorblind; break;
-						case 1: color = uint32ColorPlayer2_colorblind; break;
-						case 2: color = uint32ColorPlayer3_colorblind; break;
-						case 3: color = uint32ColorPlayer4_colorblind; break;
-						default: color = uint32ColorPlayerX_colorblind; break;
-						}
+					if ( foundShadowTaggedEntity ) {
+						color = uint32ColorPlayerX; // grey
 					} else {
-						switch (foundplayer) {
-						case 0: color = uint32ColorPlayer1; break;
-						case 1: color = uint32ColorPlayer2; break;
-						case 2: color = uint32ColorPlayer3; break;
-						case 3: color = uint32ColorPlayer4; break;
-						default: color = uint32ColorPlayerX; break;
+						color = playerColor(foundplayer, colorblind, false);
+					}
+				} else if ( entity->sprite == 239 ) { // minotaur
+					color_edge = uint32ColorBlack;
+					if ( !splitscreen )
+					{
+						if (!players[player] || !players[player]->entity) {
+							continue;
 						}
 					}
-		        }
-			} else if ( entity->sprite == 239 ) { // minotaur
-				color_edge = uint32ColorBlack;
-				if ( !splitscreen )
-				{
-					if (!players[player] || !players[player]->entity) {
+					if ( ticks % 120 - ticks % 60 ) {
+						if ( !minotaur_timer ) {
+							playSound(116, 64);
+						}
+						minotaur_timer = 1;
+					} else {
+						minotaur_timer = 0;
 						continue;
 					}
-				}
-			    if ( ticks % 120 - ticks % 60 ) {
-				    if ( !minotaur_timer ) {
-					    playSound(116, 64);
-				    }
-				    minotaur_timer = 1;
+					color = makeColor(255, 0, 0, 255);
 				} else {
-				    minotaur_timer = 0;
-				    continue;
-				}
-				color = makeColor(255, 0, 0, 255);
-			} else {
-				color_edge = uint32ColorGray;
+					color_edge = uint32ColorGray;
 
-				bool foundShadowTaggedEntity = false;
-				if ( splitscreen )
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
+					bool foundShadowTaggedEntity = false;
+					if ( splitscreen )
 					{
-						if ( players[i] && players[i]->entity
-							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( players[i] && players[i]->entity
+								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+							{
+								foundShadowTaggedEntity = true;
+								break;
+							}
+						}
+					}
+					else
+					{
+						if ( players[player] && players[player]->entity
+							&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
 						{
 							foundShadowTaggedEntity = true;
-							break;
 						}
 					}
-				}
-				else
-				{
-					if ( players[player] && players[player]->entity
-						&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID() )
-					{
-						foundShadowTaggedEntity = true;
+
+					if ( foundShadowTaggedEntity ) {
+						color = uint32ColorPlayerX_Ally; // grey
+					} else {
+						color = playerColor(drawMonsterAlly, colorblind, true);
 					}
 				}
 
-				if ( foundShadowTaggedEntity ) {
-					color = uint32ColorPlayerX_Ally; // grey
-				} else {
-				    switch ( drawMonsterAlly ) {
-					    case 0: color = uint32ColorPlayer1_Ally; break;
-					    case 1: color = uint32ColorPlayer2_Ally; break;
-					    case 2: color = uint32ColorPlayer3_Ally; break;
-					    case 3: color = uint32ColorPlayer4_Ally; break;
-					    default: color = uint32ColorPlayerX_Ally; break;
-				    }
-				}
-			}
+				static ConsoleVariable<bool> cvar_brightTriangles("/minimap_bright_triangles", false);
+				static ConsoleVariable<bool> cvar_outlineTriangles("/minimap_outline_triangles", false);
 
-			static ConsoleVariable<bool> cvar_brightTriangles("/minimap_bright_triangles", false);
-			static ConsoleVariable<bool> cvar_outlineTriangles("/minimap_outline_triangles", false);
+				auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
+					const int windowLCD = std::min(rect.w, rect.h);
+					const int windowGCD = std::max(rect.w, rect.h);
+					const int mapLCD = std::min(map.width, map.height);
+					const int mapGCD = std::max(map.width, map.height);
+					const int xmin = ((int)map.width - mapGCD) / 2;
+					const int ymin = ((int)map.height - mapGCD) / 2;
+					const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+					const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+           			const real_t zoom = minimapObjectZoom / 100.0 * size;
+					x = (x - xmin) * unitX + rect.x;
+					y = (y - ymin) * unitY + rect.y;
 
-			auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
-				const int windowLCD = std::min(rect.w, rect.h);
-				const int windowGCD = std::max(rect.w, rect.h);
-				const int mapLCD = std::min(map.width, map.height);
-				const int mapGCD = std::max(map.width, map.height);
-				const int xmin = ((int)map.width - mapGCD) / 2;
-				const int ymin = ((int)map.height - mapGCD) / 2;
-				const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
-				const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-           		const real_t zoom = minimapObjectZoom / 100.0 * size;
-				x = (x - xmin) * unitX + rect.x;
-				y = (y - ymin) * unitY + rect.y;
+					const real_t v[][2] = {
+						{  1.0,  0.0 },
+						{  0.0,  0.0 },
+						{ -0.5,  0.5 },
 
-				const real_t v[][2] = {
-					{  1.0,  0.0 },
-					{  0.0,  0.0 },
-					{ -0.5,  0.5 },
+						{  1.0,  0.0 },
+						{ -0.5, -0.5 },
+						{  0.0,  0.0 },
 
-					{  1.0,  0.0 },
-					{ -0.5, -0.5 },
-					{  0.0,  0.0 },
+						{  0.0,  0.0 },
+						{ -0.5, -0.5 },
+						{ -0.5,  0.5 },
+					};
+					const int num_vertices = sizeof(v) / sizeof(v[0]);
 
-					{  0.0,  0.0 },
-					{ -0.5, -0.5 },
-					{ -0.5,  0.5 },
+					Uint8 r, g, b, a;
+					getColor(color, &r, &g, &b, &a);
+					glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+					glBegin(GL_TRIANGLES);
+					for (int c = 0; c < num_vertices; ++c) {
+						const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
+						const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
+						const real_t sx = vx * unitX * zoom;
+						const real_t sy = vy * unitY * zoom;
+						if (*cvar_brightTriangles) {
+							if (c == 0 || c == 3) {
+								glColor4f(1.f, 1.f, 1.f, 1.f);
+							} else {
+								glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+							}
+						}
+						glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+					}
+					glEnd();
 				};
-				const int num_vertices = sizeof(v) / sizeof(v[0]);
 
-				Uint8 r, g, b, a;
-				getColor(color, &r, &g, &b, &a);
-				glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-				glBegin(GL_TRIANGLES);
-				for (int c = 0; c < num_vertices; ++c) {
-					const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
-					const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
-					const real_t sx = vx * unitX * zoom;
-					const real_t sy = vy * unitY * zoom;
-					if (*cvar_brightTriangles) {
-						if (c == 0 || c == 3) {
-							glColor4f(1.f, 1.f, 1.f, 1.f);
-						} else {
-							glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-						}
-					}
-					glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+				const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
+				const real_t x = entity->x / 16.0;
+				const real_t y = entity->y / 16.0;
+				const real_t ang = entity->yaw;
+				if (*cvar_outlineTriangles) {
+            		drawTriangle(x, y, ang, size, rect, color_edge);
+            		drawTriangle(x, y, ang, size - 0.25, rect, color);
+				} else {
+            		drawTriangle(x, y, ang, size, rect, color);
 				}
-				glEnd();
-			};
-
-			const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
-			const real_t x = entity->x / 16.0;
-			const real_t y = entity->y / 16.0;
-			const real_t ang = entity->yaw;
-			if (*cvar_outlineTriangles) {
-            	drawTriangle(x, y, ang, size, rect, color_edge);
-            	drawTriangle(x, y, ang, size - 0.25, rect, color);
-			} else {
-            	drawTriangle(x, y, ang, size, rect, color);
 			}
 		}
 	}

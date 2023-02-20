@@ -548,6 +548,7 @@ namespace MainMenu {
 	static void createLobby(LobbyType);
 	static void createLobbyBrowser(Button&);
 	static void createLocalOrNetworkMenu();
+	static void refreshLobbyBrowser();
 
     static void sendPlayerOverNet();
     static void sendReadyOverNet(int index, bool ready);
@@ -1740,6 +1741,7 @@ namespace MainMenu {
 		} else {
 			static bool attemptedConnection;
 			attemptedConnection = false;
+			nxShutdownWireless();
 			nxConnectToNetwork();
 			cancellablePrompt("connect_eos_prompt", "Connecting\n...", "Cancel",
 				[](Widget& widget) {
@@ -1779,11 +1781,7 @@ namespace MainMenu {
 							} else {
 								if (!attemptedConnection) {
 									attemptedConnection = true;
-
-									char buf[32];
-									snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
-									setUsername(buf);
-
+									randomizeUsername();
 									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 									EOS.StatGlobalManager.queryGlobalStatUser();
 									printlog("[NX] logging into EOS");
@@ -1823,10 +1821,7 @@ namespace MainMenu {
 		}
 #else // NINTENDO
 		if (!isConnectedToEpic()) {
-			char buf[32];
-			snprintf(buf, sizeof(buf), "User #%04d", RNG.uniform(0, 9999));
-			setUsername(buf);
-
+			randomizeUsername();
 			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 			EOS.StatGlobalManager.queryGlobalStatUser();
 		}
@@ -2913,6 +2908,10 @@ namespace MainMenu {
 					if (back_button) {
 		            	back_button->setText("Skip story");
 					}
+					auto next = main_menu_frame->findButton("next");
+					if (next) {
+						next->select();
+					}
 		        }
 		    }
 			});
@@ -3172,7 +3171,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -3742,7 +3741,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
 				allSettings.audio_device = guid_string;
 				fmod_system->setDriver(index);
 			}
@@ -5300,7 +5299,7 @@ bind_failed:
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
 			if (!selected_device && allSettings.audio_device == guid_string) {
 				selected_device = c;
 			}
@@ -7302,7 +7301,8 @@ bind_failed:
 	                len = snprintf(buf, sizeof(buf), "%s: %s", players[clientnum]->getAccountName(), text);
 	            }
 	            if (len > 0) {
-                    sendChatMessageOverNet(0xffffffff, buf, len);
+					Uint32 color = playerColor(clientnum, colorblind, false);
+                    sendChatMessageOverNet(color, buf, len);
                 }
                 field.setText("");
 #ifndef NINTENDO
@@ -7373,29 +7373,31 @@ bind_failed:
         return frame;
     }
 
-	static void disconnectFromLobby() {
-	    if (multiplayer == SERVER) {
-		    // send disconnect message to clients
-		    for (int c = 1; c < MAXPLAYERS; c++) {
-			    if (client_disconnected[c]) {
-				    continue;
-			    }
-			    strcpy((char*)net_packet->data, "DISC");
-			    net_packet->data[4] = clientnum;
-			    net_packet->address.host = net_clients[c - 1].host;
-			    net_packet->address.port = net_clients[c - 1].port;
-			    net_packet->len = 5;
-			    sendPacketSafe(net_sock, -1, net_packet, c - 1);
-		    }
-	    } else if (multiplayer == CLIENT) {
-		    // send disconnect message to server
-		    strcpy((char*)net_packet->data, "DISC");
-		    net_packet->data[4] = clientnum;
-		    net_packet->address.host = net_server.host;
-		    net_packet->address.port = net_server.port;
-		    net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
-	    }
+	static void disconnectFromLobby(bool informRemotes = true) {
+		if (informRemotes) {
+			if (multiplayer == SERVER) {
+				// send disconnect message to clients
+				for (int c = 1; c < MAXPLAYERS; c++) {
+					if (client_disconnected[c]) {
+						continue;
+					}
+					strcpy((char*)net_packet->data, "DISC");
+					net_packet->data[4] = clientnum;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 5;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			} else if (multiplayer == CLIENT) {
+				// send disconnect message to server
+				strcpy((char*)net_packet->data, "DISC");
+				net_packet->data[4] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 5;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
 
 	    // this short delay makes sure that the disconnect message gets out
 	    Uint32 timetoshutdown = SDL_GetTicks();
@@ -7418,6 +7420,7 @@ bind_failed:
 	    closeNetworkInterfaces();
 
 #ifdef NINTENDO
+		nxShutdownWireless();
 		nxEndParentalControls();
 		logoutOfEpic();
 #endif
@@ -7834,6 +7837,28 @@ bind_failed:
 			}
 #endif
 		}
+		else if ( directConnect )
+		{
+#ifdef NINTENDO
+			if ( ticks % TICKS_PER_SECOND == 0 ) {
+				int numplayers = 0;
+				for (int c = 0; c < MAXPLAYERS; ++c) {
+					if (!client_disconnected[c]) {
+						++numplayers;
+					}
+				}
+
+				char address[64];
+				nxGetWirelessAddress(address, sizeof(address));
+				bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+				if (!result) {
+					disconnectFromLobby();
+					destroyMainMenu();
+					createMainMenu(false);
+				}
+			}
+#endif
+		}
 	}
 
 	static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
@@ -8246,8 +8271,7 @@ bind_failed:
 			client_disconnected[playerDisconnected] = true;
 		    if (playerDisconnected == clientnum || playerDisconnected == 0) {
 			    // we got dropped
-                multiplayer = SINGLE; // so we don't send DISC packets
-                disconnectFromLobby();
+                disconnectFromLobby(false);
 	            destroyMainMenu();
 	            createMainMenu(false);
                 connectionErrorPrompt("The lobby has been closed\nby the host.");
@@ -8266,8 +8290,7 @@ bind_failed:
 
 	    // kicked
 	    {'KICK', [](){
-            multiplayer = SINGLE; // so we don't send DISC packets
-            disconnectFromLobby();
+            disconnectFromLobby(false);
             destroyMainMenu();
             createMainMenu(false);
             connectionErrorPrompt("You have been kicked\nfrom the lobby.");
@@ -8299,7 +8322,7 @@ bind_failed:
 				    // 15 second timeout
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
-					disconnectFromLobby();
+					disconnectFromLobby(false);
 					closePrompt("connect_prompt");
 					connectionErrorPrompt(error_str.c_str());
 					connectingToLobbyStatus = EResult::k_EResultOK;
@@ -8313,7 +8336,7 @@ bind_failed:
 				    // 15 second timeout
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
-					disconnectFromLobby();
+					disconnectFromLobby(false);
 					closePrompt("connect_prompt");
 					connectionErrorPrompt(error_str.c_str());
 					EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_Success);
@@ -8391,7 +8414,6 @@ bind_failed:
                     int error = clientnum;
                     clientnum = 0;
 					printlog("connection attempt denied by server, error code: %d.\n", error);
-					multiplayer = SINGLE;
 				    //flushP2PPackets(2000, 5000);
 
 #ifdef STEAMWORKS
@@ -8427,9 +8449,18 @@ bind_failed:
                     connectionErrorPrompt(error_str);
 
                     // reset connection
-                    multiplayer = SINGLE;
-                    disconnectFromLobby();
+                    disconnectFromLobby(false);
 
+#ifdef NINTENDO
+					// recover wireless state
+					if (directConnect) {
+						nxShutdownWireless();
+						if (!nxInitWireless()) {
+							destroyMainMenu();
+							createMainMenu(false);
+						}
+					}
+#endif
                     return;
 				} else {
 					// join game succeeded, advance to lobby
@@ -8780,19 +8811,27 @@ bind_failed:
             }
             text->setText(buf);
 
-            // here is the connection polling loop for online lobbies
-            // this should be moved to lobbies.cpp (actually it was largely lifted from there - put it back!)
-            if (!directConnect) {
+            // here is the connection polling loop
+			if (directConnect) {
+				if (seconds >= 15) {
+					systemErrorPrompt("Failed to connect to lobby.");
+					closePrompt("connect_prompt");
+#ifdef NINTENDO
+					// recover wireless state
+					nxShutdownWireless();
+					if (!nxInitWireless()) {
+						destroyMainMenu();
+						createMainMenu(false);
+					}
+#endif
+				}
+			} else {
 #ifdef STEAMWORKS
                 if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
                     if (joinLobbyWaitingForHostResponse) {
 		                if (connectingToLobbyStatus != EResult::k_EResultOK) {
 		                    resetLobbyJoinFlowState();
-
-			                // close current window
-			                auto frame = static_cast<Frame*>(widget.getParent());
-			                auto dimmer = static_cast<Frame*>(frame->getParent());
-			                dimmer->removeSelf();
+							closePrompt("connect_prompt");
 
 			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(connectingToLobbyStatus));
 							connectionErrorPrompt(error_str.c_str());
@@ -8828,11 +8867,7 @@ bind_failed:
                     if (EOS.bJoinLobbyWaitingForHostResponse) {
 		                if (EOS.ConnectingToLobbyStatus != static_cast<int>(EOS_EResult::EOS_Success)) {
 		                    resetLobbyJoinFlowState();
-
-			                // close current window
-			                auto frame = static_cast<Frame*>(widget.getParent());
-			                auto dimmer = static_cast<Frame*>(frame->getParent());
-			                dimmer->removeSelf();
+							closePrompt("connect_prompt");
 
 			                auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(static_cast<int>(EOS.ConnectingToLobbyStatus));
 							connectionErrorPrompt(error_str.c_str());
@@ -8852,8 +8887,19 @@ bind_failed:
             }
             },
             [](Button&){ // cancel
-            disconnectFromLobby();
-            closePrompt("connect_prompt");
+			closePrompt("connect_prompt");
+            disconnectFromLobby(false);
+
+#ifdef NINTENDO
+			// recover wireless state
+			if (directConnect) {
+				nxShutdownWireless();
+				if (!nxInitWireless()) {
+					destroyMainMenu();
+					createMainMenu(false);
+				}
+			}
+#endif
             });
 
         // setup game state
@@ -8927,7 +8973,7 @@ bind_failed:
 #ifdef STEAMWORKS
 						if (LobbyHandler.crossplayEnabled) {
 							// can't join an epic lobby if crossplay is not enabled
-							return false;
+							goto failed;
 						}
 #endif
 		                // save address for next time
@@ -8972,12 +9018,17 @@ bind_failed:
 			    }
 			}
 #endif
-	        closePrompt("connect_prompt");
-	        connectionErrorPrompt("Unable to join lobby.\nInvalid room code.");
-	        multiplayer = SINGLE;
-	        disconnectFromLobby();
-	        return false;
+			connectionErrorPrompt("Unable to join lobby.\nInvalid room code.");
+	        goto failed;
         } else if (lobbyType == LobbyType::LobbyLAN) {
+#ifdef NINTENDO
+			assert(pLobby);
+			int* lobby = static_cast<int*>(pLobby);
+			if (!nxJoinLobby(*lobby)) {
+				goto failed;
+			}
+#endif
+
             // copy address
             char address_copy[128];
             int address_len = (int)strlen(address);
@@ -9012,12 +9063,9 @@ bind_failed:
 		    if (SDLNet_ResolveHost(&net_server, address_copy, port) == -1) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to resolve host at:\n%s", address);
-			    printlog(buf);
-			    closePrompt("connect_prompt");
 				systemErrorPrompt(buf);
-			    multiplayer = SINGLE;
-			    disconnectFromLobby();
-			    return false;
+				printlog(buf);
+				goto failed;
 		    }
 
 		    // open sockets
@@ -9025,12 +9073,9 @@ bind_failed:
 		    if (!(net_sock = SDLNet_UDP_Open(NETWORK_PORT_CLIENT))) {
 			    char buf[1024];
 			    snprintf(buf, sizeof(buf), "Failed to open UDP socket.");
-			    printlog(buf);
-			    closePrompt("connect_prompt");
 				systemErrorPrompt(buf);
-			    multiplayer = SINGLE;
-			    disconnectFromLobby();
-			    return false;
+				printlog(buf);
+				goto failed;
 		    }
 
 		    printlog("successfully contacted server at %s.\n", address);
@@ -9039,10 +9084,25 @@ bind_failed:
 	    }
 
 	    // connection initiation failed for unknown reason
+		connectionErrorPrompt("Failed to join lobby.");
+
+failed:
 	    closePrompt("connect_prompt");
-	    connectionErrorPrompt("Failed to join lobby.");
-	    multiplayer = SINGLE;
-	    disconnectFromLobby();
+	    disconnectFromLobby(false);
+
+#ifdef NINTENDO
+		// recover wireless state
+		if (directConnect) {
+			nxShutdownWireless();
+			if (!nxInitWireless()) {
+				destroyMainMenu();
+				createMainMenu(false);
+			} else {
+				refreshLobbyBrowser();
+			}
+		}
+#endif
+
 	    return false;
 	}
 
@@ -9947,8 +10007,8 @@ bind_failed:
 			setting->setColor(0);
 			setting->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			setting->addWidgetAction("MenuStart", "confirm");
-			setting->addWidgetAction("MenuSelect", "chat");
-			setting->addWidgetAction("MenuAlt2", "privacy");
+			setting->addWidgetAction("MenuPageRightAlt", "chat");
+			setting->addWidgetAction("MenuPageLeftAlt", "privacy");
 			setting->setWidgetBack("back_button");
 			if (c > 0) {
 				setting->setWidgetUp((std::string("setting") + std::to_string(c - 1)).c_str());
@@ -10001,6 +10061,14 @@ bind_failed:
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
 				break;
 			}
+
+			// rescue cursor
+			setting->setTickCallback([](Widget& widget){
+				assert(main_menu_frame);
+				if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+					widget.select();
+				}
+				});
 		}
 
 		auto achievements = card->addField("achievements", 256);
@@ -10076,8 +10144,8 @@ bind_failed:
 		custom_difficulty->setText("Game Flags");
 		custom_difficulty->setWidgetSearchParent(name.c_str());
 		custom_difficulty->addWidgetAction("MenuStart", "confirm");
-		custom_difficulty->addWidgetAction("MenuSelect", "chat");
-		custom_difficulty->addWidgetAction("MenuAlt2", "privacy");
+		custom_difficulty->addWidgetAction("MenuPageRightAlt", "chat");
+		custom_difficulty->addWidgetAction("MenuPageLeftAlt", "privacy");
 		custom_difficulty->setWidgetBack("back_button");
 		custom_difficulty->setWidgetUp("hard");
 		custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
@@ -10123,8 +10191,8 @@ bind_failed:
 			invite->setHighlightColor(0xffffffff);
 			invite->setWidgetSearchParent(name.c_str());
 			invite->addWidgetAction("MenuStart", "confirm");
-			invite->addWidgetAction("MenuSelect", "chat");
-			invite->addWidgetAction("MenuAlt2", "privacy");
+			invite->addWidgetAction("MenuPageRightAlt", "chat");
+			invite->addWidgetAction("MenuPageLeftAlt", "privacy");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom_difficulty");
 			invite->setWidgetDown("friends");
@@ -10202,8 +10270,8 @@ bind_failed:
 			friends->setHighlightColor(0xffffffff);
 			friends->setWidgetSearchParent(name.c_str());
 			friends->addWidgetAction("MenuStart", "confirm");
-			friends->addWidgetAction("MenuSelect", "chat");
-			friends->addWidgetAction("MenuAlt2", "privacy");
+			friends->addWidgetAction("MenuPageRightAlt", "chat");
+			friends->addWidgetAction("MenuPageLeftAlt", "privacy");
 			friends->setWidgetBack("back_button");
 			friends->setWidgetUp("invite");
 			friends->setWidgetDown("open");
@@ -10287,8 +10355,8 @@ bind_failed:
 			open->setHighlightColor(0xffffffff);
 			open->setWidgetSearchParent(name.c_str());
 			open->addWidgetAction("MenuStart", "confirm");
-			open->addWidgetAction("MenuSelect", "chat");
-			open->addWidgetAction("MenuAlt2", "privacy");
+			open->addWidgetAction("MenuPageRightAlt", "chat");
+			open->addWidgetAction("MenuPageLeftAlt", "privacy");
 			open->setWidgetBack("back_button");
 			open->setWidgetUp("friends");
 			open->setWidgetDown("player_count_2");
@@ -10363,8 +10431,8 @@ bind_failed:
 		    player_count->setColor(uint32ColorWhite);
 		    player_count->setWidgetSearchParent(name.c_str());
 			player_count->addWidgetAction("MenuStart", "confirm");
-			player_count->addWidgetAction("MenuSelect", "chat");
-			player_count->addWidgetAction("MenuAlt2", "privacy");
+			player_count->addWidgetAction("MenuPageRightAlt", "chat");
+			player_count->addWidgetAction("MenuPageLeftAlt", "privacy");
 			player_count->setWidgetBack("back_button");
 			player_count->setWidgetUp(online ? "open" : "custom_difficulty");
 		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
@@ -10492,8 +10560,8 @@ bind_failed:
 		    kick_player->setColor(uint32ColorWhite);
 		    kick_player->setWidgetSearchParent(name.c_str());
 			kick_player->addWidgetAction("MenuStart", "confirm");
-			kick_player->addWidgetAction("MenuSelect", "chat");
-			kick_player->addWidgetAction("MenuAlt2", "privacy");
+			kick_player->addWidgetAction("MenuPageRightAlt", "chat");
+			kick_player->addWidgetAction("MenuPageLeftAlt", "privacy");
 			kick_player->setWidgetBack("back_button");
 		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
 		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
@@ -11092,8 +11160,8 @@ bind_failed:
 		    race->setHighlightColor(0xffffffff);
 		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		    race->addWidgetAction("MenuStart", "confirm");
-		    race->addWidgetAction("MenuSelect", "chat");
-		    race->addWidgetAction("MenuAlt2", "privacy");
+		    race->addWidgetAction("MenuPageRightAlt", "chat");
+		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c == 0) {
 		        race->setWidgetRight("appearances");
@@ -11166,8 +11234,8 @@ bind_failed:
 		appearances->addWidgetMovement("MenuListCancel", "appearances");
 		appearances->addWidgetMovement("MenuListConfirm", "appearances");
 		appearances->addWidgetAction("MenuStart", "confirm");
-		appearances->addWidgetAction("MenuSelect", "chat");
-		appearances->addWidgetAction("MenuAlt2", "privacy");
+		appearances->addWidgetAction("MenuPageRightAlt", "chat");
+		appearances->addWidgetAction("MenuPageLeftAlt", "privacy");
 		appearances->setWidgetBack("back_button");
 	    appearances->addWidgetAction("MenuPageLeft", "male");
 	    appearances->addWidgetAction("MenuPageRight", "female");
@@ -11190,13 +11258,31 @@ bind_failed:
 				appearance_uparrow->setInvisible(false);
 				appearance_downarrow->setDisabled(false);
 				appearance_downarrow->setInvisible(false);
-			} else if (!frame->isSelected() &&
+				auto bottom = parent->findFrame("bottom");
+				if (bottom) {
+					auto male = parent->findButton("male");
+					auto female = parent->findButton("female");
+					auto abilities = parent->findButton("disable_abilities");
+					male->setHideGlyphs(true);
+					female->setHideGlyphs(true);
+					abilities->setHideGlyphs(true);
+				}
+			} else if (!frame->isActivated() &&
 				!appearance_uparrow->isSelected() &&
 				!appearance_downarrow->isSelected()) {
 				appearance_uparrow->setDisabled(true);
 				appearance_uparrow->setInvisible(true);
 				appearance_downarrow->setDisabled(true);
 				appearance_downarrow->setInvisible(true);
+				auto bottom = parent->findFrame("bottom");
+				if (bottom) {
+					auto male = parent->findButton("male");
+					auto female = parent->findButton("female");
+					auto abilities = parent->findButton("disable_abilities");
+					male->setHideGlyphs(false);
+					female->setHideGlyphs(false);
+					abilities->setHideGlyphs(false);
+				}
 			}
 	        if (widget.isSelected()) {
 	            auto hover = parent->findImage("hover"); assert(hover);
@@ -11249,8 +11335,8 @@ bind_failed:
 	        }
 	        });
 		appearance_uparrow->addWidgetAction("MenuStart", "confirm");
-		appearance_uparrow->addWidgetAction("MenuSelect", "chat");
-		appearance_uparrow->addWidgetAction("MenuAlt2", "privacy");
+		appearance_uparrow->addWidgetAction("MenuPageRightAlt", "chat");
+		appearance_uparrow->addWidgetAction("MenuPageLeftAlt", "privacy");
 		appearance_uparrow->setWidgetBack("back_button");
 	    appearance_uparrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_uparrow->addWidgetAction("MenuPageRight", "female");
@@ -11287,8 +11373,8 @@ bind_failed:
 	        }
 	        });
 		appearance_downarrow->addWidgetAction("MenuStart", "confirm");
-		appearance_downarrow->addWidgetAction("MenuSelect", "chat");
-		appearance_downarrow->addWidgetAction("MenuAlt2", "privacy");
+		appearance_downarrow->addWidgetAction("MenuPageRightAlt", "chat");
+		appearance_downarrow->addWidgetAction("MenuPageLeftAlt", "privacy");
 		appearance_downarrow->setWidgetBack("back_button");
 	    appearance_downarrow->addWidgetAction("MenuPageLeft", "male");
 	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
@@ -11365,8 +11451,8 @@ bind_failed:
 		disable_abilities->setStyle(Button::style_t::STYLE_CHECKBOX);
 		disable_abilities->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		disable_abilities->addWidgetAction("MenuStart", "confirm");
-		disable_abilities->addWidgetAction("MenuSelect", "chat");
-		disable_abilities->addWidgetAction("MenuAlt2", "privacy");
+		disable_abilities->addWidgetAction("MenuPageRightAlt", "chat");
+		disable_abilities->addWidgetAction("MenuPageLeftAlt", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
 		disable_abilities->setWidgetUp(races[num_races - 1]);
@@ -11417,8 +11503,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{44, details ? 48 : 60, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "confirm");
-		male_button->addWidgetAction("MenuSelect", "chat");
-		male_button->addWidgetAction("MenuAlt2", "privacy");
+		male_button->addWidgetAction("MenuPageRightAlt", "chat");
+		male_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetUp("disable_abilities");
 		male_button->setWidgetDown("confirm");
@@ -11463,8 +11549,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{106, details ? 48 : 60, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "confirm");
-		female_button->addWidgetAction("MenuSelect", "chat");
-		female_button->addWidgetAction("MenuAlt2", "privacy");
+		female_button->addWidgetAction("MenuPageRightAlt", "chat");
+		female_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetUp("disable_abilities");
 		female_button->setWidgetDown("confirm");
@@ -11506,8 +11592,8 @@ bind_failed:
 		show_race_info->setSize(SDL_Rect{168, details ? 48 : 60, 110, 52});
 		show_race_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		show_race_info->addWidgetAction("MenuStart", "confirm");
-		show_race_info->addWidgetAction("MenuSelect", "chat");
-		show_race_info->addWidgetAction("MenuAlt2", "privacy");
+		show_race_info->addWidgetAction("MenuPageRightAlt", "chat");
+		show_race_info->addWidgetAction("MenuPageLeftAlt", "privacy");
 		show_race_info->setWidgetBack("back_button");
 		show_race_info->setWidgetUp("disable_abilities");
 		show_race_info->setWidgetDown("confirm");
@@ -12127,8 +12213,8 @@ bind_failed:
 		class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_info->addWidgetAction("MenuStart", "confirm");
-		class_info->addWidgetAction("MenuSelect", "chat");
-		class_info->addWidgetAction("MenuAlt2", "privacy");
+		class_info->addWidgetAction("MenuPageRightAlt", "chat");
+		class_info->addWidgetAction("MenuPageLeftAlt", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
 		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
@@ -12208,8 +12294,8 @@ bind_failed:
 				button->setWidgetDown(classes_in_order[num_classes - 1]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
-			button->addWidgetAction("MenuSelect", "chat");
-			button->addWidgetAction("MenuAlt2", "privacy");
+			button->addWidgetAction("MenuPageRightAlt", "chat");
+			button->addWidgetAction("MenuPageLeftAlt", "privacy");
 			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
@@ -12307,7 +12393,8 @@ bind_failed:
 								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
 									int len = snprintf(buf, sizeof(buf), "%s: We need a %s.",
 										players[player]->getAccountName(), widget.getName());
-									sendChatMessageOverNet(0xffffffff, buf, (size_t)len);
+									Uint32 color = playerColor(player, colorblind, false);
+									sendChatMessageOverNet(color, buf, (size_t)len);
 									lastClassRequest = ticks;
 								} else {
 									snprintf(buf, sizeof(buf), "*** Please wait %d seconds before suggesting another class. ***",
@@ -12449,8 +12536,8 @@ bind_failed:
 #endif
 		name_field->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		name_field->addWidgetAction("MenuStart", "ready");
-		name_field->addWidgetAction("MenuSelect", "chat");
-		name_field->addWidgetAction("MenuAlt2", "privacy");
+		name_field->addWidgetAction("MenuPageRightAlt", "chat");
+		name_field->addWidgetAction("MenuPageLeftAlt", "privacy");
 		name_field->setWidgetBack("back_button");
 		name_field->setWidgetRight("randomize_name");
 		name_field->setWidgetDown("game_settings");
@@ -12485,8 +12572,8 @@ bind_failed:
 		randomize_name->setSize(SDL_Rect{236, 22, 54, 54});
 		randomize_name->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_name->addWidgetAction("MenuStart", "ready");
-		randomize_name->addWidgetAction("MenuSelect", "chat");
-		randomize_name->addWidgetAction("MenuAlt2", "privacy");
+		randomize_name->addWidgetAction("MenuPageRightAlt", "chat");
+		randomize_name->addWidgetAction("MenuPageLeftAlt", "privacy");
 		randomize_name->setWidgetBack("back_button");
 		randomize_name->setWidgetLeft("name");
 		randomize_name->setWidgetDown("game_settings");
@@ -12495,7 +12582,7 @@ bind_failed:
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
 			int choice;
-			for (choice = 0; choice < names.size() - 1; ++choice) {
+			for (choice = 0; choice < names.size(); ++choice) {
 				if (names[choice] == stats[index]->name) {
 					++choice;
 					break;
@@ -12531,8 +12618,8 @@ bind_failed:
 		game_settings->setFont(smallfont_outline);
 		game_settings->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		game_settings->addWidgetAction("MenuStart", "ready");
-		game_settings->addWidgetAction("MenuSelect", "chat");
-		game_settings->addWidgetAction("MenuAlt2", "privacy");
+		game_settings->addWidgetAction("MenuPageRightAlt", "chat");
+		game_settings->addWidgetAction("MenuPageLeftAlt", "privacy");
 		game_settings->setWidgetBack("back_button");
 		game_settings->setWidgetUp("name");
 		game_settings->setWidgetDown("male");
@@ -12562,8 +12649,8 @@ bind_failed:
 		male_button->setSize(SDL_Rect{0, 0, 58, 52});
 		male_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		male_button->addWidgetAction("MenuStart", "ready");
-		male_button->addWidgetAction("MenuSelect", "chat");
-		male_button->addWidgetAction("MenuAlt2", "privacy");
+		male_button->addWidgetAction("MenuPageRightAlt", "chat");
+		male_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		male_button->setWidgetBack("back_button");
 		male_button->setWidgetRight("female");
 		male_button->setWidgetUp("game_settings");
@@ -12604,8 +12691,8 @@ bind_failed:
 		female_button->setSize(SDL_Rect{62, 0, 58, 52});
 		female_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		female_button->addWidgetAction("MenuStart", "ready");
-		female_button->addWidgetAction("MenuSelect", "chat");
-		female_button->addWidgetAction("MenuAlt2", "privacy");
+		female_button->addWidgetAction("MenuPageRightAlt", "chat");
+		female_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		female_button->setWidgetBack("back_button");
 		female_button->setWidgetLeft("male");
 		female_button->setWidgetRight("race");
@@ -12653,8 +12740,8 @@ bind_failed:
 		race_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBasePress_00.png");
 		race_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		race_button->addWidgetAction("MenuStart", "ready");
-		race_button->addWidgetAction("MenuSelect", "chat");
-		race_button->addWidgetAction("MenuAlt2", "privacy");
+		race_button->addWidgetAction("MenuPageRightAlt", "chat");
+		race_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		race_button->setWidgetBack("back_button");
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
@@ -12751,8 +12838,8 @@ bind_failed:
 		randomize_class->setSize(SDL_Rect{236, 226, 54, 54});
 		randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		randomize_class->addWidgetAction("MenuStart", "ready");
-		randomize_class->addWidgetAction("MenuSelect", "chat");
-		randomize_class->addWidgetAction("MenuAlt2", "privacy");
+		randomize_class->addWidgetAction("MenuPageRightAlt", "chat");
+		randomize_class->addWidgetAction("MenuPageLeftAlt", "privacy");
 		randomize_class->setWidgetBack("back_button");
 		randomize_class->setWidgetLeft("class");
 		randomize_class->setWidgetDown("ready");
@@ -12818,8 +12905,8 @@ bind_failed:
 		class_button->setBorder(0);
 		class_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		class_button->addWidgetAction("MenuStart", "ready");
-		class_button->addWidgetAction("MenuSelect", "chat");
-		class_button->addWidgetAction("MenuAlt2", "privacy");
+		class_button->addWidgetAction("MenuPageRightAlt", "chat");
+		class_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		class_button->setWidgetBack("back_button");
 		class_button->setWidgetRight("randomize_class");
 		class_button->setWidgetUp("male");
@@ -12843,11 +12930,17 @@ bind_failed:
 		ready_button->setFont(bigfont_outline);
 		ready_button->setText("Ready");
 		ready_button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-		ready_button->addWidgetAction("MenuSelect", "chat");
-		ready_button->addWidgetAction("MenuAlt2", "privacy");
+		ready_button->addWidgetAction("MenuPageRightAlt", "chat");
+		ready_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		ready_button->setWidgetBack("back_button");
 		ready_button->setWidgetUp("class");
 		ready_button->setCallback([](Button& button){ready_button_fn(button, button.getOwner());});
+		ready_button->setTickCallback([](Widget& widget){
+			assert(main_menu_frame);
+			if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+				widget.select();
+			}
+			});
 		ready_button->select();
 	}
 
@@ -12982,31 +13075,23 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		if (colorblind) {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
-			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
-			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
-			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
-			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
-			}
-		} else {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX); break;
-			case 0: banner->setColor(uint32ColorPlayer1); break;
-			case 1: banner->setColor(uint32ColorPlayer2); break;
-			case 2: banner->setColor(uint32ColorPlayer3); break;
-			case 3: banner->setColor(uint32ColorPlayer4); break;
-			}
-		}
+		banner->setColor(playerColor(index, colorblind, false));
 
 		auto start = card->addField("start", 128);
 		start->setFont(smallfont_outline);
 		start->setSize(SDL_Rect{(card->getSize().w - 200) / 2, card->getSize().h / 2, 200, 50});
 		start->setVJustify(Field::justify_t::TOP);
 		start->setHJustify(Field::justify_t::CENTER);
+		start->setHideGlyphs(true);
+		start->setHideSelectors(true);
+		start->setWidgetBack("back_button");
 		start->setTickCallback([](Widget& widget){
 		    const int player = widget.getOwner();
+			
+			assert(main_menu_frame);
+			if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+				widget.select();
+			}
 
             // determine whether I should own the keyboard
 #ifndef NINTENDO
@@ -13251,23 +13336,7 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		if (colorblind) {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
-			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
-			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
-			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
-			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
-			}
-		} else {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX); break;
-			case 0: banner->setColor(uint32ColorPlayer1); break;
-			case 1: banner->setColor(uint32ColorPlayer2); break;
-			case 2: banner->setColor(uint32ColorPlayer3); break;
-			case 3: banner->setColor(uint32ColorPlayer4); break;
-			}
-		}
+		banner->setColor(playerColor(index, colorblind, false));
 
 		auto invite = card->addButton("invite_button");
 		invite->setText("Click to Invite");
@@ -13316,23 +13385,7 @@ bind_failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		if (colorblind) {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
-			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
-			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
-			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
-			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
-			}
-		} else {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX); break;
-			case 0: banner->setColor(uint32ColorPlayer1); break;
-			case 1: banner->setColor(uint32ColorPlayer2); break;
-			case 2: banner->setColor(uint32ColorPlayer3); break;
-			case 3: banner->setColor(uint32ColorPlayer4); break;
-			}
-		}
+		banner->setColor(playerColor(index, colorblind, false));
 
 		auto text = card->addField("text", 128);
 		text->setText("Waiting for\nplayer to join");
@@ -13438,30 +13491,15 @@ bind_failed:
 			"backdrop"
 		);
 
+		// character name
 		auto banner = card->addField("banner", 64); assert(banner);
 		banner->setFont(banner_font);
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		if (colorblind) {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX_colorblind); break;
-			case 0: banner->setColor(uint32ColorPlayer1_colorblind); break;
-			case 1: banner->setColor(uint32ColorPlayer2_colorblind); break;
-			case 2: banner->setColor(uint32ColorPlayer3_colorblind); break;
-			case 3: banner->setColor(uint32ColorPlayer4_colorblind); break;
-			}
-		} else {
-			switch (index) {
-			default: banner->setColor(uint32ColorPlayerX); break;
-			case 0: banner->setColor(uint32ColorPlayer1); break;
-			case 1: banner->setColor(uint32ColorPlayer2); break;
-			case 2: banner->setColor(uint32ColorPlayer3); break;
-			case 3: banner->setColor(uint32ColorPlayer4); break;
-			}
-		}
+		banner->setColor(playerColor(index, colorblind, false));
 
-		// name needs to be updated constantly in case it gets updated over the net
+		// character name needs to be updated constantly in case it gets updated over the net
 		banner->setTickCallback([](Widget& widget){
 		    const int player = widget.getOwner();
 		    auto field = static_cast<Field*>(&widget);
@@ -13477,24 +13515,41 @@ bind_failed:
 		        strcpy(shortname, stats[player]->name);
 		    }
 
-		    char buf[128];
-		    snprintf(buf, sizeof(buf), "%s\n(%s)", shortname, players[player]->getAccountName());
-
-		    // announce new player
-		    if (multiplayer == SERVER) {
-		        if (!client_disconnected[player] && newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
-		            newPlayer[player] = false;
-
-		            char buf[1024];
-		            int len = snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
-		            if (len > 0) {
-		                sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
-		            }
-		        }
-		    }
-
-		    field->setText(buf);
+			// set the name
+			field->setText(shortname);
 		    });
+
+		// account name
+		auto account = card->addField("account", 64); assert(account);
+		account->setFont(smallfont_outline);
+		account->setSize(SDL_Rect{ (card->getSize().w - 260) / 2, 54, 260, 76 });
+		account->setVJustify(Field::justify_t::TOP);
+		account->setHJustify(Field::justify_t::CENTER);
+		account->setColor(playerColor(index, colorblind, false));
+
+		// account name needs to be updated constantly in case it gets updated over the net
+		account->setTickCallback([](Widget& widget) {
+			const int player = widget.getOwner();
+			auto field = static_cast<Field*>(&widget);
+
+			// set name
+			char buf[64];
+			snprintf(buf, sizeof(buf), "(%s)", players[player]->getAccountName());
+			field->setText(buf);
+
+			// announce new player
+			if (multiplayer == SERVER) {
+				if (!client_disconnected[player] && newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
+					newPlayer[player] = false;
+
+					char buf[1024];
+					int len = snprintf(buf, sizeof(buf), "*** %s has joined the game ***", players[player]->getAccountName());
+					if (len > 0) {
+						sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
+					}
+				}
+			}
+			});
 
         if (local) {
             static auto cancel_fn = [](int index){
@@ -13543,6 +13598,13 @@ bind_failed:
 		    } else {
 		        button->setCallback([](Button& button){ready_fn(button.getOwner());}); 
 		    }
+			button->setTickCallback([](Widget& widget){
+				// rescue focus
+				assert(main_menu_frame);
+				if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+					widget.select();
+				}
+				});
 		    button->select();
 		} else {
 		    auto status = card->addField("status", 64); assert(status);
@@ -13817,6 +13879,12 @@ bind_failed:
                 "*#images/ui/Main Menus/Play/PlayerCreation/Banner.png",
                 "background");
 
+#ifdef NINTENDO
+			const bool roomcodeDisabled = directConnect;
+#else
+			const bool roomcodeDisabled = false;
+#endif
+
 		    auto back_button = createBackWidget(banner, [](Button&){
 		        if (currentLobbyType == LobbyType::LobbyLocal) {
 			        soundCancel();
@@ -13928,10 +13996,9 @@ bind_failed:
 		        field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		        field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
 		        field->setWidgetSearchParent(banner->getName());
-				field->addWidgetAction("MenuSelect", "chat");
-				field->addWidgetAction("MenuAlt2", "privacy");
-		        field->setWidgetBack("back_button");
-		        field->setWidgetRight("privacy");
+				field->addWidgetAction("MenuPageRightAlt", "chat");
+				field->addWidgetAction("MenuPageLeftAlt", "privacy");
+		        field->setWidgetRight(roomcodeDisabled ? "chat" : "privacy");
 		        if (type != LobbyType::LobbyJoined) {
                     field->setCallback([](Field& field){
                         if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -13963,6 +14030,12 @@ bind_failed:
                     }
                 }
                 field->setTickCallback([](Widget& widget){
+					if (widget.isSelected()) {
+						auto& input = Input::inputs[widget.getOwner()];
+						if (input.consumeBinaryToggle("MenuCancel")) {
+							widget.deselect();
+						}
+					}
                     auto field = static_cast<Field*>(&widget);
 	                if (multiplayer == CLIENT) {
 	                    if (LobbyHandler.getJoiningType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -13986,7 +14059,7 @@ bind_failed:
 			} else {
 			    if (directConnect) {
 #ifdef NINTENDO
-                    type_str = "WiFi Lobby";
+                    type_str = "Wireless Lobby";
 #else
 					type_str = "LAN Lobby";
 #endif
@@ -14097,34 +14170,45 @@ bind_failed:
 			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292, 0, 288, 48});
 		        roomcode->setFont(bigfont_outline);
 
-		        // privacy button
-		        auto privacy = banner->addButton("privacy");
-				privacy->setOwner(clientnum);
-		        privacy->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44, 8, 40, 40});
-		        privacy->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
-		        privacy->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
-		        privacy->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
-	            privacy->setColor(0xffffffff);
-	            privacy->setHighlightColor(0xffffffff);
-		        privacy->setTextHighlightColor(0xffffffff);
-	            privacy->setTextColor(0xffffffff);
-	            privacy->setFont(smallfont_outline);
-				privacy->setAlwaysShowGlyphs(true);
-		        privacy->setWidgetSearchParent(banner->getName());
-				privacy->addWidgetAction("MenuSelect", "chat");
-				privacy->addWidgetAction("MenuAlt2", "privacy");
-	            privacy->setWidgetBack("back_button");
-	            privacy->setWidgetLeft("lobby_name");
-	            privacy->setWidgetRight("chat");
-		        privacy->setCallback([](Button& button){
-		            soundToggle();
-		            auto banner = static_cast<Frame*>(button.getParent()); assert(banner);
-		            auto roomcode = banner->findField("roomcode"); assert(roomcode);
-		            hide_roomcode(*roomcode, button, !hidden_roomcode);
-		            });
+				if (roomcodeDisabled) {
+					roomcode->setInvisible(true);
+				} else {
+					// privacy button
+					auto privacy = banner->addButton("privacy");
+					privacy->setOwner(clientnum);
+					privacy->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44, 8, 40, 40});
+					privacy->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
+					privacy->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
+					privacy->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
+					privacy->setColor(0xffffffff);
+					privacy->setHighlightColor(0xffffffff);
+					privacy->setTextHighlightColor(0xffffffff);
+					privacy->setTextColor(0xffffffff);
+					privacy->setFont(smallfont_outline);
+					privacy->setAlwaysShowGlyphs(true);
+					privacy->setWidgetSearchParent(banner->getName());
+					privacy->addWidgetAction("MenuPageRightAlt", "chat");
+					privacy->addWidgetAction("MenuPageLeftAlt", "privacy");
+					privacy->setWidgetLeft("lobby_name");
+					privacy->setWidgetRight("chat");
+					privacy->setCallback([](Button& button){
+						soundToggle();
+						auto banner = static_cast<Frame*>(button.getParent()); assert(banner);
+						auto roomcode = banner->findField("roomcode"); assert(roomcode);
+						hide_roomcode(*roomcode, button, !hidden_roomcode);
+						});
+					privacy->setTickCallback([](Widget& widget){
+						if (widget.isSelected()) {
+							auto& input = Input::inputs[widget.getOwner()];
+							if (input.consumeBinaryToggle("MenuCancel")) {
+								widget.deselect();
+							}
+						}
+						});
 
-		        // set default privacy
-		        hide_roomcode(*roomcode, *privacy, true);
+					// set default privacy
+					hide_roomcode(*roomcode, *privacy, true);
+				}
 
                 // chat button
 			    auto chat_button = banner->addButton("chat");
@@ -14146,14 +14230,20 @@ bind_failed:
 		        chat_button->setCallback([](Button& button){
 		            soundActivate();
 		            (void)toggleLobbyChatWindow();
+					button.select();
 		            });
 				chat_button->setAlwaysShowGlyphs(true);
 		        chat_button->setWidgetSearchParent(banner->getName());
-				chat_button->addWidgetAction("MenuSelect", "chat");
-				chat_button->addWidgetAction("MenuAlt2", "privacy");
-		        chat_button->setWidgetBack("back_button");
-		        chat_button->setWidgetLeft("privacy");
+				chat_button->addWidgetAction("MenuPageRightAlt", "chat");
+				chat_button->addWidgetAction("MenuPageLeftAlt", "privacy");
+		        chat_button->setWidgetLeft(roomcodeDisabled ? "lobby_name" : "privacy");
 		        chat_button->setTickCallback([](Widget& widget){
+					if (widget.isSelected()) {
+						auto& input = Input::inputs[widget.getOwner()];
+						if (input.consumeBinaryToggle("MenuCancel")) {
+							widget.deselect();
+						}
+					}
 		            auto button = static_cast<Button*>(&widget);
 		            if (new_lobby_chat_message_alert) {
 		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % 20;
@@ -14215,7 +14305,7 @@ bind_failed:
 		if (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline) {
             if (directConnect) {
 #ifdef NINTENDO
-				addLobbyChatMessage(uint32ColorBaronyBlue, "WiFi lobby opened successfully.");
+				addLobbyChatMessage(uint32ColorBaronyBlue, "Wireless lobby opened successfully.");
 #else
                 addLobbyChatMessage(uint32ColorBaronyBlue, "Server hosted on LAN successfully.");
 #endif
@@ -14231,7 +14321,7 @@ bind_failed:
 		else if (type == LobbyType::LobbyJoined) {
             if (directConnect) {
 #ifdef NINTENDO
-				addLobbyChatMessage(uint32ColorBaronyBlue, "Joined WiFi lobby successfully.");
+				addLobbyChatMessage(uint32ColorBaronyBlue, "Joined wireless lobby successfully.");
 #else
                 addLobbyChatMessage(uint32ColorBaronyBlue, "Joined LAN server successfully.");
 #endif
@@ -14390,23 +14480,7 @@ bind_failed:
                 	field->setText((std::string("P") + std::to_string(c + 1)).c_str());
 				}
                 field->setFont(bigfont_outline);
-				if (colorblind) {
-					switch (c) {
-					default: field->setColor(uint32ColorPlayerX_colorblind); break;
-					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
-					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
-					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
-					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
-					}
-				} else {
-					switch (c) {
-					default: field->setColor(uint32ColorPlayerX); break;
-					case 0: field->setColor(uint32ColorPlayer1); break;
-					case 1: field->setColor(uint32ColorPlayer2); break;
-					case 2: field->setColor(uint32ColorPlayer3); break;
-					case 3: field->setColor(uint32ColorPlayer4); break;
-					}
-				}
+				field->setColor(playerColor(c, colorblind, false));
                 ++num;
 	        }
 	    }
@@ -14606,14 +14680,15 @@ bind_failed:
 					// pressing A on a lobby after selecting it will join that lobby
 					const auto& lobby = lobbies[lobbyId];
 					if (!lobby.locked) {
-						if (connectToServer(lobby.address.c_str(), nullptr,
+						if (connectToServer(lobby.address.c_str(), entry.data,
 							directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
 							// only deselect the list if the connection begins
 							entry.parent.deselect();
 						}
 					}
 					else {
-						soundWarning();
+						errorPrompt("Unable to join lobby.\nLobby is locked.",
+							"Okay", [](Button&) {soundCancel(); closeMono(); });
 					}
 				}
 			}
@@ -14853,6 +14928,63 @@ bind_failed:
         UDPpacket* packet = nullptr;
 	};
 	static ScanNetworkResources scan;
+	static Uint32 scan_ticks = 0;
+
+	static void refreshLobbyBrowser() {
+		soundActivate();
+		clearLobbies(); // clear visible list
+		lobbies.clear(); // clear internal list
+		selectedLobby = -1; // select no lobby at all
+		scan_ticks = ticks;
+		if (directConnect) {
+#ifdef NINTENDO
+			int result = nxScanLobbies();
+			if (result >= 0) {
+				printlog("[NX] scanned and found %d lobbies", result);
+				for (int c = 0; c < result; ++c) {
+					LobbyInfo info;
+					info.name = nxLobbies[c].name;
+					info.players = nxLobbies[c].numplayers;
+					info.ping = nxLobbies[c].ping;
+					info.locked = nxLobbies[c].ingame;
+					info.flags = nxLobbies[c].svFlags;
+					info.address = nxLobbies[c].address;
+					addLobby(info);
+				}
+			}
+			else {
+				// error
+				multiplayer = SINGLE;
+				loadingsavegame = 0;
+				soundError();
+				closeNetworkInterfaces();
+				logoutOfEpic();
+				destroyMainMenu();
+				createMainMenu(false);
+			}
+#else
+			memcpy(scan.packet->data, "SCAN", 4);
+			scan.packet->len = 4;
+			scan.packet->address.host = 0xffffffff;
+			SDLNet_Write16(DEFAULT_PORT, &scan.packet->address.port);
+			//SDLNet_ResolveHost(&scan.packet->address, "224.0.0.150", DEFAULT_PORT);
+			sendPacket(scan.sock, -1, scan.packet, 0);
+#endif
+		}
+		else {
+			refreshOnlineLobbies();
+		}
+
+		assert(main_menu_frame);
+		auto window = main_menu_frame->findFrame("lobby_browser_window");
+		if (window) {
+			auto slider = window->findSlider("scroll_slider");
+			slider->setValue(0.f);
+			slider->setMinValue(0.f);
+			slider->setMaxValue(0.f);
+			slider->updateHandlePosition();
+		}
+	};
 
 	static void createLobbyBrowser(Button& button) {
 		selectedLobby = -1;
@@ -14866,6 +14998,15 @@ bind_failed:
 #if defined(NINTENDO)
 		mode = BrowserMode::LAN;
 		directConnect = true;
+		nxShutdownWireless();
+		if (!nxInitWireless()) {
+			multiplayer = SINGLE;
+			loadingsavegame = 0;
+			soundError();
+			closeNetworkInterfaces();
+			destroyMainMenu();
+			createMainMenu(false);
+		}
 #elif defined(STEAMWORKS)
 		mode = BrowserMode::Online;
 		directConnect = false;
@@ -14910,39 +15051,6 @@ bind_failed:
 		window->setActualSize(SDL_Rect{0, 0, 1020, 552});
 		window->setColor(0);
 		window->setBorder(0);
-
-		static Uint32 scan_ticks;
-		scan_ticks = ticks;
-
-		static auto refresh_fn = [](Button& button){
-		    soundActivate();
-		    clearLobbies(); // clear visible list
-	        lobbies.clear(); // clear internal list
-	        selectedLobby = -1; // select no lobby at all
-		    scan_ticks = ticks;
-            if (directConnect) {
-                memcpy(scan.packet->data, "SCAN", 4);
-                scan.packet->len = 4;
-#ifdef NINTENDO
-				SDLNet_ResolveHost(&scan.packet->address, "224.0.0.150", DEFAULT_PORT);
-				sendPacket(scan.sock, -1, scan.packet, 0);
-#endif
-				scan.packet->address.host = 0xffffffff;
-                SDLNet_Write16(DEFAULT_PORT, &scan.packet->address.port);
-                sendPacket(scan.sock, -1, scan.packet, 0);
-            } else {
-                refreshOnlineLobbies();
-                button.deselect();
-            }
-
-		    assert(main_menu_frame);
-		    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-            auto slider = window->findSlider("scroll_slider");
-		    slider->setValue(0.f);
-		    slider->setMinValue(0.f);
-		    slider->setMaxValue(0.f);
-			slider->updateHandlePosition();
-		    };
 
 		// while the window is open, listen for SCAN packets
 		window->setTickCallback([](Widget& widget){
@@ -15004,6 +15112,7 @@ bind_failed:
 #ifdef NINTENDO
 			nxEndParentalControls();
 			logoutOfEpic();
+			nxShutdownWireless();
 #endif
 
 		    // remove parent window
@@ -15241,7 +15350,7 @@ bind_failed:
 			interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online01.png";
 			mode = BrowserMode::Online;
 			directConnect = false;
-			refresh_fn(button);
+			refreshLobbyBrowser();
 			});
 #elif defined(USE_EOS)
 #if defined(NINTENDO)
@@ -15249,7 +15358,6 @@ bind_failed:
 			if (nxBeginParentalControls()) {
 				static Button* store_button;
 				store_button = static_cast<Button*>(&button);
-
 				auto callback = [](bool success){
 					if (success) {
 						auto frame = static_cast<Frame*>(store_button->getParent());
@@ -15257,14 +15365,14 @@ bind_failed:
 						interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
 						mode = BrowserMode::Online;
 						directConnect = false;
-						refresh_fn(*store_button);
+						refreshLobbyBrowser();
 					} else {
-						errorPrompt("Unable to connect to Epic Online\nOnline play is not available.", "Okay", [](Button&) {closeMono(); });
+						nxInitWireless();
+						errorPrompt("Unable to connect to Epic Online\nOnline play is not available.", "Okay", [](Button&) {closeMono();});
 						multiplayer = SINGLE;
 						soundError();
 					}
 				};
-
 				if (isConnectedToEpic()) {
 					callback(true);
 				} else {
@@ -15282,7 +15390,7 @@ bind_failed:
 				interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Online02.png";
 				mode = BrowserMode::Online;
 				directConnect = false;
-				refresh_fn(button);
+				refreshLobbyBrowser();
 				});
 		} else {
 			online_tab->setCallback([](Button& button){soundError();});
@@ -15302,7 +15410,7 @@ bind_failed:
 		lan_tab->setBorder(0);
 		lan_tab->setColor(0);
 #if defined(NINTENDO)
-		lan_tab->setText("WIFI");
+		lan_tab->setText("WIRELESS");
 #else
 		lan_tab->setText("LAN");
 #endif
@@ -15321,7 +15429,24 @@ bind_failed:
 		lan_tab->setCallback([](Button& button){
 #ifdef NINTENDO
 			nxEndParentalControls();
-#endif
+			nxShutdownWireless();
+			if (nxInitWireless()) {
+				auto frame = static_cast<Frame*>(button.getParent());
+				auto interior = frame->findImage("interior");
+				interior->path = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Wireless02.png";
+				mode = BrowserMode::LAN;
+				directConnect = true;
+				refreshLobbyBrowser();
+			} else {
+				multiplayer = SINGLE;
+				loadingsavegame = 0;
+				soundError();
+				closeNetworkInterfaces();
+				logoutOfEpic();
+				destroyMainMenu();
+				createMainMenu(false);
+			}
+#else
 			auto frame = static_cast<Frame*>(button.getParent());
 			auto interior = frame->findImage("interior");
 #if defined(STEAMWORKS) && defined(USE_EOS)
@@ -15331,7 +15456,8 @@ bind_failed:
 #endif
 			mode = BrowserMode::LAN;
 			directConnect = true;
-			refresh_fn(button);
+			refreshLobbyBrowser();
+#endif
 			});
 
 		auto refresh = window->addButton("refresh");
@@ -15350,9 +15476,15 @@ bind_failed:
 		refresh->setWidgetBack("back_button");
 		refresh->setWidgetLeft("lan_tab");
 		refresh->setWidgetDown("names");
-		refresh->setCallback(refresh_fn);
+		refresh->setCallback([](Button&){refreshLobbyBrowser();});
 
 		static auto enter_code_fn = [](Button& button){
+#ifdef NINTENDO
+			if (directConnect) {
+				soundError();
+				return;
+			}
+#endif
 		    static const char* guide_ipaddr = "Enter an IP address to connect to.";
 		    static const char* guide_roomcode = "Enter the code to a lobby you wish to connect to.";
 		    static const char* guide;
@@ -15401,12 +15533,28 @@ bind_failed:
 		enter_code->setWidgetRight("join_lobby");
 		enter_code->setWidgetUp("crossplay");
 		enter_code->setTickCallback([](Widget& widget){
-		    auto button = static_cast<Button*>(&widget);
+#ifdef NINTENDO
+			auto button = static_cast<Button*>(&widget);
 		    if (mode == BrowserMode::Online) {
 		        button->setText("Enter Lobby\nCode");
+				button->setTextColor(makeColor(255, 255, 255, 255));
+				button->setHighlightColor(makeColor(255, 255, 255, 255));
+				button->setColor(makeColor(255, 255, 255, 255));
 		    } else if (mode == BrowserMode::LAN) {
 		        button->setText("Enter IP\nAddress");
+				button->setTextColor(makeColor(127, 127, 127, 255));
+				button->setHighlightColor(makeColor(127, 127, 127, 255));
+				button->setColor(makeColor(127, 127, 127, 255));
 		    }
+#else
+			auto button = static_cast<Button*>(&widget);
+			if (mode == BrowserMode::Online) {
+				button->setText("Enter Lobby\nCode");
+			}
+			else if (mode == BrowserMode::LAN) {
+				button->setText("Enter IP\nAddress");
+			}
+#endif
 		    });
 		enter_code->setCallback(enter_code_fn);
 
@@ -15414,26 +15562,19 @@ bind_failed:
 	        if (selectedLobby >= 0 && selectedLobby < lobbies.size()) {
                 const auto& lobby = lobbies[selectedLobby];
                 if (!lobby.locked) {
-                    if (connectToServer(lobby.address.c_str(), nullptr,
+                    if (connectToServer(lobby.address.c_str(), &selectedLobby,
                         directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                         // we only want to deselect the button if the
                         // "joining lobby" prompt actually raises
                         button.deselect();
                     }
                 } else {
-                    soundWarning();
+					errorPrompt("Unable to join lobby.\nLobby is locked.",
+						"Okay", [](Button&) {soundCancel(); closeMono();});
                 }
             } else {
 	            errorPrompt("Select a lobby to join first.",
-	                "Okay",
-	                [](Button&){
-		                soundCancel();
-	                    assert(main_menu_frame);
-	                    auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
-	                    auto names = window->findFrame("names"); assert(names);
-	                    names->select();
-		                closeMono();
-	                });
+	                "Okay", [](Button&){soundCancel(); closeMono();});
             }
 		    };
 
@@ -16360,15 +16501,11 @@ bind_failed:
 #else
 		auto completion = [](bool connected){
 			closeNetworkInterfaces();
+			randomizeHostname();
 			directConnect = false;
-
-			char buf[32];
-			snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
-			setHostname(buf);
 
 #if defined(STEAMWORKS) && !defined(USE_EOS)
 			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-            LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 			createOnlineLobby();
 #elif defined(STEAMWORKS) && defined(USE_EOS)
 			if (LobbyHandler.crossplayEnabled) {
@@ -16377,19 +16514,16 @@ bind_failed:
 					[](Button&) { // yes
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
-                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 						createOnlineLobby();
 					},
 					[](Button&) { // no
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-                        LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 						createOnlineLobby();
 					}, false, false);
 			}
 			else {
 				LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
-                LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 				createOnlineLobby();
 			}
 #elif defined(USE_EOS)
@@ -16429,45 +16563,33 @@ bind_failed:
 		soundActivate();
 
 		closeNetworkInterfaces();
+		randomizeHostname();
 		directConnect = true;
-        
-        char buf[32];
-        snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(0, 9999));
-        setHostname(buf);
 
-#if 0
-//#if defined(NINTENDO)
-		nxConnectToNetwork();
-		textPrompt("host_lobby_prompt", "Creating WiFi lobby...",
-			[](Widget&) {
-				if (nxConnectingToNetwork()) {
-					return;
-				}
-				else {
-					if (nxConnectedToNetwork()) {
-						// resolve localhost address
-						Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
-						int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
-						assert(resolve != -1);
+#if defined(NINTENDO)
+		if (!nxInitWireless()) {
+			return;
+		}
+		if (!nxHostLobby()) {
+			return;
+		}
 
-						// open socket
-						if (!(net_sock = SDLNet_UDP_Open(port))) {
-							char buf[1024];
-							snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
-							errorPrompt(buf, "Okay", [](Button&) {soundCancel(); closeMono(); });
-							return;
-						}
+		// resolve localhost address
+		Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+		int resolve = SDLNet_ResolveHost(&net_server, NULL, port);
+		assert(resolve != -1);
 
-						// create lobby
-						createLobby(LobbyType::LobbyLAN);
-					}
-					else {
-						closePrompt("host_lobby_prompt");
-						errorPrompt("Failed to host WiFi lobby.", "Okay",
-							[](Button&) {soundCancel(); closeMono();});
-					}
-				}
-			});
+		// open socket
+		if (!(net_sock = SDLNet_UDP_Open(port))) {
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "Failed to open UDP socket\non port %hu.", port);
+			systemErrorPrompt(buf);
+			nxShutdownWireless();
+			return;
+		}
+
+		// create lobby
+		createLobby(LobbyType::LobbyLAN);
 #else
 		// resolve localhost address
 		Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
@@ -16539,7 +16661,7 @@ bind_failed:
 		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
 		    if (host_lan_button->isSelected()) {
 #ifdef NINTENDO
-		        tooltip->setText("Host a game with 2-4 players\nover a local area network (WiFi)");
+		        tooltip->setText("Host a game with 2-4 players\nover a wireless connection");
 #else
 				tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
 #endif
@@ -16641,7 +16763,7 @@ bind_failed:
 		host_lan_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		host_lan_button->setColor(makeColor(255, 255, 255, 255));
 #ifdef NINTENDO
-		host_lan_button->setText("Host WiFi Party");
+		host_lan_button->setText("Host Wireless\nParty");
 #else
 		host_lan_button->setText("Host LAN Party");
 #endif
@@ -17335,11 +17457,7 @@ bind_failed:
 		    });
 
 		auto multiplayer = window->addButton("multiplayer");
-#ifdef NINTENDO
-		multiplayer->setText("Online + WiFi");
-#else
-		multiplayer->setText("Online + LAN");
-#endif
+		multiplayer->setText("Net Games");
 		multiplayer->setFont(smallfont_outline);
 		multiplayer->setSize(SDL_Rect{702, 38, 144, 36});
 		multiplayer->setColor(makeColor(255, 255, 255, 255));
@@ -19093,23 +19211,7 @@ bind_failed:
 				field->setJustify(Field::justify_t::CENTER);
 				field->setText((std::string("P") + std::to_string(player + 1)).c_str());
 				field->setFont(bigfont_outline);
-				if (colorblind) {
-					switch (player) {
-					default: field->setColor(uint32ColorPlayerX_colorblind); break;
-					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
-					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
-					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
-					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
-					}
-				} else {
-					switch (player) {
-					default: field->setColor(uint32ColorPlayerX); break;
-					case 0: field->setColor(uint32ColorPlayer1); break;
-					case 1: field->setColor(uint32ColorPlayer2); break;
-					case 2: field->setColor(uint32ColorPlayer3); break;
-					case 3: field->setColor(uint32ColorPlayer4); break;
-					}
-				}
+				field->setColor(playerColor(player, colorblind, false));
 			}
 		
 			auto achievements = notification->addField("achievements", 256);
@@ -20112,23 +20214,7 @@ bind_failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-				if (colorblind) {
-					switch (c) {
-					default: field->setColor(uint32ColorPlayerX_colorblind); break;
-					case 0: field->setColor(uint32ColorPlayer1_colorblind); break;
-					case 1: field->setColor(uint32ColorPlayer2_colorblind); break;
-					case 2: field->setColor(uint32ColorPlayer3_colorblind); break;
-					case 3: field->setColor(uint32ColorPlayer4_colorblind); break;
-					}
-				} else {
-					switch (c) {
-					default: field->setColor(uint32ColorPlayerX); break;
-					case 0: field->setColor(uint32ColorPlayer1); break;
-					case 1: field->setColor(uint32ColorPlayer2); break;
-					case 2: field->setColor(uint32ColorPlayer3); break;
-					case 3: field->setColor(uint32ColorPlayer4); break;
-					}
-				}
+				field->setColor(playerColor(c, colorblind, false));
                 ++num;
 	        }
 	    }
@@ -20235,4 +20321,23 @@ bind_failed:
     void setHostname(const char* name) {
         hostname = name;
     }
+
+	void randomizeUsername() {
+		// generate a name like:
+		// Filthy Rat #5743
+		std::string monster = getMonsterLocalizedName(
+			(Monster)RNG.uniform(Monster::HUMAN, Monster::MAX_MONSTER));
+		monster[0] = toupper(monster[0]);
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%s %s #%04d",
+			language[4234 + RNG.uniform(0, 16)],
+			monster.c_str(), RNG.uniform(1000, 9999));
+		setUsername(buf);
+	}
+
+	void randomizeHostname() {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(1000, 9999));
+		setHostname(buf);
+	}
 }

@@ -424,6 +424,8 @@ void Widget::drawPost(const SDL_Rect size,
             "MenuBack",
             "MenuPageLeft",
             "MenuPageRight",
+			"MenuPageLeftAlt",
+			"MenuPageRightAlt",
         };
         static const int actionListSize = sizeof(actionList) / sizeof(actionList[0]);
 

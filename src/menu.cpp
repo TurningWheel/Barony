@@ -10532,6 +10532,10 @@ void doEndgame(bool saveHighscore) {
 
 #ifdef NINTENDO
 	nxEndParentalControls();
+	if (directConnect) {
+		// cleanse wireless connection state
+		nxShutdownWireless();
+	}
 #endif
 
     // this is done so that save game screenshots get

@@ -1420,7 +1420,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 #else
     static ConsoleVariable<int> cvar_numRays("/raycast_num", 200);
     static ConsoleVariable<int> cvar_numRaysPerJob("/raycast_num_per_job", 50);
-    static ConsoleVariable<bool> cvar_parallelRays("/raycast_multithread", true);
+    static ConsoleVariable<bool> cvar_parallelRays("/raycast_multithread", false); // note: crashes on nintendo
     static ConsoleVariable<bool> cvar_writeOutsSequentially("/raycast_write_outs_sequentially", false);
     
     static int NumRays;

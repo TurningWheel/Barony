@@ -3460,7 +3460,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 		
-		if ( !strcmp(msg, language[1109]) )
+		if ( !strcmp(msg, language[1109]) ) // "you survive through your party's persistence"
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
@@ -3484,7 +3484,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			playMusic( sounds[175], false, true, false );
 #endif
 		}
-		else if ( (strstr(msg, language[1160])) != NULL )
+		else if ( (strstr(msg, language[1160])) != NULL ) // <player name> bumps you
 		{
 			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -4220,7 +4220,24 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// win the game
 	{'WING', [](){
-		victory = net_packet->data[4];
+		int victoryType;
+		switch (stats[clientnum]->playerRace) {
+		default: victoryType = 3; break;
+		case RACE_HUMAN: victoryType = 4; break;
+		case RACE_SKELETON: victoryType = 5; break;
+		case RACE_VAMPIRE: victoryType = 5; break;
+		case RACE_SUCCUBUS: victoryType = 5; break;
+		case RACE_GOATMAN: victoryType = 3; break;
+		case RACE_AUTOMATON: victoryType = 4; break;
+		case RACE_INCUBUS: victoryType = 5; break;
+		case RACE_GOBLIN: victoryType = 3; break;
+		case RACE_INSECTOID: victoryType = 3; break;
+		case RACE_RAT: victoryType = 3; break;
+		case RACE_TROLL: victoryType = 3; break;
+		case RACE_SPIDER: victoryType = 3; break;
+		case RACE_IMP: victoryType = 5; break;
+		}
+		victory = victoryType;
 	    if (net_packet->data[5] == 0) { // full ending
 	        switch (stats[clientnum]->playerRace) {
 	        default:
