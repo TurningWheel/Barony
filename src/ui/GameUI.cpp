@@ -21816,31 +21816,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( prompt == PROMPT_INTERACT )
 			{
-				useItem(item, player);
+				item_ToolLootBag(item, player);
 			}
 			else if ( prompt == PROMPT_INSPECT )
 			{
-				int lootbagPlayer = item->getLootBagPlayer();
-				if ( lootbagPlayer >= 0 && lootbagPlayer < MAXPLAYERS
-					&& stats[lootbagPlayer] )
-				{
-					std::string name = stats[lootbagPlayer]->name;
-					if ( name == "" )
-					{
-						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-							language[4330]);
-					}
-					else
-					{
-						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-							language[4329], stats[lootbagPlayer]->name);
-					}
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
-						language[4330]);
-				}
+				useItem(item, player);
 			}
 		}
 		else if ( item->type == TOOL_ALEMBIC )

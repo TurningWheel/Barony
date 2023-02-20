@@ -5112,31 +5112,48 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[16]),
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
-		    &stats[player]->inventory);
-		auto entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-		entity->x = net_packet->data[26];
-		entity->x = entity->x * 16 + 8;
-		entity->y = net_packet->data[27];
-		entity->y = entity->y * 16 + 8;
-		entity->flags[NOUPDATE] = true;
-		entity->flags[PASSABLE] = true;
-		entity->flags[INVISIBLE] = true;
-		for ( int c = item->count; c > 0; c-- )
+		    nullptr);
+
+		real_t x = net_packet->data[26];
+		x = (x * 16) + 8;
+		real_t y = net_packet->data[27];
+		y = (y * 16) + 8;
+
+		stats[0]->addItemToLootingBag(player, x, y, *item);
+		if ( item->node )
 		{
-			int qtyToDrop = 1;
-			if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-			{
-				qtyToDrop = 10;
-				c -= 9;
-			}
-			else if ( itemTypeIsQuiver(item->type) )
-			{
-				qtyToDrop = item->count;
-				c -= item->count;
-			}
-			dropItemMonster(item, entity, stats[player], qtyToDrop);
+			list_RemoveNode(item->node);
 		}
-		list_RemoveNode(entity->mynode);
+		else
+		{
+			free(item);
+		}
+		//{
+		//	auto entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		//	entity->x = net_packet->data[26];
+		//	entity->x = entity->x * 16 + 8;
+		//	entity->y = net_packet->data[27];
+		//	entity->y = entity->y * 16 + 8;
+		//	entity->flags[NOUPDATE] = true;
+		//	entity->flags[PASSABLE] = true;
+		//	entity->flags[INVISIBLE] = true;
+		//	for ( int c = item->count; c > 0; c-- )
+		//	{
+		//		int qtyToDrop = 1;
+		//		if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+		//		{
+		//			qtyToDrop = 10;
+		//			c -= 9;
+		//		}
+		//		else if ( itemTypeIsQuiver(item->type) )
+		//		{
+		//			qtyToDrop = item->count;
+		//			c -= item->count;
+		//		}
+		//		dropItemMonster(item, entity, stats[player], qtyToDrop);
+		//	}
+		//	list_RemoveNode(entity->mynode);
+		//}
 	}},
 
 	// raise/lower shield
@@ -5399,6 +5416,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    &stats[client]->inventory);
 		useItem(item, client);
 	}},
+
+	// use loot bag
+	{ 'LOOT', []() {
+		const int client = std::min(net_packet->data[8], (Uint8)(MAXPLAYERS - 1));
+		Uint32 appearance = SDLNet_Read32(&net_packet->data[4]);
+		Stat::emptyLootingBag(client, appearance);
+	} },
 
 	// equip item (as a weapon)
 	{'EQUI', [](){

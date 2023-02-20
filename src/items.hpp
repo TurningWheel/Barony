@@ -479,6 +479,7 @@ public:
 	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
 	int foodGetPukeChance(Stat* eater) const;
 	int getLootBagPlayer() const;
+	int getLootBagNumItems() const;
 
 	enum ItemBombPlacement : int
 	{

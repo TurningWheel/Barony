@@ -2528,7 +2528,42 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_PLAYER_LOOT_BAG:
-			item_ToolLootBag(item, player);
+			if ( multiplayer != CLIENT )
+			{
+				int lootbagPlayer = item->getLootBagPlayer();
+				
+				if ( lootbagPlayer >= 0 && lootbagPlayer < MAXPLAYERS
+					&& stats[lootbagPlayer] )
+				{
+					std::string name = stats[lootbagPlayer]->name;
+					if ( lootbagPlayer == player )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4331], item->getLootBagNumItems());
+					}
+					else if ( name == "" || client_disconnected[lootbagPlayer] )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4330], item->getLootBagNumItems());
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4329], item->getLootBagNumItems(), 
+							name.c_str());
+					}
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+						language[4330], item->getLootBagNumItems());
+				}
+
+				if ( !players[player]->isLocalPlayer() )
+				{
+					consumeItem(item, player);
+				}
+			}
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -5932,4 +5967,22 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 int Item::getLootBagPlayer() const
 {
 	return (int)(appearance & 0x000000FF) % MAXPLAYERS;
+}
+int Item::getLootBagNumItems() const
+{
+	if ( multiplayer == CLIENT )
+	{
+		return 0;
+	}
+	if ( stats[0]->player_lootbags.find(appearance)
+		!= stats[0]->player_lootbags.end() )
+	{
+		auto& lootbag = stats[0]->player_lootbags[appearance];
+		if ( !lootbag.looted )
+		{
+			return lootbag.items.size();
+		}
+		return 0;
+	}
+	return 0;
 }

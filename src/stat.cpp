@@ -234,7 +234,8 @@ void Stat::clearStats()
 			break;
 		}
 	}
-
+	this->attributes.clear();
+	this->player_lootbags.clear();
 	freePlayerEquipment();
 	list_FreeAll(&this->inventory);
 }
@@ -1300,6 +1301,119 @@ bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 			break;
 		default:
 			break;
+	}
+	return false;
+}
+
+Uint32 Stat::getLootingBagKey(const int player)
+{
+	Uint32 lootingBagKey = player & 0xF;
+	Uint16 levelKey = currentlevel & 0xFFF;
+	levelKey |= ((secretlevel ? 1 : 0) << 3);
+	lootingBagKey |= (levelKey << 4);
+
+	return lootingBagKey;
+}
+
+void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item)
+{
+	Uint32 lootingBagKey = getLootingBagKey(player);
+	if ( player_lootbags.find(lootingBagKey) == player_lootbags.end() )
+	{
+		player_lootbags[lootingBagKey].spawn_x = x;
+		player_lootbags[lootingBagKey].spawn_y = y;
+
+		if ( !player_lootbags[lootingBagKey].spawnedOnGround )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = x;
+			entity->y = y;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = (local_rng.rand() % 360) * (PI / 180.f);
+			entity->vel_x = 0.0;
+			entity->vel_y = 0.0;
+			entity->vel_z = -.5;
+			entity->flags[PASSABLE] = true;
+			entity->flags[USERFLAG1] = true;
+			entity->behavior = &actItem;
+			entity->skill[10] = TOOL_PLAYER_LOOT_BAG;
+			entity->skill[11] = WORN;
+			entity->skill[12] = 0;
+			entity->skill[13] = 1;
+			entity->skill[14] = lootingBagKey;
+			entity->skill[15] = true;
+		}
+		
+		player_lootbags[lootingBagKey].spawnedOnGround = true;
+	}
+	auto& loot = player_lootbags[lootingBagKey];
+	loot.items.push_back(Item());
+	auto& i = loot.items.back();
+	copyItem(&i, &item);
+
+	if ( item.type >= ARTIFACT_SWORD && item.type <= ARTIFACT_GLOVES )
+	{
+		if ( itemIsEquipped(&item, player) )
+		{
+			steamAchievementClient(player, "BARONY_ACH_CHOSEN_ONE");
+		}
+	}
+}
+
+bool Stat::emptyLootingBag(const int player, Uint32 key)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stats[i] && stats[i]->player_lootbags.find(key) != stats[i]->player_lootbags.end() )
+		{
+			messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[4332]);
+			if ( !stats[i]->player_lootbags[key].looted )
+			{
+				for ( auto& item_loot : stats[i]->player_lootbags[key].items )
+				{
+					//dropItemMonster(&item, players[i]->entity, stats[i], item.count);
+					Item* item2 = newItem(item_loot.type, item_loot.status, 
+						item_loot.beatitude, item_loot.count, item_loot.appearance, item_loot.identified, nullptr);
+					if ( item2 )
+					{
+						int pickedUpCount = item2->count;
+						Item* item = itemPickup(player, item2);
+						if ( item )
+						{
+							if ( players[player]->isLocalPlayer() )
+							{
+								// item is the new inventory stack for server, free the picked up items
+								free(item2);
+								int oldcount = item->count;
+								item->count = pickedUpCount;
+								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+								item->count = oldcount;
+							}
+							else
+							{
+								//messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+								free(item); // item is the picked up items (item == item2)
+							}
+						}
+					}
+					if ( !stats[i]->player_lootbags[key].looted )
+					{
+						playSoundEntity(players[player]->entity, 558, 64);
+						playSoundEntity(players[player]->entity, 35 + local_rng.rand() % 3, 64);
+					}
+					stats[i]->player_lootbags[key].looted = true;
+				}
+			}
+			stats[i]->player_lootbags.erase(key);
+			return true;
+		}
 	}
 	return false;
 }
