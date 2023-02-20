@@ -293,6 +293,7 @@ public:
 #endif
 	int monster_idlevar;
 	std::map<std::string, std::string> attributes;
+	std::map<Uint32, std::vector<Item>> player_lootbags;
 	list_t magic_effects; //Makes things like the invisibility spell work.
 	Stat(Sint32 sprite);
 	~Stat();

@@ -639,6 +639,7 @@ Stat* Stat::copyStats()
 	newStat->magic_effects.first = NULL;
 	newStat->magic_effects.last = NULL;
 	newStat->attributes = this->attributes;
+	newStat->player_lootbags = this->player_lootbags;
 	return newStat;
 }
 

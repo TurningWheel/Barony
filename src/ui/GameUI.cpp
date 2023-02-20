@@ -21812,7 +21812,38 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_INSPECT_ALTERNATE || prompt == PROMPT_TINKER )
 	{
-		if ( item->type == TOOL_ALEMBIC )
+		if ( item->type == TOOL_PLAYER_LOOT_BAG )
+		{
+			if ( prompt == PROMPT_INTERACT )
+			{
+				useItem(item, player);
+			}
+			else if ( prompt == PROMPT_INSPECT )
+			{
+				int lootbagPlayer = item->getLootBagPlayer();
+				if ( lootbagPlayer >= 0 && lootbagPlayer < MAXPLAYERS
+					&& stats[lootbagPlayer] )
+				{
+					std::string name = stats[lootbagPlayer]->name;
+					if ( name == "" )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4330]);
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4329], stats[lootbagPlayer]->name);
+					}
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+						language[4330]);
+				}
+			}
+		}
+		else if ( item->type == TOOL_ALEMBIC )
 		{
 			// not experimenting
 			if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )

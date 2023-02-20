@@ -5486,3 +5486,20 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 	}
 	serverUpdateHunger(my->skill[2]);
 }
+
+void item_ToolLootBag(Item*& item, int player)
+{
+	if ( multiplayer != CLIENT )
+	{
+		consumeItem(item, player);
+		return;
+	}
+	if ( players[player] == nullptr || players[player]->entity == nullptr || stats[player] == nullptr )
+	{
+		return;
+	}
+
+
+	consumeItem(item, player);
+	return;
+}
