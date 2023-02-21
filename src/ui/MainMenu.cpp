@@ -8971,7 +8971,7 @@ bind_failed:
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
 #ifdef STEAMWORKS
-						if (LobbyHandler.crossplayEnabled) {
+						if (!LobbyHandler.crossplayEnabled) {
 							// can't join an epic lobby if crossplay is not enabled
 							goto failed;
 						}
