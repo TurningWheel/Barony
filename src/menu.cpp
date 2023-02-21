@@ -2454,7 +2454,7 @@ void handleMainMenu(bool mode)
 				{
 					real_t ofov = fov;
 					fov = 50;
-					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
+					//glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
 				}
 				players[clientnum]->entity->flags[BRIGHT] = b;
@@ -2472,7 +2472,7 @@ void handleMainMenu(bool mode)
 						entity->flags[BRIGHT] = true;
 						real_t ofov = fov;
 						fov = 50;
-						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+						//glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
 						entity->flags[BRIGHT] = b;
 					}
@@ -6659,7 +6659,7 @@ void handleMainMenu(bool mode)
 				{
 					real_t ofov = fov;
 					fov = 50;
-					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
+					//glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
 				}
 				players[clientnum]->entity->flags[BRIGHT] = b;
@@ -6677,7 +6677,7 @@ void handleMainMenu(bool mode)
 						entity->flags[BRIGHT] = true;
 						real_t ofov = fov;
 						fov = 50;
-						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
+						//glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
 						entity->flags[BRIGHT] = b;
 					}
