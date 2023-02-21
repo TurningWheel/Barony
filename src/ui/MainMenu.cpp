@@ -8985,14 +8985,15 @@ bind_failed:
 		                lobby = getLobbyEpic(address);
 		            }
 		            else if ((char)tolower((int)address[0]) == 'e' && strlen(address) == 5) {
+						// save address for next time
+						stringCopyUnsafe(last_address, address, sizeof(last_address));
 #ifdef STEAMWORKS
 						if (!LobbyHandler.crossplayEnabled) {
 							// can't join an epic lobby if crossplay is not enabled
+							connectionErrorPrompt("Failed to join lobby.\nCrossplay required.");
 							goto failed;
 						}
 #endif
-		                // save address for next time
-		                stringCopyUnsafe(last_address, address, sizeof(last_address));
                         memcpy(EOS.lobbySearchByCode, address + 1, 4);
                         EOS.lobbySearchByCode[4] = '\0';
                         EOS.LobbySearchResults.useLobbyCode = true;
@@ -16533,11 +16534,13 @@ failed:
 					[](Button&) { // yes
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+						LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
 						createOnlineLobby();
 					},
 					[](Button&) { // no
 						closeBinary();
 						LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+						LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
 						createOnlineLobby();
 					}, false, false);
 			}
