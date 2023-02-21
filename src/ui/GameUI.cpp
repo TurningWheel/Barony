@@ -1587,6 +1587,22 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		auto hpField = entryFrame->findField("hp");
 		hpField->setText(buf);
 
+		if ( bPlayerBars )
+		{
+			static ConsoleVariable<bool> cvar_playerbars_use_colors("/playerbars_use_colors", true);
+			if ( *cvar_playerbars_use_colors )
+			{
+				nameField->setColor(playerColor(uid, colorblind, false));
+			}
+			else
+			{
+				nameField->setColor(hudColors.characterSheetLightNeutral);
+			}
+		}
+		else
+		{
+			nameField->setColor(hudColors.characterSheetLightNeutral);
+		}
 		nameField->setText(followerBar.name.c_str());
 
 		int hpWidth = (shortBars ? hpBarSettings.barCompactPixelWidth : hpBarSettings.barPixelWidth);

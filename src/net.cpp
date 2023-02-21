@@ -5066,8 +5066,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
 		MessageType type = MESSAGE_CHAT; // the only kind of message you can get from a client.
 
-		char shortname[16];
-		stringCopy(shortname, stats[pnum]->name, sizeof(shortname), 10);
+		char shortname[32];
+		stringCopy(shortname, stats[pnum]->name, sizeof(shortname), 22);
 
 		char fmt[1024];
 		const int len = snprintf(fmt, sizeof(fmt), "%s: %s", shortname, (char*)(&net_packet->data[9]));
