@@ -1646,6 +1646,13 @@ public:
 		int selected_spell_last_appearance = -1;
 		list_t spellList; //All of the player's spells are stored here.
 		bool bHasUnreadNewSpell = false;
+		Uint32 noManaFeedbackTicks = 0;
+		Uint32 noManaProcessedOnTick = 0;
+		void flashNoMana()
+		{
+			noManaFeedbackTicks = 0;
+			noManaProcessedOnTick = ticks;
+		}
 		Magic_t(Player& p) : player(p)
 		{
 			spellList.first = nullptr;

@@ -187,6 +187,13 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		    // (maybe an immensely powerful tree of magic actually likes this --
 		    //  using your life-force to power spells instead of mana)
 			messagePlayer(player, MESSAGE_MISC, language[375]);
+			if ( players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->magic.noManaProcessedOnTick == 0 )
+				{
+					players[player]->magic.flashNoMana();
+				}
+			}
 		}
 		return;
 	}

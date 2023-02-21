@@ -311,6 +311,7 @@ struct LevelUpAnimation_t
 		int increaseLvl = -1;
 		Uint32 ticksActive = 0;
 		Uint32 processedOnTick = 0;
+		Uint32 ticksToLive = 6 * TICKS_PER_SECOND;
 		struct StatUp_t
 		{
 			int whichStat = -1;
