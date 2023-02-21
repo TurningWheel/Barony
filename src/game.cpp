@@ -3614,15 +3614,42 @@ bool handleEvents(void)
 	    }
 	}
 
-#if defined(NINTENDO) && defined(USE_EOS)
+	// detect timeouts and network disconnects
+#if defined(NINTENDO)
 	if (initialized && !loading) {
 		const bool connected = nxConnectedToNetwork();
+#ifdef USE_EOS
 		EOS.SetNetworkAvailable(connected);
-		if (multiplayer != SINGLE && !connected && !directConnect) {
-			MainMenu::timedOut();
+#endif // USE_EOS
+		if (multiplayer != SINGLE) {
+			if (directConnect) {
+				if (!nxHandleWireless()) {
+					MainMenu::timedOut();
+				}
+				if (multiplayer == SERVER && !intro) {
+					if (ticks % TICKS_PER_SECOND == 0) {
+						int numplayers = 0;
+						for (int c = 0; c < MAXPLAYERS; ++c) {
+							if (!client_disconnected[c]) {
+								++numplayers;
+							}
+						}
+						char address[64];
+						nxGetWirelessAddress(address, sizeof(address));
+						bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+						if (!result) {
+							MainMenu::timedOut();
+						}
+					}
+				}
+			} else {
+				if (!connected) {
+					MainMenu::timedOut();
+				}
+			}
 		}
 	}
-#endif
+#endif // NINTENDO
 
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
@@ -5843,18 +5870,19 @@ static void doConsoleCommands() {
 		}
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
-            if (!command) {
-                confirm = true;
-            }
+			if (!command) {
+				confirm = true;
+			}
 		}
 	}
 
 	if (confirm && !command) // begin a command
 	{
 		// start typing a command
-		if ( input.binary("Console Command") ) {
+		if (input.binary("Console Command")) {
 			strcpy(command_str, "/");
-		} else {
+		}
+		else {
 			strcpy(command_str, "");
 		}
 		inputstr = command_str;
@@ -5866,8 +5894,8 @@ static void doConsoleCommands() {
 		}
 
 		// clear follower menu entities.
-		for ( int i = 0; i < MAXPLAYERS; ++i ) {
-			if ( players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i) ) {
+		for (int i = 0; i < MAXPLAYERS; ++i) {
+			if (players[i]->isLocalPlayer() && inputs.bPlayerUsingKeyboardControl(i)) {
 				FollowerMenu[i].closeFollowerMenuGUI();
 			}
 		}
@@ -5875,7 +5903,7 @@ static void doConsoleCommands() {
 	else if (command) // finish a command
 	{
 		// check for cancel keystroke (always ESC)
-		if ( keystatus[SDLK_ESCAPE] )
+		if (keystatus[SDLK_ESCAPE])
 		{
 			keystatus[SDLK_ESCAPE] = 0;
 			chosen_command = nullptr;
@@ -5883,7 +5911,7 @@ static void doConsoleCommands() {
 		}
 
 		// check for forced cancel
-		if ( !controlEnabled )
+		if (!controlEnabled)
 		{
 			if (SDL_IsTextInputActive()) {
 				SDL_StopTextInput();
@@ -5926,91 +5954,91 @@ static void doConsoleCommands() {
 			// sanitize strings (remove format codes)
 			strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
 
-            // process string
-            if (command_str[0] == '/') // slash invokes a command procedure
-            {
-                messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
-                consoleCommand(command_str);
-            }
-            else if (!intro) // can't send messages in multiplayer
-            {
-                if (multiplayer == CLIENT) // send message as a client
-                {
-                    if (strcmp(command_str, ""))
-                    {
-                        char chatstring[256];
-                        strcpy(chatstring, language[739]);
-                        strcat(chatstring, command_str);
-                        Uint32 color = makeColor(0, 255, 255, 255);
-                        if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-                            playSound(238, 64);
-                        }
+			// process string
+			if (command_str[0] == '/') // slash invokes a command procedure
+			{
+				messagePlayer(commandPlayer, MESSAGE_MISC, command_str);
+				consoleCommand(command_str);
+			}
+			else if (!intro) // can't send messages in multiplayer
+			{
+				if (multiplayer == CLIENT) // send message as a client
+				{
+					if (strcmp(command_str, ""))
+					{
+						char chatstring[256];
+						strcpy(chatstring, language[739]);
+						strcat(chatstring, command_str);
+						Uint32 color = makeColor(0, 255, 255, 255);
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+							playSound(238, 64);
+						}
 
-                        // send message to server
-                        strcpy((char*)net_packet->data, "MSGS");
-                        net_packet->data[4] = commandPlayer;
-                        SDLNet_Write32(color, &net_packet->data[5]);
-                        strcpy((char*)(&net_packet->data[9]), command_str);
-                        net_packet->address.host = net_server.host;
-                        net_packet->address.port = net_server.port;
-                        net_packet->len = 9 + strlen(command_str) + 1;
-                        sendPacketSafe(net_sock, -1, net_packet, 0);
-                    }
-                    else
-                    {
-                        strcpy(command_str, "");
-                    }
-                }
-                else // servers (or singleplayer) broadcast typed messages
-                {
-                    if (strcmp(command_str, ""))
-                    {
-                        char chatstring[256];
-                        strcpy(chatstring, language[739]);
-                        strcat(chatstring, command_str);
-                        Uint32 color = makeColor(0, 255, 255, 255);
-                        if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
-                            playSound(238, 64);
-                        }
-                        if (multiplayer == SERVER)
-                        {
-                            // send message to all clients
-                            for (int c = 1; c < MAXPLAYERS; c++)
-                            {
-                                if (client_disconnected[c] || players[c]->isLocalPlayer())
-                                {
-                                    continue;
-                                }
-                                strcpy((char*)net_packet->data, "MSGS");
-                                // strncpy() does not copy N bytes if a terminating null is encountered first
-                                // see http://www.cplusplus.com/reference/cstring/strncpy/
-                                // see https://en.cppreference.com/w/c/string/byte/strncpy
-                                // GCC throws a warning (intended) when the length argument to strncpy() in any
-                                // way depends on strlen(src) to discourage this (and related) construct(s).
-                                
-                                strncpy(chatstring, stats[0]->name, 10);
-                                chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
-                                strcat(chatstring, ": ");
-                                strcat(chatstring, command_str);
-                                SDLNet_Write32(color, &net_packet->data[4]);
-                                SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
-                                strcpy((char*)(&net_packet->data[12]), chatstring);
-                                net_packet->address.host = net_clients[c - 1].host;
-                                net_packet->address.port = net_clients[c - 1].port;
-                                net_packet->len = 12 + strlen(chatstring) + 1;
-                                sendPacketSafe(net_sock, -1, net_packet, c - 1);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        strcpy(command_str, "");
-                    }
-                }
+						// send message to server
+						strcpy((char*)net_packet->data, "MSGS");
+						net_packet->data[4] = commandPlayer;
+						SDLNet_Write32(color, &net_packet->data[5]);
+						strcpy((char*)(&net_packet->data[9]), command_str);
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 9 + strlen(command_str) + 1;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						strcpy(command_str, "");
+					}
+				}
+				else // servers (or singleplayer) broadcast typed messages
+				{
+					if (strcmp(command_str, ""))
+					{
+						char chatstring[256];
+						strcpy(chatstring, language[739]);
+						strcat(chatstring, command_str);
+						Uint32 color = makeColor(0, 255, 255, 255);
+						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
+							playSound(238, 64);
+						}
+						if (multiplayer == SERVER)
+						{
+							// send message to all clients
+							for (int c = 1; c < MAXPLAYERS; c++)
+							{
+								if (client_disconnected[c] || players[c]->isLocalPlayer())
+								{
+									continue;
+								}
+								strcpy((char*)net_packet->data, "MSGS");
+								// strncpy() does not copy N bytes if a terminating null is encountered first
+								// see http://www.cplusplus.com/reference/cstring/strncpy/
+								// see https://en.cppreference.com/w/c/string/byte/strncpy
+								// GCC throws a warning (intended) when the length argument to strncpy() in any
+								// way depends on strlen(src) to discourage this (and related) construct(s).
+
+								strncpy(chatstring, stats[0]->name, 10);
+								chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+								strcat(chatstring, ": ");
+								strcat(chatstring, command_str);
+								SDLNet_Write32(color, &net_packet->data[4]);
+								SDLNet_Write32((Uint32)MESSAGE_CHAT, &net_packet->data[8]);
+								strcpy((char*)(&net_packet->data[12]), chatstring);
+								net_packet->address.host = net_clients[c - 1].host;
+								net_packet->address.port = net_clients[c - 1].port;
+								net_packet->len = 12 + strlen(chatstring) + 1;
+								sendPacketSafe(net_sock, -1, net_packet, c - 1);
+							}
+						}
+					}
+					else
+					{
+						strcpy(command_str, "");
+					}
+				}
 			}
 
 			// save this in the command history
-			if ( command_str[0] ) {
+			if (command_str[0]) {
 				saveCommand(command_str);
 			}
 			chosen_command = NULL;
@@ -6019,10 +6047,10 @@ static void doConsoleCommands() {
 	else
 	{
 		// make sure not to create text input events
-		if ( inputstr == command_str ) {
+		if (inputstr == command_str) {
 			inputstr = nullptr;
 		}
-		if ( !inputstr && SDL_IsTextInputActive() ) {
+		if (!inputstr && SDL_IsTextInputActive()) {
 			SDL_StopTextInput();
 		}
 	}

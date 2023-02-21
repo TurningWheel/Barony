@@ -68,7 +68,7 @@ public:
 	template<typename T, typename... Args>
 	bool value(std::vector<T>& v, Uint32 maxLength = 0, Args ... args) {
 		Uint32 size = (Uint32)v.size();
-		if (beginArray(size) && maxLength == 0 || size <= maxLength) {
+		if (beginArray(size) && (maxLength == 0 || size <= maxLength)) {
 		    v.resize(size);
 		    bool result = true;
 		    for (Uint32 index = 0; index < size; ++index) {

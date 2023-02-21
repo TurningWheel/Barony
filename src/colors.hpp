@@ -55,3 +55,45 @@ constexpr Uint32 uint32ColorPlayer2_Ally_colorblind = makeColorRGB(127, 80, 127)
 constexpr Uint32 uint32ColorPlayer3_Ally_colorblind = makeColorRGB(31, 127, 31);
 constexpr Uint32 uint32ColorPlayer4_Ally_colorblind = makeColorRGB(128, 128, 128);
 constexpr Uint32 uint32ColorPlayerX_Ally_colorblind = makeColorRGB(95, 95, 95);
+
+constexpr Uint32 playerColor(int index, bool colorblind, bool ally) {
+	if (ally) {
+		if (colorblind) {
+			switch (index) {
+			default: return uint32ColorPlayerX_Ally_colorblind;
+			case 0: return uint32ColorPlayer1_Ally_colorblind;
+			case 1: return uint32ColorPlayer2_Ally_colorblind;
+			case 2: return uint32ColorPlayer3_Ally_colorblind;
+			case 3: return uint32ColorPlayer4_Ally_colorblind;
+			}
+		}
+		else {
+			switch (index) {
+			default: return uint32ColorPlayerX_Ally;
+			case 0: return uint32ColorPlayer1_Ally;
+			case 1: return uint32ColorPlayer2_Ally;
+			case 2: return uint32ColorPlayer3_Ally;
+			case 3: return uint32ColorPlayer4_Ally;
+			}
+		}
+	} else {
+		if (colorblind) {
+			switch (index) {
+			default: return uint32ColorPlayerX_colorblind;
+			case 0: return uint32ColorPlayer1_colorblind;
+			case 1: return uint32ColorPlayer2_colorblind;
+			case 2: return uint32ColorPlayer3_colorblind;
+			case 3: return uint32ColorPlayer4_colorblind;
+			}
+		}
+		else {
+			switch (index) {
+			default: return uint32ColorPlayerX;
+			case 0: return uint32ColorPlayer1;
+			case 1: return uint32ColorPlayer2;
+			case 2: return uint32ColorPlayer3;
+			case 3: return uint32ColorPlayer4;
+			}
+		}
+	}
+}

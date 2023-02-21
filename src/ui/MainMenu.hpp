@@ -82,6 +82,8 @@ namespace MainMenu {
     const char* getHostname();              // get local host name
     void setUsername(const char* name);     // set local account name
     void setHostname(const char* name);     // set local hostname
+	void randomizeUsername();				// randomize the username
+	void randomizeHostname();				// randomize the hostname
 
 	int getMenuOwner();					// get current pause menu owner
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot

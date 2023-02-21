@@ -107,9 +107,10 @@ void Text::render() {
 	}
 	TTF_Font* ttf = font->getTTF();
 
+	bool addedSpace = false;
+
 #ifdef NINTENDO
 	// fixes weird crash in SDL_ttf when string length < 2
-	const bool addedSpace = false;
 	std::string spaces;
 	int num_spaces_needed = std::max(0, 2 - (int)strToRender.size());
 	while (num_spaces_needed) {
@@ -121,15 +122,15 @@ void Text::render() {
 		TTF_SizeUTF8(ttf, spaces.c_str(), &spaces_width, nullptr);
 		spaces_width += spaces.size();
 		strToRender.append(spaces);
+		if (spaces.size() == 2) {
+			addedSpace = true;
+		}
 	}
 #else
 	const int spaces_width = 0;
-	bool addedSpace = false;
 #ifndef EDITOR
-	if ( *cvar_text_render_addspace )
-	{
-		if ( strToRender == "" )
-		{
+	if ( *cvar_text_render_addspace ) {
+		if ( strToRender == "" ) {
 			addedSpace = true;
 			strToRender += ' ';
 		}
@@ -185,6 +186,9 @@ void Text::render() {
 	{
 		width = std::max(0, surf->w - spaces_width);
 		height = surf->h;
+#ifndef WINDOWS
+		width -= outlineSize;
+#endif
 	}
 
 	// Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()

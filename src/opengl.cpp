@@ -434,7 +434,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	uint64_t index;
 	uint64_t indexdown[3];
 	voxel_t* model;
-	int modelindex = 0;
+	int modelindex = -1;
 	GLfloat rotx, roty, rotz;
 	//GLuint uidcolor;
 
@@ -444,17 +444,24 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	}
 
 	// assign model
-	if ( entity->sprite >= 0 && entity->sprite < nummodels )
+#ifndef EDITOR
+	static ConsoleVariable<int> cvar_forceModel("/forcemodel", -1, "force all voxel models to use a specific index");
+	modelindex = *cvar_forceModel;
+#endif
+	if (modelindex < 0)
 	{
-		if ( models[entity->sprite] != NULL )
+		modelindex = entity->sprite;
+	}
+	if (modelindex >= 0 && modelindex < nummodels)
+	{
+		if (models[modelindex] != NULL)
 		{
-			model = models[entity->sprite];
+			model = models[modelindex];
 		}
 		else
 		{
 			model = models[0];
 		}
-		modelindex = entity->sprite;
 	}
 	else
 	{
@@ -476,6 +483,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 
 	// setup projection
 	glMatrixMode( GL_PROJECTION );
+	glPushMatrix();
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
@@ -497,8 +505,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
 	glPushMatrix();
+	glLoadIdentity();
 	rotx = entity->roll * 180 / PI; // get x rotation
 	roty = 360 - entity->yaw * 180 / PI; // get y rotation
 	rotz = 360 - entity->pitch * 180 / PI; // get z rotation
@@ -511,7 +519,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
     static ConsoleVariable<bool> reverseWhip("/reversewhip", false);
     if (*reverseWhip) {
         int chop = entity->skill[0];
-	    if (entity->behavior == &actHudWeapon && entity->sprite == 868 &&
+	    if (entity->behavior == &actHudWeapon && modelindex == 868 &&
 	        (chop == 1 || chop == 2 || chop == 4 || chop == 5)) {
 	        // whips get turned around when attacking
 	        // gross hack, but it works, and we don't have quaternions. so this is way easier
@@ -546,7 +554,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 	}
 	highlightEntity = entity->bEntityHighlightedForPlayer(player);
-	if ( !highlightEntity && (entity->sprite == 184 || entity->sprite == 585 || entity->sprite == 216) ) // lever base/chest lid
+	if ( !highlightEntity && (modelindex == 184 || modelindex == 585 || modelindex == 216) ) // lever base/chest lid
 	{
 		Entity* parent = uidToEntity(entity->parent);
 		if ( parent && parent->bEntityHighlightedForPlayer(player) )
@@ -764,7 +772,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					if ( entity->flags[USERFLAG2] )
 					{
 						if ( entity->behavior == &actMonster 
-							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
+							&& (entity->isPlayerHeadSprite() || modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
 							glColor3f((r / 255.f)*s, (g / 255.f)*s, (b / 255.f)*s );
@@ -807,7 +815,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				if ( entity->flags[USERFLAG2] )
 				{
 					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
-						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
+						|| modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
 						if ( doGrayScale )
 						{
@@ -897,6 +905,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 	}
 	glDepthRange(0, 1);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 }
 
