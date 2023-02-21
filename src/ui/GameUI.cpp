@@ -458,6 +458,181 @@ void imageResizeToContainer9x9(Frame* container, SDL_Rect dimensionsToFill, cons
 	mm->pos.h = ml->pos.h;
 }
 
+static ConsoleVariable<bool> cvar_mp_flash_whole_bar("/mp_flash_whole_bar", true);
+struct MPBarPaths_t
+{
+	static const std::map<std::string, std::string> normalMPBars;
+	static const std::map<std::string, std::string> automatonHTBars;
+	static const std::map<std::string, std::string> automatonSTBars;
+	static const std::map<std::string, std::string> insectoidENBars;
+	static const std::map<std::string, std::string>& getMPBar(const int player)
+	{
+		/*if ( keystatus[SDLK_h] )
+		{
+			return automatonHTBars;
+		}*/
+		if ( stats[player]->type == AUTOMATON )
+		{
+			/*if ( keystatus[SDLK_g] )
+			{
+				return automatonHTBars;
+			}*/
+			return automatonSTBars;
+		}
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			return insectoidENBars;
+		}
+		return normalMPBars;
+	}
+	static const std::string& get(const int player, const std::string key)
+	{
+		if ( (players[player]->magic.noManaProcessedOnTick != 0
+				&& players[player]->magic.noManaFeedbackTicks % 20 < 10) )
+		{
+			if ( *cvar_mp_flash_whole_bar )
+			{
+				if ( key.find("fade") == std::string::npos )
+				{
+					return automatonHTBars.at(key);
+				}
+			}
+			else
+			{
+				if ( key == "mp img value" )
+				{
+					return automatonHTBars.at(key);
+				}
+			}
+		}
+		return getMPBar(player).at(key);
+	}
+};
+
+const std::map<std::string, std::string> MPBarPaths_t::normalMPBars = {
+	{ "mp img progress bot", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png" },
+	{ "mp img progress bot 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png" },
+	{ "mp img progress bot 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png" },
+	{ "mp img progress bot 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png" },
+
+	{ "mp img progress endcap","*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png" },
+	{ "mp img progress endcap 1","*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png" },
+
+	{ "mp img progress endcap flash", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" },
+	{ "mp img progress endcap flash 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png" },
+	{ "mp img progress endcap flash 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png" },
+	{ "mp img progress endcap flash 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png" },
+	{ "mp img progress endcap flash 4", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F04.png" },
+	{ "mp img progress endcap flash b", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" },
+	{ "mp img progress endcap flash c", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" },
+	{ "mp img progress endcap flash d", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png" },
+
+	{ "mp img fade endcap", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEndFade_00.png" },
+
+	{ "mp img progress", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png" },
+	{ "mp img progress 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png" },
+	{ "mp img progress 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png" },
+	{ "mp img progress 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png" },
+
+	{ "mp img fade bot",	"*#images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png" },
+	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMidFade_00.png" },
+
+	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_MPNumBase_00.png" }
+};
+
+const std::map<std::string, std::string> MPBarPaths_t::automatonHTBars = {
+	{ "mp img progress bot", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTBot_00.png" },
+	{ "mp img progress bot 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTBot_01.png" },
+	{ "mp img progress bot 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTBot_02.png" },
+	{ "mp img progress bot 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTBot_03.png" },
+
+	{ "mp img progress endcap","*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_00.png" },
+	{ "mp img progress endcap 1","*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_01.png" },
+
+	{ "mp img progress endcap flash", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F00.png" },
+	{ "mp img progress endcap flash 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F01.png" },
+	{ "mp img progress endcap flash 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F02.png" },
+	{ "mp img progress endcap flash 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F03.png" },
+	{ "mp img progress endcap flash 4", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F04.png" },
+	{ "mp img progress endcap flash b", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F00b.png" },
+	{ "mp img progress endcap flash c", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F00c.png" },
+	{ "mp img progress endcap flash d", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEnd_F00d.png" },
+
+	{ "mp img fade endcap", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTEndFade_00.png" },
+
+	{ "mp img progress", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTMid_00.png" },
+	{ "mp img progress 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTMid_01.png" },
+	{ "mp img progress 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTMid_02.png" },
+	{ "mp img progress 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTMid_03.png" },
+
+	{ "mp img fade bot",	"*#images/ui/HUD/hpmpbars/HUD_Bars_HTMidFade_00.png" },
+	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTMidFade_00.png" },
+
+	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_HTNumBase_00.png" }
+};
+
+const std::map<std::string, std::string> MPBarPaths_t::automatonSTBars = {
+	{ "mp img progress bot", "*#images/ui/HUD/hpmpbars/HUD_Bars_STBot_00.png" },
+	{ "mp img progress bot 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_STBot_01.png" },
+	{ "mp img progress bot 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_STBot_02.png" },
+	{ "mp img progress bot 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_STBot_03.png" },
+
+	{ "mp img progress endcap","*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_00.png" },
+	{ "mp img progress endcap 1","*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_01.png" },
+
+	{ "mp img progress endcap flash", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F00.png" },
+	{ "mp img progress endcap flash 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F01.png" },
+	{ "mp img progress endcap flash 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F02.png" },
+	{ "mp img progress endcap flash 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F03.png" },
+	{ "mp img progress endcap flash 4", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F04.png" },
+	{ "mp img progress endcap flash b", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F00b.png" },
+	{ "mp img progress endcap flash c", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F00c.png" },
+	{ "mp img progress endcap flash d", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEnd_F00d.png" },
+
+	{ "mp img fade endcap", "*#images/ui/HUD/hpmpbars/HUD_Bars_STEndFade_00.png" },
+
+	{ "mp img progress", "*#images/ui/HUD/hpmpbars/HUD_Bars_STMid_00.png" },
+	{ "mp img progress 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_STMid_01.png" },
+	{ "mp img progress 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_STMid_02.png" },
+	{ "mp img progress 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_STMid_03.png" },
+
+	{ "mp img fade bot",	"*#images/ui/HUD/hpmpbars/HUD_Bars_STMidFade_00.png" },
+	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_STMidFade_00.png" },
+
+	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_STNumBase_00.png" }
+};
+
+const std::map<std::string, std::string> MPBarPaths_t::insectoidENBars = {
+	{ "mp img progress bot", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENBot_00.png" },
+	{ "mp img progress bot 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENBot_01.png" },
+	{ "mp img progress bot 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENBot_02.png" },
+	{ "mp img progress bot 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENBot_03.png" },
+
+	{ "mp img progress endcap","*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_00.png" },
+	{ "mp img progress endcap 1","*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_01.png" },
+
+	{ "mp img progress endcap flash", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F00.png" },
+	{ "mp img progress endcap flash 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F01.png" },
+	{ "mp img progress endcap flash 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F02.png" },
+	{ "mp img progress endcap flash 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F03.png" },
+	{ "mp img progress endcap flash 4", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F04.png" },
+	{ "mp img progress endcap flash b", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F00b.png" },
+	{ "mp img progress endcap flash c", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F00c.png" },
+	{ "mp img progress endcap flash d", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEnd_F00d.png" },
+
+	{ "mp img fade endcap", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENEndFade_00.png" },
+
+	{ "mp img progress", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMid_00.png" },
+	{ "mp img progress 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMid_01.png" },
+	{ "mp img progress 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMid_02.png" },
+	{ "mp img progress 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMid_03.png" },
+
+	{ "mp img fade bot",	"*#images/ui/HUD/hpmpbars/HUD_Bars_ENMidFade_00.png" },
+	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMidFade_00.png" },
+
+	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENNumBase_00.png" }
+};
+
 void createHPMPBars(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -1587,6 +1762,22 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		auto hpField = entryFrame->findField("hp");
 		hpField->setText(buf);
 
+		if ( bPlayerBars )
+		{
+			static ConsoleVariable<bool> cvar_playerbars_use_colors("/playerbars_use_colors", true);
+			if ( *cvar_playerbars_use_colors )
+			{
+				nameField->setColor(playerColor(uid, colorblind, false));
+			}
+			else
+			{
+				nameField->setColor(hudColors.characterSheetLightNeutral);
+			}
+		}
+		else
+		{
+			nameField->setColor(hudColors.characterSheetLightNeutral);
+		}
 		nameField->setText(followerBar.name.c_str());
 
 		int hpWidth = (shortBars ? hpBarSettings.barCompactPixelWidth : hpBarSettings.barPixelWidth);
@@ -3110,6 +3301,37 @@ void createEnemyBar(const int player, Frame*& frame)
 	dmgText->setOntop(true);
 }
 
+std::vector<std::vector<std::string>> playerXPCapPaths = {
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03d.png",
+	}
+};
+
 void createXPBar(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -3135,17 +3357,42 @@ void createXPBar(const int player)
 		"*#images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");*/
 	auto progressClipFrame = hud_t.xpFrame->addFrame("xp progress clipping frame");
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
+
+	std::string bodyPath = "*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_";
+	switch ( player )
+	{
+		case 0:
+		default:
+			bodyPath += "00.png";
+			break;
+		case 1:
+			bodyPath += "01.png";
+			break;
+		case 2:
+			bodyPath += "02.png";
+			break;
+		case 3:
+			bodyPath += "03.png";
+			break;
+	}
+
 	auto progressClipImg = progressClipFrame->addImage(SDL_Rect{ 0, 0, 634, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress clipped");
+		bodyPath.c_str(), "xp img progress clipped");
 
 	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress");
+		bodyPath.c_str(), "xp img progress");
 
 	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
 	/*auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 		"*#images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
+
+	int xpPathNum = player;
+	if ( player >= playerXPCapPaths.size() )
+	{
+		xpPathNum = 0;
+	}
 	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 38, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png", "xp img progress endcap");
+		playerXPCapPaths[xpPathNum][0].c_str(), "xp img progress endcap");
 
 
 	const int endCapWidth = 26;
@@ -23643,25 +23890,46 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks % 5 == 0 )
 		{
 			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
-			if ( moving && xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png" )
+			std::string playerStr = "00";
+			switch ( player.playernum )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png";
+				case 0:
+				default:
+					break;
+				case 1:
+					playerStr = "01";
+					break;
+				case 2:
+					playerStr = "02";
+					break;
+				case 3:
+					playerStr = "03";
+					break;
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png" )
+			int xpPathNum = player.playernum;
+			if ( player.playernum >= playerXPCapPaths.size() )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png";
+				xpPathNum = 0;
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png" )
+			if ( moving && xpProgressEndCap->path == playerXPCapPaths[xpPathNum][0] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][1];
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png" )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][1] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][2];
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png" )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][2] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][3];
+			}
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][3] )
+			{
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][4];
+			}
+			else if ( xpProgressEndCap->path == playerXPCapPaths[player.playernum][4] )
+			{
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][0];
 			}
 		}
 	}
@@ -25474,6 +25742,7 @@ void Player::HUD_t::updateMPBar()
 		_pos.w = pos.w;
 		mpForegroundFrame->setSize(_pos);
 	}
+
 	auto mpBg = mpFrame->findImage("mp img base");
 	auto mpEndcap = mpForegroundFrame->findImage("mp img endcap");
 	auto mpProgressBot = mpForegroundFrame->findImage("mp img progress bot");
@@ -25486,8 +25755,13 @@ void Player::HUD_t::updateMPBar()
 		mpFadeFrame->setSize(_pos);
 	}
 	auto mpFadedBase = mpFadeFrame->findImage("mp img fade bot");
+	mpFadedBase->path = MPBarPaths_t::get(player.playernum, "mp img fade bot");
 	auto mpFaded = mpFadeFrame->findImage("mp img fade");
+	mpFaded->path = MPBarPaths_t::get(player.playernum, "mp img fade");
 	auto mpFadedEndCap = mpFadeFrame->findImage("mp img fade endcap");
+	mpFadedEndCap->path = MPBarPaths_t::get(player.playernum, "mp img fade endcap");
+	auto mpBase = mpForegroundFrame->findImage("mp img value");
+	mpBase->path = MPBarPaths_t::get(player.playernum, "mp img value");
 
 	real_t progressWidth = mpFrame->getSize().w - 74;
 	int backgroundWidth = mpFrame->getSize().w - 54;
@@ -25658,9 +25932,9 @@ void Player::HUD_t::updateMPBar()
 		}
 	}
 
-	mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-	mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
-	mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_00.png";
+	mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress");
+	mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot");
+	mpProgressEndCap->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap");
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
 	const int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
@@ -25682,6 +25956,13 @@ void Player::HUD_t::updateMPBar()
 			{
 				MPBar.flashAnimState = 1;
 				MPBar.flashProcessedOnTick = ticks;
+
+				if ( mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 1")
+					|| mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 2")
+					|| mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 3") )
+				{
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash"); // reset to no full flash
+				}
 			}
 			else if ( (!processedOnTick)
 				&& (ticks > MPBar.flashTicks)
@@ -25700,7 +25981,7 @@ void Player::HUD_t::updateMPBar()
 				else if ( MPBar.flashAnimState == 0 )
 				{
 					mpProgressEndCapFlash->color = makeColor(255, 255, 255, 0);
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash");
 				}
 
 				if ( MPBar.flashAnimState <= 9 )
@@ -25720,64 +26001,64 @@ void Player::HUD_t::updateMPBar()
 					a = std::min(255, (int)a + increment);
 					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
 
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot");
 
 					if ( MPBar.flashAnimState % 2 == 0
 						&& !processedOnTick )
 					{
-						if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png" )
+						if ( mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash") )
 						{
-							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png";
+							mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash b");
 						}
-						else if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00b.png" )
+						else if ( mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash b") )
 						{
-							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png";
+							mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash c");
 						}
-						else if ( mpProgressEndCapFlash->path == "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00c.png" )
+						else if ( mpProgressEndCapFlash->path == MPBarPaths_t::get(player.playernum, "mp img progress endcap flash c") )
 						{
-							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00d.png";
+							mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash d");
 						}
 						else 
 						{
-							mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
+							mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash");
 						}
 					}
 				}
 				else if ( MPBar.flashAnimState <= 10 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F00.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_00.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot");
 				}
 				else if ( MPBar.flashAnimState >= 11 && MPBar.flashAnimState <= 12 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress 1");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 1");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot 1");
 				}
 				else if ( MPBar.flashAnimState == 13 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_02.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F02.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_02.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress 2");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 2");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot 2");
 				}
 				else if ( MPBar.flashAnimState >= 14 && MPBar.flashAnimState <= 15 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_01.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F01.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_01.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress 1");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 1");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot 1");
 				}
 				else if ( MPBar.flashAnimState == 16 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F03.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress 3");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 3");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot 3");
 				}
 				else
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_00.png";
-					mpProgressEndCapFlash->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_F04.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress");
+					mpProgressEndCapFlash->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap flash 4");
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
@@ -25793,9 +26074,9 @@ void Player::HUD_t::updateMPBar()
 				mpProgressEndCapFlash->disabled = true;
 				if ( MPBar.flashAnimState == 1 )
 				{
-					mpProgress->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPMid_03.png";
-					mpProgressBot->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPBot_03.png";
-					mpProgressEndCap->path = "*#images/ui/HUD/hpmpbars/HUD_Bars_MPEnd_01.png";
+					mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress 3");
+					mpProgressBot->path = MPBarPaths_t::get(player.playernum, "mp img progress bot 3");
+					mpProgressEndCap->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap 1");
 				}
 			}
 		}
@@ -25822,6 +26103,20 @@ void Player::HUD_t::updateMPBar()
 			mpProgressEndCapFlash->pos.x += overflowx;
 			mpProgressEndCapFlash->pos.w -= overflowx;
 			mpProgressEndCapFlash->section.w = mpProgressEndCapFlash->pos.w;
+		}
+	}
+
+	if ( player.magic.noManaProcessedOnTick != 0 )
+	{
+		if ( ticks != player.magic.noManaProcessedOnTick )
+		{
+			++player.magic.noManaFeedbackTicks;
+			player.magic.noManaProcessedOnTick = ticks;
+		}
+		if ( player.magic.noManaFeedbackTicks > TICKS_PER_SECOND )
+		{
+			player.magic.noManaProcessedOnTick = 0;
+			player.magic.noManaFeedbackTicks = 0;
 		}
 	}
 }
@@ -32345,6 +32640,7 @@ void LevelUpAnimation_t::addLevelUp(const int currentLvl, const int increaseLvl,
 			// skip some animation
 			lvlUp.titleFinishAnim = true;
 			lvlUp.animTitleFade = 1.0;
+			lvlUp.ticksToLive = 3 * TICKS_PER_SECOND;
 		}
 		else
 		{
@@ -32451,6 +32747,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 	static ConsoleVariable<float> cvar_lvlup_speed("/lvlup_speed", .5);
 	static ConsoleVariable<float> cvar_lvlup_bounce("/lvlup_bounce", 1.0 /*2.5*/);
 	static ConsoleVariable<float> cvar_lvlup_animfall("/lvlup_animfall", 0.5/*2.0*/);
+	static ConsoleVariable<int> cvar_lvlup_ding_volume("/lvlup_ding_volume", 64);
 	animspeed *= *cvar_lvlup_speed;
 	int movementAmount = 0;
 	if ( players[player]->bUseCompactGUIHeight() )
@@ -32575,7 +32872,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 	animAngle = std::min(1.0, animAngle);
 	if ( animAngle > 0.0 && oldAngle <= 0.001 )
 	{
-		playSound(*cvar_lvl_ding_sfx, 64);
+		playSound(*cvar_lvl_ding_sfx, *cvar_lvlup_ding_volume);
 	}
 	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
 	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
@@ -32987,7 +33284,7 @@ void updateLevelUpFrame(const int player)
 	levelUpFramePos.y += lvlUp.fadeout * *cvar_lvlup_falldist;
 	hud_t.levelupFrame->setSize(levelUpFramePos);
 
-	if ( lvlUp.ticksActive >= TICKS_PER_SECOND * 6 )
+	if ( lvlUp.ticksActive >= lvlUp.ticksToLive )
 	{
 		lvlUp.expired = true;
 	}
@@ -33091,7 +33388,7 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	static ConsoleVariable<float> cvar_skillup_bounce("/skillup_bounce", 1.0 /*2.5*/);
 	static ConsoleVariable<float> cvar_skillup_animfall("/skillup_animfall", 0.5/*2.0*/);
 	static ConsoleVariable<int> cvar_skillup_increase_delay("/skillup_increase_delay", 50);
-	static ConsoleVariable<int> cvar_skillup_ding_volume("/skillup_ding_volume", 64);
+	static ConsoleVariable<int> cvar_skillup_ding_volume("/skillup_ding_volume", 32);
 	animspeed *= *cvar_skillup_speed;
 	int movementAmount = 0;
 	if ( players[player]->bUseCompactGUIHeight() )

@@ -101,6 +101,11 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 		case static_cast<int>(EOS_EResult::EOS_NoChange) :
 			snprintf(buf, 1023, "Unable to join lobby:\nNo match found.");
 			break;
+#ifdef STEAMWORKS
+		case static_cast<int>(k_EResultNoMatch) :
+			snprintf(buf, 1023, "Unable to join lobby:\nNo match found.");
+			break;
+#endif
 		case static_cast<int>(EOS_EResult::EOS_NotFound):
 			snprintf(buf, 1023, "Unable to join lobby:\nLobby no longer exists.");
 			break;
@@ -150,21 +155,50 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 			// loading save game, but incorrect assertion from client side.
 			if ( loadingsavegame == 0 )
 			{
-				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+				// try reload from your other savefiles since this didn't match the default savegameIndex.
+				bool foundSave = false;
+				for ( int c = 0; c < SAVE_GAMES_MAX; ++c ) {
+					auto info = getSaveGameInfo(false, c);
+					if ( info.game_version != -1 ) {
+						if ( info.gamekey == lsg ) {
+							savegameCurrentFileIndex = c;
+							foundSave = true;
+							break;
+						}
+					}
+				}
+
+				if ( foundSave )
+				{
+					loadingsavegame = lsg;
+					auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
+					for ( int c = 0; c < MAXPLAYERS; ++c ) {
+						if ( info.players_connected[c] ) {
+							loadGame(c, info);
+						}
+					}
+				}
+				else
+				{
+					connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+					errorOnJoin = true;
+				}
 			}
 			else if ( loadingsavegame > 0 && lsg == 0 )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+				errorOnJoin = true;
 			}
 			else if ( loadingsavegame > 0 && lsg > 0 )
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+				errorOnJoin = true;
 			}
 			else
 			{
 				connectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+				errorOnJoin = true;
 			}
-			errorOnJoin = true;
 		}
 	}
 
@@ -182,6 +216,7 @@ bool LobbyHandler_t::validateSteamLobbyDataOnJoin()
 	{
 		connectingToLobbyWindow = false;
 		connectingToLobby = false;
+		multiplayer = SINGLE;
 	}
 
 	return !errorOnJoin;

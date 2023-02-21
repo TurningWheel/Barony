@@ -1927,21 +1927,49 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 		// loading save game, but incorrect assertion from client side.
 		if ( loadingsavegame == 0 )
 		{
-			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+			// try reload from your other savefiles since this didn't match the default savegameIndex.
+			bool foundSave = false;
+			for ( int c = 0; c < SAVE_GAMES_MAX; ++c ) {
+				auto info = getSaveGameInfo(false, c);
+				if ( info.game_version != -1 ) {
+					if ( info.gamekey == lobby->LobbyAttributes.isLobbyLoadingSavedGame ) {
+						savegameCurrentFileIndex = c;
+						foundSave = true;
+						break;
+					}
+				}
+			}
+
+			if ( foundSave ) {
+				loadingsavegame = lobby->LobbyAttributes.isLobbyLoadingSavedGame;
+				auto info = getSaveGameInfo(false, savegameCurrentFileIndex);
+				for ( int c = 0; c < MAXPLAYERS; ++c ) {
+					if ( info.players_connected[c] ) {
+						loadGame(c, info);
+					}
+				}
+			}
+			else 
+			{
+				ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_USING_SAVEGAME;
+				errorOnJoin = true;
+			}
 		}
 		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame == 0 )
 		{
 			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_NOT_USING_SAVEGAME;
+			errorOnJoin = true;
 		}
 		else if ( loadingsavegame > 0 && lobby->LobbyAttributes.isLobbyLoadingSavedGame > 0 )
 		{
 			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_WRONG_SAVEGAME;
+			errorOnJoin = true;
 		}
 		else
 		{
 			ConnectingToLobbyStatus = LobbyHandler_t::EResult_LobbyFailures::LOBBY_UNHANDLED_ERROR;
+			errorOnJoin = true;
 		}
-		errorOnJoin = true;
 	}
 	else if ( lobby->LobbyAttributes.gameCurrentLevel >= 0 )
 	{
@@ -1960,6 +1988,7 @@ void EOSFuncs::joinLobby(LobbyData_t* lobby)
 	{
 		bConnectingToLobbyWindow = false;
 		bConnectingToLobby = false;
+		multiplayer = SINGLE;
 
 		LobbyParameters.clearLobbyToJoin();
 		LobbyLeaveCleanup(EOS.CurrentLobbyData);

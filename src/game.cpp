@@ -5969,7 +5969,7 @@ static void doConsoleCommands() {
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = makeColor(0, 255, 255, 255);
+						Uint32 color = playerColor(commandPlayer, colorblind, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 							playSound(238, 64);
 						}
@@ -5996,7 +5996,7 @@ static void doConsoleCommands() {
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = makeColor(0, 255, 255, 255);
+						Uint32 color = playerColor(commandPlayer, colorblind, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 							playSound(238, 64);
 						}
@@ -6016,8 +6016,8 @@ static void doConsoleCommands() {
 								// GCC throws a warning (intended) when the length argument to strncpy() in any
 								// way depends on strlen(src) to discourage this (and related) construct(s).
 
-								strncpy(chatstring, stats[0]->name, 10);
-								chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
+								strncpy(chatstring, stats[0]->name, 22);
+								chatstring[std::min<size_t>(strlen(stats[0]->name), 22)] = 0; //TODO: Why are size_t and int being compared?
 								strcat(chatstring, ": ");
 								strcat(chatstring, command_str);
 								SDLNet_Write32(color, &net_packet->data[4]);

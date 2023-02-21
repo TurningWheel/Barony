@@ -2128,6 +2128,8 @@ void actPlayer(Entity* my)
 		nametag->scalex = 0.2;
 		nametag->scaley = 0.2;
 		nametag->scalez = 0.2;
+		nametag->skill[0] = PLAYER_NUM;
+		nametag->skill[1] = playerColor(PLAYER_NUM, colorblind, false);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;

@@ -1859,6 +1859,7 @@ void drawEntities3D(view_t* camera, int mode)
 			Entity* entity = (Entity*)std::get<1>(distSpriteType);
 			if ( entity->behavior == &actSpriteNametag )
 			{
+				if ( intro ) { continue; } // don't draw on main menu
 				int playersTag = playerEntityMatchesUid(entity->parent);
 				if ( playersTag >= 0 )
 				{
@@ -1867,10 +1868,12 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
+				if ( intro ) { continue; } // don't draw on main menu
 				glDrawWorldUISprite(camera, entity, mode);
 			}
 			else if ( entity->behavior == &actDamageGib )
 			{
+				if ( intro ) { continue; } // don't draw on main menu
 				char buf[16];
 				if ( entity->skill[0] < 0 )
 				{
@@ -1891,6 +1894,7 @@ void drawEntities3D(view_t* camera, int mode)
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_HPBAR )
 		{
 #ifndef EDITOR
+			if ( intro ) { continue; } // don't draw on main menu
 			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
 			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
 #endif
@@ -1898,6 +1902,7 @@ void drawEntities3D(view_t* camera, int mode)
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_DIALOGUE )
 		{
 #ifndef EDITOR
+			if ( intro ) { continue; } // don't draw on main menu
 			auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)std::get<1>(distSpriteType);
 			glDrawWorldDialogueSprite(camera, dialogue, mode);
 #endif
