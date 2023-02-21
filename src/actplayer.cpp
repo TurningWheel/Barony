@@ -1085,6 +1085,7 @@ real_t Player::PlayerMovement_t::getWeightRatio(int weight, Sint32 STR)
 	{
 		weightratio = std::max(weightratio, weightratio_zero);
 	}
+
 	return weightratio;
 }
 
@@ -1110,6 +1111,22 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
 	{
 		speedFactor = std::min(speedFactor, 5.0);
+	}
+
+
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL )
+		{
+			if ( item->type == TOOL_PLAYER_LOOT_BAG )
+			{
+				if ( items[item->type].hasAttribute("EFF_WEIGHT_BURDEN") )
+				{
+					speedFactor *= (items[item->type].attributes["EFF_WEIGHT_BURDEN"]) / 100.0;
+				}
+			}
+		}
 	}
 	return speedFactor;
 }
