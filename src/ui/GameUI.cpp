@@ -3110,6 +3110,37 @@ void createEnemyBar(const int player, Frame*& frame)
 	dmgText->setOntop(true);
 }
 
+std::vector<std::vector<std::string>> playerXPCapPaths = {
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_01d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_02d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03d.png",
+	}
+};
+
 void createXPBar(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -3135,17 +3166,42 @@ void createXPBar(const int player)
 		"*#images/ui/HUD/xpbar/HUD_Bars_ExpMid_00.png", "xp img progress");*/
 	auto progressClipFrame = hud_t.xpFrame->addFrame("xp progress clipping frame");
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
+
+	std::string bodyPath = "*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_";
+	switch ( player )
+	{
+		case 0:
+		default:
+			bodyPath += "00.png";
+			break;
+		case 1:
+			bodyPath += "01.png";
+			break;
+		case 2:
+			bodyPath += "02.png";
+			break;
+		case 3:
+			bodyPath += "03.png";
+			break;
+	}
+
 	auto progressClipImg = progressClipFrame->addImage(SDL_Rect{ 0, 0, 634, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress clipped");
+		bodyPath.c_str(), "xp img progress clipped");
 
 	auto xpProgress = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 1, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_00.png", "xp img progress");
+		bodyPath.c_str(), "xp img progress");
 
 	// xpProgressEndCap only adjusts x position based on xpProgress->pos.x + xpProgress->pos.w
 	/*auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 		"*#images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
+
+	int xpPathNum = player;
+	if ( player >= playerXPCapPaths.size() )
+	{
+		xpPathNum = 0;
+	}
 	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 38, progressBarHeight }, 0xFFFFFFFF,
-		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png", "xp img progress endcap");
+		playerXPCapPaths[xpPathNum][0].c_str(), "xp img progress endcap");
 
 
 	const int endCapWidth = 26;
@@ -23643,25 +23699,46 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks % 5 == 0 )
 		{
 			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
-			if ( moving && xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png" )
+			std::string playerStr = "00";
+			switch ( player.playernum )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png";
+				case 0:
+				default:
+					break;
+				case 1:
+					playerStr = "01";
+					break;
+				case 2:
+					playerStr = "02";
+					break;
+				case 3:
+					playerStr = "03";
+					break;
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00a.png" )
+			int xpPathNum = player.playernum;
+			if ( player.playernum >= playerXPCapPaths.size() )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png";
+				xpPathNum = 0;
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00b.png" )
+			if ( moving && xpProgressEndCap->path == playerXPCapPaths[xpPathNum][0] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][1];
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00c.png" )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][1] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][2];
 			}
-			else if ( xpProgressEndCap->path == "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00d.png" )
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][2] )
 			{
-				xpProgressEndCap->path = "*#images/ui/HUD/xpbar/HUD_Exp_SandCap_00.png";
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][3];
+			}
+			else if ( xpProgressEndCap->path == playerXPCapPaths[xpPathNum][3] )
+			{
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][4];
+			}
+			else if ( xpProgressEndCap->path == playerXPCapPaths[player.playernum][4] )
+			{
+				xpProgressEndCap->path = playerXPCapPaths[xpPathNum][0];
 			}
 		}
 	}
