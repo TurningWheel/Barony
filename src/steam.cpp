@@ -1634,6 +1634,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 
 		// set the lobby open for friends only by default
 		SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
+		SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "false");
 
 		// set load game status on lobby
 		char loadingsavegameChar[16];

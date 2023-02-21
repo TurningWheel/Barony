@@ -10221,7 +10221,7 @@ failed:
             }
             else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-                if (::currentLobbyType == k_ELobbyTypeFriendsOnly) {
+                if (::currentLobbyType == k_ELobbyTypeInvisible) {
                     invite->setPressed(true);
                 }
 #endif // STEAMWORKS
@@ -10246,10 +10246,11 @@ failed:
                     }
                     else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
-                        ::currentLobbyType = k_ELobbyTypeFriendsOnly;
+                        ::currentLobbyType = k_ELobbyTypeInvisible;
                         auto lobby = static_cast<CSteamID*>(::currentLobby);
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
+						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "true");
 #endif // STEAMWORKS
                     }
 			        });
@@ -10335,6 +10336,7 @@ failed:
                         auto lobby = static_cast<CSteamID*>(::currentLobby);
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
+						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "false");
 #endif // STEAMWORKS
                     }
 			        });
@@ -10420,6 +10422,7 @@ failed:
                         auto lobby = static_cast<CSteamID*>(::currentLobby);
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
+						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "false");
 #endif // STEAMWORKS
                     }
 			        });
@@ -14586,11 +14589,16 @@ failed:
 #endif
         }
 
-        // this is a steam lobby, check if it's friends-only and filter it
+        // this is a steam lobby, check if it's friends-only or invite-only and filter it
         if (info.address[0] == 's') {
 #ifdef STEAMWORKS
             auto lobby = getLobbySteamID(info.address.c_str());
             if (lobby) {
+				auto invite_only = SteamMatchmaking()->GetLobbyData(*lobby, "invite_only");
+				if (invite_only && stringCmp(invite_only, "true", 4, 4) == 0) {
+					// this is an invite-only lobby.
+					return;
+				}
                 const int num_friends = SteamFriends()->GetFriendCount( k_EFriendFlagImmediate );
                 for (int i = 0; i < num_friends; ++i) {
                     FriendGameInfo_t friendGameInfo;
