@@ -1703,6 +1703,10 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		color = hudColors.characterSheetGreen;
 #endif // !EDITOR
 	}
+	else if ( entity->behavior == &actSpriteNametag )
+	{
+		color = entity->skill[1];
+	}
 	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
@@ -1783,6 +1787,10 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		else if ( entity->behavior != &actSpriteNametag )
 		{
 			glDepthRange(0, 0.98);
+		}
+		else if ( entity->behavior == &actSpriteNametag )
+		{
+			glDepthRange(0, 0.52);
 		}
 	}
 
