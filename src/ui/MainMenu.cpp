@@ -11253,35 +11253,39 @@ failed:
 			backdrop->pos.y = frame->getActualSize().y + 4;
 			auto appearance_uparrow = parent->findButton("appearance_uparrow");
 			auto appearance_downarrow = parent->findButton("appearance_downarrow");
+			auto controlType = Input::inputs[widget.getOwner()].getPlayerControlType();
+			const bool deselected = controlType == Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD ?
+				(!frame->isSelected() && !appearance_uparrow->isSelected() && !appearance_downarrow->isSelected()) :
+				!frame->isActivated();
 			if (frame->isActivated()) {
 				appearance_uparrow->setDisabled(false);
 				appearance_uparrow->setInvisible(false);
 				appearance_downarrow->setDisabled(false);
 				appearance_downarrow->setInvisible(false);
-				auto bottom = parent->findFrame("bottom");
+				auto card = static_cast<Frame*>(parent->getParent());
+				auto bottom = card->findFrame("bottom");
 				if (bottom) {
-					auto male = parent->findButton("male");
-					auto female = parent->findButton("female");
-					auto abilities = parent->findButton("disable_abilities");
+					auto male = bottom->findButton("male");
+					auto female = bottom->findButton("female");
+					auto info = bottom->findButton("show_race_info");
 					male->setHideGlyphs(true);
 					female->setHideGlyphs(true);
-					abilities->setHideGlyphs(true);
+					info->setHideGlyphs(true);
 				}
-			} else if (!frame->isActivated() &&
-				!appearance_uparrow->isSelected() &&
-				!appearance_downarrow->isSelected()) {
+			} else if (deselected) {
 				appearance_uparrow->setDisabled(true);
 				appearance_uparrow->setInvisible(true);
 				appearance_downarrow->setDisabled(true);
 				appearance_downarrow->setInvisible(true);
-				auto bottom = parent->findFrame("bottom");
+				auto card = static_cast<Frame*>(parent->getParent());
+				auto bottom = card->findFrame("bottom");
 				if (bottom) {
-					auto male = parent->findButton("male");
-					auto female = parent->findButton("female");
-					auto abilities = parent->findButton("disable_abilities");
+					auto male = bottom->findButton("male");
+					auto female = bottom->findButton("female");
+					auto info = bottom->findButton("show_race_info");
 					male->setHideGlyphs(false);
 					female->setHideGlyphs(false);
-					abilities->setHideGlyphs(false);
+					info->setHideGlyphs(false);
 				}
 			}
 	        if (widget.isSelected()) {
