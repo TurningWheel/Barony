@@ -13326,6 +13326,10 @@ failed:
 	        createLockedStone(index);
 	        return;
 	    }
+		if (LobbyHandler.getHostingType() != LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+			createWaitingStone(index);
+			return;
+		}
 
 	    if (multiplayer == SERVER) {
 	        newPlayer[index] = true;
