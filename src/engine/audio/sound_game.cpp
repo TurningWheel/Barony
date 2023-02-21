@@ -204,12 +204,12 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 				c->getVolume(&volume);
 				FMOD_VECTOR playingPosition;
 				c->get3DAttributes(&playingPosition, nullptr);
-				printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 255.f)) < 0.05 )
 				{
 					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
 					{
-						printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
 						return nullptr;
 					}
 				}

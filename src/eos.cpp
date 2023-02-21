@@ -521,6 +521,17 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		if ( NumSearchResults == 0 )
 		{
 			EOSFuncs::logInfo("OnLobbySearchFinished: Found 0 lobbies!");
+
+			int* searchOptions = static_cast<int*>(data->ClientData);
+			if ( searchOptions[EOSFuncs::LobbyParameters_t::JOIN_OPTIONS]
+				== static_cast<int>(EOSFuncs::LobbyParameters_t::LOBBY_JOIN_FIRST_SEARCH_RESULT) )
+			{
+				// we were trying to join a lobby, set error message.
+				EOS.bConnectingToLobbyWindow = false;
+				EOS.bConnectingToLobby = false;
+				EOS.ConnectingToLobbyStatus = static_cast<int>(EOS_EResult::EOS_NoChange);
+				multiplayer = SINGLE;
+			}
 		}
 		EOS.LobbySearchResults.sortResults();
 		return;
@@ -544,6 +555,7 @@ void EOS_CALL EOSFuncs::OnLobbySearchFinished(const EOS_LobbySearch_FindCallback
 		    EOS.bConnectingToLobbyWindow = false;
 		    EOS.bConnectingToLobby = false;
 		    EOS.ConnectingToLobbyStatus = static_cast<int>(data->ResultCode);
+			multiplayer = SINGLE;
 	    }
     }
 }
