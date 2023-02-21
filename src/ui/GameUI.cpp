@@ -32544,6 +32544,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 	static ConsoleVariable<float> cvar_lvlup_speed("/lvlup_speed", .5);
 	static ConsoleVariable<float> cvar_lvlup_bounce("/lvlup_bounce", 1.0 /*2.5*/);
 	static ConsoleVariable<float> cvar_lvlup_animfall("/lvlup_animfall", 0.5/*2.0*/);
+	static ConsoleVariable<int> cvar_lvlup_ding_volume("/lvlup_ding_volume", 64);
 	animspeed *= *cvar_lvlup_speed;
 	int movementAmount = 0;
 	if ( players[player]->bUseCompactGUIHeight() )
@@ -32668,7 +32669,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 	animAngle = std::min(1.0, animAngle);
 	if ( animAngle > 0.0 && oldAngle <= 0.001 )
 	{
-		playSound(*cvar_lvl_ding_sfx, 64);
+		playSound(*cvar_lvl_ding_sfx, *cvar_lvlup_ding_volume);
 	}
 	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
 	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
@@ -33184,7 +33185,7 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	static ConsoleVariable<float> cvar_skillup_bounce("/skillup_bounce", 1.0 /*2.5*/);
 	static ConsoleVariable<float> cvar_skillup_animfall("/skillup_animfall", 0.5/*2.0*/);
 	static ConsoleVariable<int> cvar_skillup_increase_delay("/skillup_increase_delay", 50);
-	static ConsoleVariable<int> cvar_skillup_ding_volume("/skillup_ding_volume", 64);
+	static ConsoleVariable<int> cvar_skillup_ding_volume("/skillup_ding_volume", 32);
 	animspeed *= *cvar_skillup_speed;
 	int movementAmount = 0;
 	if ( players[player]->bUseCompactGUIHeight() )
