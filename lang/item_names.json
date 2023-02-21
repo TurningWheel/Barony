@@ -1152,6 +1152,10 @@
         "monocle": {
             "name_identified": "monocle",
             "name_unidentified": "monocle"
+        },
+		"tool_player_loot_bag": {
+            "name_identified": "loot crate",
+            "name_unidentified": "loot crate"
         }
     },
 	"spell_names": {

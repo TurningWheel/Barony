@@ -18,6 +18,7 @@
 #include "../../entity.hpp"
 #include "../../net.hpp"
 #include "../../player.hpp"
+#include "../../ui/GameUI.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -38,6 +39,10 @@ FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 	if ( snd == 149 )
 	{
 		return soundAmbient_group;
+	}
+	if ( SkillUpAnimation_t::soundIndexUsedForNotification(snd) )
+	{
+		return soundNotification_group;
 	}
 	return sound_group;
 }
@@ -193,18 +198,18 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 			FMOD::Channel* c;
 			if ( soundAmbient_group->getChannel(i, &c) == FMOD_RESULT::FMOD_OK )
 			{
-				//float audibility = 0.f;
-				//FMOD_Channel_GetAudibility(c, &audibility);
+				float audibility = 0.f;
+				c->getAudibility(&audibility);
 				float volume = 0.f;
 				c->getVolume(&volume);
 				FMOD_VECTOR playingPosition;
 				c->get3DAttributes(&playingPosition, nullptr);
-				//printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
+				printlog("Channel index: %d, audibility: %f, vol: %f, pos x: %.2f | y: %.2f", i, audibility, volume, playingPosition.z, playingPosition.x);
 				if ( abs(volume - (vol / 255.f)) < 0.05 )
 				{
 					if ( sqrt(pow(playingPosition.x - position.x, 2) + pow(playingPosition.z - position.z, 2)) <= 1.5 )
 					{
-						//printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
+						printlog("Culling sound due to proximity, pos x: %.2f | y: %.2f", position.z, position.x);
 						return nullptr;
 					}
 				}
@@ -212,7 +217,7 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 		}
 	}
 
-	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
+	fmod_result = fmod_system->playSound(sounds[snd], getChannelGroupForSoundIndex(snd), true, &channel);
 	if (FMODErrorCheck())
 	{
 		return nullptr;
@@ -220,7 +225,6 @@ FMOD::Channel* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol)
 
 	channel->setVolume(vol / 255.f);
 	channel->set3DAttributes(&position, nullptr);
-	//FMOD_Channel_SetChannelGroup(channel, getChannelGroupForSoundIndex(snd)); //No complement/not needed in FMOD Studio?
 	channel->setPaused(false);
 
 	return channel;
@@ -285,7 +289,7 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol)
 		return nullptr;
 	}
 	FMOD::Channel* channel;
-	fmod_result = fmod_system->playSound(sounds[snd], sound_group, true, &channel);
+	fmod_result = fmod_system->playSound(sounds[snd], getChannelGroupForSoundIndex(snd), true, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
 	FMOD_VECTOR position;
 	position.x = 0;
@@ -293,7 +297,6 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol)
 	position.z = 0;
 
 	channel->set3DAttributes(&position, nullptr);
-	//FMOD_Channel_SetChannelGroup(channel, sound_group);
 	channel->setVolume(vol / 255.f);
 	channel->setMode(FMOD_3D_HEADRELATIVE);
 
@@ -323,7 +326,7 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol)
 		return nullptr;
 	}
 	FMOD::Channel* channel;
-	fmod_result = fmod_system->playSound(sounds[snd], notification_group, true, &channel);
+	fmod_result = fmod_system->playSound(sounds[snd], music_notification_group, true, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
 	FMOD_VECTOR position;
 	position.x = 0;
@@ -331,7 +334,6 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol)
 	position.z = 0;
 
 	channel->set3DAttributes(&position, nullptr);
-	//FMOD_Channel_SetChannelGroup(channel, sound_group);
 	channel->setVolume(vol / 255.f);
 	channel->setMode(FMOD_3D_HEADRELATIVE);
 

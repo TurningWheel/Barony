@@ -1085,6 +1085,7 @@ real_t Player::PlayerMovement_t::getWeightRatio(int weight, Sint32 STR)
 	{
 		weightratio = std::max(weightratio, weightratio_zero);
 	}
+
 	return weightratio;
 }
 
@@ -1110,6 +1111,22 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
 	{
 		speedFactor = std::min(speedFactor, 5.0);
+	}
+
+
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != NULL )
+		{
+			if ( item->type == TOOL_PLAYER_LOOT_BAG )
+			{
+				if ( items[item->type].hasAttribute("EFF_WEIGHT_BURDEN") )
+				{
+					speedFactor *= (items[item->type].attributes["EFF_WEIGHT_BURDEN"]) / 100.0;
+				}
+			}
+		}
 	}
 	return speedFactor;
 }
@@ -5414,40 +5431,47 @@ void actPlayer(Entity* my)
 											steamAchievement("BARONY_ACH_CHOSEN_ONE");
 										}
 									}
-									int c = item->count;
-									for ( c = item->count; c > 0; c-- )
+									if ( (multiplayer == SINGLE && !splitscreen) )
 									{
-										entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-										entity->flags[INVISIBLE] = true;
-										entity->flags[UPDATENEEDED] = true;
-										entity->x = my->x;
-										entity->y = my->y;
-										entity->sizex = 4;
-										entity->sizey = 4;
-										entity->yaw = (local_rng.rand() % 360) * (PI / 180.f);
-										entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
-										entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
-										entity->vel_z = -.5;
-										entity->flags[PASSABLE] = true;
-										entity->flags[USERFLAG1] = true;
-										entity->behavior = &actItem;
-										entity->skill[10] = item->type;
-										entity->skill[11] = item->status;
-										entity->skill[12] = item->beatitude;
-										int qtyToDrop = 1;
-										if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+										int c = item->count;
+										for ( c = item->count; c > 0; c-- )
 										{
-											qtyToDrop = 10;
-											c -= 9;
+											entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+											entity->flags[INVISIBLE] = true;
+											entity->flags[UPDATENEEDED] = true;
+											entity->x = my->x;
+											entity->y = my->y;
+											entity->sizex = 4;
+											entity->sizey = 4;
+											entity->yaw = (local_rng.rand() % 360) * (PI / 180.f);
+											entity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+											entity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+											entity->vel_z = -.5;
+											entity->flags[PASSABLE] = true;
+											entity->flags[USERFLAG1] = true;
+											entity->behavior = &actItem;
+											entity->skill[10] = item->type;
+											entity->skill[11] = item->status;
+											entity->skill[12] = item->beatitude;
+											int qtyToDrop = 1;
+											if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+											{
+												qtyToDrop = 10;
+												c -= 9;
+											}
+											else if ( itemTypeIsQuiver(item->type) )
+											{
+												qtyToDrop = item->count;
+												c -= item->count;
+											}
+											entity->skill[13] = qtyToDrop;
+											entity->skill[14] = item->appearance;
+											entity->skill[15] = item->identified;
 										}
-										else if ( itemTypeIsQuiver(item->type) )
-										{
-											qtyToDrop = item->count;
-											c -= item->count;
-										}
-										entity->skill[13] = qtyToDrop;
-										entity->skill[14] = item->appearance;
-										entity->skill[15] = item->identified;
+									}
+									else
+									{
+										stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
 									}
 								}
 								if ( multiplayer != SINGLE || splitscreen )
@@ -5526,7 +5550,8 @@ void actPlayer(Entity* my)
 							{
 								my->x = ((int)(my->x / 16)) * 16 + 8;
 								my->y = ((int)(my->y / 16)) * 16 + 8;
-								item = stats[PLAYER_NUM]->helmet;
+								
+								/*item = stats[PLAYER_NUM]->helmet;
 								if ( item )
 								{
 									int c = item->count;
@@ -5622,7 +5647,149 @@ void actPlayer(Entity* my)
 									{
 										dropItemMonster(item, my, stats[PLAYER_NUM]);
 									}
+								}*/
+
+								item = stats[PLAYER_NUM]->helmet;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->helmet = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
 								}
+								item = stats[PLAYER_NUM]->breastplate;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->breastplate = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->gloves;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->gloves = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->shoes;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->shoes = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->shield;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->shield = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->weapon;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->weapon = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->cloak;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->cloak = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->amulet;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->amulet = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->ring;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->ring = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+								item = stats[PLAYER_NUM]->mask;
+								if ( item )
+								{
+									stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
+									stats[PLAYER_NUM]->mask = nullptr;
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+								}
+
 								list_FreeAll(&stats[PLAYER_NUM]->inventory);
 							}
 

@@ -7750,7 +7750,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// unaware monster, get backstab damage.
 								backstab = true;
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
-								if ( local_rng.rand() % 4 > 0 )
+								if ( local_rng.rand() % 4 > 0 && hit.entity->behavior != &actPlayer )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -7761,7 +7761,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
-								if ( local_rng.rand() % 20 == 0 )
+								if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -10882,6 +10882,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( src->behavior == &actPlayer && root )
+		{
+			return;
+		}
 	}
 
 	// calculate XP gain

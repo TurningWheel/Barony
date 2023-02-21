@@ -451,6 +451,7 @@ struct SkillUpAnimation_t
 	void addSpellLearned(const int _spellID);
 	size_t getSkillUpIndexToDisplay();
 	SkillUp_t& getSkillUpToDisplay();
+	static bool soundIndexUsedForNotification(const int index);
 };
 
 extern SkillUpAnimation_t skillUpAnimation[MAXPLAYERS];

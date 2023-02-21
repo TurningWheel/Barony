@@ -9644,6 +9644,10 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundEnvironment_group->stop();
 		}
+		if ( soundNotification_group )
+		{
+			soundNotification_group->stop();
+		}
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9976,6 +9980,10 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundEnvironment_group->stop();
 		}
+		if ( soundNotification_group )
+		{
+			soundNotification_group->stop();
+		}
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -10302,6 +10310,10 @@ void doEndgame(bool saveHighscore) {
 	if ( soundEnvironment_group )
 	{
 		soundEnvironment_group->stop();
+	}
+	if ( soundNotification_group )
+	{
+		soundNotification_group->stop();
 	}
 #elif defined USE_OPENAL
 	if ( sound_group )

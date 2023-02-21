@@ -1850,6 +1850,10 @@ void gameLogic(void)
 					{
 						soundEnvironment_group->stop();
 					}
+					if ( soundNotification_group )
+					{
+						soundNotification_group->stop();
+					}
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
@@ -4471,7 +4475,7 @@ bool handleEvents(void)
 			case SDL_WINDOWEVENT:
 				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
 				{
-				    setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
+				    setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
 				}
 				else if ( event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED )
 				{
@@ -4479,7 +4483,8 @@ bool handleEvents(void)
 				        musvolume,
 				        sfxvolume,
 				        sfxAmbientVolume,
-				        sfxEnvironmentVolume);
+				        sfxEnvironmentVolume,
+						sfxNotificationVolume);
 				}
 				else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
 				{
@@ -5626,6 +5631,26 @@ void drawAllPlayerCameras() {
 			++playercount;
 		}
 	}
+	Uint32 oldFov = ::fov;
+	if ( playercount == 2 )
+	{
+		if ( *MainMenu::vertical_splitscreen )
+		{
+			::fov += 15;
+		}
+		else
+		{
+			if ( ::fov >= 15 )
+			{
+				::fov -= 15;
+			}
+			else
+			{
+				::fov = 0;
+			}
+		}
+	}
+
 	if (playercount >= 1)
 	{
         // drunkenness spinning
@@ -5790,6 +5815,7 @@ void drawAllPlayerCameras() {
 		}
 	}
 	DebugStats.drawWorldT6 = std::chrono::high_resolution_clock::now();
+	::fov = oldFov;
 }
 
 /*-------------------------------------------------------------------------------

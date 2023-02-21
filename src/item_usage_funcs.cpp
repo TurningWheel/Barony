@@ -5486,3 +5486,23 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 	}
 	serverUpdateHunger(my->skill[2]);
 }
+
+void item_ToolLootBag(Item*& item, int player)
+{
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "LOOT");
+		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[4]);
+		net_packet->data[8] = clientnum;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		consumeItem(item, player);
+		return;
+	}
+
+	Stat::emptyLootingBag(player, item->appearance);
+	consumeItem(item, player);
+	return;
+}

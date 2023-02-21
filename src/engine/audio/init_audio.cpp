@@ -93,13 +93,18 @@ bool initSoundEngine()
 			printlog("[FMOD]: Failed to create sound environment channel group.\n");
 			no_sound = true;
 		}
-		fmod_result = fmod_system->createChannelGroup(nullptr, &notification_group);
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_notification_group);
 		if ( FMODErrorCheck() )
 		{
 			printlog("[FMOD]: Failed to create notification channel group.\n");
 			no_sound = true;
 		}
-		
+		fmod_result = fmod_system->createChannelGroup(nullptr, &soundNotification_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create sound notification channel group.\n");
+			no_sound = true;
+		}
 		fmod_result = fmod_system->createChannelGroup(nullptr, &music_group);
 		if (FMODErrorCheck())
 		{
@@ -117,7 +122,7 @@ bool initSoundEngine()
 
 #ifndef EDITOR
 	// saves your ears getting blasted if the game starts without window focus.
-	setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f);
+	setGlobalVolume(0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
 #endif
 
 	return !no_sound; //No double negatives pls

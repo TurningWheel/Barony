@@ -293,6 +293,15 @@ public:
 #endif
 	int monster_idlevar;
 	std::map<std::string, std::string> attributes;
+	struct Lootbag_t
+	{
+		int spawn_x = 0;
+		int spawn_y = 0;
+		bool spawnedOnGround = false;
+		bool looted = false;
+		std::vector<Item> items;
+	};
+	std::map<Uint32, Lootbag_t> player_lootbags;
 	list_t magic_effects; //Makes things like the invisibility spell work.
 	Stat(Sint32 sprite);
 	~Stat();
@@ -326,6 +335,9 @@ public:
 	}
 	void setAttribute(std::string key, std::string value);
 	bool statusEffectRemovedByCureAilment(const int effect, Entity* my);
+	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
+	Uint32 getLootingBagKey(const int player);
+	static bool emptyLootingBag(const int player, Uint32 key);
 };
 extern Stat* stats[MAXPLAYERS];
 

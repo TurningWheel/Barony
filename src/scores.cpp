@@ -5419,6 +5419,30 @@ int saveGame(int saveIndex) {
 				h2.second.numAccessories = h.second.numAccessories;
 			}
 
+			for ( auto& loot : stats[c]->player_lootbags )
+			{
+				player.stats.player_lootbags.push_back(std::make_pair(loot.first,
+					SaveGameInfo::Player::stat_t::lootbag_t(
+						loot.second.spawn_x,
+						loot.second.spawn_y,
+						loot.second.spawnedOnGround,
+						loot.second.looted
+					)));
+				auto& loot2 = player.stats.player_lootbags.at(player.stats.player_lootbags.size() - 1);
+				for ( auto& item : loot.second.items )
+				{
+					loot2.second.items.push_back(SaveGameInfo::Player::stat_t::item_t(
+						(Uint32)item.type,
+						(Uint32)item.status,
+						item.appearance,
+						item.beatitude,
+						item.count,
+						item.identified,
+						0,
+						0));
+				}
+			}
+
 			// equipment slots
 			const std::vector<std::pair<std::string, Item*>> player_slots = {
 				{"helmet", stats[c]->helmet},
@@ -5701,6 +5725,27 @@ int loadGame(int player, const SaveGameInfo& info) {
 		stats[player]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
 	}
 	//stats[player]->attributes = p.attributes; // skip attributes for now
+	for ( auto& loot : p.player_lootbags )
+	{
+		auto& player_lootbag = stats[player]->player_lootbags[loot.first];
+		player_lootbag.spawn_x = loot.second.spawn_x;
+		player_lootbag.spawn_y = loot.second.spawn_y;
+		player_lootbag.spawnedOnGround = loot.second.spawnedOnGround;
+		player_lootbag.looted = loot.second.looted;
+
+		for ( auto& _item : loot.second.items )
+		{
+			player_lootbag.items.push_back(Item());
+			auto& item = player_lootbag.items.back();
+
+			item.type = static_cast<ItemType>(_item.type);
+			item.status = static_cast<Status>(_item.status);
+			item.beatitude = _item.beatitude;
+			item.count = _item.count;
+			item.appearance = _item.appearance;
+			item.identified = _item.identified;
+		}
+	}
 
 	// inventory
 	for (auto& item : p.inventory) {

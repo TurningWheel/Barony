@@ -979,7 +979,8 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT
+		|| item1->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		if ( comparisonUsedForStacking )
 		{
@@ -2525,6 +2526,44 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_ORB_PURPLE:
 		case ARTIFACT_ORB_GREEN:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
+			break;
+		case TOOL_PLAYER_LOOT_BAG:
+			if ( multiplayer != CLIENT )
+			{
+				int lootbagPlayer = item->getLootBagPlayer();
+				
+				if ( lootbagPlayer >= 0 && lootbagPlayer < MAXPLAYERS
+					&& stats[lootbagPlayer] )
+				{
+					std::string name = stats[lootbagPlayer]->name;
+					if ( lootbagPlayer == player )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4331], item->getLootBagNumItems());
+					}
+					else if ( name == "" || client_disconnected[lootbagPlayer] )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4330], item->getLootBagNumItems());
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+							language[4329], item->getLootBagNumItems(), 
+							name.c_str());
+					}
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT,
+						language[4330], item->getLootBagNumItems());
+				}
+
+				if ( !players[player]->isLocalPlayer() )
+				{
+					consumeItem(item, player);
+				}
+			}
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
@@ -4428,7 +4467,7 @@ int Item::buyValue(const int player) const
 	value /= (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f;
 
 	// charisma bonus
-	value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+	/*value /= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;*/
 
 	// result
 	value = std::max(1, value);
@@ -5923,4 +5962,27 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 	clientSendEquipUpdateToServer(slot, equipType, player,
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
+}
+
+int Item::getLootBagPlayer() const
+{
+	return (int)(appearance & 0x000000FF) % MAXPLAYERS;
+}
+int Item::getLootBagNumItems() const
+{
+	if ( multiplayer == CLIENT )
+	{
+		return 0;
+	}
+	if ( stats[0]->player_lootbags.find(appearance)
+		!= stats[0]->player_lootbags.end() )
+	{
+		auto& lootbag = stats[0]->player_lootbags[appearance];
+		if ( !lootbag.looted )
+		{
+			return lootbag.items.size();
+		}
+		return 0;
+	}
+	return 0;
 }

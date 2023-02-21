@@ -424,6 +424,39 @@ struct SaveGameInfo {
 				}
 			};
 
+			struct lootbag_t
+			{
+				lootbag_t() = default;
+				lootbag_t(const lootbag_t&) = default;
+				lootbag_t(lootbag_t&&) = default;
+				lootbag_t(
+					int _spawn_x,
+					int _spawn_y,
+					bool _spawnedOnGround,
+					bool _looted
+					)
+				{
+					spawn_x = _spawn_x;
+					spawn_y = _spawn_y;
+					spawnedOnGround = _spawnedOnGround;
+					looted = _looted;
+				}
+
+				int spawn_x = 0;
+				int spawn_y = 0;
+				bool spawnedOnGround = false;
+				bool looted = false;
+				std::vector<item_t> items;
+				bool serialize(FileInterface* fp) {
+					fp->property("spawn_x", spawn_x);
+					fp->property("spawn_y", spawn_y);
+					fp->property("looted", looted);
+					fp->property("spawned", spawnedOnGround);
+					fp->property("items", items);
+					return true;
+				}
+			};
+
 			std::string name;
 			Uint32 type = Monster::HUMAN;
 			Uint32 sex = 0;
@@ -450,6 +483,7 @@ struct SaveGameInfo {
 			std::vector<std::pair<std::string, Uint32>> player_equipment;
 			std::vector<std::pair<std::string, item_t>> npc_equipment;
 			std::vector<item_t> inventory;
+			std::vector<std::pair<Uint32, lootbag_t>> player_lootbags;
 
 			bool serialize(FileInterface* fp) {
 				fp->property("name", name);
@@ -478,6 +512,7 @@ struct SaveGameInfo {
 				fp->property("npc_equipment", npc_equipment);
 				fp->property("inventory", inventory);
 				fp->property("attributes", attributes);
+				fp->property("lootbags", player_lootbags);
 				return true;
 			}
 		};

@@ -352,11 +352,20 @@ void actItem(Entity* my)
 	{
 		switch ( my->sprite )
 		{
-			case 610:
+			case 610: // orbs
 			case 611:
 			case 612:
 			case 613:
 				my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
+				if ( !my->light )
+				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+				}
+				break;
+			case 1206: // loot bags
+			case 1207:
+			case 1208:
+			case 1209:
 				if ( !my->light )
 				{
 					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
@@ -438,7 +447,7 @@ void actItem(Entity* my)
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
 			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] 
-				|| (my->sprite >= 610 && my->sprite <= 613) )
+				|| (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1209) )
 			{
 				// land
 				ITEM_VELZ *= -.7;

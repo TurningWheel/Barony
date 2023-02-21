@@ -13068,14 +13068,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					real_t val = 1 / ((50 + stats[player.playernum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
 					real_t normalVal = val;
-					normalVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					//normalVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
 					normalVal = std::max(1.0, normalVal);
 
 					int stat = stats[player.playernum]->CHR;
 					stats[player.playernum]->CHR = 0;
 					stats[player.playernum]->CHR -= statGetCHR(stats[player.playernum], players[player.playernum]->entity);
 					real_t zeroVal = val;
-					zeroVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
+					//zeroVal /= (1.f + statGetCHR(stats[player.playernum], players[player.playernum]->entity) / 20.f);
 					zeroVal = std::max(1.0, zeroVal);
 					stats[player.playernum]->CHR = stat;
 
@@ -21796,7 +21796,18 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_INSPECT_ALTERNATE || prompt == PROMPT_TINKER )
 	{
-		if ( item->type == TOOL_ALEMBIC )
+		if ( item->type == TOOL_PLAYER_LOOT_BAG )
+		{
+			if ( prompt == PROMPT_INTERACT )
+			{
+				item_ToolLootBag(item, player);
+			}
+			else if ( prompt == PROMPT_INSPECT )
+			{
+				useItem(item, player);
+			}
+		}
+		else if ( item->type == TOOL_ALEMBIC )
 		{
 			// not experimenting
 			if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == item )
@@ -27601,7 +27612,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		if ( tag == "TRADING_BUY_PRICE" )
 		{
 			val = 1 / ((50 + stats[playernum]->PROFICIENCIES[proficiency]) / 150.f); // buy value
-			val /= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
+			//val /= 1.f + statGetCHR(stats[playernum], players[playernum]->entity) / 20.f;
 			val = std::max(1.0, val);
 			val = val * 100.0 - 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
@@ -32355,6 +32366,40 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int 
 
 static ConsoleVariable<int> cvar_skill_ding_sfx("/skill_sfx_ding", 554);
 static ConsoleVariable<int> cvar_lvl_ding_sfx("/lvl_sfx_ding", 555);
+static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 0);
+static ConsoleVariable<int> cvar_skill_appraisal_sfx("/skill_sfx_appraise", 550);
+static ConsoleVariable<int> cvar_skill_sneak_sfx("/skill_sfx_sneak", 549);
+static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 551);
+static ConsoleVariable<int> cvar_skill_casting_sfx("/skill_sfx_casting", 552);
+static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 553);
+static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
+static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 531);
+
+bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
+{
+	if ( index == 0 ) { return false; }
+	if ( index >= *cvar_skill_ding_sfx && index <= *cvar_skill_ding_sfx + 3 )
+	{
+		return true;
+	}
+	else if ( index == *cvar_lvl_ding_sfx )
+	{
+		return true;
+	}
+	else if ( index == *cvar_skill_sfx
+		|| index == *cvar_skill_appraisal_sfx
+		|| index == *cvar_skill_sneak_sfx
+		|| index == *cvar_skill_magic_sfx
+		|| index == *cvar_skill_casting_sfx
+		|| index == *cvar_skill_newspell_sfx
+		|| index == *cvar_skill_combat_sfx
+		|| index == *cvar_skill_leader_sfx )
+	{
+		return true;
+	}
+	
+	return false;
+}
 
 void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int player)
 {
@@ -33001,6 +33046,8 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	static ConsoleVariable<float> cvar_skillup_speed("/skillup_speed", .5);
 	static ConsoleVariable<float> cvar_skillup_bounce("/skillup_bounce", 1.0 /*2.5*/);
 	static ConsoleVariable<float> cvar_skillup_animfall("/skillup_animfall", 0.5/*2.0*/);
+	static ConsoleVariable<int> cvar_skillup_increase_delay("/skillup_increase_delay", 50);
+	static ConsoleVariable<int> cvar_skillup_ding_volume("/skillup_ding_volume", 64);
 	animspeed *= *cvar_skillup_speed;
 	int movementAmount = 0;
 	if ( players[player]->bUseCompactGUIHeight() )
@@ -33008,7 +33055,8 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 		movementAmount = 0;
 	}
 
-	if ( ticks != processedOnTick )
+	bool newtick = ticks != processedOnTick;
+	if ( newtick )
 	{
 		processedOnTick = ticks;
 		++ticksActive;
@@ -33031,11 +33079,11 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	real_t oldAngle = animAngle;
 	animAngle += fpsScale * std::max(.1, (1.0 - animAngle)) / (5.0);
 	animAngle = std::min(1.0, animAngle);
-	if ( !isSpell )
+	if ( newtick && ticksActive == *cvar_skillup_increase_delay )
 	{
-		if ( animAngle > 0.01 && oldAngle <= 0.0 )
+		if ( !isSpell )
 		{
-			playSound(*cvar_skill_ding_sfx + local_rng.rand() % 4, 64);
+			playSound(*cvar_skill_ding_sfx + local_rng.rand() % 4, *cvar_skillup_ding_volume);
 		}
 	}
 
@@ -33298,15 +33346,6 @@ void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill
 	}
 	skillUps.at(skillUps.size() - 1).ticksToLive = ticksToLive;
 }
-
-static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 0);
-static ConsoleVariable<int> cvar_skill_appraisal_sfx("/skill_sfx_appraise", 550);
-static ConsoleVariable<int> cvar_skill_sneak_sfx("/skill_sfx_sneak", 549);
-static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 551);
-static ConsoleVariable<int> cvar_skill_casting_sfx("/skill_sfx_casting", 552);
-static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 553);
-static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
-static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 531);
 
 void updateSkillUpFrame(const int player)
 {
@@ -33666,7 +33705,7 @@ void updateSkillUpFrame(const int player)
 			skillCurrentTxt->setColor(makeColor(r, g, b, skillUp.animCurrentStat * a));
 		}
 
-		skillFramePos.w = std::max(120, (int)(skillBgImg->pos.x + skillBgImg->pos.w));
+		skillFramePos.w = std::max(120, (int)(skillBgImg->pos.x + skillBgImg->pos.w + 64));
 		if ( skillUp.isSpell )
 		{
 			skillFramePos.w = std::max(skillFramePos.w, (skillBgCapImg->pos.x + skillBgCapImg->pos.w));
@@ -33730,49 +33769,46 @@ void updateSkillUpFrame(const int player)
 			skillUp.pos.h = skillImg->pos.h;
 			skillUp.init = true;
 
-			if ( *cvar_skill_sfx >= 0 )
+			if ( skillUp.whichSkill == PRO_SPELLCASTING )
 			{
-				if ( skillUp.whichSkill == PRO_SPELLCASTING )
+				playSound(*cvar_skill_casting_sfx, 128);
+			}
+			else if ( skillUp.whichSkill == PRO_MAGIC )
+			{
+				playSound(*cvar_skill_magic_sfx, 128);
+			}
+			else if ( skillUp.isSpell )
+			{
+				playSound(*cvar_skill_newspell_sfx, 128);
+			}
+			else if ( skillUp.whichSkill == PRO_RANGED
+				|| skillUp.whichSkill == PRO_SWORD
+				|| skillUp.whichSkill == PRO_POLEARM
+				|| skillUp.whichSkill == PRO_AXE
+				|| skillUp.whichSkill == PRO_MACE
+				|| skillUp.whichSkill == PRO_UNARMED
+				|| skillUp.whichSkill == PRO_SHIELD
+				)
+			{
+				playSound(*cvar_skill_combat_sfx, 128);
+			}
+			else if ( skillUp.whichSkill == PRO_STEALTH )
+			{
+				playSound(*cvar_skill_sneak_sfx, 128);
+			}
+			else if ( skillUp.whichSkill == PRO_APPRAISAL )
+			{
+				playSound(*cvar_skill_appraisal_sfx, 128);
+			}
+			else if ( skillUp.whichSkill == PRO_LEADERSHIP )
+			{
+				playSound(*cvar_skill_leader_sfx, 128);
+			}
+			else
+			{
+				if ( *cvar_skill_sfx != 0 )
 				{
-					playSound(*cvar_skill_casting_sfx, 128);
-				}
-				else if ( skillUp.whichSkill == PRO_MAGIC )
-				{
-					playSound(*cvar_skill_magic_sfx, 128);
-				}
-				else if ( skillUp.isSpell )
-				{
-					playSound(*cvar_skill_newspell_sfx, 128);
-				}
-				else if ( skillUp.whichSkill == PRO_RANGED
-					|| skillUp.whichSkill == PRO_SWORD
-					|| skillUp.whichSkill == PRO_POLEARM
-					|| skillUp.whichSkill == PRO_AXE
-					|| skillUp.whichSkill == PRO_MACE
-					|| skillUp.whichSkill == PRO_UNARMED
-					|| skillUp.whichSkill == PRO_SHIELD
-					)
-				{
-					playSound(*cvar_skill_combat_sfx, 128);
-				}
-				else if ( skillUp.whichSkill == PRO_STEALTH )
-				{
-					playSound(*cvar_skill_sneak_sfx, 128);
-				}
-				else if ( skillUp.whichSkill == PRO_APPRAISAL )
-				{
-					playSound(*cvar_skill_appraisal_sfx, 128);
-				}
-				else if ( skillUp.whichSkill == PRO_LEADERSHIP )
-				{
-					playSound(*cvar_skill_leader_sfx, 128);
-				}
-				else
-				{
-					if ( *cvar_skill_sfx != 0 )
-					{
-						playSound(*cvar_skill_sfx, 128);
-					}
+					playSound(*cvar_skill_sfx, 128);
 				}
 			}
 		}

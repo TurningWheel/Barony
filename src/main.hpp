@@ -727,6 +727,7 @@ extern real_t musvolume;
 extern real_t sfxvolume;
 extern real_t sfxAmbientVolume;
 extern real_t sfxEnvironmentVolume;
+extern real_t sfxNotificationVolume;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 static const int MINIMAP_MAX_DIMENSION = 512;
