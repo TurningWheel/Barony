@@ -98,6 +98,9 @@ std::string LobbyHandler_t::getLobbyJoinFailedConnectString(int result)
 			snprintf(buf, 1023, "Unable to join lobby:\nNot connected to Epic Online.");
 			break;
 #endif
+		case static_cast<int>(EOS_EResult::EOS_NoChange) :
+			snprintf(buf, 1023, "Unable to join lobby:\nNo match found.");
+			break;
 		case static_cast<int>(EOS_EResult::EOS_NotFound):
 			snprintf(buf, 1023, "Unable to join lobby:\nLobby no longer exists.");
 			break;
