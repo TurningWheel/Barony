@@ -1491,6 +1491,12 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 	        multiplayer = SINGLE;
 	        MainMenu::receivedInvite(lobbyIDs[0]);
 	    }
+		else
+		{
+			multiplayer = SINGLE;
+			connectingToLobbyStatus = k_EResultNoMatch;
+			joinLobbyWaitingForHostResponse = true;
+		}
 	}
 }
 
