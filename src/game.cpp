@@ -5695,6 +5695,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
+			glBeginCamera(&camera);
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5802,6 +5803,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
+			glEndCamera(&camera);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
@@ -6627,8 +6629,10 @@ int main(int argc, char** argv)
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
 							occlusionCulling(map, menucam);
+							glBeginCamera(&menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
+							glEndCamera(&menucam);
 							list_RemoveNode(light->node);
 						}
 

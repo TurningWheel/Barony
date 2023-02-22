@@ -407,10 +407,12 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// set color
@@ -433,6 +435,10 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	glEnd();
 	glDisable(GL_LINE_SMOOTH);
 	glLineWidth(lineWidth);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -449,10 +455,12 @@ static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -473,6 +481,10 @@ static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, 
 		glVertex2f(x + cos(degInRad) * radius, yres - (y + sin(degInRad) * radius));
 	}
 	glEnd();
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -491,10 +503,12 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// set line width
@@ -519,6 +533,10 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 
 	// reset line width
 	glLineWidth(lineWidth);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -535,10 +553,12 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// set line width
@@ -560,6 +580,10 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 
 	// reset line width
 	glLineWidth(lineWidth);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -668,13 +692,14 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, re
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 	glTranslatef(pos->x, yres - pos->y, 0);
 	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
@@ -702,8 +727,12 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, re
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(src->w / 2, src->h / 2);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -719,13 +748,14 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -743,7 +773,7 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	getColor(color, &r, &g, &b, &a);
 	glColor4f(r / 255.f, g / 255.f, b / 255.f, a/ 255.f);
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
@@ -754,8 +784,11 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
-	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -771,13 +804,14 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -793,7 +827,7 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
 	glColor4f(1, 1, 1, alpha / 255.1);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
@@ -804,8 +838,12 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -821,13 +859,14 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -843,7 +882,7 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
 	glColor4f(1, 1, 1, 1);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
@@ -854,8 +893,12 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -871,13 +914,14 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -893,7 +937,6 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
 	glColor4f(1, 1, 1, alpha / 255.f);
-	glPushMatrix();
 
 	double s;
 	real_t arcAngle = angStart;
@@ -967,7 +1010,7 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 		}
 		glEnd();
 	}
-	glPopMatrix();
+
 	// debug lines
 	/*real_t x1 = xres / 2 + 300 * cos(angStart);
 	real_t y1 = yres / 2 - 300 * sin(angStart);
@@ -976,6 +1019,10 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 	drawLine(xres / 2, yres / 2, x1, y1, 0xFFFFFFFF, 255);
 	drawLine(xres / 2, yres / 2, x2, y2, 0xFFFFFFFF, 255);*/
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -996,13 +1043,14 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	}
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -1018,7 +1066,6 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
 	glColor4f(1, 1, 1, 1);
-	glPushMatrix();
 	glBegin(GL_QUADS);
 
 	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
@@ -1042,8 +1089,12 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	//glTexCoord2f(1.f, 0.f);
 	//glVertex2f(pos->x + pos->w, yres - pos->y);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -1064,13 +1115,14 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	}
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -1086,7 +1138,7 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
 	glColor4f(1, 1, 1, 1);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.f, 1.f - 1.f * percentY); // top left. 
 	glVertex2f(pos->x, yres - pos->y - pos->h + pos->h * percentY);
@@ -1100,7 +1152,7 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	glTexCoord2f(1.f, 1.f - 1.f * percentY); // top right
 	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h + pos->h * percentY);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
 
 	// debug corners
@@ -1112,6 +1164,10 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
 	//color = uint32ColorPlayer4; // yellow
 	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -1127,13 +1183,14 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 	SDL_Rect secondsrc;
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
@@ -1151,7 +1208,7 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 	Uint8 r, g, b, a;
 	getColor(color, &r, &g, &b, &a);
 	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.f, 0.f);
 	glVertex2f(pos->x, yres - pos->y);
@@ -1162,8 +1219,12 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 	glTexCoord2f(1.f, 0.f);
 	glVertex2f(pos->x + pos->w, yres - pos->y);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -1219,13 +1280,14 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 	}
 
 	// update projection
-	glPushMatrix();
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 	glTranslatef(pos->x, yres - pos->y, 0);
 	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
@@ -1245,7 +1307,7 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 	Uint8 r, g, b, a;
 	getColor(color, &r, &g, &b, &a);
 	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	glPushMatrix();
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
 	glVertex2f(0, 0);
@@ -1256,8 +1318,12 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
 	glVertex2f(pos->w, 0);
 	glEnd();
-	glPopMatrix();
+
 	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -2647,10 +2713,12 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(0, 0, xres, yres);
 	glLoadIdentity();
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glEnable(GL_BLEND);
 
 	// draw quads
@@ -2682,6 +2750,10 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, 0);
 	glVertex2f(x2 - 2, yres - y1 - 2);
 	glEnd();
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------

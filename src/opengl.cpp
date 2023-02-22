@@ -423,6 +423,29 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
+void glBeginCamera(view_t* camera)
+{
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	glEnable(GL_DEPTH_TEST);
+	const float rotx = camera->vang * 180 / PI; // get x rotation
+	const float roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+	const float rotz = 0; // get z rotation
+	glRotatef(rotx, 1, 0, 0); // rotate pitch
+	glRotatef(roty, 0, 1, 0); // rotate yaw
+	glRotatef(rotz, 0, 0, 1); // rotate roll
+	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+}
+
+void glEndCamera(view_t* camera)
+{
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+}
+
 bool wholevoxels = false;
 void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 {
@@ -481,35 +504,22 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glPushMatrix();
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable( GL_DEPTH_TEST );
-	if ( !entity->flags[OVERDRAW] )
-	{
-		rotx = camera->vang * 180 / PI; // get x rotation
-		roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-	}
-
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
 	glPushMatrix();
 	glLoadIdentity();
-	rotx = entity->roll * 180 / PI; // get x rotation
-	roty = 360 - entity->yaw * 180 / PI; // get y rotation
-	rotz = 360 - entity->pitch * 180 / PI; // get z rotation
+	if (entity->flags[OVERDRAW]) {
+		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
+		rotx = 0; // get x rotation
+		roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
+		rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
+		glRotatef(roty, 0, 1, 0); // rotate yaw
+		glRotatef(rotz, 0, 0, 1); // rotate pitch
+		glRotatef(rotx, 1, 0, 0); // rotate roll
+	}
+	rotx = entity->roll * 180.0 / PI; // get x rotation
+	roty = 360.0 - entity->yaw * 180.0 / PI; // get y rotation
+	rotz = 360.0 - entity->pitch * 180.0 / PI; // get z rotation
 	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
 	glRotatef(roty, 0, 1, 0); // rotate yaw
 	glRotatef(rotz, 0, 0, 1); // rotate pitch
@@ -906,8 +916,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	}
 	glDepthRange(0, 1);
 	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -988,15 +996,33 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 
 	real_t s = 1;
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	// assign texture
+	TempTexture* tex = enemybar->worldTexture;
+	if (!doVisibilityCheckOnly)
+	{
+		if (mode == REALCOLORS)
+		{
+			if (tex)
+			{
+				tex->bind();
+			}
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1010,8 +1036,8 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	glPushMatrix();
+	glLoadIdentity();
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
@@ -1019,23 +1045,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	else
 	{
 		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	TempTexture* tex = enemybar->worldTexture;
-	if ( !doVisibilityCheckOnly )
-	{
-		if ( mode == REALCOLORS )
-		{
-			if ( tex )
-			{
-				tex->bind();
-			}
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
 	}
 
 	// translate sprite and rotate towards camera
@@ -1159,10 +1168,13 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
 		glEnd();
 	}
-	glDepthRange(0, 1);
-	glPopMatrix();
 
+	glDepthRange(0, 1);
 	glDisable(GL_ALPHA_TEST);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 
 	//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
 	return anyVertexVisible;
@@ -1197,15 +1209,31 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 
 	int player = dialogue->player;
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	// assign texture
+	TempTexture* tex = nullptr;
+	tex = new TempTexture();
+	if (sprite) {
+		tex->load(sprite, false, true);
+		if (mode == REALCOLORS)
+		{
+			tex->bind();
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1216,8 +1244,8 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	glPushMatrix();
+	glLoadIdentity();
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
@@ -1225,21 +1253,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	else
 	{
 		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	TempTexture* tex = nullptr;
-	tex = new TempTexture();
-	if ( sprite ) {
-		tex->load(sprite, false, true);
-		if ( mode == REALCOLORS )
-		{
-			tex->bind();
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
 	}
 
 	// translate sprite and rotate towards camera
@@ -1280,7 +1293,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 		glTexCoord2f(1, 0);
 		glVertex3f(0, sprite->h / 2, -sprite->w / 2);
 		glEnd();
-		glPopMatrix();
 	}
 
 	glDepthRange(0, 1);
@@ -1290,6 +1302,10 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 		delete tex;
 		tex = nullptr;
 	}
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 #endif
 }
 
@@ -1336,43 +1352,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		{
 			return;
 		}
-	}
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
-	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
-	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-	}
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glPushMatrix();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// assign texture
@@ -1428,6 +1407,37 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		{
 			sprite = sprites[0];
 		}
+	}
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
+
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+	GLfloat rotz = 0; // get z rotation
+	glRotatef(rotx, 1, 0, 0); // rotate pitch
+	glRotatef(roty, 0, 1, 0); // rotate yaw
+	glRotatef(rotz, 0, 0, 1); // rotate roll
+	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	if (mode == REALCOLORS)
+	{
+		glEnable(GL_BLEND);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1524,7 +1534,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	    glTexCoord2f(1, 0);
 	    glVertex3f(0, sprite->h / 2, -sprite->w / 2);
 	    glEnd();
-	    glPopMatrix();
 	}
 
 	glDepthRange(0, 1);
@@ -1537,6 +1546,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			tex = nullptr;
 		}
 	}
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 #endif
 }
 
@@ -1546,34 +1559,23 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	//int x, y;
 	real_t s = 1;
 
-	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable( GL_DEPTH_TEST );
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
-	if (!entity->flags[OVERDRAW])
-	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-	}
-	else
-	{
-		glRotatef(90, 0, 1, 0);
-
-	}
 
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
 	glPushMatrix();
+	glLoadIdentity();
+	if (entity->flags[OVERDRAW])
+	{
+		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
+		float rotx = 0; // get x rotation
+		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
+		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
+		glRotatef(roty, 0, 1, 0); // rotate yaw
+		glRotatef(rotz, 0, 0, 1); // rotate pitch
+		glRotatef(rotx, 1, 0, 0); // rotate roll
+	}
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
@@ -1711,33 +1713,34 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-	if ( !entity->flags[OVERDRAW] )
+	// assign texture
+	if (mode == REALCOLORS)
 	{
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+		glBindTexture(GL_TEXTURE_2D, textureId);
 	}
 	else
 	{
-		glRotatef(90, 0, 1, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	glPushMatrix();
+	glLoadIdentity();
+	if (entity->flags[OVERDRAW])
+	{
+		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
+		float rotx = 0; // get x rotation
+		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
+		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
+		glRotatef(roty, 0, 1, 0); // rotate yaw
+		glRotatef(rotz, 0, 0, 1); // rotate pitch
+		glRotatef(rotx, 1, 0, 0); // rotate roll
+	}
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
@@ -1745,16 +1748,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	else
 	{
 		glDisable(GL_BLEND);
-	}
-
-	// assign texture
-	if ( mode == REALCOLORS )
-	{
-		glBindTexture(GL_TEXTURE_2D, textureId);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1834,10 +1827,10 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glTexCoord2f(1, 0);
 	glVertex3f(0, h / 2, -w / 2);
 	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
 
+	glDepthRange(0, 1);
 	glDisable(GL_ALPHA_TEST);
+	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -1960,6 +1953,7 @@ void glDrawWorld(view_t* camera, int mode)
 	{
 		// draw sky "box"
 		glMatrixMode( GL_PROJECTION );
+		glPushMatrix();
 		glLoadIdentity();
 		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
@@ -1970,6 +1964,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glRotatef(roty, 0, 1, 0); // rotate yaw
 		glRotatef(rotz, 0, 0, 1); // rotate roll
 		glMatrixMode( GL_MODELVIEW );
+		glPushMatrix();
 		glLoadIdentity();
 		glEnable( GL_DEPTH_TEST );
 		glDepthMask(GL_FALSE);
@@ -2008,21 +2003,15 @@ void glDrawWorld(view_t* camera, int mode)
 		glTexCoord2f((real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, CLIPFAR * 16);
 		glEnd();
+
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
 	}
 
 	// setup projection
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
 	glMatrixMode( GL_MODELVIEW );
+	glPushMatrix();
 	glLoadIdentity();
 	glEnable( GL_DEPTH_TEST );
 	glDepthMask(GL_TRUE);
@@ -2458,6 +2447,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 	glDisable(GL_SCISSOR_TEST);
 	glScissor(0, 0, xres, yres);
+	glPopMatrix();
 }
 
 static int dirty = 1;
@@ -2479,8 +2469,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		// generate object buffer
 		framebuffer::unbindAll();
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glBeginCamera(&camera);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
+		glEndCamera(&camera);
 	}
 
 	GLubyte pixel[4];

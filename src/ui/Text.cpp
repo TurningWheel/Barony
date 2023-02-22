@@ -304,10 +304,12 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	glLoadIdentity();
 	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	glLoadIdentity();
 
 	auto src = _src;
@@ -348,6 +350,10 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	// unbind texture
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glColor4f(1.f, 1.f, 1.f, 1.f);
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 int Text::countNumTextLines() const {

@@ -18272,6 +18272,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
+		glBeginCamera(&view);
 		bool b = players[player]->entity->flags[BRIGHT];
 		players[player]->entity->flags[BRIGHT] = true;
 		if ( !players[player]->entity->flags[INVISIBLE] )
@@ -18329,6 +18330,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
+		glEndCamera(&view);
 	}
 	::fov = ofov;
 }
