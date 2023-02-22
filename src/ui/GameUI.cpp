@@ -465,6 +465,7 @@ struct MPBarPaths_t
 	static const std::map<std::string, std::string> automatonHTBars;
 	static const std::map<std::string, std::string> automatonSTBars;
 	static const std::map<std::string, std::string> insectoidENBars;
+	static const std::map<std::string, std::string> warningMPBars;
 	static const std::map<std::string, std::string>& getMPBar(const int player)
 	{
 		/*if ( keystatus[SDLK_h] )
@@ -494,14 +495,14 @@ struct MPBarPaths_t
 			{
 				if ( key.find("fade") == std::string::npos )
 				{
-					return automatonHTBars.at(key);
+					return warningMPBars.at(key);
 				}
 			}
 			else
 			{
 				if ( key == "mp img value" )
 				{
-					return automatonHTBars.at(key);
+					return warningMPBars.at(key);
 				}
 			}
 		}
@@ -631,6 +632,37 @@ const std::map<std::string, std::string> MPBarPaths_t::insectoidENBars = {
 	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENMidFade_00.png" },
 
 	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_ENNumBase_00.png" }
+};
+
+const std::map<std::string, std::string> MPBarPaths_t::warningMPBars = {
+	{ "mp img progress bot", "*#images/ui/HUD/hpmpbars/HUD_Bars_NABot_00.png" },
+	{ "mp img progress bot 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_NABot_01.png" },
+	{ "mp img progress bot 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_NABot_02.png" },
+	{ "mp img progress bot 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_NABot_03.png" },
+
+	{ "mp img progress endcap","*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_00.png" },
+	{ "mp img progress endcap 1","*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_01.png" },
+
+	{ "mp img progress endcap flash", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F00.png" },
+	{ "mp img progress endcap flash 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F01.png" },
+	{ "mp img progress endcap flash 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F02.png" },
+	{ "mp img progress endcap flash 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F03.png" },
+	{ "mp img progress endcap flash 4", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F04.png" },
+	{ "mp img progress endcap flash b", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F00b.png" },
+	{ "mp img progress endcap flash c", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F00c.png" },
+	{ "mp img progress endcap flash d", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEnd_F00d.png" },
+
+	{ "mp img fade endcap", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAEndFade_00.png" },
+
+	{ "mp img progress", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAMid_00.png" },
+	{ "mp img progress 1", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAMid_01.png" },
+	{ "mp img progress 2", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAMid_02.png" },
+	{ "mp img progress 3", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAMid_03.png" },
+
+	{ "mp img fade bot",	"*#images/ui/HUD/hpmpbars/HUD_Bars_NAMidFade_00.png" },
+	{ "mp img fade", "*#images/ui/HUD/hpmpbars/HUD_Bars_NAMidFade_00.png" },
+
+	{ "mp img value", "*#images/ui/HUD/hpmpbars/HUD_Bars_NANumBase_00.png" }
 };
 
 void createHPMPBars(const int player)
@@ -32706,12 +32738,12 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int 
 
 static ConsoleVariable<int> cvar_skill_ding_sfx("/skill_sfx_ding", 554);
 static ConsoleVariable<int> cvar_lvl_ding_sfx("/lvl_sfx_ding", 555);
-static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 0);
+static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 559);
 static ConsoleVariable<int> cvar_skill_appraisal_sfx("/skill_sfx_appraise", 550);
 static ConsoleVariable<int> cvar_skill_sneak_sfx("/skill_sfx_sneak", 549);
 static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 551);
 static ConsoleVariable<int> cvar_skill_casting_sfx("/skill_sfx_casting", 552);
-static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 553);
+static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 560);
 static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
 static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 531);
 
