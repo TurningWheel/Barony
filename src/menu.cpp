@@ -9531,7 +9531,10 @@ void doNewGame(bool makeHighscore) {
 
 	if ( multiplayer == CLIENT )
 	{
-		gameModeManager.currentSession.saveServerFlags();
+		if ( bWasOnMainMenu )
+		{
+			gameModeManager.currentSession.saveServerFlags();
+		}
 		svFlags = lobbyWindowSvFlags;
 	}
 	else if ( !loadingsavegame && bWasOnMainMenu )
@@ -9670,11 +9673,18 @@ void doNewGame(bool makeHighscore) {
 
 		// reset class loadout
 		if (loadingsavegame) {
+			Uint32 oldSvFlags = gameModeManager.currentSession.serverFlags;
+			bool bOldSvFlags = gameModeManager.currentSession.bHasSavedServerFlags;
 			for (int c = 0; c < MAXPLAYERS; ++c) {
 				if (!client_disconnected[c]) {
 					stats[c]->clearStats();
 					loadGame(c, saveGameInfo);
 				}
+			}
+			if ( bOldSvFlags )
+			{
+				// restore flags as we saved them in the lobby before this game started
+				gameModeManager.currentSession.serverFlags = oldSvFlags;
 			}
 		} else {
 			for (int c = 0; c < MAXPLAYERS; ++c) {
@@ -9957,7 +9967,14 @@ void doNewGame(bool makeHighscore) {
 		}
 		else
 		{
+			Uint32 oldSvFlags = gameModeManager.currentSession.serverFlags;
+			bool bOldSvFlags = gameModeManager.currentSession.bHasSavedServerFlags;
 			loadGame(clientnum, saveGameInfo);
+			if ( bOldSvFlags )
+			{
+				// restore flags as we saved them in the lobby before this game started
+				gameModeManager.currentSession.serverFlags = oldSvFlags;
+			}
 		}
 
 		players[clientnum]->hud.resetBars();

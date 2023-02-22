@@ -7432,6 +7432,8 @@ bind_failed:
 	    }
 		currentLobbyType = LobbyType::None;
 
+		gameModeManager.currentSession.restoreSavedServerFlags();
+
 	    closeNetworkInterfaces();
 
 #ifdef NINTENDO
@@ -15140,6 +15142,8 @@ failed:
 		    soundCancel();
 		    closeNetworkInterfaces();
 		    createLocalOrNetworkMenu();
+
+			gameModeManager.currentSession.restoreSavedServerFlags();
 
 #ifdef NINTENDO
 			nxEndParentalControls();
