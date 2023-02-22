@@ -4272,7 +4272,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// win the game
 	{'WING', [](){
 		int victoryType;
-		switch (stats[clientnum]->playerRace) {
+		int race = RACE_HUMAN;
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		{
+			race = stats[clientnum]->playerRace;
+		}
+
+		switch ( race ) {
 		default: victoryType = 3; break;
 		case RACE_HUMAN: victoryType = 4; break;
 		case RACE_SKELETON: victoryType = 5; break;
@@ -4290,7 +4296,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		victory = victoryType;
 	    if (net_packet->data[5] == 0) { // full ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
@@ -4312,7 +4318,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 1) { // classic herx ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
@@ -4334,7 +4340,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 2) { // classic baphomet ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
@@ -4363,8 +4369,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// mid game cutscene
 	{'MIDG', [](){
+		int race = RACE_HUMAN;
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		{
+			race = stats[clientnum]->playerRace;
+		}
 	    if (net_packet->data[4] == 0) { // herx midpoint
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
@@ -4386,7 +4397,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[4] == 1) { // baphomet midpoint
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);

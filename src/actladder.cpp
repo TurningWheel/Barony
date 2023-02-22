@@ -508,7 +508,13 @@ void actWinningPortal(Entity* my)
 				}
 
 	            if (cutscene == 1) { // classic herx ending
-	                switch (stats[clientnum]->playerRace) {
+					int race = RACE_HUMAN;
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					{
+						race = stats[clientnum]->playerRace;
+					}
+
+	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
@@ -530,7 +536,13 @@ void actWinningPortal(Entity* my)
 	                }
 	            }
 	            else if (cutscene == 2) { // classic baphomet ending
-	                switch (stats[clientnum]->playerRace) {
+					int race = RACE_HUMAN;
+					if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+					{
+						race = stats[clientnum]->playerRace;
+					}
+
+	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
@@ -694,7 +706,13 @@ void Entity::actExpansionEndGamePortal()
 					}
 				}
 
-                switch (stats[clientnum]->playerRace) {
+				int race = RACE_HUMAN;
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				{
+					race = stats[clientnum]->playerRace;
+				}
+
+                switch ( race ) {
                 default:
                 case RACE_HUMAN:
                     MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
@@ -885,8 +903,14 @@ void Entity::actMidGamePortal()
 					}
 				}
 
+				int race = RACE_HUMAN;
+				if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+				{
+					race = stats[clientnum]->playerRace;
+				}
+
 	            if (cutscene == 0) {
-	                switch (stats[clientnum]->playerRace) { // herx midpoint
+	                switch ( race ) { // herx midpoint
 	                default:
 	                case RACE_HUMAN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
@@ -908,7 +932,7 @@ void Entity::actMidGamePortal()
 	                }
 	            }
 	            else if (cutscene == 1) { // baphomet midpoint
-	                switch (stats[clientnum]->playerRace) {
+	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
