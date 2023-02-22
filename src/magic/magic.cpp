@@ -446,6 +446,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				{
 					recentlyHitBySameSpell = true;
 				}
+				hitstats->poisonKiller = my.parent;
 			}
 			
 			if ( !recentlyHitBySameSpell )
