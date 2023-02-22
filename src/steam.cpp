@@ -1573,7 +1573,9 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 	    // this is where invites are actually processed on steam.
 	    // we do it here to ensure info about the savegame in the lobby is up-to-date.
 		handlingInvite = false;
-		MainMenu::receivedInvite(tempSteamID);
+		static CSteamID storedID;
+		storedID = *static_cast<CSteamID*>(tempSteamID);
+		MainMenu::receivedInvite(&storedID);
 	}
 	
 	cpp_Free_CSteamID(tempSteamID);
