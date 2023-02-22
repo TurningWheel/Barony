@@ -173,7 +173,7 @@ namespace MainMenu {
 		bool hotbarArmor = false;
 		bool hotbarAmulets = false;
 		bool hotbarBooks = false;
-		bool hotbarTools = false;
+		bool hotbarTools = true;
 		bool hotbarThrown = true;
 		bool hotbarGems = false;
 		bool hotbarPotions = false;
