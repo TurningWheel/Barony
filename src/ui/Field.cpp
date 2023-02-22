@@ -180,14 +180,29 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	scaledRect.w = rect.w;
 	scaledRect.h = rect.h;
 
-	auto white = Image::get("images/system/white.png");
 	const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+
 	if (activated && selectAll) {
-		white->drawColor(nullptr, scaledRect, viewport, backgroundSelectAllColor);
+		uint8_t a;
+		::getColor(backgroundSelectAllColor, nullptr, nullptr, nullptr, &a);
+		if (a) {
+			auto white = Image::get("images/system/white.png");
+			white->drawColor(nullptr, scaledRect, viewport, backgroundSelectAllColor);
+		}
 	} else if (activated) {
-		white->drawColor(nullptr, scaledRect, viewport, backgroundActivatedColor);
+		uint8_t a;
+		::getColor(backgroundActivatedColor, nullptr, nullptr, nullptr, &a);
+		if (a) {
+			auto white = Image::get("images/system/white.png");
+			white->drawColor(nullptr, scaledRect, viewport, backgroundActivatedColor);
+		}
 	} else {
-		white->drawColor(nullptr, scaledRect, viewport, backgroundColor);
+		uint8_t a;
+		::getColor(backgroundColor, nullptr, nullptr, nullptr, &a);
+		if (a) {
+			auto white = Image::get("images/system/white.png");
+			white->drawColor(nullptr, scaledRect, viewport, backgroundColor);
+		}
 	}
 
 	bool showCursor = (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2;
@@ -320,7 +335,12 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		// draw cursor
 		if (!nexttoken && showCursor && activated) {
 			SDL_Rect cursorSize{scaledDest.x + scaledDest.w - 2, scaledDest.y, 2, scaledDest.h};
-			white->drawColor(nullptr, cursorSize, viewport, blendColor);
+			uint8_t a;
+			::getColor(blendColor, nullptr, nullptr, nullptr, &a);
+			if (a) {
+				auto white = Image::get("images/system/white.png");
+				white->drawColor(nullptr, cursorSize, viewport, blendColor);
+			}
 		}
 	} while ((token = nexttoken) != NULL);
 
