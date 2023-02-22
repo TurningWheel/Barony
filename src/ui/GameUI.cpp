@@ -32738,14 +32738,14 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int 
 
 static ConsoleVariable<int> cvar_skill_ding_sfx("/skill_sfx_ding", 554);
 static ConsoleVariable<int> cvar_lvl_ding_sfx("/lvl_sfx_ding", 555);
-static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 559);
+static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 552);
 static ConsoleVariable<int> cvar_skill_appraisal_sfx("/skill_sfx_appraise", 550);
 static ConsoleVariable<int> cvar_skill_sneak_sfx("/skill_sfx_sneak", 549);
 static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 551);
 static ConsoleVariable<int> cvar_skill_casting_sfx("/skill_sfx_casting", 552);
 static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 560);
 static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
-static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 531);
+static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 552);
 
 bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 {
