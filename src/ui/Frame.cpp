@@ -18,6 +18,7 @@
 #include "MainMenu.hpp"
 #endif
 
+bool drawingGui = false;
 const Sint32 Frame::sliderSize = 16;
 
 int uiDefaultHeight = 720;
@@ -241,22 +242,41 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 
 #if !defined(EDITOR)
 void Frame::predraw() {
+	drawingGui = true;
+	glViewport(0, 0, virtualScreenX, virtualScreenY);
+
+	// setup projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
             return;
         }
     }
     if (!*ui_scale) {
-        return;
+		return;
     }
     gui_fb.bindForWriting();
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Frame::postdraw() {
+	drawingGui = false;
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
             return;
@@ -299,6 +319,20 @@ void Frame::postdraw() {
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
+	drawingGui = true;
+	glViewport(0, 0, virtualScreenX, virtualScreenY);
+
+	// setup projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, 0, virtualScreenX, virtualScreenY, -1, 1);
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
@@ -308,6 +342,9 @@ void Frame::predraw() {
 }
 
 void Frame::postdraw() {
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
@@ -2215,6 +2252,7 @@ void createTestUI() {
 // sample function - would need to cache the blitted images somewhere for real-time use.
 void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, const SDL_Rect viewport, const Uint32 baseOutlineColor)
 {
+	return; // do not use
 	if ( !actualImage )
 	{
 		return;
@@ -2433,7 +2471,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 	newSrc.w = actualImage->getOutlineSurf()->w;
 	newSrc.h = actualImage->getOutlineSurf()->h;
 
-	Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
+	//Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
 
 	if ( outlineTexture ) {
 		delete outlineTexture;

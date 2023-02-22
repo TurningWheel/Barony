@@ -16533,12 +16533,9 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 		return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -16731,12 +16728,9 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();

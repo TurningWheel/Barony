@@ -425,12 +425,15 @@ real_t getLightForEntity(real_t x, real_t y)
 
 void glBeginCamera(view_t* camera)
 {
+	// setup state
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	glEnable(GL_DEPTH_TEST);
+
+	// setup projection
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	glEnable(GL_DEPTH_TEST);
 	const float rotx = camera->vang * 180 / PI; // get x rotation
 	const float roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	const float rotz = 0; // get z rotation
@@ -444,6 +447,8 @@ void glEndCamera(view_t* camera)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 }
 
 bool wholevoxels = false;
@@ -1013,7 +1018,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
@@ -1021,7 +1025,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -1224,7 +1227,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
@@ -1232,7 +1234,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -1409,7 +1410,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
@@ -1417,7 +1417,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -1723,7 +1722,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 
@@ -1955,7 +1953,6 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glPushMatrix();
 		glLoadIdentity();
-		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
@@ -1966,7 +1963,6 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_MODELVIEW );
 		glPushMatrix();
 		glLoadIdentity();
-		glEnable( GL_DEPTH_TEST );
 		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
 
@@ -2013,7 +2009,6 @@ void glDrawWorld(view_t* camera, int mode)
 	glMatrixMode( GL_MODELVIEW );
 	glPushMatrix();
 	glLoadIdentity();
-	glEnable( GL_DEPTH_TEST );
 	glDepthMask(GL_TRUE);
 	if ( mode == REALCOLORS )
 	{
@@ -2509,8 +2504,6 @@ void GO_SwapBuffers(SDL_Window* screen)
 
 		glDisable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_LIGHTING);
 
 		glBindTexture(GL_TEXTURE_2D, fbo_tex);
 		glColor4f(1,1,1,1);

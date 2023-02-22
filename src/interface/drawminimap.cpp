@@ -78,12 +78,9 @@ void drawMinimap(const int player, SDL_Rect rect)
     const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
     const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();

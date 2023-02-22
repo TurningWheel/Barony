@@ -5047,8 +5047,7 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 	{
 		return;
 	}
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
+
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -5140,7 +5139,6 @@ void VideoManager_t::draw()
 	{
 		return;
 	}
-	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glViewport(0, 0, xres, yres);
@@ -5165,8 +5163,6 @@ void VideoManager_t::draw()
 	float th = potCeil(h);
 
 	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
-
-	glEnable(GL_DEPTH_TEST);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

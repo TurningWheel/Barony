@@ -2762,6 +2762,8 @@ bool initVideo()
 	    glEnable(GL_CULL_FACE);
 	    glCullFace(GL_BACK);
 	    glEnable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
 	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	    glMatrixMode( GL_MODELVIEW );
 	    glLoadIdentity();
