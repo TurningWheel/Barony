@@ -331,7 +331,7 @@ void Frame::predraw() {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glOrtho(0, 0, virtualScreenX, virtualScreenY, -1, 1);
+	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);

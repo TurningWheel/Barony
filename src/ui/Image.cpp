@@ -206,6 +206,7 @@ void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const S
 		glPushMatrix();
 		glLoadIdentity();
 		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+        glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
 	}
 
 	// setup model matrix

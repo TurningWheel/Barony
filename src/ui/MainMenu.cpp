@@ -5060,7 +5060,7 @@ bind_failed:
 			"Display the name of each player character above their avatar.",
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
 
-#ifndef NINTENDO
+#if 0
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
 			allSettings.show_hud_enabled, [](Button& button){soundToggle(); allSettings.show_hud_enabled = button.isPressed();});
@@ -5077,7 +5077,8 @@ bind_failed:
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
-			{Setting::Type::Boolean, "show_hud"}});
+			//{Setting::Type::Boolean, "show_hud"},
+        });
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Boolean, "fast_restart"},
@@ -5085,7 +5086,8 @@ bind_failed:
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
-			{Setting::Type::Boolean, "show_player_nametags"}});
+			{Setting::Type::Boolean, "show_player_nametags"},
+        });
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "fast_restart"});
@@ -5147,7 +5149,7 @@ bind_failed:
         const char* selected_mode = borderless ? "Borderless" : "Bordered";
 #endif
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
+		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display Mode");
         y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
             true, resolutions_formatted_ptrs, resolutions_formatted_ptrs[selected_res],
             resolutions_formatted.size() > 5 ? settingsResolutionBig : settingsResolutionSmall);
@@ -5160,7 +5162,7 @@ bind_failed:
 			"Prevent screen-tearing by locking the game's refresh rate to the current display.",
 			allSettings.video.vsync_enabled, [](Button& button){soundToggle(); allSettings.video.vsync_enabled = button.isPressed();});
 #endif
-		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display");
+		y += settingsAddSubHeader(*settings_subwindow, y, "options", "Display Options");
 		y += settingsAddSlider(*settings_subwindow, y, "gamma", "Gamma",
 			"Adjust the brightness of the visuals in-game.",
 			allSettings.video.gamma, 50, 200, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.video.gamma = slider.getValue();});

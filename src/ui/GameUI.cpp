@@ -23935,7 +23935,7 @@ void Player::HUD_t::updateXPBar()
 }
 
 bool EnemyHPDamageBarHandler::bEnemyBarSimpleBlit = false;
-static ConsoleVariable<bool> cvar_enemybar_simple_blit("/enemybar_simple_blit", false);
+static ConsoleVariable<bool> cvar_enemybar_simple_blit("/enemybar_simple_blit", true);
 
 // to nest deep maps and suppress visual studio warnings
 struct enemybarMapLowDurationTick_k {

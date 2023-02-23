@@ -3199,7 +3199,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 	// cvars
 #ifndef EDITOR
     static ConsoleVariable<int> max_distance("/culling_max_distance", CLIPFAR / 16);
-    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 2);
+    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
 	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
     static ConsoleVariable<bool> disabled("/skipculling", false);
 #else

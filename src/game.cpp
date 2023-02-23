@@ -882,7 +882,7 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
 -------------------------------------------------------------------------------*/
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
-static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", false);
+static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", true);
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
