@@ -507,8 +507,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	indexdown[1] = model->sizez;
 	indexdown[2] = 1;
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
 	glPushMatrix();
@@ -544,14 +542,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	}
 #endif
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
 
 	if ( entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) )
 	{
@@ -820,6 +810,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		}
 		else
 		{
+            glDisable(GL_TEXTURE_2D);
 			glBindVertexArray(polymodels[modelindex].va);
 			glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
 			glVertexPointer( 3, GL_FLOAT, 0, (char*) NULL );  // Set The Vertex Pointer To The Vertex Buffer
@@ -917,6 +908,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
 			}
 			glDisableClientState(GL_VERTEX_ARRAY); // disable the vertex array on the client side
+            glEnable(GL_TEXTURE_2D);
 		}
 	}
 	glDepthRange(0, 1);
@@ -1018,9 +1010,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		}
 	}
 
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -1044,10 +1033,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1173,7 +1158,10 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	}
 
 	glDepthRange(0, 1);
-	glDisable(GL_ALPHA_TEST);
+    
+    if (mode == REALCOLORS) {
+        glDisable(GL_BLEND);
+    }
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1227,9 +1215,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 		}
 	}
 
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -1250,10 +1235,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1297,12 +1278,15 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	}
 
 	glDepthRange(0, 1);
-	glDisable(GL_ALPHA_TEST);
 
 	if ( tex ) {
 		delete tex;
 		tex = nullptr;
 	}
+    if ( mode == REALCOLORS )
+    {
+        glDisable(GL_BLEND);
+    }
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1410,9 +1394,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 		}
 	}
 
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -1433,10 +1414,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	if (mode == REALCOLORS)
 	{
 		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1536,7 +1513,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	}
 
 	glDepthRange(0, 1);
-	glDisable(GL_ALPHA_TEST);
 
 	if ( entity->behavior == &actSpriteWorldTooltip )
 	{
@@ -1545,6 +1521,11 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			tex = nullptr;
 		}
 	}
+    
+    if (mode == REALCOLORS)
+    {
+        glDisable(GL_BLEND);
+    }
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1557,9 +1538,6 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	SDL_Surface* sprite;
 	//int x, y;
 	real_t s = 1;
-
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
@@ -1578,10 +1556,6 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// assign texture
@@ -1682,8 +1656,11 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();
-
-	glDisable(GL_ALPHA_TEST);
+    
+    if ( mode == REALCOLORS )
+    {
+        glDisable(GL_BLEND);
+    }
 }
 
 #ifndef EDITOR
@@ -1722,9 +1699,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.0f);
-
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -1742,10 +1716,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	if ( mode == REALCOLORS )
 	{
 		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
 	}
 
 	// translate sprite and rotate towards camera
@@ -1827,8 +1797,12 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	glEnd();
 
 	glDepthRange(0, 1);
-	glDisable(GL_ALPHA_TEST);
 	glPopMatrix();
+    
+    if ( mode == REALCOLORS )
+    {
+        glDisable(GL_BLEND);
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -2003,6 +1977,8 @@ void glDrawWorld(view_t* camera, int mode)
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
+        
+        glDisable(GL_BLEND);
 	}
 
 	// setup projection
@@ -2010,14 +1986,6 @@ void glDrawWorld(view_t* camera, int mode)
 	glPushMatrix();
 	glLoadIdentity();
 	glDepthMask(GL_TRUE);
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
 
 	// glBegin / glEnd are also moved outside, 
 	// but needs to track the texture used to "flush" current drawing before switching
@@ -2501,9 +2469,6 @@ void GO_SwapBuffers(SDL_Window* screen)
 		glOrtho(0, 800, 480, 0, 1, -1);
 		glMatrixMode( GL_MODELVIEW );
 		glLoadIdentity();
-
-		glDisable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
 
 		glBindTexture(GL_TEXTURE_2D, fbo_tex);
 		glColor4f(1,1,1,1);

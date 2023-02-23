@@ -318,6 +318,8 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	dest.h = dest.h <= 0 ? surf->h : dest.h;
 
 	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
 		// setup projection matrix
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
@@ -351,6 +353,8 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glEnd();
 
 	if (!drawingGui) {
+        glDisable(GL_BLEND);
+        
 		// pop matrices
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);

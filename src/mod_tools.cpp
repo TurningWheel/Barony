@@ -5163,6 +5163,8 @@ void VideoManager_t::draw()
 	float th = potCeil(h);
 
 	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

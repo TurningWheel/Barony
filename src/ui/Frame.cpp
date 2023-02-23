@@ -244,6 +244,7 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 void Frame::predraw() {
 	drawingGui = true;
 	glViewport(0, 0, virtualScreenX, virtualScreenY);
+    glEnable(GL_BLEND);
 
 	// setup projection matrix
 	glMatrixMode(GL_PROJECTION);
@@ -279,10 +280,12 @@ void Frame::postdraw() {
 	glPopMatrix();
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+            glDisable(GL_BLEND);
             return;
         }
     }
     if (!*ui_scale) {
+        glDisable(GL_BLEND);
         return;
     }
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -315,12 +318,14 @@ void Frame::postdraw() {
         framebuffer::unbindForReading();
     }
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 }
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = true;
 	glViewport(0, 0, virtualScreenX, virtualScreenY);
+    glEnable(GL_BLEND);
 
 	// setup projection matrix
 	glMatrixMode(GL_PROJECTION);
@@ -346,6 +351,7 @@ void Frame::postdraw() {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+        glDisable(GL_BLEND);
         return;
     }
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
@@ -354,6 +360,7 @@ void Frame::postdraw() {
     framebuffer::blit();
     framebuffer::unbindForReading();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 }
 #endif
 

@@ -432,6 +432,7 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 	}
 	glEnd();
 	glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_BLEND);
 	glLineWidth(lineWidth);
 
 	glPopMatrix();
@@ -477,6 +478,8 @@ static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, 
 		glVertex2f(x + cos(degInRad) * radius, yres - (y + sin(degInRad) * radius));
 	}
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -527,6 +530,8 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 
 	// reset line width
 	glLineWidth(lineWidth);
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -572,6 +577,8 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 
 	// reset line width
 	glLineWidth(lineWidth);
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -718,6 +725,8 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, re
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(src->w / 2, src->h / 2);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -772,6 +781,8 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -824,6 +835,8 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -876,6 +889,8 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -998,6 +1013,8 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 	real_t y2 = yres / 2 - 300 * sin(angEnd);
 	drawLine(xres / 2, yres / 2, x1, y1, 0xFFFFFFFF, 255);
 	drawLine(xres / 2, yres / 2, x2, y2, 0xFFFFFFFF, 255);*/
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1067,6 +1084,8 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	//glTexCoord2f(1.f, 0.f);
 	//glVertex2f(pos->x + pos->w, yres - pos->y);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1137,6 +1156,8 @@ void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, fl
 	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
 	//color = uint32ColorPlayer4; // yellow
 	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1191,6 +1212,8 @@ void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint
 	glTexCoord2f(1.f, 0.f);
 	glVertex2f(pos->x + pos->w, yres - pos->y);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -1287,6 +1310,8 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
 	glVertex2f(pos->w, 0);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -2715,6 +2740,8 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, 0);
 	glVertex2f(x2 - 2, yres - y1 - 2);
 	glEnd();
+    
+    glDisable(GL_BLEND);
 
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

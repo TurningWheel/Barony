@@ -145,6 +145,8 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	}
 
 	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
 		// setup projection matrix
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
@@ -174,6 +176,8 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	glEnd();
 
 	if (!drawingGui) {
+        glDisable(GL_BLEND);
+        
 		// pop matrices
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
@@ -195,6 +199,8 @@ void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const S
 	}
 
 	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
 		// setup projection matrix
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
@@ -238,6 +244,7 @@ void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const S
 	// pop matrices
 	glPopMatrix();
 	if (!drawingGui) {
+        glDisable(GL_BLEND);
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
