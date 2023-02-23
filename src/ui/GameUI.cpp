@@ -26713,8 +26713,14 @@ static void drawConsoleCommandBuffer() {
 	} else {
 	    snprintf(buf, sizeof(buf), "> %s", command_str);
 	}
-	auto text = Text::get(buf, players[commandPlayer]->messageZone.useBigFont ? "fonts/pixelmix.ttf#16#2" : "fonts/pixel_maz_multiline.ttf#16#2",
-	    0xffffffff, makeColor(0, 0, 0, 255));
+    const char* font;
+    if (intro) {
+        font = "fonts/pixelmix.ttf#16#2";
+    } else {
+        font = players[commandPlayer]->messageZone.useBigFont ?
+            "fonts/pixelmix.ttf#16#2" : "fonts/pixel_maz_multiline.ttf#16#2";
+    }
+	auto text = Text::get(buf, font, 0xffffffff, makeColor(0, 0, 0, 255));
 	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
 	int printy = players[commandPlayer]->camera_virtualy2() - 192;
 	if ( players[commandPlayer]->messageZone.actualAlignment == Player::MessageZone_t::ALIGN_LEFT_BOTTOM 
@@ -26757,7 +26763,9 @@ Frame::result_t doFrames() {
         if (*gui_draw) {
 		    gui->predraw();
 		    gui->draw();
-            drawConsoleCommandBuffer();
+            if (!movie) {
+                drawConsoleCommandBuffer();
+            }
 		    gui->postdraw();
 		}
 	}

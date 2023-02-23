@@ -5857,18 +5857,22 @@ static void doConsoleCommands() {
 	bool confirm = false;
 	if (controlEnabled) {
 		if (input.getPlayerControlType() != Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
-			if (keystatus[SDLK_RETURN]) {
-				keystatus[SDLK_RETURN] = 0;
-				confirm = true;
-			}
-			if (Input::keys[SDLK_RETURN]) {
-				Input::keys[SDLK_RETURN] = 0;
-				confirm = true;
-			}
+            if (command || !intro) {
+                if (keystatus[SDLK_RETURN]) {
+                    keystatus[SDLK_RETURN] = 0;
+                    confirm = true;
+                }
+                if (Input::keys[SDLK_RETURN]) {
+                    Input::keys[SDLK_RETURN] = 0;
+                    confirm = true;
+                }
+            }
 		}
 		if (input.consumeBinaryToggle("Chat")) {
 			input.consumeBindingsSharedWithBinding("Chat");
-			confirm = true;
+            if (command || !intro) {
+                confirm = true;
+            }
 		}
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
