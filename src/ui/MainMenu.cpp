@@ -9982,7 +9982,11 @@ failed:
 		auto backdrop = card->addImage(
 			card->getActualSize(),
 			0xffffffff,
+#ifdef NINTENDO
+			"*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDifficulty_Window_02.png",
+#else
 			"*images/ui/Main Menus/Play/PlayerCreation/LobbySettings/GameSettings/CustomDifficulty_Window_01.png",
+#endif
 			"backdrop"
 		);
 
