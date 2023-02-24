@@ -1186,7 +1186,6 @@ const std::vector<std::string> officialSecretlevelsTxtOrder =
 void glLoadTexture(SDL_Surface* image, int texnum)
 {
 	SDL_LockSurface(image);
-	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texid[texnum]);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	//glPixelStorei(GL_UNPACK_ROW_LENGTH, (image->pitch / 4));

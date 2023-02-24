@@ -6,6 +6,7 @@
 #include "../draw.hpp"
 #include "Text.hpp"
 #include "Font.hpp"
+#include "Frame.hpp"
 
 GLuint Text::vao = 0;
 GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
@@ -301,15 +302,6 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	    return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION);
-	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
-	glLoadIdentity();
-	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
 	auto src = _src;
 	auto dest = _dest;
 
@@ -324,6 +316,21 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	src.h = src.h <= 0 ? surf->h : src.h;
 	dest.w = dest.w <= 0 ? surf->w : dest.w;
 	dest.h = dest.h <= 0 ? surf->h : dest.h;
+
+	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
+		// setup projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+
+		// push model matrix
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+	}
 
 	// bind texture
 	glBindTexture(GL_TEXTURE_2D, texid);
@@ -345,9 +352,14 @@ void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect v
 	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
 	glEnd();
 
-	// unbind texture
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glColor4f(1.f, 1.f, 1.f, 1.f);
+	if (!drawingGui) {
+        glDisable(GL_BLEND);
+        
+		// pop matrices
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	}
 }
 
 int Text::countNumTextLines() const {

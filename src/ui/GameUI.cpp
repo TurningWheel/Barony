@@ -16565,12 +16565,9 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 		return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -16763,12 +16760,9 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		return;
 	}
 
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -18304,6 +18298,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
+		glBeginCamera(&view);
 		bool b = players[player]->entity->flags[BRIGHT];
 		players[player]->entity->flags[BRIGHT] = true;
 		if ( !players[player]->entity->flags[INVISIBLE] )
@@ -18361,6 +18356,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
+		glEndCamera(&view);
 	}
 	::fov = ofov;
 }
@@ -23971,7 +23967,7 @@ void Player::HUD_t::updateXPBar()
 }
 
 bool EnemyHPDamageBarHandler::bEnemyBarSimpleBlit = false;
-static ConsoleVariable<bool> cvar_enemybar_simple_blit("/enemybar_simple_blit", false);
+static ConsoleVariable<bool> cvar_enemybar_simple_blit("/enemybar_simple_blit", true);
 
 // to nest deep maps and suppress visual studio warnings
 struct enemybarMapLowDurationTick_k {
@@ -26749,8 +26745,14 @@ static void drawConsoleCommandBuffer() {
 	} else {
 	    snprintf(buf, sizeof(buf), "> %s", command_str);
 	}
-	auto text = Text::get(buf, players[commandPlayer]->messageZone.useBigFont ? "fonts/pixelmix.ttf#16#2" : "fonts/pixel_maz_multiline.ttf#16#2",
-	    0xffffffff, makeColor(0, 0, 0, 255));
+    const char* font;
+    if (intro) {
+        font = "fonts/pixelmix.ttf#16#2";
+    } else {
+        font = players[commandPlayer]->messageZone.useBigFont ?
+            "fonts/pixelmix.ttf#16#2" : "fonts/pixel_maz_multiline.ttf#16#2";
+    }
+	auto text = Text::get(buf, font, 0xffffffff, makeColor(0, 0, 0, 255));
 	const int printx = players[commandPlayer]->camera_virtualx1() + 8;
 	int printy = players[commandPlayer]->camera_virtualy2() - 192;
 	if ( players[commandPlayer]->messageZone.actualAlignment == Player::MessageZone_t::ALIGN_LEFT_BOTTOM 
@@ -26793,7 +26795,9 @@ Frame::result_t doFrames() {
         if (*gui_draw) {
 		    gui->predraw();
 		    gui->draw();
-            drawConsoleCommandBuffer();
+            if (!movie) {
+                drawConsoleCommandBuffer();
+            }
 		    gui->postdraw();
 		}
 	}

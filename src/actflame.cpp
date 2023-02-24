@@ -79,7 +79,7 @@ void actFlame(Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-static ConsoleVariable<bool> cvar_flame_use_vismap("/flame_use_vismap", false);
+static ConsoleVariable<bool> cvar_flame_use_vismap("/flame_use_vismap", true);
 
 Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 {

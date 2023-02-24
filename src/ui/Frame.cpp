@@ -18,6 +18,7 @@
 #include "MainMenu.hpp"
 #endif
 
+bool drawingGui = false;
 const Sint32 Frame::sliderSize = 16;
 
 int uiDefaultHeight = 720;
@@ -241,28 +242,50 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 
 #if !defined(EDITOR)
 void Frame::predraw() {
+	drawingGui = true;
+	glViewport(0, 0, virtualScreenX, virtualScreenY);
+    glEnable(GL_BLEND);
+
+	// setup projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
             return;
         }
     }
     if (!*ui_scale) {
-        return;
+		return;
     }
     gui_fb.bindForWriting();
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
- 
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Frame::postdraw() {
+	drawingGui = false;
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
     if (!*ui_scale_native) {
         if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+            glDisable(GL_BLEND);
             return;
         }
     }
     if (!*ui_scale) {
+        glDisable(GL_BLEND);
         return;
     }
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -295,10 +318,26 @@ void Frame::postdraw() {
         framebuffer::unbindForReading();
     }
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 }
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
+	drawingGui = true;
+	glViewport(0, 0, virtualScreenX, virtualScreenY);
+    glEnable(GL_BLEND);
+
+	// setup projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
         return;
     }
@@ -308,7 +347,11 @@ void Frame::predraw() {
 }
 
 void Frame::postdraw() {
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
     if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
+        glDisable(GL_BLEND);
         return;
     }
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
@@ -317,6 +360,7 @@ void Frame::postdraw() {
     framebuffer::blit();
     framebuffer::unbindForReading();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 }
 #endif
 
@@ -432,10 +476,9 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	scaledSize.w = _size.w;
 	scaledSize.h = _size.h;
 
-	auto white = Image::get("images/system/white.png");
-
 	// draw frame background
 	if (!hollow) {
+
 	    if (border) {
 		    SDL_Rect inner;
 		    inner.x = (_size.x + border);
@@ -443,12 +486,27 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		    inner.w = (_size.w - border*2);
 		    inner.h = (_size.h - border*2);
 		    if (borderStyle == BORDER_BEVEL_LOW) {
-			    white->drawColor(nullptr, inner, viewport, borderColor);
+				uint8_t a;
+				::getColor(borderColor, nullptr, nullptr, nullptr, &a);
+				if (a) {
+					auto white = Image::get("images/system/white.png");
+					white->drawColor(nullptr, inner, viewport, borderColor);
+				}
 		    } else {
-			    white->drawColor(nullptr, inner, viewport, color);
+				uint8_t a;
+				::getColor(color, nullptr, nullptr, nullptr, &a);
+				if (a) {
+					auto white = Image::get("images/system/white.png");
+					white->drawColor(nullptr, inner, viewport, color);
+				}
 		    }
 		} else {
-			white->drawColor(nullptr, _size, viewport, color);
+			uint8_t a;
+			::getColor(color, nullptr, nullptr, nullptr, &a);
+			if (a) {
+				auto white = Image::get("images/system/white.png");
+				white->drawColor(nullptr, _size, viewport, color);
+			}
 		}
 	}
 
@@ -476,6 +534,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// horizontal slider
 	if (actualSize.w > size.w && scrollbars) {
+		auto white = Image::get("images/system/white.png");
 
 		// slider rail
 		SDL_Rect barRect;
@@ -508,6 +567,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// vertical slider
 	if (actualSize.h > size.h && _size.y && scrollbars) {
+		auto white = Image::get("images/system/white.png");
+
 		SDL_Rect barRect;
 		barRect.x = scaledSize.x + scaledSize.w;
 		barRect.y = scaledSize.y;
@@ -538,6 +599,8 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// slider filler (at the corner between sliders)
 	if (actualSize.w > size.w && actualSize.h > size.h && scrollbars) {
+		auto white = Image::get("images/system/white.png");
+
 		SDL_Rect barRect;
 		barRect.x = scaledSize.x + scaledSize.w;
 		barRect.y = scaledSize.y + scaledSize.h;
@@ -589,9 +652,11 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		        dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
                 if (activation == &entry && activatedEntryColor) {
+					auto white = Image::get("images/system/white.png");
                     white->drawColor(nullptr, dest, viewport, activatedEntryColor);
                 }
 		        else if (selection == i && selectedEntryColor) {
+					auto white = Image::get("images/system/white.png");
                     white->drawColor(nullptr, dest, viewport, selectedEntryColor);
                 }
             }
@@ -672,12 +737,18 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			entryback.y = entryback.y;
 			entryback.w = entryback.w;
 			entryback.h = entryback.h;
-			if (entry.pressed) {
-				white->drawColor(nullptr, entryback, viewport, color);
-			} else if (entry.highlighted) {
-				white->drawColor(nullptr, entryback, viewport, color);
-			} else if (!mouseActive && selection >= 0 && selection == i) {
-				white->drawColor(nullptr, entryback, viewport, color);
+
+			uint8_t a;
+			::getColor(color, nullptr, nullptr, nullptr, &a);
+			if (a) {
+				auto white = Image::get("images/system/white.png");
+				if (entry.pressed) {
+					white->drawColor(nullptr, entryback, viewport, color);
+				} else if (entry.highlighted) {
+					white->drawColor(nullptr, entryback, viewport, color);
+				} else if (!mouseActive && selection >= 0 && selection == i) {
+					white->drawColor(nullptr, entryback, viewport, color);
+				}
 			}
 
 			text->drawColor(src, dest, viewport, entry.color);
@@ -768,6 +839,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	// root frame draws tooltip
 	// TODO on Nintendo, display this next to the currently selected widget
+#if 0
 	if (!parent) {
 		if (tooltip && tooltip[0] != '\0') {
 			Font* font = Font::get(tooltip_text_font);
@@ -798,6 +870,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			}
 		}
 	}
+#endif
 }
 
 Frame::result_t Frame::process() {
@@ -2215,6 +2288,7 @@ void createTestUI() {
 // sample function - would need to cache the blitted images somewhere for real-time use.
 void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, const SDL_Rect viewport, const Uint32 baseOutlineColor)
 {
+	return; // do not use
 	if ( !actualImage )
 	{
 		return;
@@ -2433,7 +2507,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 	newSrc.w = actualImage->getOutlineSurf()->w;
 	newSrc.h = actualImage->getOutlineSurf()->h;
 
-	Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
+	//Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
 
 	if ( outlineTexture ) {
 		delete outlineTexture;
@@ -2445,6 +2519,11 @@ const Uint32 imageGlowInterval = TICKS_PER_SECOND;
 
 void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const {
 	assert(image);
+	uint8_t a;
+	::getColor(image->color, nullptr, nullptr, nullptr, &a);
+	if (!a) {
+		return;
+	}
 	const Image* actualImage = Image::get(image->path.c_str());
 	if (actualImage) {
 		SDL_Rect pos;
