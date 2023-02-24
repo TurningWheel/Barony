@@ -9293,8 +9293,6 @@ void addMessageToLogWindow(int player, string_t* string) {
 		field->addWordToHighlight(0, makeColorRGB(166, 166, 166));
 		field->setText(buf);
 		field->setPaddingPerLine(*cvar_log_multiline_pady);
-		auto text = Text::get(buf, compactfont->c_str(),
-			uint32ColorWhite, uint32ColorBlack);
 		if ( auto text = field->getTextObject() )
 		{
 			textHeight = (int)(std::max(*cvar_log_lineheight_min, (int)text->getHeight()) * (int)string->lines + 2);
@@ -28450,9 +28448,161 @@ void Player::SkillSheet_t::selectSkill(int skill)
 	resetSkillDisplay();
 }
 
+//SDL_Surface* blitSkillSheet(Frame* skillsFrame)
+//{
+//	int player = skillsFrame->getOwner();
+//	SDL_Surface* sprite = SDL_CreateRGBSurface(0, skillsFrame->getSize().w, skillsFrame->getSize().h, 32,
+//		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+//
+//	real_t opacity = 1.0; // skillsFrame->getOpacity() / 100.0
+//
+//	for ( auto& img : skillsFrame->getImages() )
+//	{
+//		if ( img->disabled ) { continue; }
+//		if ( img->path == "" ) { continue; }
+//		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//		Uint8 r, g, b, a;
+//		getColor(img->color, &r, &g, &b, &a);
+//		SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//		SDL_Rect pos = img->pos;
+//		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//	}
+//
+//	SDL_Rect totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//	/*for ( auto& img : skillSheetEntryFrames[player].entryFrameLeft->getImages() )
+//	{
+//		if ( img->disabled ) { continue; }
+//		if ( img->path == "" ) { continue; }
+//		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//		Uint8 r, g, b, a;
+//		getColor(img->color, &r, &g, &b, &a);
+//		SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//		SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//		SDL_Rect pos = img->pos;
+//		pos.x += totalPos.x;
+//		pos.y += totalPos.y;
+//		pos.x += skillSheetEntryFrames[player].entryFrameLeft->getSize().x;
+//		pos.y += skillSheetEntryFrames[player].entryFrameLeft->getSize().y;
+//		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//	}
+//
+//	for ( auto& img : skillSheetEntryFrames[player].entryFrameRight->getImages() )
+//	{
+//		if ( img->disabled ) { continue; }
+//		if ( img->path == "" ) { continue; }
+//		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//		Uint8 r, g, b, a;
+//		getColor(img->color, &r, &g, &b, &a);
+//		SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//		SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//		SDL_Rect pos = img->pos;
+//		pos.x += totalPos.x;
+//		pos.y += totalPos.y;
+//		pos.x += skillSheetEntryFrames[player].entryFrameRight->getSize().x;
+//		pos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
+//		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//	}*/
+//
+//	for ( auto& frame : skillSheetEntryFrames[player].skillsFrame->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//
+//		totalPos.x += frame->getSize().x;
+//		totalPos.y += frame->getSize().y;
+//		for ( auto& img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	for ( auto& frame : skillSheetEntryFrames[player].entryFrameLeft->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//		totalPos.x += frame->getSize().x;
+//		totalPos.x += skillSheetEntryFrames[player].entryFrameLeft->getSize().x;
+//		totalPos.y += frame->getSize().y;
+//		totalPos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
+//		for ( auto& img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//
+//		for ( auto& f : frame->getFields() )
+//		{
+//			auto tex = f->getTextObject();
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
+//			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
+//			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = f->getSize();
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	for ( auto& frame : skillSheetEntryFrames[player].entryFrameRight->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//		totalPos.x += frame->getSize().x;
+//		totalPos.x += skillSheetEntryFrames[player].entryFrameRight->getSize().x;
+//		totalPos.y += frame->getSize().y;
+//		totalPos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
+//		for ( auto& img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//
+//		for ( auto& f : frame->getFields() )
+//		{
+//			auto tex = f->getTextObject();
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
+//			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
+//			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = f->getSize();
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	return sprite;
+//}
+
 void Player::SkillSheet_t::processSkillSheet()
 {
-	DebugTimers.addTimePoint("skill", "start");
+	//DebugTimers.addTimePoint("skill 1", "start");
+	//DebugTimers.addTimePoint("skill", "start");
 	if ( !skillFrame )
 	{
 		createSkillSheet();
@@ -28620,7 +28770,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		imageResizeToContainer9x9(bgImgFrame, SDL_Rect{0, 12, backgroundWidth, backgroundHeight - 6 }, skillsheetEffectBackgroundImages);
 	}
 
-	DebugTimers.addTimePoint("skill", "post resize");
+	//DebugTimers.addTimePoint("skill", "post resize");
 
 	sheetSize.x = skillFrame->getSize().w / 2 - sheetSize.w / 2;
 
@@ -28815,7 +28965,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		mouseClickedOutOfBounds = true;
 	}
 
-	DebugTimers.addTimePoint("skill", "post inputs");
+	//DebugTimers.addTimePoint("skill", "post inputs");
 
 	if ( stats[player.playernum] && skillSheetData.skillEntries.size() > 0 )
 	{
@@ -28983,7 +29133,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			//skillIconFg->path = "";
 		}
 
-		DebugTimers.addTimePoint("skill", "post basic numbers");
+		//DebugTimers.addTimePoint("skill", "post basic numbers");
 
 		int lowestY = 0;
 
@@ -29018,7 +29168,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			scrollInertia = 0.0;
 		}
 
-		DebugTimers.addTimePoint("skill", "post resize");
+		//DebugTimers.addTimePoint("skill", "post resize");
 
 		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() )
 		{
@@ -29115,7 +29265,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 			}
 
-			DebugTimers.addTimePoint("skill", "process 1");
+			//DebugTimers.addTimePoint("skill", "process 1");
 
 			int moveEffectsOffsetY = 0;
 			const int actualFontHeight = 20;
@@ -29387,11 +29537,11 @@ void Player::SkillSheet_t::processSkillSheet()
 					//	effectVal->setSize(posValue);
 					//}
 					previousEffectFrameHeight = effectFrame->getSize().y + effectFrame->getSize().h;
-					DebugTimers.addTimePoint("skill", effectFrame->getName());
+					//DebugTimers.addTimePoint("skill", effectFrame->getName());
 				}
 			}
 
-			DebugTimers.addTimePoint("skill", "process fx 2");
+			//DebugTimers.addTimePoint("skill", "process fx 2");
 
 			if ( false )
 			{
@@ -29598,9 +29748,9 @@ void Player::SkillSheet_t::processSkillSheet()
 		scrollArea->setSize(scrollAreaPos);
 	}
 
-	DebugTimers.addTimePoint("skill", "post display");
+	//DebugTimers.addTimePoint("skill", "post display");
 
-	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor;
+	bool drawGlyphs = !::inputs.getVirtualMouse(player.playernum)->draw_cursor && inputs.hasController(player.playernum);
 	if ( auto promptBack = skillFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
@@ -29699,6 +29849,32 @@ void Player::SkillSheet_t::processSkillSheet()
 		return;
 	}
 
+	/*static SDL_Surface* skillSprite = nullptr;
+	static TempTexture* texture = nullptr;
+	{
+		if ( !bSkillSheetEntryLoaded || skillsFadeInAnimationY < 1.0 )
+		{
+			if ( texture )
+			{
+				delete texture;
+				texture = nullptr;
+			}
+			if ( skillSprite )
+			{
+				SDL_FreeSurface(skillSprite);
+				skillSprite = nullptr;
+			}
+			skillSprite = blitSkillSheet(skillFrame);
+			if ( skillSprite )
+			{
+				texture = new TempTexture();
+				texture->load(skillSprite, false, true);
+			}
+		}
+		const SDL_Rect viewport{ 0, 0, xres, yres };
+		Image::drawSurface(texture->texid, skillSprite, nullptr, skillFrame->getSize(), viewport, 0xFFFFFFFF);
+	}*/
+
 	if ( sliderDisabled != slider->isDisabled() )
 	{
 		// rerun this function
@@ -29709,7 +29885,8 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		bSkillSheetEntryLoaded = true;
 	}
-	DebugTimers.addTimePoint("skill", "end");
+	//DebugTimers.addTimePoint("skill", "end");
+	//DebugTimers.addTimePoint("skill 1", "end");
 }
 
 void Player::Inventory_t::SpellPanel_t::openSpellPanel()

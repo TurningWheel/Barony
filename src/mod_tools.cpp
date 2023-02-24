@@ -4120,6 +4120,9 @@ void DebugTimers_t::printAllTimepoints()
 
 void DebugTimers_t::printTimepoints(std::string key, int& posy)
 {
+	if ( !font8x8_bmp || intro ) {
+		return;
+	}
 	auto& points = timepoints[key];
 	if ( points.empty() ) { return; }
 	int starty = posy;
