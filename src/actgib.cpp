@@ -335,6 +335,11 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	{
 		entity_uids--;
 	}
+	entity->skill[1] = -1;
+	if ( parentent->behavior == &actPlayer )
+	{
+		entity->skill[1] = parentent->skill[2];
+	}
 	entity->setUID(-3);
 
 	return entity;

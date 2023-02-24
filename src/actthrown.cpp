@@ -818,6 +818,7 @@ void actThrown(Entity* my)
 				bool wasPotion = itemCategory(item) == POTION;
 				bool wasBoomerang = item->type == BOOMERANG;
 				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
+				bool healingPotion = false;
 
 				if ( hitstats )
 				{
@@ -887,6 +888,7 @@ void actThrown(Entity* my)
 							case POTION_WATER:
 								usedpotion = true;
 								item_PotionWater(item, hit.entity, parent);
+								healingPotion = true;
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity, parent);
@@ -942,11 +944,13 @@ void actThrown(Entity* my)
 										}
 									}
 								}
+								healingPotion = true;
 								usedpotion = true;
 								break;
 							case POTION_JUICE:
 								item_PotionJuice(item, hit.entity, parent);
 								usedpotion = true;
+								healingPotion = true;
 								break;
 							case POTION_SICKNESS:
 								item_PotionSickness(item, hit.entity, parent);
@@ -973,6 +977,7 @@ void actThrown(Entity* my)
 									}
 								}
 								usedpotion = true;
+								healingPotion = true;
 							}
 								break;
 							case POTION_HEALING:
@@ -991,6 +996,7 @@ void actThrown(Entity* my)
 									}
 								}
 								usedpotion = true;
+								healingPotion = true;
 							}
 								break;
 							case POTION_CUREAILMENT:
@@ -1148,7 +1154,7 @@ void actThrown(Entity* my)
 				}
 
 				// update enemy bar for attacker
-				if ( !friendlyHit )
+				if ( !friendlyHit || healingPotion )
 				{
 					if ( !strcmp(hitstats->name, "") )
 					{

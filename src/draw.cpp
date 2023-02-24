@@ -1778,9 +1778,12 @@ void drawEntities3D(view_t* camera, int mode)
 				}
 				else if ( entity->behavior == &actDamageGib )
 				{
-					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-						+ pow(camera->y * 16.0 - entity->y, 2));
-					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+					if ( currentPlayerViewport != entity->skill[1] ) // skill[1] is player num, don't draw gibs on me
+					{
+						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+							+ pow(camera->y * 16.0 - entity->y, 2));
+						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+					}
 				}
 				else
 				{
