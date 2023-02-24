@@ -1349,6 +1349,7 @@ public:
 					Uint32 marqueeTicks[MAXPLAYERS] = { 0 };
 					bool marqueeCompleted[MAXPLAYERS] = { false };
 					int effectUpdatedAtSkillLevel = -1;
+					int cachedWidth = -1;
 				};
 				std::vector<SkillEffect_t> effects;
 			};
