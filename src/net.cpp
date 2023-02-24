@@ -1644,6 +1644,44 @@ Entity* receiveEntity(Entity* entity)
 	    (monsterType == RAT || monsterType == SLIME || monsterType == SCARAB) &&
 	    entity->skill[8]; // MONSTER_ATTACK
 
+	//if ( Entity::getMonsterTypeFromSprite(entity->sprite) == SPIDER )
+	//{
+	//	if ( arachnophobia_filter )
+	//	{
+	//		switch ( entity->sprite )
+	//		{
+	//			case 267: // spider
+	//				entity->sprite = 997; // crab
+	//				break;
+	//			case 823: // player spider
+	//				entity->sprite = 1001; // player crab
+	//				break;
+	//			case 1118: // shelob
+	//				entity->sprite = 1189; // bubbles
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		switch ( entity->sprite )
+	//		{
+	//			case 997: // crab
+	//				entity->sprite = 997; // spider
+	//				break;
+	//			case 1001: // player crab
+	//				entity->sprite = 823; // player spider
+	//				break;
+	//			case 1189: // bubbles
+	//				entity->sprite = 1118; // bubbles
+	//				break;
+	//			default:
+	//				break;
+	//		}
+	//	}
+	//}
+
 	if (excludeForAnimation) {
 	    entity->sprite = oldSprite;
 	}
@@ -4213,6 +4251,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// update svFlags
 	{'SVFL', [](){
 		svFlags = SDLNet_Read32(&net_packet->data[4]);
+		lobbyWindowSvFlags = svFlags;
 	}},
 
 	// kick
@@ -4272,7 +4311,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// win the game
 	{'WING', [](){
 		int victoryType;
-		switch (stats[clientnum]->playerRace) {
+		int race = RACE_HUMAN;
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		{
+			race = stats[clientnum]->playerRace;
+		}
+
+		switch ( race ) {
 		default: victoryType = 3; break;
 		case RACE_HUMAN: victoryType = 4; break;
 		case RACE_SKELETON: victoryType = 5; break;
@@ -4290,7 +4335,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		victory = victoryType;
 	    if (net_packet->data[5] == 0) { // full ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
@@ -4312,7 +4357,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 1) { // classic herx ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
@@ -4334,7 +4379,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[5] == 2) { // classic baphomet ending
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
@@ -4363,8 +4408,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// mid game cutscene
 	{'MIDG', [](){
+		int race = RACE_HUMAN;
+		if ( stats[clientnum]->playerRace != RACE_HUMAN && stats[clientnum]->appearance == 0 )
+		{
+			race = stats[clientnum]->playerRace;
+		}
 	    if (net_packet->data[4] == 0) { // herx midpoint
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
@@ -4386,7 +4436,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        }
 	    }
 	    else if (net_packet->data[4] == 1) { // baphomet midpoint
-	        switch (stats[clientnum]->playerRace) {
+	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
 	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);

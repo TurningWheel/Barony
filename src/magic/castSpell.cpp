@@ -189,6 +189,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			messagePlayer(player, MESSAGE_MISC, language[375]);
 			if ( players[player]->isLocalPlayer() )
 			{
+				playSound(563, 64);
 				if ( players[player]->magic.noManaProcessedOnTick == 0 )
 				{
 					players[player]->magic.flashNoMana();

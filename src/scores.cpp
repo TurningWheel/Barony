@@ -5640,7 +5640,6 @@ int loadGame(int player, const SaveGameInfo& info) {
 	uniqueGameKey = info.gamekey;
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
-	svFlags = info.svflags;
 	clientnum = info.player_num;
 	switch (info.multiplayer_type) {
 	default:
@@ -5654,6 +5653,20 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 	currentlevel = info.dungeon_lvl;
 	secretlevel = info.level_track != 0;
+
+	if ( clientnum == player )
+	{
+		gameModeManager.currentSession.saveServerFlags();
+		if ( multiplayer == CLIENT )
+		{
+			lobbyWindowSvFlags = info.svflags;
+		}
+		else
+		{
+			svFlags = info.svflags;
+		}
+		printlog("[SESSION]: Using savegame server flags");
+	}
 
 	// load player data
 	client_classes[player] = info.players[player].char_class;
