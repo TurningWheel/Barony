@@ -18329,11 +18329,12 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( (Sint32)entity->getUID() == -4 )
+				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 				{
 					glDrawSprite(&view, entity, REALCOLORS);
 				}
 			}
+            glEnable(GL_BLEND); // this gets disabled by the torch sprites
 		}
 		else
 		{
@@ -18344,7 +18345,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
-					if ( (Sint32)entity->getUID() == -4 )
+					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
 						glDrawSprite(&view, entity, REALCOLORS);
 					}
@@ -18355,6 +18356,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					entity->flags[BRIGHT] = b;
 				}
 			}
+            glEnable(GL_BLEND); // this gets disabled by the torch sprites
 		}
 		glEndCamera(&view);
 	}
