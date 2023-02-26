@@ -26858,9 +26858,13 @@ void Player::SkillSheet_t::createSkillSheet()
 	allSkillEntriesRight->setSize(allSkillEntriesPosRight);
 
 	allSkillEntriesLeft->addImage(SDL_Rect{ 0, 12, 182, 376 },
-		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Left_03.png", "bg wing left");
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Left_04.png", "bg wing left");
+	allSkillEntriesLeft->addImage(SDL_Rect{0, 0, 0, 0},
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Left_Full_00000000.png", "bg wing all skills left");
 	allSkillEntriesRight->addImage(SDL_Rect{ 0, 12, 182, 376 },
-		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Right_03.png", "bg wing right");
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Window_Right_04.png", "bg wing right");
+	allSkillEntriesRight->addImage(SDL_Rect{ 0, 0, 0, 0 },
+		0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Right_Full_00000000.png", "bg wing all skills right");
 
 	auto skillBackgroundImagesFrame = skillBackground->addFrame("skills bg images");
 	skillBackgroundImagesFrame->setHollow(true);
@@ -27139,6 +27143,10 @@ void Player::SkillSheet_t::createSkillSheet()
 		int effectXOffset = 72; // tmp paramters - configured in skillsheet json
 		int effectBackgroundXOffset = 8;
 		int effectBackgroundWidth = 80;
+		auto effectLargeBgImg = scrollAreaFrame->addImage(
+			SDL_Rect{ 0, 0, 0, 0 },
+			makeColor(101, 33, 33, 28), "images/system/white.png", "effect frame bg tmp");
+		effectLargeBgImg->disabled = true;
 		for ( int i = 0; i < 10; ++i )
 		{
 			snprintf(effectFrameName, sizeof(effectFrameName), "effect %d frame", i);
@@ -27149,9 +27157,6 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectFrame->addImage(
 				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 }, 
 				makeColor(101, 87, 67, 255), "images/system/white.png", "effect frame bg highlight");
-			effectFrame->addImage(
-				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 },
-				makeColor(101, 33, 33, 28), "images/system/white.png", "effect frame bg tmp");
 			int valueX =  effectFrame->getSize().w - effectXOffset;
 
 			auto valBgImgFrame = effectFrame->addFrame("effect val bg frame");
@@ -27319,6 +27324,7 @@ void Player::SkillSheet_t::resetSkillDisplay()
 			skillEffect.marqueeCompleted[player.playernum] = false;
 			skillEffect.effectUpdatedAtSkillLevel = -1;
 			skillEffect.cachedWidth = -1;
+			skillEffect.effectUpdatedAtMonsterType = -1;
 		}
 	}
 }
@@ -28599,6 +28605,7 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //	return sprite;
 //}
 
+static ConsoleVariable<bool> cvar_skillsheet_optimise("/skillsheet_optimise", true);
 void Player::SkillSheet_t::processSkillSheet()
 {
 	//DebugTimers.addTimePoint("skill 1", "start");
@@ -28708,6 +28715,10 @@ void Player::SkillSheet_t::processSkillSheet()
 			(int)(404 + (bUseCompactSkillsView ? windowCompactHeightScaleY : windowHeightScaleY) * 80)));
 		sheetSize.w = std::max(0, std::min(skillFrame->getSize().w - 8, 
 			(int)(684 + (bUseCompactSkillsView ? windowCompactHeightScaleX : windowHeightScaleX) * 80)));
+		if ( player.bUseCompactGUIHeight() && !player.bUseCompactGUIWidth() )
+		{
+			sheetSize.w += 12; // some adjustment to match 4 player as it's bigger
+		}
 		innerFrame->setSize(sheetSize);
 
 		SDL_Rect skillDescPos = skillDescriptionFrame->getSize();
@@ -28732,15 +28743,76 @@ void Player::SkillSheet_t::processSkillSheet()
 		allSkillEntriesLeft->setSize(leftWingPos);
 		allSkillEntriesRight->setSize(rightWingPos);
 
+		auto leftWingAllSkillsImg = allSkillEntriesLeft->findImage("bg wing all skills left");
+		leftWingAllSkillsImg->ontop = true;
+		auto rightWingAllSkillsImg = allSkillEntriesRight->findImage("bg wing all skills right");
+		rightWingAllSkillsImg->ontop = true;
+		int index = 0;
+		std::string leftBinary = "00000000";
+		std::string rightBinary = "00000000";
+		for ( auto& skillEntry : skillSheetData.skillEntries )
+		{
+			if ( index >= 8 )
+			{
+				if ( stats[player.playernum]->PROFICIENCIES[skillEntry.skillId] >= SKILL_LEVEL_LEGENDARY )
+				{
+					leftBinary[7 - (index - 8)] = '1';
+				}
+			}
+			else
+			{
+				if ( stats[player.playernum]->PROFICIENCIES[skillEntry.skillId] >= SKILL_LEVEL_LEGENDARY )
+				{
+					rightBinary[7 - index] = '1';
+				}
+			}
+			++index;
+		}
 		if ( bUseCompactSkillsView )
 		{
-			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_LeftCompact_03.png";
-			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_RightCompact_03.png";
+			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_LeftCompact_04.png";
+			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_RightCompact_04.png";
+
+			leftWingAllSkillsImg->path = "*#images/ui/SkillSheet/Icons2/UI_Skills_Left_Comp_" + leftBinary + ".png";
+			rightWingAllSkillsImg->path = "*#images/ui/SkillSheet/Icons2/UI_Skills_Right_Comp_" + rightBinary + ".png";
 		}
 		else
 		{
-			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Left_03.png";
-			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Right_03.png";
+			leftWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Left_04.png";
+			rightWingImg->path = "*#images/ui/SkillSheet/UI_Skills_Window_Right_04.png";
+
+			leftWingAllSkillsImg->path = "*#images/ui/SkillSheet/Icons2/UI_Skills_Left_Full_" + leftBinary + ".png";
+			rightWingAllSkillsImg->path = "*#images/ui/SkillSheet/Icons2/UI_Skills_Right_Full_" + rightBinary + ".png";
+		}
+		if ( auto imgGet = Image::get(leftWingAllSkillsImg->path.c_str()) )
+		{
+			if ( bUseCompactSkillsView )
+			{
+				leftWingAllSkillsImg->pos.x = 6 + leftWingImg->pos.x;
+				leftWingAllSkillsImg->pos.y = 22 + leftWingImg->pos.y;
+			}
+			else
+			{
+				leftWingAllSkillsImg->pos.x = 6 + leftWingImg->pos.x;
+				leftWingAllSkillsImg->pos.y = 32 + leftWingImg->pos.y;
+			}
+			leftWingAllSkillsImg->pos.w = imgGet->getWidth();
+			leftWingAllSkillsImg->pos.h = imgGet->getHeight();
+		}
+		if ( auto imgGet = Image::get(rightWingAllSkillsImg->path.c_str()) )
+		{
+			if ( bUseCompactSkillsView )
+			{
+				rightWingAllSkillsImg->pos.x = 152 + rightWingImg->pos.x;
+				rightWingAllSkillsImg->pos.y = 22 + rightWingImg->pos.y;
+			}
+			else
+			{
+				rightWingAllSkillsImg->pos.x = 152 + rightWingImg->pos.x;
+				rightWingAllSkillsImg->pos.y = 32 + rightWingImg->pos.y;
+			}
+			rightWingAllSkillsImg->pos.w = imgGet->getWidth();
+			rightWingAllSkillsImg->pos.h = imgGet->getHeight();
 		}
 		leftWingImg->pos.h = Image::get(leftWingImg->path.c_str())->getHeight();
 		rightWingImg->pos.h = Image::get(rightWingImg->path.c_str())->getHeight();
@@ -28756,6 +28828,9 @@ void Player::SkillSheet_t::processSkillSheet()
 		auto flourishBottom = bgImgFrame->findImage("flourish bottom");
 		flourishBottom->pos.x = bgImgFramePos.w / 2 - flourishBottom->pos.w / 2;
 		flourishBottom->pos.y = backgroundHeight - flourishBottom->pos.h;
+		flourishTop->disabled = true;
+		flourishBottom->disabled = true;
+
 
 		bgImgFramePos.x = innerFrame->getSize().w / 2 - backgroundWidth / 2;
 		if ( skillSlideDirection != 0 )
@@ -28767,7 +28842,79 @@ void Player::SkillSheet_t::processSkillSheet()
 		bgImgFramePos.h = backgroundHeight;
 		bgImgFrame->setSize(bgImgFramePos);
 
-		imageResizeToContainer9x9(bgImgFrame, SDL_Rect{0, 12, backgroundWidth, backgroundHeight - 6 }, skillsheetEffectBackgroundImages);
+		if ( backgroundWidth == 480 && backgroundHeight == 500 && *cvar_skillsheet_optimise )
+		{
+			for ( auto img : bgImgFrame->getImages() )
+			{
+				img->disabled = true;
+			}
+			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			mm->pos.x = 0;
+			mm->pos.y = 0;
+			mm->pos.w = backgroundWidth;
+			mm->pos.h = backgroundHeight;
+			mm->color = makeColorRGB(255, 255, 255);
+			mm->path = ("*#images/ui/SkillSheet/UI_Skills_Full_480x500.png");
+			mm->disabled = false;
+		}
+		else if ( backgroundWidth == 360 && backgroundHeight == 352 && *cvar_skillsheet_optimise )
+		{
+			for ( auto img : bgImgFrame->getImages() )
+			{
+				img->disabled = true;
+			}
+			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			mm->pos.x = 0;
+			mm->pos.y = 0;
+			mm->pos.w = backgroundWidth;
+			mm->pos.h = backgroundHeight;
+			mm->color = makeColorRGB(255, 255, 255);
+			mm->path = ("*#images/ui/SkillSheet/UI_Skills_Full_360x352.png");
+			mm->disabled = false;
+		}
+		else if ( backgroundWidth == 372 && backgroundHeight == 352 && *cvar_skillsheet_optimise )
+		{
+			for ( auto img : bgImgFrame->getImages() )
+			{
+				img->disabled = true;
+			}
+			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			mm->pos.x = 0;
+			mm->pos.y = 0;
+			mm->pos.w = backgroundWidth;
+			mm->pos.h = backgroundHeight;
+			mm->color = makeColorRGB(255, 255, 255);
+			mm->path = ("*#images/ui/SkillSheet/UI_Skills_Full_372x352.png");
+			mm->disabled = false;
+		}
+		else if ( backgroundWidth == 372 && backgroundHeight == 500 && *cvar_skillsheet_optimise )
+		{
+			for ( auto img : bgImgFrame->getImages() )
+			{
+				img->disabled = true;
+			}
+			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			mm->pos.x = 0;
+			mm->pos.y = 0;
+			mm->pos.w = backgroundWidth;
+			mm->pos.h = backgroundHeight;
+			mm->color = makeColorRGB(255, 255, 255);
+			mm->path = ("*#images/ui/SkillSheet/UI_Skills_Full_372x500.png");
+			mm->disabled = false;
+		}
+		else
+		{
+			for ( auto img : bgImgFrame->getImages() )
+			{
+				img->disabled = false;
+			}
+			flourishTop->disabled = false;
+			flourishBottom->disabled = false;
+			auto mm = bgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			mm->path = "images/system/white.png";
+			mm->color = makeColor(0, 0, 0, 255);
+			imageResizeToContainer9x9(bgImgFrame, SDL_Rect{0, 12, backgroundWidth, backgroundHeight - 6 }, skillsheetEffectBackgroundImages);
+		}
 	}
 
 	//DebugTimers.addTimePoint("skill", "post resize");
@@ -28785,6 +28932,8 @@ void Player::SkillSheet_t::processSkillSheet()
 	a = 128 * skillsFadeInAnimationY;
 	fade->color = makeColor( r, g, b, a);
 	fade->disabled = false;
+	fade->pos.w = skillFrame->getSize().w;
+	fade->pos.h = skillFrame->getSize().h;
 
 	int baseY = (skillFrame->getSize().h / 2 - sheetSize.h / 2);
 	sheetSize.y = -sheetSize.h + skillsFadeInAnimationY * (baseY + sheetSize.h);
@@ -29054,13 +29203,14 @@ void Player::SkillSheet_t::processSkillSheet()
 
 				auto skillIconBg = entry->findImage("skill icon bg");
 				auto skillIconFg = entry->findImage("skill icon fg");
-				skillIconFg->path = skillSheetData.skillEntries[i].skillIconPath;
-
+				//skillIconFg->path = skillSheetData.skillEntries[i].skillIconPath;
+				skillIconFg->disabled = true;
 				auto statIcon = entry->findImage("stat icon");
 				statIcon->disabled = true;
 
 				auto selectorIcon = entry->findImage("selector img");
 				selectorIcon->disabled = true;
+				skillIconBg->disabled = false;
 
 				if ( selectedSkill == i || highlightedSkill == i )
 				{
@@ -29081,7 +29231,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 				if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_LEGENDARY )
 				{
-					skillIconFg->path = skillSheetData.skillEntries[i].skillIconPathLegend;
+					//skillIconFg->path = skillSheetData.skillEntries[i].skillIconPathLegend;
 					skillLevel->setColor(skillSheetData.legendTextColor);
 					if ( selectedSkill == i )
 					{
@@ -29126,6 +29276,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					else
 					{
 						skillIconBg->path = skillSheetData.iconBgPathDefault;
+						skillIconBg->disabled = true;
 					}
 				}
 			}
@@ -29289,13 +29440,42 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 				skillDescriptionBgFrame->setSize(SDL_Rect{skillDescriptionTxtPos.x, skillDescriptionTxtPos.y - 4,
 					skillDescriptionTxtPos.w, txtHeightNew + 8 });
-				imageResizeToContainer9x9(skillDescriptionBgFrame, 
-					SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h }, skillsheetEffectBackgroundImages);
 				lowestY = std::max(lowestY, skillDescriptionTxt->getSize().y + skillDescriptionTxt->getNumTextLines() * actualFontHeight/*actualFont->height(true)*/);
+
+				std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_Desc_Full_";
+				staticImgPath += std::to_string(skillDescriptionBgFrame->getSize().w) + 'x' + std::to_string(skillDescriptionBgFrame->getSize().h) + ".png";
+
+				auto staticImg = Image::get(staticImgPath.c_str());
+				if ( staticImg && staticImg->getWidth() > 0 && *cvar_skillsheet_optimise )
+				{
+					for ( auto img : skillDescriptionBgFrame->getImages() )
+					{
+						img->disabled = true;
+					}
+					auto mm = skillDescriptionBgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					mm->disabled = false;
+					mm->path = staticImgPath;
+					mm->pos = SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h };
+				}
+				else
+				{
+					for ( auto img : skillDescriptionBgFrame->getImages() )
+					{
+						img->disabled = false;
+					}
+					auto mm = skillDescriptionBgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+					mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
+					imageResizeToContainer9x9(skillDescriptionBgFrame,
+						SDL_Rect{ 0, 0, skillDescriptionBgFrame->getSize().w, skillDescriptionBgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+				}
 			}
 
 			bool skillLVLUpdated = false;
 			int previousEffectFrameHeight = 0;
+
+			auto effectFrameBgImgTmp = scrollArea->findImage("effect frame bg tmp");
+			effectFrameBgImgTmp->disabled = false;
+
 			for ( int eff = 0; eff < 10; ++eff )
 			{
 				auto effectFrame = skillSheetEntryFrames[player.playernum].effectFrames[eff];
@@ -29307,6 +29487,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				{
 					SDL_Rect effectFramePos = effectFrame->getSize();
 					effectFramePos.w = scrollAreaPos.w;
+					effectFrameBgImgTmp->pos.w = effectFramePos.w;
 
 					if ( moveEffectsOffsetY != 0 )
 					{
@@ -29321,6 +29502,7 @@ void Player::SkillSheet_t::processSkillSheet()
 					bool bEffUpdated = false;
 					if ( (effect_t.bAllowRealtimeUpdate && (ticks % (std::max(TICKS_PER_SECOND, MAXPLAYERS * 10))) == (player.playernum * 10))
 						|| effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency]
+						|| effect_t.effectUpdatedAtMonsterType != stats[player.playernum]->type
 						|| effect_t.value == "" )
 					{
 						if ( effect_t.effectUpdatedAtSkillLevel != stats[player.playernum]->PROFICIENCIES[proficiency] )
@@ -29328,7 +29510,12 @@ void Player::SkillSheet_t::processSkillSheet()
 							skillLVLUpdated = true;
 							bEffUpdated = true;
 						}
+						else if ( effect_t.effectUpdatedAtMonsterType != stats[player.playernum]->type )
+						{
+							bEffUpdated = true;
+						}
 						effect_t.effectUpdatedAtSkillLevel = stats[player.playernum]->PROFICIENCIES[proficiency];
+						effect_t.effectUpdatedAtMonsterType = stats[player.playernum]->type;
 						std::string oldValue = effect_t.value;
 						effect_t.value = formatSkillSheetEffects(player.playernum, proficiency, effect_t.tag, effect_t.rawValue);
 						if ( oldValue != effect_t.value )
@@ -29422,6 +29609,10 @@ void Player::SkillSheet_t::processSkillSheet()
 						{
 							effectFramePos.y = previousEffectFrameHeight; // don't adjust first effect frame y pos
 						}
+						else
+						{
+							effectFrameBgImgTmp->pos.y = effectFramePos.y;
+						}
 						effectFrame->setSize(effectFramePos);
 
 						{
@@ -29448,20 +29639,53 @@ void Player::SkillSheet_t::processSkillSheet()
 
 							auto effectFrameBgImg = effectFrame->findImage("effect frame bg highlight");
 							effectFrameBgImg->pos = SDL_Rect{ 0, effectFrame->getSize().h - 2, effectFrame->getSize().w, 1 };
-
-							auto effectFrameBgImgTmp = effectFrame->findImage("effect frame bg tmp");
-							effectFrameBgImgTmp->pos = SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h };
 						}
 
 						{
 							// adjust inner background image elements
-							imageResizeToContainer9x9(effectBgImgFrame,
-								SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+
+							std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_Eff_Full_";
+							staticImgPath += std::to_string(effectBgImgFrame->getSize().w) + 'x' + std::to_string(effectBgImgFrame->getSize().h) + ".png";
+
+							auto staticImg = Image::get(staticImgPath.c_str());
+							if ( staticImg && staticImg->getWidth() > 0 && *cvar_skillsheet_optimise )
+							{
+								for ( auto img : effectBgImgFrame->getImages() )
+								{
+									img->disabled = true;
+								}
+								auto mm = effectBgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+								mm->disabled = false;
+								mm->path = staticImgPath;
+								mm->color = makeColorRGB(255, 255, 255);
+								mm->pos = SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h };
+							}
+							else
+							{
+								for ( auto img : effectBgImgFrame->getImages() )
+								{
+									img->disabled = false;
+								}
+								auto mm = effectBgImgFrame->findImage(skillsheetEffectBackgroundImages[MIDDLE].c_str());
+								mm->path = "*#images/ui/SkillSheet/UI_Skills_EffectBG_M00.png";
+								mm->color = makeColor(51, 33, 26, 255);
+								imageResizeToContainer9x9(effectBgImgFrame,
+									SDL_Rect{ 0, 0, effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h }, skillsheetEffectBackgroundImages);
+								/*static std::map<int, std::pair<int, int>> sizes;
+								sizes[effectBgImgFrame->getSize().w + effectBgImgFrame->getSize().h * 1000] = std::make_pair(effectBgImgFrame->getSize().w, effectBgImgFrame->getSize().h);
+								printlog("sizes");
+								for ( auto & pair : sizes )
+								{
+									printlog("%d | %d", pair.second.first, pair.second.second);
+								}*/
+							}
+
+
 						}
 					}
 
 					lowestY = std::max(lowestY, effectFrame->getSize().y + effectFrame->getSize().h);
-
+					effectFrameBgImgTmp->pos.h = lowestY - effectFrameBgImgTmp->pos.y;
 					// check marquee if needed
 					//if ( false )
 					//{
@@ -29637,41 +29861,93 @@ void Player::SkillSheet_t::processSkillSheet()
 				bm->pos.w = legendPos.w - bl->pos.w - br->pos.w;
 				br->pos.x = legendPos.w - br->pos.w;
 
+
+				legendPos.h = bl->pos.y + bl->pos.h;
+				legendFrame->setSize(legendPos);
+
+
 				if ( proficiencyValue < SKILL_LEVEL_LEGENDARY )
 				{
 					legendDivTxt->setColor(legendRegularColor);
 					legendText->setColor(legendRegularColor);
-					tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
-					tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
-					tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
+					
+					std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_LegendBox_Full_";
+					staticImgPath += std::to_string(legendPos.w) + 'x' + std::to_string(legendPos.h) + ".png";
 
-					ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png";
-					mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
-					mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png";
+					auto staticImg = Image::get(staticImgPath.c_str());
+					if ( staticImg && staticImg->getWidth() > 0 && *cvar_skillsheet_optimise )
+					{
+						for ( auto img : legendFrame->getImages() )
+						{
+							img->disabled = true;
+						}
+						mm->disabled = false;
+						mm->path = staticImgPath;
+						mm->color = makeColorRGB(255, 255, 255);
+						mm->pos = SDL_Rect{ 0, 0, legendPos.w, legendPos.h };
+					}
+					else
+					{
+						for ( auto img : legendFrame->getImages() )
+						{
+							img->disabled = false;
+						}
+						mm->pos.x = 18;
+						mm->pos.y = 18;
+						tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TL_00.png";
+						tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_T_00.png";
+						tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_TR_00.png";
 
-					bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png";
-					bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png";
-					br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png";
+						ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_ML_00.png";
+						mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_M_00.png";
+						mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_MR_00.png";
+
+						bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BL_00.png";
+						bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_B_00.png";
+						br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox_BR_00.png";
+					}
 				}
 				else
 				{
 					legendDivTxt->setColor(legendGoldColor);
 					legendText->setColor(legendGoldColor);
-					tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
-					tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
-					tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
 
-					ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_ML_00.png";
-					mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_M_00.png";
-					mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_MR_00.png";
+					std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_Full_";
+					staticImgPath += std::to_string(legendPos.w) + 'x' + std::to_string(legendPos.h) + ".png";
 
-					bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BL_00.png";
-					bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_B_00.png";
-					br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BR_00.png";
+					auto staticImg = Image::get(staticImgPath.c_str());
+					if ( staticImg && staticImg->getWidth() > 0 && *cvar_skillsheet_optimise )
+					{
+						for ( auto img : legendFrame->getImages() )
+						{
+							img->disabled = true;
+						}
+						mm->disabled = false;
+						mm->path = staticImgPath;
+						mm->color = makeColorRGB(255, 255, 255);
+						mm->pos = SDL_Rect{ 0, 0, legendPos.w, legendPos.h };
+					}
+					else
+					{
+						for ( auto img : legendFrame->getImages() )
+						{
+							img->disabled = false;
+						}
+						mm->pos.x = 18;
+						mm->pos.y = 18;
+						tl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TL_00.png";
+						tm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_T_00.png";
+						tr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_TR_00.png";
+
+						ml->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_ML_00.png";
+						mm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_M_00.png";
+						mr->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_MR_00.png";
+
+						bl->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BL_00.png";
+						bm->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_B_00.png";
+						br->path = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_BR_00.png";
+					}
 				}
-
-				legendPos.h = bl->pos.y + bl->pos.h;
-				legendFrame->setSize(legendPos);
 			}
 
 			lowestY = legendPos.y + legendPos.h;
