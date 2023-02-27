@@ -434,7 +434,7 @@ std::pair<size_t, const char*> Text::hash(const char* str, const char* font, Uin
 }
 
 Text* Text::get(size_t hash, const char* key) {
-	if (!hash || !key) {
+	if (!key) {
 		return nullptr;
 	}
 

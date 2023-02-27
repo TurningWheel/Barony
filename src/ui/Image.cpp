@@ -263,7 +263,7 @@ size_t Image::hash(const char* name) {
 }
 
 Image* Image::get(size_t hash, const char* name) {
-	if (!hash || !name || name[0] == '\0') {
+	if (!name || name[0] == '\0') {
 		return nullptr;
 	}
 
