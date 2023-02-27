@@ -255,25 +255,48 @@ static std::unordered_map<std::string, Image*> hashed_images;
 static const size_t IMAGE_BUDGET = 1 * 1024 * 1024 * 512; // in bytes
 static size_t IMAGE_VOLUME = 0; // in bytes
 
-Image* Image::get(const char* name) {
-	if ( !name || name[0] == '\0' ) {
+size_t Image::hash(const char* name) {
+	if (!name || name[0] == '\0') {
+		return 0;
+	}
+	return hashed_images.hash_function()(name);
+}
+
+Image* Image::get(size_t hash, const char* name) {
+	if (!hash || !name || name[0] == '\0') {
 		return nullptr;
 	}
-	Image* image = nullptr;
-	auto search = hashed_images.find(name);
-	if (search == hashed_images.end()) {
-		if (IMAGE_VOLUME > IMAGE_BUDGET) {
-			dumpCache();
+
+	// search for text using precomputed hash
+	auto& map = hashed_images;
+	auto bc = map.bucket_count();
+	if (bc) {
+		const auto& key_eq = map.key_eq();
+		const auto& hash_fn = map.hash_function();
+		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
+			(hash < bc ? hash : hash % bc);
+		for (auto it = map.begin(chash); it != map.end(chash); ++it) {
+			if (hash == hash_fn(it->first) && key_eq(it->first, name)) {
+				return it->second;
+			}
 		}
-		image = new Image(name);
-		hashed_images.insert(std::make_pair(name, image));
-		IMAGE_VOLUME += sizeof(Image) + sizeof(SDL_Surface); // header data
-		IMAGE_VOLUME += image->getWidth() * image->getHeight() * 4; // 32-bpp pixel data
-		IMAGE_VOLUME += 1024; // 1-kB buffer
-	} else {
-		image = search->second;
 	}
+
+	// image not found in cache, load it
+	if (IMAGE_VOLUME > IMAGE_BUDGET) {
+		dumpCache();
+	}
+	auto image = new Image(name);
+	hashed_images.insert(std::make_pair(name, image));
+	IMAGE_VOLUME += sizeof(Image) + sizeof(SDL_Surface); // header data
+	IMAGE_VOLUME += image->getWidth() * image->getHeight() * 4; // 32-bpp pixel data
+	IMAGE_VOLUME += 1024; // 1-kB buffer
+
 	return image;
+}
+
+Image* Image::get(const char* name) {
+	return get(hash(name), name);
 }
 
 void Image::dumpCache() {

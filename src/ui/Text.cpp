@@ -388,13 +388,14 @@ static inline void uint32tox(uint32_t value, char* out) {
 	}
 }
 
-Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
+std::pair<size_t, const char*> Text::hash(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
 	if (!str) {
-		return nullptr;
+		return std::make_pair((size_t)0, (const char*)nullptr);
 	}
 	if (font == nullptr || font[0] == '\0') {
 		font = Font::defaultFont;
 	}
+
 	// NOTE the following static buffer makes this function NOT thread safe!!
 	// better not try to render more than 64kb of text...
 	static char textAndFont[65536] = { '\0' };
@@ -408,9 +409,10 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 		sizeof('\0');
 	if (totalLen > sizeof(textAndFont)) {
 		assert(0 && "Trying to render > 64kb of ttf text");
-		return nullptr;
+		return std::make_pair((size_t)0, (const char*)nullptr);
 	}
 
+	// build format string
 	char* ptr = textAndFont;
 	memcpy(ptr, str, len0); ptr += len0;
 	*ptr = fontBreak; ++ptr;
@@ -426,39 +428,61 @@ Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outl
 	*ptr = fontBreak; ++ptr;
 	*ptr = '\0'; ++ptr;
 
-	/*snprintf(textAndFont, sizeof(textAndFont), "%s%c%s%c%#010x%c%#010x%c",
-		str, Text::fontBreak,
-		font, Text::fontBreak,
-		textColor, Text::fontBreak,
-		outlineColor, Text::fontBreak);*/
+	// compute hash
+	const auto& hash = hashed_text.hash_function();
+	return std::make_pair(hash(textAndFont), textAndFont);
+}
 
-	Text* text = nullptr;
-	auto search = hashed_text.find(textAndFont);
-	if (search == hashed_text.end()) {
-		if (TEXT_VOLUME > TEXT_BUDGET) {
-#ifdef EDITOR
-			dumpCache();
-#else
-			if ( *cvar_text_delay_dumpcache )
-			{
-				bRequireTextDump = true;
-			}
-			else
-			{
-				dumpCache();
-			}
-#endif
-		}
-		text = new Text(textAndFont);
-		hashed_text.insert(std::make_pair(textAndFont, text));
-		TEXT_VOLUME += sizeof(Text) + sizeof(SDL_Surface); // header data
-		TEXT_VOLUME += text->getWidth() * text->getHeight() * 4; // 32-bpp pixel data
-		TEXT_VOLUME += text->wordsToHighlight.size() * sizeof(int) * sizeof(Uint32); // word highlight map
-		TEXT_VOLUME += 1024; // 1-kB buffer
-	} else {
-		text = search->second;
+Text* Text::get(size_t hash, const char* key) {
+	if (!hash || !key) {
+		return nullptr;
 	}
+
+	// search for text using precomputed hash
+	auto& map = hashed_text;
+	auto bc = map.bucket_count();
+	if (bc) {
+		const auto& key_eq = map.key_eq();
+		const auto& hash_fn = map.hash_function();
+		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
+			(hash < bc ? hash : hash % bc);
+		for (auto it = map.begin(chash); it != map.end(chash); ++it) {
+			if (hash == hash_fn(it->first) && key_eq(it->first, key)) {
+				return it->second;
+			}
+		}
+	}
+
+	// check if cache is full
+	if (TEXT_VOLUME > TEXT_BUDGET) {
+#ifdef EDITOR
+		dumpCache();
+#else
+		if (*cvar_text_delay_dumpcache)
+		{
+			bRequireTextDump = true;
+		}
+		else
+		{
+			dumpCache();
+		}
+#endif
+	}
+
+	// text not found, add it to cache
+	auto text = new Text(key);
+	hashed_text.insert(std::make_pair(key, text));
+	TEXT_VOLUME += sizeof(Text) + sizeof(SDL_Surface); // header data
+	TEXT_VOLUME += text->getWidth() * text->getHeight() * 4; // 32-bpp pixel data
+	TEXT_VOLUME += text->wordsToHighlight.size() * sizeof(int) * sizeof(Uint32); // word highlight map
+	TEXT_VOLUME += 1024; // 1-kB buffer
+
 	return text;
+}
+
+Text* Text::get(const char* str, const char* font, Uint32 textColor, Uint32 outlineColor) {
+	auto h = hash(str, font, textColor, outlineColor);
+	return get(h.first, h.second);
 }
 
 void Text::dumpCache() {

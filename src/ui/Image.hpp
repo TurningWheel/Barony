@@ -44,10 +44,20 @@ public:
 	//! bind this image as the active GL texture
 	void bind() const;
 
-	//! get an Image object from the engine
+	//! get an Image object from the engine. loads it if it has not been loaded
 	//! @param name The Image name
 	//! @return the Image or nullptr if it could not be retrieved
 	static Image* get(const char* name);
+
+	//! get an Image object. loads it if it has not been loaded
+	//! @param hash the hash value of the cached image
+	//! @return the Image object, or nullptr if it was not found
+	static Image* get(size_t hash, const char* key);
+
+	//! turn the given image name into a hash value
+	//! @param name the name of the image
+	//! @return the hash for the name
+	static size_t hash(const char* name);
 
 	//! dump engine's image cache
 	static void dumpCache();
