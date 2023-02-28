@@ -1388,7 +1388,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						spell_changeHealth(players[i]->entity, amount, overdrewIntoHP);
 					}
 					totalHeal += std::max(players[i]->entity->getHP() - oldHP, 0);
-
+					if ( totalHeal > 0 )
+					{
+						spawnDamageGib(players[i]->entity, -totalHeal);
+					}
 					playSoundEntity(caster, 168, 128);
 
 					for ( node = map.creatures->first; node; node = node->next )
@@ -1407,8 +1410,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							oldHP = entity->getHP();
 							spell_changeHealth(entity, amount);
-							totalHeal += std::max(entity->getHP() - oldHP, 0);
-
+							int heal = std::max(entity->getHP() - oldHP, 0);
+							totalHeal += heal;
+							if ( heal > 0 )
+							{
+								spawnDamageGib(entity, -heal);
+							}
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 						}

@@ -1563,7 +1563,14 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 			const char* svFlagsChar = SteamMatchmaking()->GetLobbyData( *lobby, "svFlags" );
 			if ( svFlagsChar )
 			{
-				svFlags = atoi(svFlagsChar);
+				if ( multiplayer == CLIENT )
+				{
+					lobbyWindowSvFlags = atoi(svFlagsChar);
+				}
+				else
+				{
+					svFlags = atoi(svFlagsChar);
+				}
 			}
 		}
 	}
@@ -1953,7 +1960,14 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 
 	const char* svflagsChar = SteamMatchmaking()->GetLobbyData(lobby, "svFlags");
 	if (svflagsChar) {
-		svFlags = atoi(svflagsChar);
+		if ( multiplayer == CLIENT )
+		{
+			lobbyWindowSvFlags = atoi(svflagsChar);
+		}
+		else
+		{
+			svFlags = atoi(svflagsChar);
+		}
 	}
 }
 
