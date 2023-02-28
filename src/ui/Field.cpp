@@ -57,6 +57,10 @@ Field::~Field() {
 		delete[] text;
 		text = nullptr;
 	}
+	while (!cache.empty()) {
+		delete cache.back();
+		cache.pop_back();
+	}
 }
 
 void Field::activate() {
@@ -161,6 +165,23 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 	return true;
 }
 
+void Field::buildCache() {
+	while (!cache.empty()) {
+		delete cache.back();
+		cache.pop_back();
+	}
+	char* buf = (char*)malloc(textlen + 1);
+	if (buf) {
+		memcpy(buf, text ? text : "\0", textlen + 1);
+		for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
+			nexttoken = tokenize(token, "\n");
+			auto line = Text::hash(token, font.c_str(), textColor, outlineColor);
+			cache.push_back(new Text(line.second));
+		}
+		free(buf);
+	}
+}
+
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
@@ -214,20 +235,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	int lines = std::max(1, getNumTextLines());
 	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
-	char* buf = (char*)malloc(textlen + 1);
-	memcpy(buf, text ? text : "\0", textlen + 1);
-
-	int yoff = 0;
-	int currentLine = -1;
-	char* nexttoken;
-	char* token = buf;
-	do {
-	    ++currentLine;
-		nexttoken = tokenize(token, "\n");
-
-		Text* text = Text::get(token, font.c_str(), textColor, outlineColor);
-		assert(text);
-
+	for (int yoff = 0, currentLine = 0; currentLine < cache.size(); ++currentLine) {
+		auto& text = cache[currentLine];
+		if (!text) {
+			continue;
+		}
 		if ( getWordsToHighlight().size() > 0 )
 		{
 			// Field() has words to highlight, check if the pulled Text() object has a copy of the data.
@@ -333,7 +345,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 
 		// draw cursor
-		if (!nexttoken && showCursor && activated) {
+		if (showCursor && activated && currentLine == cache.size() - 1) {
 			SDL_Rect cursorSize{scaledDest.x + scaledDest.w - 2, scaledDest.y, 2, scaledDest.h};
 			uint8_t a;
 			::getColor(blendColor, nullptr, nullptr, nullptr, &a);
@@ -342,9 +354,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 				white->drawColor(nullptr, cursorSize, viewport, blendColor);
 			}
 		}
-	} while ((token = nexttoken) != NULL);
-
-	free(buf);
+	}
 
 	// draw user stuff
 	if (drawCallback) {
@@ -474,11 +484,11 @@ void Field::setText(const char* _text) {
 	if (_text == nullptr) {
 		return;
 	}
-	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen);
-	if (size > 0) {
-		memcpy(text, _text, size);
+	size_t len = std::min(strlen(_text), (size_t)textlen);
+	if (stringCmp(text, _text, textlen, len)) {
+		stringCopy(text, _text, textlen, len);
+		buildCache();
 	}
-	text[size] = '\0';
 }
 
 void Field::scrollParent() {

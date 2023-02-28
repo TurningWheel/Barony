@@ -2524,6 +2524,9 @@ static std::chrono::high_resolution_clock::time_point timeEnd;
 
 SDL_HapticEffect * GameController::handleRumble()
 {
+#ifdef DISABLE_RUMBLE
+	return nullptr;
+#endif
 	if ( haptics.hapticTick == std::numeric_limits<Uint32>::max() )
 	{
 		haptics.hapticTick = 0;
@@ -2681,6 +2684,9 @@ void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
 
 SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 {
+#ifdef DISABLE_RUMBLE
+	return nullptr;
+#endif
 	if ( !r )
 	{
 		return nullptr;
@@ -2815,9 +2821,7 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 	}
 	else if (sdl_device)
 	{
-#ifndef DISABLE_RUMBLE
 		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
-#endif
 	}
 #endif
 	return nullptr;

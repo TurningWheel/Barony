@@ -81,6 +81,7 @@ public:
     const GLuint& texid = _texid;
 
 	TempTexture() {
+		glGenTextures(1, &_texid);
 	}
 
 	~TempTexture() {
@@ -92,7 +93,6 @@ public:
 
 	void load(SDL_Surface* surf, bool clamp, bool point) {
 		SDL_LockSurface(surf);
-		glGenTextures(1,&_texid);
 		glBindTexture(GL_TEXTURE_2D, _texid);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 		if (clamp) {
