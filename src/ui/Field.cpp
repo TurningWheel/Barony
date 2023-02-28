@@ -161,6 +161,22 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 	return true;
 }
 
+void blitFieldToFrame(SDL_Surface* textSurf, SDL_Surface* destSurf, const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport)
+{
+	if ( !textSurf )
+	{
+		return;
+	}
+
+	src.w = src.w <= 0 ? textSurf->w : src.w;
+	src.h = src.h <= 0 ? textSurf->h : src.h;
+	dest.w = dest.w <= 0 ? textSurf->w : dest.w;
+	dest.h = dest.h <= 0 ? textSurf->h : dest.h;
+
+	SDL_SetSurfaceBlendMode(textSurf, SDL_BLENDMODE_BLEND);
+	SDL_BlitSurface(textSurf, &src, destSurf, &dest);
+}
+
 void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if ( invisible || isDisabled() ) {
 		return;
@@ -309,12 +325,55 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			Uint8 r, g, b, a;
 			::getColor(blendColor, &r, &g, &b, &a);
 			a *= static_cast<Frame*>(parent)->getOpacity() / 100.0;
-			if( a > 0 )
+
+			if ( a > 0 )
 			{
-				text->drawColor(src, scaledDest, viewport, makeColor(r, g, b, a));
+				Frame* toBlit = nullptr;
+				if ( parent )
+				{
+					toBlit = static_cast<Frame*>(parent)->findParentToBlitTo();
+				}
+
+				if ( toBlit )
+				{
+					if ( !toBlit->bIsDirtyBlit() )
+					{
+						return;
+					}
+					//scaledDest.x += this->getAbsoluteSize().x - toBlit->getAbsoluteSize().x;
+					//scaledDest.y += this->getAbsoluteSize().y - toBlit->getAbsoluteSize().y;
+					scaledDest.x -= toBlit->getAbsoluteSize().x;
+					scaledDest.y -= toBlit->getAbsoluteSize().y;
+					blitFieldToFrame(const_cast<SDL_Surface*>(text->getSurf()), toBlit->getBlitSurface(), src, scaledDest, viewport);
+				}
+				else
+				{
+					text->drawColor(src, scaledDest, viewport, makeColor(r, g, b, a));
+				}
 			}
 		} else {
-			text->drawColor(src, scaledDest, viewport, blendColor);
+			Frame* toBlit = nullptr;
+			if ( parent )
+			{
+				toBlit = static_cast<Frame*>(parent)->findParentToBlitTo();
+			}
+
+			if ( toBlit )
+			{
+				if ( !toBlit->bIsDirtyBlit() )
+				{
+					return;
+				}
+				//scaledDest.x += this->getAbsoluteSize().x - toBlit->getAbsoluteSize().x;
+				//scaledDest.y += this->getAbsoluteSize().y - toBlit->getAbsoluteSize().y;
+				scaledDest.x -= toBlit->getAbsoluteSize().x;
+				scaledDest.y -= toBlit->getAbsoluteSize().y;
+				blitFieldToFrame(const_cast<SDL_Surface*>(text->getSurf()), toBlit->getBlitSurface(), src, scaledDest, viewport);
+			}
+			else
+			{
+				text->drawColor(src, scaledDest, viewport, blendColor);
+			}
 		}
 
 		// draw cursor

@@ -63,6 +63,7 @@ public:
 		bool disabled = false;
 		bool ontop = false;
 		bool outline = false;
+		bool noBlitParent = false;
 	};
 
 	struct entry_t;
@@ -335,6 +336,14 @@ public:
 	const bool						isClickable() const { return clickable; }
 	const bool                      isDontTickChildren() const { return dontTickChildren; }
 	int                             getEntrySize() const { return entrySize; }
+	Frame*							findParentToBlitTo();
+	SDL_Surface*					getBlitSurface() const { return blitSurface; }
+	TempTexture*					getBlitTexture() const { return blitTexture; }
+	void							setBlitChildren(bool _doBlit);
+	void							setBlitDirty(bool _bBlitDity) { bBlitDirty = _bBlitDity; }
+	void							setBlitToParent(bool _bBlitParent) { bBlitToParent = _bBlitParent; }
+	const bool						bIsDirtyBlit() const { return bBlitDirty; }
+	const bool						isBlitToParent() const { return bBlitToParent; }
 
 	void	setFont(const char* _font) { font = _font; }
 	void	setBorder(const int _border) { border = _border; }
@@ -415,6 +424,9 @@ private:
 	bool dontTickChildren = false;                      //!< enable to prevent children from running their tick functions
 	int entrySize = 0;                                  //!< the height of every entry in the list (if 0, derived from font instead)
 	bool scrollWithLeftControls = true;                 //!< if true, left stick and left d-pad can scroll the frame if no items can be selected
+	bool bBlitChildrenToTexture = false;				//!< if true, subframes will blit onto blitSurface and draw from this cached surface
+	bool bBlitDirty = false;							//!< if true, re-blit all subframes next draw()
+	bool bBlitToParent = false;							//!< if true, find a frame with findParentToBlitTo() and blit onto it's surface
 
 	std::vector<Frame*> frames;
 	std::vector<Button*> buttons;
@@ -424,6 +436,9 @@ private:
 	std::vector<entry_t*> list;
 
 	std::vector<std::string> syncScrollTargets;
+
+	SDL_Surface* blitSurface = nullptr;					//!< cached surface to blit to if bBlitChildrenToTexture
+	TempTexture* blitTexture = nullptr;					//!< cached texture to draw to if bBlitChildrenToTexture
 
 	//! activate the given list entry
 	//! @param entry the entry to activate
