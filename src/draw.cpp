@@ -3162,24 +3162,34 @@ void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) {
 
 bool behindCamera(const view_t& camera, real_t x, real_t y)
 {
-    const real_t dx = x - camera.x;
-    const real_t dy = y - camera.y;
-    const real_t len = sqrt(dx*dx + dy*dy);
-    if (len < 4) {
+    const float dx = x - camera.x;
+    const float dy = y - camera.y;
+    const float len2 = dx*dx + dy*dy;
+    if (len2 < 4) {
         return false;
     }
-    const real_t alen = 1.0 / len;
+    const float alen = 1.0f / sqrtf(len2); // normalize direction to x/y
 
-    const real_t v0x = cos(camera.ang);
-    const real_t v0y = sin(camera.ang);
-    const real_t v1x = dx * alen;
-    const real_t v1y = dy * alen;
+	// camera direction vector
+	const float a = camera.ang;
+    const float v0x = cosf(a);
+    const float v0y = sinf(a);
 
-    const real_t dot = v0x * v1x + v0y * v1y;
+	// direction vector to x/y
+    const float v1x = dx * alen;
+    const float v1y = dy * alen;
 
-    const real_t aspect = (real_t)camera.winw / (real_t)camera.winh;
-    const real_t wfov = std::max((real_t)90.0, ((real_t)(fov + 30.0) * aspect)) * PI / 180.0;
-    const real_t c = cos(wfov * 0.5);
+	// dot product of camera direction and normalized direction vector to x/y
+    const float dot = v0x * v1x + v0y * v1y;
+
+	// cosine of FOV lets us see if the object is outside the view frustum.
+	// however, there is an inaccuracy: the above algorithm only operates in
+	// 2D, so when the camera tilts up or down, broadening the WFOV, this is
+	// unaccounted for. therefore a margin of error of 30* is added to fov
+	const uint32_t error = 30;
+    const float aspect = (float)camera.winw / (float)camera.winh;
+    const float wfov = std::max(90.f, (float)(fov + error) * aspect) * ((float)PI) / 180.f;
+    const float c = cosf(wfov * 0.5f);
 
     return dot < c;
 }

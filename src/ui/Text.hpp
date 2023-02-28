@@ -6,6 +6,7 @@
 
 //! Contains some text that was rendered to a texture with a ttf font.
 class Text {
+friend class Field;
 private:
 	Text() = default;
 	Text(const char* _name);

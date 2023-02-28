@@ -276,7 +276,7 @@ Image* Image::get(size_t hash, const char* name) {
 		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
 			(hash < bc ? hash : hash % bc);
 		for (auto it = map.begin(chash); it != map.end(chash); ++it) {
-			if (hash == hash_fn(it->first) && key_eq(it->first, name)) {
+			if (hash == hash_fn(it->first) && it->first == name) {
 				return it->second;
 			}
 		}

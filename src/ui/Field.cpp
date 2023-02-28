@@ -57,6 +57,10 @@ Field::~Field() {
 		delete[] text;
 		text = nullptr;
 	}
+	while (!cache.empty()) {
+		delete cache.back();
+		cache.pop_back();
+	}
 }
 
 void Field::activate() {
@@ -162,14 +166,17 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 }
 
 void Field::buildCache() {
-	cache.clear();
+	while (!cache.empty()) {
+		delete cache.back();
+		cache.pop_back();
+	}
 	char* buf = (char*)malloc(textlen + 1);
 	if (buf) {
 		memcpy(buf, text ? text : "\0", textlen + 1);
 		for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
 			nexttoken = tokenize(token, "\n");
 			auto line = Text::hash(token, font.c_str(), textColor, outlineColor);
-			cache.emplace_back(line.first, std::string(line.second));
+			cache.push_back(new Text(line.second));
 		}
 		free(buf);
 	}
@@ -229,8 +236,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
 	for (int yoff = 0, currentLine = 0; currentLine < cache.size(); ++currentLine) {
-		const auto& line = cache[currentLine];
-		Text* text = Text::get(line.first, line.second.c_str());
+		auto& text = cache[currentLine];
 		if (!text) {
 			continue;
 		}
@@ -478,12 +484,11 @@ void Field::setText(const char* _text) {
 	if (_text == nullptr) {
 		return;
 	}
-	int size = std::min(std::max(0, (int)strlen(_text)), (int)textlen);
-	if (size > 0) {
-		memcpy(text, _text, size);
+	size_t len = std::min(strlen(_text), (size_t)textlen);
+	if (stringCmp(text, _text, textlen, len)) {
+		stringCopy(text, _text, textlen, len);
+		buildCache();
 	}
-	text[size] = '\0';
-	buildCache();
 }
 
 void Field::scrollParent() {
