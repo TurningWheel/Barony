@@ -161,7 +161,7 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 	return true;
 }
 
-void blitFieldToFrame(SDL_Surface* textSurf, SDL_Surface* destSurf, const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport)
+void blitFieldToFrame(SDL_Surface* textSurf, SDL_Surface* destSurf, SDL_Rect src, SDL_Rect dest, const SDL_Rect viewport)
 {
 	if ( !textSurf )
 	{
