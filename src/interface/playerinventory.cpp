@@ -4419,60 +4419,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	auto imgBottomBackgroundLeft = frameMain->findImage("tooltip bottom left");
 	auto imgBottomBackgroundRight = frameMain->findImage("tooltip bottom right");
 
-	auto imgSpellIcon = frameAttr->findImage("inventory mouse tooltip spell image");
-	auto imgSpellIconBg = frameAttr->findImage("inventory mouse tooltip spell image bg");
-	auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
-	auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
-	auto imgThirdIcon = frameAttr->findImage("inventory mouse tooltip third image");
-	auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
-	auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
-	auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
-
-	auto txtHeader = frameMain->findField("inventory mouse tooltip header");
-	auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
-	auto txtPrimaryValueHighlight = frameAttr->findField("inventory mouse tooltip primary value highlight");
-	auto txtPrimaryValuePositive = frameAttr->findField("inventory mouse tooltip primary value positive text");
-	auto txtPrimaryValueNegative = frameAttr->findField("inventory mouse tooltip primary value negative text");
-
-	auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
-	auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
-	auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
-	auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
-
-	auto txtThirdValue = frameAttr->findField("inventory mouse tooltip third value");
-	auto txtThirdValueHighlight = frameAttr->findField("inventory mouse tooltip third value highlight");
-	auto txtThirdValuePositive = frameAttr->findField("inventory mouse tooltip third value positive text");
-	auto txtThirdValueNegative = frameAttr->findField("inventory mouse tooltip third value negative text");
-
-	auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
-	auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
-	auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
-	auto txtDescriptionNegative = frameDesc->findField("inventory mouse tooltip description negative text");
-
 	auto txtPrompt = framePrompt->findField("inventory mouse tooltip prompt");
-	auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
-	auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
-	auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
-
-	{
-		static ConsoleVariable<int> cvar_item_tooltip_attr_padding("/item_tooltip_attr_padding", -4);
-		txtPrimaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtPrimaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtPrimaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtPrimaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-
-		txtSecondaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtSecondaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtSecondaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtSecondaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-
-		txtThirdValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtThirdValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-	}
-
-
 	char buf[1024] = "";
 
 	const int padx = 4;
@@ -4841,7 +4788,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			titleOnlyFrame->setSize(tooltipPos);
 			goto TOOLTIP_FINALIZE_LABEL;
 		}
-
+		auto txtHeader = frameMain->findField("inventory mouse tooltip header");
 		txtHeader->setText(buf);
 		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
 			txtHeader->getTextColor(), txtHeader->getOutlineColor());
@@ -5019,6 +4966,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
 		frameAttrPos.w = tooltipWidth - frameAttrPos.x * 2;
 
+		auto imgSpellIcon = frameAttr->findImage("inventory mouse tooltip spell image");
+		auto imgSpellIconBg = frameAttr->findImage("inventory mouse tooltip spell image bg");
+		auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
+		auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
+		auto imgThirdIcon = frameAttr->findImage("inventory mouse tooltip third image");
+		auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
+		auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
+		auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
+
 		imgPrimaryIcon->pos.y = 0;
 		imgSecondaryIcon->pos.y = 0;
 		imgThirdIcon->pos.y = 0;
@@ -5045,6 +5001,43 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			imgSpellIcon->pos.y = 3 * pady + *cvar_spelltooltipIconY;
 			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 5;
 			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 5;
+		}
+
+		auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
+		auto txtPrimaryValueHighlight = frameAttr->findField("inventory mouse tooltip primary value highlight");
+		auto txtPrimaryValuePositive = frameAttr->findField("inventory mouse tooltip primary value positive text");
+		auto txtPrimaryValueNegative = frameAttr->findField("inventory mouse tooltip primary value negative text");
+
+		auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
+		auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
+		auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
+		auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
+
+		auto txtThirdValue = frameAttr->findField("inventory mouse tooltip third value");
+		auto txtThirdValueHighlight = frameAttr->findField("inventory mouse tooltip third value highlight");
+		auto txtThirdValuePositive = frameAttr->findField("inventory mouse tooltip third value positive text");
+		auto txtThirdValueNegative = frameAttr->findField("inventory mouse tooltip third value negative text");
+
+		auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
+		auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
+		auto txtDescriptionNegative = frameDesc->findField("inventory mouse tooltip description negative text");
+
+		{
+			static ConsoleVariable<int> cvar_item_tooltip_attr_padding("/item_tooltip_attr_padding", -4);
+			txtPrimaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtPrimaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtPrimaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtPrimaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+
+			txtSecondaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtSecondaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtSecondaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtSecondaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+
+			txtThirdValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtThirdValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+			txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
 		}
 
 		if ( itemTooltip.icons.size() > 0 )
@@ -5302,6 +5295,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			}
 		}
 
+		auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
 		txtAttributes->setDisabled(true);
 
 		std::string descriptionTextString = "";
@@ -5997,6 +5991,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		{
 			tooltipDisplayedSettings.tooltipDescriptionHeight = 0;
 		}
+
+		auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
+		auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
+		auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
 
 		SDL_Rect frameValuesPos = frameDescPos;
 		if ( !frameValues->isDisabled() )
@@ -7006,7 +7004,7 @@ bool Player::Inventory_t::guiAllowDropItems() const
 	return false;
 }
 
-bool blitInventorySlotFramesToSurf = true;
+bool blitInventorySlotFramesToSurf = false;
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
