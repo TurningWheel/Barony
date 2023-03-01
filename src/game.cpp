@@ -882,7 +882,7 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
 -------------------------------------------------------------------------------*/
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
-static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", false);
+static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", true);
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
@@ -5695,6 +5695,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
+			glBeginCamera(&camera);
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5802,6 +5803,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
+			glEndCamera(&camera);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
@@ -5855,18 +5857,22 @@ static void doConsoleCommands() {
 	bool confirm = false;
 	if (controlEnabled) {
 		if (input.getPlayerControlType() != Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
-			if (keystatus[SDLK_RETURN]) {
-				keystatus[SDLK_RETURN] = 0;
-				confirm = true;
-			}
-			if (Input::keys[SDLK_RETURN]) {
-				Input::keys[SDLK_RETURN] = 0;
-				confirm = true;
-			}
+            if (command || !intro) {
+                if (keystatus[SDLK_RETURN]) {
+                    keystatus[SDLK_RETURN] = 0;
+                    confirm = true;
+                }
+                if (Input::keys[SDLK_RETURN]) {
+                    Input::keys[SDLK_RETURN] = 0;
+                    confirm = true;
+                }
+            }
 		}
 		if (input.consumeBinaryToggle("Chat")) {
 			input.consumeBindingsSharedWithBinding("Chat");
-			confirm = true;
+            if (command || !intro) {
+                confirm = true;
+            }
 		}
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
@@ -6627,8 +6633,10 @@ int main(int argc, char** argv)
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, 64);
 							occlusionCulling(map, menucam);
+							glBeginCamera(&menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
+							glEndCamera(&menucam);
 							list_RemoveNode(light->node);
 						}
 

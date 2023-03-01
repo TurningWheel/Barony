@@ -3,6 +3,7 @@
 #include "../main.hpp"
 #include "../draw.hpp"
 #include "Image.hpp"
+#include "Frame.hpp"
 
 GLuint Image::vao = 0;
 GLuint Image::vbo[BUFFER_TYPE_LENGTH] = { 0 };
@@ -122,10 +123,6 @@ void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewpo
 }
 
 void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const {
-	drawSurface(texid, surf, src, dest, viewport, color);
-}
-
-void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) {
 	if (!surf) {
 		return;
 	}
@@ -134,24 +131,8 @@ void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, co
 	Uint8 r, g, b, a;
 	getColor(color, &r, &g, &b, &a);
 	if (!a) {
-	    return;
+		return;
 	}
-
-    // set GL state
-	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-
-    // push projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-
-    // push model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
 
 	// for the use of a whole image
 	SDL_Rect secondsrc;
@@ -161,6 +142,21 @@ void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, co
 		secondsrc.w = surf->w;
 		secondsrc.h = surf->h;
 		src = &secondsrc;
+	}
+
+	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
+		// setup projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+
+		// push model matrix
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
 	}
 
 	// bind texture
@@ -179,15 +175,14 @@ void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, co
 	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
 	glEnd();
 
-	// unbind texture
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glColor4f(1.f, 1.f, 1.f, 1.f);
-
-    // pop matrices
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	if (!drawingGui) {
+        glDisable(GL_BLEND);
+        
+		// pop matrices
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	}
 }
 
 void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle)
@@ -203,22 +198,21 @@ void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const S
 		return;
 	}
 
-	// set GL state
-	glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
+	if (!drawingGui) {
+        glEnable(GL_BLEND);
+        
+		// setup projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+        glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
+	}
 
-	// push projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-
-	// push model matrix
+	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-
 	glTranslatef(dest.x, viewport.h - dest.y, 0);
 	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
 
@@ -248,40 +242,61 @@ void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const S
 	glVertex2f(dest.w / 2, dest.h / 2);
 	glEnd();
 
-	// unbind texture
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glColor4f(1.f, 1.f, 1.f, 1.f);
-
 	// pop matrices
-	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	if (!drawingGui) {
+        glDisable(GL_BLEND);
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	}
 }
 
 static std::unordered_map<std::string, Image*> hashed_images;
 static const size_t IMAGE_BUDGET = 1 * 1024 * 1024 * 512; // in bytes
 static size_t IMAGE_VOLUME = 0; // in bytes
 
-Image* Image::get(const char* name) {
-	if ( !name || name[0] == '\0' ) {
+size_t Image::hash(const char* name) {
+	if (!name || name[0] == '\0') {
+		return 0;
+	}
+	return hashed_images.hash_function()(name);
+}
+
+Image* Image::get(size_t hash, const char* name) {
+	if (!name || name[0] == '\0') {
 		return nullptr;
 	}
-	Image* image = nullptr;
-	auto search = hashed_images.find(name);
-	if (search == hashed_images.end()) {
-		if (IMAGE_VOLUME > IMAGE_BUDGET) {
-			dumpCache();
+
+	// search for text using precomputed hash
+	auto& map = hashed_images;
+	auto bc = map.bucket_count();
+	if (bc) {
+		const auto& key_eq = map.key_eq();
+		const auto& hash_fn = map.hash_function();
+		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
+			(hash < bc ? hash : hash % bc);
+		for (auto it = map.begin(chash); it != map.end(chash); ++it) {
+			if (hash == hash_fn(it->first) && it->first == name) {
+				return it->second;
+			}
 		}
-		image = new Image(name);
-		hashed_images.insert(std::make_pair(name, image));
-		IMAGE_VOLUME += sizeof(Image) + sizeof(SDL_Surface); // header data
-		IMAGE_VOLUME += image->getWidth() * image->getHeight() * 4; // 32-bpp pixel data
-		IMAGE_VOLUME += 1024; // 1-kB buffer
-	} else {
-		image = search->second;
 	}
+
+	// image not found in cache, load it
+	if (IMAGE_VOLUME > IMAGE_BUDGET) {
+		dumpCache();
+	}
+	auto image = new Image(name);
+	hashed_images.insert(std::make_pair(name, image));
+	IMAGE_VOLUME += sizeof(Image) + sizeof(SDL_Surface); // header data
+	IMAGE_VOLUME += image->getWidth() * image->getHeight() * 4; // 32-bpp pixel data
+	IMAGE_VOLUME += 1024; // 1-kB buffer
+
 	return image;
+}
+
+Image* Image::get(const char* name) {
+	return get(hash(name), name);
 }
 
 void Image::dumpCache() {

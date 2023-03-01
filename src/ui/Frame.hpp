@@ -477,6 +477,7 @@ private:
 
 // root frame object
 extern Frame* gui;
+extern bool drawingGui;
 void createTestUI();
 extern int uiDefaultHeight;
 

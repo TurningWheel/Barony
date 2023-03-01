@@ -52,7 +52,7 @@ bool FMODErrorCheck()
 
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification) {
     master = std::min(std::max(0.0, master), 1.0);
-    music = std::min(std::max(0.0, music / 2.0), 1.0); // music volume cut in half because the music is loud...
+    music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
     gameplay = std::min(std::max(0.0, gameplay), 1.0);
     ambient = std::min(std::max(0.0, ambient), 1.0);
     environment = std::min(std::max(0.0, environment), 1.0);
@@ -588,7 +588,7 @@ static int get_firstfreechannel()
 
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
     master = std::min(std::max(0.0, master), 1.0);
-    music = std::min(std::max(0.0, music / 2.0), 1.0); // music volume cut in half because the music is loud...
+    music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
     gameplay = std::min(std::max(0.0, gameplay), 1.0);
     ambient = std::min(std::max(0.0, ambient), 1.0);
     environment = std::min(std::max(0.0, environment), 1.0);

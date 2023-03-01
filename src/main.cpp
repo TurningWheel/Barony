@@ -96,7 +96,7 @@ int stringCmp(const char* str1, const char* str2, size_t str1_size, size_t str2_
     // verify input
     assert(str1);
     assert(str2);
-    if (!str1 || !str2 || !str1_size || !str2_size) {
+    if (!str1 || !str2) {
 	    return 0;
     }
 
@@ -151,7 +151,7 @@ const char* stringStr(const char* str1, const char* str2, size_t str1_size, size
     // verify input
     assert(str1);
     assert(str2);
-    if (!str1 || !str2 || !str1_size || !str2_size) {
+    if (!str1 || !str2) {
 	    return nullptr;
     }
 
@@ -171,7 +171,7 @@ char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size
     // verify input
     assert(str1);
     assert(str2);
-    if (!str1 || !str2 || !str1_size || !str2_size) {
+    if (!str1 || !str2) {
 	    return nullptr;
     }
 

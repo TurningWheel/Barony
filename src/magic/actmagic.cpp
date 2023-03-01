@@ -482,7 +482,7 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats)
 	}
 }
 
-static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", false);
+static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
 
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {

@@ -44,22 +44,23 @@ public:
 	//! bind this image as the active GL texture
 	void bind() const;
 
-	//! get an Image object from the engine
+	//! get an Image object from the engine. loads it if it has not been loaded
 	//! @param name The Image name
 	//! @return the Image or nullptr if it could not be retrieved
 	static Image* get(const char* name);
 
+	//! get an Image object. loads it if it has not been loaded
+	//! @param hash the hash value of the cached image
+	//! @return the Image object, or nullptr if it was not found
+	static Image* get(size_t hash, const char* key);
+
+	//! turn the given image name into a hash value
+	//! @param name the name of the image
+	//! @return the hash for the name
+	static size_t hash(const char* name);
+
 	//! dump engine's image cache
 	static void dumpCache();
-
-	//! draws arbitrary surface with the given color
-	//! @param texid GL texture id
-	//! @param surf SDL surface
-	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
-	//! @param dest the location and size by which the image should be drawn
-	//! @param viewport the viewport dimensions
-	//! @param color a 32-bit color to mix with the image
-	static void drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color);
 	
 	const char*				getName() const { return name.c_str(); }
 	virtual const bool		isStreamable() const { return true; }
