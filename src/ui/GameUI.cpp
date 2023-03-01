@@ -12926,6 +12926,98 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
+struct CharacterSheetTooltipCache_t
+{
+	Sint32 baseSTR = 0;
+	Sint32 baseDEX = 0;
+	Sint32 baseINT = 0;
+	Sint32 baseCON = 0;
+	Sint32 basePER = 0;
+	Sint32 baseCHR = 0;
+
+	Sint32 modifiedSTR = 0;
+	Sint32 modifiedDEX = 0;
+	Sint32 modifiedINT = 0;
+	Sint32 modifiedCON = 0;
+	Sint32 modifiedPER = 0;
+	Sint32 modifiedCHR = 0;
+
+	Sint32 ac = 0;
+	int playerRace = RACE_HUMAN;
+	int type = NOTHING;
+	bool hungerEnabled = false;
+	int weapontype = 0;
+	Sint32 ATK = -1;
+	bool manualUpdate = false;
+
+	struct TextEntries_t
+	{
+		std::string title = "";
+		std::string entry1 = "";
+		std::string entry2 = "";
+		std::string entry3 = "";
+		std::string entry4 = "";
+		std::string entry5 = "";
+		std::string entry6 = "";
+		std::string entry7 = "";
+		std::string entry8 = "";
+		std::string entry9 = "";
+		std::string entry10 = "";
+		std::string entry11 = "";
+		std::string entry12 = "";
+	};
+	TextEntries_t textEntries[Player::CharacterSheet_t::SHEET_ENUM_END];
+	bool needsUpdate(const int player)
+	{
+		if ( manualUpdate ) { return true; }
+		if ( baseSTR != stats[player]->STR ) { return true; }
+		if ( baseDEX != stats[player]->DEX ) { return true; }
+		if ( baseCON != stats[player]->CON ) { return true; }
+		if ( baseINT != stats[player]->INT ) { return true; }
+		if ( basePER != stats[player]->PER ) { return true; }
+		if ( baseCHR != stats[player]->CHR ) { return true; }
+
+		if ( modifiedSTR != statGetSTR(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedDEX != statGetDEX(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedCON != statGetCON(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedINT != statGetINT(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedPER != statGetPER(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedCHR != statGetCHR(stats[player], players[player]->entity) ) { return true; }
+
+		if ( playerRace != stats[player]->playerRace ) { return true; }
+		if ( type != stats[player]->type ) { return true; }
+		if ( hungerEnabled != (svFlags & SV_FLAG_HUNGER) ) { return true; }
+		if ( ac != AC(stats[player]) ) { return true; }
+		if ( weapontype != getWeaponSkill(stats[player]->weapon) ) { return true; }
+		return false;
+	}
+	void updateToCharacter(const int player)
+	{
+		manualUpdate = false;
+
+		baseSTR = stats[player]->STR;
+		baseDEX = stats[player]->DEX;
+		baseCON = stats[player]->CON;
+		baseINT = stats[player]->INT;
+		basePER = stats[player]->PER;
+		baseCHR = stats[player]->CHR;
+
+		modifiedSTR = statGetSTR(stats[player], players[player]->entity);
+		modifiedDEX = statGetDEX(stats[player], players[player]->entity);
+		modifiedCON = statGetCON(stats[player], players[player]->entity);
+		modifiedINT = statGetINT(stats[player], players[player]->entity);
+		modifiedPER = statGetPER(stats[player], players[player]->entity);
+		modifiedCHR = statGetCHR(stats[player], players[player]->entity);
+
+		playerRace = stats[player]->playerRace;
+		type = stats[player]->type;
+		hungerEnabled = (svFlags & SV_FLAG_HUNGER);
+		ac = AC(stats[player]);
+		weapontype = getWeaponSkill(stats[player]->weapon);
+	}
+};
+bool blitCharacterSheetTooltipToSurf = false;
+CharacterSheetTooltipCache_t charsheetTooltipCache[MAXPLAYERS];
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
 {
 	if ( !sheetFrame )
@@ -12965,6 +13057,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
 	}
 
+	if ( selectedElement == SHEET_UNSELECTED )
+	{
+		cachedElementTooltip = SHEET_UNSELECTED;
+	}
 	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
 		|| player.GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET )
 	{
@@ -12977,6 +13073,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	tooltipFrame->setDisabled(false);
 	tooltipFrame->setOpacity(100.0);
 	tooltipDeselectedTick = ticks;
+
+	//if ( keystatus[SDLK_g] )
+	//{
+	//	keystatus[SDLK_g] = 0;
+	//	blitCharacterSheetTooltipToSurf = !blitCharacterSheetTooltipToSurf;
+	//	messagePlayer(0, MESSAGE_DEBUG, "%d", blitCharacterSheetTooltipToSurf);
+	//	if ( !blitCharacterSheetTooltipToSurf )
+	//	{
+	//		tooltipFrame->setBlitChildren(false);
+	//	}
+	//	else if ( blitCharacterSheetTooltipToSurf )
+	//	{
+	//		tooltipFrame->setBlitChildren(true);
+	//	}
+	//}
+
+	bool redraw = false;
+	if ( cachedElementTooltip != selectedElement 
+		|| cachedElementTooltip == SHEET_ENUM_END || cachedElementTooltip == SHEET_UNSELECTED
+		|| charsheetTooltipCache[player.playernum].needsUpdate(player.playernum) )
+	{
+		redraw = true;
+		cachedElementTooltip = selectedElement;
+		charsheetTooltipCache[player.playernum].updateToCharacter(player.playernum);
+	}
+
+	if ( !redraw )
+	{
+		return;
+	}
+
 
 	Uint32 defaultColor = hudColors.characterSheetNeutral;
 	auto txt = tooltipFrame->findField("tooltip text");
@@ -13085,7 +13212,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		txt->setText(titleText.c_str());
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
@@ -13156,7 +13287,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13233,7 +13368,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry3 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry3 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13342,7 +13481,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry5 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry5 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13466,7 +13609,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry7 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry7 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13590,7 +13737,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry9 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry9 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13724,7 +13875,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(hudColors.characterSheetOffWhiteText);
@@ -13952,7 +14107,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		txt->setText(titleText.c_str());
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
@@ -14222,7 +14381,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14379,7 +14542,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry2 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry2 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14699,7 +14866,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry3 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry3 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14953,7 +15124,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry4 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry4 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15165,7 +15340,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry5 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry5 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15355,7 +15534,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry6 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry6 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15464,7 +15647,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry7 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry7 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15587,7 +15774,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry8 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry8 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			if ( element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER) )
@@ -15647,10 +15838,17 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			mapDetailsText += detail.second;
 		}
 
-		txt->setText(descriptionText.c_str());
+		if ( strcmp(descriptionText.c_str(), txt->getText()) )
+		{
+			txt->setText(descriptionText.c_str());
+		}
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + 4;
@@ -15668,14 +15866,21 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight += padyMid;
 			auto entry = tooltipFrame->findField("txt 1"); assert(entry);
 			entry->setDisabled(false);
-			entry->setText(mapDetailsText.c_str());
+			if ( strcmp(mapDetailsText.c_str(), entry->getText()) )
+			{
+				entry->setText(mapDetailsText.c_str());
+			}
 
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = padx + padxMid;
 			entryPos.y = currentHeight;
 			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != txt->getText() )
+			{
+				txt->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = txt->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
 			entry->setColor(makeColor(255, 0, 255, 255));
@@ -15714,11 +15919,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
-		txt->setText(getHoverTextString("gold_mouse").c_str());
+		if ( strcmp(getHoverTextString("gold_mouse").c_str(), txt->getText()) )
+		{
+			txt->setText(getHoverTextString("gold_mouse").c_str());
+		}
 
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + padyMid;
@@ -15758,19 +15970,29 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		if ( player.characterSheet.showGameTimerAlways )
 		{
 			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_unpin");
-			txt->setText(tooltiptxt.c_str());
+			if ( strcmp(tooltiptxt.c_str(), txt->getText()) )
+			{
+				txt->setText(tooltiptxt.c_str());
+			}
 		}
 		else
 		{
 			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_pin");
-			txt->setText(tooltiptxt.c_str());
+			if ( strcmp(tooltiptxt.c_str(), txt->getText()) )
+			{
+				txt->setText(tooltiptxt.c_str());
+			}
 		}
 
 		int currentHeight = padyMid;
 
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + padyMid;
@@ -15819,7 +16041,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
 	{
-		name->setText(stats[player.playernum]->name);
+		if ( strcmp(stats[player.playernum]->name, name->getText()) )
+		{
+			name->setText(stats[player.playernum]->name);
+		}
 	}
 	Field* className = characterInnerFrame->findField("character class text");
 	int classNameWidth = 0;
@@ -15829,7 +16054,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		if ( !classname.empty() )
 		{
 			capitalizeString(classname);
-			className->setText(classname.c_str());
+			if ( strcmp(classname.c_str(), className->getText()) )
+			{
+				className->setText(classname.c_str());
+			}
 		}
 		if ( client_classes[player.playernum] >= CLASS_CONJURER && client_classes[player.playernum] <= CLASS_BREWER )
 		{
@@ -15854,7 +16082,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	if ( charLevel )
 	{
 		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
-		charLevel->setText(buf);
+		if ( strcmp(buf, charLevel->getText()) )
+		{
+			charLevel->setText(buf);
+		}
 		if ( auto textGet = Text::get(charLevel->getText(), charLevel->getFont(),
 			charLevel->getTextColor(), charLevel->getOutlineColor()) )
 		{
@@ -15919,7 +16150,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			snprintf(buf, sizeof(buf), "%s", race.c_str());
 		}
 
-		raceText->setText(buf);
+		if ( strcmp(buf, raceText->getText()) )
+		{
+			raceText->setText(buf);
+		}
 		int width = 0;
 		if ( auto textGet = Text::get(raceText->getText(), raceText->getFont(),
 			raceText->getTextColor(), raceText->getOutlineColor()) )
@@ -15990,13 +16224,22 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		if ( auto floorLevelText = floorFrame->findField("dungeon level text") )
 		{
 			snprintf(buf, sizeof(buf), language[4052], currentlevel);
-			floorLevelText->setText(buf);
+			if ( strcmp(buf, floorLevelText->getText()) )
+			{
+				floorLevelText->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 		}
 		if ( auto floorNameText = floorFrame->findField("dungeon name text") )
 		{
 			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
 			{
-				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
+				if ( strcmp(mapDisplayNamesDescriptions[map.name].first.c_str(), floorNameText->getText()) )
+				{
+					floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
+					charsheetTooltipCache[player.playernum].manualUpdate = true;
+				}
+
 				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
 					SDL_Rect tooltipPos = characterInfoFrame->getSize();
@@ -16016,6 +16259,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 		}
 	}
+
 	if ( auto gold = characterInnerFrame->findField("gold text") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
@@ -16101,7 +16345,6 @@ void Player::CharacterSheet_t::updateStats()
 		statsInnerPos.x = leftAlignPosX;
 	}*/
 	statsInnerFrame->setSize(statsInnerPos);
-
 	Button* strButton = statsInnerFrame->findButton("str button");
 	Button* dexButton = statsInnerFrame->findButton("dex button");
 	Button* conButton = statsInnerFrame->findButton("con button");
@@ -16116,12 +16359,15 @@ void Player::CharacterSheet_t::updateStats()
 	{
 		enableTooltips = false;
 	}
-
 	char buf[32] = "";
 	if ( auto field = statsInnerFrame->findField("str text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
@@ -16130,7 +16376,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->STR )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16152,7 +16402,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("dex text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->DEX);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
@@ -16161,7 +16415,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->DEX )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16183,7 +16441,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("con text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CON);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCON(stats[player.playernum], players[player.playernum]->entity);
@@ -16192,7 +16454,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->CON )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16214,7 +16480,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("int text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->INT);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetINT(stats[player.playernum], players[player.playernum]->entity);
@@ -16223,7 +16493,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->INT )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16245,7 +16519,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("per text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->PER);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetPER(stats[player.playernum], players[player.playernum]->entity);
@@ -16254,7 +16532,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->PER )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16276,7 +16558,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("chr text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CHR);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
@@ -16285,7 +16571,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->CHR )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16353,7 +16643,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		{
 			snprintf(buf, sizeof(buf), "%d", displayedATK);
 		}
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_ATK && enableTooltips )
@@ -16367,7 +16661,11 @@ void Player::CharacterSheet_t::updateAttributes()
 	if ( auto field = attributesInnerFrame->findField("ac text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_AC && enableTooltips )
@@ -16382,7 +16680,11 @@ void Player::CharacterSheet_t::updateAttributes()
 	{
 		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum]) * 100.0) + 100.0;
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_POW && enableTooltips )
@@ -16399,7 +16701,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 		resistance = -(resistance - 100.0);
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 		if ( resistance > 0.01 )
 		{
@@ -16423,7 +16729,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		field->setColor(hudColors.characterSheetNeutral);
 		Uint32 color = hudColors.characterSheetNeutral;
 		getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(color);
 
 		if ( selectedElement == SHEET_RGN && enableTooltips )
@@ -16439,7 +16749,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		field->setColor(hudColors.characterSheetNeutral);
 		Uint32 color = hudColors.characterSheetNeutral;
 		getDisplayedMPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(color);
 
 		if ( selectedElement == SHEET_RGN_MP && enableTooltips )
@@ -16464,7 +16778,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		}
 		weight += stats[player.playernum]->GOLD / 100;
 		snprintf(buf, sizeof(buf), "%d", weight);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_WGT && enableTooltips )
