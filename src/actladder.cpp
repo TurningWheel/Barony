@@ -24,6 +24,7 @@
 #include "items.hpp"
 #include "mod_tools.hpp"
 #include "ui/MainMenu.hpp"
+#include "colors.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -33,6 +34,8 @@
 	takes a pointer to the entity that uses it as an argument.
 
 -------------------------------------------------------------------------------*/
+
+Uint32 mpPokeCooldown[MAXPLAYERS] = { 0 };
 
 #define LADDER_AMBIENCE my->skill[1]
 #define LADDER_SECRET_ENTRANCE my->skill[3]
@@ -46,6 +49,7 @@ void actLadder(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	LADDER_AMBIENCE--;
@@ -77,7 +81,18 @@ void actLadder(Entity* my)
 						dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 						if (dist > TOUCHRANGE)
 						{
-							messagePlayer(i, MESSAGE_INTERACTION, language[505]);
+							sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+							messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+							if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+								for (int j = 0; j < MAXPLAYERS; ++j) {
+									if (!client_disconnected[j] && j != i) {
+										// "so-and-so wants to leave the level"
+										messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+											language[509], stats[i]->name);
+									}
+								}
+								mpPokeCooldown[i] = ticks;
+							}
 							return;
 						}
 					}
@@ -166,6 +181,7 @@ void actPortal(Entity* my)
 		{
 			my->flags[INVISIBLE] = true;
 		}
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	my->portalAmbience--;
@@ -273,7 +289,18 @@ void actPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[505]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										language[509], stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}
@@ -366,6 +393,7 @@ void actWinningPortal(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -474,7 +502,18 @@ void actWinningPortal(Entity* my)
 					dist = sqrt( pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE)
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										language[509], stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}
@@ -591,6 +630,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( this->ticks == 1 )
 	{
 		this->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -683,7 +723,18 @@ void Entity::actExpansionEndGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
+						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										language[509], stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ::ticks;
+						}
 						return;
 					}
 				}
@@ -760,6 +811,7 @@ void Entity::actMidGamePortal()
 	if ( this->ticks == 1 )
 	{
 		this->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -871,7 +923,18 @@ void Entity::actMidGamePortal()
 					dist = sqrt(pow(x - players[c]->entity->x, 2) + pow(y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
+						sendMinimapPing(i, this->x / 16.0, this->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						if (::ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										language[509], stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ::ticks;
+						}
 						return;
 					}
 				}
@@ -1154,6 +1217,7 @@ void actCustomPortal(Entity* my)
 	if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
+		memset(mpPokeCooldown, 0, sizeof(mpPokeCooldown));
 	}
 
 	if ( multiplayer != CLIENT )
@@ -1245,7 +1309,18 @@ void actCustomPortal(Entity* my)
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if ( dist > TOUCHRANGE )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[509]);
+						sendMinimapPing(i, my->x / 16.0, my->y / 16.0);
+						messagePlayer(i, MESSAGE_INTERACTION, language[505]); // "you must assemble your party"
+						if (ticks - mpPokeCooldown[i] >= TICKS_PER_SECOND * 3) {
+							for (int j = 0; j < MAXPLAYERS; ++j) {
+								if (!client_disconnected[j] && j != i) {
+									// "so-and-so wants to leave the level"
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										language[509], stats[i]->name);
+								}
+							}
+							mpPokeCooldown[i] = ticks;
+						}
 						return;
 					}
 				}

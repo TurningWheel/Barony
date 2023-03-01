@@ -809,7 +809,7 @@ thou makest use of them.#
 506 You descend the ladder.#
 507 You and your party descend the ladder.#
 508 You cannot go back that way.#
-509 You must assemble your party to travel onward.#
+509 %s wants to exit the level.#
 510 You step through the portal.#
 511 You and your party step through the portal.#
 

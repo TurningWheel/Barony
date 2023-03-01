@@ -43,11 +43,21 @@
 #define ITEM_IDENTIFIED my->skill[15]
 #define ITEM_LIFE my->skill[16]
 #define ITEM_AMBIENCE my->skill[17]
+#define ITEM_SPLOOSHED my->skill[27]
+#define ITEM_WATERBOB my->fskill[2]
 
 void actItem(Entity* my)
 {
 	Item* item;
 	int i;
+
+	bool isArtifact = ITEM_TYPE >= ARTIFACT_ORB_BLUE && ITEM_TYPE <= ARTIFACT_ORB_GREEN;
+	if (!isArtifact) {
+		my->flags[BURNABLE] = true;
+	}
+	my->z -= ITEM_WATERBOB;
+	my->new_z -= ITEM_WATERBOB;
+	ITEM_WATERBOB = 0.0;
 
 	if ( multiplayer == CLIENT )
 	{
@@ -388,11 +398,45 @@ void actItem(Entity* my)
 		}
 	}
 
+	// check whether we are over water
+	bool overWater = false;
+	if (my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4)
+	{
+		const int tile = map.tiles[(int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height];
+		overWater = (tile >= 22 && tile < 30) || (tile >= 64 && tile < 72);
+	}
+
 	// gravity
 	bool onground = false;
-	real_t groundHeight = 7.5 - models[my->sprite]->sizey * .25;
+	double groundheight;
+	if (overWater) {
+		groundheight = 8.0;
+	} else {
+		if (my->sprite == 569)
+		{
+			groundheight = 8.5 - models[my->sprite]->sizey * .25;
+		}
+		else if (my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+			|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
+			|| my->sprite == items[TOOL_DETONATOR_CHARGE].index)
+		{
+			groundheight = 7.5 - models[my->sprite]->sizey * .25;
+		}
+		else if (my->sprite == 567)
+		{
+			groundheight = 8.75 - models[my->sprite]->sizey * .25;
+		}
+		else if (my->sprite == items[BOOMERANG].index)
+		{
+			groundheight = 9.0 - models[my->sprite]->sizey * .25;
+		}
+		else
+		{
+			groundheight = 7.5 - models[my->sprite]->sizey * .25;
+		}
+	}
 
-	if ( my->z < groundHeight )
+	if ( my->z < groundheight )
 	{
 		// fall
 		// chakram and shuriken lie flat, needs to use sprites for client
@@ -446,62 +490,74 @@ void actItem(Entity* my)
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] 
-				|| (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1209) )
+			const int tile = map.tiles[(int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height];
+			if ( tile || (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1209) )
 			{
-				// land
-				ITEM_VELZ *= -.7;
-				if ( ITEM_VELZ > -.35 )
-				{
-					// chakram and shuriken lie flat, needs to use sprites for client
-					if ( my->sprite == 567 || my->sprite == 569 || my->sprite == items[BOOMERANG].index )
-					{
-						if ( my->sprite == items[BOOMERANG].index )
-						{
-							my->roll = PI;
-						}
-						else
-						{
-							my->roll = PI;
-						}
-						my->pitch = 0;
-						if ( my->sprite == 569 )
-						{
-							my->z = 8.5 - models[my->sprite]->sizey * .25;
-						}
-						else if ( my->sprite == items[BOOMERANG].index )
-						{
-							my->z = 9.0 - models[my->sprite]->sizey * .25;
-						}
-						else
-						{
-							my->z = 8.75 - models[my->sprite]->sizey * .25;
-						}
+				onground = true;
+				if (!isArtifact && tile >= 64 && tile < 72) { // landing on lava
+					my->flags[BURNING] = true;
+					my->skill[11] = BROKEN;
+				}
+				else if (overWater) {
+					if (!ITEM_SPLOOSHED) {
+						ITEM_SPLOOSHED = true;
+						playSoundEntity(my, 136, 64);
 					}
-					else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
-						|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
-						|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
+				}
+				else {
+					ITEM_VELZ *= -.7; // bounce
+					if ( ITEM_VELZ > -.35 )
 					{
-						my->roll = 3 * PI / 2;
-						my->z = 7.5 - models[my->sprite]->sizey * .25;
+						// velocity too low, land on ground.
+						// chakram and shuriken lie flat, needs to use sprites for client
+						if ( my->sprite == 567 || my->sprite == 569 || my->sprite == items[BOOMERANG].index )
+						{
+							if ( my->sprite == items[BOOMERANG].index )
+							{
+								my->roll = PI;
+							}
+							else
+							{
+								my->roll = PI;
+							}
+							my->pitch = 0;
+							if ( my->sprite == 569 )
+							{
+								my->z = groundheight;
+							}
+							else if ( my->sprite == items[BOOMERANG].index )
+							{
+								my->z = groundheight;
+							}
+							else
+							{
+								my->z = groundheight;
+							}
+						}
+						else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+							|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
+							|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
+						{
+							my->roll = 3 * PI / 2;
+							my->z = groundheight;
+						}
+						else
+						{
+							my->roll = PI / 2.0;
+							my->z = groundheight;
+						}
+						ITEM_VELZ = 0;
 					}
 					else
 					{
-						my->roll = PI / 2.0;
-						my->z = 7.5 - models[my->sprite]->sizey * .25;
+						// just bounce off the ground.
+						my->z = groundheight - .0001;
 					}
-					ITEM_VELZ = 0;
-					onground = true;
-				}
-				else
-				{
-					onground = true;
-					my->z = 7.5 - models[my->sprite]->sizey * .25 - .0001;
 				}
 			}
 			else
 			{
-				// fall
+				// fall (no ground here)
 				ITEM_VELZ += 0.04;
 				my->z += ITEM_VELZ;
 				my->roll += 0.04;
@@ -509,15 +565,29 @@ void actItem(Entity* my)
 		}
 		else
 		{
-			// fall
+			// fall (out of bounds)
 			ITEM_VELZ += 0.04;
 			my->z += ITEM_VELZ;
 			my->roll += 0.04;
 		}
 	}
 
-	// falling out of the map
-	if ( my->z > 128 )
+	// float in water
+	if (onground) {
+		if (overWater) {
+			my->yaw += PI / (TICKS_PER_SECOND * 10);
+			ITEM_WATERBOB = sin(((ticks % (TICKS_PER_SECOND * 2)) / ((real_t)TICKS_PER_SECOND * 2.0)) * (2.0 * PI)) * 0.5;
+			my->z += ITEM_WATERBOB;
+			my->new_z += ITEM_WATERBOB;
+			if (my->flags[BURNING]) {
+				my->new_z += 0.03;
+				my->z += 0.03;
+			}
+		}
+	}
+
+	// falling out of the map (or burning in a pit of lava)
+	if ( (my->flags[BURNING] && my->z > 12) || my->z > 128 )
 	{
 		if ( ITEM_TYPE == ARTIFACT_MACE && my->parent != 0 )
 		{
@@ -528,31 +598,9 @@ void actItem(Entity* my)
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	double groundheight;
-	if ( my->sprite == 569 )
-	{
-		groundheight = 8.5 - models[my->sprite]->sizey * .25;
-	}
-	else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
-		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
-		|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
-	{
-		groundheight = 7.5 - models[my->sprite]->sizey * .25;
-	}
-	else if ( my->sprite == 567 )
-	{
-		groundheight = 8.75 - models[my->sprite]->sizey * .25;
-	}
-	else if ( my->sprite == items[BOOMERANG].index )
-	{
-		groundheight = 9.0 - models[my->sprite]->sizey * .25;
-	}
-	else
-	{
-		groundheight = 7.5 - models[my->sprite]->sizey * .25;
-	}
-
-	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
+	if (!overWater && onground &&
+		my->z > groundheight - .0001 && my->z < groundheight + .0001 &&
+		fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02)
 	{
 		my->itemNotMoving = 1;
 		my->flags[UPDATENEEDED] = false;

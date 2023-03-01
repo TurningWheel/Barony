@@ -1814,6 +1814,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 -------------------------------------------------------------------------------*/
 
 static real_t getLightAtModifier = 1.0;
+static real_t getLightAtAdder = 0.0;
 static real_t getLightAt(const int x, const int y)
 {
 #if !defined(EDITOR) && !defined(NDEBUG)
@@ -1831,6 +1832,7 @@ static real_t getLightAt(const int x, const int y)
 	l += lightmapSmoothed[index - 1];
 	l += lightmapSmoothed[index];
 	l *= getLightAtModifier;
+	l += getLightAtAdder;
 	real_t div = 1.0 / (255.0 * 4.0);
 	l = std::min(std::max(0.0, l * div), 1.0);
 
@@ -1987,6 +1989,8 @@ void glDrawWorld(view_t* camera, int mode)
 	glLoadIdentity();
 	glDepthMask(GL_TRUE);
 
+	bool lavaTexture = false;
+
 	// glBegin / glEnd are also moved outside, 
 	// but needs to track the texture used to "flush" current drawing before switching
 	GLuint cur_tex = 0, new_tex = 0;
@@ -2020,32 +2024,54 @@ void glDrawWorld(view_t* camera, int mode)
 					    continue;
 					}
 
-					// bind texture
+					// select texture
+					int tile = 0;
 					if ( mode == REALCOLORS )
 					{
 						if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
 						{
 							new_tex = texid[(long int)sprites[0]->userdata];
-							//glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
 						}
 						else
 						{
-							new_tex = texid[(long int)tiles[map.tiles[index]]->userdata];
-							//glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
+							if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
+								// water special case
+								tile = 267 + map.tiles[index] - 22;
+							}
+							else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
+								// lava special case
+								tile = 285 + map.tiles[index] - 64;
+							}
+							else {
+								tile = map.tiles[index];
+							}
+							new_tex = texid[(long int)tiles[tile]->userdata];
 						}
 					}
 					else
 					{
 						new_tex = 0;
-						//glBindTexture(GL_TEXTURE_2D, 0);
 					}
-					// check if the texture has changed (flushing drawing if it's the case)
+
+					// rebind texture if it changed (flushing drawing if it's the case)
 					if(new_tex != cur_tex)
 					{
 						glEnd();
 						glBindTexture(GL_TEXTURE_2D, new_tex);
 						cur_tex=new_tex;
 						glBegin(GL_QUADS);
+						if ((tile >= 64 && tile < 72) ||
+							(tile >= 129 && tile < 135) ||
+							(tile >= 136 && tile < 139) ||
+							(tile >= 285 && tile < 293) ||
+							(tile >= 294 && tile < 302)) {
+							getLightAtAdder = 1020.0;
+							lavaTexture = true;
+						}
+						else {
+							getLightAtAdder = 0.0;
+							lavaTexture = false;
+						}
 					}
 
 					// draw east wall
@@ -2301,6 +2327,18 @@ void glDrawWorld(view_t* camera, int mode)
 							cur_tex = new_tex;
 							glBindTexture(GL_TEXTURE_2D, new_tex);
 							glBegin(GL_QUADS);
+							if ((mapceilingtile >= 64 && mapceilingtile < 72) ||
+								(mapceilingtile >= 129 && mapceilingtile < 135) ||
+								(mapceilingtile >= 136 && mapceilingtile < 139) ||
+								(mapceilingtile >= 285 && mapceilingtile < 293) ||
+								(mapceilingtile >= 294 && mapceilingtile < 302)) {
+								getLightAtAdder = 1020.0;
+								lavaTexture = true;
+							}
+							else {
+								getLightAtAdder = 0.0;
+								lavaTexture = false;
+							}
 						}
 					}
 					else
@@ -2311,6 +2349,38 @@ void glDrawWorld(view_t* camera, int mode)
 
 				if ( mode == REALCOLORS )
 				{
+					// reselect texture for floor and ceiling
+					if (z >= 0 && z < MAPLAYERS) {
+						int tile;
+						if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
+							tile = 0;
+							new_tex = texid[(long int)sprites[0]->userdata];
+						} else {
+							tile = map.tiles[index];
+							new_tex = texid[(long int)tiles[tile]->userdata];
+						}
+
+						// rebind texture if it changed (flushing drawing if it's the case)
+						if (new_tex != cur_tex) {
+							glEnd();
+							glBindTexture(GL_TEXTURE_2D, new_tex);
+							cur_tex = new_tex;
+							glBegin(GL_QUADS);
+							if ((tile >= 64 && tile < 72) ||
+								(tile >= 129 && tile < 135) ||
+								(tile >= 136 && tile < 139) ||
+								(tile >= 285 && tile < 293) ||
+								(tile >= 294 && tile < 302)) {
+								getLightAtAdder = 1020.0;
+								lavaTexture = true;
+							}
+							else {
+								getLightAtAdder = 0.0;
+								lavaTexture = false;
+							}
+						}
+					}
+
 					// draw floor
 					if ( z < OBSTACLELAYER )
 					{

@@ -172,6 +172,7 @@ void Field::buildCache() {
 	}
 	char* buf = (char*)malloc(textlen + 1);
 	if (buf) {
+		dirty = false;
 		memcpy(buf, text ? text : "\0", textlen + 1);
 		for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
 			nexttoken = tokenize(token, "\n");
@@ -382,6 +383,10 @@ void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	Widget::process();
 
+	if (dirty) {
+		buildCache();
+	}
+
 	result_t result;
 	result.tooltip = nullptr;
 	result.highlighted = false;
@@ -487,7 +492,7 @@ void Field::setText(const char* _text) {
 	size_t len = std::min(strlen(_text), (size_t)textlen);
 	if (stringCmp(text, _text, textlen, len)) {
 		stringCopy(text, _text, textlen, len);
-		buildCache();
+		dirty = true;
 	}
 }
 

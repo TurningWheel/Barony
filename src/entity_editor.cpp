@@ -128,6 +128,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemDelayMonsterPickingUp(skill[24]),
 	itemReceivedDetailsFromServer(skill[25]),
 	itemAutoSalvageByPlayer(skill[26]),
+	itemSplooshed(skill[27]),
+	itemWaterBob(fskill[2]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),

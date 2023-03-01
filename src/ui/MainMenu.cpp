@@ -5569,6 +5569,18 @@ bind_failed:
 		}
 		int y = 0;
 
+		if (multiplayer == CLIENT) {
+			allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
+			allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
+			allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
+			allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
+			allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
+			allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
+			allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
+			allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+			allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+		}
+
 		y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
 			"Toggle player hunger. When hunger is off, eating food heals the player directly.",
@@ -5625,6 +5637,37 @@ bind_failed:
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "hunger"});
 		settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
+
+		if (multiplayer == CLIENT) {
+			static const std::unordered_map<std::string, int> options = {
+				{"setting_hunger_button", SV_FLAG_HUNGER},
+				{"setting_minotaur_button", SV_FLAG_MINOTAURS},
+				{"setting_random_traps_button", SV_FLAG_TRAPS},
+				{"setting_friendly_fire_button", SV_FLAG_FRIENDLYFIRE},
+				{"setting_hardcore_mode_button", SV_FLAG_HARDCORE},
+				{"setting_classic_mode_button", SV_FLAG_CLASSIC},
+				{"setting_keep_inventory_button", SV_FLAG_KEEPINVENTORY},
+				{"setting_extra_life_button", SV_FLAG_LIFESAVING},
+				{"setting_cheats_button", SV_FLAG_CHEATS},
+			};
+			for (auto& button : settings_subwindow->getButtons()) {
+				button->setDisabled(true);
+				button->setColor(makeColor(127, 127, 127, 255));
+				button->setTextColor(makeColor(127, 127, 127, 255));
+			}
+			auto updater = settings_subwindow->addFrame("updater");
+			updater->setInvisible(true);
+			updater->setTickCallback([](Widget& widget){
+				auto settings_subwindow = static_cast<Frame*>(widget.getParent());
+				for (auto& button : settings_subwindow->getButtons()) {
+					auto find = options.find(button->getName());
+					if (find != options.end()) {
+						auto flag = find->second;
+						button->setPressed(svFlags & flag);
+					}
+				}
+				});
+		}
 	}
 
 /******************************************************************************/
@@ -9957,6 +10000,18 @@ failed:
 
 		auto card = initCharacterCard(index, 664);
 
+		if (multiplayer == CLIENT) {
+			allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
+			allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
+			allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
+			allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
+			allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
+			allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
+			allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
+			allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+			allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+		}
+
 		static void (*back_fn)(int) = [](int index){
 			characterCardLobbySettingsMenu(index);
 			if (multiplayer != CLIENT) {
@@ -10051,48 +10106,98 @@ failed:
 			case 0:
 				setting->setPressed(!allSettings.hunger_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
+				setting->setTickCallback([](Widget& widget) {
+					assert(main_menu_frame);
+					if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+						widget.select(); // rescue cursor
+					}
+					if (multiplayer == CLIENT) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_HUNGER);
+					}
+					});
 				break;
 			case 1:
 				setting->setPressed(!allSettings.minotaur_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_MINOTAURS);
+						});
+				}
 				break;
 			case 2:
 				setting->setPressed(allSettings.extra_life_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_LIFESAVING);
+						});
+				}
 				break;
 			case 3:
 				setting->setPressed(allSettings.keep_inventory_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.keep_inventory_enabled = button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_KEEPINVENTORY);
+						});
+				}
 				break;
 			case 4:
 				setting->setPressed(!allSettings.random_traps_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.random_traps_enabled = !button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_TRAPS);
+						});
+				}
 				break;
 			case 5:
 				setting->setPressed(!allSettings.friendly_fire_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.friendly_fire_enabled = !button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_FRIENDLYFIRE);
+						});
+				}
 				break;
 			case 6:
 				setting->setPressed(allSettings.classic_mode_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.classic_mode_enabled = button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_CLASSIC);
+						});
+				}
 				break;
 			case 7:
 				setting->setPressed(allSettings.hardcore_mode_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hardcore_mode_enabled = button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_HARDCORE);
+						});
+				}
 				break;
 			case 8:
 				setting->setPressed(allSettings.cheats_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
+				if (multiplayer == CLIENT) {
+					setting->setTickCallback([](Widget& widget) {
+						auto setting = static_cast<Button*>(&widget);
+						setting->setPressed(svFlags & SV_FLAG_CHEATS);
+						});
+				}
 				break;
 			}
-
-			// rescue cursor
-			setting->setTickCallback([](Widget& widget){
-				assert(main_menu_frame);
-				if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
-					widget.select();
-				}
-				});
 		}
 
 		auto achievements = card->addField("achievements", 256);
@@ -17804,7 +17909,7 @@ failed:
 		Option options[] = {
 			//{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
 #ifndef STEAMWORKS
-#ifdef USE_EOS
+#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
 			{"Achievements", "ACHIEVEMENTS", archivesAchievements},
 #endif
 #endif
@@ -19257,25 +19362,6 @@ failed:
 				field->setFont(bigfont_outline);
 				field->setColor(playerColor(player, colorblind, false));
 			}
-		
-			auto achievements = notification->addField("achievements", 256);
-			achievements->setSize(SDL_Rect{0, notification->getSize().h - 32, notification->getSize().w, 32});
-			achievements->setFont(smallfont_outline);
-			achievements->setHJustify(Field::justify_t::CENTER);
-			achievements->setVJustify(Field::justify_t::TOP);
-			achievements->setTickCallback([](Widget& widget){
-				Field* achievements = static_cast<Field*>(&widget);
-				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-					|| conductGameChallenges[CONDUCT_LIFESAVING]
-					|| gamemods_disableSteamAchievements) {
-					achievements->setColor(makeColor(180, 37, 37, 255));
-					achievements->setText("ACHIEVEMENTS DISABLED");
-				} else {
-					achievements->setColor(makeColor(37, 90, 255, 255));
-					achievements->setText(""); // "ACHIEVEMENTS ENABLED"
-				}
-				});
-			(*achievements->getTickCallback())(*achievements);
 		}
 
 		y += notification->getSize().h;
@@ -19293,7 +19379,7 @@ failed:
 		        {"Assign Controllers", "ASSIGN CONTROLLERS", mainAssignControllers},
 		        //{"Dungeon Compendium", "DUNGEON COMPENDIUM", archivesDungeonCompendium}, // TODO
 #ifndef STEAMWORKS
-#ifdef USE_EOS
+#if defined(USE_EOS) || defined(LOCAL_ACHIEVEMENTS)
 		        {"Achievements", "ACHIEVEMENTS", archivesAchievements},
 #endif
 #endif
@@ -19405,6 +19491,28 @@ failed:
 			//y += 4;
 		}
 		y += 16;
+
+		if (ingame) {
+			auto achievements = main_menu_frame->addField("achievements", 256);
+			achievements->setSize(SDL_Rect{ 0, buttons->getSize().y - 32, main_menu_frame->getSize().w, 32 });
+			achievements->setFont(smallfont_outline);
+			achievements->setHJustify(Field::justify_t::CENTER);
+			achievements->setVJustify(Field::justify_t::TOP);
+			achievements->setTickCallback([](Widget& widget) {
+				Field* achievements = static_cast<Field*>(&widget);
+				if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+					|| conductGameChallenges[CONDUCT_LIFESAVING]
+					|| gamemods_disableSteamAchievements) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED");
+				}
+				else {
+					achievements->setColor(makeColor(37, 90, 255, 255));
+					achievements->setText(""); // "ACHIEVEMENTS ENABLED"
+				}
+				});
+			(*achievements->getTickCallback())(*achievements);
+		}
 
 		auto button = buttons->findButton(ingame ? "Back to Game" : "Play Game");
 		if (button) {
