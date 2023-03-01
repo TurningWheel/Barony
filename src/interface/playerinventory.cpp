@@ -6694,21 +6694,26 @@ int Player::Inventory_t::slideOutWidth = 100;
 void Player::Inventory_t::resizeAndPositionInventoryElements()
 {
 	if ( !frame ) { return; }
-	auto inventoryBaseImagesFrame = frame->findFrame("inventory base");
-	auto invSlotsFrame = frame->findFrame("inventory slots");
-	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
-	auto backpackSlotsFrame = frame->findFrame("backpack slots");
+	auto inventoryBaseImagesFrame = playerInventoryFrames[player.playernum].inventoryBaseImagesFrame;
+	auto invSlotsFrame = playerInventoryFrames[player.playernum].invSlotsFrame;
+	auto dollSlotsFrame = playerInventoryFrames[player.playernum].dollSlotsFrame;
+	auto backpackSlotsFrame = playerInventoryFrames[player.playernum].backpackSlotsFrame;
 	SDL_Rect invSlotsPos = invSlotsFrame->getSize();
 	SDL_Rect dollSlotsPos = dollSlotsFrame->getSize();
 	SDL_Rect backpackSlotsPos = backpackSlotsFrame->getSize();
 
-	auto defaultInvImg = inventoryBaseImagesFrame->findImage("inventory base img");
-	if ( auto img = Image::get(defaultInvImg->path.c_str()) )
+	auto defaultInvImg = playerInventoryFrames[player.playernum].defaultInvImg;
+	if ( !bCompactView && defaultInvImg->disabled )
+	{
+		if ( auto img = Image::get(defaultInvImg->path.c_str()) )
+		{
+			defaultInvImg->pos.w = img->getWidth();
+			defaultInvImg->pos.h = img->getHeight();
+		}
+	}
 	{
 		defaultInvImg->pos.x = 0;
 		defaultInvImg->pos.y = 0;
-		defaultInvImg->pos.w = img->getWidth();
-		defaultInvImg->pos.h = img->getHeight();
 		defaultInvImg->disabled = bCompactView ? true : false;
 	}
 
@@ -6728,11 +6733,16 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		inventoryBaseImagesFrame->setSize(pos);
 	}
 
-	auto compactInvImg = inventoryBaseImagesFrame->findImage("inventory base compact img");
-	if ( auto img = Image::get(compactInvImg->path.c_str()) )
+	auto compactInvImg = playerInventoryFrames[player.playernum].compactInvImg;
+	if ( bCompactView && compactInvImg->disabled )
 	{
-		compactInvImg->pos.w = img->getWidth();
-		compactInvImg->pos.h = img->getHeight();
+		if ( auto img = Image::get(compactInvImg->path.c_str()) )
+		{
+			compactInvImg->pos.w = img->getWidth();
+			compactInvImg->pos.h = img->getHeight();
+		}
+	}
+	{
 		if ( inventoryPanelJustify == PANEL_JUSTIFY_RIGHT )
 		{
 			compactInvImg->pos.x = inventoryBaseImagesFrame->getSize().w - compactInvImg->pos.w;
@@ -6744,11 +6754,16 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		compactInvImg->pos.y = 4;
 		compactInvImg->disabled = bCompactView ? false : true;
 	}
-	auto compactCharImg = inventoryBaseImagesFrame->findImage("inventory character compact img");
-	if ( auto img = Image::get(compactCharImg->path.c_str()) )
+	auto compactCharImg = playerInventoryFrames[player.playernum].compactCharImg;
+	if ( bCompactView && compactCharImg->disabled )
 	{
-		compactCharImg->pos.w = img->getWidth();
-		compactCharImg->pos.h = img->getHeight();
+		if ( auto img = Image::get(compactCharImg->path.c_str()) )
+		{
+			compactCharImg->pos.w = img->getWidth();
+			compactCharImg->pos.h = img->getHeight();
+		}
+	}
+	{
 		if ( paperDollPanelJustify == PANEL_JUSTIFY_RIGHT )
 		{
 			compactCharImg->pos.x = inventoryBaseImagesFrame->getSize().w - compactCharImg->pos.w;
@@ -6847,20 +6862,20 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	dollSlotsFrame->setSize(dollSlotsPos);
 	backpackSlotsFrame->setSize(backpackSlotsPos);
 
-	auto characterPreview = frame->findFrame("inventory character preview");
+	auto characterPreview = playerInventoryFrames[player.playernum].characterPreview;
 	auto characterPreviewPos = characterPreview->getSize();
 	characterPreviewPos.y = dollSlotsPos.y;
 	characterPreviewPos.h = dollSlotsPos.h;
 	characterPreviewPos.x = dollSlotsPos.x + getSlotSize() + 8;
 	characterPreview->setSize(characterPreviewPos);
 
-	auto flourishFrame = frame->findFrame("inventory base flourish");
+	auto flourishFrame = playerInventoryFrames[player.playernum].flourishFrame;
 	auto flourishFramePos = flourishFrame->getSize();
 	flourishFramePos.x = dollSlotsPos.x + dollSlotsPos.w / 2 - flourishFramePos.w / 2;
 	flourishFramePos.y = dollSlotsPos.y + dollSlotsPos.h - flourishFramePos.h + 6;
 	flourishFrame->setSize(flourishFramePos);
 
-	auto backpackFrame = frame->findFrame("inventory backpack");
+	auto backpackFrame = playerInventoryFrames[player.playernum].backpackFrame;
 	backpackFrame->setDisabled(true);
 	backpackSlotsFrame->setDisabled(true);
 	if ( getSizeY() > DEFAULT_INVENTORY_SIZEY )
@@ -6888,7 +6903,6 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		spellFramePos.y -= spellPanel.heightOffsetWhenNotCompact;
 	}
 	spellFrame->setSize(spellFramePos);
-
 
 	// mouse hovering over inventory frames in compact view - if we're on hotbar, refocus the inventory/spells panel
 	if ( (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR || player.GUI.activeModule == Player::GUI_t::MODULE_SHOP)
@@ -6992,6 +7006,7 @@ bool Player::Inventory_t::guiAllowDropItems() const
 	return false;
 }
 
+bool blitInventorySlotFramesToSurf = true;
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
@@ -7055,10 +7070,30 @@ void Player::Inventory_t::updateInventory()
 		return;
 	}
 
+	//if ( keystatus[SDLK_g] )
+	//{
+	//	keystatus[SDLK_g] = 0;
+	//	blitInventorySlotFramesToSurf = !blitInventorySlotFramesToSurf;
+	//	if ( slotFrames[0] )
+	//	{
+	//		if ( !blitInventorySlotFramesToSurf )
+	//		{
+	//			if ( slotFrames[0]->findParentToBlitTo() )
+	//			{
+	//				auto parent = slotFrames[0]->getParent();
+	//				parent->setBlitChildren(false);
+	//			}
+	//		}
+	//		else if ( blitInventorySlotFramesToSurf )
+	//		{
+	//			auto parent = slotFrames[0]->getParent();
+	//			parent->setBlitChildren(true);
+	//		}
+	//	}
+	//}
+
 	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
-
 	openInventory();
-
 	if ( slideOutPercent <= .0001 )
 	{
 		if ( !bFirstTimeSnapCursor )
@@ -7086,11 +7121,8 @@ void Player::Inventory_t::updateInventory()
 	{
 		spellPanel.closeSpellPanel();
 	}
-
 	spellPanel.updateSpellPanel();
-
 	chestGUI.updateChest();
-
 	if ( selectedItem )
 	{
 		if ( itemCategory(selectedItem) == SPELL_CAT && players[player]->inventory_mode != INVENTORY_MODE_SPELL )
@@ -7107,7 +7139,6 @@ void Player::Inventory_t::updateInventory()
 		// resize/position elements based on compact view or not
 		resizeAndPositionInventoryElements();
 	}
-
 	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect mode_pos{-100, -100, 0, 0};
 	node_t* node, *nextnode;
@@ -7204,14 +7235,13 @@ void Player::Inventory_t::updateInventory()
 		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 		playSound(139, 64);
 	}
-
+	//DebugStats.gui7 = std::chrono::high_resolution_clock::now();
 	resetInventorySlotFrames(player);
 
+	auto invSlotsFrame = playerInventoryFrames[player].invSlotsFrame;
+	auto dollSlotsFrame = playerInventoryFrames[player].dollSlotsFrame;
 
-	auto invSlotsFrame = frame->findFrame("inventory slots");
-	auto dollSlotsFrame = frame->findFrame("paperdoll slots");
-
-	auto selectedSlotFrame = frame->findFrame("inventory selected item");
+	auto selectedSlotFrame = playerInventoryFrames[player].selectedSlotFrame;
 	auto selectedSlotCursor = selectedItemCursorFrame;
 
 	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
@@ -7568,9 +7598,8 @@ void Player::Inventory_t::updateInventory()
 			featherGUI.highlightedSlot = -1;
 		}
 	}
-
+	//DebugStats.gui8 = std::chrono::high_resolution_clock::now();
 	players[player]->paperDoll.drawSlots();
-
 	// dragging item - highlight slots
 	if ( selectedItem && selectedSlotFrame->isDisabled() )
 	{
@@ -7627,7 +7656,7 @@ void Player::Inventory_t::updateInventory()
 				&& !players[player]->inventoryUI.chestFrame->isDisabled()
 				&& openedChest[player] )
 			{
-				if ( auto chestSlots = players[player]->inventoryUI.chestFrame->findFrame("chest slots") )
+				if ( auto chestSlots = playerInventoryFrames[player].chestFrameSlots )
 				{
 					if ( !chestSlots->isDisabled() && chestSlots->capturesMouseInRealtimeCoords() )
 					{
@@ -7646,7 +7675,10 @@ void Player::Inventory_t::updateInventory()
 				Frame* slotFrame = nullptr;
 				if ( !isSpell && !isFromChest && mouseInChest )
 				{
-					slotFrame = getChestSlotFrame(x, y);
+					if ( x >= 0 && y >= 0 && x < MAX_CHEST_X && y < MAX_CHEST_Y )
+					{
+						slotFrame = getChestSlotFrame(x, y);
+					}
 				}
 				else if ( !isSpell && isFromChest && !mouseInChest )
 				{
@@ -7755,8 +7787,9 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
+	//DebugStats.gui9 = std::chrono::high_resolution_clock::now();
 	// draw contents of each slot
-	auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
+	auto oldSelectedSlotFrame = playerInventoryFrames[player].oldSelectedSlotFrame;
 	oldSelectedSlotFrame->setDisabled(true);
 	bool shopOpen = false;
 	if ( shopGUI.bOpen && shopGUI.shopFrame && shopInv[player] && uidToEntity(shopkeeper[player]) )
@@ -7848,7 +7881,7 @@ void Player::Inventory_t::updateInventory()
 							oldSelectedSlotFrame->setDisabled(false);
 							oldSelectedSlotFrame->setSize(borderPos);
 
-							auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
+							auto oldSelectedSlotItem = playerInventoryFrames[player].oldSelectedSlotItemImg;
 							oldSelectedSlotItem->disabled = false;
 							oldSelectedSlotItem->path = getItemSpritePath(player, *item);
 						}
@@ -7870,7 +7903,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 	}
-
+	//DebugStats.gui10 = std::chrono::high_resolution_clock::now();
 	for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
@@ -7921,7 +7954,7 @@ void Player::Inventory_t::updateInventory()
 					oldSelectedSlotFrame->setDisabled(false);
 					oldSelectedSlotFrame->setSize(borderPos);
 
-					auto oldSelectedSlotItem = oldSelectedSlotFrame->findImage("inventory old selected item");
+					auto oldSelectedSlotItem = playerInventoryFrames[player].oldSelectedSlotItemImg;
 					oldSelectedSlotItem->disabled = false;
 					oldSelectedSlotItem->path = getItemSpritePath(player, *item);
 				}
@@ -8078,46 +8111,48 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
+	//DebugStats.gui11 = std::chrono::high_resolution_clock::now();
+
 	// autosort button
-	if ( bNewInventoryLayout )
-	{
-		// draw halfway down
-		mode_pos.y += (getSizeY() / 2) * inventorySlotSize;
-	}
-	mode_pos.w = 24;
-	mode_pos.h = 24;
-	bool mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w, mode_pos.y, mode_pos.y + mode_pos.h);
-	if ( !mouse_in_bounds )
-	{
-		drawWindow(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
-	}
-	else
-	{
-		drawDepressed(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
-	}
-	//ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
-	if ( mouse_in_bounds )
-	{
-		mode_pos.x += 2;
-		mode_pos.y += 2;
-		mode_pos.w -= 4;
-		mode_pos.h -= 4;
-		drawRect(&mode_pos, makeColorRGB(192, 192, 192), 64);
-		// tooltip
-		SDL_Rect src;
-		src.x = mousex + 16;
-		src.y = mousey + 8;
-		src.h = TTF12_HEIGHT + 8;
-		src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
-		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], "DEPRECATED");
-		if ( inputs.bMouseLeft(player) )
-		{
-			inputs.mouseClearLeft(player);
-			autosortInventory(player);
-			playSound(139, 64);
-		}
-	}
+	//if ( bNewInventoryLayout )
+	//{
+	//	// draw halfway down
+	//	mode_pos.y += (getSizeY() / 2) * inventorySlotSize;
+	//}
+	//mode_pos.w = 24;
+	//mode_pos.h = 24;
+	//bool mouse_in_bounds = mouseInBounds(player, mode_pos.x, mode_pos.x + mode_pos.w, mode_pos.y, mode_pos.y + mode_pos.h);
+	//if ( !mouse_in_bounds )
+	//{
+	//	drawWindow(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	//}
+	//else
+	//{
+	//	drawDepressed(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	//}
+	////ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
+	//if ( mouse_in_bounds )
+	//{
+	//	mode_pos.x += 2;
+	//	mode_pos.y += 2;
+	//	mode_pos.w -= 4;
+	//	mode_pos.h -= 4;
+	//	drawRect(&mode_pos, makeColorRGB(192, 192, 192), 64);
+	//	// tooltip
+	//	SDL_Rect src;
+	//	src.x = mousex + 16;
+	//	src.y = mousey + 8;
+	//	src.h = TTF12_HEIGHT + 8;
+	//	src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
+	//	drawTooltip(&src);
+	//	ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], "DEPRECATED");
+	//	if ( inputs.bMouseLeft(player) )
+	//	{
+	//		inputs.mouseClearLeft(player);
+	//		autosortInventory(player);
+	//		playSound(139, 64);
+	//	}
+	//}
 
 	// mouse interactions
 	bool noPreviousSelectedItem = (selectedItem == nullptr);
@@ -8379,7 +8414,7 @@ void Player::Inventory_t::updateInventory()
 
 				if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
 				{
-					auto chestBgFrame = chestFrame->findFrame("chest base");
+					auto chestBgFrame = playerInventoryFrames[player].chestBgFrame;
 					int tooltipCoordX = 0;
 					PanelJustify_t justify = inventoryPanelJustify;
 					if ( bCompactView )
@@ -8399,7 +8434,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					if ( !bCompactView )
 					{
-						Frame::image_t* chestBaseImg = chestBgFrame->findImage("chest base img");
+						Frame::image_t* chestBaseImg = playerInventoryFrames[player].chestBaseImg;
 
 						if ( justify == PANEL_JUSTIFY_LEFT )
 						{
@@ -8414,7 +8449,7 @@ void Player::Inventory_t::updateInventory()
 					}
 					else
 					{
-						Frame::image_t* compactImg = chestBgFrame->findImage("chest base img");
+						Frame::image_t* compactImg = playerInventoryFrames[player].chestBaseImg;
 
 						if ( justify == PANEL_JUSTIFY_LEFT )
 						{
@@ -8720,7 +8755,7 @@ void Player::Inventory_t::updateInventory()
 
 			if ( mouseOverSlot && players[player]->GUI.bActiveModuleUsesInventory() )
 			{
-				auto inventoryBgFrame = frame->findFrame("inventory base");
+				auto inventoryBgFrame = playerInventoryFrames[player].inventoryBgFrame;
 				if ( itemCategory(item) == SPELL_CAT )
 				{
 					inventoryBgFrame = spellFrame;
@@ -8732,11 +8767,11 @@ void Player::Inventory_t::updateInventory()
 					Frame::image_t* invBaseImg = nullptr;
 					if ( itemCategory(item) == SPELL_CAT )
 					{
-						invBaseImg = inventoryBgFrame->findFrame("spell base")->findImage("spell base img");
+						invBaseImg = playerInventoryFrames[player].spellBaseImg;
 					}
 					else
 					{
-						invBaseImg = inventoryBgFrame->findImage("inventory base img");
+						invBaseImg = playerInventoryFrames[player].defaultInvImg;
 					}
 
 					if ( justify == PANEL_JUSTIFY_LEFT )
@@ -8767,13 +8802,13 @@ void Player::Inventory_t::updateInventory()
 					Frame::image_t* compactImg = nullptr;
 					if ( itemCategory(item) == SPELL_CAT )
 					{
-						compactImg = inventoryBgFrame->findFrame("spell base")->findImage("spell base img");
+						compactImg = playerInventoryFrames[player].spellBaseImg;
 					}
 					else
 					{
 						compactImg = itemOnPaperDoll ?
-							inventoryBgFrame->findImage("inventory character compact img")
-							: inventoryBgFrame->findImage("inventory base compact img");
+							playerInventoryFrames[player].compactCharImg
+							: playerInventoryFrames[player].compactInvImg;
 					}
 
 					if ( justify == PANEL_JUSTIFY_LEFT )
@@ -9277,7 +9312,7 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 	}
-	
+
 	if ( !noPreviousSelectedItem && stats[player]->HP > 0 )
 	{
 		// releasing items
@@ -9316,7 +9351,7 @@ void Player::Inventory_t::updateInventory()
 		// otherwise we'll have a frame of drawing nothing
 		if ( oldSelectedItem && !selectedItem && frame )
 		{
-			auto selectedSlotFrame = frame->findFrame("inventory selected item");
+			auto selectedSlotFrame = playerInventoryFrames[player].selectedSlotFrame;
 			if ( foundOldSlot )
 			{
 				if ( auto slotFrame = oldSlotFrame )
@@ -9367,7 +9402,7 @@ void Player::Inventory_t::updateInventory()
 				}
 			}
 
-			auto oldSelectedSlotFrame = frame->findFrame("inventory old selected item");
+			auto oldSelectedSlotFrame = playerInventoryFrames[player].oldSelectedSlotFrame;
 			oldSelectedSlotFrame->setDisabled(true);
 
 			// update the displayed item frames - to catch any changes
@@ -9405,6 +9440,7 @@ void Player::Inventory_t::updateInventory()
 				else if ( itemx >= 0 && itemx < getSizeX()
 					&& itemy >= Player::Inventory_t::PaperDollRows::DOLL_ROW_1 && itemy < getSizeY() )
 				{
+					if ( itemx >= 2 && itemx <= Player::Inventory_t::PaperDollRows::DOLL_ROW_5 ) { continue; }
 					if ( auto slotFrame = getInventorySlotFrame(itemx, itemy) )
 					{
 						if ( shopOpen && !isItemSellableToShop(player, item) )

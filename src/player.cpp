@@ -4644,28 +4644,33 @@ bool Player::ShopGUI_t::warpMouseToSelectedShopItem(Item* snapToItem, Uint32 fla
 
 Frame* Player::Inventory_t::getInventorySlotFrame(int x, int y) const
 {
+	//printlog("%d %d inv", x, y);
 	if ( frame )
 	{
-		int key = x + y * 100;
-		if ( slotFrames.find(key) != slotFrames.end() )
+		if ( (x >= 0 && y >= 0 && x < getSizeX() && y < getSizeY()) )
 		{
-			return slotFrames.at(key);
+			//assert(slotFrames.find(x + y * 100) != slotFrames.end());
+			return slotFrames.at(x + y * 100);
 		}
-		assert(slotFrames.find(key) == slotFrames.end());
+		else if ( x >= PaperDollColumns::DOLL_COLUMN_LEFT && x <= PaperDollColumns::DOLL_COLUMN_RIGHT
+			&& y >= PaperDollRows::DOLL_ROW_1 && y <= PaperDollRows::DOLL_ROW_5 )
+		{
+			//assert(slotFrames.find(x + y * 100) != slotFrames.end());
+			return slotFrames.at(x + y * 100);
+		}
 	}
 	return nullptr;
 }
 
 Frame* Player::Inventory_t::getSpellSlotFrame(int x, int y) const
 {
+	//printlog("%d %d spell", x, y);
 	if ( spellFrame )
 	{
-		int key = x + y * 100;
-		if ( spellSlotFrames.find(key) != spellSlotFrames.end() )
+		if ( x >= 0 && y >= 0 && x < MAX_SPELLS_X && y < MAX_SPELLS_Y )
 		{
-			return spellSlotFrames.at(key);
+			return spellSlotFrames.at(x + y * 100);
 		}
-		assert(spellSlotFrames.find(key) == spellSlotFrames.end());
 	}
 	return nullptr;
 }
@@ -4674,11 +4679,11 @@ Frame* Player::Inventory_t::getChestSlotFrame(int x, int y) const
 {
 	if ( chestFrame )
 	{
+		//return chestSlotFrames.at(x + y * 100);
+
 		int key = x + y * 100;
-		if ( chestSlotFrames.find(key) != chestSlotFrames.end() )
-		{
-			return chestSlotFrames.at(key);
-		}
+		auto find = chestSlotFrames.find(key);
+		return find != chestSlotFrames.end() ? find->second : nullptr;
 		//assert(chestSlotFrames.find(key) == chestSlotFrames.end());
 	}
 	return nullptr;
@@ -4688,11 +4693,11 @@ Frame* Player::ShopGUI_t::getShopSlotFrame(int x, int y) const
 {
 	if ( shopFrame )
 	{
+		//return shopSlotFrames.at(x + y * 100);
+
 		int key = x + y * 100;
-		if ( shopSlotFrames.find(key) != shopSlotFrames.end() )
-		{
-			return shopSlotFrames.at(key);
-		}
+		auto find = shopSlotFrames.find(key);
+		return find != shopSlotFrames.end() ? find->second : nullptr;
 		//assert(shopSlotFrames.find(key) == shopSlotFrames.end());
 	}
 	return nullptr;
@@ -6094,6 +6099,25 @@ void Player::clearGUIPointers()
 		skillSheetEntryFrames[playernum].effectFrames[i] = nullptr;
 	}
 	skillSheetEntryFrames[playernum].legendFrame = nullptr;
+
+	playerInventoryFrames[playernum].inventoryBgFrame = nullptr;
+	playerInventoryFrames[playernum].selectedSlotFrame = nullptr;
+	playerInventoryFrames[playernum].oldSelectedSlotFrame = nullptr;
+	playerInventoryFrames[playernum].chestFrameSlots = nullptr;
+	playerInventoryFrames[playernum].dollSlotsFrame = nullptr;
+	playerInventoryFrames[playernum].invSlotsFrame = nullptr;
+	playerInventoryFrames[playernum].backpackFrame = nullptr;
+	playerInventoryFrames[playernum].flourishFrame = nullptr;
+	playerInventoryFrames[playernum].characterPreview = nullptr;
+	playerInventoryFrames[playernum].inventoryBaseImagesFrame = nullptr;
+	playerInventoryFrames[playernum].backpackSlotsFrame = nullptr;
+	playerInventoryFrames[playernum].chestBgFrame = nullptr;
+	playerInventoryFrames[playernum].defaultInvImg = nullptr;
+	playerInventoryFrames[playernum].compactInvImg = nullptr;
+	playerInventoryFrames[playernum].compactCharImg = nullptr;
+	playerInventoryFrames[playernum].oldSelectedSlotItemImg = nullptr;
+	playerInventoryFrames[playernum].chestBaseImg = nullptr;
+	playerInventoryFrames[playernum].spellBaseImg = nullptr;
 
 	FollowerMenu[playernum].followerFrame = nullptr;
 }

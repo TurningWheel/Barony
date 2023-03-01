@@ -5619,6 +5619,7 @@ void ImGui_t::update()
 			main_viewport->WorkPos.y + lastWindowPos.y + 140), 
 			ImGuiCond_FirstUseEver);
 		ImGui_t::showConsoleCommands();
+		ImGui_t::showHUDTimers();
 	}
 }
 
@@ -5632,6 +5633,124 @@ void ImGui_t::buttonConsoleCommandHighlight(const char* cmd, bool flag)
 		consoleCommand(cmd);
 	}
 	ImGui::PopStyleColor(3);
+}
+
+struct ImGuiHUDTimers_t
+{
+	std::string sliderName;
+	std::string samplesName;
+	std::string graphName;
+	ImGuiHUDTimers_t(int index)
+	{
+		char buf[32];
+		snprintf(buf, sizeof(buf), "Y Zoom G%d", index);
+		sliderName = buf;
+		snprintf(buf, sizeof(buf), "Samples G%d", index);
+		samplesName = buf;
+		snprintf(buf, sizeof(buf), "GUI %d ms", index);
+		graphName = buf;
+	}
+	float plotValues[1000] = { 0.f };
+	int plotIndex = 0;
+	float plotYZoom = 10.f;
+	int plotSamples = 50;
+	float average = 0.0f;
+	void process();
+};
+std::vector<ImGuiHUDTimers_t> imguiHUDTimers;
+
+void ImGui_t::showHUDTimers()
+{
+	int ids = 0;
+
+	ImGui::Begin("HUD Timers", nullptr);
+	const float windowWidth = ImGui::GetWindowWidth();
+
+	if ( imguiHUDTimers.empty() )
+	{
+		for ( int i = 0; i < 11; ++i )
+		{
+			imguiHUDTimers.push_back(ImGuiHUDTimers_t(i));
+		}
+	}
+
+	for ( int i = 0; i < 11; ++i )
+	{
+		float milliseconds = 0.0;
+		switch ( i )
+		{
+			case 0:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui2 - DebugStats.gui1).count();
+				break;
+			case 1:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui3 - DebugStats.gui2).count();
+				break;
+			case 2:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui4 - DebugStats.gui3).count();
+				break;
+			case 3:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui5 - DebugStats.gui4).count();
+				break;
+			case 4:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui6 - DebugStats.gui5).count();
+				break;
+			case 5:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui7 - DebugStats.gui6).count();
+				break;
+			case 6:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui8 - DebugStats.gui7).count();
+				break;
+			case 7:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui9 - DebugStats.gui8).count();
+				break;
+			case 8:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui10 - DebugStats.gui9).count();
+				break;
+			case 9:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui11 - DebugStats.gui10).count();
+				break;
+			case 10:
+				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui12 - DebugStats.gui11).count();
+				break;
+			default:
+				break;
+		}
+
+		{
+			
+			ImGui::SetNextItemWidth(windowWidth * .25);
+			ImGui::SliderFloat(imguiHUDTimers[i].sliderName.c_str(), &imguiHUDTimers[i].plotYZoom, 1, 20);
+
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(windowWidth * .25);
+			ImGui::SliderInt(imguiHUDTimers[i].samplesName.c_str(), &imguiHUDTimers[i].plotSamples, 50, 1000);
+
+			imguiHUDTimers[i].plotValues[imguiHUDTimers[i].plotIndex] = milliseconds;
+			++imguiHUDTimers[i].plotIndex;
+			if ( imguiHUDTimers[i].plotIndex >= imguiHUDTimers[i].plotSamples )
+			{
+				imguiHUDTimers[i].plotIndex = 0;
+			}
+
+			float average = 0.0f;
+			int usefulSamples = imguiHUDTimers[i].plotSamples;
+			for ( int n = 0; n < std::min(imguiHUDTimers[i].plotSamples, IM_ARRAYSIZE(imguiHUDTimers[i].plotValues)); n++ )
+			{
+				if ( imguiHUDTimers[i].plotValues[n] == 0.f )
+				{
+					--usefulSamples;
+				}
+				average += imguiHUDTimers[i].plotValues[n];
+			}
+			average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(imguiHUDTimers[i].plotValues));
+
+			char overlay[32];
+			sprintf(overlay, "avg %.5fms", average);
+
+			ImGui::PlotLines(imguiHUDTimers[i].graphName.c_str(), imguiHUDTimers[i].plotValues, std::min(imguiHUDTimers[i].plotSamples, IM_ARRAYSIZE(imguiHUDTimers[i].plotValues)), 0, overlay, 0.f, imguiHUDTimers[i].plotYZoom, ImVec2(0, 50.f));
+		}
+	}
+	ImGui::End();
 }
 
 void ImGui_t::showConsoleCommands()
@@ -5833,18 +5952,18 @@ void ImGui_t::showConsoleCommands()
 	}
 
 	{
-		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT3 - DebugStats.drawWorldT2).count();
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t6Messages - DebugStats.t5MainDraw).count();
 		static int plotIndex = 0;
 		static float plotValues[1000] = { 0.f };
 
 		static float plotYZoom = 10.f;
 		static int plotSamples = 50;
 		ImGui::SetNextItemWidth(windowWidth * .25);
-		ImGui::SliderFloat("Y Zoom2", &plotYZoom, 1, 20);
+		ImGui::SliderFloat("Y Zoom3", &plotYZoom, 1, 20);
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(windowWidth * .25);
-		ImGui::SliderInt("Samples2", &plotSamples, 50, 1000);
+		ImGui::SliderInt("Samples3", &plotSamples, 50, 1000);
 
 		plotValues[plotIndex] = milliseconds;
 		++plotIndex;
@@ -5868,7 +5987,7 @@ void ImGui_t::showConsoleCommands()
 		char overlay[32];
 		sprintf(overlay, "avg %.5fms", average);
 
-		ImGui::PlotLines("Occlusion ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+		ImGui::PlotLines("doFrames() ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
 	}
 
 	{
@@ -5996,7 +6115,7 @@ void ImGui_t::showConsoleCommands()
 		static float plotYZoom = 10.f;
 		static int plotSamples = 50;
 		ImGui::SetNextItemWidth(windowWidth * .25);
-		ImGui::SliderFloat("Y Zoom6", &plotYZoom, 1, 20);
+		ImGui::SliderFloat("Y Zoom6", &plotYZoom, 1, 144);
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(windowWidth * .25);
@@ -6025,6 +6144,45 @@ void ImGui_t::showConsoleCommands()
 		sprintf(overlay, "avg %.5fms", average);
 
 		ImGui::PlotLines("Frame Time ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
+	}
+
+	{
+		float milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.drawWorldT3 - DebugStats.drawWorldT2).count();
+		static int plotIndex = 0;
+		static float plotValues[1000] = { 0.f };
+
+		static float plotYZoom = 10.f;
+		static int plotSamples = 50;
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderFloat("Y Zoom2", &plotYZoom, 1, 20);
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(windowWidth * .25);
+		ImGui::SliderInt("Samples2", &plotSamples, 50, 1000);
+
+		plotValues[plotIndex] = milliseconds;
+		++plotIndex;
+		if ( plotIndex >= plotSamples )
+		{
+			plotIndex = 0;
+		}
+
+		float average = 0.0f;
+		int usefulSamples = plotSamples;
+		for ( int n = 0; n < std::min(plotSamples, IM_ARRAYSIZE(plotValues)); n++ )
+		{
+			if ( plotValues[n] == 0.f )
+			{
+				--usefulSamples;
+			}
+			average += plotValues[n];
+		}
+		average /= (float)std::min(usefulSamples, IM_ARRAYSIZE(plotValues));
+
+		char overlay[32];
+		sprintf(overlay, "avg %.5fms", average);
+
+		ImGui::PlotLines("Occlusion ms", plotValues, std::min(plotSamples, IM_ARRAYSIZE(plotValues)), 0, overlay, 0.f, plotYZoom, ImVec2(0, 50.f));
 	}
 
 	ImGui::End();

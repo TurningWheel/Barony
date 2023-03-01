@@ -3006,6 +3006,7 @@ public:
 	static ImGuiIO& getIO() { return ImGui::GetIO(); }
 	static bool show_demo_window;
 	static void showConsoleCommands();
+	static void showHUDTimers();
 	static void buttonConsoleCommandHighlight(const char* cmd, bool flag);
 	static void update();
 	static void render();

@@ -455,6 +455,19 @@ public:
 	std::chrono::high_resolution_clock::time_point t10FrameLimiter;
 	std::chrono::high_resolution_clock::time_point t11End;
 
+	std::chrono::high_resolution_clock::time_point gui1;
+	std::chrono::high_resolution_clock::time_point gui2;
+	std::chrono::high_resolution_clock::time_point gui3;
+	std::chrono::high_resolution_clock::time_point gui4;
+	std::chrono::high_resolution_clock::time_point gui5;
+	std::chrono::high_resolution_clock::time_point gui6;
+	std::chrono::high_resolution_clock::time_point gui7;
+	std::chrono::high_resolution_clock::time_point gui8;
+	std::chrono::high_resolution_clock::time_point gui9;
+	std::chrono::high_resolution_clock::time_point gui10;
+	std::chrono::high_resolution_clock::time_point gui11;
+	std::chrono::high_resolution_clock::time_point gui12;
+
 	std::chrono::high_resolution_clock::time_point eventsT1;
 	std::chrono::high_resolution_clock::time_point eventsT2;
 	std::chrono::high_resolution_clock::time_point eventsT3;

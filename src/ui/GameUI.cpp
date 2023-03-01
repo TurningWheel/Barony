@@ -17032,47 +17032,79 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 void resetInventorySlotFrames(const int player)
 {
-	for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+	//for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+	//{
+	//	for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.frame )
 	{
-		for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+		for ( auto& pair : players[player]->inventoryUI.slotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+	//for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.spellFrame )
 	{
-		for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+		for ( auto& pair : players[player]->inventoryUI.spellSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+	//for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.chestFrame )
 	{
-		for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+		for ( auto& pair : players[player]->inventoryUI.chestSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+	//for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->shopGUI.getShopSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->shopGUI.shopFrame )
 	{
-		for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+		for ( auto& pair : players[player]->shopGUI.shopSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->shopGUI.getShopSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 }
@@ -17163,6 +17195,26 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	return false;
 }
 
+enum SlotFrameIndices : size_t {
+	SLOTFRAME_BEATITUDE_FRAME = 0,
+	SLOTFRAME_BEATITUDE_IMG = 0,
+	SLOTFRAME_BROKEN_STATUS_FRAME = 1,
+	SLOTFRAME_BROKEN_STATUS_IMG = 0,
+	SLOTFRAME_ITEMSPRITE_FRAME = 2,
+	SLOTFRAME_ITEMSPRITE_IMG = 0,
+	SLOTFRAME_ITEMSPRITE_LABELBG_IMG = 1,
+	SLOTFRAME_ITEMSPRITE_LABEL_IMG = 2,
+	SLOTFRAME_UNUSABLE_ITEM_FRAME = 3,
+	SLOTFRAME_UNUSABLE_IMG = 0,
+	SLOTFRAME_APPRAISAL_FRAME = 4,
+	SLOTFRAME_APPRAISAL_NOTIF_IMG = 0,
+	SLOTFRAME_QTY_FRAME = 5,
+	SLOTFRAME_QTY_TEXT = 0,
+	SLOTFRAME_EQUIPPED_FRAME = 6,
+	SLOTFRAME_EQUIPPED_IMG = 0,
+	SLOTFRAME_BROKEN_ICON_FRAME = 7,
+	SLOTFRAME_BROKEN_ICON_IMG = 0
+};
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable)
 {
 	if ( !itemPtr || !slotFrame )
@@ -17185,8 +17237,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	slotFrame->setDisabled(false);
 
-	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
-	auto spriteImage = spriteImageFrame->findImage("item sprite img");
+	auto& frames = slotFrame->getFrames();
+
+	auto spriteImageFrame = frames[SLOTFRAME_ITEMSPRITE_FRAME]; // slotFrame->findFrame("item sprite frame");
+	auto spriteImage = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_IMG]; // [spriteImageFrame->findImage("item sprite img");
 
 	if ( hiddenItemInGUI )
 	{
@@ -17256,7 +17310,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			spriteImage->color = 0xFFFFFFFF;
 		}
-		if ( auto iconLabelImg = spriteImageFrame->findImage("icon label img") )
+		if ( auto iconLabelImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABEL_IMG]/*spriteImageFrame->findImage("icon label img")*/ )
 		{
 			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
 			iconLabelImg->disabled = true;
@@ -17269,7 +17323,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
 			}
 			iconLabelImg->color = spriteImage->color;
-			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
+			if ( auto iconLabelBgImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABELBG_IMG]/*spriteImageFrame->findImage("icon label bg img")*/ )
 			{
 				iconLabelBgImg->pos.w = 24;
 				iconLabelBgImg->pos.h = iconLabelBgImg->pos.w;
@@ -17291,7 +17345,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
+	if ( auto qtyFrame = frames[SLOTFRAME_QTY_FRAME]/*slotFrame->findFrame("quantity frame")*/ )
 	{
 		qtyFrame->setDisabled(true);
 		bool drawQty = (item->count > 1) ? true : false;
@@ -17331,7 +17385,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		if ( drawQty )
 		{
 			qtyFrame->setDisabled(false);
-			if ( auto qtyText = qtyFrame->findField("quantity text") )
+			if ( auto qtyText = qtyFrame->getFields()[SLOTFRAME_QTY_TEXT]/*qtyFrame->findField("quantity text")*/ )
 			{
 				char qtybuf[32] = "";
 				if ( stackable )
@@ -17349,97 +17403,122 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
 				}
-				qtyText->setText(qtybuf);
+				if ( strcmp(qtyText->getText(), qtybuf) )
+				{
+					qtyText->setText(qtybuf);
+				}
 				qtyText->setColor(qtyColor);
 			}
 		}
 	}
 	
-	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
+	if ( auto beatitudeFrame = frames[SLOTFRAME_BEATITUDE_FRAME]/*slotFrame->findFrame("beatitude status frame")*/ )
 	{
 		beatitudeFrame->setDisabled(true);
-		spriteImage->outline = false;
+		//spriteImage->outline = false;
 		if ( !disableBackgrounds )
 		{
-			if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
+			if ( auto beatitudeImg = beatitudeFrame->getImages()[SLOTFRAME_BEATITUDE_IMG]/*beatitudeFrame->findImage("beatitude status bg")*/ )
 			{
 				if ( !item->identified )
 				{
-					beatitudeImg->color = makeColor( 128, 128, 0, 125);
+					//beatitudeImg->color = makeColor( 128, 128, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = makeColor(210, 183, 76, 255);
 					//spriteImage->outline = true;
 				}
 				else if ( item->beatitude < 0 )
 				{
-					beatitudeImg->color = makeColor( 128, 0, 0, 125);
+					//beatitudeImg->color = makeColor( 128, 0, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = hudColors.characterSheetRed;
 					//spriteImage->outline = true;
 				}
 				else if ( item->beatitude > 0 )
 				{
-					if ( colorblind )
+					/*if ( colorblind )
 					{
 						beatitudeImg->color = makeColor( 100, 245, 255, 65);
 					}
 					else
 					{
 						beatitudeImg->color = makeColor( 0, 255, 0, 65);
-					}
+					}*/
 					//spriteImage->outlineColor = hudColors.characterSheetHeadingText;
 					//spriteImage->outline = true;
 					beatitudeFrame->setDisabled(false);
 				}
-				if ( !spriteImage->outline )
+				/*if ( !spriteImage->outline )
 				{
 					spriteImage->outlineColor = 0;
 				}
 				else
 				{
 					spriteImage->outlineColor = makeColor(0, 0, 0, 255);
-				}
+				}*/
 				if ( !beatitudeFrame->isDisabled() )
 				{
+					//beatitudeImg->color = uint32ColorWhite;
 					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
-						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+							static const char* unidentifyHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+							if ( strcmp(unidentifyHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = unidentifyHotbarPath;
+							}
 						}
 						else if ( item->beatitude > 0 )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+							static const char* blessHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+							if ( strcmp(blessHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = blessHotbarPath;
+							}
 						}
 						else if ( item->beatitude < 0 )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+							static const char* curseHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+							if ( strcmp(curseHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = curseHotbarPath;
+							}
 						}
 					}
 					else
 					{
-						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+							static const char* unidentifyPath = "*#images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+							if ( strcmp(unidentifyPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = unidentifyPath;
+							}
 						}
 						else if ( item->beatitude > 0 )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+							static const char* blessPath = "*#images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+							if ( strcmp(blessPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = blessPath;
+							}
 						}
 						else if ( item->beatitude < 0 )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+							static const char* cursePath = "*#images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+							if ( strcmp(cursePath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = cursePath;
+							}
 						}
-						//beatitudeImg->path = "images/system/white.png";
 					}
 				}
 			}
 		}
 	}
 
-	if ( auto brokenStatusFrame = slotFrame->findFrame("broken status frame") )
+	if ( auto brokenStatusFrame = frames[SLOTFRAME_BROKEN_STATUS_FRAME]/*slotFrame->findFrame("broken status frame")*/ )
 	{
 		brokenStatusFrame->setDisabled(true);
 		if ( !disableBackgrounds )
@@ -17454,7 +17533,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				else
 				{
 					brokenStatusFrame->setDisabled(false);
-					auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
+					auto brokenStatusImg = brokenStatusFrame->getImages()[SLOTFRAME_BROKEN_STATUS_IMG];/*brokenStatusFrame->findImage("broken status bg");*/
 					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
 						brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
@@ -17468,7 +17547,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
+	if ( auto unusableFrame = frames[SLOTFRAME_UNUSABLE_ITEM_FRAME]/*slotFrame->findFrame("unusable item frame")*/ )
 	{
 		bool greyedOut = forceUnusable || hiddenItemInGUI;
 		unusableFrame->setDisabled(true);
@@ -17536,7 +17615,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
+	if ( auto equippedIconFrame = frames[SLOTFRAME_EQUIPPED_FRAME]/*slotFrame->findFrame("equipped icon frame")*/ )
 	{
 		equippedIconFrame->setDisabled(true);
 		if ( equipped && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM))) )
@@ -17544,7 +17623,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			equippedIconFrame->setDisabled(false);
 		}
 	}
-	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
+	if ( auto brokenIconFrame = frames[SLOTFRAME_BROKEN_ICON_FRAME]/*slotFrame->findFrame("broken icon frame")*/ )
 	{
 		brokenIconFrame->setDisabled(true);
 		if ( broken && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT))) )
@@ -17553,7 +17632,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
+	if ( auto appraisalFrame = frames[SLOTFRAME_APPRAISAL_FRAME]/*slotFrame->findFrame("appraisal frame")*/ )
 	{
 		appraisalFrame->setDisabled(true);
 		appraisalFrame->setDrawCallback(nullptr);
@@ -17583,7 +17662,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		if ( !appraisalFrame->isDisabled() )
 		{
-			auto img = appraisalFrame->findImage("new notif img");
+			auto img = appraisalFrame->getImages()[SLOTFRAME_APPRAISAL_NOTIF_IMG];/*appraisalFrame->findImage("new notif img");*/
 			img->disabled = true;
 			if ( item->notifyIcon )
 			{
@@ -17604,8 +17683,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 					}*/
 				}
 				img->disabled = false;
-				auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
-				switch ( animState )
+				switch ( players[player]->inventoryUI.appraisal.itemNotifyAnimState )
 				{
 					case 0:
 						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
@@ -20060,6 +20138,7 @@ void createPlayerSpellList(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, kSpellListHeight },
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+		playerInventoryFrames[player].spellBaseImg = bg;
 
 		auto slider = bgFrame->addSlider("spell slider");
 		slider->setBorder(16);
@@ -20310,6 +20389,7 @@ bool takeAllChestGUIAction(const int player)
 
 const int chestBaseImgBorderWidth = 16;
 const int chestBaseImgBorderTopHeight = 20;
+PlayerInventoryFrames_t playerInventoryFrames[MAXPLAYERS];
 
 void createChestGUI(const int player)
 {
@@ -20338,12 +20418,14 @@ void createChestGUI(const int player)
 	SDL_Rect basePos{ 0, 0, 194, 130 };
 	{
 		auto bgFrame = frame->addFrame("chest base");
+		playerInventoryFrames[player].chestBgFrame = bgFrame;
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
+		playerInventoryFrames[player].chestBaseImg = bg;
 		auto bg2 = bgFrame->addImage(SDL_Rect{ 0, 0, 194, 66 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
@@ -20468,6 +20550,7 @@ void createChestGUI(const int player)
 		chestSlotsFrame->setActualSize(SDL_Rect{ 0, 0, basePos.w, gridHeight * numGrids });
 		chestSlotsFrame->setHollow(true);
 		chestSlotsFrame->setAllowScrollBinds(false);
+		playerInventoryFrames[player].chestFrameSlots = chestSlotsFrame;
 
 		auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
 			makeColor(255, 255, 255, 32), "*#images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
@@ -20892,27 +20975,32 @@ void createPlayerInventory(const int player)
 	SDL_Rect basePos{ 0, 0, 210, 448 };
 	{
 		auto bgFrame = frame->addFrame("inventory base");
+		playerInventoryFrames[player].inventoryBaseImagesFrame = bgFrame;
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
+		auto defaultInvImg = bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
+		defaultInvImg->disabled = true;
+		playerInventoryFrames[player].defaultInvImg = defaultInvImg;
 
 		auto compactBase = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
 		compactBase->disabled = true;
+		playerInventoryFrames[player].compactInvImg = compactBase;
 
 		auto compactCharacterView = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 214 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
 		compactCharacterView->disabled = true;
-
+		playerInventoryFrames[player].compactCharImg = compactCharacterView;
 	}
 
 	{
 		auto backpackFrame = frame->addFrame("inventory backpack");
+		playerInventoryFrames[player].backpackFrame = backpackFrame;
 		backpackFrame->setSize(SDL_Rect{ 0, 202 + 242 - 2, 226, 102 });
 		auto backpackImg = backpackFrame->addImage(SDL_Rect{ 0, 0, 226, 102 },
 			makeColor( 255, 255, 255, 255),
@@ -20928,6 +21016,7 @@ void createPlayerInventory(const int player)
 	SDL_Rect invSlotsPos{ 0, 202, basePos.w, 242 };
 	{
 		const auto invSlotsFrame = frame->addFrame("inventory slots");
+		playerInventoryFrames[player].invSlotsFrame = invSlotsFrame;
 		invSlotsFrame->setSize(invSlotsPos);
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -20951,11 +21040,13 @@ void createPlayerInventory(const int player)
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
+		//invSlotsFrame->setBlitChildren(true);
 	}
 
 	SDL_Rect backpackSlotsPos{ 0, 202 + 242, basePos.w, 242 };
 	{
 		const auto backPackSlotsFrame = frame->addFrame("backpack slots");
+		playerInventoryFrames[player].backpackSlotsFrame = backPackSlotsFrame;
 		backPackSlotsFrame->setSize(backpackSlotsPos);
 		const int backpackBaseSlotOffsetY = 8;
 		int lowestY = 0;
@@ -20993,6 +21084,7 @@ void createPlayerInventory(const int player)
 	{
 		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
 		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
+		playerInventoryFrames[player].dollSlotsFrame = dollSlotsFrame;
 		dollSlotsFrame->setSize(dollSlotsPos);
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -21024,6 +21116,7 @@ void createPlayerInventory(const int player)
 
 		{
 			auto charFrame = frame->addFrame("inventory character preview");
+			playerInventoryFrames[player].characterPreview = charFrame;
 			auto charSize = dollSlotsPos;
 			charSize.x += inventorySlotSize + baseSlotOffsetX + 4;
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
@@ -21073,6 +21166,7 @@ void createPlayerInventory(const int player)
 
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
+		playerInventoryFrames[player].selectedSlotFrame = selectedFrame;
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		selectedFrame->setDisabled(true);
 
@@ -21080,10 +21174,10 @@ void createPlayerInventory(const int player)
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory selected highlight");
 
-
 		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		oldSelectedFrame->setDisabled(true);
+		playerInventoryFrames[player].oldSelectedSlotFrame = oldSelectedFrame;
 
 		const int itemSpriteSize = players[player]->inventoryUI.getItemSpriteSize();
 		SDL_Rect itemSpriteBorder{ 2, 2, itemSpriteSize, itemSpriteSize };
@@ -21091,12 +21185,15 @@ void createPlayerInventory(const int player)
 		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
 			makeColor( 255, 255, 255, 128), "", "inventory old selected item");
+		playerInventoryFrames[player].oldSelectedSlotItemImg = oldImg;
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory old selected highlight");
 
 		auto bgFrame = frame->findFrame("inventory base");
+		playerInventoryFrames[player].inventoryBgFrame = bgFrame;
 		auto flourishFrame = frame->addFrame("inventory base flourish");
+		playerInventoryFrames[player].flourishFrame = flourishFrame;
 		const int flourishW = 126;
 		const int flourishH = 26;
 		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (flourishW / 2), 202 - flourishH + 6, flourishW, flourishH });
@@ -21230,17 +21327,10 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 
 void Player::Inventory_t::updateItemContextMenu()
 {
-	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
 	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
 	int& itemMenuSelected = inputs.getUIInteraction(player.playernum)->itemMenuSelected;
-	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
-	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
-	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player.playernum)->itemMenuFromHotbar;
-	int& itemMenuOffsetDetectionY = inputs.getUIInteraction(player.playernum)->itemMenuOffsetDetectionY;
-	itemMenuOffsetDetectionY = 0;
-	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
 	Item* item = uidToItem(itemMenuItem);
 	if ( itemMenuItem != 0 && !item )
@@ -21280,15 +21370,6 @@ void Player::Inventory_t::updateItemContextMenu()
 		return;
 	}
 
-	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
-	highlightImageMid->disabled = true;
-	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
-	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
-	highlightImageLeft->disabled = true;
-	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
-	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
-	highlightImageRight->disabled = true;
-	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
 
 	if ( !item || !itemMenuOpen )
 	{
@@ -21298,6 +21379,24 @@ void Player::Inventory_t::updateItemContextMenu()
 		interactFrame->setDisabled(true);
 		return;
 	}
+
+	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
+	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
+	int& itemMenuOffsetDetectionY = inputs.getUIInteraction(player.playernum)->itemMenuOffsetDetectionY;
+	itemMenuOffsetDetectionY = 0;
+	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+
+	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
 
 	interactFrame->setDisabled(false);
 
