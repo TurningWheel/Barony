@@ -575,20 +575,18 @@ void Field::scrollParent() {
 	fparent->setActualSize(fActualSize);
 }
 
-std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int width, const char* font)
+void reflowTextLine(std::string& input, int width, const char* font, std::vector<std::string>& result)
 {
-	std::unordered_map<size_t, std::string> result;
-
 	Font* actualFont = Font::get(font);
 	if ( !actualFont )
 	{
-		return result;
+		return;
 	}
 	int charWidth = 0;
 	actualFont->sizeText("_", &charWidth, nullptr);
 	if ( charWidth == 0 )
 	{
-		return result;
+		return;
 	}
 	++charWidth;
 
@@ -618,6 +616,7 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 	size_t currentLine = 0;
 	Text* getText = nullptr;
 	bool lastInsertedManualSpace = false;
+	result.push_back("");
 	for ( auto& token : tokens )
 	{
 		size_t currentLength = result[currentLine].size();
@@ -631,6 +630,7 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 			if ( getText->getWidth() > width )
 			{
 				++currentLine;
+				result.push_back("");
 			}
 		}
 
@@ -664,7 +664,7 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 		}
 		assert(result[0] == input);
 	}*/
-	return result;
+	return;
 }
 
 std::string Field::getLongestLine()
@@ -769,7 +769,8 @@ void Field::reflowTextToFit(const int characterOffset) {
 		do {
 			nexttoken = tokenize(token, "\n");
 			std::string tokenStr(token);
-			auto result = reflowTextLine(tokenStr, (getSize().w), font.c_str());
+			std::vector<std::string> result;
+			reflowTextLine(tokenStr, (getSize().w), font.c_str(), result);
 			for ( size_t i = 0; i < result.size(); ++i )
 			{
 				allLines.push_back(result[i]);
