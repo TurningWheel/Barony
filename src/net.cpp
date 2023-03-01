@@ -482,9 +482,9 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	SDLNet_Write16((Sint16)(entity->yaw * 256), &net_packet->data[21]);
 	SDLNet_Write16((Sint16)(entity->pitch * 256), &net_packet->data[23]);
 	SDLNet_Write16((Sint16)(entity->roll * 256), &net_packet->data[25]);
-	net_packet->data[27] = (char)(entity->focalx * 8);
-	net_packet->data[28] = (char)(entity->focaly * 8);
-	net_packet->data[29] = (char)(entity->focalz * 8);
+	net_packet->data[27] = (Sint8)(entity->focalx * 8);
+	net_packet->data[28] = (Sint8)(entity->focaly * 8);
+	net_packet->data[29] = (Sint8)(entity->focalz * 8);
 	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
 	net_packet->data[34] = 0;
 	net_packet->data[35] = 0;
@@ -1713,10 +1713,10 @@ Entity* receiveEntity(Entity* entity)
 		entity->pitch = entity->new_pitch;
 		entity->roll = entity->new_roll;
 	}
-	entity->focalx = ((char)net_packet->data[27]) / 8.0;
-	entity->focaly = ((char)net_packet->data[28]) / 8.0;
+	entity->focalx = ((Sint8)net_packet->data[27]) / 8.0;
+	entity->focaly = ((Sint8)net_packet->data[28]) / 8.0;
 	if (!excludeForAnimation) {
-	    entity->focalz = ((char)net_packet->data[29]) / 8.0;
+	    entity->focalz = ((Sint8)net_packet->data[29]) / 8.0;
 	}
 	for (c = 0; c < 16; ++c)
 	{
@@ -2876,8 +2876,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// shake screen
 	{'SHAK', [](){
-		cameravars[clientnum].shakex += ((char)(net_packet->data[4])) / 100.f;
-		cameravars[clientnum].shakey += ((char)(net_packet->data[5]));
+		cameravars[clientnum].shakex += ((Sint8)(net_packet->data[4])) / 100.f;
+		cameravars[clientnum].shakey += ((Sint8)(net_packet->data[5]));
 	}},
 
 	// a torch burns out
@@ -3319,16 +3319,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 
 		ItemType type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
-		Status status = static_cast<Status>((char)net_packet->data[8]);
-		Sint16 beatitude = (char)net_packet->data[9];
+		Status status = static_cast<Status>((Sint8)net_packet->data[8]);
+		Sint16 beatitude = (Sint8)net_packet->data[9];
 		Sint16 count = (unsigned char)net_packet->data[10];
 		Uint32 appearance = SDLNet_Read32(&net_packet->data[11]);
 		bool identified = (bool)(net_packet->data[15] & 1);
 		bool buybackItem = (bool)((net_packet->data[15] >> 1) & 1);
 		bool extraConsumable = (bool)((net_packet->data[15] >> 2) & 1);
 		Uint8 requireTradingSkill = (Uint8)((net_packet->data[15] >> 4) & 0xF);
-		int x = (char)net_packet->data[16];
-		int y = (char)net_packet->data[17];
+		int x = (Sint8)net_packet->data[16];
+		int y = (Sint8)net_packet->data[17];
 		if ( Item* item = newItem(type, status, beatitude, count, appearance, identified, shopInv[clientnum]) )
 		{
 			item->x = x;
@@ -3852,7 +3852,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			if ( monster->clientStats )
 			{
-				if ( (char)net_packet->data[8] == '$' )
+				if ( (Sint8)net_packet->data[8] == '$' )
 				{
 					char buf[128];
 					memset(buf, 0, sizeof(buf));
@@ -4132,8 +4132,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		Item* newitem = newItem(itemType, status, beatitude, count, appearance, identified, nullptr);
 		bool forceNewStack = net_packet->data[25] ? true : false;
-		newitem->x = (char)net_packet->data[26];
-		newitem->y = (char)net_packet->data[27];
+		newitem->x = (Sint8)net_packet->data[26];
+		newitem->y = (Sint8)net_packet->data[27];
 		addItemToChestClientside(clientnum, newitem, forceNewStack, nullptr);
 	}},
 
@@ -5280,8 +5280,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			item->playerSoldItemToShop = true;
 		}
-		item->x = (char)net_packet->data[18];
-		item->y = (char)net_packet->data[19];
+		item->x = (Sint8)net_packet->data[18];
+		item->y = (Sint8)net_packet->data[19];
 		node_t* nextnode;
 		for ( auto node = entitystats->inventory.first; node != NULL; node = nextnode )
 		{

@@ -759,8 +759,8 @@ void Entity::actChest()
 						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 						net_packet->data[24] = item->identified;
 						net_packet->data[25] = 1; //forceNewStack ? 1 : 0;
-						net_packet->data[26] = (char)item->x;
-						net_packet->data[27] = (char)item->y;
+						net_packet->data[26] = (Sint8)item->x;
+						net_packet->data[27] = (Sint8)item->y;
 						net_packet->address.host = net_clients[chestclicked - 1].host;
 						net_packet->address.port = net_clients[chestclicked - 1].port;
 						net_packet->len = 28;
@@ -1049,8 +1049,8 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->data[25] = forceNewStack ? 1 : 0;
-		net_packet->data[26] = (char)item->x;
-		net_packet->data[27] = (char)item->y;
+		net_packet->data[26] = (Sint8)item->x;
+		net_packet->data[27] = (Sint8)item->y;
 		net_packet->address.host = net_clients[chestOpener - 1].host;
 		net_packet->address.port = net_clients[chestOpener - 1].port;
 		net_packet->len = 28;
