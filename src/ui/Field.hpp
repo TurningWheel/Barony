@@ -39,6 +39,8 @@ public:
 		Uint32 highlightTime;			//!< time since field was highlighted
 		bool entered;                   //!< whether or not changes to field were confirmed
 	};
+    
+    bool dirty = false; //!< if true, rebuild text cache
 
 	//! scroll the parent frame (if any) to be within our bounds
 	virtual void scrollParent();
@@ -184,5 +186,4 @@ private:
 
 	void buildCache();
 	std::vector<Text*> cache;							//!< cached lines of text
-	bool dirty = false;									//!< if true, rebuild cache
 };

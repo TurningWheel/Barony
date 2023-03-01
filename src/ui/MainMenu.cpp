@@ -2894,6 +2894,7 @@ namespace MainMenu {
 							}
 							buf[len] = c;
 							buf[len + 1] = '\0';
+                            text->dirty = true;
 						} else {
 						    auto back = main_menu_frame->findButton("back");
 							if (back) {
