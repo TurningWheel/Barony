@@ -388,7 +388,9 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	pathnode->h = heuristic(x1, y1, x2, y2);
 	heapAdd(binaryheap, pathnode, &heaplength);
 	int tries = 0;
-	while ( openList->first != NULL && tries < 10000 )
+	while ( openList->first != NULL 
+		&& ((tries < 200 && !playerCheckPathToExit && !loading) 
+			|| (tries < 10000 && (playerCheckPathToExit || loading))) )
 	{
 		/*pathnode = (pathnode_t *)openList->first->element;
 		for( node=openList->first; node!=NULL; node=node->next ) {
@@ -892,6 +894,27 @@ bool isPathObstacle(Entity* entity)
 	{
 		return true;
 	}
-
+	else if ( entity->behavior == &actStalagColumn
+		|| entity->behavior == &actStalagFloor
+		|| entity->behavior == &actColumn )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPistonBase || entity->behavior == &actPistonCam )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0 )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagCeiling )
+	{
+		if ( entity->z > -8 )
+		{
+			// not on ceiling layer
+			return true;
+		}
+	}
 	return false;
 }
