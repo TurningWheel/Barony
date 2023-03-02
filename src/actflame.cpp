@@ -14,6 +14,7 @@
 #include "collision.hpp"
 #include "entity.hpp"
 #include "prng.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -87,7 +88,7 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	{
 		return nullptr;
 	}
-	if ( *cvar_flame_use_vismap )
+	if ( *cvar_flame_use_vismap && !splitscreen )
 	{
 		if ( parentent->behavior != actPlayer 
 			&& parentent->behavior != actPlayerLimb

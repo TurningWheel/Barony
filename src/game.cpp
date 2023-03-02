@@ -1397,7 +1397,7 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if ( doLavaParticles )
 											{
-												if ( *cvar_lava_use_vismap )
+												if ( *cvar_lava_use_vismap && !splitscreen )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
@@ -2808,7 +2808,7 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if (doLavaParticles)
 											{
-												if ( *cvar_lava_use_vismap )
+												if ( *cvar_lava_use_vismap && !splitscreen )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
