@@ -5545,7 +5545,9 @@ void actPlayer(Entity* my)
                                 constexpr int num_slots = sizeof(items) / sizeof(items[0]);
                                 for (int c = 0; c < num_slots; ++c) {
                                     Item* slot = items[c];
-                                    stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *slot);
+                                    if (slot) {
+                                        stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *slot);
+                                    }
                                 }
 							}
 
