@@ -4679,7 +4679,7 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
                 SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
                 int x, y, w, h;
                 SDL_GetWindowPosition(screen, &x, &y);
-                SDL_GL_GetDrawableSize(screen, &w, &h);
+                SDL_GetWindowSize(screen, &w, &h);
                 if (mouse_x < x || mouse_x >= x + w ||
                     mouse_y < y || mouse_y >= y + h) {
                     SDL_WarpMouseInWindow(screen, w/2, h/2);
@@ -5204,7 +5204,7 @@ void ingameHud()
                         SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
                         int x, y, w, h;
                         SDL_GetWindowPosition(screen, &x, &y);
-                        SDL_GL_GetDrawableSize(screen, &w, &h);
+                        SDL_GetWindowSize(screen, &w, &h);
                         if (mouse_x < x || mouse_x >= x + w ||
                             mouse_y < y || mouse_y >= y + h) {
                             SDL_WarpMouseInWindow(screen, w/2, h/2);

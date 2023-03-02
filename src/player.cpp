@@ -5108,7 +5108,7 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
                 SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
                 int x, y, w, h;
                 SDL_GetWindowPosition(screen, &x, &y);
-                SDL_GL_GetDrawableSize(screen, &w, &h);
+                SDL_GetWindowSize(screen, &w, &h);
                 if (mouse_x < x || mouse_x >= x + w ||
                     mouse_y < y || mouse_y >= y + h) {
                     SDL_WarpMouseInWindow(screen, w/2, h/2);
@@ -5116,7 +5116,10 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
             }
 			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
-		SDL_WarpMouseInWindow(screen, x, y); // this pushes to the SDL event queue
+        int w, h, gw, gh;
+        SDL_GetWindowSize(screen, &w, &h);
+        SDL_GL_GetDrawableSize(screen, &gw, &gh);
+		SDL_WarpMouseInWindow(screen, (x * w) / gw, (y * h) / gh); // this pushes to the SDL event queue
 		
 		// if we don't set mousex/y here, the mouse will flicker until the event is popped
 		mousex = x;
