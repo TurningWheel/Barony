@@ -5416,7 +5416,7 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							if ( (multiplayer == SINGLE && !splitscreen) || !(svFlags & SV_FLAG_KEEPINVENTORY) )
+							if ( (multiplayer == SINGLE && !splitscreen) || !keepInventoryGlobal )
 							{
 								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 								{
@@ -5525,7 +5525,7 @@ void actPlayer(Entity* my)
 						}
 						else
 						{
-							if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
+							if ( !keepInventoryGlobal )
 							{
 								my->x = ((int)(my->x / 16)) * 16 + 8;
 								my->y = ((int)(my->y / 16)) * 16 + 8;

@@ -9560,6 +9560,9 @@ void doNewGame(bool makeHighscore) {
 			gameModeManager.Tutorial.dungeonLevel = -1;
 		}
 	}
+    
+    // very important: set this AFTER svFlags is configured
+    keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{

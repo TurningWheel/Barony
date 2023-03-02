@@ -14826,19 +14826,21 @@ failed:
 				selectedLobby = lobbyId;
 			} else {
 				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-					// pressing A on a lobby after selecting it will join that lobby
-					const auto& lobby = lobbies[lobbyId];
-					if (!lobby.locked) {
-						if (connectToServer(lobby.address.c_str(), entry.data,
-							directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
-							// only deselect the list if the connection begins
-							entry.parent.deselect();
-						}
-					}
-					else {
-						errorPrompt("Unable to join lobby.\nLobby is locked.",
-							"Okay", [](Button&) {soundCancel(); closeMono(); });
-					}
+                    if (lobbyId >= 0 && lobbyId < lobbies.size()) {
+                        // pressing A on a lobby after selecting it will join that lobby
+                        const auto& lobby = lobbies[lobbyId];
+                        if (!lobby.locked) {
+                            if (connectToServer(lobby.address.c_str(), entry.data,
+                                    directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
+                                // only deselect the list if the connection begins
+                                entry.parent.deselect();
+                            }
+                        }
+                        else {
+                            errorPrompt("Unable to join lobby.\nLobby is locked.",
+                                "Okay", [](Button&) {soundCancel(); closeMono(); });
+                        }
+                    }
 				}
 			}
             };
@@ -14851,7 +14853,8 @@ failed:
         entry_name->selected = selection_fn;
         entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
         entry_name->text = std::string("  ") + info.name;
-        entry_name->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
+        entry_name->data = (info.index < 0 || info.index >= lobbies.size()) ?
+            &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // players cell
         const char* players_image;
@@ -14874,7 +14877,8 @@ failed:
         entry_players->selected = selection_fn;
         entry_players->color = 0xffffffff;
         entry_players->image = players_image;
-        entry_players->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
+        entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
+            &(lobbies.back().index) : &(lobbies[info.index].index);
 
         // ping cell
         auto entry_ping = pings->addEntry(info.name.c_str(), true);
@@ -14883,7 +14887,8 @@ failed:
         entry_ping->highlight = selection_fn;
         entry_ping->selected = selection_fn;
         entry_ping->color = 0xffffffff;
-        entry_ping->data = info.index == -1 ? &(lobbies.back().index) : &(lobbies[info.index].index);
+        entry_ping->data = (info.index < 0 || info.index >= lobbies.size()) ?
+            &(lobbies.back().index) : &(lobbies[info.index].index);
         if (!info.locked) {
             if (info.ping < 100) {
                 entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";

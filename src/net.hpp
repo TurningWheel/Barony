@@ -87,6 +87,8 @@ const Uint32 SV_FLAG_KEEPINVENTORY = 1 << 7;
 const Uint32 SV_FLAG_LIFESAVING = 1 << 8;
 const Uint32 NUM_SERVER_FLAGS =  9;
 
+extern bool keepInventoryGlobal;
+
 class SteamPacketWrapper
 {
 	Uint8* _data;

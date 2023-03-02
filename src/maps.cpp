@@ -3848,7 +3848,7 @@ void assignActions(map_t* map)
 					}
                     if ( stats[numplayers]->HP <= 0 )
                     {
-                        if (!(svFlags & SV_FLAG_KEEPINVENTORY))
+                        if (!keepInventoryGlobal)
                         {
                             Item** items[] = {
                                 &stats[numplayers]->helmet,
@@ -6763,6 +6763,8 @@ void assignActions(map_t* map)
 			}
 		}
 	}
+                            
+    keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
 void mapLevel(int player)

@@ -57,6 +57,8 @@ int itemscroll = 0;
 view_t camera_charsheet;
 real_t camera_charsheet_offsetyaw = (330) * PI / 180;
 
+bool keepInventoryGlobal = false;
+
 SDL_Surface* font12x12_small_bmp = NULL;
 SDL_Surface* inventoryChest_bmp = NULL;
 SDL_Surface* invclose_bmp = NULL;

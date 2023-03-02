@@ -3406,7 +3406,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		assailant[clientnum] = false;
 		assailantTimer[clientnum] = 0;
 
-		if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
+		if ( !keepInventoryGlobal )
 		{
 		    node_t* nextnode;
 			for ( auto node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
