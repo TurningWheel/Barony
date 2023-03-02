@@ -10112,7 +10112,7 @@ failed:
 					}
 					if (multiplayer == CLIENT) {
 						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_HUNGER);
+						setting->setPressed(!(svFlags & SV_FLAG_HUNGER));
 					}
 					});
 				break;
@@ -10122,7 +10122,7 @@ failed:
 				if (multiplayer == CLIENT) {
 					setting->setTickCallback([](Widget& widget) {
 						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_MINOTAURS);
+						setting->setPressed(!(svFlags & SV_FLAG_MINOTAURS));
 						});
 				}
 				break;
@@ -10152,7 +10152,7 @@ failed:
 				if (multiplayer == CLIENT) {
 					setting->setTickCallback([](Widget& widget) {
 						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_TRAPS);
+						setting->setPressed(!(svFlags & SV_FLAG_TRAPS));
 						});
 				}
 				break;
@@ -10162,7 +10162,7 @@ failed:
 				if (multiplayer == CLIENT) {
 					setting->setTickCallback([](Widget& widget) {
 						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_FRIENDLYFIRE);
+						setting->setPressed(!(svFlags & SV_FLAG_FRIENDLYFIRE));
 						});
 				}
 				break;
