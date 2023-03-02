@@ -51,7 +51,12 @@ void actItem(Entity* my)
 	Item* item;
 	int i;
 
-	bool isArtifact = ITEM_TYPE >= ARTIFACT_ORB_BLUE && ITEM_TYPE <= ARTIFACT_ORB_GREEN;
+	const bool isArtifact =
+        my->sprite == items[ARTIFACT_ORB_RED].index ||
+        my->sprite == items[ARTIFACT_ORB_GREEN].index ||
+        my->sprite == items[ARTIFACT_ORB_BLUE].index ||
+        my->sprite == items[ARTIFACT_ORB_PURPLE].index ||
+        my->sprite == items[TOOL_PLAYER_LOOT_BAG].index;
 	if (!isArtifact) {
 		my->flags[BURNABLE] = true;
 	}
