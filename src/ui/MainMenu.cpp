@@ -10000,15 +10000,15 @@ failed:
 		auto card = initCharacterCard(index, 664);
 
 		if (multiplayer == CLIENT) {
-			allSettings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
-			allSettings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
-			allSettings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
-			allSettings.keep_inventory_enabled = svFlags & SV_FLAG_KEEPINVENTORY;
-			allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
-			allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
-			allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-			allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
-			allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
+			allSettings.classic_mode_enabled = lobbyWindowSvFlags & SV_FLAG_CLASSIC;
+			allSettings.hardcore_mode_enabled = lobbyWindowSvFlags & SV_FLAG_HARDCORE;
+			allSettings.friendly_fire_enabled = lobbyWindowSvFlags & SV_FLAG_FRIENDLYFIRE;
+			allSettings.keep_inventory_enabled = lobbyWindowSvFlags & SV_FLAG_KEEPINVENTORY;
+			allSettings.hunger_enabled = lobbyWindowSvFlags & SV_FLAG_HUNGER;
+			allSettings.minotaur_enabled = lobbyWindowSvFlags & SV_FLAG_MINOTAURS;
+			allSettings.random_traps_enabled = lobbyWindowSvFlags & SV_FLAG_TRAPS;
+			allSettings.extra_life_enabled = lobbyWindowSvFlags & SV_FLAG_LIFESAVING;
+			allSettings.cheats_enabled = lobbyWindowSvFlags & SV_FLAG_CHEATS;
 		}
 
 		static void (*back_fn)(int) = [](int index){
@@ -10031,7 +10031,15 @@ failed:
 			button->select();
 		};
 
-		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
+		auto back = createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
+        if (multiplayer == CLIENT) {
+            back->setTickCallback([](Widget& widget){
+                assert(main_menu_frame);
+                if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+                    widget.select(); // rescue cursor
+                }
+                });
+        }
 
 		auto backdrop = card->addImage(
 			card->getActualSize(),
@@ -10099,102 +10107,53 @@ failed:
 			if (c == 0) {
 				setting->select();
 			}
-
+            
+            setting->setUserData((void*)c);
 			setting->setDisabled(index != 0);
 			switch (c) {
 			case 0:
 				setting->setPressed(!allSettings.hunger_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
-				setting->setTickCallback([](Widget& widget) {
-					assert(main_menu_frame);
-					if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
-						widget.select(); // rescue cursor
-					}
-					if (multiplayer == CLIENT) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(!(svFlags & SV_FLAG_HUNGER));
-					}
-					});
+                if (multiplayer != CLIENT) {
+                    setting->setTickCallback([](Widget& widget) {
+                        assert(main_menu_frame);
+                        if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+                            widget.select(); // rescue cursor
+                        }
+                    });
+                }
 				break;
 			case 1:
 				setting->setPressed(!allSettings.minotaur_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(!(svFlags & SV_FLAG_MINOTAURS));
-						});
-				}
 				break;
 			case 2:
 				setting->setPressed(allSettings.extra_life_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_LIFESAVING);
-						});
-				}
 				break;
 			case 3:
 				setting->setPressed(allSettings.keep_inventory_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.keep_inventory_enabled = button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_KEEPINVENTORY);
-						});
-				}
 				break;
 			case 4:
 				setting->setPressed(!allSettings.random_traps_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.random_traps_enabled = !button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(!(svFlags & SV_FLAG_TRAPS));
-						});
-				}
 				break;
 			case 5:
 				setting->setPressed(!allSettings.friendly_fire_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.friendly_fire_enabled = !button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(!(svFlags & SV_FLAG_FRIENDLYFIRE));
-						});
-				}
 				break;
 			case 6:
 				setting->setPressed(allSettings.classic_mode_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.classic_mode_enabled = button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_CLASSIC);
-						});
-				}
 				break;
 			case 7:
 				setting->setPressed(allSettings.hardcore_mode_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hardcore_mode_enabled = button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_HARDCORE);
-						});
-				}
 				break;
 			case 8:
 				setting->setPressed(allSettings.cheats_enabled);
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.cheats_enabled = button.isPressed();});
-				if (multiplayer == CLIENT) {
-					setting->setTickCallback([](Widget& widget) {
-						auto setting = static_cast<Button*>(&widget);
-						setting->setPressed(svFlags & SV_FLAG_CHEATS);
-						});
-				}
 				break;
 			}
 		}
@@ -10214,6 +10173,39 @@ failed:
 				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
+            Frame* card = static_cast<Frame*>(widget.getParent());
+            for (auto button : card->getButtons()) {
+                auto i = reinterpret_cast<intptr_t>(button->getUserData());
+                switch (i) {
+                case 0:
+                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_HUNGER));
+                    break;
+                case 1:
+                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_MINOTAURS));
+                    break;
+                case 2:
+                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_LIFESAVING));
+                    break;
+                case 3:
+                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_KEEPINVENTORY));
+                    break;
+                case 4:
+                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_TRAPS));
+                    break;
+                case 5:
+                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_FRIENDLYFIRE));
+                    break;
+                case 6:
+                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_CLASSIC));
+                    break;
+                case 7:
+                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_HARDCORE));
+                    break;
+                case 8:
+                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_CHEATS));
+                    break;
+                }
+            }
 			});
 		(*achievements->getTickCallback())(*achievements);
 

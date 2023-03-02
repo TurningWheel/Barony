@@ -5476,29 +5476,6 @@ void actPlayer(Entity* my)
 										stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *item);
 									}
 								}
-								if ( multiplayer != SINGLE || splitscreen )
-								{
-									for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
-									{
-										nextnode = node->next;
-										Item* item = (Item*)node->element;
-										if ( itemCategory(item) == SPELL_CAT )
-										{
-											continue;    // don't drop spells on death, stupid!
-										}
-										list_RemoveNode(node);
-									}
-									stats[PLAYER_NUM]->helmet = NULL;
-									stats[PLAYER_NUM]->breastplate = NULL;
-									stats[PLAYER_NUM]->gloves = NULL;
-									stats[PLAYER_NUM]->shoes = NULL;
-									stats[PLAYER_NUM]->shield = NULL;
-									stats[PLAYER_NUM]->weapon = NULL;
-									stats[PLAYER_NUM]->cloak = NULL;
-									stats[PLAYER_NUM]->amulet = NULL;
-									stats[PLAYER_NUM]->ring = NULL;
-									stats[PLAYER_NUM]->mask = NULL;
-								}
 							}
 							else
 							{

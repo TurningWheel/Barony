@@ -3846,11 +3846,45 @@ void assignActions(map_t* map)
 						entity = nullptr;
 						break;
 					}
-					if ( multiplayer != CLIENT )
-					{
-						if ( stats[numplayers]->HP <= 0 )
-						{
-							messagePlayer(numplayers, MESSAGE_STATUS, language[1109]);
+                    if ( stats[numplayers]->HP <= 0 )
+                    {
+                        if (!(svFlags & SV_FLAG_KEEPINVENTORY))
+                        {
+                            Item** items[] = {
+                                &stats[numplayers]->helmet,
+                                &stats[numplayers]->breastplate,
+                                &stats[numplayers]->gloves,
+                                &stats[numplayers]->shoes,
+                                &stats[numplayers]->shield,
+                                &stats[numplayers]->weapon,
+                                &stats[numplayers]->cloak,
+                                &stats[numplayers]->amulet,
+                                &stats[numplayers]->ring,
+                                &stats[numplayers]->mask,
+                            };
+                            constexpr int num_slots = sizeof(items) / sizeof(items[0]);
+                            for (int c = 0; c < num_slots; ++c) {
+                                if ((*items[c])->node) {
+                                    list_RemoveNode((*items[c])->node);
+                                } else {
+                                    free((*items[c]));
+                                }
+                                *items[c] = nullptr;
+                            }
+                            for ( node = stats[numplayers]->inventory.first; node != nullptr; node = nextnode )
+                            {
+                                nextnode = node->next;
+                                Item* item = (Item*)node->element;
+                                if ( itemCategory(item) == SPELL_CAT )
+                                {
+                                    continue;    // don't drop spells on death, stupid!
+                                }
+                                list_RemoveNode(node);
+                            }
+                        }
+                        if ( multiplayer != CLIENT )
+                        {
+                            messagePlayer(numplayers, MESSAGE_STATUS, language[1109]);
 							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
 							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
 							stats[numplayers]->HUNGER = 500;
