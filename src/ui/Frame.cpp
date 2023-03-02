@@ -447,6 +447,7 @@ static bool isMouseActive(int owner) {
 
 void frameDrawBlitSurface(const Frame* frame, SDL_Rect _size, SDL_Surface* surf, TempTexture* tex)
 {
+#ifndef EDITOR
 	int owner = frame->getOwner();
 	SDL_Rect pos = SDL_Rect{ _size.x, _size.y, surf->w, surf->h };
 	SDL_Rect dest;
@@ -473,6 +474,7 @@ void frameDrawBlitSurface(const Frame* frame, SDL_Rect _size, SDL_Surface* surf,
 			SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
 			makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0));
 	}
+#endif
 }
 
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {

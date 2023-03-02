@@ -1009,13 +1009,13 @@ namespace MainMenu {
 		tip->setUserData(const_cast<void*>((const void*)tip_text));
 		tip->setHJustify(Field::justify_t::LEFT);
 		tip->setVJustify(Field::justify_t::CENTER);
-		tip->setColor(makeColor(166, 123, 81, 255));
+		tip->setColor(makeColor(166, 123, 81, 127));
 		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
 		tip->setTickCallback([](Widget& widget){
 	        auto tip = static_cast<Field*>(&widget);
 		    auto parent = static_cast<Frame*>(widget.getParent());
 		    auto field = parent->findField("field");
-		    if (field && (field->isActivated() || field->getText()[0] != '\0')) {
+		    if (field && field->getText()[0] != '\0') {
 		        tip->setText("");
 		    } else {
 		        tip->setText((const char*)tip->getUserData());
