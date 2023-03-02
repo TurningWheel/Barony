@@ -956,6 +956,7 @@ void drawStatus(int player)
 						if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 						{
 							hotbar[num].item = 0;
+							hotbar[num].resetLastItem();
 						}
 						else
 						{
@@ -966,6 +967,7 @@ void drawStatus(int player)
 								playSound(139, 64); // click sound
 							}
 							hotbar[num].item = 0;
+							hotbar[num].resetLastItem();
 
 							if ( inputs.bControllerInputPressed(player, INJOY_MENU_LEFT_CLICK) && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 							{
@@ -2344,6 +2346,7 @@ void drawStatusNew(const int player)
 							&& Input::inputs[player].binaryToggle("MenuLeftClick") && inputs.bPlayerUsingKeyboardControl(player) )
 						{
 							hotbar[num].item = 0;
+							hotbar[num].resetLastItem();
 							Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
 						}
 						else
@@ -2355,6 +2358,7 @@ void drawStatusNew(const int player)
 								playSound(139, 64); // click sound
 							}
 							hotbar[num].item = 0;
+							hotbar[num].resetLastItem();
 
 							if ( inputs.getVirtualMouse(player)->draw_cursor )
 							{
@@ -2689,6 +2693,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[0].item;
 							hotbar[0].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[0].item == 0 || !uidToItem(hotbar[0].item) )
+							{
+								hotbar[0].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
 						{
@@ -2696,6 +2708,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[1].item;
 							hotbar[1].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[1].item == 0 || !uidToItem(hotbar[1].item) )
+							{
+								hotbar[1].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
 						{
@@ -2703,6 +2723,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[2].item;
 							hotbar[2].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[2].item == 0 || !uidToItem(hotbar[2].item) )
+							{
+								hotbar[2].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
 						{
@@ -2710,6 +2738,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[3].item;
 							hotbar[3].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[3].item == 0 || !uidToItem(hotbar[3].item) )
+							{
+								hotbar[3].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
 						{
@@ -2717,6 +2753,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[4].item;
 							hotbar[4].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[4].item == 0 || !uidToItem(hotbar[4].item) )
+							{
+								hotbar[4].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
 						{
@@ -2724,6 +2768,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[5].item;
 							hotbar[5].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[5].item == 0 || !uidToItem(hotbar[5].item) )
+							{
+								hotbar[5].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
 						{
@@ -2731,6 +2783,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[6].item;
 							hotbar[6].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[6].item == 0 || !uidToItem(hotbar[6].item) )
+							{
+								hotbar[6].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
 						{
@@ -2738,6 +2798,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[7].item;
 							hotbar[7].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[7].item == 0 || !uidToItem(hotbar[7].item) )
+							{
+								hotbar[7].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
 						{
@@ -2745,6 +2813,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[8].item;
 							hotbar[8].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[8].item == 0 || !uidToItem(hotbar[8].item) )
+							{
+								hotbar[8].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 						if ( Input::inputs[player].binaryToggle("HotbarSlot10")
 							&& hotbar_t.getHotbarSlotFrame(9)
@@ -2754,6 +2830,14 @@ void drawStatusNew(const int player)
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
+							if ( hotbar[9].item == 0 || !uidToItem(hotbar[9].item) )
+							{
+								hotbar[9].resetLastItem();
+							}
+							if ( hotbar[num].item == 0 || !uidToItem(hotbar[num].item) )
+							{
+								hotbar[num].resetLastItem();
+							}
 						}
 					}
 				}

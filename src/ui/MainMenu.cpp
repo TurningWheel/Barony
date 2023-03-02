@@ -2425,7 +2425,15 @@ namespace MainMenu {
 		file->property("crossplay_enabled", crossplay_enabled);
 		file->propertyVersion("fast_restart", version >= 2, fast_restart);
 		file->property("add_items_to_hotbar_enabled", add_items_to_hotbar_enabled);
-		file->property("inventory_sorting", inventory_sorting);
+		if ( version < 9 )
+		{
+			// redo default hotbar sorting now that it is cleaner
+			inventory_sorting = InventorySorting::reset();
+		}
+		else
+		{
+			file->property("inventory_sorting", inventory_sorting);
+		}
 		file->property("use_on_release_enabled", use_on_release_enabled);
 		file->property("minimap", minimap);
         file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);

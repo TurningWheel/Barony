@@ -22146,6 +22146,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			if ( slot.item == item->uid )
 			{
 				slot.item = 0;
+				slot.resetLastItem();
 			}
 		}
 		return;
@@ -26566,6 +26567,51 @@ void Player::HUD_t::updateMPBar()
 	}
 }
 
+bool hotbar_slot_t::matchesExactLastItem(int player, Item* item)
+{
+	if ( !item ) { return false; }
+	if ( lastItem.uid == item->uid ) { return true; }
+	if ( lastItem.type == item->type
+		&& lastItem.status == item->status
+		&& lastItem.count == item->count
+		&& lastItem.identified == item->identified )
+	{
+		if ( item->shouldItemStack(player, true) )
+		{
+			return true;
+		}
+		else
+		{
+			return lastItem.appearance == item->appearance;
+		}
+	}
+	return false;
+}
+
+void hotbar_slot_t::resetLastItem()
+{
+	lastCategory = -1;
+	lastItem.type = WOODEN_SHIELD;
+	lastItem.appearance = -1;
+	lastItem.status = BROKEN;
+	lastItem.count = 0;
+	lastItem.identified = false;
+	lastItem.uid = 0;
+}
+
+void hotbar_slot_t::storeLastItem(Item* item)
+{
+	if ( !item ) { return; }
+	if ( !item->identified ) { return; }
+	lastItem.type = item->type;
+	lastItem.appearance = item->appearance;
+	lastItem.status = item->status;
+	lastItem.count = item->count;
+	lastItem.identified = item->identified;
+	lastItem.uid = item->uid;
+	lastCategory = itemCategory(item);
+}
+
 void Player::Hotbar_t::updateHotbar()
 {
 	if ( !hotbarFrame )
@@ -26748,11 +26794,20 @@ void Player::Hotbar_t::updateHotbar()
 	{
 		if ( hotbar[num].item != 0 )
 		{
-			hotbar[num].lastItemUid = hotbar[num].item;
 			if ( Item* item = uidToItem(hotbar[num].item) )
 			{
-				hotbar[num].lastItemType = item->type;
-				hotbar[num].lastItemCategory = itemCategory(item);
+				if ( hotbar[num].item == hotbar[num].lastItem.uid
+					&& hotbar[num].lastItem.status > BROKEN
+					&& item->status == BROKEN )
+				{
+					// de-hotbar newly broken stuff
+					hotbar[num].item = 0;
+					hotbar[num].resetLastItem();
+				}
+				else
+				{
+					hotbar[num].storeLastItem(item);
+				}
 			}
 		}
 

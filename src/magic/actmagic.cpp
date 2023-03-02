@@ -4520,6 +4520,7 @@ void actParticleSapCenter(Entity* my)
 										&& hotbar[i].item == pickedUp->uid )
 									{
 										hotbar[i].item = 0;
+										hotbar[i].resetLastItem();
 									}
 								}
 							}

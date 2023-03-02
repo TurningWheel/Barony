@@ -274,7 +274,8 @@ int saveScore()
 	}
 
 #ifdef STEAMWORKS
-	if ( g_SteamLeaderboards )
+	// temp disable leaderboard scores until fix 
+	/*if ( g_SteamLeaderboards )
 	{
 		if ( steamLeaderboardSetScore(currentscore) )
 		{
@@ -291,7 +292,7 @@ int saveScore()
 				printlog("[STEAM]: Loaded data did not match hash as expected.");
 			}
 		}
-	}
+	}*/
 #endif // STEAMWORKS
 
     int c;
@@ -2787,15 +2788,11 @@ int loadGameOld(int player, int saveIndex)
 		else
 		{
 			hotbar[c].item = 0;
-			hotbar[c].lastItemUid = 0;
-			hotbar[c].lastItemCategory = -1;
-			hotbar[c].lastItemType = -1;
+			hotbar[c].resetLastItem();
 			for ( int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d )
 			{
 				hotbar_alternate[d][c].item = 0;
-				hotbar_alternate[d][c].lastItemUid = 0;
-				hotbar_alternate[d][c].lastItemCategory = -1;
-				hotbar_alternate[d][c].lastItemType = -1;
+				hotbar_alternate[d][c].resetLastItem();
 			}
 		}
 	}
@@ -5833,16 +5830,13 @@ int loadGame(int player, const SaveGameInfo& info) {
 		if (node) {
 			Item* item = (Item*)node->element;
 			hotbar[c].item = item->uid;
+			hotbar[c].storeLastItem(item);
 		} else {
 			hotbar[c].item = 0;
-			hotbar[c].lastItemUid = 0;
-			hotbar[c].lastItemCategory = -1;
-			hotbar[c].lastItemType = -1;
+			hotbar[c].resetLastItem();
 			for (int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d) {
 				hotbar_alternate[d][c].item = 0;
-				hotbar_alternate[d][c].lastItemUid = 0;
-				hotbar_alternate[d][c].lastItemCategory = -1;
-				hotbar_alternate[d][c].lastItemType = -1;
+				hotbar_alternate[d][c].resetLastItem();
 			}
 		}
 	}

@@ -2928,6 +2928,7 @@ void initShapeshiftHotbar(int player)
 							if ( hotbar[i].item == item->uid )
 							{
 								hotbar[i].item = 0;
+								hotbar[i].resetLastItem();
 							}
 						}
 					}
@@ -3016,6 +3017,7 @@ void deinitShapeshiftHotbar(int player)
 			if ( canUseShapeshiftSpellInCurrentForm(player, *item) != 1 ) // not allowed to use spell.
 			{
 				hotbar[slotIndex].item = 0;
+				hotbar[slotIndex].resetLastItem();
 				hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT][slotIndex].item = 0;
 			}
 		}

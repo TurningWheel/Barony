@@ -3214,6 +3214,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 						if ( i != hotbar_t.magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
 						{
 							hotbar[i].item = 0;
+							hotbar[i].resetLastItem();
 						}
 					}
 				}

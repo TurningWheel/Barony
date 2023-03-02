@@ -3183,6 +3183,7 @@ void releaseChestItem(const int player)
 					if ( i != slotNum && s.item == slot->item )
 					{
 						s.item = 0;
+						s.resetLastItem();
 					}
 					++i;
 				}
@@ -4065,6 +4066,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 						if ( i != slotNum && s.item == slot->item )
 						{
 							s.item = 0;
+							s.resetLastItem();
 						}
 						++i;
 					}
@@ -4130,6 +4132,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 							if ( i != slotNum && s.item == slot->item )
 							{
 								s.item = 0;
+								s.resetLastItem();
 							}
 							++i;
 						}
@@ -9288,6 +9291,7 @@ void Player::Inventory_t::updateInventory()
 							if ( i != slotNum && s.item == item->uid )
 							{
 								s.item = 0;
+								s.resetLastItem();
 							}
 							++i;
 						}
@@ -10273,31 +10277,50 @@ bool autoAddHotbarFilter(const Item& item)
 					}
 					break;
 				case 3: // books/spellbooks
-					if ( cat == BOOK || cat == SPELLBOOK )
+					if ( /*cat == BOOK ||*/ cat == SPELLBOOK )
 					{
 						return true;
 					}
 					break;
 				case 4: // tools
-					if ( cat == TOOL )
+					if ( item.type == POTION_EMPTY )
 					{
 						return true;
 					}
+					else if ( cat == TOOL )
+					{
+						switch ( item.type )
+						{
+							case ARTIFACT_ORB_BLUE:
+							case ARTIFACT_ORB_RED:
+							case ARTIFACT_ORB_GREEN:
+							case ARTIFACT_ORB_PURPLE:
+							case TOOL_LOCKPICK:
+							case TOOL_TORCH:
+							case TOOL_LANTERN:
+							case TOOL_CRYSTALSHARD:
+								return true;
+								break;
+							default:
+								break;
+						}
+					}
 					break;
 				case 5: // thrown
-					if ( cat == THROWN || item.type == GEM_ROCK )
+					if ( cat == THROWN || item.type == GEM_ROCK || itemTypeIsQuiver(item.type)
+						|| itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP )
 					{
 						return true;
 					}
 					break;
 				case 6: // gems
-					if ( cat == GEM )
+					if ( cat == GEM && item.type != GEM_ROCK )
 					{
 						return true;
 					}
 					break;
 				case 7: // potions
-					if ( cat == POTION )
+					if ( cat == POTION && item.type != POTION_EMPTY )
 					{
 						return true;
 					}
