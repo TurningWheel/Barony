@@ -3436,16 +3436,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				net_packet->len = 28;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			stats[clientnum]->helmet = NULL;
-			stats[clientnum]->breastplate = NULL;
-			stats[clientnum]->gloves = NULL;
-			stats[clientnum]->shoes = NULL;
-			stats[clientnum]->shield = NULL;
-			stats[clientnum]->weapon = NULL;
-			stats[clientnum]->cloak = NULL;
-			stats[clientnum]->amulet = NULL;
-			stats[clientnum]->ring = NULL;
-			stats[clientnum]->mask = NULL;
 		}
 		else
 		{
