@@ -883,6 +883,11 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
 
 ConsoleVariable<bool> framesEatMouse("/gui_eat_mouseclicks", true);
 static ConsoleVariable<bool> cvar_lava_use_vismap("/lava_use_vismap", true);
+#ifdef NINTENDO
+static ConsoleVariable<bool> cvar_lava_bubbles_enabled("/lava_bubbles_enabled", false);
+#else
+static ConsoleVariable<bool> cvar_lava_bubbles_enabled("/lava_bubbles_enabled", true);
+#endif
 
 static real_t drunkextend[MAXPLAYERS] = { (real_t)0.0 };
 
@@ -1389,45 +1394,48 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
-											bool doLavaParticles = true;
-											if ( *cvar_lava_use_vismap )
+											bool doLavaParticles = *cvar_lava_bubbles_enabled;
+											if ( doLavaParticles )
 											{
-												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												if ( *cvar_lava_use_vismap )
 												{
-													if ( !map.vismap[y + x * map.height] )
+													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														doLavaParticles = false;
+														if ( !map.vismap[y + x * map.height] )
+														{
+															doLavaParticles = false;
+														}
 													}
 												}
-											}
-											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j && doLavaParticles; ++c )
-											{
-												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
-												entity->behavior = &actGib;
-												entity->x = x * 16 + local_rng.rand() % 16;
-												entity->y = y * 16 + local_rng.rand() % 16;
-												entity->z = 7.5;
-												entity->flags[PASSABLE] = true;
-												entity->flags[SPRITE] = true;
-												entity->flags[NOUPDATE] = true;
-												entity->flags[UPDATENEEDED] = false;
-												entity->flags[UNCLICKABLE] = true;
-												entity->sizex = 2;
-												entity->sizey = 2;
-												entity->fskill[3] = 0.01;
-												double vel = (local_rng.rand() % 10) / 20.f;
-												entity->vel_x = vel * cos(entity->yaw);
-												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
-												entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-												entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
-												entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-												if ( multiplayer != CLIENT )
+												int c, j = 1 + local_rng.rand() % 2;
+												for ( c = 0; c < j && doLavaParticles; ++c )
 												{
-													--entity_uids;
+													Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
+													entity->behavior = &actGib;
+													entity->x = x * 16 + local_rng.rand() % 16;
+													entity->y = y * 16 + local_rng.rand() % 16;
+													entity->z = 7.5;
+													entity->flags[PASSABLE] = true;
+													entity->flags[SPRITE] = true;
+													entity->flags[NOUPDATE] = true;
+													entity->flags[UPDATENEEDED] = false;
+													entity->flags[UNCLICKABLE] = true;
+													entity->sizex = 2;
+													entity->sizey = 2;
+													entity->fskill[3] = 0.01;
+													double vel = (local_rng.rand() % 10) / 20.f;
+													entity->vel_x = vel * cos(entity->yaw);
+													entity->vel_y = vel * sin(entity->yaw);
+													entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
+													entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+													entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+													entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+													if ( multiplayer != CLIENT )
+													{
+														--entity_uids;
+													}
+													entity->setUID(-3);
 												}
-												entity->setUID(-3);
 											}
 										}
 									}
@@ -2797,45 +2805,48 @@ void gameLogic(void)
 									{
 										if ( ticks % 40 == (y + x * map.height) % 40 && local_rng.rand() % 3 == 0 )
 										{
-											bool doLavaParticles = true;
-											if ( *cvar_lava_use_vismap )
+											bool doLavaParticles = *cvar_lava_bubbles_enabled;
+											if (doLavaParticles)
 											{
-												if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+												if ( *cvar_lava_use_vismap )
 												{
-													if ( !map.vismap[y + x * map.height] )
+													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														doLavaParticles = false;
+														if ( !map.vismap[y + x * map.height] )
+														{
+															doLavaParticles = false;
+														}
 													}
 												}
-											}
-											int c, j = 1 + local_rng.rand() % 2;
-											for ( c = 0; c < j && doLavaParticles; c++ )
-											{
-												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
-												entity->behavior = &actGib;
-												entity->x = x * 16 + local_rng.rand() % 16;
-												entity->y = y * 16 + local_rng.rand() % 16;
-												entity->z = 7.5;
-												entity->flags[PASSABLE] = true;
-												entity->flags[SPRITE] = true;
-												entity->flags[NOUPDATE] = true;
-												entity->flags[UPDATENEEDED] = false;
-												entity->flags[UNCLICKABLE] = true;
-												entity->sizex = 2;
-												entity->sizey = 2;
-												entity->fskill[3] = 0.01;
-												double vel = (local_rng.rand() % 10) / 20.f;
-												entity->vel_x = vel * cos(entity->yaw);
-												entity->vel_y = vel * sin(entity->yaw);
-												entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
-												entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-												entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
-												entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-												if ( multiplayer != CLIENT )
+												int c, j = 1 + local_rng.rand() % 2;
+												for ( c = 0; c < j && doLavaParticles; c++ )
 												{
-													entity_uids--;
+													Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
+													entity->behavior = &actGib;
+													entity->x = x * 16 + local_rng.rand() % 16;
+													entity->y = y * 16 + local_rng.rand() % 16;
+													entity->z = 7.5;
+													entity->flags[PASSABLE] = true;
+													entity->flags[SPRITE] = true;
+													entity->flags[NOUPDATE] = true;
+													entity->flags[UPDATENEEDED] = false;
+													entity->flags[UNCLICKABLE] = true;
+													entity->sizex = 2;
+													entity->sizey = 2;
+													entity->fskill[3] = 0.01;
+													double vel = (local_rng.rand() % 10) / 20.f;
+													entity->vel_x = vel * cos(entity->yaw);
+													entity->vel_y = vel * sin(entity->yaw);
+													entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
+													entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+													entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+													entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+													if ( multiplayer != CLIENT )
+													{
+														entity_uids--;
+													}
+													entity->setUID(-3);
 												}
-												entity->setUID(-3);
 											}
 										}
 									}

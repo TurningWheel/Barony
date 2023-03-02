@@ -221,6 +221,7 @@ void doLoadingScreen() {
 		if (fadealpha > 0) {
 			drawRect(NULL, makeColor(0, 0, 0, 255), fadealpha);
 		}
+		gui->process();
 		gui->predraw();
 		gui->draw();
 		gui->postdraw();

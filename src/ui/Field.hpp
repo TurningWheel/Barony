@@ -39,6 +39,8 @@ public:
 		Uint32 highlightTime;			//!< time since field was highlighted
 		bool entered;                   //!< whether or not changes to field were confirmed
 	};
+    
+    bool dirty = false; //!< if true, rebuild text cache
 
 	//! scroll the parent frame (if any) to be within our bounds
 	virtual void scrollParent();
@@ -136,8 +138,8 @@ public:
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }
 	void	setSize(const SDL_Rect _size) { size = _size; }
 	void	setColor(const Uint32 _color) { color = _color; }
-	void	setTextColor(const Uint32 _color) { if (textColor != _color) { textColor = _color; buildCache(); } }
-	void	setOutlineColor(const Uint32 _color) { if (outlineColor != _color) { outlineColor = _color; buildCache(); } }
+	void	setTextColor(const Uint32 _color) { if (textColor != _color) { textColor = _color; dirty = true; } }
+	void	setOutlineColor(const Uint32 _color) { if (outlineColor != _color) { outlineColor = _color; dirty = true; } }
 	void	setBackgroundColor(const Uint32 _color) { backgroundColor = _color; }
 	void	setBackgroundActivatedColor(const Uint32 _color) { backgroundActivatedColor = _color; }
 	void	setBackgroundSelectAllColor(const Uint32 _color) { backgroundSelectAllColor = _color; }
@@ -148,7 +150,7 @@ public:
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void	setScroll(const bool _scroll) { scroll = _scroll; }
 	void	setCallback(void (*const fn)(Field&)) { callback = fn; }
-	void	setFont(const char* _font) { if (font != _font) { font = _font; buildCache(); } }
+	void	setFont(const char* _font) { if (font != _font) { font = _font; dirty = true; } }
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void	setTooltip(const char* _tooltip) { tooltip = _tooltip; }
 	void    reflowTextToFit(const int characterOffset);
@@ -183,5 +185,5 @@ private:
 	int paddingPerLine = 0;								//!< +/- pixel padding for multiple lines
 
 	void buildCache();
-	std::vector<Text*> cache;							//!< cached lines of text
+	std::vector<std::pair<std::string,Text*>> cache;	//!< cached lines of text
 };
