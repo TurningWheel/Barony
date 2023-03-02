@@ -5102,6 +5102,18 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
 		}
 		else if ( flags & SET_RELATIVE_MOUSE )
 		{
+            // fix for macOS: put mouse back in window before recapturing mouse
+            if (EnableMouseCapture) {
+                int mouse_x, mouse_y;
+                SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
+                int x, y, w, h;
+                SDL_GetWindowPosition(screen, &x, &y);
+                SDL_GL_GetDrawableSize(screen, &w, &h);
+                if (mouse_x < x || mouse_x >= x + w ||
+                    mouse_y < y || mouse_y >= y + h) {
+                    SDL_WarpMouseInWindow(screen, w/2, h/2);
+                }
+            }
 			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
 		SDL_WarpMouseInWindow(screen, x, y); // this pushes to the SDL event queue

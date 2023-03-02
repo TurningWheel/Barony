@@ -4673,6 +4673,18 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 		gamePaused = false;
 		if ( !SDL_GetRelativeMouseMode() && capture_mouse )
 		{
+            // fix for macOS: put mouse back in window before recapturing mouse
+            if (EnableMouseCapture) {
+                int mouse_x, mouse_y;
+                SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
+                int x, y, w, h;
+                SDL_GetWindowPosition(screen, &x, &y);
+                SDL_GL_GetDrawableSize(screen, &w, &h);
+                if (mouse_x < x || mouse_x >= x + w ||
+                    mouse_y < y || mouse_y >= y + h) {
+                    SDL_WarpMouseInWindow(screen, w/2, h/2);
+                }
+            }
 			SDL_SetRelativeMouseMode(EnableMouseCapture);
 		}
 		if (keystatus[SDLK_ESCAPE]) {
@@ -5186,6 +5198,18 @@ void ingameHud()
 			{
 				if ( inputs.bPlayerUsingKeyboardControl(player) )
 				{
+                    // fix for macOS: put mouse back in window before recapturing mouse
+                    if (EnableMouseCapture) {
+                        int mouse_x, mouse_y;
+                        SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
+                        int x, y, w, h;
+                        SDL_GetWindowPosition(screen, &x, &y);
+                        SDL_GL_GetDrawableSize(screen, &w, &h);
+                        if (mouse_x < x || mouse_x >= x + w ||
+                            mouse_y < y || mouse_y >= y + h) {
+                            SDL_WarpMouseInWindow(screen, w/2, h/2);
+                        }
+                    }
 				    SDL_SetRelativeMouseMode(EnableMouseCapture);
 				}
 			}
