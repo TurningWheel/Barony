@@ -3419,12 +3419,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				}
 				if ( itemIsEquipped(item, clientnum) )
 				{
-					Item** slot = itemSlot(stats[clientnum], item);
-					if ( slot != NULL )
-					{
-						*slot = NULL;
-					}
-					list_RemoveNode(node);
 					continue;
 				}
 				strcpy((char*)net_packet->data, "DIEI");
@@ -3441,18 +3435,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				net_packet->address.port = net_server.port;
 				net_packet->len = 28;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
-				list_RemoveNode(node);
 			}
-			stats[clientnum]->helmet = NULL;
-			stats[clientnum]->breastplate = NULL;
-			stats[clientnum]->gloves = NULL;
-			stats[clientnum]->shoes = NULL;
-			stats[clientnum]->shield = NULL;
-			stats[clientnum]->weapon = NULL;
-			stats[clientnum]->cloak = NULL;
-			stats[clientnum]->amulet = NULL;
-			stats[clientnum]->ring = NULL;
-			stats[clientnum]->mask = NULL;
 		}
 		else
 		{

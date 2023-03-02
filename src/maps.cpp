@@ -3864,15 +3864,16 @@ void assignActions(map_t* map)
                             };
                             constexpr int num_slots = sizeof(items) / sizeof(items[0]);
                             for (int c = 0; c < num_slots; ++c) {
-                                if (*items[c]) {
-                                    if ((*items[c])->node) {
-                                        list_RemoveNode((*items[c])->node);
+                                if (*(items[c])) {
+                                    if ((*(items[c]))->node) {
+                                        list_RemoveNode((*(items[c]))->node);
                                     } else {
-                                        free((*items[c]));
+                                        free((*(items[c])));
                                     }
                                 }
-                                *items[c] = nullptr;
+                                *(items[c]) = nullptr;
                             }
+                            node_t *node, *nextnode;
                             for ( node = stats[numplayers]->inventory.first; node != nullptr; node = nextnode )
                             {
                                 nextnode = node->next;
