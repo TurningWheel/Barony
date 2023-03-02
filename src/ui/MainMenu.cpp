@@ -18756,6 +18756,9 @@ failed:
 					nxAssignControllers(1, 1, true, false, true, false, nullptr);
 				}
 #endif
+                // end the game AND create a highscore!
+                // this is because the game is well and truly done. There is no save file.
+                // create a highscore as token of remembrance.
 				doEndgame(true);
 				destroyMainMenu();
 				createDummyMainMenu();
@@ -18858,7 +18861,7 @@ failed:
 		            splitscreen = false;
 		        }
 
-				doNewGame(false);
+				doNewGame(!intro);
 				destroyMainMenu();
 				setupSplitscreen();
 
@@ -18903,7 +18906,7 @@ failed:
 
 				gameModeManager.Tutorial.startTutorial(tutorial_map_destination);
 				steamStatisticUpdate(STEAM_STAT_TUTORIAL_ENTERED, ESteamStatTypes::STEAM_STAT_INT, 1);
-				doNewGame(false);
+				doNewGame(!intro);
 				setupSplitscreen();
 			}
 			fadeout = false;
