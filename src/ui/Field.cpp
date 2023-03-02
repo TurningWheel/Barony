@@ -58,7 +58,10 @@ Field::~Field() {
 		text = nullptr;
 	}
 	while (!cache.empty()) {
-		delete cache.back();
+        auto text = cache.back().second;
+        if (text) {
+            delete text;
+        }
 		cache.pop_back();
 	}
 }
@@ -86,7 +89,7 @@ void Field::activate() {
         cursorflash = ticks;
 	    activated = true;
 	    inputstr = text;
-	    inputlen = textlen;
+	    inputlen = (int)textlen;
 	    SDL_StartTextInput();
 	}
 #endif
@@ -165,20 +168,33 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 	return true;
 }
 
+static ConsoleVariable<bool> cvar_enableFieldCache(
+    "/fieldcache", false, "toggle fields caching their own text");
+
 void Field::buildCache() {
 	while (!cache.empty()) {
-		delete cache.back();
+        auto text = cache.back().second;
+        if (text) {
+            delete text;
+        }
 		cache.pop_back();
 	}
 	char* buf = (char*)malloc(textlen + 1);
 	if (buf) {
 		dirty = false;
 		memcpy(buf, text ? text : "\0", textlen + 1);
-		for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
-			nexttoken = tokenize(token, "\n");
-			auto line = Text::hash(token, font.c_str(), textColor, outlineColor);
-			cache.push_back(new Text(line.second));
-		}
+        if (*cvar_enableFieldCache) {
+            for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
+                nexttoken = tokenize(token, "\n");
+                auto line = Text::hash(token, font.c_str(), textColor, outlineColor);
+                cache.push_back(std::make_pair(token, new Text(line.second)));
+            }
+        } else {
+            for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
+                nexttoken = tokenize(token, "\n");
+                cache.push_back(std::make_pair(token, nullptr));
+            }
+        }
 		free(buf);
 	}
 }
@@ -237,7 +253,17 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
 
 	for (int yoff = 0, currentLine = 0; currentLine < cache.size(); ++currentLine) {
+#ifdef EDITOR
 		auto& text = cache[currentLine];
+#else
+        Text* text;
+        if (*cvar_enableFieldCache) {
+            text = cache[currentLine].second;
+        } else {
+            text = Text::get(cache[currentLine].first.c_str(),
+                font.c_str(), textColor, outlineColor);
+        }
+#endif
 		if (!text) {
 			continue;
 		}
@@ -565,8 +591,9 @@ std::unordered_map<size_t, std::string> reflowTextLine(std::string& input, int w
 		{
 			// this is probably OK
 		}
-		else if ( getText = Text::get(std::string(result[currentLine] + " " + token).c_str(), font,
-			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255)) )
+		else if ( (getText = Text::get(
+            std::string(result[currentLine] + " " + token).c_str(), font,
+			makeColor(255, 255, 255, 255), makeColor(0, 0, 0, 255))) )
 		{
 			if ( getText->getWidth() > width )
 			{
@@ -754,12 +781,12 @@ void Field::reflowTextToFit(const int characterOffset) {
 	{
 		if ( (currentCharacters - characterOffset) > charactersPerLine )
 		{
-			int findSpace = reflowText.rfind(' ', reflowText.size());
+			size_t findSpace = reflowText.rfind(' ', reflowText.size());
 			if ( findSpace != std::string::npos )
 			{
-				int lastWordEnd = reflowText.size();
+				size_t lastWordEnd = reflowText.size();
 				reflowText.at(findSpace) = '\n';
-				currentCharacters = lastWordEnd - findSpace;
+				currentCharacters = (int)(lastWordEnd - findSpace);
 			}
 			else
 			{

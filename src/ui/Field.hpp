@@ -185,5 +185,5 @@ private:
 	int paddingPerLine = 0;								//!< +/- pixel padding for multiple lines
 
 	void buildCache();
-	std::vector<Text*> cache;							//!< cached lines of text
+	std::vector<std::pair<std::string,Text*>> cache;	//!< cached lines of text
 };
