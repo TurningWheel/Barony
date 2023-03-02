@@ -10165,16 +10165,26 @@ failed:
 		achievements->setJustify(Field::justify_t::CENTER);
 		achievements->setTickCallback([](Widget& widget){
 			Field* achievements = static_cast<Field*>(&widget);
-			if (allSettings.cheats_enabled ||
-				allSettings.extra_life_enabled ||
-				gamemods_disableSteamAchievements) {
-				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED");
-			} else {
-				achievements->setColor(makeColor(37, 90, 255, 255));
-				achievements->setText("ACHIEVEMENTS ENABLED");
-			}
-            if (multiplayer == CLIENT) {
+            if (multiplayer != CLIENT) {
+                if (allSettings.cheats_enabled ||
+                    allSettings.extra_life_enabled ||
+                    gamemods_disableSteamAchievements) {
+                    achievements->setColor(makeColor(180, 37, 37, 255));
+                    achievements->setText("ACHIEVEMENTS DISABLED");
+                } else {
+                    achievements->setColor(makeColor(37, 90, 255, 255));
+                    achievements->setText("ACHIEVEMENTS ENABLED");
+                }
+            } else {
+                if ((lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
+                    (lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ||
+                    gamemods_disableSteamAchievements) {
+                    achievements->setColor(makeColor(180, 37, 37, 255));
+                    achievements->setText("ACHIEVEMENTS DISABLED");
+                } else {
+                    achievements->setColor(makeColor(37, 90, 255, 255));
+                    achievements->setText("ACHIEVEMENTS ENABLED");
+                }
                 Frame* card = static_cast<Frame*>(widget.getParent());
                 for (auto button : card->getButtons()) {
                     auto i = reinterpret_cast<intptr_t>(button->getUserData());
