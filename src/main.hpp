@@ -866,6 +866,10 @@ extern SteamGlobalStat_t g_SteamAPIGlobalStats[1];
  #define getHeightOfFont(A) TTF_FontHeight(A)
 #endif // NINTENDO
 
+#if defined(NINTENDO) || (!defined(USE_EOS) && !defined(STEAMWORKS))
+ #define LOCAL_ACHIEVEMENTS
+#endif
+
 std::string stackTrace();
 void stackTraceUnique();
 void finishStackTraceUnique();

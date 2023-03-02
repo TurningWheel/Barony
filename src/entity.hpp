@@ -463,6 +463,8 @@ public:
 	Sint32& itemDelayMonsterPickingUp; //skill[24]
 	Sint32& itemReceivedDetailsFromServer; //skill[25]
 	Sint32& itemAutoSalvageByPlayer; //skill[26]
+	Sint32& itemSplooshed; //skill[27]
+	real_t& itemWaterBob; //fskill[2]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
