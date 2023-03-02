@@ -589,6 +589,7 @@ namespace MainMenu {
             *p = defaultColor;
         }
 	    SDL_UnlockSurface(fireSurface);
+        fireTexture = new TempTexture();
     }
 
     static void fireStop() {
@@ -631,10 +632,6 @@ namespace MainMenu {
             *p = defaultColor;
 	    }
 	    SDL_UnlockSurface(fireSurface);
-	    if (fireTexture) {
-	        delete fireTexture;
-	    }
-	    fireTexture = new TempTexture();
 	    fireTexture->load(fireSurface, false, false);
     }
 
@@ -1042,6 +1039,7 @@ namespace MainMenu {
 		field->setWidgetBack("cancel");
 		field->setWidgetDown("okay");
 		field->select();
+        field->activate();
 		field->setTickCallback([](Widget& widget) {
 			assert(main_menu_frame);
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
@@ -19495,7 +19493,7 @@ failed:
 
 		if (ingame) {
 			auto achievements = main_menu_frame->addField("achievements", 256);
-			achievements->setSize(SDL_Rect{ 0, buttons->getSize().y - 32, main_menu_frame->getSize().w, 32 });
+			achievements->setSize(SDL_Rect{ 0, buttons->getSize().y + buttons->getSize().h + 2, main_menu_frame->getSize().w, 32 });
 			achievements->setFont(smallfont_outline);
 			achievements->setHJustify(Field::justify_t::CENTER);
 			achievements->setVJustify(Field::justify_t::TOP);
@@ -20047,7 +20045,7 @@ failed:
 				    soundActivate();
 				    destroyMainMenu();
 				    createDummyMainMenu();
-				    tutorial_map_destination = "tutorial1";
+				    tutorial_map_destination = "tutorial_hub";
 				    beginFade(MainMenu::FadeDestination::HallOfTrials);
                     });
             } else {
