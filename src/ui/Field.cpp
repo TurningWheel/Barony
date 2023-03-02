@@ -168,8 +168,10 @@ static bool bWordHighlightMapAreSame(const std::map<int, Uint32>& textMap, const
 	return true;
 }
 
+#ifndef EDITOR
 static ConsoleVariable<bool> cvar_enableFieldCache(
     "/fieldcache", false, "toggle fields caching their own text");
+#endif
 
 void Field::buildCache() {
 	while (!cache.empty()) {
