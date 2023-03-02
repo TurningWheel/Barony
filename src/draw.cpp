@@ -3215,7 +3215,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 #ifdef NINTENDO
 	static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
 #else
-    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 2);
+    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
 #endif // NINTENDO
 
 	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
