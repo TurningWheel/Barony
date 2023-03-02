@@ -185,6 +185,13 @@ void Field::buildCache() {
 	if (buf) {
 		dirty = false;
 		memcpy(buf, text ? text : "\0", textlen + 1);
+#ifdef EDITOR
+        for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
+            nexttoken = tokenize(token, "\n");
+            auto line = Text::hash(token, font.c_str(), textColor, outlineColor);
+            cache.push_back(std::make_pair(token, new Text(line.second)));
+        }
+#else
         if (*cvar_enableFieldCache) {
             for (char *nexttoken = buf, *token; (token = nexttoken) != nullptr;) {
                 nexttoken = tokenize(token, "\n");
@@ -197,6 +204,7 @@ void Field::buildCache() {
                 cache.push_back(std::make_pair(token, nullptr));
             }
         }
+#endif
 		free(buf);
 	}
 }
