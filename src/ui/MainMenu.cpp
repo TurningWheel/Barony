@@ -8201,6 +8201,7 @@ bind_failed:
 					    }
 #endif
 				    }
+                    sendSvFlagsOverNet();
 			    }
 
 			    // assume success after this point
@@ -10173,37 +10174,39 @@ failed:
 				achievements->setColor(makeColor(37, 90, 255, 255));
 				achievements->setText("ACHIEVEMENTS ENABLED");
 			}
-            Frame* card = static_cast<Frame*>(widget.getParent());
-            for (auto button : card->getButtons()) {
-                auto i = reinterpret_cast<intptr_t>(button->getUserData());
-                switch (i) {
-                case 0:
-                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_HUNGER));
-                    break;
-                case 1:
-                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_MINOTAURS));
-                    break;
-                case 2:
-                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_LIFESAVING));
-                    break;
-                case 3:
-                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_KEEPINVENTORY));
-                    break;
-                case 4:
-                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_TRAPS));
-                    break;
-                case 5:
-                    button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_FRIENDLYFIRE));
-                    break;
-                case 6:
-                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_CLASSIC));
-                    break;
-                case 7:
-                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_HARDCORE));
-                    break;
-                case 8:
-                    button->setPressed((lobbyWindowSvFlags & SV_FLAG_CHEATS));
-                    break;
+            if (multiplayer == CLIENT) {
+                Frame* card = static_cast<Frame*>(widget.getParent());
+                for (auto button : card->getButtons()) {
+                    auto i = reinterpret_cast<intptr_t>(button->getUserData());
+                    switch (i) {
+                    case 0:
+                        button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_HUNGER));
+                        break;
+                    case 1:
+                        button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_MINOTAURS));
+                        break;
+                    case 2:
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_LIFESAVING));
+                        break;
+                    case 3:
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_KEEPINVENTORY));
+                        break;
+                    case 4:
+                        button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_TRAPS));
+                        break;
+                    case 5:
+                        button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_FRIENDLYFIRE));
+                        break;
+                    case 6:
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_CLASSIC));
+                        break;
+                    case 7:
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_HARDCORE));
+                        break;
+                    case 8:
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_CHEATS));
+                        break;
+                    }
                 }
             }
 			});
