@@ -274,7 +274,8 @@ int saveScore()
 	}
 
 #ifdef STEAMWORKS
-	if ( g_SteamLeaderboards )
+	// temp disable leaderboard scores until fix 
+	/*if ( g_SteamLeaderboards )
 	{
 		if ( steamLeaderboardSetScore(currentscore) )
 		{
@@ -291,7 +292,7 @@ int saveScore()
 				printlog("[STEAM]: Loaded data did not match hash as expected.");
 			}
 		}
-	}
+	}*/
 #endif // STEAMWORKS
 
     int c;
