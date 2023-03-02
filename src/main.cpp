@@ -28,7 +28,7 @@ char* stringCopy(char* dest, const char* src, size_t dest_size, size_t src_size)
     // verify input
     assert(dest);
     assert(src);
-    if (!dest || !src || !dest_size || !src_size) {
+    if (!dest || !src || !dest_size) {
 	    return dest;
     }
 
