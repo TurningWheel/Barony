@@ -814,28 +814,41 @@ void EOS_CALL EOSFuncs::OnQueryAccountMappingsCallback(const EOS_Connect_QueryPr
 						}
 						MappingsReceived.push_back(productId);
 					}
-					else if ( Result == EOS_EResult::EOS_NotFound )
-					{
-						// try different account types
-						Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_NINTENDO;
-						Result = EOS_Connect_GetProductUserIdMapping(ConnectHandle, &Options, buffer, &bufferSize);
-						if ( Result == EOS_EResult::EOS_Success )
-						{
-							EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, buffer));
-							if ( EOSFuncs::Helpers_t::isMatchingProductIds(EOS.CurrentUserInfo.getProductUserIdHandle(), productId) )
-							{
-								EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOCAL);
-							}
-							for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
-							{
-								if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
-								{
-									EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
-								}
-							}
-							MappingsReceived.push_back(productId);
-						}
-					}
+                    else if ( Result == EOS_EResult::EOS_NotFound )
+                    {
+                        // try different account types
+                        Options.AccountIdType = EOS_EExternalAccountType::EOS_EAT_NINTENDO;
+                        Result = EOS_Connect_GetProductUserIdMapping(ConnectHandle, &Options, buffer, &bufferSize);
+                        if ( Result == EOS_EResult::EOS_Success )
+                        {
+                            EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, buffer));
+                            if ( EOSFuncs::Helpers_t::isMatchingProductIds(EOS.CurrentUserInfo.getProductUserIdHandle(), productId) )
+                            {
+                                EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOCAL);
+                            }
+                            for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
+                            {
+                                if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
+                                {
+                                    EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+                                }
+                            }
+                            MappingsReceived.push_back(productId);
+                        }
+                        else
+                        {
+                            // Result does not return EOS_Success querying type EOS_EExternalAccountType::EOS_EAT_NINTENDO, so try get info anyway.
+                            EOS.ExternalAccountMappings.insert(std::pair<EOS_ProductUserId, std::string>(productId, ""));
+                            for ( LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
+                            {
+                                if ( EOSFuncs::Helpers_t::isMatchingProductIds(productId, EOSFuncs::Helpers_t::productIdFromString(player.memberProductUserId.c_str())) )
+                                {
+                                    EOS.getExternalAccountUserInfo(productId, EOSFuncs::USER_INFO_QUERY_LOBBY_MEMBER);
+                                }
+                            }
+                            MappingsReceived.push_back(productId);
+                        }
+                    }
 				}
 			}
 
