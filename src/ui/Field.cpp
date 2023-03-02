@@ -486,7 +486,7 @@ void Field::drawPost(SDL_Rect _size, SDL_Rect _actualSize,
 Field::result_t Field::process(SDL_Rect _size, SDL_Rect _actualSize, const bool usable) {
 	Widget::process();
 
-	if ( dirty ) {
+	if ( dirty || activated ) {
 		buildCache();
 	}
 
