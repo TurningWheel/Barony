@@ -9475,7 +9475,17 @@ void doNewGame(bool makeHighscore) {
 		if ( makeHighscore )
 		{
 			// restarting game, make a highscore
-			saveScore();
+            if (splitscreen) {
+                for (int c = 0; c < MAXPLAYERS; ++c) {
+                    if (!client_disconnected[c]) {
+                        saveScore(c);
+                    }
+                }
+            } else {
+                saveScore(clientnum);
+            }
+            saveAllScores(SCORESFILE);
+            saveAllScores(SCORESFILE_MULTIPLAYER);
 			deleteSaveGame(multiplayer);
 			loadingsavegame = 0;
 		}
@@ -10305,7 +10315,17 @@ void doEndgame(bool saveHighscore) {
 	// make a highscore!
 	if ( !endTutorial && saveHighscore )
 	{
-		int saveScoreResult = saveScore();
+        if (splitscreen) {
+            for (int c = 0; c < MAXPLAYERS; ++c) {
+                if (!client_disconnected[c]) {
+                    saveScore(c);
+                }
+            }
+        } else {
+            saveScore(clientnum);
+        }
+        saveAllScores(SCORESFILE);
+        saveAllScores(SCORESFILE_MULTIPLAYER);
 	}
 
 	// pick a new subtitle :)
@@ -11012,7 +11032,7 @@ void openGameoverWindow()
 
 	// calculate player score
 	char scorenum[16];
-	score_t* score = scoreConstructor();
+	score_t* score = scoreConstructor(clientnum);
 	Uint32 total = totalScore(score);
 	snprintf(scorenum, 16, "%d\n\n", total);
 

@@ -68,7 +68,7 @@ AchievementObserver achievementObserver;
 
 -------------------------------------------------------------------------------*/
 
-score_t* scoreConstructor()
+score_t* scoreConstructor(int player)
 {
 	node_t* node;
 
@@ -91,38 +91,38 @@ score_t* scoreConstructor()
 	{
 		score->kills[c] = kills[c];
 	}
-	score->stats->type = stats[clientnum]->type;
-	score->stats->sex = stats[clientnum]->sex;
-	score->stats->appearance = stats[clientnum]->appearance;
-	score->stats->playerRace = stats[clientnum]->playerRace;
-	//score->stats->appearance |= stats[clientnum]->playerRace << 8;
-	strcpy(score->stats->name, stats[clientnum]->name);
-	strcpy(score->stats->obituary, stats[clientnum]->obituary);
+	score->stats->type = stats[player]->type;
+	score->stats->sex = stats[player]->sex;
+	score->stats->appearance = stats[player]->appearance;
+	score->stats->playerRace = stats[player]->playerRace;
+	//score->stats->appearance |= stats[player]->playerRace << 8;
+	strcpy(score->stats->name, stats[player]->name);
+	strcpy(score->stats->obituary, stats[player]->obituary);
 	score->victory = victory;
 	score->dungeonlevel = currentlevel;
-	score->classnum = client_classes[clientnum];
-	score->stats->HP = stats[clientnum]->HP;
-	score->stats->MAXHP = stats[clientnum]->MAXHP;
-	score->stats->MP = stats[clientnum]->MP;
-	score->stats->MAXMP = stats[clientnum]->MAXMP;
-	score->stats->STR = stats[clientnum]->STR;
-	score->stats->DEX = stats[clientnum]->DEX;
-	score->stats->CON = stats[clientnum]->CON;
-	score->stats->INT = stats[clientnum]->INT;
-	score->stats->PER = stats[clientnum]->PER;
-	score->stats->CHR = stats[clientnum]->CHR;
-	score->stats->EXP = stats[clientnum]->EXP;
-	score->stats->LVL = stats[clientnum]->LVL;
-	score->stats->GOLD = stats[clientnum]->GOLD;
-	score->stats->HUNGER = stats[clientnum]->HUNGER;
+	score->classnum = client_classes[player];
+	score->stats->HP = stats[player]->HP;
+	score->stats->MAXHP = stats[player]->MAXHP;
+	score->stats->MP = stats[player]->MP;
+	score->stats->MAXMP = stats[player]->MAXMP;
+	score->stats->STR = stats[player]->STR;
+	score->stats->DEX = stats[player]->DEX;
+	score->stats->CON = stats[player]->CON;
+	score->stats->INT = stats[player]->INT;
+	score->stats->PER = stats[player]->PER;
+	score->stats->CHR = stats[player]->CHR;
+	score->stats->EXP = stats[player]->EXP;
+	score->stats->LVL = stats[player]->LVL;
+	score->stats->GOLD = stats[player]->GOLD;
+	score->stats->HUNGER = stats[player]->HUNGER;
 	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 	{
-		score->stats->PROFICIENCIES[c] = stats[clientnum]->PROFICIENCIES[c];
+		score->stats->PROFICIENCIES[c] = stats[player]->PROFICIENCIES[c];
 	}
 	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
-		score->stats->EFFECTS[c] = stats[clientnum]->EFFECTS[c];
-		score->stats->EFFECTS_TIMERS[c] = stats[clientnum]->EFFECTS_TIMERS[c];
+		score->stats->EFFECTS[c] = stats[player]->EFFECTS[c];
+		score->stats->EFFECTS_TIMERS[c] = stats[player]->EFFECTS_TIMERS[c];
 	}
 	score->stats->leader_uid = 0;
 	score->stats->FOLLOWERS.first = NULL;
@@ -143,71 +143,71 @@ score_t* scoreConstructor()
 	score->stats->amulet = NULL;
 	score->stats->ring = NULL;
 	score->stats->mask = NULL;
-	list_Copy(&score->stats->inventory, &stats[clientnum]->inventory);
+	list_Copy(&score->stats->inventory, &stats[player]->inventory);
 	for ( node = score->stats->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
 	}
 	int c;
-	for ( c = 0, node = stats[clientnum]->inventory.first; node != NULL; node = node->next, c++ )
+	for ( c = 0, node = stats[player]->inventory.first; node != NULL; node = node->next, c++ )
 	{
 		Item* item = (Item*)node->element;
-		if ( stats[clientnum]->helmet == item )
+		if ( stats[player]->helmet == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->helmet = item2;
 		}
-		else if ( stats[clientnum]->breastplate == item )
+		else if ( stats[player]->breastplate == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->breastplate = item2;
 		}
-		else if ( stats[clientnum]->gloves == item )
+		else if ( stats[player]->gloves == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->gloves = item2;
 		}
-		else if ( stats[clientnum]->shoes == item )
+		else if ( stats[player]->shoes == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->shoes = item2;
 		}
-		else if ( stats[clientnum]->shield == item )
+		else if ( stats[player]->shield == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->shield = item2;
 		}
-		else if ( stats[clientnum]->weapon == item )
+		else if ( stats[player]->weapon == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->weapon = item2;
 		}
-		else if ( stats[clientnum]->cloak == item )
+		else if ( stats[player]->cloak == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->cloak = item2;
 		}
-		else if ( stats[clientnum]->amulet == item )
+		else if ( stats[player]->amulet == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->amulet = item2;
 		}
-		else if ( stats[clientnum]->ring == item )
+		else if ( stats[player]->ring == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
 			score->stats->ring = item2;
 		}
-		else if ( stats[clientnum]->mask == item )
+		else if ( stats[player]->mask == item )
 		{
 			node_t* node2 = list_Node(&score->stats->inventory, c);
 			Item* item2 = (Item*)node2->element;
@@ -264,9 +264,9 @@ void scoreDeconstructor(void* data)
 
 -------------------------------------------------------------------------------*/
 
-int saveScore()
+int saveScore(int player)
 {
-	score_t* currentscore = scoreConstructor();
+	score_t* currentscore = scoreConstructor(player);
 	list_t* scoresPtr = &topscores;
 	if ( conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{

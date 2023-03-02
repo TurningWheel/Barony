@@ -6522,7 +6522,7 @@ bind_failed:
                     int num_scores = g_SteamLeaderboards->m_nLeaderboardEntries;
                     for (int index = 0; index < num_scores; ++index) {
                         steamLeaderboardReadScore(g_SteamLeaderboards->downloadedTags[index]);
-                        auto score = scoreConstructor();
+                        auto score = scoreConstructor(clientnum);
                         downloadedScores.scores.push_back(score);
                         auto name = g_SteamLeaderboards->leaderBoardSteamUsernames[index].c_str();
                         char prev_buf[128] = "";
@@ -6743,6 +6743,7 @@ bind_failed:
 		                    ++index;
 		                }
 		                (void)deleteScore(boardType == BoardType::LOCAL_MULTI, index);
+                        saveAllScores(boardType == BoardType::LOCAL_MULTI ? SCORESFILE_MULTIPLAYER : SCORESFILE);
 		                repopulate_list(boardType);
 		                closeBinary();
                         },
@@ -19786,7 +19787,7 @@ failed:
 
         // determine if we made highscore list
 	    int placement;
-	    score_t* score = scoreConstructor();
+	    score_t* score = scoreConstructor(player);
 	    Uint32 total = totalScore(score);
 	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
 	    if (list_Size(scoresPtr) < MAXTOPSCORES) {
@@ -20080,7 +20081,7 @@ failed:
 				    pauseGame(2, 0);
 				    destroyMainMenu();
 				    createDummyMainMenu();
-				    beginFade(MainMenu::FadeDestination::RootMainMenu);
+				    beginFade(MainMenu::FadeDestination::Endgame);
                     });
             }
             quit->setWidgetRight("restart");

@@ -279,9 +279,9 @@ extern bool playerFailedRangedOnlyConduct[MAXPLAYERS];
 extern bool achievementBrawlerMode;
 extern bool achievementRangedMode[MAXPLAYERS];
 
-score_t* scoreConstructor();
+score_t* scoreConstructor(int player);
 void scoreDeconstructor(void* data);
-int saveScore();
+int saveScore(int player);
 int totalScore(score_t* score);
 void loadScore(int score);
 void loadScore(score_t* score);
