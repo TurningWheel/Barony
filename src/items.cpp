@@ -37,6 +37,131 @@ std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
 int decoyBoxRange = 15;
 
+bool autoHotbarSoftReserveItem(Item& item)
+{
+	Category cat = itemCategory(&item);
+	if ( cat == THROWN || item.type == GEM_ROCK || itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP )
+	{
+		return true;
+	}
+	return false;
+}
+
+void autoHotbarTryAdd(const int player, Item& item)
+{
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		if ( !item.usableWhileShapeshifted(stats[player]) )
+		{
+			return;
+		}
+	}
+	if ( !autoAddHotbarFilter(item) )
+	{
+		return;
+	}
+	Category cat = itemCategory(&item);
+	if ( !item.identified && cat != SPELL_CAT ) { return; }
+
+	std::vector<std::tuple<int, int, hotbar_slot_t*>> slots(NUM_HOTBAR_SLOTS); // index, priority, then stored item info
+	size_t index = 0;
+	const int DEFAULT_PRIORITY = 5;
+	const int RESERVED_PRIORITY = 4;
+	for ( auto& slot : players[player]->hotbar.slots() )
+	{
+		std::get<0>(slots[index]) = index;
+		if ( uidToItem(slot.item) )
+		{
+			std::get<1>(slots[index]) = -1; // taken
+			std::get<2>(slots[index]) = nullptr;
+			++index;
+			continue;
+		}
+
+		if ( slot.lastItem.type == item.type )
+		{
+			std::get<1>(slots[index]) = DEFAULT_PRIORITY + 1;
+		}
+		else if ( autoHotbarSoftReserveItem(slot.lastItem) )
+		{
+			std::get<1>(slots[index]) = RESERVED_PRIORITY;
+		}
+		else
+		{
+			std::get<1>(slots[index]) = DEFAULT_PRIORITY;
+		}
+		std::get<2>(slots[index]) = &slot;
+		++index;
+	}
+
+
+	bool softReserveSlots = autoHotbarSoftReserveItem(item);
+	if ( softReserveSlots )
+	{
+		for ( auto& slot : slots )
+		{
+			auto& priority = std::get<1>(slot);
+			if ( priority < 0 ) { continue; }
+
+			auto hotbar_slot = std::get<2>(slot);
+			if ( !hotbar_slot ) { continue; }
+			if ( !hotbar_slot->lastItem.identified ) { continue; } // no good
+
+			if ( hotbar_slot->lastItem.type == item.type )
+			{
+				priority = std::max(priority, 10); // match item type, good
+				if ( hotbar_slot->lastItem.status == item.status )
+				{
+					priority = std::max(priority, 15); // match item status, good+
+					if ( hotbar_slot->lastItem.beatitude == item.beatitude )
+					{
+						priority = std::max(priority, 20); // match item beatitude, good++
+					}
+				}
+			}
+			else if ( autoHotbarSoftReserveItem(hotbar_slot->lastItem) ) // these items are interchangeable, non matching types
+			{
+				priority = std::max(priority, RESERVED_PRIORITY - 1); // slightly less than normal reserved slot
+			}
+		}
+	}
+
+	std::pair<int, int> indexAndPriorityToPick = { -1, 0 };
+	for ( auto& slot : slots )
+	{
+		auto& priority = std::get<1>(slot);
+		if ( priority > indexAndPriorityToPick.second )
+		{
+			indexAndPriorityToPick.second = priority;
+			indexAndPriorityToPick.first = std::get<0>(slot);
+		}
+	}
+
+	if ( indexAndPriorityToPick.first >= 0 )
+	{
+		size_t index = indexAndPriorityToPick.first;
+		players[player]->hotbar.slots()[index].item = item.uid;
+		players[player]->hotbar.slots()[index].storeLastItem(&item);
+		if ( item.type == BOOMERANG )
+		{
+			players[player]->hotbar.magicBoomerangHotbarSlot = index;
+		}
+		return;
+	}
+
+	for ( auto& hotbarSlot : players[player]->hotbar.slots() )
+	{
+		if ( !uidToItem(hotbarSlot.item) )
+		{
+			if ( autoAddHotbarFilter(item) )
+			{
+				hotbarSlot.item = item.uid;
+				break;
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	newItem
@@ -128,27 +253,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 				}
 				if ( stats[i] && inventory == &stats[i]->inventory )
 				{
-					for ( auto& hotbarSlot : players[i]->hotbar.slots() )
-					{
-						if ( !uidToItem(hotbarSlot.item) )
-						{
-							if ( autoAddHotbarFilter(*item) )
-							{
-								if ( players[i] && players[i]->entity && players[i]->entity->effectShapeshift != NOTHING )
-								{
-									if ( item->usableWhileShapeshifted(stats[i]) )
-									{
-										hotbarSlot.item = item->uid;
-									}
-								}
-								else
-								{
-									hotbarSlot.item = item->uid;
-								}
-								break;
-							}
-						}
-					}
+					autoHotbarTryAdd(i, *item);
 					break;
 				}
 			}

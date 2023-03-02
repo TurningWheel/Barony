@@ -9791,6 +9791,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 									{
 										// this was auto placed by itemPickup just above, undo it.
 										hotbarSlot.item = 0;
+										hotbarSlot.resetLastItem();
 									}
 								}
 							}
@@ -9903,6 +9904,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 									{
 										// this was auto placed by itemPickup just above, undo it.
 										hotbarSlot.item = 0;
+										hotbarSlot.resetLastItem();
 									}
 								}
 							}
@@ -10018,6 +10020,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 								{
 									// this was auto placed by itemPickup just above, undo it.
 									hotbarSlot.item = 0;
+									hotbarSlot.resetLastItem();
 								}
 							}
 							if ( replaceTinkeringKit )
@@ -10624,6 +10627,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 						{
 							// this was auto placed by itemPickup just above, undo it.
 							hotbarSlot.item = 0;
+							hotbarSlot.resetLastItem();
 						}
 					}
 				}

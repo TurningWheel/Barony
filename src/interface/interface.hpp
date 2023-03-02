@@ -1116,9 +1116,15 @@ typedef struct hotbar_slot_t
 	* This is an item's ID. It just resolves to NULL if an item is no longer valid.
 	*/
 	Uint32 item = 0;
-	Uint32 lastItemUid = 0;
-	int lastItemCategory = -1;
-	int lastItemType = -1;
+	Item lastItem;
+	int lastCategory = -1;
+	bool matchesExactLastItem(int player, Item* item);
+	void resetLastItem();
+	hotbar_slot_t()
+	{
+		resetLastItem();
+	}
+	void storeLastItem(Item* item);
 } hotbar_slot_t;
 
 

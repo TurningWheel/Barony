@@ -6910,9 +6910,7 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
 		hotbar_t.slots()[i].item = 0;
-		hotbar_t.slots()[i].lastItemUid = 0;
-		hotbar_t.slots()[i].lastItemCategory = -1;
-		hotbar_t.slots()[i].lastItemType = -1;
+		hotbar_t.slots()[i].resetLastItem();
 	}
 
 	std::vector<std::pair<int, HotbarEntry_t*>> itemsAndSlots;

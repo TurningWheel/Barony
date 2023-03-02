@@ -2104,15 +2104,11 @@ public:
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
 				hotbar[i].item = 0;
-				hotbar[i].lastItemUid = 0;
-				hotbar[i].lastItemCategory = -1;
-				hotbar[i].lastItemType = -1;
+				hotbar[i].resetLastItem();
 				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 				{
 					hotbar_alternate[j][i].item = 0;
-					hotbar_alternate[j][i].lastItemUid = 0;
-					hotbar_alternate[j][i].lastItemCategory = -1;
-					hotbar_alternate[j][i].lastItemType = -1;
+					hotbar_alternate[j][i].resetLastItem();
 				}
 			}
 		}
