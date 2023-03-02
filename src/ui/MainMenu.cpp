@@ -5976,13 +5976,13 @@ bind_failed:
 		time_and_score->setVJustify(Field::justify_t::CENTER);
 
         enum BoardType {
-            LOCAL,
-            LAN,
-            FRIENDS,
-            WORLD
+            LOCAL_SINGLE,
+            LOCAL_MULTI,
+            ONLINE_FRIENDS,
+            ONLINE_WORLD
         };
         static BoardType boardType;
-        boardType = BoardType::LOCAL;
+        boardType = BoardType::LOCAL_SINGLE;
 
         static auto updateStats = [](const Button& button, score_t* score){
             if (!score) {
@@ -6000,7 +6000,7 @@ bind_failed:
             auto& victory = victories[score->victory];
 
             char victory_text[1024];
-            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
+            if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 snprintf(victory_text, sizeof(victory_text), victory.text, score->stats->name);
             } else {
 #ifdef STEAMWORKS
@@ -6330,8 +6330,8 @@ bind_failed:
             size.h = list->getSize().h;
             list->setActualSize(size);
 
-            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
-                auto scores = boardType == BoardType::LOCAL ?
+            if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
+                auto scores = boardType == BoardType::LOCAL_SINGLE ?
                     &topscores : &topscoresMultiplayer;
                 if (scores->first) {
                     (void)window->remove("wait_message");
@@ -6385,8 +6385,8 @@ bind_failed:
             };
 
         auto disableIfNotOnline = [](Widget& widget){
-            bool invisible = boardType == BoardType::LOCAL ||
-                boardType == BoardType::LAN;
+            bool invisible = boardType == BoardType::LOCAL_SINGLE ||
+                boardType == BoardType::LOCAL_MULTI;
             widget.setInvisible(invisible);
             auto window = static_cast<Frame*>(widget.getParent());
             auto category_panel = window->findImage("category_panel");
@@ -6483,15 +6483,15 @@ bind_failed:
         // poll for downloaded scores
 #ifdef STEAMWORKS
         list->setTickCallback([](Widget& widget){
-            if (boardType != BoardType::FRIENDS &&
-                boardType != BoardType::WORLD) {
+            if (boardType != BoardType::ONLINE_FRIENDS &&
+                boardType != BoardType::ONLINE_WORLD) {
                 return;
             }
             auto window = static_cast<Frame*>(widget.getParent());
             if (scores_loaded == 0 && g_SteamLeaderboards->b_LeaderboardInit) {
                 scores_loaded++;
                 g_SteamLeaderboards->DownloadScores(
-                    boardType == BoardType::FRIENDS ?
+                    boardType == BoardType::ONLINE_FRIENDS ?
                     k_ELeaderboardDataRequestFriends :
                     k_ELeaderboardDataRequestGlobal,
                     0, CSteamLeaderboards::k_numEntriesToRetrieve);
@@ -6547,11 +6547,11 @@ bind_failed:
             void (*func)(Button& button);
         };
         static const Tab tabs[] = {
-            {"local", "Your Top 100\nLocal Scores", TAB_FN(BoardType::LOCAL)},
-            {"lan", "Your Top 100\nNet Scores", TAB_FN(BoardType::LAN)},
+            {"local", "Local\nSingleplayer", TAB_FN(BoardType::LOCAL_SINGLE)},
+            {"lan", "Local\nMultiplayer", TAB_FN(BoardType::LOCAL_MULTI)},
 #ifdef STEAMWORKS
-            {"friends", "Friends\nLeaderboard", TAB_FN(BoardType::FRIENDS)},
-            {"world", "World\nLeaderboard", TAB_FN(BoardType::WORLD)},
+            {"friends", "Leaderboard\nFriends", TAB_FN(BoardType::ONLINE_FRIENDS)},
+            {"world", "Leaderboard\nWorld", TAB_FN(BoardType::ONLINE_WORLD)},
 #endif
         };
         static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
@@ -6699,17 +6699,17 @@ bind_failed:
 		delete_entry->setFont(smallfont_outline);
 		delete_entry->setText("Delete Entry");
 		delete_entry->setTickCallback([](Widget& widget){
-            if (boardType == BoardType::LOCAL || boardType == BoardType::LAN) {
-                auto scores = boardType == BoardType::LOCAL ?
+            if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
+                auto scores = boardType == BoardType::LOCAL_SINGLE ?
                     &topscores : &topscoresMultiplayer;
                 widget.setInvisible(scores->first == nullptr);
             }
-            else if (boardType == BoardType::FRIENDS || boardType == BoardType::WORLD) {
+            else if (boardType == BoardType::ONLINE_FRIENDS || boardType == BoardType::ONLINE_WORLD) {
                 widget.setInvisible(true);
             }
 		    });
 		delete_entry->setCallback([](Button& button){
-            if (boardType != BoardType::LOCAL && boardType != BoardType::LAN) {
+            if (boardType != BoardType::LOCAL_SINGLE && boardType != BoardType::LOCAL_MULTI) {
                 // don't ever delete online scores
                 return;
             }
@@ -6734,7 +6734,7 @@ bind_failed:
 		                    }
 		                    ++index;
 		                }
-		                (void)deleteScore(boardType == BoardType::LAN, index);
+		                (void)deleteScore(boardType == BoardType::LOCAL_MULTI, index);
 		                repopulate_list(boardType);
 		                closeBinary();
                         },
@@ -6743,7 +6743,7 @@ bind_failed:
 		                repopulate_list(boardType);
 		                closeBinary();
                         });
-                auto scores = boardType == BoardType::LOCAL ?
+                auto scores = boardType == BoardType::LOCAL_SINGLE ?
                     &topscores : &topscoresMultiplayer;
             } else {
                 errorPrompt(
