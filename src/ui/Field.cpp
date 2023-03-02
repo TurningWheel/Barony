@@ -254,7 +254,7 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 	for (int yoff = 0, currentLine = 0; currentLine < cache.size(); ++currentLine) {
 #ifdef EDITOR
-		auto& text = cache[currentLine];
+		auto& text = cache[currentLine].second;
 #else
         Text* text;
         if (*cvar_enableFieldCache) {
