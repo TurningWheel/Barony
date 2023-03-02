@@ -6404,9 +6404,9 @@ for accessory to violence!#
 4326 Next interaction...#
 4327 %s Increased!#
 4328 Spell Learned!#
-4329 A crate of %d items belonging to %s.#
-4330 A crate of %d items with no owner.#
-4331 A crate of %d items belonging to you.#
-4332 The crate spills its contents and vanishes!#
+4329 Contains %d items belonging to %s.#
+4330 Contains %d items with no owner.#
+4331 Contains %d items belonging to you.#
+4332 You break the box open!#
 
 4399 end#

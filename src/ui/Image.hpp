@@ -41,6 +41,15 @@ public:
 	//! @param angle rotation
 	void drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle);
 
+	//! draws arbitrary surface with the given color
+	//! @param texid GL texture id
+	//! @param surf SDL surface
+	//! @param src the section of the image to be used for drawing, or nullptr for the whole image
+	//! @param dest the location and size by which the image should be drawn
+	//! @param viewport the viewport dimensions
+	//! @param color a 32-bit color to mix with the image
+	static void drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color);
+
 	//! bind this image as the active GL texture
 	void bind() const;
 

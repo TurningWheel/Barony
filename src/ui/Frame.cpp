@@ -230,6 +230,16 @@ Frame::Frame(Frame& _parent, const char* _name) : Frame(_name) {
 }
 
 Frame::~Frame() {
+	if ( blitTexture )
+	{
+		delete blitTexture;
+		blitTexture = nullptr;
+	}
+	if ( blitSurface )
+	{
+		SDL_FreeSurface(blitSurface);
+		blitSurface = nullptr;
+	}
 	clear();
 }
 
@@ -244,7 +254,7 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 void Frame::predraw() {
 	drawingGui = true;
 	glViewport(0, 0, virtualScreenX, virtualScreenY);
-    glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 
 	// setup projection matrix
 	glMatrixMode(GL_PROJECTION);
@@ -257,15 +267,15 @@ void Frame::predraw() {
 	glPushMatrix();
 	glLoadIdentity();
 
-    if (!*ui_scale_native) {
-        if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
-            return;
-        }
-    }
-    if (!*ui_scale) {
+	if ( !*ui_scale_native ) {
+		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
+			return;
+		}
+	}
+	if ( !*ui_scale ) {
 		return;
-    }
-    gui_fb.bindForWriting();
+	}
+	gui_fb.bindForWriting();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -278,16 +288,16 @@ void Frame::postdraw() {
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-    if (!*ui_scale_native) {
-        if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
-            glDisable(GL_BLEND);
-            return;
-        }
-    }
-    if (!*ui_scale) {
-        glDisable(GL_BLEND);
-        return;
-    }
+	if ( !*ui_scale_native ) {
+		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
+			glDisable(GL_BLEND);
+			return;
+		}
+	}
+	if ( !*ui_scale ) {
+		glDisable(GL_BLEND);
+		return;
+	}
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     if (*ui_downscale) {
 	    gui_fb.bindForReading();
@@ -318,14 +328,14 @@ void Frame::postdraw() {
         framebuffer::unbindForReading();
     }
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_BLEND);
+	glDisable(GL_BLEND);
 }
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = true;
 	glViewport(0, 0, virtualScreenX, virtualScreenY);
-    glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 
 	// setup projection matrix
 	glMatrixMode(GL_PROJECTION);
@@ -338,10 +348,10 @@ void Frame::predraw() {
 	glPushMatrix();
 	glLoadIdentity();
 
-    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
-        return;
-    }
-    gui_fb.bindForWriting();
+	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
+		return;
+	}
+	gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
@@ -350,17 +360,17 @@ void Frame::postdraw() {
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-    if (xres == Frame::virtualScreenX && yres == Frame::virtualScreenY) {
-        glDisable(GL_BLEND);
-        return;
-    }
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
-    main_framebuffer.bindForWriting();
-    gui_fb.bindForReading();
-    framebuffer::blit();
-    framebuffer::unbindForReading();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_BLEND);
+	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
+		glDisable(GL_BLEND);
+		return;
+	}
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
+	main_framebuffer.bindForWriting();
+	gui_fb.bindForReading();
+	framebuffer::blit();
+	framebuffer::unbindForReading();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
 }
 #endif
 
@@ -435,6 +445,36 @@ static bool isMouseActive(int owner) {
 #endif
 }
 
+void frameDrawBlitSurface(const Frame* frame, SDL_Rect _size, SDL_Surface* surf, TempTexture* tex)
+{
+	int owner = frame->getOwner();
+	SDL_Rect pos = SDL_Rect{ _size.x, _size.y, surf->w, surf->h };
+	SDL_Rect dest;
+	dest.x = std::max(_size.x, pos.x);
+	dest.y = std::max(_size.y, pos.y);
+	dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+	dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+
+	SDL_Rect src;
+	src.x = std::max(0, _size.x - pos.x);
+	src.y = std::max(0, _size.y - pos.y);
+	src.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+	src.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+
+	if ( owner >= 0 )
+	{
+		dest.x += players[owner]->camera_virtualx1();
+		dest.y += players[owner]->camera_virtualy1();
+	}
+	if ( !(src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0) )
+	{
+		Image::drawSurface(tex->texid, surf,
+			&src, dest,
+			SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+			makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0));
+	}
+}
+
 void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const Widget*>& selectedWidgets) const {
 	if (disabled || invisible)
 		return;
@@ -476,34 +516,38 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	scaledSize.w = _size.w;
 	scaledSize.h = _size.h;
 
-	// draw frame background
-	if (!hollow) {
+	auto white = Image::get("images/system/white.png");
 
-	    if (border) {
-		    SDL_Rect inner;
-		    inner.x = (_size.x + border);
-		    inner.y = (_size.y + border);
-		    inner.w = (_size.w - border*2);
-		    inner.h = (_size.h - border*2);
-		    if (borderStyle == BORDER_BEVEL_LOW) {
+	// draw frame background
+	if ( !hollow ) {
+
+		if ( border ) {
+			SDL_Rect inner;
+			inner.x = (_size.x + border);
+			inner.y = (_size.y + border);
+			inner.w = (_size.w - border * 2);
+			inner.h = (_size.h - border * 2);
+			if ( borderStyle == BORDER_BEVEL_LOW ) {
 				uint8_t a;
 				::getColor(borderColor, nullptr, nullptr, nullptr, &a);
-				if (a) {
+				if ( a ) {
 					auto white = Image::get("images/system/white.png");
 					white->drawColor(nullptr, inner, viewport, borderColor);
 				}
-		    } else {
+			}
+			else {
 				uint8_t a;
 				::getColor(color, nullptr, nullptr, nullptr, &a);
-				if (a) {
+				if ( a ) {
 					auto white = Image::get("images/system/white.png");
 					white->drawColor(nullptr, inner, viewport, color);
 				}
-		    }
-		} else {
+			}
+		}
+		else {
 			uint8_t a;
 			::getColor(color, nullptr, nullptr, nullptr, &a);
-			if (a) {
+			if ( a ) {
 				auto white = Image::get("images/system/white.png");
 				white->drawColor(nullptr, _size, viewport, color);
 			}
@@ -616,6 +660,51 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	if (size.y - _actualSize.y < 0) {
 		scroll.y -= size.y - _actualSize.y;
 	}
+
+	if ( bBlitChildrenToTexture )
+	{
+		Frame* f = const_cast<Frame*>(this);
+		if ( !blitTexture && blitSurface )
+		{
+			f->blitTexture = new TempTexture();
+			f->blitTexture->load(blitSurface, false, true);
+		}
+		if ( bBlitDirty )
+		{
+			if ( !f->blitSurface )
+			{
+				f->blitSurface = SDL_CreateRGBSurface(0, size.w, size.h, 32,
+					0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			}
+			else
+			{
+				if ( blitTexture && blitSurface )
+				{
+					frameDrawBlitSurface(this, size, blitSurface, blitTexture);
+				}
+				if ( f->blitTexture )
+				{
+					delete f->blitTexture;
+					f->blitTexture = nullptr;
+				}
+				if ( f->blitSurface )
+				{
+					SDL_FreeSurface(f->blitSurface);
+					f->blitSurface = nullptr;
+				}
+				f->blitSurface = SDL_CreateRGBSurface(0, size.w, size.h, 32,
+					0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			}
+		}
+		else if ( !bBlitDirty )
+		{
+			if ( blitTexture && blitSurface )
+			{
+				frameDrawBlitSurface(this, size, blitSurface, blitTexture);
+			}
+		}
+	}
+
 
 	// draw images
 	for (auto image : images) {
@@ -740,13 +829,15 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 
 			uint8_t a;
 			::getColor(color, nullptr, nullptr, nullptr, &a);
-			if (a) {
+			if ( a ) {
 				auto white = Image::get("images/system/white.png");
-				if (entry.pressed) {
+				if ( entry.pressed ) {
 					white->drawColor(nullptr, entryback, viewport, color);
-				} else if (entry.highlighted) {
+				}
+				else if ( entry.highlighted ) {
 					white->drawColor(nullptr, entryback, viewport, color);
-				} else if (!mouseActive && selection >= 0 && selection == i) {
+				}
+				else if ( !mouseActive && selection >= 0 && selection == i ) {
 					white->drawColor(nullptr, entryback, viewport, color);
 				}
 			}
@@ -871,6 +962,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		}
 	}
 #endif
+
+	Frame* f = const_cast<Frame*>(this);
+	if ( f->bBlitDirty )
+	{
+		f->bBlitDirty = false;
+	}
 }
 
 Frame::result_t Frame::process() {
@@ -2519,11 +2616,14 @@ const Uint32 imageGlowInterval = TICKS_PER_SECOND;
 
 void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const {
 	assert(image);
+
+	if ( getOpacity() <= 0.0 ) { return; }
 	uint8_t a;
 	::getColor(image->color, nullptr, nullptr, nullptr, &a);
-	if (!a) {
+	if ( !a ) {
 		return;
 	}
+
 	const Image* actualImage = Image::get(image->path.c_str());
 	if (actualImage) {
 		SDL_Rect pos;
@@ -2593,8 +2693,38 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 							makeColor( r2, g2, b2, alpha));
 					}
 				}
-				actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-					makeColor( r, g, b, a));
+				else
+				{
+					Frame* f = nullptr;
+					if ( !image->noBlitParent )
+					{
+						f = const_cast<Frame*>(this)->findParentToBlitTo();
+					}
+					if ( f )
+					{
+						if ( !f->bBlitDirty ) {
+							return;
+						}
+						SDL_Surface* srcSurf = const_cast<SDL_Surface*>(actualImage->getSurf());
+						scaledDest.x -= f->getAbsoluteSize().x;
+						scaledDest.y -= f->getAbsoluteSize().y;
+						SDL_SetSurfaceColorMod(srcSurf, r, g, b);
+						if ( scaledDest.w != src.w || scaledDest.h != src.h )
+						{
+							SDL_BlitScaled(srcSurf, &src, f->blitSurface, &scaledDest);
+						}
+						else
+						{
+							SDL_BlitSurface(srcSurf, &src, f->blitSurface, &scaledDest);
+						}
+						return;
+					}
+					else
+					{
+						actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+							makeColor( r, g, b, a));
+					}
+				}
 			}
 		}
 		else
@@ -2621,7 +2751,40 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 						makeColor( r2, g2, b2, alpha));
 				}
 			}
-			actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, image->color);
+			else
+			{
+				Frame* f = nullptr;
+				if ( !image->noBlitParent )
+				{
+					f = const_cast<Frame*>(this)->findParentToBlitTo();
+				}
+				if ( f )
+				{
+					if ( !f->bBlitDirty ) {
+						return;
+					}
+					SDL_Surface* srcSurf = const_cast<SDL_Surface*>(actualImage->getSurf());
+					scaledDest.x -= f->getAbsoluteSize().x;
+					scaledDest.y -= f->getAbsoluteSize().y;
+					//SDL_SetSurfaceAlphaMod(srcSurf, 255);
+					Uint8 r, g, b, a;
+					getColor(image->color, &r, &g, &b, &a);
+					SDL_SetSurfaceColorMod(srcSurf, r, g, b);
+					if ( scaledDest.w != src.w || scaledDest.h != src.h )
+					{
+						SDL_BlitScaled(srcSurf, &src, f->blitSurface, &scaledDest);
+					}
+					else
+					{
+						SDL_BlitSurface(srcSurf, &src, f->blitSurface, &scaledDest);
+					}
+					return;
+				}
+				else
+				{
+					actualImage->drawColor(&src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, image->color);
+				}
+			}
 		}
 	}
 }
@@ -2655,4 +2818,133 @@ void Frame::bringToTop() {
 			return;
         }
     }
+}
+
+Frame* Frame::findParentToBlitTo()
+{
+	if ( bBlitChildrenToTexture )
+	{
+		return this;
+	}
+	if ( !bBlitToParent ) { return nullptr; }
+	if ( blitSurface ) 
+	{ 
+		return this;
+	}
+	Frame* parent = this;
+	while ( parent = parent->getParent() )
+	{
+		if ( parent->blitSurface )
+		{
+			return parent;
+		}
+	}
+	return nullptr;
+}
+
+void Frame::setBlitChildren(bool _doBlit)
+{
+	bBlitDirty = true;
+	if ( _doBlit )
+	{
+		bBlitChildrenToTexture = true;
+		bBlitToParent = false;
+		if ( blitTexture )
+		{
+			delete blitTexture;
+			blitTexture = nullptr;
+		}
+		if ( blitSurface )
+		{
+			SDL_FreeSurface(blitSurface);
+			blitSurface = nullptr;
+		}
+
+		std::queue<Frame*> q;
+		for ( auto frame : frames )
+		{
+			if ( frame->toBeDeleted )
+			{
+				continue;
+			}
+			q.push(frame);
+		}
+		q.push(nullptr);
+
+		int currentDepth = 0;
+
+		while ( !q.empty() )
+		{
+			auto subFrame = q.front();
+			q.pop();
+			if ( subFrame == nullptr )
+			{
+				++currentDepth;
+			}
+			else
+			{
+				subFrame->bBlitToParent = true;
+				for ( auto frame : subFrame->frames )
+				{
+					if ( frame->toBeDeleted )
+					{
+						continue;
+					}
+					q.push(frame);
+				}
+				q.push(nullptr);
+			}
+		}
+	}
+	else
+	{
+		bBlitChildrenToTexture = false;
+		bBlitToParent = false;
+		if ( blitTexture )
+		{
+			delete blitTexture;
+			blitTexture = nullptr;
+		}
+		if ( blitSurface )
+		{
+			SDL_FreeSurface(blitSurface);
+			blitSurface = nullptr;
+		}
+
+		std::queue<Frame*> q;
+		for ( auto frame : frames )
+		{
+			if ( frame->toBeDeleted )
+			{
+				continue;
+			}
+			q.push(frame);
+		}
+		q.push(nullptr);
+
+		int currentDepth = 0;
+
+		while ( !q.empty() )
+		{
+			auto subFrame = q.front();
+			q.pop();
+			if ( subFrame == nullptr )
+			{
+				++currentDepth;
+			}
+			else
+			{
+				subFrame->bBlitToParent = false;
+				for ( auto frame : subFrame->frames )
+				{
+					if ( frame->toBeDeleted )
+					{
+						continue;
+					}
+					q.push(frame);
+				}
+				q.push(nullptr);
+			}
+		}
+	}
 }

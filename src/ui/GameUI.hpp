@@ -257,6 +257,30 @@ struct SkillSheetFrames_t
 };
 extern SkillSheetFrames_t skillSheetEntryFrames[MAXPLAYERS];
 
+struct PlayerInventoryFrames_t
+{
+	Frame* inventoryBgFrame = nullptr;
+	Frame* selectedSlotFrame = nullptr;
+	Frame* oldSelectedSlotFrame = nullptr;
+	Frame* chestFrameSlots = nullptr;
+	Frame* dollSlotsFrame = nullptr;
+	Frame* invSlotsFrame = nullptr;
+	Frame* backpackFrame = nullptr;
+	Frame* flourishFrame = nullptr;
+	Frame* characterPreview = nullptr;
+	Frame* inventoryBaseImagesFrame = nullptr;
+	Frame* backpackSlotsFrame = nullptr;
+	Frame* chestBgFrame = nullptr;
+
+	Frame::image_t* defaultInvImg = nullptr; //"inventory base img"
+	Frame::image_t* compactInvImg = nullptr; //"inventory base compact img"
+	Frame::image_t* compactCharImg = nullptr; //"inventory character compact img"
+	Frame::image_t* oldSelectedSlotItemImg = nullptr; //"inventory old selected item"
+	Frame::image_t* chestBaseImg = nullptr; //"chest base img"
+	Frame::image_t* spellBaseImg = nullptr; //"spell base img"
+};
+extern PlayerInventoryFrames_t playerInventoryFrames[MAXPLAYERS];
+
 extern Frame* minimapFrame; // shared minimap
 
 void openMapWindow(int player);

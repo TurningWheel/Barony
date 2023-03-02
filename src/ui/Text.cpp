@@ -297,6 +297,64 @@ void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
+
+//#include "Image.hpp"
+// testing function debugging text blitting
+//void Text::drawColorToTexture(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
+//	if ( !surf ) {
+//		return;
+//	}
+//{
+//	auto src = _src;
+//	auto dest = _dest;
+
+//	if ( resolution_factor != 1 ) {
+//		src.x *= resolution_factor;
+//		src.y *= resolution_factor;
+//		src.w *= resolution_factor;
+//		src.h *= resolution_factor;
+//	}
+
+//	src.w = src.w <= 0 ? surf->w : src.w;
+//	src.h = src.h <= 0 ? surf->h : src.h;
+//	dest.w = dest.w <= 0 ? surf->w : dest.w;
+//	dest.h = dest.h <= 0 ? surf->h : dest.h;
+
+//	Uint8 r, g, b, a;
+//	getColor(color, &r, &g, &b, &a);
+//	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+
+
+//	SDL_Rect pos{ 0, 0, 0, 0 };
+//	pos = SDL_Rect{ -src.x, -src.y, 0, 0 };
+//	SDL_Surface* sprite = SDL_CreateRGBSurface(0, dest.w, dest.h, 32,
+//		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+//	TempTexture* texture = nullptr;
+//	SDL_SetSurfaceBlendMode(surf, SDL_BLENDMODE_BLEND);
+//	SDL_BlitSurface(surf, nullptr, sprite, &pos);
+//	if ( sprite )
+//	{
+//		texture = new TempTexture();
+//		texture->load(sprite, false, true);
+//		src.x = 0;
+//		src.y = 0;
+//		SDL_Rect pos = dest;
+//		//Image::drawSurface(texture->texid, sprite, &src, pos, viewport, color);
+//		Image::drawSurface(texture->texid, sprite, nullptr, pos, viewport, color);
+//		if ( texture )
+//		{
+//			delete texture;
+//			texture = nullptr;
+//		}
+//		if ( sprite )
+//		{
+//			SDL_FreeSurface(sprite);
+//			sprite = nullptr;
+//		}
+//	}
+//	return;
+//}
+
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
 	if (!surf) {
 	    return;

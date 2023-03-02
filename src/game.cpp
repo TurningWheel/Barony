@@ -6861,7 +6861,6 @@ int main(int argc, char** argv)
 					}
 				}
 
-				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 
 				for ( int player = 0; player < MAXPLAYERS; ++player )
 				{
@@ -6879,9 +6878,9 @@ int main(int argc, char** argv)
 					}
 				}
 
-				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
-
+				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 				framesProcResult = doFrames();
+				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 				ingameHud();
 
                 static ConsoleVariable<bool> showConsumeMouseInputs("/debug_consume_mouse", false);
