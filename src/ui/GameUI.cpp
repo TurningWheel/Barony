@@ -12926,6 +12926,98 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
+struct CharacterSheetTooltipCache_t
+{
+	Sint32 baseSTR = 0;
+	Sint32 baseDEX = 0;
+	Sint32 baseINT = 0;
+	Sint32 baseCON = 0;
+	Sint32 basePER = 0;
+	Sint32 baseCHR = 0;
+
+	Sint32 modifiedSTR = 0;
+	Sint32 modifiedDEX = 0;
+	Sint32 modifiedINT = 0;
+	Sint32 modifiedCON = 0;
+	Sint32 modifiedPER = 0;
+	Sint32 modifiedCHR = 0;
+
+	Sint32 ac = 0;
+	int playerRace = RACE_HUMAN;
+	int type = NOTHING;
+	bool hungerEnabled = false;
+	int weapontype = 0;
+	Sint32 ATK = -1;
+	bool manualUpdate = false;
+
+	struct TextEntries_t
+	{
+		std::string title = "";
+		std::string entry1 = "";
+		std::string entry2 = "";
+		std::string entry3 = "";
+		std::string entry4 = "";
+		std::string entry5 = "";
+		std::string entry6 = "";
+		std::string entry7 = "";
+		std::string entry8 = "";
+		std::string entry9 = "";
+		std::string entry10 = "";
+		std::string entry11 = "";
+		std::string entry12 = "";
+	};
+	TextEntries_t textEntries[Player::CharacterSheet_t::SHEET_ENUM_END];
+	bool needsUpdate(const int player)
+	{
+		if ( manualUpdate ) { return true; }
+		if ( baseSTR != stats[player]->STR ) { return true; }
+		if ( baseDEX != stats[player]->DEX ) { return true; }
+		if ( baseCON != stats[player]->CON ) { return true; }
+		if ( baseINT != stats[player]->INT ) { return true; }
+		if ( basePER != stats[player]->PER ) { return true; }
+		if ( baseCHR != stats[player]->CHR ) { return true; }
+
+		if ( modifiedSTR != statGetSTR(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedDEX != statGetDEX(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedCON != statGetCON(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedINT != statGetINT(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedPER != statGetPER(stats[player], players[player]->entity) ) { return true; }
+		if ( modifiedCHR != statGetCHR(stats[player], players[player]->entity) ) { return true; }
+
+		if ( playerRace != stats[player]->playerRace ) { return true; }
+		if ( type != stats[player]->type ) { return true; }
+		if ( hungerEnabled != (svFlags & SV_FLAG_HUNGER) ) { return true; }
+		if ( ac != AC(stats[player]) ) { return true; }
+		if ( weapontype != getWeaponSkill(stats[player]->weapon) ) { return true; }
+		return false;
+	}
+	void updateToCharacter(const int player)
+	{
+		manualUpdate = false;
+
+		baseSTR = stats[player]->STR;
+		baseDEX = stats[player]->DEX;
+		baseCON = stats[player]->CON;
+		baseINT = stats[player]->INT;
+		basePER = stats[player]->PER;
+		baseCHR = stats[player]->CHR;
+
+		modifiedSTR = statGetSTR(stats[player], players[player]->entity);
+		modifiedDEX = statGetDEX(stats[player], players[player]->entity);
+		modifiedCON = statGetCON(stats[player], players[player]->entity);
+		modifiedINT = statGetINT(stats[player], players[player]->entity);
+		modifiedPER = statGetPER(stats[player], players[player]->entity);
+		modifiedCHR = statGetCHR(stats[player], players[player]->entity);
+
+		playerRace = stats[player]->playerRace;
+		type = stats[player]->type;
+		hungerEnabled = (svFlags & SV_FLAG_HUNGER);
+		ac = AC(stats[player]);
+		weapontype = getWeaponSkill(stats[player]->weapon);
+	}
+};
+bool blitCharacterSheetTooltipToSurf = false;
+CharacterSheetTooltipCache_t charsheetTooltipCache[MAXPLAYERS];
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
 {
 	if ( !sheetFrame )
@@ -12965,6 +13057,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		tooltipFrame->setOpacity(tooltipOpacitySetpoint);
 	}
 
+	if ( selectedElement == SHEET_UNSELECTED )
+	{
+		cachedElementTooltip = SHEET_UNSELECTED;
+	}
 	if ( element == SHEET_ENUM_END || element == SHEET_UNSELECTED
 		|| player.GUI.activeModule != Player::GUI_t::MODULE_CHARACTERSHEET )
 	{
@@ -12977,6 +13073,37 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	tooltipFrame->setDisabled(false);
 	tooltipFrame->setOpacity(100.0);
 	tooltipDeselectedTick = ticks;
+
+	//if ( keystatus[SDLK_g] )
+	//{
+	//	keystatus[SDLK_g] = 0;
+	//	blitCharacterSheetTooltipToSurf = !blitCharacterSheetTooltipToSurf;
+	//	messagePlayer(0, MESSAGE_DEBUG, "%d", blitCharacterSheetTooltipToSurf);
+	//	if ( !blitCharacterSheetTooltipToSurf )
+	//	{
+	//		tooltipFrame->setBlitChildren(false);
+	//	}
+	//	else if ( blitCharacterSheetTooltipToSurf )
+	//	{
+	//		tooltipFrame->setBlitChildren(true);
+	//	}
+	//}
+
+	bool redraw = false;
+	if ( cachedElementTooltip != selectedElement 
+		|| cachedElementTooltip == SHEET_ENUM_END || cachedElementTooltip == SHEET_UNSELECTED
+		|| charsheetTooltipCache[player.playernum].needsUpdate(player.playernum) )
+	{
+		redraw = true;
+		cachedElementTooltip = selectedElement;
+		charsheetTooltipCache[player.playernum].updateToCharacter(player.playernum);
+	}
+
+	if ( !redraw )
+	{
+		return;
+	}
+
 
 	Uint32 defaultColor = hudColors.characterSheetNeutral;
 	auto txt = tooltipFrame->findField("tooltip text");
@@ -13085,7 +13212,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		txt->setText(titleText.c_str());
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
@@ -13156,7 +13287,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13233,7 +13368,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry3 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry3 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13342,7 +13481,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry5 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry5 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13466,7 +13609,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry7 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry7 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13590,7 +13737,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry9 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry9 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -13724,7 +13875,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(hudColors.characterSheetOffWhiteText);
@@ -13952,7 +14107,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		txt->setText(titleText.c_str());
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		txt->setColor(hudColors.characterSheetHeadingText);
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
@@ -14222,7 +14381,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14379,7 +14542,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid + glyphBacking->pos.x + glyphBacking->pos.w);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry2 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry2 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14699,7 +14866,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry3 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry3 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -14953,7 +15124,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry4 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry4 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15165,7 +15340,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry5 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry5 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15355,7 +15534,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry6 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry6 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15464,7 +15647,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w - (padxMid * 2);
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry7 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry7 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			entry->setColor(defaultColor);
@@ -15587,7 +15774,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry8 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry8 = entry->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			if ( element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER) )
@@ -15647,10 +15838,17 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			mapDetailsText += detail.second;
 		}
 
-		txt->setText(descriptionText.c_str());
+		if ( strcmp(descriptionText.c_str(), txt->getText()) )
+		{
+			txt->setText(descriptionText.c_str());
+		}
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + 4;
@@ -15668,14 +15866,21 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			currentHeight += padyMid;
 			auto entry = tooltipFrame->findField("txt 1"); assert(entry);
 			entry->setDisabled(false);
-			entry->setText(mapDetailsText.c_str());
+			if ( strcmp(mapDetailsText.c_str(), entry->getText()) )
+			{
+				entry->setText(mapDetailsText.c_str());
+			}
 
 			SDL_Rect entryPos = entry->getSize();
 			entryPos.x = padx + padxMid;
 			entryPos.y = currentHeight;
 			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
-			entry->reflowTextToFit(0);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != txt->getText() )
+			{
+				txt->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = txt->getText();
+			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
 			entry->setColor(makeColor(255, 0, 255, 255));
@@ -15714,11 +15919,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int padxMid = 4;
 		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
 		bool usingMouse = !inputs.getVirtualMouse(player.playernum)->lastMovementFromController;
-		txt->setText(getHoverTextString("gold_mouse").c_str());
+		if ( strcmp(getHoverTextString("gold_mouse").c_str(), txt->getText()) )
+		{
+			txt->setText(getHoverTextString("gold_mouse").c_str());
+		}
 
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + padyMid;
@@ -15758,19 +15970,29 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		if ( player.characterSheet.showGameTimerAlways )
 		{
 			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_unpin");
-			txt->setText(tooltiptxt.c_str());
+			if ( strcmp(tooltiptxt.c_str(), txt->getText()) )
+			{
+				txt->setText(tooltiptxt.c_str());
+			}
 		}
 		else
 		{
 			std::string tooltiptxt = getHoverTextString("game_timer_mouse") + getHoverTextString("game_timer_pin");
-			txt->setText(tooltiptxt.c_str());
+			if ( strcmp(tooltiptxt.c_str(), txt->getText()) )
+			{
+				txt->setText(tooltiptxt.c_str());
+			}
 		}
 
 		int currentHeight = padyMid;
 
 		SDL_Rect txtPos = SDL_Rect{ padx, pady1, maxWidth - padx * 2, 80 };
 		txt->setSize(txtPos);
-		txt->reflowTextToFit(0);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
 		Font* actualFont = Font::get(txt->getFont());
 		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
 		txtPos.h = txtHeight + padyMid;
@@ -15819,7 +16041,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	char buf[32] = "";
 	if ( auto name = characterInnerFrame->findField("character name text") )
 	{
-		name->setText(stats[player.playernum]->name);
+		if ( strcmp(stats[player.playernum]->name, name->getText()) )
+		{
+			name->setText(stats[player.playernum]->name);
+		}
 	}
 	Field* className = characterInnerFrame->findField("character class text");
 	int classNameWidth = 0;
@@ -15829,7 +16054,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		if ( !classname.empty() )
 		{
 			capitalizeString(classname);
-			className->setText(classname.c_str());
+			if ( strcmp(classname.c_str(), className->getText()) )
+			{
+				className->setText(classname.c_str());
+			}
 		}
 		if ( client_classes[player.playernum] >= CLASS_CONJURER && client_classes[player.playernum] <= CLASS_BREWER )
 		{
@@ -15854,7 +16082,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 	if ( charLevel )
 	{
 		snprintf(buf, sizeof(buf), language[4051], stats[player.playernum]->LVL);
-		charLevel->setText(buf);
+		if ( strcmp(buf, charLevel->getText()) )
+		{
+			charLevel->setText(buf);
+		}
 		if ( auto textGet = Text::get(charLevel->getText(), charLevel->getFont(),
 			charLevel->getTextColor(), charLevel->getOutlineColor()) )
 		{
@@ -15919,7 +16150,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			snprintf(buf, sizeof(buf), "%s", race.c_str());
 		}
 
-		raceText->setText(buf);
+		if ( strcmp(buf, raceText->getText()) )
+		{
+			raceText->setText(buf);
+		}
 		int width = 0;
 		if ( auto textGet = Text::get(raceText->getText(), raceText->getFont(),
 			raceText->getTextColor(), raceText->getOutlineColor()) )
@@ -15990,13 +16224,22 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		if ( auto floorLevelText = floorFrame->findField("dungeon level text") )
 		{
 			snprintf(buf, sizeof(buf), language[4052], currentlevel);
-			floorLevelText->setText(buf);
+			if ( strcmp(buf, floorLevelText->getText()) )
+			{
+				floorLevelText->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 		}
 		if ( auto floorNameText = floorFrame->findField("dungeon name text") )
 		{
 			if ( mapDisplayNamesDescriptions.find(map.name) != mapDisplayNamesDescriptions.end() )
 			{
-				floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
+				if ( strcmp(mapDisplayNamesDescriptions[map.name].first.c_str(), floorNameText->getText()) )
+				{
+					floorNameText->setText(mapDisplayNamesDescriptions[map.name].first.c_str());
+					charsheetTooltipCache[player.playernum].manualUpdate = true;
+				}
+
 				if ( selectedElement == SHEET_DUNGEON_FLOOR && enableTooltips )
 				{
 					SDL_Rect tooltipPos = characterInfoFrame->getSize();
@@ -16016,6 +16259,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 			}
 		}
 	}
+
 	if ( auto gold = characterInnerFrame->findField("gold text") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->GOLD);
@@ -16101,7 +16345,6 @@ void Player::CharacterSheet_t::updateStats()
 		statsInnerPos.x = leftAlignPosX;
 	}*/
 	statsInnerFrame->setSize(statsInnerPos);
-
 	Button* strButton = statsInnerFrame->findButton("str button");
 	Button* dexButton = statsInnerFrame->findButton("dex button");
 	Button* conButton = statsInnerFrame->findButton("con button");
@@ -16116,12 +16359,15 @@ void Player::CharacterSheet_t::updateStats()
 	{
 		enableTooltips = false;
 	}
-
 	char buf[32] = "";
 	if ( auto field = statsInnerFrame->findField("str text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->STR);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
@@ -16130,7 +16376,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->STR )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16152,7 +16402,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("dex text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->DEX);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
@@ -16161,7 +16415,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->DEX )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16183,7 +16441,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("con text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CON);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCON(stats[player.playernum], players[player.playernum]->entity);
@@ -16192,7 +16454,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->CON )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16214,7 +16480,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("int text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->INT);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetINT(stats[player.playernum], players[player.playernum]->entity);
@@ -16223,7 +16493,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->INT )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16245,7 +16519,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("per text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->PER);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetPER(stats[player.playernum], players[player.playernum]->entity);
@@ -16254,7 +16532,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->PER )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16276,7 +16558,11 @@ void Player::CharacterSheet_t::updateStats()
 	if ( auto field = statsInnerFrame->findField("chr text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", stats[player.playernum]->CHR);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		Sint32 modifiedStat = statGetCHR(stats[player.playernum], players[player.playernum]->entity);
@@ -16285,7 +16571,11 @@ void Player::CharacterSheet_t::updateStats()
 			modifiedField->setColor(hudColors.characterSheetNeutral);
 			modifiedField->setDisabled(true);
 			snprintf(buf, sizeof(buf), "%d", modifiedStat);
-			modifiedField->setText(buf);
+			if ( strcmp(buf, modifiedField->getText()) )
+			{
+				modifiedField->setText(buf);
+				charsheetTooltipCache[player.playernum].manualUpdate = true;
+			}
 			if ( modifiedStat > stats[player.playernum]->CHR )
 			{
 				modifiedField->setColor(hudColors.characterSheetGreen);
@@ -16353,7 +16643,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		{
 			snprintf(buf, sizeof(buf), "%d", displayedATK);
 		}
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_ATK && enableTooltips )
@@ -16367,7 +16661,11 @@ void Player::CharacterSheet_t::updateAttributes()
 	if ( auto field = attributesInnerFrame->findField("ac text stat") )
 	{
 		snprintf(buf, sizeof(buf), "%d", AC(stats[player.playernum]));
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_AC && enableTooltips )
@@ -16382,7 +16680,11 @@ void Player::CharacterSheet_t::updateAttributes()
 	{
 		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum]) * 100.0) + 100.0;
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_POW && enableTooltips )
@@ -16399,7 +16701,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 		resistance = -(resistance - 100.0);
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 		if ( resistance > 0.01 )
 		{
@@ -16423,7 +16729,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		field->setColor(hudColors.characterSheetNeutral);
 		Uint32 color = hudColors.characterSheetNeutral;
 		getDisplayedHPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(color);
 
 		if ( selectedElement == SHEET_RGN && enableTooltips )
@@ -16439,7 +16749,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		field->setColor(hudColors.characterSheetNeutral);
 		Uint32 color = hudColors.characterSheetNeutral;
 		getDisplayedMPRegen(players[player.playernum]->entity, *stats[player.playernum], &color, buf);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(color);
 
 		if ( selectedElement == SHEET_RGN_MP && enableTooltips )
@@ -16464,7 +16778,11 @@ void Player::CharacterSheet_t::updateAttributes()
 		}
 		weight += stats[player.playernum]->GOLD / 100;
 		snprintf(buf, sizeof(buf), "%d", weight);
-		field->setText(buf);
+		if ( strcmp(buf, field->getText()) )
+		{
+			field->setText(buf);
+			charsheetTooltipCache[player.playernum].manualUpdate = true;
+		}
 		field->setColor(hudColors.characterSheetNeutral);
 
 		if ( selectedElement == SHEET_WGT && enableTooltips )
@@ -17026,47 +17344,79 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 
 void resetInventorySlotFrames(const int player)
 {
-	for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+	//for ( int x = 0; x < players[player]->inventoryUI.getSizeX(); ++x )
+	//{
+	//	for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.frame )
 	{
-		for ( int y = Player::Inventory_t::PaperDollRows::DOLL_ROW_1; y < players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY + players[player]->inventoryUI.getPlayerBackpackBonusSizeY(); ++y )
+		for ( auto& pair : players[player]->inventoryUI.slotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getInventorySlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+	//for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.spellFrame )
 	{
-		for ( int y = 0; y < Player::Inventory_t::MAX_SPELLS_Y; ++y )
+		for ( auto& pair : players[player]->inventoryUI.spellSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getSpellSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+	//for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->inventoryUI.chestFrame )
 	{
-		for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y; ++y )
+		for ( auto& pair : players[player]->inventoryUI.chestSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->inventoryUI.getChestSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 
-	for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+	//for ( int x = 0; x < Player::ShopGUI_t::MAX_SHOP_X; ++x )
+	//{
+	//	for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+	//	{
+	//		if ( auto slotFrame = players[player]->shopGUI.getShopSlotFrame(x, y) )
+	//		{
+	//			slotFrame->setDisabled(true);
+	//		}
+	//	}
+	//}
+
+	if ( players[player]->shopGUI.shopFrame )
 	{
-		for ( int y = 0; y < Player::ShopGUI_t::MAX_SHOP_Y; ++y )
+		for ( auto& pair : players[player]->shopGUI.shopSlotFrames )
 		{
-			if ( auto slotFrame = players[player]->shopGUI.getShopSlotFrame(x, y) )
-			{
-				slotFrame->setDisabled(true);
-			}
+			if ( pair.second ) { pair.second->setDisabled(true); }
 		}
 	}
 }
@@ -17157,6 +17507,26 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	return false;
 }
 
+enum SlotFrameIndices : size_t {
+	SLOTFRAME_BEATITUDE_FRAME = 0,
+	SLOTFRAME_BEATITUDE_IMG = 0,
+	SLOTFRAME_BROKEN_STATUS_FRAME = 1,
+	SLOTFRAME_BROKEN_STATUS_IMG = 0,
+	SLOTFRAME_ITEMSPRITE_FRAME = 2,
+	SLOTFRAME_ITEMSPRITE_IMG = 0,
+	SLOTFRAME_ITEMSPRITE_LABELBG_IMG = 1,
+	SLOTFRAME_ITEMSPRITE_LABEL_IMG = 2,
+	SLOTFRAME_UNUSABLE_ITEM_FRAME = 3,
+	SLOTFRAME_UNUSABLE_IMG = 0,
+	SLOTFRAME_APPRAISAL_FRAME = 4,
+	SLOTFRAME_APPRAISAL_NOTIF_IMG = 0,
+	SLOTFRAME_QTY_FRAME = 5,
+	SLOTFRAME_QTY_TEXT = 0,
+	SLOTFRAME_EQUIPPED_FRAME = 6,
+	SLOTFRAME_EQUIPPED_IMG = 0,
+	SLOTFRAME_BROKEN_ICON_FRAME = 7,
+	SLOTFRAME_BROKEN_ICON_IMG = 0
+};
 void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable)
 {
 	if ( !itemPtr || !slotFrame )
@@ -17179,8 +17549,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	slotFrame->setDisabled(false);
 
-	auto spriteImageFrame = slotFrame->findFrame("item sprite frame");
-	auto spriteImage = spriteImageFrame->findImage("item sprite img");
+	auto& frames = slotFrame->getFrames();
+
+	auto spriteImageFrame = frames[SLOTFRAME_ITEMSPRITE_FRAME]; // slotFrame->findFrame("item sprite frame");
+	auto spriteImage = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_IMG]; // [spriteImageFrame->findImage("item sprite img");
 
 	if ( hiddenItemInGUI )
 	{
@@ -17250,7 +17622,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			spriteImage->color = 0xFFFFFFFF;
 		}
-		if ( auto iconLabelImg = spriteImageFrame->findImage("icon label img") )
+		if ( auto iconLabelImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABEL_IMG]/*spriteImageFrame->findImage("icon label img")*/ )
 		{
 			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
 			iconLabelImg->disabled = true;
@@ -17263,7 +17635,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
 			}
 			iconLabelImg->color = spriteImage->color;
-			if ( auto iconLabelBgImg = spriteImageFrame->findImage("icon label bg img") )
+			if ( auto iconLabelBgImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABELBG_IMG]/*spriteImageFrame->findImage("icon label bg img")*/ )
 			{
 				iconLabelBgImg->pos.w = 24;
 				iconLabelBgImg->pos.h = iconLabelBgImg->pos.w;
@@ -17285,7 +17657,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto qtyFrame = slotFrame->findFrame("quantity frame") )
+	if ( auto qtyFrame = frames[SLOTFRAME_QTY_FRAME]/*slotFrame->findFrame("quantity frame")*/ )
 	{
 		qtyFrame->setDisabled(true);
 		bool drawQty = (item->count > 1) ? true : false;
@@ -17325,7 +17697,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		if ( drawQty )
 		{
 			qtyFrame->setDisabled(false);
-			if ( auto qtyText = qtyFrame->findField("quantity text") )
+			if ( auto qtyText = qtyFrame->getFields()[SLOTFRAME_QTY_TEXT]/*qtyFrame->findField("quantity text")*/ )
 			{
 				char qtybuf[32] = "";
 				if ( stackable )
@@ -17343,97 +17715,122 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				{
 					snprintf(qtybuf, sizeof(qtybuf), "%d", item->count);
 				}
-				qtyText->setText(qtybuf);
+				if ( strcmp(qtyText->getText(), qtybuf) )
+				{
+					qtyText->setText(qtybuf);
+				}
 				qtyText->setColor(qtyColor);
 			}
 		}
 	}
 	
-	if ( auto beatitudeFrame = slotFrame->findFrame("beatitude status frame") )
+	if ( auto beatitudeFrame = frames[SLOTFRAME_BEATITUDE_FRAME]/*slotFrame->findFrame("beatitude status frame")*/ )
 	{
 		beatitudeFrame->setDisabled(true);
-		spriteImage->outline = false;
+		//spriteImage->outline = false;
 		if ( !disableBackgrounds )
 		{
-			if ( auto beatitudeImg = beatitudeFrame->findImage("beatitude status bg") )
+			if ( auto beatitudeImg = beatitudeFrame->getImages()[SLOTFRAME_BEATITUDE_IMG]/*beatitudeFrame->findImage("beatitude status bg")*/ )
 			{
 				if ( !item->identified )
 				{
-					beatitudeImg->color = makeColor( 128, 128, 0, 125);
+					//beatitudeImg->color = makeColor( 128, 128, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = makeColor(210, 183, 76, 255);
 					//spriteImage->outline = true;
 				}
 				else if ( item->beatitude < 0 )
 				{
-					beatitudeImg->color = makeColor( 128, 0, 0, 125);
+					//beatitudeImg->color = makeColor( 128, 0, 0, 125);
 					beatitudeFrame->setDisabled(false);
 					//spriteImage->outlineColor = hudColors.characterSheetRed;
 					//spriteImage->outline = true;
 				}
 				else if ( item->beatitude > 0 )
 				{
-					if ( colorblind )
+					/*if ( colorblind )
 					{
 						beatitudeImg->color = makeColor( 100, 245, 255, 65);
 					}
 					else
 					{
 						beatitudeImg->color = makeColor( 0, 255, 0, 65);
-					}
+					}*/
 					//spriteImage->outlineColor = hudColors.characterSheetHeadingText;
 					//spriteImage->outline = true;
 					beatitudeFrame->setDisabled(false);
 				}
-				if ( !spriteImage->outline )
+				/*if ( !spriteImage->outline )
 				{
 					spriteImage->outlineColor = 0;
 				}
 				else
 				{
 					spriteImage->outlineColor = makeColor(0, 0, 0, 255);
-				}
+				}*/
 				if ( !beatitudeFrame->isDisabled() )
 				{
+					//beatitudeImg->color = uint32ColorWhite;
 					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
-						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+							static const char* unidentifyHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_App01.png";
+							if ( strcmp(unidentifyHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = unidentifyHotbarPath;
+							}
 						}
 						else if ( item->beatitude > 0 )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+							static const char* blessHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Bless01.png";
+							if ( strcmp(blessHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = blessHotbarPath;
+							}
 						}
 						else if ( item->beatitude < 0 )
 						{
-							beatitudeImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+							static const char* curseHotbarPath = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_Curse01.png";
+							if ( strcmp(curseHotbarPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = curseHotbarPath;
+							}
 						}
 					}
 					else
 					{
-						beatitudeImg->color = makeColor(255, 255, 255, 255);
 						if ( !item->identified )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+							static const char* unidentifyPath = "*#images/ui/Inventory/HUD_Inventory_Item_App00B.png";
+							if ( strcmp(unidentifyPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = unidentifyPath;
+							}
 						}
 						else if ( item->beatitude > 0 )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+							static const char* blessPath = "*#images/ui/Inventory/HUD_Inventory_Item_Bless00B.png";
+							if ( strcmp(blessPath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = blessPath;
+							}
 						}
 						else if ( item->beatitude < 0 )
 						{
-							beatitudeImg->path = "*#images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+							static const char* cursePath = "*#images/ui/Inventory/HUD_Inventory_Item_Curse00B.png";
+							if ( strcmp(cursePath, beatitudeImg->path.c_str()) )
+							{
+								beatitudeImg->path = cursePath;
+							}
 						}
-						//beatitudeImg->path = "images/system/white.png";
 					}
 				}
 			}
 		}
 	}
 
-	if ( auto brokenStatusFrame = slotFrame->findFrame("broken status frame") )
+	if ( auto brokenStatusFrame = frames[SLOTFRAME_BROKEN_STATUS_FRAME]/*slotFrame->findFrame("broken status frame")*/ )
 	{
 		brokenStatusFrame->setDisabled(true);
 		if ( !disableBackgrounds )
@@ -17448,7 +17845,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				else
 				{
 					brokenStatusFrame->setDisabled(false);
-					auto brokenStatusImg = brokenStatusFrame->findImage("broken status bg");
+					auto brokenStatusImg = brokenStatusFrame->getImages()[SLOTFRAME_BROKEN_STATUS_IMG];/*brokenStatusFrame->findImage("broken status bg");*/
 					if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
 					{
 						brokenStatusImg->path = "*#images/ui/HUD/hotbar/HUD_Quickbar_Slot_Box_Overlay_01.png";
@@ -17462,7 +17859,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto unusableFrame = slotFrame->findFrame("unusable item frame") )
+	if ( auto unusableFrame = frames[SLOTFRAME_UNUSABLE_ITEM_FRAME]/*slotFrame->findFrame("unusable item frame")*/ )
 	{
 		bool greyedOut = forceUnusable || hiddenItemInGUI;
 		unusableFrame->setDisabled(true);
@@ -17530,7 +17927,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto equippedIconFrame = slotFrame->findFrame("equipped icon frame") )
+	if ( auto equippedIconFrame = frames[SLOTFRAME_EQUIPPED_FRAME]/*slotFrame->findFrame("equipped icon frame")*/ )
 	{
 		equippedIconFrame->setDisabled(true);
 		if ( equipped && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ANIMATING_ITEM))) )
@@ -17538,7 +17935,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			equippedIconFrame->setDisabled(false);
 		}
 	}
-	if ( auto brokenIconFrame = slotFrame->findFrame("broken icon frame") )
+	if ( auto brokenIconFrame = frames[SLOTFRAME_BROKEN_ICON_FRAME]/*slotFrame->findFrame("broken icon frame")*/ )
 	{
 		brokenIconFrame->setDisabled(true);
 		if ( broken && (!disableBackgrounds || (slotType && (*slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT))) )
@@ -17547,7 +17944,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 	}
 
-	if ( auto appraisalFrame = slotFrame->findFrame("appraisal frame") )
+	if ( auto appraisalFrame = frames[SLOTFRAME_APPRAISAL_FRAME]/*slotFrame->findFrame("appraisal frame")*/ )
 	{
 		appraisalFrame->setDisabled(true);
 		appraisalFrame->setDrawCallback(nullptr);
@@ -17577,7 +17974,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		if ( !appraisalFrame->isDisabled() )
 		{
-			auto img = appraisalFrame->findImage("new notif img");
+			auto img = appraisalFrame->getImages()[SLOTFRAME_APPRAISAL_NOTIF_IMG];/*appraisalFrame->findImage("new notif img");*/
 			img->disabled = true;
 			if ( item->notifyIcon )
 			{
@@ -17598,8 +17995,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 					}*/
 				}
 				img->disabled = false;
-				auto& animState = players[player]->inventoryUI.appraisal.itemNotifyAnimState;
-				switch ( animState )
+				switch ( players[player]->inventoryUI.appraisal.itemNotifyAnimState )
 				{
 					case 0:
 						img->path = "images/ui/Inventory/tooltips/ExclamationAnim00.png";
@@ -20058,6 +20454,7 @@ void createPlayerSpellList(const int player)
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, 210, kSpellListHeight },
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Magic_Base.png", "spell base img");
+		playerInventoryFrames[player].spellBaseImg = bg;
 
 		auto slider = bgFrame->addSlider("spell slider");
 		slider->setBorder(16);
@@ -20308,6 +20705,7 @@ bool takeAllChestGUIAction(const int player)
 
 const int chestBaseImgBorderWidth = 16;
 const int chestBaseImgBorderTopHeight = 20;
+PlayerInventoryFrames_t playerInventoryFrames[MAXPLAYERS];
 
 void createChestGUI(const int player)
 {
@@ -20336,12 +20734,14 @@ void createChestGUI(const int player)
 	SDL_Rect basePos{ 0, 0, 194, 130 };
 	{
 		auto bgFrame = frame->addFrame("chest base");
+		playerInventoryFrames[player].chestBgFrame = bgFrame;
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(false);
 		const auto bgSize = bgFrame->getSize();
 		auto bg = bgFrame->addImage(SDL_Rect{ 6, 0, 182, 172 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/chests/Chest_Main_00.png", "chest base img");
+		playerInventoryFrames[player].chestBaseImg = bg;
 		auto bg2 = bgFrame->addImage(SDL_Rect{ 0, 0, 194, 66 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/chests/Chest_Top_00.png", "chest lid img");
@@ -20466,6 +20866,7 @@ void createChestGUI(const int player)
 		chestSlotsFrame->setActualSize(SDL_Rect{ 0, 0, basePos.w, gridHeight * numGrids });
 		chestSlotsFrame->setHollow(true);
 		chestSlotsFrame->setAllowScrollBinds(false);
+		playerInventoryFrames[player].chestFrameSlots = chestSlotsFrame;
 
 		auto gridImg = chestSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, baseSlotOffsetY, 162, gridHeight * numGrids },
 			makeColor(255, 255, 255, 32), "*#images/ui/Inventory/HUD_Chest4x3_ScrollGrid.png", "grid img");
@@ -20890,27 +21291,32 @@ void createPlayerInventory(const int player)
 	SDL_Rect basePos{ 0, 0, 210, 448 };
 	{
 		auto bgFrame = frame->addFrame("inventory base");
+		playerInventoryFrames[player].inventoryBaseImagesFrame = bgFrame;
 		bgFrame->setSize(basePos);
 		bgFrame->setHollow(true);
 		const auto bgSize = bgFrame->getSize();
-		bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
+		auto defaultInvImg = bgFrame->addImage(SDL_Rect{ 0, 0, bgSize.w, 448 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_Base_02.png", "inventory base img");
+		defaultInvImg->disabled = true;
+		playerInventoryFrames[player].defaultInvImg = defaultInvImg;
 
 		auto compactBase = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 250 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_BaseCompact_02.png", "inventory base compact img");
 		compactBase->disabled = true;
+		playerInventoryFrames[player].compactInvImg = compactBase;
 
 		auto compactCharacterView = bgFrame->addImage(SDL_Rect{ 0, 0, 210, 214 },
 			makeColor( 255, 255, 255, 255),
 			"*#images/ui/Inventory/HUD_Inventory_CharacterCompact_02.png", "inventory character compact img");
 		compactCharacterView->disabled = true;
-
+		playerInventoryFrames[player].compactCharImg = compactCharacterView;
 	}
 
 	{
 		auto backpackFrame = frame->addFrame("inventory backpack");
+		playerInventoryFrames[player].backpackFrame = backpackFrame;
 		backpackFrame->setSize(SDL_Rect{ 0, 202 + 242 - 2, 226, 102 });
 		auto backpackImg = backpackFrame->addImage(SDL_Rect{ 0, 0, 226, 102 },
 			makeColor( 255, 255, 255, 255),
@@ -20926,6 +21332,7 @@ void createPlayerInventory(const int player)
 	SDL_Rect invSlotsPos{ 0, 202, basePos.w, 242 };
 	{
 		const auto invSlotsFrame = frame->addFrame("inventory slots");
+		playerInventoryFrames[player].invSlotsFrame = invSlotsFrame;
 		invSlotsFrame->setSize(invSlotsPos);
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -20949,11 +21356,13 @@ void createPlayerInventory(const int player)
 				createPlayerInventorySlotFrameElements(slotFrame);
 			}
 		}
+		//invSlotsFrame->setBlitChildren(true);
 	}
 
 	SDL_Rect backpackSlotsPos{ 0, 202 + 242, basePos.w, 242 };
 	{
 		const auto backPackSlotsFrame = frame->addFrame("backpack slots");
+		playerInventoryFrames[player].backpackSlotsFrame = backPackSlotsFrame;
 		backPackSlotsFrame->setSize(backpackSlotsPos);
 		const int backpackBaseSlotOffsetY = 8;
 		int lowestY = 0;
@@ -20991,6 +21400,7 @@ void createPlayerInventory(const int player)
 	{
 		SDL_Rect dollSlotsPos{ 0, 0, basePos.w, invSlotsPos.y };
 		const auto dollSlotsFrame = frame->addFrame("paperdoll slots");
+		playerInventoryFrames[player].dollSlotsFrame = dollSlotsFrame;
 		dollSlotsFrame->setSize(dollSlotsPos);
 
 		SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, inventorySlotSize, inventorySlotSize };
@@ -21022,6 +21432,7 @@ void createPlayerInventory(const int player)
 
 		{
 			auto charFrame = frame->addFrame("inventory character preview");
+			playerInventoryFrames[player].characterPreview = charFrame;
 			auto charSize = dollSlotsPos;
 			charSize.x += inventorySlotSize + baseSlotOffsetX + 4;
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
@@ -21071,6 +21482,7 @@ void createPlayerInventory(const int player)
 
 	{
 		auto selectedFrame = frame->addFrame("inventory selected item");
+		playerInventoryFrames[player].selectedSlotFrame = selectedFrame;
 		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		selectedFrame->setDisabled(true);
 
@@ -21078,10 +21490,10 @@ void createPlayerInventory(const int player)
 		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory selected highlight");
 
-
 		auto oldSelectedFrame = frame->addFrame("inventory old selected item");
 		oldSelectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 		oldSelectedFrame->setDisabled(true);
+		playerInventoryFrames[player].oldSelectedSlotFrame = oldSelectedFrame;
 
 		const int itemSpriteSize = players[player]->inventoryUI.getItemSpriteSize();
 		SDL_Rect itemSpriteBorder{ 2, 2, itemSpriteSize, itemSpriteSize };
@@ -21089,12 +21501,15 @@ void createPlayerInventory(const int player)
 		color = makeColor( 0, 255, 255, 255);
 		auto oldImg = oldSelectedFrame->addImage(itemSpriteBorder,
 			makeColor( 255, 255, 255, 128), "", "inventory old selected item");
+		playerInventoryFrames[player].oldSelectedSlotItemImg = oldImg;
 		oldImg->disabled = true;
 		oldSelectedFrame->addImage(SDL_Rect{ 0, 0, oldSelectedFrame->getSize().w, oldSelectedFrame->getSize().h },
 			color, "*images/system/hotbar_slot.png", "inventory old selected highlight");
 
 		auto bgFrame = frame->findFrame("inventory base");
+		playerInventoryFrames[player].inventoryBgFrame = bgFrame;
 		auto flourishFrame = frame->addFrame("inventory base flourish");
+		playerInventoryFrames[player].flourishFrame = flourishFrame;
 		const int flourishW = 126;
 		const int flourishH = 26;
 		flourishFrame->setSize(SDL_Rect{ (bgFrame->getSize().w / 2) - (flourishW / 2), 202 - flourishH + 6, flourishW, flourishH });
@@ -21228,17 +21643,10 @@ void Player::Inventory_t::updateSelectedSlotAnimation(int destx, int desty, int 
 
 void Player::Inventory_t::updateItemContextMenu()
 {
-	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
 	bool& itemMenuOpen = inputs.getUIInteraction(player.playernum)->itemMenuOpen;
 	int& itemMenuSelected = inputs.getUIInteraction(player.playernum)->itemMenuSelected;
-	Uint32& itemMenuItem = inputs.getUIInteraction(player.playernum)->itemMenuItem;
-	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
-	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
 	bool& itemMenuFromHotbar = inputs.getUIInteraction(player.playernum)->itemMenuFromHotbar;
-	int& itemMenuOffsetDetectionY = inputs.getUIInteraction(player.playernum)->itemMenuOffsetDetectionY;
-	itemMenuOffsetDetectionY = 0;
-	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 
 	Item* item = uidToItem(itemMenuItem);
 	if ( itemMenuItem != 0 && !item )
@@ -21278,15 +21686,6 @@ void Player::Inventory_t::updateItemContextMenu()
 		return;
 	}
 
-	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
-	highlightImageMid->disabled = true;
-	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
-	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
-	highlightImageLeft->disabled = true;
-	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
-	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
-	highlightImageRight->disabled = true;
-	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
 
 	if ( !item || !itemMenuOpen )
 	{
@@ -21296,6 +21695,24 @@ void Player::Inventory_t::updateItemContextMenu()
 		interactFrame->setDisabled(true);
 		return;
 	}
+
+	bool& toggleclick = inputs.getUIInteraction(player.playernum)->toggleclick;
+	int& itemMenuX = inputs.getUIInteraction(player.playernum)->itemMenuX;
+	int& itemMenuY = inputs.getUIInteraction(player.playernum)->itemMenuY;
+	int& itemMenuOffsetDetectionY = inputs.getUIInteraction(player.playernum)->itemMenuOffsetDetectionY;
+	itemMenuOffsetDetectionY = 0;
+	const Sint32 mousex = (inputs.getMouse(player.playernum, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	const Sint32 mousey = (inputs.getMouse(player.playernum, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+
+	auto highlightImageMid = interactFrame->findImage("interact selected highlight mid");
+	highlightImageMid->disabled = true;
+	highlightImageMid->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageLeft = interactFrame->findImage("interact selected highlight left");
+	highlightImageLeft->disabled = true;
+	highlightImageLeft->color = hudColors.itemContextMenuOptionSelectedImg;
+	auto highlightImageRight = interactFrame->findImage("interact selected highlight right");
+	highlightImageRight->disabled = true;
+	highlightImageRight->color = hudColors.itemContextMenuOptionSelectedImg;
 
 	interactFrame->setDisabled(false);
 
@@ -26920,7 +27337,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		entry->setHollow(true);
 		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
-		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
+		auto selector = entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelector_00.png", "selector img");
 		SDL_Rect imgBgPos{ skillEntryPos.w - 36, 0, 36, 36 };
 		entry->addImage(imgBgPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
 		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
@@ -26939,7 +27356,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setHJustify(Field::justify_t::RIGHT);
 		profName->setVJustify(Field::justify_t::CENTER);
 		profName->setFont(boldFont);
-		profName->setColor(skillSheetData.defaultTextColor);
+		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
 			profName->setText(skillSheetData.skillEntries[i].name.c_str());
@@ -26955,7 +27372,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profLevel->setHJustify(Field::justify_t::RIGHT);
 		profLevel->setVJustify(Field::justify_t::CENTER);
 		profLevel->setFont(numberFont);
-		profLevel->setColor(skillSheetData.defaultTextColor);
+		profLevel->setTextColor(skillSheetData.defaultTextColor);
 		profLevel->setText("0");
 	}
 
@@ -26971,7 +27388,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		entry->setHollow(true);
 		skillSheetEntryFrames[player.playernum].entryFrames[i] = entry;
 		entry->setSize(skillEntryPos);
-		entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
+		auto selector = entry->addImage(skillSelectorPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_SkillSelectorR_00.png", "selector img");
 		SDL_Rect imgBgPos{ 0, 0, 36, 36 };
 		entry->addImage(imgBgPos, 0xFFFFFFFF, "*#images/ui/SkillSheet/UI_Skills_Icons_BG00_00.png", "skill icon bg");
 		SDL_Rect imgFgPos{ imgBgPos.x + 6, imgBgPos.y + 6, 24, 24 };
@@ -26990,7 +27407,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setHJustify(Field::justify_t::LEFT);
 		profName->setVJustify(Field::justify_t::CENTER);
 		profName->setFont(boldFont);
-		profName->setColor(skillSheetData.defaultTextColor);
+		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
 			profName->setText(skillSheetData.skillEntries[i].name.c_str());
@@ -27006,7 +27423,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profLevel->setHJustify(Field::justify_t::RIGHT);
 		profLevel->setVJustify(Field::justify_t::CENTER);
 		profLevel->setFont(numberFont);
-		profLevel->setColor(skillSheetData.defaultTextColor);
+		profLevel->setTextColor(skillSheetData.defaultTextColor);
 		profLevel->setText("0");
 	}
 
@@ -27018,7 +27435,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	skillTitleTxt->setSize(skillTitlePos);
 	skillTitleTxt->setFont(titleFont);
 	skillTitleTxt->setOntop(true);
-	skillTitleTxt->setColor(makeColor(201, 162, 100, 255));
+	skillTitleTxt->setTextColor(makeColor(201, 162, 100, 255));
 
 	SDL_Rect descPos{ 0, 54, 320, 324 };
 	descPos.x = skillBackground->getSize().w / 2 - descPos.w / 2;
@@ -27104,7 +27521,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		skillDescriptionTxt->setFont(descFont);
 		skillDescriptionTxt->setSize(txtPos);
 		skillDescriptionTxt->setText("");
-		//skillDescriptionTxt->setColor(makeColor(201, 162, 100, 255));
+		//skillDescriptionTxt->setTextColor(makeColor(201, 162, 100, 255));
 		skillDescriptionTxt->setHJustify(Field::justify_t::CENTER);
 		skillDescriptionTxt->setOntop(true);
 
@@ -27151,7 +27568,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		int effectBackgroundWidth = 80;
 		auto effectLargeBgImg = scrollAreaFrame->addImage(
 			SDL_Rect{ 0, 0, 0, 0 },
-			makeColor(101, 33, 33, 28), "images/system/white.png", "effect frame bg tmp");
+			makeColor(10, 4, 4, 255), "images/system/white.png", "effect frame bg tmp");
 		effectLargeBgImg->disabled = true;
 		for ( int i = 0; i < 10; ++i )
 		{
@@ -27162,7 +27579,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectFrame->setSize(SDL_Rect{ txtPos.x, txtPos.y - 2, txtPos.w, fontHeight + 8 });
 			effectFrame->addImage(
 				SDL_Rect{ 0, 0, effectFrame->getSize().w, effectFrame->getSize().h - 4 }, 
-				makeColor(101, 87, 67, 255), "images/system/white.png", "effect frame bg highlight");
+				makeColor(91, 73, 57, 255), "images/system/white.png", "effect frame bg highlight");
 			int valueX =  effectFrame->getSize().w - effectXOffset;
 
 			auto valBgImgFrame = effectFrame->addFrame("effect val bg frame");
@@ -27203,7 +27620,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectTxt->setSize(SDL_Rect{0, 0, 1000, effectTxtFrame->getSize().h}); // large 1000px to handle large text length marquee
 			effectTxt->setVJustify(Field::justify_t::CENTER);
 			effectTxt->setText("");
-			effectTxt->setColor(makeColor(201, 162, 100, 255));
+			effectTxt->setTextColor(makeColor(201, 162, 100, 255));
 
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
 			effectValFrame->setHollow(true);
@@ -27213,7 +27630,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			effectVal->setSize(SDL_Rect{ 0, 0, 1000, effectValFrame->getSize().h }); // large 1000px to handle large text length marquee
 			effectVal->setVJustify(Field::justify_t::CENTER);
 			effectVal->setText("");
-			effectVal->setColor(makeColor(201, 162, 100, 255));
+			effectVal->setTextColor(makeColor(201, 162, 100, 255));
 
 			//effectFrame->setDisabled(true);
 
@@ -27266,6 +27683,8 @@ void Player::SkillSheet_t::createSkillSheet()
 		legendText->setSize(mm->pos);
 		legendText->setFont(descFont);
 		legendText->setHJustify(Field::justify_t::CENTER);
+
+		skillBackground->setBlitChildren(true);
 	}
 	
 	std::string promptFont = "fonts/pixel_maz.ttf#32#2";
@@ -27279,7 +27698,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	promptBack->setVJustify(Field::justify_t::CENTER);
 	promptBack->setText(language[4053]);
 	//promptBack->setOntop(true);
-	promptBack->setColor(makeColor(201, 162, 100, 255));
+	promptBack->setTextColor(makeColor(201, 162, 100, 255));
 
 	auto promptBackImg = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt back img");
@@ -27294,7 +27713,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	promptScroll->setVJustify(Field::justify_t::CENTER);
 	promptScroll->setText(language[4062]);
 	//promptScroll->setOntop(true);
-	promptScroll->setColor(makeColor(201, 162, 100, 255));
+	promptScroll->setTextColor(makeColor(201, 162, 100, 255));
 
 	auto promptScrollImg = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
 		"", "prompt scroll img");
@@ -27354,6 +27773,7 @@ void Player::SkillSheet_t::closeSkillSheet()
 	}
 }
 
+static ConsoleVariable<bool> cvar_skillsheet_blit("/skillsheet_blit", true);
 void Player::SkillSheet_t::openSkillSheet()
 {
 	player.GUI.previousModule = player.GUI.activeModule;
@@ -27373,6 +27793,7 @@ void Player::SkillSheet_t::openSkillSheet()
 	if ( skillFrame )
 	{
 		auto innerFrame = skillFrame->findFrame("skills frame");
+		innerFrame->setBlitChildren(*cvar_skillsheet_blit);
 		auto skillDescriptionFrame = innerFrame->findFrame("skill desc frame");
 		auto slider = skillDescriptionFrame->findSlider("skill slider");
 		slider->setValue(0.0);
@@ -28460,6 +28881,29 @@ void Player::SkillSheet_t::selectSkill(int skill)
 	resetSkillDisplay();
 }
 
+//void positionSkillSheetBlitField(Field* f, Text* tex, SDL_Rect& pos, int yoff = 0)
+//{
+//	Font* actualFont = Font::get(f->getFont());
+//	int lines = std::max(1, tex->getNumTextLines());
+//	int fullH = lines * (actualFont->height(false) + actualFont->getOutline() * 2);
+//	if ( f->getVJustify() == Field::justify_t::TOP )
+//	{
+//		pos.y = pos.y + yoff + std::min(pos.h - fullH, 0);
+//	}
+//	else if ( f->getVJustify() == Field::justify_t::CENTER )
+//	{
+//		pos.y = pos.y + yoff + (pos.h - fullH) / 2;
+//	}
+//	if ( f->getHJustify() == Field::justify_t::RIGHT )
+//	{
+//		pos.x = pos.x + pos.w - tex->getWidth();
+//	}
+//	else if ( f->getHJustify() == Field::justify_t::CENTER )
+//	{
+//		pos.x = pos.x + pos.w / 2 - tex->getWidth() / 2;
+//	}
+//}
+//
 //SDL_Surface* blitSkillSheet(Frame* skillsFrame)
 //{
 //	int player = skillsFrame->getOwner();
@@ -28467,19 +28911,6 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 //
 //	real_t opacity = 1.0; // skillsFrame->getOpacity() / 100.0
-//
-//	for ( auto& img : skillsFrame->getImages() )
-//	{
-//		if ( img->disabled ) { continue; }
-//		if ( img->path == "" ) { continue; }
-//		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
-//		Uint8 r, g, b, a;
-//		getColor(img->color, &r, &g, &b, &a);
-//		SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
-//		//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
-//		SDL_Rect pos = img->pos;
-//		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
-//	}
 //
 //	SDL_Rect totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
 //	/*for ( auto& img : skillSheetEntryFrames[player].entryFrameLeft->getImages() )
@@ -28516,7 +28947,7 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //		SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 //	}*/
 //
-//	for ( auto& frame : skillSheetEntryFrames[player].skillsFrame->getFrames() )
+//	for ( auto frame : skillSheetEntryFrames[player].skillsFrame->getFrames() )
 //	{
 //		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
 //
@@ -28526,6 +28957,7 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //		{
 //			if ( img->disabled ) { continue; }
 //			if ( img->path == "" ) { continue; }
+//			if ( img->ontop ) { continue; }
 //			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 //			Uint8 r, g, b, a;
 //			getColor(img->color, &r, &g, &b, &a);
@@ -28538,17 +28970,33 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //		}
 //	}
 //
-//	for ( auto& frame : skillSheetEntryFrames[player].entryFrameLeft->getFrames() )
+//	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 //	{
+//		Frame* frame = skillSheetEntryFrames[player].entryFrames[i];
 //		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
 //		totalPos.x += frame->getSize().x;
-//		totalPos.x += skillSheetEntryFrames[player].entryFrameLeft->getSize().x;
+//		if ( i >= 8 )
+//		{
+//			totalPos.x += skillSheetEntryFrames[player].entryFrameLeft->getSize().x;
+//		}
+//		else
+//		{
+//			totalPos.x += skillSheetEntryFrames[player].entryFrameRight->getSize().x;
+//		}
 //		totalPos.y += frame->getSize().y;
-//		totalPos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
-//		for ( auto& img : frame->getImages() )
+//		if ( i >= 8 )
+//		{
+//			totalPos.y += skillSheetEntryFrames[player].entryFrameLeft->getSize().y;
+//		}
+//		else
+//		{
+//			totalPos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
+//		}
+//		for ( auto img : frame->getImages() )
 //		{
 //			if ( img->disabled ) { continue; }
 //			if ( img->path == "" ) { continue; }
+//			if ( img->ontop ) { continue; }
 //			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 //			Uint8 r, g, b, a;
 //			getColor(img->color, &r, &g, &b, &a);
@@ -28560,30 +29008,107 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 //		}
 //
-//		for ( auto& f : frame->getFields() )
+//		for ( auto img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			if ( !img->ontop ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//
+//		for ( auto f : frame->getFields() )
 //		{
 //			auto tex = f->getTextObject();
 //			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
 //			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
-//			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 //			SDL_Rect pos = f->getSize();
+//
+//			positionSkillSheetBlitField(f, tex, pos);
+//
 //			pos.x += totalPos.x;
 //			pos.y += totalPos.y;
 //			SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
 //		}
 //	}
 //
-//	for ( auto& frame : skillSheetEntryFrames[player].entryFrameRight->getFrames() )
+//	for ( auto frame : skillSheetEntryFrames[player].skillsFrame->getFrames() )
 //	{
 //		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//
 //		totalPos.x += frame->getSize().x;
-//		totalPos.x += skillSheetEntryFrames[player].entryFrameRight->getSize().x;
 //		totalPos.y += frame->getSize().y;
-//		totalPos.y += skillSheetEntryFrames[player].entryFrameRight->getSize().y;
 //		for ( auto& img : frame->getImages() )
 //		{
 //			if ( img->disabled ) { continue; }
 //			if ( img->path == "" ) { continue; }
+//			if ( !img->ontop ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	//for ( auto img : skillsFrame->getImages() )
+//	//{
+//	//	if ( img->disabled ) { continue; }
+//	//	if ( img->path == "" ) { continue; }
+//	//	SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//	//	Uint8 r, g, b, a;
+//	//	getColor(img->color, &r, &g, &b, &a);
+//	//	SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//	//	//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//	//	SDL_Rect pos = img->pos;
+//	//	SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//	//}
+//
+//	for ( auto frame : skillsFrame->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//
+//		for ( auto f : frame->getFields() )
+//		{
+//			auto tex = f->getTextObject();
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
+//			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = f->getSize();
+//
+//			positionSkillSheetBlitField(f, tex, pos);
+//
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	for ( auto frame : skillSheetEntryFrames[player].skillDescFrame->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//		totalPos.x += skillSheetEntryFrames[player].skillDescFrame->getSize().x;
+//		totalPos.y += skillSheetEntryFrames[player].skillDescFrame->getSize().y;
+//
+//		totalPos.x += frame->getSize().x;
+//		totalPos.y += frame->getSize().y;
+//		for ( auto& img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			//if ( !img->ontop ) { continue; }
 //			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
 //			Uint8 r, g, b, a;
 //			getColor(img->color, &r, &g, &b, &a);
@@ -28595,16 +29120,111 @@ void Player::SkillSheet_t::selectSkill(int skill)
 //			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
 //		}
 //
-//		for ( auto& f : frame->getFields() )
+//		for ( auto f : frame->getFields() )
 //		{
 //			auto tex = f->getTextObject();
 //			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
 //			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
-//			SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
 //			SDL_Rect pos = f->getSize();
+//
+//			positionSkillSheetBlitField(f, tex, pos);
+//
 //			pos.x += totalPos.x;
 //			pos.y += totalPos.y;
 //			SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
+//		}
+//	}
+//
+//	for ( auto frame : skillSheetEntryFrames[player].scrollAreaOuterFrame->getFrames() )
+//	{
+//		totalPos = skillSheetEntryFrames[player].skillsFrame->getSize();
+//		totalPos.x += skillSheetEntryFrames[player].skillDescFrame->getSize().x;
+//		totalPos.y += skillSheetEntryFrames[player].skillDescFrame->getSize().y;
+//		totalPos.x += skillSheetEntryFrames[player].scrollAreaOuterFrame->getSize().x;
+//		totalPos.y += skillSheetEntryFrames[player].scrollAreaOuterFrame->getSize().y;
+//
+//		totalPos.x += frame->getSize().x;
+//		totalPos.y += frame->getSize().y;
+//		for ( auto& img : frame->getImages() )
+//		{
+//			if ( img->disabled ) { continue; }
+//			if ( img->path == "" ) { continue; }
+//			//if ( !img->ontop ) { continue; }
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(Image::get(img->path.c_str())->getSurf());
+//			Uint8 r, g, b, a;
+//			getColor(img->color, &r, &g, &b, &a);
+//			SDL_SetSurfaceAlphaMod(srcSurf, a * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = img->pos;
+//			pos.x += totalPos.x;
+//			pos.y += totalPos.y;
+//			SDL_BlitScaled(srcSurf, nullptr, sprite, &pos);
+//		}
+//
+//		for ( auto f : frame->getFields() )
+//		{
+//			if ( f->isDisabled() ) { continue; }
+//			auto tex = f->getTextObject();
+//			SDL_Surface* srcSurf = const_cast<SDL_Surface*>(tex->getSurf());
+//			SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
+//			//SDL_SetSurfaceBlendMode(srcSurf, SDL_BLENDMODE_NONE);
+//			SDL_Rect pos = f->getSize();
+//
+//			if ( tex->getNumTextLines() > 1 )
+//			{
+//				char* buf = (char*)malloc(f->getTextLen() + 1);
+//				memcpy(buf, f->getText(), f->getTextLen() + 1);
+//
+//				int yoff = 0;
+//				int currentLine = -1;
+//				char* nexttoken;
+//				char* token = buf;
+//				do {
+//					++currentLine;
+//					nexttoken = Field::tokenize(token, "\n");
+//
+//					Text* text = Text::get(token, f->getFont(), f->getTextColor(), f->getOutlineColor());
+//					assert(text);
+//
+//					positionSkillSheetBlitField(f, text, pos, yoff);
+//					pos.x += totalPos.x;
+//					pos.y += totalPos.y;
+//
+//					srcSurf = const_cast<SDL_Surface*>(text->getSurf());
+//					SDL_SetSurfaceAlphaMod(srcSurf, 255 * opacity);
+//
+//					SDL_Rect srcPos = pos;
+//					srcPos.x = 0;
+//					srcPos.y = 0;
+//					if ( f->getSize().y + yoff + frame->getSize().y < 0 )
+//					{
+//						int diff = f->getSize().y + yoff + frame->getSize().y;
+//						srcPos.y -= diff;
+//						pos.y -= diff;
+//					}
+//					else if ( f->getSize().y + yoff + text->getHeight() - (frame->getSize().h - frame->getSize().y) < 0 )
+//					{
+//						int diff = f->getSize().y + yoff + text->getHeight() - (frame->getSize().h - frame->getSize().y);
+//						srcPos.y -= diff;
+//						pos.y -= diff;
+//					}
+//					SDL_BlitSurface(srcSurf, &srcPos, sprite, &pos);
+//
+//					Font* actualFont = Font::get(f->getFont());
+//					yoff += actualFont->height(true);
+//					pos = f->getSize();
+//				} while ( (token = nexttoken) != NULL );
+//
+//				free(buf);
+//			}
+//			else
+//			{
+//				positionSkillSheetBlitField(f, tex, pos);
+//				pos.x += totalPos.x;
+//				pos.y += totalPos.y;
+//				SDL_BlitSurface(srcSurf, nullptr, sprite, &pos);
+//			}
 //		}
 //	}
 //
@@ -28634,6 +29254,9 @@ void Player::SkillSheet_t::processSkillSheet()
 		}
 	}
 
+	auto oldSkillSlideAmount = skillSlideAmount;
+	auto oldHighlightedSkill = highlightedSkill;
+
 	if ( !bSkillSheetOpen )
 	{
 		skillFrame->setDisabled(true);
@@ -28652,6 +29275,8 @@ void Player::SkillSheet_t::processSkillSheet()
 		fade->disabled = true;
 		return;
 	}
+
+	bool reblitFrame = false;
 
 	skillFrame->setDisabled(false);
 	skillFrame->setSize(SDL_Rect{ players[player.playernum]->camera_virtualx1(),
@@ -28730,11 +29355,16 @@ void Player::SkillSheet_t::processSkillSheet()
 		SDL_Rect skillDescPos = skillDescriptionFrame->getSize();
 		skillDescPos.h = innerFrame->getSize().h - skillDescPos.y - 16;
 		skillDescPos.w = innerFrame->getSize().w + compactViewWidthOffset - allSkillEntriesLeft->getSize().w - allSkillEntriesRight->getSize().w;
-		skillDescPos.x = innerFrame->getSize().w / 2 - skillDescPos.w / 2;
+		int xMove = innerFrame->getSize().w / 2 - skillDescPos.w / 2;
 		if ( skillSlideDirection != 0 )
 		{
-			skillDescPos.x += (skillSlideAmount) * slideTravelDistance;
+			xMove += (skillSlideAmount) * slideTravelDistance;
 		}
+		if ( xMove != skillDescPos.x )
+		{
+			reblitFrame = true;
+		}
+		skillDescPos.x = xMove;
 		skillDescriptionFrame->setSize(skillDescPos);
 
 		scrollOuterFramePos.h = skillDescPos.h - 4;
@@ -28951,6 +29581,7 @@ void Player::SkillSheet_t::processSkillSheet()
 	{
 		slider->deselect();
 	}
+	//slider->setHideSelectors(false);
 	bool sliderDisabled = slider->isDisabled();
 
 	auto titleText = innerFrame->findField("skill title txt");
@@ -28971,6 +29602,11 @@ void Player::SkillSheet_t::processSkillSheet()
 		{
 			skillSlideAmount = 1.0;
 		}
+	}
+
+	if ( oldSkillSlideAmount != skillSlideAmount )
+	{
+		reblitFrame = true;
 	}
 
 	int lowestSkillEntryY = 0;
@@ -29194,6 +29830,11 @@ void Player::SkillSheet_t::processSkillSheet()
 				|| skillsheetCache[player.playernum][proficiency].selectedSkill != selectedSkill
 				|| skillsheetCache[player.playernum][proficiency].highlightedSkill != highlightedSkill )
 			{
+				if ( skillsheetCache[player.playernum][proficiency].proficiencyLevelCached != stats[player.playernum]->PROFICIENCIES[proficiency]
+					|| skillsheetCache[player.playernum][proficiency].selectedSkill != selectedSkill )
+				{
+					reblitFrame = true;
+				}
 				skillsheetCache[player.playernum][proficiency].proficiencyLevelCached = stats[player.playernum]->PROFICIENCIES[proficiency];
 				skillsheetCache[player.playernum][proficiency].selectedSkill = selectedSkill;
 				skillsheetCache[player.playernum][proficiency].highlightedSkill = highlightedSkill;
@@ -29238,7 +29879,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_LEGENDARY )
 				{
 					//skillIconFg->path = skillSheetData.skillEntries[i].skillIconPathLegend;
-					skillLevel->setColor(skillSheetData.legendTextColor);
+					skillLevel->setTextColor(skillSheetData.legendTextColor);
 					if ( selectedSkill == i )
 					{
 						skillIconBg->path = skillSheetData.iconBgSelectedPathLegend;
@@ -29250,7 +29891,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_EXPERT )
 				{
-					skillLevel->setColor(skillSheetData.expertTextColor);
+					skillLevel->setTextColor(skillSheetData.expertTextColor);
 					if ( selectedSkill == i )
 					{
 						skillIconBg->path = skillSheetData.iconBgSelectedPathExpert;
@@ -29262,7 +29903,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 				else if ( stats[player.playernum]->PROFICIENCIES[proficiency] >= SKILL_LEVEL_BASIC )
 				{
-					skillLevel->setColor(skillSheetData.noviceTextColor);
+					skillLevel->setTextColor(skillSheetData.noviceTextColor);
 					if ( selectedSkill == i )
 					{
 						skillIconBg->path = skillSheetData.iconBgSelectedPathNovice;
@@ -29274,7 +29915,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 				else
 				{
-					skillLevel->setColor(skillSheetData.defaultTextColor);
+					skillLevel->setTextColor(skillSheetData.defaultTextColor);
 					if ( selectedSkill == i )
 					{
 						skillIconBg->path = skillSheetData.iconBgSelectedPathDefault;
@@ -29541,6 +30182,8 @@ void Player::SkillSheet_t::processSkillSheet()
 
 					if ( !bSkillSheetEntryLoaded || bEffUpdated )
 					{
+						reblitFrame = true;
+
 						auto effectValFrame = effectFrame->findFrame("effect val frame");
 						auto effectVal = effectValFrame->findField("effect val");
 						auto effectTxtFrame = effectFrame->findFrame("effect txt frame");
@@ -29836,6 +30479,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 			if ( !bSkillSheetEntryLoaded || skillLVLUpdated )
 			{
+				reblitFrame = true;
 				Uint32 legendGoldColor = makeColor(230, 183, 20, 255);
 				Uint32 legendRegularColor = makeColor(201, 162, 100, 255);
 
@@ -29874,8 +30518,8 @@ void Player::SkillSheet_t::processSkillSheet()
 
 				if ( proficiencyValue < SKILL_LEVEL_LEGENDARY )
 				{
-					legendDivTxt->setColor(legendRegularColor);
-					legendText->setColor(legendRegularColor);
+					legendDivTxt->setTextColor(legendRegularColor);
+					legendText->setTextColor(legendRegularColor);
 					
 					std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_LegendBox_Full_";
 					staticImgPath += std::to_string(legendPos.w) + 'x' + std::to_string(legendPos.h) + ".png";
@@ -29915,8 +30559,8 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 				else
 				{
-					legendDivTxt->setColor(legendGoldColor);
-					legendText->setColor(legendGoldColor);
+					legendDivTxt->setTextColor(legendGoldColor);
+					legendText->setTextColor(legendGoldColor);
 
 					std::string staticImgPath = "*#images/ui/SkillSheet/UI_Skills_LegendBox100_Full_";
 					staticImgPath += std::to_string(legendPos.w) + 'x' + std::to_string(legendPos.h) + ".png";
@@ -29969,6 +30613,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			//lowestY += 4; // small buffer after legend box
 		}
 
+		auto oldScrollPercent = scrollPercent;
 		if ( !slider->isDisabled() && player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
@@ -30027,7 +30672,16 @@ void Player::SkillSheet_t::processSkillSheet()
 			scrollAreaPos.y = 0;
 			slider->setDisabled(true);
 		}
+		if ( scrollPercent != oldScrollPercent )
+		{
+			reblitFrame = true;
+		}
 		scrollArea->setSize(scrollAreaPos);
+	}
+
+	if ( oldHighlightedSkill != highlightedSkill )
+	{
+		reblitFrame = true;
 	}
 
 	//DebugTimers.addTimePoint("skill", "post display");
@@ -30131,31 +30785,12 @@ void Player::SkillSheet_t::processSkillSheet()
 		return;
 	}
 
-	/*static SDL_Surface* skillSprite = nullptr;
-	static TempTexture* texture = nullptr;
 	{
-		if ( !bSkillSheetEntryLoaded || skillsFadeInAnimationY < 1.0 )
+		if ( !bSkillSheetEntryLoaded || reblitFrame || skillsFadeInAnimationY < 1.0 )
 		{
-			if ( texture )
-			{
-				delete texture;
-				texture = nullptr;
-			}
-			if ( skillSprite )
-			{
-				SDL_FreeSurface(skillSprite);
-				skillSprite = nullptr;
-			}
-			skillSprite = blitSkillSheet(skillFrame);
-			if ( skillSprite )
-			{
-				texture = new TempTexture();
-				texture->load(skillSprite, false, true);
-			}
+			skillSheetEntryFrames[player.playernum].skillsFrame->setBlitDirty(true);
 		}
-		const SDL_Rect viewport{ 0, 0, xres, yres };
-		Image::drawSurface(texture->texid, skillSprite, nullptr, skillFrame->getSize(), viewport, 0xFFFFFFFF);
-	}*/
+	}
 
 	if ( sliderDisabled != slider->isDisabled() )
 	{

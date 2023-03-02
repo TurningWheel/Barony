@@ -164,6 +164,18 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPistonBase || entity->behavior == &actPistonCam )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0 )
+	{
+		return true;
+	}
 	return false;
 }
 

@@ -1154,8 +1154,8 @@
             "name_unidentified": "monocle"
         },
 		"tool_player_loot_bag": {
-            "name_identified": "loot crate",
-            "name_unidentified": "loot crate"
+            "name_identified": "death box",
+            "name_unidentified": "death box"
         }
     },
 	"spell_names": {

@@ -185,6 +185,69 @@ void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect v
 	}
 }
 
+void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) {
+	if ( !surf ) {
+		return;
+	}
+
+	// read color
+	Uint8 r, g, b, a;
+	getColor(color, &r, &g, &b, &a);
+	if ( !a ) {
+		return;
+	}
+
+	// for the use of a whole image
+	SDL_Rect secondsrc;
+	if ( src == nullptr ) {
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = surf->w;
+		secondsrc.h = surf->h;
+		src = &secondsrc;
+	}
+
+	if ( !drawingGui ) {
+		glEnable(GL_BLEND);
+
+		// setup projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+
+		// push model matrix
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+	}
+
+	// bind texture
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x, viewport.h - dest.y);
+	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
+	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
+	glEnd();
+
+	if ( !drawingGui ) {
+		glDisable(GL_BLEND);
+
+		// pop matrices
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	}
+}
+
 void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle)
 {
 	if ( !surf ) {

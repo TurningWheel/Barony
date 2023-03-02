@@ -61,6 +61,8 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 			image.pos = {0, 0, railSize.w, railSize.h};
 			image.tiled = false;
 			auto frame = static_cast<Frame*>(parent);
+			//bool isBlitToParent = frame->isBlitToParent();
+			//frame->setBlitToParent(false);
 			frame->drawImage(&image, _railSize,
 				SDL_Rect{
 					std::max(0, _actualSize.x - railSize.x),
@@ -68,6 +70,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 					0, 0
 				}
 			);
+			//frame->setBlitToParent(isBlitToParent);
 		}
 	}
 	
@@ -106,6 +109,8 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 			image.pos = {0, 0, handleSize.w, handleSize.h};
 			image.tiled = false;
 			auto frame = static_cast<Frame*>(parent);
+			//bool isBlitToParent = frame->isBlitToParent();
+			//frame->setBlitToParent(false);
 			frame->drawImage(&image, _handleSize,
 				SDL_Rect{
 					std::max(0, _actualSize.x - handleSize.x),
@@ -113,6 +118,7 @@ void Slider::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 					0, 0
 				}
 			);
+			//frame->setBlitToParent(isBlitToParent);
 		}
 	}
 
