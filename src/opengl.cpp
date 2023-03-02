@@ -1009,6 +1009,9 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
+    
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
@@ -1166,6 +1169,8 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
+    
+    glDisable(GL_ALPHA_TEST);
 
 	//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
 	return anyVertexVisible;
@@ -1214,6 +1219,9 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
+    
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
@@ -1291,6 +1299,8 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
+    
+    glDisable(GL_ALPHA_TEST);
 #endif
 }
 
@@ -1393,6 +1403,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 			sprite = sprites[0];
 		}
 	}
+    
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
@@ -1530,6 +1543,8 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
+    
+    glDisable(GL_ALPHA_TEST);
 #endif
 }
 
@@ -1538,6 +1553,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	SDL_Surface* sprite;
 	//int x, y;
 	real_t s = 1;
+    
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup model matrix
 	glMatrixMode( GL_MODELVIEW );
@@ -1661,6 +1679,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     {
         glDisable(GL_BLEND);
     }
+    
+    glDisable(GL_ALPHA_TEST);
 }
 
 #ifndef EDITOR
@@ -1698,6 +1718,9 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+    
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup model matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -1803,6 +1826,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     {
         glDisable(GL_BLEND);
     }
+    glDisable(GL_ALPHA_TEST);
 }
 
 /*-------------------------------------------------------------------------------
