@@ -333,7 +333,7 @@ void Frame::postdraw() {
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
-	drawingGui = true;
+	drawingGui = false;
 	glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
 
