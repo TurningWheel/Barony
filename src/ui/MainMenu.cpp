@@ -1720,6 +1720,7 @@ namespace MainMenu {
 #ifdef USE_EOS
 		LobbyHandler.crossplayEnabled = false;
 		EOS.CrossplayAccountManager.logOut = true;
+		nxDisconnectFromNetwork();
 #endif
 	}
 
@@ -1788,6 +1789,7 @@ namespace MainMenu {
 									logoutOfEpic();
 									printlog("[NX] EOS login failed");
 									closePrompt("connect_eos_prompt");
+									nxDisconnectFromNetwork();
 									if (cb) {
 										cb(false);
 									}
@@ -1804,6 +1806,7 @@ namespace MainMenu {
 							logoutOfEpic();
 							printlog("[NX] failed to establish network connection, EOS connection failed");
 							closePrompt("connect_eos_prompt");
+							nxDisconnectFromNetwork();
 							if (cb) {
 								cb(false);
 							}
@@ -2269,7 +2272,7 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
+#if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
@@ -6953,8 +6956,15 @@ bind_failed:
 				if (it != achievementUnlockTime.end()) {
 					char buffer[64];
 					time_t t = (time_t)it->second;
+
+#ifdef NINTENDO
+					char tbuf[64];
+					nxGetTimeFormatted(t, tbuf, sizeof(tbuf));
+					snprintf(buffer, sizeof(buffer), "Unlocked %s", tbuf);
+#else
 					struct tm* tm_info = localtime(&t);
 					strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
+#endif
 
 					auto unlockField = frame->addField("unlock", 64);
 					unlockField->setFont(smallfont_outline);
@@ -7116,7 +7126,11 @@ bind_failed:
         }
 
         constexpr Uint32 seconds_in_day = 86400;
-        const Uint32 seconds = time(NULL) / seconds_in_day;
+#ifdef NINTENDO
+		const Uint32 seconds = nxGetTime() % seconds_in_day;
+#else
+		const Uint32 seconds = time(NULL) % seconds_in_day;
+#endif
 
         if (add_to_list) {
             playSound(238, 64);

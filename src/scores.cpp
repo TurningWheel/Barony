@@ -5276,7 +5276,11 @@ int saveGame(int saveIndex) {
 	
 	SaveGameInfo info;
 	
-	time_t t = time(nullptr);
+#ifdef NINTENDO
+    auto t = nxGetTime();
+#else
+	auto t = time(nullptr);
+#endif
 	struct tm* tm = localtime(&t); assert(tm);
 
 	// save info

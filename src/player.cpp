@@ -243,7 +243,7 @@ void GameController::initBindings()
 const bool GameController::isActive()
 {
 #ifdef NINTENDO
-	return true;
+	return nxIsControllerConnected(id);
 #else
 	return (sdl_device != nullptr);
 #endif
