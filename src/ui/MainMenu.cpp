@@ -1720,7 +1720,9 @@ namespace MainMenu {
 #ifdef USE_EOS
 		LobbyHandler.crossplayEnabled = false;
 		EOS.CrossplayAccountManager.logOut = true;
+#ifdef NINTENDO
 		nxDisconnectFromNetwork();
+#endif
 #endif
 	}
 
