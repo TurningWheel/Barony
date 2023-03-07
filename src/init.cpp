@@ -241,8 +241,9 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #ifdef NINTENDO
 	EOS.SetNetworkAvailable(nxConnectedToNetwork());
-#endif
+#else
 	EOS.initAuth();
+#endif
 #endif // !STEAMWORKS
 #endif
 

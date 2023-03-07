@@ -1816,6 +1816,7 @@ namespace MainMenu {
 				[](Button&){ // cancel
 					logoutOfEpic();
 					closePrompt("connect_eos_prompt");
+					nxDisconnectFromNetwork();
 					if (cb) {
 						cb(false);
 					}
@@ -18027,7 +18028,7 @@ failed:
 					++numplayers;
 				}
 			}
-			nxAssignControllers(numplayers, numplayers, true, false, false, false, nullptr);
+			nxAssignControllers(numplayers, numplayers, false, false, false, false, nullptr);
 #else
 	        static std::vector<int> players;
 	        players.clear();
