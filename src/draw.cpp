@@ -3215,20 +3215,23 @@ void occlusionCulling(map_t& map, const view_t& camera)
 #ifdef NINTENDO
 	static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
 #else
-    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
+    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 2);
 #endif // NINTENDO
 
 	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
     static ConsoleVariable<bool> disabled("/skipculling", false);
+	static ConsoleVariable<bool> disableInWalls("/disable_culling_in_walls", false);
 #else
 	static int ed_distance = CLIPFAR / 16;
 	static int ed_walls_hit = 2;
 	static bool ed_culling = true;
 	static bool ed_disabled = false;
+	static bool ed_disableInWalls = true;
 	auto* max_distance = &ed_distance;
 	auto* max_walls_hit = &ed_walls_hit;
 	auto* diagonalCulling = &ed_culling;
     auto* disabled = &ed_disabled;
+	auto* disableInWalls = &ed_disableInWalls;
 #endif
 
 	const int size = map.width * map.height;
@@ -3244,10 +3247,11 @@ void occlusionCulling(map_t& map, const view_t& camera)
     const int camy = std::min(std::max(0, (int)camera.y), (int)map.height - 1);
 
     // don't do culling if camera in wall
-    if ( map.tiles[OBSTACLELAYER + camy * MAPLAYERS + camx * MAPLAYERS * map.height] != 0 )
-	{
-		memset(map.vismap, 1, sizeof(bool) * size);
-		return;
+	if (*disableInWalls) {
+		if (map.tiles[OBSTACLELAYER + camy * MAPLAYERS + camx * MAPLAYERS * map.height] != 0) {
+			memset(map.vismap, 1, sizeof(bool) * size);
+			return;
+		}
 	}
 
     memset(map.vismap, 0, sizeof(bool) * size);

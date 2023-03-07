@@ -2772,7 +2772,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		}
 
 		// spawn particles
-		if ( *cvar_magic_fx_use_vismap )
+		if ( *cvar_magic_fx_use_vismap && !splitscreen )
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
@@ -2835,7 +2835,7 @@ void actMagicClient(Entity* my)
 	}
 
 	// spawn particles
-	if ( *cvar_magic_fx_use_vismap )
+	if ( *cvar_magic_fx_use_vismap && !splitscreen)
 	{
 		int x = my->x / 16.0;
 		int y = my->y / 16.0;
@@ -2856,7 +2856,7 @@ void actMagicClient(Entity* my)
 void actMagicClientNoLight(Entity* my)
 {
 	// simply spawn particles
-	if ( *cvar_magic_fx_use_vismap )
+	if ( *cvar_magic_fx_use_vismap && !splitscreen)
 	{
 		int x = my->x / 16.0;
 		int y = my->y / 16.0;
@@ -3772,7 +3772,7 @@ void actParticleErupt(Entity* my)
 		my->scalex *= 0.99;
 		my->scaley *= 0.99;
 		my->scalez *= 0.99;
-		if ( *cvar_magic_fx_use_vismap )
+		if ( *cvar_magic_fx_use_vismap && !splitscreen)
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
@@ -4297,7 +4297,7 @@ void actParticleSap(Entity* my)
 		}
 		else
 		{
-			if ( *cvar_magic_fx_use_vismap )
+			if ( *cvar_magic_fx_use_vismap && !splitscreen)
 			{
 				int x = my->x / 16.0;
 				int y = my->y / 16.0;
