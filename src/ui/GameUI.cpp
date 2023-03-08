@@ -30544,8 +30544,9 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendTextPos.w = tm->pos.w;
 				legendText->setSize(legendTextPos);
 				legendText->reflowTextToFit(0);
-				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight/*actualFont->height(true)*/;
-				legendTextPos.y = tm->pos.y + tm->pos.h / 2;
+				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight;
+				legendTextPos.y = tm->pos.y + tm->pos.h / 2 + 2;
+				legendTextPos.h += 4; // handle hanging chars
 				legendText->setSize(legendTextPos);
 
 				auto ml = legendFrame->findImage("middle left img");
@@ -30719,11 +30720,20 @@ void Player::SkillSheet_t::processSkillSheet()
 		scrollAreaPos = scrollArea->getSize();
 		if ( lowestY > scrollAreaOuterFrame->getSize().h )
 		{
-			scrollAreaPos.y = -(lowestY - scrollAreaOuterFrame->getSize().h) * scrollPercent;
+			SDL_Rect actualSize = scrollArea->getActualSize();
+			actualSize.y = (lowestY - scrollAreaOuterFrame->getSize().h) * scrollPercent;
+			actualSize.h = scrollAreaPos.h;
+			scrollArea->setActualSize(actualSize);
+			
+			scrollAreaPos.y = 0;
 			slider->setDisabled(false);
 		}
 		else
 		{
+			SDL_Rect actualSize = scrollArea->getActualSize();
+			actualSize.y = 0;
+			scrollArea->setActualSize(actualSize);
+
 			scrollAreaPos.y = 0;
 			slider->setDisabled(true);
 		}
