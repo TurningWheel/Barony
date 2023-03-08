@@ -4322,35 +4322,35 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 	std::string bindingName = getContextMenuOptionBindingName(player, prompt);
 	if ( bindingName == "MenuAlt1" )
 	{
-#ifdef NINTENDO
-		return 1;
-#else
 		return 2;
-#endif
+//#ifdef NINTENDO
+//		return 1;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuAlt2" )
 	{
-#ifdef NINTENDO
-		return 2;
-#else
 		return 1;
-#endif
+//#ifdef NINTENDO
+//		return 2;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuConfirm" )
 	{
-#ifdef NINTENDO
-		return 3;
-#else
 		return 4;
-#endif
+//#ifdef NINTENDO
+//		return 3;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuCancel" )
 	{
-#ifdef NINTENDO
-		return 4;
-#else
 		return 3;
-#endif
+//#ifdef NINTENDO
+//		return 4;
+//#else
+//#endif
 	}
 	return 5;
 }
