@@ -4458,6 +4458,21 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// the server sent a game player preferences update
+	{'GPPR', []() {
+		GameplayPreferences_t::receivePacket();
+	}},
+
+	// the server requested a game player preferences update
+	{'GPPU', []() {
+		gameplayPreferences[clientnum].sendToServer();
+	}},
+
+	// the server sent a game config update
+	{ 'GOPT', []() {
+		GameplayPreferences_t::receiveGameConfig();
+	} },
+
 	{'DASH', [](){
 		if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
 		{
@@ -6042,6 +6057,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	{'PMAP', [](){
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay self and to other clients.
+	}},
+
+	// the client sent a gameplayer preferences update
+	{ 'GPPR', []() {
+		GameplayPreferences_t::receivePacket();
 	}},
 
 	//Remove vampiric aura

@@ -3770,7 +3770,7 @@ void assignActions(map_t* map)
 	}
 
 	// update arachnophobia filter
-	arachnophobia_filter = MainMenu::arachnophobia_filter;
+	arachnophobia_filter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
 
 	// add lava lights
 	for ( y = 0; y < map->height; ++y )

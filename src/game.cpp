@@ -1607,7 +1607,10 @@ void gameLogic(void)
 				}
 				updateGameplayStatisticsInMainLoop();
 			}
-
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				gameplayPreferences[i].process();
+			}
 			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
@@ -2863,6 +2866,10 @@ void gameLogic(void)
 				updateGameplayStatisticsInMainLoop();
 			}
 
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				gameplayPreferences[i].process();
+			}
 			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update

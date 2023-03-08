@@ -8071,6 +8071,11 @@ bind_failed:
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 			client_keepalive[player] = ticks;
 		}},
+
+		// the client sent a gameplayer preferences update
+		{'GPPR', []() {
+			GameplayPreferences_t::receivePacket();
+		}},
     };
 
 	static void handlePacketsAsServer() {
@@ -8382,6 +8387,21 @@ bind_failed:
 	    {'KPAL', [](){
 		    return; // just a keep alive
 	    }},
+
+		// the server sent a game player preferences update
+		{'GPPR', []() {
+			GameplayPreferences_t::receivePacket();
+		}},
+
+		// the server requested a game player preferences update
+		{'GPPU', []() {
+			gameplayPreferences[clientnum].sendToServer();
+		}},
+
+		// the server sent a game config update
+		{'GOPT', []() {
+			GameplayPreferences_t::receiveGameConfig();
+		}},
 	};
 
 	static void handlePacketsAsClient() {
@@ -13967,6 +13987,9 @@ failed:
 			    }
 			}
 		}
+
+		GameplayPreferences_t::reset();
+
         if (type == LobbyType::LobbyJoined) {
             sendPlayerOverNet();
         }
@@ -19034,6 +19057,26 @@ failed:
 
         if (!ingame) {
             handleNetwork();
+
+			if ( currentLobbyType != LobbyType::None )
+			{
+				int oldArachnophobiaFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					gameplayPreferences[i].process();
+				}
+				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA) != oldArachnophobiaFilter )
+				{
+					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ARACHNOPHOBIA].value != 0 )
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4333]);
+					}
+					else
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4334]);
+					}
+				}
+			}
         } else {
 #ifdef STEAMWORKS
 			if (ticks % 250 == 0) {
