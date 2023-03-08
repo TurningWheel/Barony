@@ -230,10 +230,6 @@ int ofingery = 0;
 Sint8 mousestatus[6];
 bool capture_mouse = true;
 string lastname;
-int lastCreatedCharacterClass = -1;
-int lastCreatedCharacterAppearance = -1;
-int lastCreatedCharacterSex = -1;
-int lastCreatedCharacterRace = -1;
 
 // net stuff
 Uint32 clientplayer = 0;
