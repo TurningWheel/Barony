@@ -6408,5 +6408,7 @@ for accessory to violence!#
 4330 Contains %d items with no owner.#
 4331 Contains %d items belonging to you.#
 4332 You break the box open!#
+4333 Arachnophobia Filter has been enabled for the lobby.#
+4334 Arachnophobia Filter has been disabled for the lobby.#
 
 4399 end#
