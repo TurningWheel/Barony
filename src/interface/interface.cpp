@@ -4158,7 +4158,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			strcat(interactText, language[4044]); // "switch"
 		}
 	}
-	else if ( (selectedEntity.behavior == &actTeleportShrine ) && interactWorld && followerStats->type != GYROBOT )
+	else if ( (selectedEntity.behavior == &actTeleportShrine ) && (interactWorld || interactItems) && followerStats->type != GYROBOT )
 	{
 		if ( updateInteractText )
 		{
