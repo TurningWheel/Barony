@@ -852,30 +852,8 @@ void deinitGame()
 	}
 #endif
 #if defined USE_EOS
-	if ( EOS.CurrentLobbyData.currentLobbyIsValid() )
-	{
-		EOS.leaveLobby();
-
-		Uint32 shutdownTicks = SDL_GetTicks();
-		while ( EOS.CurrentLobbyData.bAwaitingLeaveCallback )
-		{
-#ifdef APPLE
-			SDL_Event event;
-			while ( SDL_PollEvent(&event) != 0 )
-			{
-				//Makes Mac work because Apple had to do it different.
-			}
-#endif
-			EOS_Platform_Tick(EOS.PlatformHandle);
-			SDL_Delay(50);
-			if ( SDL_GetTicks() - shutdownTicks >= 3000 )
-			{
-				break;
-			}
-		}
-	}
-	EOS.AccountManager.deinit();
-	EOS.shutdown();
+	EOS.stop();
+	EOS.quit();
 #endif
 
 	//Close game controller

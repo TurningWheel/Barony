@@ -51,7 +51,7 @@ char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
 bool disableMultithreadedSteamNetworking = true;
-bool disableFPSLimitOnNetworkMessages = false;
+bool disableFPSLimitOnNetworkMessages = true; // always process the messages, otherwise you can get vastly behind.
 
 // uncomment this to have the game log packet info
 //#define PACKETINFO

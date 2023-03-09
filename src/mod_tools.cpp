@@ -7021,21 +7021,15 @@ LocalAchievements_t LocalAchievements;
 
 void LocalAchievements_t::readFromFile()
 {
-	const std::string filename = "savegames/achievements.json";
-	if ( !PHYSFS_getRealDir(filename.c_str()) )
-	{
-		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
-		return;
-	}
+	LocalAchievements.init();
 
-	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
-	inputPath.append(PHYSFS_getDirSeparator());
-	inputPath.append(filename.c_str());
+	char path[PATH_MAX] = "";
+	completePath(path, "savegames/achievements.json", outputdir);
 
-	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	File* fp = FileIO::open(path, "rb");
 	if ( !fp )
 	{
-		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		printlog("[JSON]: Error: Could not locate json file %s", path);
 		return;
 	}
 
@@ -7049,11 +7043,9 @@ void LocalAchievements_t::readFromFile()
 	d.ParseStream(is);
 	if ( !d.HasMember("version") || !d.HasMember("achievements") || !d.HasMember("statistics") )
 	{
-		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", path);
 		return;
 	}
-
-	LocalAchievements.init();
 
 	for ( auto achievement = d["achievements"].MemberBegin(); achievement != d["achievements"].MemberEnd(); ++achievement )
 	{
@@ -7096,16 +7088,8 @@ void LocalAchievements_t::readFromFile()
 
 void LocalAchievements_t::writeToFile()
 {
-	std::string outputDir = "/savegames/";
-	if ( !PHYSFS_getRealDir(outputDir.c_str()) )
-	{
-		printlog("[JSON]: LocalAchievements_t: %s directory not found", outputDir.c_str());
-		return;
-	}
-	std::string outputPath = PHYSFS_getRealDir(outputDir.c_str());
-	outputPath.append(PHYSFS_getDirSeparator());
-	std::string fileName = "savegames/achievements.json";
-	outputPath.append(fileName.c_str());
+	char path[PATH_MAX] = "";
+	completePath(path, "savegames/achievements.json", outputdir);
 
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
@@ -7147,10 +7131,10 @@ void LocalAchievements_t::writeToFile()
 	}
 	CustomHelpers::addMemberToRoot(exportDocument, "statistics", allStatObj);
 
-	File* fp = FileIO::open(outputPath.c_str(), "wb");
+	File* fp = FileIO::open(path, "wb");
 	if ( !fp )
 	{
-		printlog("[JSON]: Error opening json file %s for write!", outputPath.c_str());
+		printlog("[JSON]: Error opening json file %s for write!", path);
 		return;
 	}
 	rapidjson::StringBuffer os;
@@ -7159,7 +7143,7 @@ void LocalAchievements_t::writeToFile()
 	fp->write(os.GetString(), sizeof(char), os.GetSize());
 	FileIO::close(fp);
 
-	printlog("[JSON]: Successfully wrote json file %s", outputPath.c_str());
+	printlog("[JSON]: Successfully wrote json file %s", path);
 	return;
 }
 
@@ -7188,7 +7172,11 @@ void LocalAchievements_t::updateAchievement(const char* name, const bool unlocke
 		ach.unlocked = unlocked;
 		if ( ach.unlocked && !oldUnlocked )
 		{
+#ifdef NINTENDO
+			auto t = nxGetTime();
+#else
 			auto t = time(nullptr);
+#endif
 			ach.unlockTime = t;
 
 			UIToastNotificationManager.createAchievementNotification(name);

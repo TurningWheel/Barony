@@ -848,7 +848,11 @@ void steamAchievement(const char* achName)
 
 #endif
 		achievementUnlockedLookup.insert(std::string(achName));
+#ifdef NINTENDO
+		achievementUnlockTime.emplace(std::make_pair(std::string(achName), nxGetTime()));
+#else
 		achievementUnlockTime.emplace(std::make_pair(std::string(achName), time(nullptr)));
+#endif
 	}
 }
 

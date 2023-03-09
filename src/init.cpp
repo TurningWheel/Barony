@@ -218,10 +218,12 @@ int initApp(char const * const title, int fullscreen)
 #if defined USE_EOS
 	EOS.readFromFile();
 	EOS.readFromCmdLineArgs();
+#ifndef NINTENDO
 	if ( EOS.initPlatform(true) == false )
 	{
 		return 14;
 	}
+#endif
 #ifndef STEAMWORKS
 #ifndef NINTENDO
 #ifdef APPLE
@@ -241,8 +243,9 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #ifdef NINTENDO
 	EOS.SetNetworkAvailable(nxConnectedToNetwork());
-#endif
+#else
 	EOS.initAuth();
+#endif
 #endif // !STEAMWORKS
 #endif
 

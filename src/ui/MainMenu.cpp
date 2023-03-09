@@ -1738,7 +1738,7 @@ namespace MainMenu {
 
 	static bool isConnectedToEpic() {
 #ifdef USE_EOS
-		return EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid();
+		return EOS.isInitialized() && EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid();
 #else
 		return false;
 #endif
@@ -1746,8 +1746,13 @@ namespace MainMenu {
 
 	static void logoutOfEpic() {
 #ifdef USE_EOS
+#if defined(NINTENDO)
+		EOS.stop();
+		nxDisconnectFromNetwork();
+#else
 		LobbyHandler.crossplayEnabled = false;
 		EOS.CrossplayAccountManager.logOut = true;
+#endif
 #endif
 	}
 
@@ -1809,6 +1814,8 @@ namespace MainMenu {
 								if (!attemptedConnection) {
 									attemptedConnection = true;
 									randomizeUsername();
+									EOS.initPlatform(true);
+									EOS.SetNetworkAvailable(true);
 									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 									EOS.StatGlobalManager.queryGlobalStatUser();
 									printlog("[NX] logging into EOS");
@@ -2348,7 +2355,7 @@ namespace MainMenu {
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
 
-#if defined(USE_EOS) && (defined(STEAMWORKS) || defined(NINTENDO))
+#if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
 	    {
 		    crossplay_enabled = false;
@@ -7042,8 +7049,15 @@ bind_failed:
 				if (it != achievementUnlockTime.end()) {
 					char buffer[64];
 					time_t t = (time_t)it->second;
+
+#ifdef NINTENDO
+					char tbuf[64];
+					nxGetTimeFormatted(t, tbuf, sizeof(tbuf));
+					snprintf(buffer, sizeof(buffer), "Unlocked %s", tbuf);
+#else
 					struct tm* tm_info = localtime(&t);
 					strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
+#endif
 
 					auto unlockField = frame->addField("unlock", 64);
 					unlockField->setFont(smallfont_outline);
@@ -7205,7 +7219,11 @@ bind_failed:
         }
 
         constexpr Uint32 seconds_in_day = 86400;
-        const Uint32 seconds = time(NULL) / seconds_in_day;
+#ifdef NINTENDO
+		const Uint32 seconds = nxGetTime() % seconds_in_day;
+#else
+		const Uint32 seconds = time(NULL) % seconds_in_day;
+#endif
 
         if (add_to_list) {
             playSound(238, 64);
@@ -7579,8 +7597,8 @@ bind_failed:
 	    closeNetworkInterfaces();
 
 #ifdef NINTENDO
-		nxShutdownWireless();
 		nxEndParentalControls();
+		nxShutdownWireless();
 		logoutOfEpic();
 #endif
 
@@ -15310,6 +15328,8 @@ failed:
 				loadingsavegame = 0;
 				soundError();
 				closeNetworkInterfaces();
+				nxEndParentalControls();
+				nxShutdownWireless();
 				logoutOfEpic();
 				destroyMainMenu();
 				createMainMenu(false);
@@ -15784,6 +15804,7 @@ failed:
 #ifdef NINTENDO
 			nxEndParentalControls();
 			nxShutdownWireless();
+			logoutOfEpic();
 			if (nxInitWireless()) {
 				auto frame = static_cast<Frame*>(button.getParent());
 				auto interior = frame->findImage("interior");
@@ -15796,7 +15817,6 @@ failed:
 				loadingsavegame = 0;
 				soundError();
 				closeNetworkInterfaces();
-				logoutOfEpic();
 				destroyMainMenu();
 				createMainMenu(false);
 			}
@@ -16781,6 +16801,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
 							"Failed to host Epic lobby.",
@@ -16802,6 +16823,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
 							"Failed to host Epic lobby.",
@@ -18202,7 +18224,7 @@ failed:
 					++numplayers;
 				}
 			}
-			nxAssignControllers(numplayers, numplayers, true, false, false, false, nullptr);
+			nxAssignControllers(numplayers, numplayers, false, false, false, false, nullptr);
 #else
 	        static std::vector<int> players;
 	        players.clear();
@@ -19965,6 +19987,8 @@ failed:
 			pauseGame(2, 0);
 		}
 		beginFade(FadeDestination::RootMainMenu);
+		nxEndParentalControls();
+		nxShutdownWireless();
 		logoutOfEpic();
 		if (intro) {
 			nxErrorPrompt(
