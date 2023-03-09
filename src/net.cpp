@@ -1325,7 +1325,7 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 	}
 }
 
-void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -1334,10 +1334,11 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 		net_packet->data[4] = player;
 		net_packet->data[5] = x;
 		net_packet->data[6] = y;
+		net_packet->data[7] = pingType;
 
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 7;
+		net_packet->len = 8;
 		sendPacket(net_sock, -1, net_packet, 0);
 	}
 	else
@@ -1350,7 +1351,7 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 			}
 			if ( players[c]->isLocalPlayer() )
 			{
-				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y));
+				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y, false, (MinimapPing::PingType)pingType));
 				continue;
 			}
 
@@ -1361,10 +1362,11 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 				net_packet->data[4] = player;
 				net_packet->data[5] = x;
 				net_packet->data[6] = y;
+				net_packet->data[7] = pingType;
 
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 7;
+				net_packet->len = 8;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -4448,7 +4450,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	}},
 
 	{'PMAP', [](){
-		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+		MinimapPing newPing(ticks, net_packet->data[4], 
+			net_packet->data[5], 
+			net_packet->data[6],
+			false,
+			(MinimapPing::PingType)net_packet->data[7]);
 		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
 			if ( players[c]->isLocalPlayer() )
@@ -6055,8 +6061,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// the client sent a minimap ping packet.
 	{'PMAP', [](){
-		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
-		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay self and to other clients.
+		MinimapPing newPing(ticks, net_packet->data[4], 
+			net_packet->data[5], 
+			net_packet->data[6],
+			false,
+			(MinimapPing::PingType)net_packet->data[7]);
+		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y, newPing.pingType); // relay self and to other clients.
 	}},
 
 	// the client sent a gameplayer preferences update
