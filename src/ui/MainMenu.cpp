@@ -1710,7 +1710,7 @@ namespace MainMenu {
 
 	static bool isConnectedToEpic() {
 #ifdef USE_EOS
-		return EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid();
+		return EOS.isInitialized() && EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid();
 #else
 		return false;
 #endif
@@ -1718,10 +1718,12 @@ namespace MainMenu {
 
 	static void logoutOfEpic() {
 #ifdef USE_EOS
+#if defined(NINTENDO)
+		EOS.stop();
+		nxDisconnectFromNetwork();
+#else
 		LobbyHandler.crossplayEnabled = false;
 		EOS.CrossplayAccountManager.logOut = true;
-#ifdef NINTENDO
-		nxDisconnectFromNetwork();
 #endif
 #endif
 	}
@@ -1784,6 +1786,8 @@ namespace MainMenu {
 								if (!attemptedConnection) {
 									attemptedConnection = true;
 									randomizeUsername();
+									EOS.initPlatform(true);
+									EOS.SetNetworkAvailable(true);
 									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 									EOS.StatGlobalManager.queryGlobalStatUser();
 									printlog("[NX] logging into EOS");
@@ -1791,7 +1795,6 @@ namespace MainMenu {
 									logoutOfEpic();
 									printlog("[NX] EOS login failed");
 									closePrompt("connect_eos_prompt");
-									nxDisconnectFromNetwork();
 									if (cb) {
 										cb(false);
 									}
@@ -1808,7 +1811,6 @@ namespace MainMenu {
 							logoutOfEpic();
 							printlog("[NX] failed to establish network connection, EOS connection failed");
 							closePrompt("connect_eos_prompt");
-							nxDisconnectFromNetwork();
 							if (cb) {
 								cb(false);
 							}
@@ -1818,7 +1820,6 @@ namespace MainMenu {
 				[](Button&){ // cancel
 					logoutOfEpic();
 					closePrompt("connect_eos_prompt");
-					nxDisconnectFromNetwork();
 					if (cb) {
 						cb(false);
 					}
@@ -7507,8 +7508,8 @@ bind_failed:
 	    closeNetworkInterfaces();
 
 #ifdef NINTENDO
-		nxShutdownWireless();
 		nxEndParentalControls();
+		nxShutdownWireless();
 		logoutOfEpic();
 #endif
 
@@ -15138,6 +15139,8 @@ failed:
 				loadingsavegame = 0;
 				soundError();
 				closeNetworkInterfaces();
+				nxEndParentalControls();
+				nxShutdownWireless();
 				logoutOfEpic();
 				destroyMainMenu();
 				createMainMenu(false);
@@ -15612,6 +15615,7 @@ failed:
 #ifdef NINTENDO
 			nxEndParentalControls();
 			nxShutdownWireless();
+			logoutOfEpic();
 			if (nxInitWireless()) {
 				auto frame = static_cast<Frame*>(button.getParent());
 				auto interior = frame->findImage("interior");
@@ -15624,7 +15628,6 @@ failed:
 				loadingsavegame = 0;
 				soundError();
 				closeNetworkInterfaces();
-				logoutOfEpic();
 				destroyMainMenu();
 				createMainMenu(false);
 			}
@@ -16609,6 +16612,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
 							"Failed to host Epic lobby.",
@@ -16630,6 +16634,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
 							"Failed to host Epic lobby.",
@@ -19773,6 +19778,8 @@ failed:
 			pauseGame(2, 0);
 		}
 		beginFade(FadeDestination::RootMainMenu);
+		nxEndParentalControls();
+		nxShutdownWireless();
 		logoutOfEpic();
 		if (intro) {
 			nxErrorPrompt(

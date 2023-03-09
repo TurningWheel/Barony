@@ -30,7 +30,11 @@
 class EOSFuncs
 {
 	std::unordered_map<std::string, SteamStat_t*> statMappings;
+	bool initialized = false;
+
 public:
+	bool isInitialized() const { return initialized; }
+
 	std::string ProductId = "";
 	std::string SandboxId = "";
 	std::string DeploymentId = "";
@@ -491,23 +495,62 @@ public:
 		int optionalIndex;
 	};
 
-	void shutdown()
+	void stop()
 	{
+		if (!initialized)
+		{
+			return;
+		}
+		if (CurrentLobbyData.currentLobbyIsValid())
+		{
+			leaveLobby();
+
+			Uint32 shutdownTicks = SDL_GetTicks();
+			while (CurrentLobbyData.bAwaitingLeaveCallback)
+			{
+#ifdef APPLE
+				SDL_Event event;
+				while (SDL_PollEvent(&event) != 0)
+				{
+					//Makes Mac work because Apple had to do it different.
+				}
+#endif
+				EOS_Platform_Tick(PlatformHandle);
+				SDL_Delay(50);
+				if (SDL_GetTicks() - shutdownTicks >= 3000)
+				{
+					break;
+				}
+			}
+		}
+		AccountManager.deinit();
 		UnsubscribeFromConnectionRequests();
-		if ( PlatformHandle )
+		SetNetworkAvailable(false);
+		if (PlatformHandle)
 		{
 			EOS_Platform_Release(PlatformHandle);
-			EOS_Platform_Release(ServerPlatformHandle);
 			PlatformHandle = nullptr;
+		}
+		if (ServerPlatformHandle)
+		{
+			EOS_Platform_Release(ServerPlatformHandle);
 			ServerPlatformHandle = nullptr;
 		}
+		initialized = false;
+		logInfo("Stop completed.");
+	}
+
+	void quit()
+	{
 		EOS_EResult result = EOS_Shutdown();
-		if ( result != EOS_EResult::EOS_Success )
+		if (result != EOS_EResult::EOS_Success)
 		{
 			logError("Shutdown error! code: %d", static_cast<int>(result));
 		}
-
-		logInfo("Shutdown completed.");
+		else
+		{
+			logInfo("Shutdown completed.");
+		}
 	}
 
 	bool initPlatform(bool enableLogging);
@@ -762,21 +805,23 @@ public:
 #endif
 	}
 
+	bool oldNetworkStatus = false;
 	void SetNetworkAvailable(bool available)
 	{
 #ifdef NINTENDO
-		if (!PlatformHandle)
-		{
-			return;
-		}
-		static bool oldStatus = false;
-		if (oldStatus != available) {
-			oldStatus = available;
+		if (oldNetworkStatus != available) {
+			oldNetworkStatus = available;
 			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
-			EOS_Platform_SetNetworkStatus(PlatformHandle, status);
+			if (PlatformHandle) {
+				EOS_Platform_SetNetworkStatus(PlatformHandle, status);
+			}
+			if (ServerPlatformHandle) {
+				EOS_Platform_SetNetworkStatus(ServerPlatformHandle, status);
+			}
 #ifdef NINTENDO
 			if (!available) {
 				if (CurrentUserInfo.isValid() && CurrentUserInfo.isLoggedIn()) {
+					printlog("[NX] auto-logging out user from EOS!");
 					CrossplayAccountManager.logOut = true;
 				}
 			}

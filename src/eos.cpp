@@ -1149,6 +1149,11 @@ EOS_Bool EOS_CALL Game_OnNetworkRequested()
 
 bool EOSFuncs::initPlatform(bool enableLogging)
 {
+	if (initialized)
+	{
+		printlog("EOS::initPlatform() called, but we're already initialized (ignored)");
+		return true;
+	}
 #ifdef NINTENDO
 	EOS_Switch_InitializeOptions SwitchOptions;
 	SwitchOptions.ApiVersion = EOS_SWITCH_INITIALIZEOPTIONS_API_LATEST;
@@ -1180,7 +1185,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	InitializeOptions.OverrideThreadAffinity = nullptr;
 #endif
 	EOS_EResult result = EOS_Initialize(&InitializeOptions);
-	if ( result != EOS_EResult::EOS_Success )
+	if ( result != EOS_EResult::EOS_Success && result != EOS_EResult::EOS_AlreadyConfigured )
 	{
 		logError("initPlatform: Failure to initialize - error code: %d", static_cast<int>(result));
 		return false;
@@ -1193,7 +1198,8 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	if ( enableLogging )
 	{
 		EOS_EResult SetLogCallbackResult = EOS_Logging_SetCallback(&this->LoggingCallback);
-		if ( SetLogCallbackResult != EOS_EResult::EOS_Success )
+		if (SetLogCallbackResult != EOS_EResult::EOS_Success &&
+			SetLogCallbackResult != EOS_EResult::EOS_AlreadyConfigured)
 		{
 			logError("SetLogCallbackResult: Set Logging Callback Failed!");
 		}
@@ -1235,17 +1241,21 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.SandboxId = nullptr;
 	PlatformOptions.DeploymentId = nullptr;
 
-#ifdef NINTENDO
-	auto networkStatus = nxConnectedToNetwork() ?
-		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
-	auto networkSetRes = EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
-#endif
-
-	if ( !PlatformHandle )
+	if ( !PlatformHandle || !ServerPlatformHandle )
 	{
 		logError("PlatformHandle: Platform failed to initialize - invalid handle");
 		return false;
 	}
+
+#ifdef NINTENDO
+	const bool connected = nxConnectedToNetwork();
+	auto networkStatus = connected ?
+		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
+	EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
+	EOS_Platform_SetNetworkStatus(ServerPlatformHandle, networkStatus);
+	oldNetworkStatus = connected;
+#endif
+
 #if !defined(STEAMWORKS) && !defined(NINTENDO)
 #ifdef WINDOWS
 #ifdef NDEBUG
@@ -1291,6 +1301,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 #if defined(STEAMWORKS)
 	EOS.StatGlobalManager.queryGlobalStatUser();
 #endif
+	initialized = true;
 	return true;
 }
 
@@ -3359,6 +3370,10 @@ void EOSFuncs::CrossplayAccounts_t::handleLogin()
 #if !defined(STEAMWORKS) && !defined(NINTENDO) // or nintendo, can use this if we only want product users
 	return;
 #endif // !STEAMWORKS
+
+	if (!EOS.initialized) {
+		return;
+	}
 
 	if ( logOut )
 	{
