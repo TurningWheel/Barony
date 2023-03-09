@@ -15876,10 +15876,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
-			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != txt->getText() )
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
 			{
-				txt->reflowTextToFit(0);
-				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = txt->getText();
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
 			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
