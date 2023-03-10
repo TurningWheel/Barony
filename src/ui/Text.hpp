@@ -4,6 +4,10 @@
 
 #include "../main.hpp"
 
+#include <atomic>
+#include <mutex>
+#include <future>
+
 //! Contains some text that was rendered to a texture with a ttf font.
 class Text {
 friend class Field;
@@ -88,6 +92,7 @@ private:
 	std::string name;
 	GLuint texid = 0;
 	SDL_Surface* surf = nullptr;
+    std::atomic<bool> rendered = false;
 
 	//! static geometry data for rendering the image to a quad
 	static const GLuint indices[6];
@@ -112,4 +117,8 @@ private:
 	//! get the number of text lines occupied by the text
 	//! @return number of lines of text
 	int countNumTextLines() const;
+    
+    //! renders text
+    bool renderImpl();
+    std::future<bool> job;
 };

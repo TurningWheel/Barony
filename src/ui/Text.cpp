@@ -1,6 +1,7 @@
 // Text.cpp
 
 #include <assert.h>
+#include <future>
 
 #include "../main.hpp"
 #include "../draw.hpp"
@@ -37,6 +38,9 @@ Text::Text(const char* _name) {
 }
 
 Text::~Text() {
+    if (job.valid()) {
+        job.wait();
+    }
 	if (surf) {
 		SDL_FreeSurface(surf);
 		surf = nullptr;
@@ -60,303 +64,255 @@ static ConsoleVariable<bool> cvar_text_render_addspace("/text_render_addspace", 
 static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", false);
 #endif
 
-void Text::render() {
-	if ( surf ) {
-		SDL_FreeSurface(surf);
-		surf = nullptr;
-	}
-	if ( texid ) {
-		glDeleteTextures(1, &texid);
-		texid = 0;
-	}
-
-	std::string strToRender;
-	std::string fontName = Font::defaultFont;
-	Uint32 textColor = makeColor(255, 255, 255, 255);
-	Uint32 outlineColor = makeColor(0, 0, 0, 255);
-
-	size_t index;
-	std::string rest = name;
-	if ((index = rest.find(fontBreak)) != std::string::npos) {
-		strToRender = rest.substr(0, index);
-		rest = rest.substr(index + 1);
-		if ((index = rest.find(fontBreak)) != std::string::npos) {
-			fontName = rest.substr(0, index);
-			rest = rest.substr(index + 1);
-			if ((index = rest.find(fontBreak)) != std::string::npos) {
-				textColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
-				rest = rest.substr(index + 1);
-				if ((index = rest.find(fontBreak)) != std::string::npos) {
-					outlineColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
-				} else {
-					outlineColor = strtoul(rest.c_str(), nullptr, 16);
-				}
-			} else {
-				textColor = strtoul(rest.c_str(), nullptr, 16);
-			}
-		} else {
-			fontName = rest;
-		}
-	} else {
-		strToRender = rest;
-	}
-
-	Font* font = Font::get(fontName.c_str());
-	if (!font) {
-		assert(0 && "Text tried to render, but font failed to load");
-		return;
-	}
-	TTF_Font* ttf = font->getTTF();
-
-	bool addedSpace = false;
-
+bool Text::renderImpl() {
+    auto& t = *this;
+    if (t.surf) {
+        SDL_FreeSurface(t.surf);
+        t.surf = nullptr;
+    }
+    if (t.texid) {
+        glDeleteTextures(1, &t.texid);
+        t.texid = 0;
+    }
+    
+    std::string strToRender;
+    std::string fontName = Font::defaultFont;
+    Uint32 textColor = makeColor(255, 255, 255, 255);
+    Uint32 outlineColor = makeColor(0, 0, 0, 255);
+    
+    size_t index;
+    std::string rest = t.name;
+    if ((index = rest.find(fontBreak)) != std::string::npos) {
+        strToRender = rest.substr(0, index);
+        rest = rest.substr(index + 1);
+        if ((index = rest.find(fontBreak)) != std::string::npos) {
+            fontName = rest.substr(0, index);
+            rest = rest.substr(index + 1);
+            if ((index = rest.find(fontBreak)) != std::string::npos) {
+                textColor = (uint32_t)strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+                rest = rest.substr(index + 1);
+                if ((index = rest.find(fontBreak)) != std::string::npos) {
+                    outlineColor = (uint32_t)strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+                } else {
+                    outlineColor = (uint32_t)strtoul(rest.c_str(), nullptr, 16);
+                }
+            } else {
+                textColor = (uint32_t)strtoul(rest.c_str(), nullptr, 16);
+            }
+        } else {
+            fontName = rest;
+        }
+    } else {
+        strToRender = rest;
+    }
+    
+    Font* font = Font::get(fontName.c_str());
+    if (!font) {
+        assert(0 && "Text tried to render, but font failed to load");
+        return false;
+    }
+    TTF_Font* ttf = font->getTTF();
+    
+    bool addedSpace = false;
+    
 #ifdef NINTENDO
-	// fixes weird crash in SDL_ttf when string length < 2
-	std::string spaces;
-	int num_spaces_needed = std::max(0, 2 - (int)strToRender.size());
-	while (num_spaces_needed) {
-		spaces.append(" ");
-		--num_spaces_needed;
-	}
-	int spaces_width = 0;
-	if (spaces.size()) {
-		TTF_SizeUTF8(ttf, spaces.c_str(), &spaces_width, nullptr);
-		spaces_width += spaces.size();
-		strToRender.append(spaces);
-		if (spaces.size() == 2) {
-			addedSpace = true;
-		}
-	}
+    // fixes weird crash in SDL_ttf when string length < 2
+    std::string spaces;
+    int num_spaces_needed = std::max(0, 2 - (int)strToRender.size());
+    while (num_spaces_needed) {
+        spaces.append(" ");
+        --num_spaces_needed;
+    }
+    int spaces_width = 0;
+    if (spaces.size()) {
+        TTF_SizeUTF8(ttf, spaces.c_str(), &spaces_width, nullptr);
+        spaces_width += spaces.size();
+        strToRender.append(spaces);
+        if (spaces.size() == 2) {
+            addedSpace = true;
+        }
+    }
 #else
-	const int spaces_width = 0;
+    const int spaces_width = 0;
 #ifndef EDITOR
-	if ( *cvar_text_render_addspace ) {
-		if ( strToRender == "" ) {
-			addedSpace = true;
-			strToRender += ' ';
-		}
-	}
+    if ( *cvar_text_render_addspace ) {
+        if ( strToRender == "" ) {
+            addedSpace = true;
+            strToRender += ' ';
+        }
+    }
 #endif
 #endif
-
-	SDL_Color colorText;
-	getColor(textColor, &colorText.r, &colorText.g, &colorText.b, &colorText.a);
-
-	SDL_Color colorOutline;
-	getColor(outlineColor, &colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
-
-	int outlineSize = font->getOutline();
-	if ( outlineSize > 0 ) {
-		TTF_SetFontOutline(ttf, outlineSize);
-		SDL_ClearError();
-		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorOutline);
-		if ( !surf )
-		{
-			printlog("[TTF]: Error: surf = TTF_RenderUTF8_Blended: %s", TTF_GetError());
-		}
-		TTF_SetFontOutline(ttf, 0);
-		SDL_ClearError();
-		SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
-		if ( !text )
-		{
-			printlog("[TTF]: Error: text = TTF_RenderUTF8_Blended: %s", TTF_GetError());
-		}
-		SDL_Rect rect;
-		rect.x = outlineSize; rect.y = outlineSize;
-		SDL_BlitSurface(text, NULL, surf, &rect);
-		SDL_FreeSurface(text);
-	}
-	else {
-		TTF_SetFontOutline(ttf, 0);
-		surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
-	}
-
-	if (!surf) {
-		num_text_lines = 1;
-	    width = 4;
-	    height = font->height(true);
-	    return;
-	}
-
-	if ( addedSpace )
-	{
-		width = 4;
-		height = surf->h;
-	}
-	else
-	{
-		width = std::max(0, surf->w - spaces_width);
-		height = surf->h;
+    
+    SDL_Color colorText;
+    getColor(textColor, &colorText.r, &colorText.g, &colorText.b, &colorText.a);
+    
+    SDL_Color colorOutline;
+    getColor(outlineColor, &colorOutline.r, &colorOutline.g, &colorOutline.b, &colorOutline.a);
+    
+    int outlineSize = font->getOutline();
+    if ( outlineSize > 0 ) {
+        TTF_SetFontOutline(ttf, outlineSize);
+        SDL_ClearError();
+        t.surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorOutline);
+        if ( !t.surf )
+        {
+            printlog("[TTF]: Error: surf = TTF_RenderUTF8_Blended: %s", TTF_GetError());
+        }
+        TTF_SetFontOutline(ttf, 0);
+        SDL_ClearError();
+        SDL_Surface* text = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
+        if ( !text )
+        {
+            printlog("[TTF]: Error: text = TTF_RenderUTF8_Blended: %s", TTF_GetError());
+        }
+        SDL_Rect rect;
+        rect.x = outlineSize; rect.y = outlineSize;
+        SDL_BlitSurface(text, NULL, t.surf, &rect);
+        SDL_FreeSurface(text);
+    }
+    else {
+        TTF_SetFontOutline(ttf, 0);
+        t.surf = TTF_RenderUTF8_Blended(ttf, strToRender.c_str(), colorText);
+    }
+    
+    if (!t.surf) {
+        t.num_text_lines = 1;
+        t.width = 4;
+        t.height = font->height(true);
+        return false;
+    }
+    
+    if ( addedSpace )
+    {
+        t.width = 4;
+        t.height = t.surf->h;
+    }
+    else
+    {
+        t.width = std::max(0, t.surf->w - spaces_width);
+        t.height = t.surf->h;
 #ifndef WINDOWS
-		width -= outlineSize;
+        t.width -= outlineSize;
 #endif
-	}
+    }
+    
+    // Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()
+    // So calculating width/height ourselves is redundant and buggy (it doesn't factor trailing spaces)
+    
+    /*width = 0;
+     height = 0;
+     
+     int numLines = getNumTextLines(strToRender);
+     height = surf->h * numLines + std::max(0, numLines - 1) * (2 + 2 * outlineSize);
+     
+     int scan = surf->pitch / surf->format->BytesPerPixel;
+     for ( int y = 0; y < surf->h; ++y ) {
+     for ( int x = 0; x < surf->w; ++x ) {
+     // check upper byte (alpha) data. remaining 3 bytes are always 0x00FFFFFF
+     if ( (0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) != 0 ) {
+     width = std::max(width, x);
+     }
+     }
+     }
+     ++width;*/
+    
+    // translate the original surface to an RGBA surface
+    SDL_Surface* newSurf = SDL_CreateRGBSurface(0, t.width * resolution_factor, t.height * resolution_factor,
+                                                32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+    SDL_Rect dest{ 0, 0, t.width * resolution_factor, t.height * resolution_factor };
+    SDL_Rect src{ 0, 0, t.width, t.height };
+    if (resolution_factor > 1) {
+        SDL_BlitScaled(t.surf, &src, newSurf, &dest);
+    } else {
+        SDL_BlitSurface(t.surf, &src, newSurf, &dest);
+    }
+    SDL_FreeSurface(t.surf);
+    t.surf = newSurf;
+    
+    // load the new surface as a GL texture
+    if ( t.surf )
+    {
+        SDL_LockSurface(t.surf);
+        
+        /*Uint32 fillColor1 = makeColor(0, 255, 0, 255);
+         Uint32 fillColor2 = makeColor(255, 0, 0, 255);
+         wordsToHighlight[2] = fillColor1;
+         wordsToHighlight[4] = fillColor2;*/
+        if ( !t.wordsToHighlight.empty() )
+        {
+            int currentWord = 0;
+            bool checkForEmptyRow = true;
+            bool currentWordHasColor = (t.wordsToHighlight.find(0) != t.wordsToHighlight.end());
+            for ( int x = 0; x < t.surf->w; x++ )
+            {
+                bool isEmptyRow = true && checkForEmptyRow;
+                bool doFillRow = false;
+                for ( int y = 0; y < t.surf->h; y++ )
+                {
+                    Uint32 pix = getPixel(t.surf, x, y);
+                    Uint8 r, g, b, a;
+                    getColor(pix, &r, &g, &b, &a);
+                    if ( r == colorText.r && g == colorText.g && b == colorText.b && a == colorText.a )
+                    {
+                        if ( !doFillRow )
+                        {
+                            checkForEmptyRow = true;
+                            doFillRow = true;
+                            --y;
+                            continue;
+                        }
+                        else if ( doFillRow )
+                        {
+                            if ( currentWordHasColor )
+                            {
+                                putPixel(t.surf, x, y, t.wordsToHighlight[currentWord]);
+                            }
+                        }
+                    }
+                    if ( a != 0 )
+                    {
+                        isEmptyRow = false;
+                    }
+                }
+                if ( isEmptyRow )
+                {
+                    checkForEmptyRow = false;
+                    ++currentWord;
+                    currentWordHasColor = (t.wordsToHighlight.find(currentWord) != t.wordsToHighlight.end());
+                }
+            }
+        }
+        
+        glGenTextures(1, &t.texid);
+        glBindTexture(GL_TEXTURE_2D, t.texid);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.surf->w, t.surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, t.surf->pixels);
+        SDL_UnlockSurface(t.surf);
+    }
+    
+    t.num_text_lines = t.countNumTextLines();
+    rendered = true;
+    return true;
+}
 
-	// Fields break multi-lines anyway, and we're not using TTF_RenderUTF8_Blended_Wrapped()
-	// So calculating width/height ourselves is redundant and buggy (it doesn't factor trailing spaces)
-
-	/*width = 0;
-	height = 0;
-
-	int numLines = getNumTextLines(strToRender);
-	height = surf->h * numLines + std::max(0, numLines - 1) * (2 + 2 * outlineSize);
-
-	int scan = surf->pitch / surf->format->BytesPerPixel;
-	for ( int y = 0; y < surf->h; ++y ) {
-		for ( int x = 0; x < surf->w; ++x ) {
-			// check upper byte (alpha) data. remaining 3 bytes are always 0x00FFFFFF
-			if ( (0xFF000000 & ((Uint32 *)surf->pixels)[x + y * scan]) != 0 ) {
-				width = std::max(width, x);
-			}
-		}
-	}
-	++width;*/
-
-	// translate the original surface to an RGBA surface
-	SDL_Surface* newSurf = SDL_CreateRGBSurface(0, width * resolution_factor, height * resolution_factor,
-		32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	SDL_Rect dest{ 0, 0, width * resolution_factor, height * resolution_factor };
-	SDL_Rect src{ 0, 0, width, height };
-	if (resolution_factor > 1) {
-		SDL_BlitScaled(surf, &src, newSurf, &dest);
-	} else {
-		SDL_BlitSurface(surf, &src, newSurf, &dest);
-	}
-	SDL_FreeSurface(surf);
-	surf = newSurf;
-
-	// load the new surface as a GL texture
-	if ( surf )
-	{
-		SDL_LockSurface(surf);
-
-		/*Uint32 fillColor1 = makeColor(0, 255, 0, 255);
-		Uint32 fillColor2 = makeColor(255, 0, 0, 255);
-		wordsToHighlight[2] = fillColor1;
-		wordsToHighlight[4] = fillColor2;*/
-		if ( !wordsToHighlight.empty() )
-		{
-			int currentWord = 0;
-			bool checkForEmptyRow = true;
-			bool currentWordHasColor = (wordsToHighlight.find(0) != wordsToHighlight.end());
-			for ( int x = 0; x < surf->w; x++ )
-			{
-				bool isEmptyRow = true && checkForEmptyRow;
-				bool foundTextColorThisRow = false;
-				bool doFillRow = false;
-				for ( int y = 0; y < surf->h; y++ )
-				{
-					Uint32 pix = getPixel(surf, x, y);
-					Uint8 r, g, b, a;
-					getColor(pix, &r, &g, &b, &a);
-					if ( r == colorText.r && g == colorText.g && b == colorText.b && a == colorText.a )
-					{
-						if ( !doFillRow )
-						{
-							checkForEmptyRow = true;
-							doFillRow = true;
-							--y;
-							continue;
-						}
-						else if ( doFillRow )
-						{
-							if ( currentWordHasColor )
-							{
-								putPixel(surf, x, y, wordsToHighlight[currentWord]);
-							}
-						}
-					}
-					if ( a != 0 )
-					{
-						isEmptyRow = false;
-					}
-				}
-				if ( isEmptyRow )
-				{
-					checkForEmptyRow = false;
-					++currentWord;
-					currentWordHasColor = (wordsToHighlight.find(currentWord) != wordsToHighlight.end());
-				}
-			}
-		}
-
-	    glGenTextures(1, &texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-		SDL_UnlockSurface(surf);
-	}
-
-	num_text_lines = countNumTextLines();
+void Text::render() {
+    if (job.valid()) {
+        job.wait();
+    }
+    rendered = false;
+    job = std::async(std::launch::async, &Text::renderImpl, *this);
 }
 
 void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport) const {
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-
-//#include "Image.hpp"
-// testing function debugging text blitting
-//void Text::drawColorToTexture(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-//	if ( !surf ) {
-//		return;
-//	}
-//{
-//	auto src = _src;
-//	auto dest = _dest;
-
-//	if ( resolution_factor != 1 ) {
-//		src.x *= resolution_factor;
-//		src.y *= resolution_factor;
-//		src.w *= resolution_factor;
-//		src.h *= resolution_factor;
-//	}
-
-//	src.w = src.w <= 0 ? surf->w : src.w;
-//	src.h = src.h <= 0 ? surf->h : src.h;
-//	dest.w = dest.w <= 0 ? surf->w : dest.w;
-//	dest.h = dest.h <= 0 ? surf->h : dest.h;
-
-//	Uint8 r, g, b, a;
-//	getColor(color, &r, &g, &b, &a);
-//	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-
-//	SDL_Rect pos{ 0, 0, 0, 0 };
-//	pos = SDL_Rect{ -src.x, -src.y, 0, 0 };
-//	SDL_Surface* sprite = SDL_CreateRGBSurface(0, dest.w, dest.h, 32,
-//		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-//	TempTexture* texture = nullptr;
-//	SDL_SetSurfaceBlendMode(surf, SDL_BLENDMODE_BLEND);
-//	SDL_BlitSurface(surf, nullptr, sprite, &pos);
-//	if ( sprite )
-//	{
-//		texture = new TempTexture();
-//		texture->load(sprite, false, true);
-//		src.x = 0;
-//		src.y = 0;
-//		SDL_Rect pos = dest;
-//		//Image::drawSurface(texture->texid, sprite, &src, pos, viewport, color);
-//		Image::drawSurface(texture->texid, sprite, nullptr, pos, viewport, color);
-//		if ( texture )
-//		{
-//			delete texture;
-//			texture = nullptr;
-//		}
-//		if ( sprite )
-//		{
-//			SDL_FreeSurface(sprite);
-//			sprite = nullptr;
-//		}
-//	}
-//	return;
-//}
-
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-	if (!surf) {
+	if (!rendered) {
 	    return;
 	}
 
@@ -500,7 +456,6 @@ Text* Text::get(size_t hash, const char* key) {
 	auto& map = hashed_text;
 	auto bc = map.bucket_count();
 	if (bc) {
-		const auto& key_eq = map.key_eq();
 		const auto& hash_fn = map.hash_function();
 		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
 			(hash < bc ? hash : hash % bc);
@@ -554,10 +509,8 @@ void Text::dumpCache() {
 	bRequireTextDump = false;
 }
 
-void Text::dumpCacheInMainLoop()
-{
-	if ( bRequireTextDump )
-	{
+void Text::dumpCacheInMainLoop() {
+	if (bRequireTextDump) {
 		dumpCache();
 	}
 }
