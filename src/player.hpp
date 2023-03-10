@@ -1635,6 +1635,7 @@ public:
 		void updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails);
 		void resetBars();
 		void updateFrameTooltip(Item* item, const int x, const int y, int justify);
+        void finalizeFrameTooltip(Item* item, const int x, const int y, int justify);
 		void updateStatusEffectTooltip();
 		void updateCursor();
 		void updateActionPrompts();

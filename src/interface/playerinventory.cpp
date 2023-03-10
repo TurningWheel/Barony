@@ -4357,2289 +4357,2324 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 
 void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify)
 {
-	if ( player.inventoryUI.tooltipContainerFrame )
-	{
-		player.inventoryUI.tooltipContainerFrame->setSize(
-			SDL_Rect{ player.camera_virtualx1(),
-			player.camera_virtualy1(),
-			player.camera_virtualWidth(),
-			player.camera_virtualHeight() });
-	}
-
-	const int player = this->player.playernum;
-	if ( !item )
-	{
-		return;
-	}
-
-	auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
-
-	bool bUpdateDisplayedTooltip = 
-		(!tooltipDisplayedSettings.isItemSameAsCurrent(player, item) || ItemTooltips.itemDebug);
-
-	auto frameMain = this->player.inventoryUI.tooltipFrame;
-	if ( !frameMain )
-	{
-		return;
-	}
-
-	auto frameInventory = this->player.inventoryUI.frame;
-	if ( !frameInventory )
-	{
-		return;
-	}
-
-	auto frameInteract = this->player.inventoryUI.interactFrame;
-	if ( !frameInteract )
-	{
-		return;
-	}
-
-	auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
-	if ( !frameTooltipPrompt )
-	{
-		return;
-	}
-
-	auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
-	
-	static const char* bigfont = "fonts/pixelmix.ttf#18";
-
-	auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
-	auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
-	auto framePrompt = frameMain->findFrame("inventory mouse tooltip prompt frame");
-	auto frameValues = frameMain->findFrame("inventory mouse tooltip value frame");
-
-	auto imgTopBackground = frameMain->findImage("tooltip top background");
-	auto imgTopBackgroundLeft = frameMain->findImage("tooltip top left");
-	auto imgTopBackgroundRight = frameMain->findImage("tooltip top right");
-
-	auto imgMiddleBackground = frameMain->findImage("tooltip middle background");
-	auto imgMiddleBackgroundLeft = frameMain->findImage("tooltip middle left");
-	auto imgMiddleBackgroundRight = frameMain->findImage("tooltip middle right");
-
-	auto imgBottomBackground = frameMain->findImage("tooltip bottom background");
-	auto imgBottomBackgroundLeft = frameMain->findImage("tooltip bottom left");
-	auto imgBottomBackgroundRight = frameMain->findImage("tooltip bottom right");
-
-	auto txtPrompt = framePrompt->findField("inventory mouse tooltip prompt");
-	char buf[1024] = "";
-
-	const int padx = 4;
-	const int pady = 4;
-	const int imgTopBackgroundDefaultHeight = 28;
-	const int imgTopBackground2XHeight = 42;
-
-	bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
-	bool doShortTooltip = false;
-	if ( players[player]->shootmode )
-	{
-		doShortTooltip = true;
-		if ( doTitleOnlyTooltip )
-		{
-			if ( !tooltipDisplayedSettings.displayingTitleOnlyTooltip )
-			{
-				bUpdateDisplayedTooltip = true;
-			}
-			tooltipDisplayedSettings.displayingTitleOnlyTooltip = true;
-			tooltipDisplayedSettings.displayingShortFormTooltip = false;
-		}
-		else
-		{
-			if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
-			{
-				bUpdateDisplayedTooltip = true;
-			}
-			tooltipDisplayedSettings.displayingShortFormTooltip = true;
-			tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
-		}
-	}
-	else
-	{
-		doShortTooltip = false;
-		if ( tooltipDisplayedSettings.displayingShortFormTooltip || tooltipDisplayedSettings.displayingTitleOnlyTooltip )
-		{
-			bUpdateDisplayedTooltip = true;
-		}
-		tooltipDisplayedSettings.displayingShortFormTooltip = false;
-		tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
-	}
-
-	bool isItemFromInventory = false;
-	if ( item->node && item->node->list == &stats[player]->inventory )
-	{
-		isItemFromInventory = true;
-	}
-
-	if ( ItemTooltips.itemDebug )
-	{
-		if ( keystatus[SDLK_KP_PLUS] )
-		{
-			keystatus[SDLK_KP_PLUS] = 0;
-			item->beatitude += 1;
-			/*for ( int i = 0; i < 100; ++i )
-			{
-				Uint32 r = local_rng.rand() % 4096;
-				printlog("%d %d %d", (r >> 8 & 0xF), (r >> 4 & 0xF), (r & 0xF));
-			}*/
-		}
-		if ( keystatus[SDLK_KP_MINUS] )
-		{
-			keystatus[SDLK_KP_MINUS] = 0;
-			item->beatitude -= 1;
-		}
-		if ( keystatus[SDLK_KP_6] )
-		{
-			keystatus[SDLK_KP_6] = 0;
-			item->status = std::min(EXCELLENT, static_cast<Status>(item->status + 1));
-		}
-		if ( keystatus[SDLK_KP_4] )
-		{
-			keystatus[SDLK_KP_4] = 0;
-			item->status = std::max(BROKEN, static_cast<Status>(item->status - 1));
-		}
-		if ( keystatus[SDLK_KP_5] )
-		{
-			keystatus[SDLK_KP_5] = 0;
-			if ( item->type == WOODEN_SHIELD )
-			{
-				item->type = static_cast<ItemType>(NUMITEMS - 1);
-			}
-			else
-			{
-				item->type = static_cast<ItemType>(item->type - 1);
-				if ( item->type == SPELL_ITEM )
-				{
-					item->type = static_cast<ItemType>(item->type - 1);
-				}
-			}
-		}
-		if ( keystatus[SDLK_KP_8] )
-		{
-			keystatus[SDLK_KP_8] = 0;
-			if ( item->type == NUMITEMS - 1 )
-			{
-				item->type = WOODEN_SHIELD;
-			}
-			else
-			{
-				item->type = static_cast<ItemType>(item->type + 1);
-				if ( item->type == SPELL_ITEM )
-				{
-					item->type = static_cast<ItemType>(item->type + 1);
-				}
-			}
-		}
-	}
-
-	bool expandBindingPressed = false;
-	if ( !players[player]->usingCommand() 
-		&& players[player]->bControlEnabled
-		&& !gamePaused
-		&& Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
-	{
-		expandBindingPressed = true;
-		if ( !players[player]->shootmode && item->identified && !doTitleOnlyTooltip
-			&& !doShortTooltip )
-		{
-			tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
-		}
-	}
-
-	if ( !doTitleOnlyTooltip )
-	{
-		titleOnlyFrame->setDisabled(true);
-	}
-
-	auto& appraisal = players[player]->inventoryUI.appraisal;
-
-	if ( bUpdateDisplayedTooltip )
-	{
-		tooltipDisplayedSettings.updateItem(player, item);
-
-		std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
-
-		if ( ItemTooltips.tooltips.find(tooltipType) == ItemTooltips.tooltips.end() )
-		{
-			tooltipType = "tooltip_default";
-		}
-		else if ( !item->identified )
-		{
-			tooltipType = "tooltip_unidentified";
-		}
-		auto itemTooltip = ItemTooltips.tooltips[tooltipType];
-
-		int textx = 0;
-		int texty = 0;
-
-		/*if ( item->type == FOOD_TIN )
-		{
-			std::string cookingMethod;
-			std::string protein;
-			std::string sides;
-			item->foodTinGetDescription(cookingMethod, protein, sides);
-			snprintf(buf, sizeof(buf), "%s %s %s%s%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-				item->getName(),
-				cookingMethod.c_str(), protein.c_str(), sides.c_str(),
-				item->beatitude);
-		}
-		else*/
-
-		bool manuallyInsertedNewline = false;
-
-		if ( item->type == SPELL_ITEM )
-		{
-			spell_t* spell = getSpellFromItem(player, item);
-			if ( !spell )
-			{
-				snprintf(buf, sizeof(buf), "%s", "Unknown Spell");
-			}
-			else if ( item && item->appearance >= 1000 )
-			{
-				// shapeshift spells, append the form name here.
-				switch ( spell->ID )
-				{
-					case SPELL_SPEED:
-					case SPELL_DETECT_FOOD:
-						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
-							ItemTooltips.spellItems[SPELL_RAT_FORM].name.c_str());
-						manuallyInsertedNewline = true;
-						break;
-					case SPELL_POISON:
-					case SPELL_SPRAY_WEB:
-						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
-							ItemTooltips.spellItems[SPELL_SPIDER_FORM].name.c_str());
-						manuallyInsertedNewline = true;
-						break;
-					case SPELL_STRIKE:
-					case SPELL_FEAR:
-					case SPELL_TROLLS_BLOOD:
-						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
-							ItemTooltips.spellItems[SPELL_TROLL_FORM].name.c_str());
-						manuallyInsertedNewline = true;
-						break;
-					case SPELL_LIGHTNING:
-					case SPELL_CONFUSE:
-					case SPELL_AMPLIFY_MAGIC:
-						snprintf(buf, sizeof(buf), "%s%s\n(%s)",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(), 
-							ItemTooltips.spellItems[SPELL_IMP_FORM].name.c_str());
-						manuallyInsertedNewline = true;
-						break;
-					default:
-						snprintf(buf, sizeof(buf), "%s%s",
-							ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
-						break;
-				}
-			}
-			else
-			{
-				snprintf(buf, sizeof(buf), "%s%s",
-					ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
-			}
-		}
-		else
-		{
-			if ( !item->identified )
-			{
-				if ( itemCategory(item) == BOOK )
-				{
-					snprintf(buf, sizeof(buf), "%s %s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-						language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str());
-					manuallyInsertedNewline = true;
-				}
-				else if ( itemCategory(item) == SCROLL )
-				{
-					snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-						items[item->type].getUnidentifiedName(), language[4215], item->getScrollLabel());
-					manuallyInsertedNewline = true;
-				}
-				else
-				{
-					snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
-				}
-			}
-			else
-			{
-				if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT
-					|| item->type == TOOL_GYROBOT )
-				{
-					int health = 100;
-					if ( !item->tinkeringBotIsMaxHealth() )
-					{
-						health = 25 * (item->appearance % 10);
-						if ( health == 0 && item->status != BROKEN )
-						{
-							health = 5;
-						}
-					}
-					snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
-				}
-				else if ( item->type == ENCHANTED_FEATHER )
-				{
-					snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-						item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
-				}
-				else if ( itemCategory(item) == BOOK )
-				{
-					snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-						language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
-					manuallyInsertedNewline = true;
-				}
-				else
-				{
-					snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
-				}
-			}
-		}
-
-		if ( doTitleOnlyTooltip )
-		{
-			auto titleOnlyTxt = titleOnlyFrame->findField("title only header");
-			std::string title = buf;
-			if ( itemCategory(item) != BOOK && !(itemCategory(item) == SCROLL && !item->identified) )
-			{
-				std::replace(title.begin(), title.end(), '\n', ' ');
-			}
-			titleOnlyTxt->setText(title.c_str());
-			bool bigTooltip = false;
-			SDL_Rect txtPos = titleOnlyTxt->getSize();
-			int padx = 10;
-			txtPos.x = padx * 2;
-			txtPos.y = pady + 1;
-			txtPos.h = 24;
-			if ( false /*&& players[player]->messageZone.useBigFont*/ )
-			{
-				titleOnlyTxt->setFont(players[player]->messageZone.bigfont);
-				bigTooltip = true;
-				txtPos.h = 44;
-				txtPos.y = pady * 2 + 2;
-			}
-			else
-			{
-				titleOnlyTxt->setFont(players[player]->messageZone.smallfont);
-			}
-			if ( auto textGet = Text::get(titleOnlyTxt->getLongestLine().c_str(), titleOnlyTxt->getFont(),
-				titleOnlyTxt->getTextColor(), titleOnlyTxt->getOutlineColor()) )
-			{
-				txtPos.w = textGet->getWidth();
-				if ( titleOnlyTxt->getNumTextLines() > 1 )
-				{
-					txtPos.h = 44;
-					bigTooltip = true;
-				}
-			}
-			titleOnlyTxt->setSize(txtPos);
-			SDL_Rect tooltipPos{ x, y, txtPos.w + padx * 4, 0 };
-			tooltipPos.x -= tooltipPos.w / 2;
-			if ( tooltipPos.x % 2 == 1 )
-			{
-				++tooltipPos.x;
-				++tooltipPos.w;
-			}
-
-			auto tm = titleOnlyFrame->findImage("tooltip top background");
-			tm->disabled = true;
-			auto tl = titleOnlyFrame->findImage("tooltip top left");
-			tl->disabled = true;
-			auto tr = titleOnlyFrame->findImage("tooltip top right");
-			tr->disabled = true;
-			if ( bigTooltip )
-			{
-				tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly2x.png";
-				tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly2x.png";
-				tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly2x.png";
-			}
-			else
-			{
-				tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly.png";
-				tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly.png";
-				tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png";
-			}
-			if ( auto imgGet = Image::get(tm->path.c_str()) )
-			{
-				tm->pos.w = imgGet->getWidth();
-				tm->pos.h = imgGet->getHeight();
-			}
-			if ( auto imgGet = Image::get(tl->path.c_str()) )
-			{
-				tl->pos.w = imgGet->getWidth();
-				tl->pos.h = imgGet->getHeight();
-				tooltipPos.h = tl->pos.h;
-			}
-			if ( auto imgGet = Image::get(tr->path.c_str()) )
-			{
-				tr->pos.w = imgGet->getWidth();
-				tr->pos.h = imgGet->getHeight();
-			}
-			static ConsoleVariable<Vector4> cvar_titleOnlyColor("/tooltip_title_only_color", Vector4{ 188, 154, 114, 255 });
-			titleOnlyTxt->setTextColor(makeColor(
-				cvar_titleOnlyColor->x,
-				cvar_titleOnlyColor->y,
-				cvar_titleOnlyColor->z,
-				cvar_titleOnlyColor->w));
-			tl->disabled = false;
-			tl->pos.x = 0;
-			tm->disabled = false;
-			tm->pos.x = tl->pos.x + tl->pos.w;
-			tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
-			tr->disabled = false;
-			tr->pos.x = tm->pos.x + tm->pos.w;
-			titleOnlyFrame->setSize(tooltipPos);
-			goto TOOLTIP_FINALIZE_LABEL;
-		}
-		auto txtHeader = frameMain->findField("inventory mouse tooltip header");
-		txtHeader->setText(buf);
-		Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
-			txtHeader->getTextColor(), txtHeader->getOutlineColor());
-		if ( textGet )
-		{
-			textx = textGet->getWidth();
-			texty = textGet->getNumTextLines() * Font::get(txtHeader->getFont())->height();
-		}
-
-		std::string minWidthKey = "default";
-		std::string maxWidthKey = "default";
-		std::string headerMaxWidthKey = "default";
-		if ( spell_t* spell = getSpellFromItem(player, item) )
-		{
-			if ( itemTooltip.minWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.minWidths.end() )
-			{
-				minWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
-			}
-			if ( itemTooltip.maxWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.maxWidths.end() )
-			{
-				maxWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
-			}
-			if ( itemTooltip.headerMaxWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.headerMaxWidths.end() )
-			{
-				headerMaxWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
-			}
-		}
-		else
-		{
-			if ( itemTooltip.minWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.minWidths.end() )
-			{
-				minWidthKey = ItemTooltips.tmpItems[item->type].internalName;
-			}
-			if ( itemTooltip.maxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.maxWidths.end() )
-			{
-				maxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
-			}
-			if ( itemTooltip.headerMaxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.headerMaxWidths.end() )
-			{
-				headerMaxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
-			}
-		}
-
-		bool useDefaultHeaderHeight = true;
-		if ( manuallyInsertedNewline || 
-			(itemTooltip.headerMaxWidths[headerMaxWidthKey] > 0 && textx > itemTooltip.headerMaxWidths[headerMaxWidthKey]) )
-		{
-			if ( !manuallyInsertedNewline )
-			{
-				txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidths[headerMaxWidthKey], 0 });
-				txtHeader->reflowTextToFit(0);
-			}
-
-			std::string input = txtHeader->getText();
-			size_t offset = 0;
-			size_t findChar = 0;
-			std::vector<std::string> tokens;
-			while ( (findChar = input.find('\n', offset)) != std::string::npos ) {
-				tokens.push_back(input.substr(offset, findChar - offset));
-				offset = findChar + 1;
-			}
-			tokens.push_back(input.substr(offset));
-
-			int newWidth = 0;
-			if ( tokens.size() == 1 )
-			{
-				// no reflow
-			}
-			else
-			{
-				unsigned int newWidth = 0;
-				for ( auto& str : tokens ) 
-				{
-					if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont(),
-						txtHeader->getTextColor(), txtHeader->getOutlineColor()) )
-					{
-						newWidth = std::max(newWidth, textGet->getWidth());
-					}
-				}
-
-				textx = newWidth;
-				texty = txtHeader->getNumTextLines() * Font::get(txtHeader->getFont())->height();
-				imgTopBackground->pos.h = imgTopBackground2XHeight;
-				imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
-				imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-				imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
-				imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-				imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
-				useDefaultHeaderHeight = false;
-			}
-		}
-
-		if ( useDefaultHeaderHeight )
-		{
-			imgTopBackground->pos.h = imgTopBackgroundDefaultHeight;
-			imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00.png";
-			imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
-			imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00.png";
-			imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
-			imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00.png";
-		}
-
-		if ( ItemTooltips.itemDebug )
-		{
-			auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
-			headerBg->pos = SDL_Rect{
-				imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
-				0,
-				textx,
-				1 };
-			headerBg->disabled = false;
-			auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
-			tooltipMin->pos = SDL_Rect{
-				imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
-				2,
-				itemTooltip.minWidths[minWidthKey],
-				1 };
-			tooltipMin->disabled = false;
-			auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
-			tooltipMax->pos = SDL_Rect{
-				imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
-				4,
-				itemTooltip.maxWidths[maxWidthKey],
-				1 };
-			tooltipMax->disabled = false;
-			auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
-			headerMax->pos = SDL_Rect{
-				imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
-				6,
-				itemTooltip.headerMaxWidths[headerMaxWidthKey],
-				1 };
-			headerMax->disabled = false;
-		}
-
-		if ( itemTooltip.minWidths[minWidthKey] > 0 )
-		{
-			textx = std::max(itemTooltip.minWidths[minWidthKey], textx);
-		}
-		if ( itemTooltip.maxWidths[maxWidthKey] > 0 )
-		{
-			textx = std::min(itemTooltip.maxWidths[maxWidthKey], textx);
-		}
-
-		if ( ItemTooltips.itemDebug )
-		{
-			auto headerBg = frameMain->findImage("inventory mouse tooltip header bg new");
-			headerBg->pos = SDL_Rect{
-				imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
-				imgTopBackground->pos.h,
-				textx,
-				1 };
-			headerBg->disabled = false;
-		}
-		else
-		{
-			auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
-			headerBg->disabled = true;
-			auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
-			tooltipMin->disabled = true;
-			auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
-			tooltipMax->disabled = true;
-			auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
-			headerMax->disabled = true;
-		}
-	
-		txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 1, textx + 3 * padx, imgTopBackground->pos.h});
-		txtHeader->setVJustify(Field::justify_t::CENTER);
-		int totalHeight = txtHeader->getSize().h;
-
-		// get total width of tooltip
-		const int tooltipWidth = txtHeader->getSize().w + imgTopBackgroundLeft->pos.w + imgTopBackgroundRight->pos.w;
-		tooltipDisplayedSettings.tooltipWidth = tooltipWidth;
-
-		// attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
-		SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
-		frameAttrPos.w = tooltipWidth - frameAttrPos.x * 2;
-
-		auto imgSpellIcon = frameAttr->findImage("inventory mouse tooltip spell image");
-		auto imgSpellIconBg = frameAttr->findImage("inventory mouse tooltip spell image bg");
-		auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
-		auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
-		auto imgThirdIcon = frameAttr->findImage("inventory mouse tooltip third image");
-		auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
-		auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
-		auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
-
-		imgPrimaryIcon->pos.y = 0;
-		imgSecondaryIcon->pos.y = 0;
-		imgThirdIcon->pos.y = 0;
-
-		imgSpellIcon->disabled = true;
-		imgSpellIcon->path = "";
-		imgSpellIconBg->disabled = true;
-		imgPrimaryIcon->disabled = true;
-		imgPrimaryIcon->path = "";
-		imgSecondaryIcon->disabled = true;
-		imgSecondaryIcon->path = "";
-		imgThirdIcon->disabled = true;
-		imgThirdIcon->path = "";
-
-		if ( tooltipType.find("tooltip_spell_") != std::string::npos )
-		{
-			imgSpellIcon->disabled = false;
-			imgSpellIconBg->disabled = false;
-			imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item);
-
-			static ConsoleVariable<int> cvar_spelltooltipIconX("/spell_tooltip_icon_x", 0);
-			static ConsoleVariable<int> cvar_spelltooltipIconY("/spell_tooltip_icon_y", -4);
-			imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx + *cvar_spelltooltipIconX;
-			imgSpellIcon->pos.y = 3 * pady + *cvar_spelltooltipIconY;
-			imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 5;
-			imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 5;
-		}
-
-		auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
-		auto txtPrimaryValueHighlight = frameAttr->findField("inventory mouse tooltip primary value highlight");
-		auto txtPrimaryValuePositive = frameAttr->findField("inventory mouse tooltip primary value positive text");
-		auto txtPrimaryValueNegative = frameAttr->findField("inventory mouse tooltip primary value negative text");
-
-		auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
-		auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
-		auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
-		auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
-
-		auto txtThirdValue = frameAttr->findField("inventory mouse tooltip third value");
-		auto txtThirdValueHighlight = frameAttr->findField("inventory mouse tooltip third value highlight");
-		auto txtThirdValuePositive = frameAttr->findField("inventory mouse tooltip third value positive text");
-		auto txtThirdValueNegative = frameAttr->findField("inventory mouse tooltip third value negative text");
-
-		auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
-		auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
-		auto txtDescriptionNegative = frameDesc->findField("inventory mouse tooltip description negative text");
-
-		{
-			static ConsoleVariable<int> cvar_item_tooltip_attr_padding("/item_tooltip_attr_padding", -4);
-			txtPrimaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtPrimaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtPrimaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtPrimaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-
-			txtSecondaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtSecondaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtSecondaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtSecondaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-
-			txtThirdValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtThirdValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-			txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
-		}
-
-		if ( itemTooltip.icons.size() > 0 )
-		{
-			int index = 0;
-			for ( auto& icon : itemTooltip.icons )
-			{
-				if ( icon.conditionalAttribute.compare("") != 0 )
-				{
-					if ( itemCategory(item) == MAGICSTAFF )
-					{
-						if ( icon.conditionalAttribute.find("magicstaff_") != std::string::npos )
-						{
-							if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
-							{
-								continue;
-							}
-							icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
-						}
-					}
-					else if ( itemCategory(item) == SCROLL )
-					{
-						if ( icon.conditionalAttribute.find("scroll_") != std::string::npos )
-						{
-							if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
-							{
-								continue;
-							}
-						}
-					}
-					else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
-						|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
-					{
-						if ( icon.conditionalAttribute == "TINKERBOT_UPGRADEABLE" )
-						{
-							if ( item->status == EXCELLENT || item->status == BROKEN )
-							{
-								continue;
-							}
-						}
-						else if ( icon.conditionalAttribute == "TINKERBOT_BROKEN" )
-						{
-							if ( item->status != BROKEN )
-							{
-								continue;
-							}
-						}
-						else if ( item->status == BROKEN )
-						{
-							continue;
-						}
-						else if ( icon.conditionalAttribute == "TINKERBOT_MAGICATK" )
-						{
-							icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
-						}
-					}
-					else if ( item->type == SPELL_ITEM )
-					{
-						if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
-						{
-							icon.iconPath = "images/ui/HUD/statusfx/magic_effect.png";
-						}
-						else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
-						{
-							spell_t* spell = getSpellFromItem(player, item);
-							if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
-							{
-								// current spell uses this attribute
-							}
-							else
-							{
-								continue; // no spell, or spellname doesn't match attribute
-							}
-						}
-					}
-					else if ( itemCategory(item) == SPELLBOOK 
-						&& icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
-					{
-						spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-						int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
-						bool isGoblin = (stats[player]
-							&& (stats[player]->type == GOBLIN
-								|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)));
-						if ( icon.conditionalAttribute == "SPELLBOOK_CAST_BONUS" )
-						{
-							if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
-							{
-								continue;
-							}
-							if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 25 )
-							{
-								continue;
-							}
-						}
-						else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNED" )
-						{
-							if ( isGoblin || playerLearnedSpellbook(player, item) || (spell && skillLVL >= spell->difficulty) )
-							{
-								continue;
-							}
-						}
-						else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNABLE" )
-						{
-							if ( !isGoblin ) { continue; }
-							if ( playerLearnedSpellbook(player, item) )
-							{
-								continue;
-							}
-						}
-						else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
-						{
-							if ( isGoblin ) { continue; }
-							if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
-							{
-								continue;
-							}
-						}
-						else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
-							|| icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
-						{
-							if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
-							{
-								if ( !playerLearnedSpellbook(player, item) )
-								{
-									continue;
-								}
-							}
-							else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
-							{
-								if ( playerLearnedSpellbook(player, item) )
-								{
-									continue;
-								}
-							}
-							icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
-						}
-						else if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
-						{
-							continue;
-						}
-					}
-					else
-					{
-						if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
-						{
-							continue;
-						}
-					}
-					if ( itemCategory(item) == RING && index > 0 && icon.conditionalAttribute == "AC" )
-					{
-						if ( item->armorGetAC(stats[player]) == 0 )
-						{
-							continue;
-						}
-					}
-				}
-
-				std::map<int, Uint32> positiveWordIndexes;
-				std::map<int, Uint32> negativeWordIndexes;
-				std::map<int, Uint32> highlightWordIndexes;
-
-				if ( index == 0 )
-				{
-					imgPrimaryIcon->disabled = false;
-					imgPrimaryIcon->path = icon.iconPath;
-
-					std::string iconText = icon.text;
-					ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
-
-					if ( tooltipType.find("tooltip_spell_") != std::string::npos && iconText == "" )
-					{
-						imgPrimaryIcon->disabled = true;
-						continue;
-					}
-
-					std::string bracketText = "";
-					ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
-					std::string positiveText = "";
-					std::string negativeText = "";
-					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
-					ItemTooltips.getWordIndexesItemDetails(txtPrimaryValue, iconText, bracketText, positiveText, negativeText,
-						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
-
-					txtPrimaryValue->setText(iconText.c_str());
-					txtPrimaryValue->setTextColor(icon.textColor);
-
-					//txtPrimaryValueHighlight->setText(bracketText.c_str());
-					txtPrimaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
-
-					//txtPrimaryValuePositive->setText(positiveText.c_str());
-					txtPrimaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
-
-					//txtPrimaryValueNegative->setText(negativeText.c_str());
-					txtPrimaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
-				}
-				else if ( index == 1 )
-				{
-					imgSecondaryIcon->disabled = false;
-					imgSecondaryIcon->path = icon.iconPath;
-
-					std::string iconText = icon.text;
-					ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
-
-					std::string bracketText = "";
-					ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
-					std::string positiveText = "";
-					std::string negativeText = "";
-					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
-					ItemTooltips.getWordIndexesItemDetails(txtSecondaryValue, iconText, bracketText, positiveText, negativeText,
-						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
-
-					txtSecondaryValue->setText(iconText.c_str());
-					txtSecondaryValue->setTextColor(icon.textColor);
-					//txtSecondaryValueHighlight->setText(bracketText.c_str());
-					txtSecondaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
-
-					//txtSecondaryValuePositive->setText(positiveText.c_str());
-					txtSecondaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
-
-					//txtSecondaryValueNegative->setText(negativeText.c_str());
-					txtSecondaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
-				}
-				else if ( index == 2 )
-				{
-					imgThirdIcon->disabled = false;
-					imgThirdIcon->path = icon.iconPath;
-
-					std::string iconText = icon.text;
-					ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
-
-					std::string bracketText = "";
-					ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
-					std::string positiveText = "";
-					std::string negativeText = "";
-					ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
-					ItemTooltips.getWordIndexesItemDetails(txtThirdValue, iconText, bracketText, positiveText, negativeText,
-						highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
-
-					txtThirdValue->setText(iconText.c_str());
-					txtThirdValue->setTextColor(icon.textColor);
-					//txtThirdValueHighlight->setText(bracketText.c_str());
-					txtThirdValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
-
-					//txtThirdValuePositive->setText(positiveText.c_str());
-					txtThirdValuePositive->setTextColor(itemTooltip.positiveTextColor);
-
-					//txtThirdValueNegative->setText(negativeText.c_str());
-					txtThirdValueNegative->setTextColor(itemTooltip.negativeTextColor);
-				}
-				else
-				{
-					break;
-				}
-				++index;
-			}
-		}
-
-		auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
-		txtAttributes->setDisabled(true);
-
-		std::string descriptionTextString = "";
-		if ( !doShortTooltip && (itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0) )
-		{
-			txtAttributes->setDisabled(false);
-			txtAttributes->setColor(itemTooltip.descriptionTextColor);
-			int index = 0;
-			for ( auto it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
-			{
-				descriptionTextString += (*it);
-				if ( std::next(it) != itemTooltip.descriptionText.end() )
-				{
-					descriptionTextString += '\n';
-				}
-			}
-			ItemTooltips.formatItemDescription(player, tooltipType, *item, descriptionTextString);
-			txtAttributes->setText(descriptionTextString.c_str());
-
-			if ( descriptionTextString == "" )
-			{
-				txtAttributes->setDisabled(true);
-			}
-		}
-
-		frameDesc->setDisabled(true);
-
-		std::string detailsTextString = "";
-		if ( !doShortTooltip && itemTooltip.detailsText.size() > 0 )
-		{
-			frameDesc->setDisabled(false);
-			txtDescription->setTextColor(itemTooltip.detailsTextColor);
-			int index = 0;
-
-			for ( auto& tag : itemTooltip.detailsTextInsertOrder )
-			{
-				if ( itemCategory(item) == POTION )
-				{
-					if ( tag.compare("potion_on_cursed") == 0 &&
-						(!items[item->type].hasAttribute("POTION_CURSED_SIDE_EFFECT") || item->beatitude >= 0) )
-					{
-						continue;
-					}
-					else if ( tag.compare("potion_on_blessed") == 0 && item->beatitude <= 0 )
-					{
-						continue;
-					}
-					else if ( tag.compare("alchemy_details") == 0 )
-					{
-						if ( detailsTextString.compare("") != 0 ) // non-empty
-						{
-							detailsTextString += '\n'; // add a padding newline
-						}
-					}
-				}
-				else if ( item->type == TOOL_BEARTRAP )
-				{
-					if ( tag.compare("beartrap_degrade_on_use_cursed") == 0 )
-					{
-						if ( item->status == BROKEN || item->beatitude >= 0 ) { continue; }
-					}
-					else if ( tag.compare("beartrap_degrade_on_use") == 0 )
-					{
-						if ( item->status == BROKEN || item->beatitude < 0 )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("on_use") == 0 )
-					{
-						if ( item->status == BROKEN )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
-					|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
-				{
-					if ( item->status == BROKEN )
-					{
-						continue;
-					}
-					else if ( tag.compare("tinkerbot_atk_initiative") == 0 )
-					{
-						if ( item->status < SERVICABLE )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("gyrobot_info_interact") == 0 )
-					{
-						if ( item->status < SERVICABLE )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( itemCategory(item) == SCROLL )
-				{
-					if ( tag.compare("scroll_on_cursed_sideeffect") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("SCROLL_CURSED_SIDE_EFFECT") )
-						{
-							continue;
-						}
-						else if ( item->beatitude >= 0 )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( itemCategory(item) == FOOD )
-				{
-					if ( tag.compare("food_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
-					{
-						continue;
-					}
-				}
-				else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == TOOL
-					|| itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type)
-					|| itemCategory(item) == GEM )
-				{
-					if ( tag.compare("weapon_durability") == 0 )
-					{
-						int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
-						if ( stats[player]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("weapon_legendary_durability") == 0 )
-					{
-						int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
-						if ( stats[player]->PROFICIENCIES[proficiency] != SKILL_LEVEL_LEGENDARY )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("weapon_bonus_exp") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("BONUS_SKILL_EXP") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("equipment_fragile_durability") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("FRAGILE") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("equipment_fragile_durability") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("FRAGILE") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("weapon_ranged_quiver_augment") == 0 )
-					{
-						if ( items[item->type].hasAttribute("RANGED_NO_QUIVER") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("weapon_ranged_rate_of_fire") == 0 )
-					{
-						// skip on 0, 100 or non-existing
-						if ( !items[item->type].hasAttribute("RATE_OF_FIRE") )
-						{
-							continue; 
-						}
-						else if ( items[item->type].hasAttribute("RATE_OF_FIRE")
-							&& (items[item->type].attributes["RATE_OF_FIRE"] == 100
-							|| items[item->type].attributes["RATE_OF_FIRE"] == 0) )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("weapon_ranged_armor_pierce") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("ARMOR_PIERCE") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.find("EFF_") != std::string::npos )
-					{
-						if ( !items[item->type].hasAttribute(tag) )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("equipment_stat_bonus") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("STR")
-							&& !items[item->type].hasAttribute("DEX")
-							&& !items[item->type].hasAttribute("CON")
-							&& !items[item->type].hasAttribute("INT")
-							&& !items[item->type].hasAttribute("PER")
-							&& !items[item->type].hasAttribute("CHR") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("attributes_text_if_armor_has_stats") == 0
-						|| tag.compare("blank_text_if_armor_has_stats") == 0 )
-					{
-						bool skip = true;
-						for ( auto it = ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].begin();
-							it != ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].end(); ++it )
-						{
-							if ( items[item->type].hasAttribute(*it) )
-							{
-								skip = false;
-								break;
-							}
-						}
-						if ( skip ) { continue; } // no attributes found, don't put this block of text in
-					}
-					else if ( tag.compare("equipment_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
-					{
-						continue;
-					}
-					else if ( tag.compare("armor_on_cursed_sideeffect") == 0 
-						&& (item->beatitude >= 0 || !items[item->type].hasAttribute("ARMOR_CURSED_SIDEEFFECT")) )
-					{
-						continue;
-					}
-					else if ( tag.compare("ring_on_cursed_sideeffect") == 0
-						&& (item->beatitude >= 0 || !items[item->type].hasAttribute("RING_CURSED_SIDEEFFECT")) )
-					{
-						continue;
-					}
-					else if ( tag.compare("on_degraded") == 0 )
-					{
-						if ( items[item->type].hasAttribute("ARTIFACT_STATUS_ATK") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("artifact_armor_on_degraded") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("ARTIFACT_STATUS_AC") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("artifact_weapon_on_degraded") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("ARTIFACT_STATUS_ATK") )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( itemCategory(item) == SPELLBOOK )
-				{
-					if ( tag.compare("spellbook_cast_bonus") == 0 )
-					{
-						if ( !items[item->type].hasAttribute("SPELLBOOK_CAST_BONUS") )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("spellbook_cast_success") == 0
-						|| tag.compare("spellbook_extramana_chance") == 0 )
-					{
-						bool newbie = isSpellcasterBeginnerFromSpellbook(player, players[player]->entity, stats[player],
-							getSpellFromID(getSpellIDFromSpellbook(item->type)), item);
-						if ( !newbie )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("spellbook_magic_requirement") == 0
-						|| tag.compare("spellbook_magic_current") == 0
-						|| tag.compare("spellbook_unlearned_blank_space") == 0 )
-					{
-						if ( playerLearnedSpellbook(player, item) )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( itemCategory(item) == SPELL_CAT )
-				{
-					spell_t* spell = getSpellFromItem(player, item);
-					if ( tag.compare("spell_damage_bonus") == 0 )
-					{
-						if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("spell_cast_success") == 0
-						|| tag.compare("spell_extramana_chance") == 0 )
-					{
-						bool newbie = isSpellcasterBeginner(player, players[player]->entity);
-						if ( !newbie )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("spell_newbie_newline") == 0 )
-					{
-						bool newbie = isSpellcasterBeginner(player, players[player]->entity);
-						if ( !newbie )
-						{
-							continue;
-						}
-						else if ( detailsTextString.compare("") == 0 )
-						{
-							continue; // don't insert this newline
-						}
-					}
-					else if ( tag.find("attribute_spell_") != std::string::npos )
-					{
-						spell_t* spell = getSpellFromItem(player, item);
-						if ( !spell ) { continue; }
-						std::string subs = tag.substr(10, std::string::npos);
-						if ( !spell || ItemTooltips.spellItems[spell->ID].internalName != subs )
-						{
-							continue;
-						}
-					}
-				}
-				else if ( itemCategory(item) == MAGICSTAFF )
-				{
-					if ( tag.compare("magicstaff_degrade_chance") == 0 )
-					{
-						if ( item->type == MAGICSTAFF_CHARM )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("magicstaff_charm_degrade_chance") == 0 )
-					{
-						if ( item->type != MAGICSTAFF_CHARM )
-						{
-							continue;
-						}
-					}
-					else if ( tag.find("attribute_spell_") != std::string::npos )
-					{
-						spell_t* spell = nullptr;
-						for ( auto& s : ItemTooltips.spellItems )
-						{
-							if ( s.second.magicstaffId == item->type )
-							{
-								spell = getSpellFromID(s.first);
-								break;
-							}
-						}
-						if ( !spell ) { continue; }
-						std::string subs = tag.substr(10, std::string::npos);
-						if ( !spell || ItemTooltips.spellItems[spell->ID].internalName != subs )
-						{
-							continue;
-						}
-					}
-				}
-				
-				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
-				{
-					if ( tag.compare("shield_durability") == 0 )
-					{
-						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
-						{
-							continue;
-						}
-						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
-						{
-							continue;
-						}
-					}
-					else if ( tag.compare("shield_legendary_durability") == 0 )
-					{
-						if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
-						{
-							continue;
-						}
-						if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
-						{
-							continue;
-						}
-					}
-				}
-
-				std::string tagText = "";
-				for ( auto it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
-				{
-					tagText += (*it);
-					if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
-					{
-						tagText += '\n';
-					}
-				}
-				ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag);
-				if ( detailsTextString.compare("") != 0 )
-				{
-					detailsTextString += '\n';
-				}
-				detailsTextString += tagText;
-			}
-			txtDescription->setText(detailsTextString.c_str());
-		}
-
-		if ( detailsTextString == "" )
-		{
-			frameDesc->setDisabled(true);
-		}
-
-		const int imgToTextOffset = 0;
-		txtPrimaryValue->setDisabled(true);
-		txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
-		txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
-		txtPrimaryValueNegative->setDisabled(txtPrimaryValue->isDisabled());
-		txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
-
-		auto txtSlotName = frameAttr->findField("inventory mouse tooltip primary value slot name");
-		txtSlotName->setDisabled(true);
-		if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
-		{
-			txtSlotName->setDisabled(false);
-			txtSlotName->setColor(itemTooltip.faintTextColor);
-			txtSlotName->setSize(SDL_Rect{padx, pady * 2 + imgToTextOffset + 1, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
-			txtSlotName->setText(ItemTooltips.getItemSlotName(items[item->type].item_slot).c_str());
-		}
-
-		const int iconPadx = 8;
-		const int iconTextPadx = 4;
-
-		int numPrimaryLines = 0;
-		if ( !imgPrimaryIcon->disabled )
-		{
-			imgPrimaryIcon->pos.x = iconPadx;
-			imgPrimaryIcon->pos.y = pady * 2;
-
-			if ( !imgSpellIcon->disabled )
-			{
-				static ConsoleVariable<int> cvar_spelltooltipIconY2("/spell_tooltip_icon_y2", -2);
-				imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.h / 2) - imgPrimaryIcon->pos.h / 2 + *cvar_spelltooltipIconY2;
-			}
-
-			int iconMultipleLinePadding = 0;
-			numPrimaryLines = txtPrimaryValue->getNumTextLines();
-			if ( numPrimaryLines > 1 )
-			{
-				imgPrimaryIcon->pos.y += pady * (std::max(0, numPrimaryLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numPrimaryLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
-			}
-
-			SDL_Rect txtPos {
-				imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx + iconTextPadx,
-				imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numPrimaryLines - 1) * txtPrimaryValue->getPaddingPerLine() / 2),
-				txtHeader->getSize().w,
-				imgPrimaryIcon->pos.h + iconMultipleLinePadding
-			};
-			if ( txtPos.y % 2 == 0 )
-			{
-				++txtPos.y;
-			}
-			txtPrimaryValue->setSize(txtPos);
-			txtPrimaryValueHighlight->setSize(txtPos);
-			txtPrimaryValuePositive->setSize(txtPos);
-			txtPrimaryValueNegative->setSize(txtPos);
-		}
-	
-		txtSecondaryValue->setDisabled(true);
-		txtSecondaryValueHighlight->setDisabled(txtSecondaryValue->isDisabled());
-		txtSecondaryValuePositive->setDisabled(txtSecondaryValue->isDisabled());
-		txtSecondaryValueNegative->setDisabled(txtSecondaryValue->isDisabled());
-		txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
-
-		txtThirdValue->setDisabled(true);
-		txtThirdValueHighlight->setDisabled(txtThirdValue->isDisabled());
-		txtThirdValuePositive->setDisabled(txtThirdValue->isDisabled());
-		txtThirdValueNegative->setDisabled(txtThirdValue->isDisabled());
-		txtThirdValue->setDisabled(imgThirdIcon->disabled);
-
-		int numSecondaryLines = 0;
-		if ( !imgSecondaryIcon->disabled )
-		{
-			imgSecondaryIcon->pos.x = iconPadx;
-			if ( imgPrimaryIcon->disabled )
-			{
-				imgSecondaryIcon->pos.y = pady * 2;
-			}
-			else
-			{
-				imgSecondaryIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
-			}
-
-			int iconMultipleLinePadding = 0;
-			numSecondaryLines = txtSecondaryValue->getNumTextLines();
-			if ( numSecondaryLines > 1 )
-			{
-				imgSecondaryIcon->pos.y += pady * (std::max(0, numSecondaryLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numSecondaryLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
-			}
-
-			SDL_Rect txtPos {
-				imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx + iconTextPadx,
-				imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numSecondaryLines - 1) * txtSecondaryValue->getPaddingPerLine() / 2),
-				txtHeader->getSize().w,
-				imgSecondaryIcon->pos.h + iconMultipleLinePadding
-			};
-			if ( txtPos.y % 2 == 0 )
-			{
-				++txtPos.y;
-			}
-			txtSecondaryValue->setSize(txtPos);
-			txtSecondaryValueHighlight->setSize(txtPos);
-			txtSecondaryValuePositive->setSize(txtPos);
-			txtSecondaryValueNegative->setSize(txtPos);
-		}
-
-		int numThirdLines = 0;
-		if ( !imgThirdIcon->disabled )
-		{
-			imgThirdIcon->pos.x = iconPadx;
-			if ( imgPrimaryIcon->disabled )
-			{
-				imgThirdIcon->pos.y = pady * 2;
-			}
-			else if ( imgSecondaryIcon->disabled )
-			{
-				imgThirdIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
-			}
-			else
-			{
-				imgThirdIcon->pos.y = pady * 2 + imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h;
-			}
-
-			int iconMultipleLinePadding = 0;
-			numThirdLines = txtThirdValue->getNumTextLines();
-			if ( numThirdLines > 1 )
-			{
-				imgThirdIcon->pos.y += pady * (std::max(0, numThirdLines - 1)); // for each line > 1 add padding
-				iconMultipleLinePadding = numThirdLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
-			}
-
-			SDL_Rect txtPos {
-				imgThirdIcon->pos.x + imgThirdIcon->pos.w + padx + iconTextPadx,
-				imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numThirdLines - 1) * txtThirdValue->getPaddingPerLine() / 2),
-				txtHeader->getSize().w,
-				imgThirdIcon->pos.h + iconMultipleLinePadding
-			};
-			if ( txtPos.y % 2 == 0 )
-			{
-				++txtPos.y;
-			}
-			txtThirdValue->setSize(txtPos);
-			txtThirdValueHighlight->setSize(txtPos);
-			txtThirdValuePositive->setSize(txtPos);
-			txtThirdValueNegative->setSize(txtPos);
-		}
-
-		bool imagesDisabled = true;
-		for ( auto image : frameAttr->getImages() )
-		{
-			if ( !image->disabled )
-			{
-				imagesDisabled = false;
-			}
-		}
-		// attribute frame size - add height after the icons
-		if ( imagesDisabled )
-		{
-			frameAttrPos.h += 2 * pady; // no icons, just text.
-		}
-		else
-		{
-			// original - int iconHeight1 = imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + std::max(txtPrimaryValue->getSize().h, imgPrimaryIcon->pos.h));
-			int iconHeight1 = imgPrimaryIcon->disabled ? 0 : 
-				(std::max(txtPrimaryValue->getSize().y + txtPrimaryValue->getSize().h 
-					+ (numPrimaryLines > 1 ? (numPrimaryLines - 1) * (int)(txtPrimaryValue->getPaddingPerLine()) : 0),
-				imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h));
-			int iconHeight2 = imgSecondaryIcon->disabled ? 0 : 
-				(std::max(txtSecondaryValue->getSize().y + txtSecondaryValue->getSize().h
-					+ (numSecondaryLines > 1 ? (numSecondaryLines - 1) * (int)(txtSecondaryValue->getPaddingPerLine()) : 0),
-				imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h));
-			int iconHeight3 = imgThirdIcon->disabled ? 0 : 
-				(std::max(txtThirdValue->getSize().y + txtThirdValue->getSize().h
-					+ (numThirdLines > 1 ? (numThirdLines - 1) * (int)(txtThirdValue->getPaddingPerLine()) : 0),
-				imgThirdIcon->pos.y + imgThirdIcon->pos.h));
-
-			if ( !imgSpellIcon->disabled && txtPrimaryValue->getNumTextLines() <= 1 )
-			{
-				iconHeight1 += 2 * pady; // extra padding for the spell icon
-			}
-
-			frameAttrPos.h += std::max(std::max(iconHeight1, iconHeight2), iconHeight3);
-			frameAttrPos.h += pady;
-
-			if ( txtAttributes->isDisabled() )
-			{
-				//frameAttrPos.h += pady; // no description, add some padding
-			}
-		}
-
-		if ( !txtAttributes->isDisabled() )
-		{
-			int charHeight = 13;
-			Font::get(txtAttributes->getFont())->sizeText("_", nullptr, &charHeight);
-			//messagePlayer(0, "%d", charHeight);
-
-
-			int attributesWidth = frameAttrPos.w;
-			txtAttributes->setSize(SDL_Rect{ padx * 2, frameAttrPos.h + pady, attributesWidth - padx * 2, frameAttrPos.h - pady });
-			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
-			{
-				// don't reflow
-			}
-			else
-			{
-				txtAttributes->reflowTextToFit(-1);
-			}
-			int currentHeight = frameAttrPos.h;
-			frameAttrPos.h += txtAttributes->getNumTextLines() * charHeight + pady * 3;
-			txtAttributes->setSize(SDL_Rect{ padx * 2, currentHeight + pady, attributesWidth - padx * 2, frameAttrPos.h - pady });
-		}
-
-		frameAttr->setSize(frameAttrPos);
-		tooltipDisplayedSettings.tooltipAttributeHeight = frameAttrPos.h;
-		totalHeight += frameAttrPos.h;
-
-		SDL_Rect frameDescPos = frameAttrPos;
-		if ( !frameDesc->isDisabled() )
-		{
-			frameDescPos.y = frameAttrPos.y + frameAttrPos.h;
-			frameDescPos.h = pady;
-
-			int _pady = pady;
-			if ( !imagesDisabled || !txtAttributes->isDisabled() )
-			{
-				_pady = 2 * pady;
-			}
-
-			int charHeight = 13;
-			Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight);
-		
-			txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
-
-			if ( tooltipType == "tooltip_spell_item" || tooltipType == "tooltip_whip" )
-			{
-				txtDescription->reflowTextToFit(1);
-			}
-			else
-			{
-				txtDescription->reflowTextToFit(-1);
-			}
-
-			std::string detailsPositiveText = "";
-			std::string detailsNegativeText = "";
-
-			detailsTextString = txtDescription->getText();
-			ItemTooltips.stripOutPositiveNegativeItemDetails(detailsTextString, detailsPositiveText, detailsNegativeText);
-
-			std::map<int, Uint32> positiveWordIndexes;
-			std::map<int, Uint32> negativeWordIndexes;
-			std::map<int, Uint32> highlightWordIndexes;
-			std::string empty;
-			ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, empty, detailsPositiveText, detailsNegativeText,
-				highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
-			txtDescription->setText(detailsTextString.c_str());
-
-			//txtDescriptionPositive->setText(detailsPositiveText.c_str());
-			//txtDescriptionPositive->setTextColor(itemTooltip.positiveTextColor);
-			//txtDescriptionNegative->setText(detailsNegativeText.c_str());
-			//txtDescriptionNegative->setTextColor(itemTooltip.negativeTextColor);
-
-			txtDescriptionPositive->setDisabled(true);
-			txtDescriptionNegative->setDisabled(true);
-
-			frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady * 3;
-
-			txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady});
-			txtDescription->setScroll(true);
-
-			txtDescriptionPositive->setSize(txtDescription->getSize());
-			txtDescriptionNegative->setSize(txtDescription->getSize());
-
-			tooltipDisplayedSettings.tooltipDescriptionHeight = frameDescPos.h;
-			//frameDescPos.h *= (tooltipDisplayedSettings.expandCurrent);
-
-			frameDesc->setSize(frameDescPos);
-			totalHeight += frameDescPos.h;
-		}
-		else
-		{
-			tooltipDisplayedSettings.tooltipDescriptionHeight = 0;
-		}
-
-		auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
-		auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
-		auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
-
-		SDL_Rect frameValuesPos = frameDescPos;
-		if ( !frameValues->isDisabled() )
-		{
-			frameValuesPos.y = frameDescPos.y + frameDescPos.h;
-			frameValuesPos.h = 0;
-
-			char valueBuf[64];
-			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
-			{
-				imgWeightIcon->disabled = true;
-				txtWeightValue->setDisabled(true);
-
-				std::string spellCost = ItemTooltips.getCostOfSpellString(player, *item);
-				txtGoldValue->setText(spellCost.c_str());
-				if ( txtGoldValue->getNumTextLines() > 1 )
-				{
-					txtWeightValue->setText(spellCost.substr(spellCost.find('\n') + 1).c_str());
-					txtGoldValue->setText(spellCost.substr(0, spellCost.find('\n')).c_str());
-					txtWeightValue->setDisabled(false);
-				}
-			}
-			else
-			{
-				snprintf(valueBuf, sizeof(valueBuf), "%d", item->sellValue(player));
-				txtGoldValue->setText(valueBuf);
-			}
-			txtGoldValue->setDisabled(false);
-
-			int charWidth = 8;
-			int charHeight = 13;
-			const int lowerIconImgToTextOffset = 0;
-
-			const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
-			const std::string weightImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
-			const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
-
-			Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
-			Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
-			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
-			{
-				auto imgMPCost = imgGoldIcon;
-				auto imgSustainedMPCost = imgWeightIcon;
-				auto txtMPCost = txtGoldValue;
-				auto txtSustainedMPCost = txtWeightValue;
-
-				auto textGetMPCost = Text::get(txtMPCost->getText(), txtMPCost->getFont(),
-					txtMPCost->getTextColor(), txtMPCost->getOutlineColor());
-
-				imgMPCost->pos.x = frameValuesPos.w - (textGetMPCost->getWidth()) - (imgMPCost->pos.w + padx);
-				imgMPCost->pos.y = pady;
-				txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
-					imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
-				imgMPCost->path = spellMPCostImagePath;
-
-				frameValuesPos.h += imgMPCost->disabled ? 0 : (imgMPCost->pos.y + imgMPCost->pos.h);
-				frameValuesPos.h += pady;
-
-				if ( !txtSustainedMPCost->isDisabled() )
-				{
-					// get alignment of longer text for sustained MP cost
-					auto textGetSustainedMPCost = Text::get(txtSustainedMPCost->getText(), txtSustainedMPCost->getFont(),
-						txtSustainedMPCost->getTextColor(), txtSustainedMPCost->getOutlineColor());
-
-					imgSustainedMPCost->pos.x = frameValuesPos.w - (textGetSustainedMPCost->getWidth()) - (imgSustainedMPCost->pos.w + padx);
-					imgSustainedMPCost->pos.y = pady + imgMPCost->pos.h;
-					txtSustainedMPCost->setSize(SDL_Rect{ imgSustainedMPCost->pos.x + imgSustainedMPCost->pos.w + padx,
-						imgSustainedMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgSustainedMPCost->pos.h });
-				
-					frameValuesPos.h += imgSustainedMPCost->pos.h;
-
-					// align left MP cost x to leftmost of sustained cost
-					imgMPCost->pos.x = imgSustainedMPCost->pos.x;
-					txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
-						imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
-
-					// move the MP cost image between the 2 lines, and a little left.
-					imgMPCost->pos.y += imgMPCost->pos.h / 2;
-					imgMPCost->pos.x -= padx;
-				}
-			}
-			else
-			{
-				auto textGetGoldValue = Text::get(txtGoldValue->getText(), txtGoldValue->getFont(),
-					txtGoldValue->getTextColor(), txtGoldValue->getOutlineColor());
-
-				imgGoldIcon->pos.x = frameValuesPos.w - (textGetGoldValue->getWidth()) - (imgGoldIcon->pos.w + padx);
-				imgGoldIcon->pos.y = pady;
-				txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
-					imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
-				imgGoldIcon->path = goldImagePath;
-
-				snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
-				txtWeightValue->setText(valueBuf);
-				txtWeightValue->setDisabled(false);
-				imgWeightIcon->disabled = false;
-
-				auto textGetWeightValue = Text::get(txtWeightValue->getText(), txtWeightValue->getFont(),
-					txtWeightValue->getTextColor(), txtWeightValue->getOutlineColor());
-
-				imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (textGetWeightValue->getWidth()) - (imgWeightIcon->pos.w + padx);
-				imgWeightIcon->pos.y = pady;
-				txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
-					imgWeightIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
-				imgWeightIcon->path = weightImagePath;
-				frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
-				frameValuesPos.h += pady;
-			}
-
-			frameValues->setSize(frameValuesPos);
-			totalHeight += frameValuesPos.h;
-
-			txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + lowerIconImgToTextOffset,
-				frameValuesPos.w - padx, txtGoldValue->getSize().h });
-
-			if ( tooltipType.find("tooltip_spell_") != std::string::npos )
-			{
-				txtIdentifiedValue->setText(ItemTooltips.getSpellTypeString(player, *item).c_str());
-			}
-			else if ( !item->identified )
-			{
-				txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["unidentified"].c_str());
-			}
-			else if ( item->beatitude > 0 )
-			{
-				txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["blessed"].c_str());
-			}
-			else if ( item->beatitude < 0 )
-			{
-				txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["cursed"].c_str());
-			}
-			else
-			{
-				txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["uncursed"].c_str());
-			}
-
-			imgValueBackground->pos = SDL_Rect{0, 0, frameValuesPos.w, frameValuesPos.h };
-			imgValueBackground->disabled = true;
-		}
-		else
-		{
-			txtGoldValue->setDisabled(true);
-			txtWeightValue->setDisabled(true);
-		}
-
-		// add dividers
-		auto divDesc = frameDesc->findImage("inventory mouse tooltip description divider");
-		auto divValue = frameValues->findImage("inventory mouse tooltip value divider");
-		divDesc->disabled = true;
-		divValue->disabled = true;
-		if ( (!imagesDisabled || !txtAttributes->isDisabled()) && !frameAttr->isDisabled() && !frameDesc->isDisabled() )
-		{
-			divDesc->disabled = false;
-			divDesc->pos.x = padx;
-			divDesc->pos.w = frameDescPos.w - 2 * padx;
-		}
-		if ( !frameValues->isDisabled() && (!imagesDisabled || !frameDesc->isDisabled() || !txtAttributes->isDisabled()) )
-		{
-			divValue->disabled = false;
-			divValue->pos.x = padx;
-			divValue->pos.w = frameValuesPos.w - 2 * padx;
-		}
-
-		// button prompts
-		{
-			SDL_Rect framePromptPos = frameValuesPos;
-			framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
-			framePromptPos.h = imgBottomBackground->pos.h;
-
-			if ( (!item->identified 
-					&& (!isItemFromInventory || (isItemFromInventory && inputs.getVirtualMouse(player)->draw_cursor && appraisal.current_item != item->uid)))
-				|| doShortTooltip
-				|| (frameDesc->isDisabled() && item->identified) )
-			{
-				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
-				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
-				imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01_NoPrompt.png";
-				txtPrompt->setDisabled(true);
-				totalHeight += 4;
-			}
-			else
-			{
-				imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00.png";
-				imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01.png";
-				imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01.png";
-				totalHeight += framePromptPos.h;
-				txtPrompt->setDisabled(false);
-			}
-			txtPrompt->setSize(SDL_Rect{ 0, 1, framePromptPos.w, framePromptPos.h });
-
-			framePrompt->setSize(framePromptPos);
-		}
-
-		tooltipDisplayedSettings.tooltipHeight = totalHeight;
-	}
-
-	// realign stuff based on expanded animation status
-	int scrollOverflow = 0;
-	auto gradientTop = frameMain->findImage("inventory mouse tooltip fade top");
-	auto gradientBottom = frameMain->findImage("inventory mouse tooltip fade bottom");
-	auto& frameTooltipScrollSetpoint = tooltipDisplayedSettings.frameTooltipScrollSetpoint;
-	auto& frameTooltipScrollAnim = tooltipDisplayedSettings.frameTooltipScrollAnim;
-	bool wasScrollable = tooltipDisplayedSettings.scrollable;
-	{
-		SDL_Rect frameDescPos = frameDesc->getSize();
-		frameDescPos.h = tooltipDisplayedSettings.tooltipDescriptionHeight;
-
-		static ConsoleVariable<int> cvar_item_tooltip_max_height("/item_tooltip_max_height", 348);
-		static ConsoleVariable<int> cvar_item_tooltip_max_height_compact("/item_tooltip_max_height_compact", 264);
-		int maxHeight = !players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_max_height : *cvar_item_tooltip_max_height_compact;
-
-		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && players[player]->bUseCompactGUIHeight() )
-		{
-			maxHeight -= 68;
-		}
-
-		scrollOverflow = std::max(0, frameAttr->getSize().y + frameAttr->getSize().h + tooltipDisplayedSettings.tooltipDescriptionHeight - maxHeight);
-		tooltipDisplayedSettings.scrollable = scrollOverflow > 0 && tooltipDisplayedSettings.expanded;
-		frameDescPos.h = std::max(0, frameDescPos.h - scrollOverflow);
-		frameDescPos.h *= tooltipDisplayedSettings.expandCurrent;
-		int heightDiff = tooltipDisplayedSettings.tooltipDescriptionHeight - frameDescPos.h;
-		frameDesc->setSize(frameDescPos);
-
-
-		if ( tooltipDisplayedSettings.expanded )
-		{
-			if ( tooltipDisplayedSettings.scrollable )
-			{
-				const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-				if ( inputs.bPlayerUsingKeyboardControl(player) )
-				{
-					if ( Input::inputs[player].binaryToggle("MenuMouseWheelUpAlt") )
-					{
-						frameTooltipScrollSetpoint -= 24.0;
-					}
-					else if ( Input::inputs[player].binaryToggle("MenuMouseWheelDownAlt") )
-					{
-						frameTooltipScrollSetpoint += 24.0;
-					}
-				}
-				if ( Input::inputs[player].binaryToggle("MenuScrollUp") )
-				{
-					frameTooltipScrollSetpoint -= 8.0 * fpsScale;
-				}
-				else if ( Input::inputs[player].binaryToggle("MenuScrollDown") )
-				{
-					frameTooltipScrollSetpoint += 8.0 * fpsScale;
-				}
-			}
-			frameTooltipScrollSetpoint = std::max(0.0, frameTooltipScrollSetpoint);
-			if ( frameTooltipScrollSetpoint > scrollOverflow )
-			{
-				frameTooltipScrollSetpoint = scrollOverflow;
-			}
-			else
-			{
-				if ( frameTooltipScrollSetpoint == scrollOverflow )
-				{
-					tooltipDisplayedSettings.scrolledToMax = scrollOverflow;
-				}
-				if ( tooltipDisplayedSettings.scrolledToMax != 0 
-					&& tooltipDisplayedSettings.scrolledToMax != scrollOverflow
-					&& frameTooltipScrollSetpoint != scrollOverflow )
-				{
-					frameTooltipScrollSetpoint = scrollOverflow; // snap to new value (moving between tooltips)
-					frameTooltipScrollAnim = frameTooltipScrollSetpoint;
-				}
-				if ( frameTooltipScrollSetpoint < scrollOverflow )
-				{
-					tooltipDisplayedSettings.scrolledToMax = 0;
-				}
-			}
-			if ( frameTooltipScrollAnim > scrollOverflow )
-			{
-				frameTooltipScrollAnim = scrollOverflow;
-			}
-
-			SDL_Rect actualSize = frameAttr->getActualSize();
-			actualSize.h = std::max(frameAttr->getSize().h * 2, tooltipDisplayedSettings.tooltipDescriptionHeight);
-			actualSize.y = frameTooltipScrollAnim;
-			frameAttr->setActualSize(actualSize);
-			frameAttr->setAllowScrollBinds(false);
-			frameAttr->setScrollBarsEnabled(false);
-
-			if ( abs(frameTooltipScrollSetpoint - frameTooltipScrollAnim) > 0.00001 )
-			{
-				const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
-				real_t setpointDiff = 0.0;
-				if ( frameTooltipScrollSetpoint - frameTooltipScrollAnim > 0.0 )
-				{
-					setpointDiff = fpsScale * std::max(3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
-				}
-				else
-				{
-					setpointDiff = fpsScale * std::min(-3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
-				}
-				frameTooltipScrollAnim += setpointDiff;
-				if ( setpointDiff > 0.0 )
-				{
-					frameTooltipScrollAnim = std::min(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
-				}
-				else
-				{
-					frameTooltipScrollAnim = std::max(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
-				}
-			}
-			else
-			{
-				frameTooltipScrollAnim = frameTooltipScrollSetpoint;
-			}
-			
-			const int scrolledPastAttrFrame = frameAttr->getSize().h - frameAttr->getActualSize().y;
-			frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttr->getActualSize().y);
-			frameDescPos.h += std::min(frameAttr->getActualSize().y, frameAttr->getSize().h);
-			if ( scrolledPastAttrFrame < 0 )
-			{
-				SDL_Rect actualSize = frameDesc->getActualSize();
-				actualSize.y = -scrolledPastAttrFrame;
-				actualSize.h = tooltipDisplayedSettings.tooltipDescriptionHeight * 2;
-				frameDesc->setActualSize(actualSize);
-				frameDesc->setAllowScrollBinds(false);
-				frameDesc->setScrollBarsEnabled(false);
-			}
-			else
-			{
-				SDL_Rect actualSize = frameDesc->getActualSize();
-				actualSize.y = 0;
-				frameDesc->setActualSize(actualSize);
-				frameDesc->setAllowScrollBinds(false);
-				frameDesc->setScrollBarsEnabled(false);
-			}
-			frameDesc->setSize(frameDescPos);
-		}
-		else
-		{
-			SDL_Rect frameAttrActualSize = frameAttr->getActualSize();
-			frameAttrActualSize.y = 0;
-			frameAttrActualSize.h = frameAttr->getSize().h * 2;
-			frameAttr->setActualSize(frameAttrActualSize);
-			frameAttr->setAllowScrollBinds(false);
-			frameAttr->setScrollBarsEnabled(false);
-
-			heightDiff += std::min(frameAttrActualSize.y, frameAttr->getSize().h);
-
-			SDL_Rect actualSize = frameDesc->getActualSize();
-			actualSize.y = 0;
-			frameDesc->setActualSize(actualSize);
-			frameDesc->setAllowScrollBinds(false);
-			frameDesc->setScrollBarsEnabled(false);
-
-			frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttrActualSize.y);
-			frameDesc->setSize(frameDescPos);
-
-			frameTooltipScrollSetpoint = 0.0;
-			frameTooltipScrollAnim = 0.0;
-		}
-
-		
-		SDL_Rect frameValuesPos = frameValues->getSize();
-		if ( !frameDesc->isDisabled() )
-		{
-			frameValuesPos.y = frameDescPos.y + frameDescPos.h;
-			frameValues->setSize(frameValuesPos);
-		}
-
-		SDL_Rect framePromptPos = framePrompt->getSize();
-		framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
-		framePrompt->setSize(framePromptPos);
-
-		bool doAppraisalPrompt = !item->identified && isItemFromInventory && appraisal.current_item != item->uid;
-		bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid;
-		if ( doAppraisalProgressPrompt )
-		{
-			real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
-			char buf[32];
-			snprintf(buf, sizeof(buf), language[4198], percent);
-			txtPrompt->setText(buf);
-		}
-		else if ( doAppraisalPrompt )
-		{
-			txtPrompt->setText(language[4102]);
-		}
-		else if ( !tooltipDisplayedSettings.expanded )
-		{
-			if ( itemCategory(item) == SPELL_CAT )
-			{
-				txtPrompt->setText(language[4103]); // show spell details
-			}
-			else
-			{
-				txtPrompt->setText(language[4086]); // show item details
-			}
-		}
-		else
-		{
-			if ( itemCategory(item) == SPELL_CAT )
-			{
-				txtPrompt->setText(language[4104]); // hide spell details
-			}
-			else
-			{
-				txtPrompt->setText(language[4087]); // hide item details
-			}
-		}
-
-		// get left anchor for tooltip - if we want moving x tooltips, otherwise currently anchor to right of inventory panel
-		//auto inventoryBgFrame = frameInventory->findFrame("inventory base");
-		//const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
-		SDL_Rect newPos { x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff };
-		if ( justify == Player::PANEL_JUSTIFY_RIGHT )
-		{
-			newPos.x -= newPos.w;
-		}
-		frameMain->setSize(newPos);
-
-		// prompt for expanding tooltip position
-		auto promptImg = frameMain->findImage("inventory mouse tooltip prompt img");
-		promptImg->disabled = true;
-		if ( !players[player]->shootmode 
-			&& !txtPrompt->isDisabled() 
-			&& !doAppraisalProgressPrompt
-			&& (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
-		{
-			auto binding = Input::inputs[player].input("Expand Inventory Tooltip");
-			bool pressedGlyph = false;
-			if ( binding.isBindingUsingGamepad()
-				&& (binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK
-					|| binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK) )
-			{
-				pressedGlyph = true;
-			}
-			promptImg->path = Input::inputs[player].getGlyphPathForBinding(binding, pressedGlyph);
-			if ( auto imgGet = Image::get(promptImg->path.c_str()) )
-			{
-				unsigned int largestTextWidth = 0;
-				std::vector<int> languageIndexes;
-				if ( doAppraisalPrompt )
-				{
-					languageIndexes.push_back(4102);
-				}
-				else if ( itemCategory(item) == SPELL_CAT )
-				{
-					languageIndexes.push_back(4103);
-					languageIndexes.push_back(4104);
-				}
-				else
-				{
-					languageIndexes.push_back(4086);
-					languageIndexes.push_back(4087);
-				}
-
-				for ( auto index : languageIndexes )
-				{
-					if ( auto textGet = Text::get(language[index], txtPrompt->getFont(),
-						txtPrompt->getTextColor(), txtPrompt->getOutlineColor()) )
-					{
-						largestTextWidth = std::max(textGet->getWidth(), largestTextWidth);
-					}
-				}
-				promptImg->disabled = false;
-				promptImg->pos.w = imgGet->getWidth();
-				promptImg->pos.h = imgGet->getHeight();
-				promptImg->pos.x = framePromptPos.x + framePromptPos.w - 4 - largestTextWidth - promptImg->pos.w;
-				promptImg->pos.y = framePromptPos.y;
-				if ( promptImg->pos.y + promptImg->pos.h > frameMain->getSize().h )
-				{
-					promptImg->pos.y -= (promptImg->pos.y + promptImg->pos.h) - frameMain->getSize().h;
-				}
-			}
-			if ( doAppraisalPrompt && expandBindingPressed )
-			{
-				players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_APPRAISE);
-			}
-		}
-	}
-
-	// position the background elements.
-	{
-		imgTopBackgroundLeft->pos.x = 0;
-		imgTopBackgroundLeft->pos.y = 0;
-		imgTopBackgroundRight->pos.x = frameMain->getSize().w - imgTopBackgroundRight->pos.w;
-		imgTopBackgroundRight->pos.y = 0;
-
-		imgTopBackground->pos.x = imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w;
-		imgTopBackground->pos.y = 0;
-		imgTopBackground->pos.w = imgTopBackgroundRight->pos.x - (imgTopBackground->pos.x);
-
-		imgMiddleBackgroundLeft->pos.x = 0;
-		imgMiddleBackgroundLeft->pos.y = imgTopBackgroundLeft->pos.h;
-		imgMiddleBackgroundRight->pos.x = frameMain->getSize().w - imgTopBackgroundRight->pos.w;
-		imgMiddleBackgroundRight->pos.y = imgMiddleBackgroundLeft->pos.y;
-
-		imgMiddleBackground->pos.x = imgMiddleBackgroundLeft->pos.x + imgMiddleBackgroundLeft->pos.w;
-		imgMiddleBackground->pos.y = imgMiddleBackgroundLeft->pos.y;
-		imgMiddleBackground->pos.w = imgMiddleBackgroundRight->pos.x - (imgMiddleBackground->pos.x);
-
-		imgBottomBackgroundLeft->pos.x = 0;
-		imgBottomBackgroundLeft->pos.y = frameMain->getSize().h - imgBottomBackgroundLeft->pos.h;
-		imgBottomBackgroundRight->pos.x = frameMain->getSize().w - imgBottomBackgroundRight->pos.w;
-		imgBottomBackgroundRight->pos.y = frameMain->getSize().h - imgBottomBackgroundLeft->pos.h;
-
-		imgBottomBackground->pos.x = imgBottomBackgroundLeft->pos.x + imgBottomBackgroundLeft->pos.w;
-		imgBottomBackground->pos.y = imgBottomBackgroundLeft->pos.y;
-		imgBottomBackground->pos.w = imgBottomBackgroundRight->pos.x - (imgBottomBackground->pos.x);
-
-		// resize the middle section height
-		imgMiddleBackgroundLeft->pos.h = imgBottomBackground->pos.y - (imgTopBackground->pos.y + imgTopBackground->pos.h);
-		imgMiddleBackgroundRight->pos.h = imgMiddleBackgroundLeft->pos.h;
-		imgMiddleBackground->pos.h = imgMiddleBackgroundLeft->pos.h;
-
-		if ( tooltipDisplayedSettings.expanded && tooltipDisplayedSettings.expandCurrent > 0.1 )
-		{
-			if ( scrollOverflow > 0 )
-			{
-				if ( tooltipDisplayedSettings.expandCurrent >= .95 ) // already open, but gradient disabled from previous item
-				{
-					if ( frameTooltipScrollSetpoint < scrollOverflow && !wasScrollable )
-					{
-						if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 255); }
-					}
-					if ( frameTooltipScrollSetpoint > 0 && !wasScrollable )
-					{
-						if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 255); }
-					}
-				}
-
-				gradientBottom->disabled = false;
-				gradientTop->disabled = false;
-
-				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
-				if ( frameTooltipScrollSetpoint < scrollOverflow )
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientBottom->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha += fpsScale * (10); // constant speed
-					newAlpha = std::min(newAlpha, 255);
-					a = newAlpha;
-					gradientBottom->color = makeColor(r, g, b, a);
-				}
-				else
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientBottom->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha -= fpsScale * (10); // constant speed
-					newAlpha = std::max(newAlpha, 0);
-					a = newAlpha;
-					gradientBottom->color = makeColor(r, g, b, a);
-					if ( a == 0 )
-					{
-						gradientBottom->disabled = true;
-					}
-				}
-				
-				if ( frameTooltipScrollSetpoint > 0 )
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientTop->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha += fpsScale * (10); // constant speed
-					newAlpha = std::min(newAlpha, 255);
-					a = newAlpha;
-					gradientTop->color = makeColor(r, g, b, a);
-				}
-				else
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientTop->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha -= fpsScale * (10); // constant speed
-					newAlpha = std::max(newAlpha, 0);
-					a = newAlpha;
-					gradientTop->color = makeColor(r, g, b, a);
-
-					if ( a == 0 )
-					{
-						gradientTop->disabled = true;
-					}
-				}
-			}
-			else
-			{
-				gradientTop->disabled = true;
-				gradientBottom->disabled = true;
-			}
-		}
-		else
-		{
-			if ( scrollOverflow > 0 )
-			{
-				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientTop->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha -= fpsScale * (10); // constant speed
-					newAlpha = std::max(newAlpha, 0);
-					a = newAlpha;
-					gradientTop->color = makeColor(r, g, b, a);
-
-					if ( a == 0 )
-					{
-						gradientTop->disabled = true;
-					}
-				}
-				{
-					Uint8 r, g, b, a;
-					getColor(gradientBottom->color, &r, &g, &b, &a);
-					int newAlpha = a;
-					newAlpha -= fpsScale * (10); // constant speed
-					newAlpha = std::max(newAlpha, 0);
-					a = newAlpha;
-					gradientBottom->color = makeColor(r, g, b, a);
-					if ( a == 0 )
-					{
-						gradientBottom->disabled = true;
-					}
-				}
-			}
-			else
-			{
-				gradientTop->disabled = true;
-				gradientBottom->disabled = true;
-			}
-		}
-		if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 0); }
-		if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 0); }
-
-		gradientBottom->pos.h = 42;
-		gradientBottom->pos.x = imgBottomBackground->pos.x - 10;
-		gradientBottom->pos.y = frameValues->getSize().y - gradientBottom->pos.h;
-		gradientBottom->pos.w = imgBottomBackground->pos.w + 20;
-
-		gradientTop->pos.h = 42;
-		gradientTop->pos.x = imgMiddleBackground->pos.x - 10;
-		gradientTop->pos.y = imgMiddleBackground->pos.y;
-		gradientTop->pos.w = imgMiddleBackground->pos.w + 20;
-	}
-
-TOOLTIP_FINALIZE_LABEL:
+    if ( player.inventoryUI.tooltipContainerFrame )
+    {
+        player.inventoryUI.tooltipContainerFrame->setSize(
+            SDL_Rect{player.camera_virtualx1(),
+                player.camera_virtualy1(),
+                player.camera_virtualWidth(),
+                player.camera_virtualHeight()});
+    }
+    
+    const int player = this->player.playernum;
+    if ( !item )
+    {
+        return;
+    }
+    
+    auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
+    
+    bool bUpdateDisplayedTooltip =
+    (!tooltipDisplayedSettings.isItemSameAsCurrent(player, item) || ItemTooltips.itemDebug);
+    
+    auto frameMain = this->player.inventoryUI.tooltipFrame;
+    if ( !frameMain )
+    {
+        return;
+    }
+    
+    auto frameInventory = this->player.inventoryUI.frame;
+    if ( !frameInventory )
+    {
+        return;
+    }
+    
+    auto frameInteract = this->player.inventoryUI.interactFrame;
+    if ( !frameInteract )
+    {
+        return;
+    }
+    
+    auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+    if ( !frameTooltipPrompt )
+    {
+        return;
+    }
+    
+    auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+    
+    static const char* bigfont = "fonts/pixelmix.ttf#18";
+    
+    auto frameAttr = frameMain->findFrame("inventory mouse tooltip attributes frame");
+    auto frameDesc = frameMain->findFrame("inventory mouse tooltip description frame");
+    auto framePrompt = frameMain->findFrame("inventory mouse tooltip prompt frame");
+    auto frameValues = frameMain->findFrame("inventory mouse tooltip value frame");
+    
+    auto imgTopBackground = frameMain->findImage("tooltip top background");
+    auto imgTopBackgroundLeft = frameMain->findImage("tooltip top left");
+    auto imgTopBackgroundRight = frameMain->findImage("tooltip top right");
+    
+    auto imgMiddleBackground = frameMain->findImage("tooltip middle background");
+    auto imgMiddleBackgroundLeft = frameMain->findImage("tooltip middle left");
+    auto imgMiddleBackgroundRight = frameMain->findImage("tooltip middle right");
+    
+    auto imgBottomBackground = frameMain->findImage("tooltip bottom background");
+    auto imgBottomBackgroundLeft = frameMain->findImage("tooltip bottom left");
+    auto imgBottomBackgroundRight = frameMain->findImage("tooltip bottom right");
+    
+    auto txtPrompt = framePrompt->findField("inventory mouse tooltip prompt");
+    char buf[1024] = "";
+    
+    const int padx = 4;
+    const int pady = 4;
+    const int imgTopBackgroundDefaultHeight = 28;
+    const int imgTopBackground2XHeight = 42;
+    
+    const bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
+    bool doShortTooltip = false;
+    if ( players[player]->shootmode )
+    {
+        doShortTooltip = true;
+        if ( doTitleOnlyTooltip )
+        {
+            if ( !tooltipDisplayedSettings.displayingTitleOnlyTooltip )
+            {
+                bUpdateDisplayedTooltip = true;
+            }
+            tooltipDisplayedSettings.displayingTitleOnlyTooltip = true;
+            tooltipDisplayedSettings.displayingShortFormTooltip = false;
+        }
+        else
+        {
+            if ( !tooltipDisplayedSettings.displayingShortFormTooltip )
+            {
+                bUpdateDisplayedTooltip = true;
+            }
+            tooltipDisplayedSettings.displayingShortFormTooltip = true;
+            tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
+        }
+    }
+    else
+    {
+        doShortTooltip = false;
+        if ( tooltipDisplayedSettings.displayingShortFormTooltip || tooltipDisplayedSettings.displayingTitleOnlyTooltip )
+        {
+            bUpdateDisplayedTooltip = true;
+        }
+        tooltipDisplayedSettings.displayingShortFormTooltip = false;
+        tooltipDisplayedSettings.displayingTitleOnlyTooltip = false;
+    }
+    
+    bool isItemFromInventory = false;
+    if ( item->node && item->node->list == &stats[player]->inventory )
+    {
+        isItemFromInventory = true;
+    }
+    
+    if ( ItemTooltips.itemDebug )
+    {
+        if ( keystatus[SDLK_KP_PLUS] )
+        {
+            keystatus[SDLK_KP_PLUS] = 0;
+            item->beatitude += 1;
+            /*for ( int i = 0; i < 100; ++i )
+             {
+             Uint32 r = local_rng.rand() % 4096;
+             printlog("%d %d %d", (r >> 8 & 0xF), (r >> 4 & 0xF), (r & 0xF));
+             }*/
+        }
+        if ( keystatus[SDLK_KP_MINUS] )
+        {
+            keystatus[SDLK_KP_MINUS] = 0;
+            item->beatitude -= 1;
+        }
+        if ( keystatus[SDLK_KP_6] )
+        {
+            keystatus[SDLK_KP_6] = 0;
+            item->status = std::min(EXCELLENT, static_cast<Status>(item->status + 1));
+        }
+        if ( keystatus[SDLK_KP_4] )
+        {
+            keystatus[SDLK_KP_4] = 0;
+            item->status = std::max(BROKEN, static_cast<Status>(item->status - 1));
+        }
+        if ( keystatus[SDLK_KP_5] )
+        {
+            keystatus[SDLK_KP_5] = 0;
+            if ( item->type == WOODEN_SHIELD )
+            {
+                item->type = static_cast<ItemType>(NUMITEMS - 1);
+            }
+            else
+            {
+                item->type = static_cast<ItemType>(item->type - 1);
+                if ( item->type == SPELL_ITEM )
+                {
+                    item->type = static_cast<ItemType>(item->type - 1);
+                }
+            }
+        }
+        if ( keystatus[SDLK_KP_8] )
+        {
+            keystatus[SDLK_KP_8] = 0;
+            if ( item->type == NUMITEMS - 1 )
+            {
+                item->type = WOODEN_SHIELD;
+            }
+            else
+            {
+                item->type = static_cast<ItemType>(item->type + 1);
+                if ( item->type == SPELL_ITEM )
+                {
+                    item->type = static_cast<ItemType>(item->type + 1);
+                }
+            }
+        }
+    }
+    
+    bool expandBindingPressed = false;
+    if ( !players[player]->usingCommand()
+        && players[player]->bControlEnabled
+        && !gamePaused
+        && Input::inputs[player].consumeBinaryToggle("Expand Inventory Tooltip") )
+    {
+        expandBindingPressed = true;
+        if ( !players[player]->shootmode && item->identified && !doTitleOnlyTooltip
+            && !doShortTooltip )
+        {
+            tooltipDisplayedSettings.expanded = !tooltipDisplayedSettings.expanded;
+        }
+    }
+    
+    if ( !doTitleOnlyTooltip )
+    {
+        titleOnlyFrame->setDisabled(true);
+    }
+    
+    auto& appraisal = players[player]->inventoryUI.appraisal;
+    
+    if ( bUpdateDisplayedTooltip )
+    {
+        tooltipDisplayedSettings.updateItem(player, item);
+        
+        std::string tooltipType = ItemTooltips.tmpItems[item->type].tooltip;
+        
+        if ( ItemTooltips.tooltips.find(tooltipType) == ItemTooltips.tooltips.end() )
+        {
+            tooltipType = "tooltip_default";
+        }
+        else if ( !item->identified )
+        {
+            tooltipType = "tooltip_unidentified";
+        }
+        auto itemTooltip = ItemTooltips.tooltips[tooltipType];
+        
+        int textx = 0;
+        int texty = 0;
+        
+        /*if ( item->type == FOOD_TIN )
+         {
+         std::string cookingMethod;
+         std::string protein;
+         std::string sides;
+         item->foodTinGetDescription(cookingMethod, protein, sides);
+         snprintf(buf, sizeof(buf), "%s %s %s%s%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+         item->getName(),
+         cookingMethod.c_str(), protein.c_str(), sides.c_str(),
+         item->beatitude);
+         }
+         else*/
+        
+        bool manuallyInsertedNewline = false;
+        
+        if ( item->type == SPELL_ITEM )
+        {
+            spell_t* spell = getSpellFromItem(player, item);
+            if ( !spell )
+            {
+                snprintf(buf, sizeof(buf), "%s", "Unknown Spell");
+            }
+            else if ( item && item->appearance >= 1000 )
+            {
+                // shapeshift spells, append the form name here.
+                switch ( spell->ID )
+                {
+                case SPELL_SPEED:
+                case SPELL_DETECT_FOOD:
+                    snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+                             ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(),
+                             ItemTooltips.spellItems[SPELL_RAT_FORM].name.c_str());
+                    manuallyInsertedNewline = true;
+                    break;
+                case SPELL_POISON:
+                case SPELL_SPRAY_WEB:
+                    snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+                             ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(),
+                             ItemTooltips.spellItems[SPELL_SPIDER_FORM].name.c_str());
+                    manuallyInsertedNewline = true;
+                    break;
+                case SPELL_STRIKE:
+                case SPELL_FEAR:
+                case SPELL_TROLLS_BLOOD:
+                    snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+                             ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(),
+                             ItemTooltips.spellItems[SPELL_TROLL_FORM].name.c_str());
+                    manuallyInsertedNewline = true;
+                    break;
+                case SPELL_LIGHTNING:
+                case SPELL_CONFUSE:
+                case SPELL_AMPLIFY_MAGIC:
+                    snprintf(buf, sizeof(buf), "%s%s\n(%s)",
+                             ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName(),
+                             ItemTooltips.spellItems[SPELL_IMP_FORM].name.c_str());
+                    manuallyInsertedNewline = true;
+                    break;
+                default:
+                    snprintf(buf, sizeof(buf), "%s%s",
+                             ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
+                    break;
+                }
+            }
+            else
+            {
+                snprintf(buf, sizeof(buf), "%s%s",
+                         ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
+            }
+        }
+        else
+        {
+            if ( !item->identified )
+            {
+                if ( itemCategory(item) == BOOK )
+                {
+                    snprintf(buf, sizeof(buf), "%s %s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+                             language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str());
+                    manuallyInsertedNewline = true;
+                }
+                else if ( itemCategory(item) == SCROLL )
+                {
+                    snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+                             items[item->type].getUnidentifiedName(), language[4215], item->getScrollLabel());
+                    manuallyInsertedNewline = true;
+                }
+                else
+                {
+                    snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
+                }
+            }
+            else
+            {
+                if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT
+                    || item->type == TOOL_GYROBOT )
+                {
+                    int health = 100;
+                    if ( !item->tinkeringBotIsMaxHealth() )
+                    {
+                        health = 25 * (item->appearance % 10);
+                        if ( health == 0 && item->status != BROKEN )
+                        {
+                            health = 5;
+                        }
+                    }
+                    snprintf(buf, sizeof(buf), "%s %s (%d%%)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), health);
+                }
+                else if ( item->type == ENCHANTED_FEATHER )
+                {
+                    snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+                             item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+                }
+                else if ( itemCategory(item) == BOOK )
+                {
+                    snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+                             language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+                    manuallyInsertedNewline = true;
+                }
+                else
+                {
+                    snprintf(buf, sizeof(buf), "%s %s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName(), item->beatitude);
+                }
+            }
+        }
+        
+        if ( doTitleOnlyTooltip )
+        {
+            auto titleOnlyTxt = titleOnlyFrame->findField("title only header");
+            std::string title = buf;
+            if ( itemCategory(item) != BOOK && !(itemCategory(item) == SCROLL && !item->identified) )
+            {
+                std::replace(title.begin(), title.end(), '\n', ' ');
+            }
+            titleOnlyTxt->setText(title.c_str());
+            bool bigTooltip = false;
+            SDL_Rect txtPos = titleOnlyTxt->getSize();
+            int padx = 10;
+            txtPos.x = padx * 2;
+            txtPos.y = pady + 1;
+            txtPos.h = 24;
+            if ( false /*&& players[player]->messageZone.useBigFont*/ )
+            {
+                titleOnlyTxt->setFont(players[player]->messageZone.bigfont);
+                bigTooltip = true;
+                txtPos.h = 44;
+                txtPos.y = pady * 2 + 2;
+            }
+            else
+            {
+                titleOnlyTxt->setFont(players[player]->messageZone.smallfont);
+            }
+            if ( auto textGet = Text::get(titleOnlyTxt->getLongestLine().c_str(), titleOnlyTxt->getFont(),
+                                          titleOnlyTxt->getTextColor(), titleOnlyTxt->getOutlineColor()) )
+            {
+                txtPos.w = textGet->getWidth();
+                if ( titleOnlyTxt->getNumTextLines() > 1 )
+                {
+                    txtPos.h = 44;
+                    bigTooltip = true;
+                }
+            }
+            titleOnlyTxt->setSize(txtPos);
+            SDL_Rect tooltipPos{ x, y, txtPos.w + padx * 4, 0 };
+            tooltipPos.x -= tooltipPos.w / 2;
+            if ( tooltipPos.x % 2 == 1 )
+            {
+                ++tooltipPos.x;
+                ++tooltipPos.w;
+            }
+            
+            auto tm = titleOnlyFrame->findImage("tooltip top background");
+            tm->disabled = true;
+            auto tl = titleOnlyFrame->findImage("tooltip top left");
+            tl->disabled = true;
+            auto tr = titleOnlyFrame->findImage("tooltip top right");
+            tr->disabled = true;
+            if ( bigTooltip )
+            {
+                tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly2x.png";
+                tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly2x.png";
+                tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly2x.png";
+            }
+            else
+            {
+                tm->path = "*#images/ui/Inventory/tooltips/Hover_T00_TitleOnly.png";
+                tl->path = "*#images/ui/Inventory/tooltips/Hover_TL00_TitleOnly.png";
+                tr->path = "*#images/ui/Inventory/tooltips/Hover_TR00_TitleOnly.png";
+            }
+            if ( auto imgGet = Image::get(tm->path.c_str()) )
+            {
+                tm->pos.w = imgGet->getWidth();
+                tm->pos.h = imgGet->getHeight();
+            }
+            if ( auto imgGet = Image::get(tl->path.c_str()) )
+            {
+                tl->pos.w = imgGet->getWidth();
+                tl->pos.h = imgGet->getHeight();
+                tooltipPos.h = tl->pos.h;
+            }
+            if ( auto imgGet = Image::get(tr->path.c_str()) )
+            {
+                tr->pos.w = imgGet->getWidth();
+                tr->pos.h = imgGet->getHeight();
+            }
+            static ConsoleVariable<Vector4> cvar_titleOnlyColor("/tooltip_title_only_color", Vector4{ 188, 154, 114, 255 });
+            titleOnlyTxt->setTextColor(makeColor(
+                                                 cvar_titleOnlyColor->x,
+                                                 cvar_titleOnlyColor->y,
+                                                 cvar_titleOnlyColor->z,
+                                                 cvar_titleOnlyColor->w));
+            tl->disabled = false;
+            tl->pos.x = 0;
+            tm->disabled = false;
+            tm->pos.x = tl->pos.x + tl->pos.w;
+            tm->pos.w = tooltipPos.w - tl->pos.w - tr->pos.w;
+            tr->disabled = false;
+            tr->pos.x = tm->pos.x + tm->pos.w;
+            titleOnlyFrame->setSize(tooltipPos);
+            finalizeFrameTooltip(item, x, y, justify);
+            return;
+        }
+        auto txtHeader = frameMain->findField("inventory mouse tooltip header");
+        txtHeader->setText(buf);
+        Text* textGet = Text::get(txtHeader->getText(), txtHeader->getFont(),
+                                  txtHeader->getTextColor(), txtHeader->getOutlineColor());
+        if ( textGet )
+        {
+            textx = textGet->getWidth();
+            texty = textGet->getNumTextLines() * Font::get(txtHeader->getFont())->height();
+        }
+        
+        std::string minWidthKey = "default";
+        std::string maxWidthKey = "default";
+        std::string headerMaxWidthKey = "default";
+        if ( spell_t* spell = getSpellFromItem(player, item) )
+        {
+            if ( itemTooltip.minWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.minWidths.end() )
+            {
+                minWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
+            }
+            if ( itemTooltip.maxWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.maxWidths.end() )
+            {
+                maxWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
+            }
+            if ( itemTooltip.headerMaxWidths.find(ItemTooltips.spellItems[spell->ID].internalName) != itemTooltip.headerMaxWidths.end() )
+            {
+                headerMaxWidthKey = ItemTooltips.spellItems[spell->ID].internalName;
+            }
+        }
+        else
+        {
+            if ( itemTooltip.minWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.minWidths.end() )
+            {
+                minWidthKey = ItemTooltips.tmpItems[item->type].internalName;
+            }
+            if ( itemTooltip.maxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.maxWidths.end() )
+            {
+                maxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
+            }
+            if ( itemTooltip.headerMaxWidths.find(ItemTooltips.tmpItems[item->type].internalName) != itemTooltip.headerMaxWidths.end() )
+            {
+                headerMaxWidthKey = ItemTooltips.tmpItems[item->type].internalName;
+            }
+        }
+        
+        bool useDefaultHeaderHeight = true;
+        if ( manuallyInsertedNewline ||
+            (itemTooltip.headerMaxWidths[headerMaxWidthKey] > 0 && textx > itemTooltip.headerMaxWidths[headerMaxWidthKey]) )
+        {
+            if ( !manuallyInsertedNewline )
+            {
+                txtHeader->setSize(SDL_Rect{ 0, 0, itemTooltip.headerMaxWidths[headerMaxWidthKey], 0 });
+                txtHeader->reflowTextToFit(0);
+            }
+            
+            std::string input = txtHeader->getText();
+            size_t offset = 0;
+            size_t findChar = 0;
+            std::vector<std::string> tokens;
+            while ( (findChar = input.find('\n', offset)) != std::string::npos ) {
+                tokens.push_back(input.substr(offset, findChar - offset));
+                offset = findChar + 1;
+            }
+            tokens.push_back(input.substr(offset));
+            
+            int newWidth = 0;
+            if ( tokens.size() == 1 )
+            {
+                // no reflow
+            }
+            else
+            {
+                unsigned int newWidth = 0;
+                for ( auto& str : tokens )
+                {
+                    if ( Text* textGet = Text::get(str.c_str(), txtHeader->getFont(),
+                                                   txtHeader->getTextColor(), txtHeader->getOutlineColor()) )
+                    {
+                        newWidth = std::max(newWidth, textGet->getWidth());
+                    }
+                }
+                
+                textx = newWidth;
+                texty = txtHeader->getNumTextLines() * Font::get(txtHeader->getFont())->height();
+                imgTopBackground->pos.h = imgTopBackground2XHeight;
+                imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00_2x.png";
+                imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+                imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00_2x.png";
+                imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+                imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00_2x.png";
+                useDefaultHeaderHeight = false;
+            }
+        }
+        
+        if ( useDefaultHeaderHeight )
+        {
+            imgTopBackground->pos.h = imgTopBackgroundDefaultHeight;
+            imgTopBackground->path = "images/ui/Inventory/tooltips/Hover_T00.png";
+            imgTopBackgroundLeft->pos.h = imgTopBackground->pos.h;
+            imgTopBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_TL00.png";
+            imgTopBackgroundRight->pos.h = imgTopBackground->pos.h;
+            imgTopBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_TR00.png";
+        }
+        
+        if ( ItemTooltips.itemDebug )
+        {
+            auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
+            headerBg->pos = SDL_Rect{
+                imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
+                0,
+                textx,
+                1 };
+            headerBg->disabled = false;
+            auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
+            tooltipMin->pos = SDL_Rect{
+                imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
+                2,
+                itemTooltip.minWidths[minWidthKey],
+                1 };
+            tooltipMin->disabled = false;
+            auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
+            tooltipMax->pos = SDL_Rect{
+                imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
+                4,
+                itemTooltip.maxWidths[maxWidthKey],
+                1 };
+            tooltipMax->disabled = false;
+            auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
+            headerMax->pos = SDL_Rect{
+                imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
+                6,
+                itemTooltip.headerMaxWidths[headerMaxWidthKey],
+                1 };
+            headerMax->disabled = false;
+        }
+        
+        if ( itemTooltip.minWidths[minWidthKey] > 0 )
+        {
+            textx = std::max(itemTooltip.minWidths[minWidthKey], textx);
+        }
+        if ( itemTooltip.maxWidths[maxWidthKey] > 0 )
+        {
+            textx = std::min(itemTooltip.maxWidths[maxWidthKey], textx);
+        }
+        
+        if ( ItemTooltips.itemDebug )
+        {
+            auto headerBg = frameMain->findImage("inventory mouse tooltip header bg new");
+            headerBg->pos = SDL_Rect{
+                imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx,
+                imgTopBackground->pos.h,
+                textx,
+                1 };
+            headerBg->disabled = false;
+        }
+        else
+        {
+            auto headerBg = frameMain->findImage("inventory mouse tooltip header bg");
+            headerBg->disabled = true;
+            auto tooltipMin = frameMain->findImage("inventory mouse tooltip min");
+            tooltipMin->disabled = true;
+            auto tooltipMax = frameMain->findImage("inventory mouse tooltip max");
+            tooltipMax->disabled = true;
+            auto headerMax = frameMain->findImage("inventory mouse tooltip header max");
+            headerMax->disabled = true;
+        }
+        
+        txtHeader->setSize(SDL_Rect{ imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w + padx, 1, textx + 3 * padx, imgTopBackground->pos.h});
+        txtHeader->setVJustify(Field::justify_t::CENTER);
+        int totalHeight = txtHeader->getSize().h;
+        
+        // get total width of tooltip
+        const int tooltipWidth = txtHeader->getSize().w + imgTopBackgroundLeft->pos.w + imgTopBackgroundRight->pos.w;
+        tooltipDisplayedSettings.tooltipWidth = tooltipWidth;
+        
+        // attribute frame size - padded by (imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx) on either side
+        SDL_Rect frameAttrPos{ imgTopBackgroundLeft->pos.x + (imgTopBackgroundLeft->pos.w / 2) + padx, totalHeight, 0, 0 };
+        frameAttrPos.w = tooltipWidth - frameAttrPos.x * 2;
+        
+        auto imgSpellIcon = frameAttr->findImage("inventory mouse tooltip spell image");
+        auto imgSpellIconBg = frameAttr->findImage("inventory mouse tooltip spell image bg");
+        auto imgPrimaryIcon = frameAttr->findImage("inventory mouse tooltip primary image");
+        auto imgSecondaryIcon = frameAttr->findImage("inventory mouse tooltip secondary image");
+        auto imgThirdIcon = frameAttr->findImage("inventory mouse tooltip third image");
+        auto imgGoldIcon = frameValues->findImage("inventory mouse tooltip gold image");
+        auto imgWeightIcon = frameValues->findImage("inventory mouse tooltip weight image");
+        auto imgValueBackground = frameValues->findImage("inventory mouse tooltip value background");
+        
+        imgPrimaryIcon->pos.y = 0;
+        imgSecondaryIcon->pos.y = 0;
+        imgThirdIcon->pos.y = 0;
+        
+        imgSpellIcon->disabled = true;
+        imgSpellIcon->path = "";
+        imgSpellIconBg->disabled = true;
+        imgPrimaryIcon->disabled = true;
+        imgPrimaryIcon->path = "";
+        imgSecondaryIcon->disabled = true;
+        imgSecondaryIcon->path = "";
+        imgThirdIcon->disabled = true;
+        imgThirdIcon->path = "";
+        
+        if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+        {
+            imgSpellIcon->disabled = false;
+            imgSpellIconBg->disabled = false;
+            imgSpellIcon->path = ItemTooltips.getSpellIconPath(player, *item);
+            
+            static ConsoleVariable<int> cvar_spelltooltipIconX("/spell_tooltip_icon_x", 0);
+            static ConsoleVariable<int> cvar_spelltooltipIconY("/spell_tooltip_icon_y", -4);
+            imgSpellIcon->pos.x = frameAttrPos.w - imgSpellIcon->pos.w - 2 * padx + *cvar_spelltooltipIconX;
+            imgSpellIcon->pos.y = 3 * pady + *cvar_spelltooltipIconY;
+            imgSpellIconBg->pos.x = imgSpellIcon->pos.x - 5;
+            imgSpellIconBg->pos.y = imgSpellIcon->pos.y - 5;
+        }
+        
+        auto txtPrimaryValue = frameAttr->findField("inventory mouse tooltip primary value");
+        auto txtPrimaryValueHighlight = frameAttr->findField("inventory mouse tooltip primary value highlight");
+        auto txtPrimaryValuePositive = frameAttr->findField("inventory mouse tooltip primary value positive text");
+        auto txtPrimaryValueNegative = frameAttr->findField("inventory mouse tooltip primary value negative text");
+        
+        auto txtSecondaryValue = frameAttr->findField("inventory mouse tooltip secondary value");
+        auto txtSecondaryValueHighlight = frameAttr->findField("inventory mouse tooltip secondary value highlight");
+        auto txtSecondaryValuePositive = frameAttr->findField("inventory mouse tooltip secondary value positive text");
+        auto txtSecondaryValueNegative = frameAttr->findField("inventory mouse tooltip secondary value negative text");
+        
+        auto txtThirdValue = frameAttr->findField("inventory mouse tooltip third value");
+        auto txtThirdValueHighlight = frameAttr->findField("inventory mouse tooltip third value highlight");
+        auto txtThirdValuePositive = frameAttr->findField("inventory mouse tooltip third value positive text");
+        auto txtThirdValueNegative = frameAttr->findField("inventory mouse tooltip third value negative text");
+        
+        auto txtDescription = frameDesc->findField("inventory mouse tooltip description");
+        auto txtDescriptionPositive = frameDesc->findField("inventory mouse tooltip description positive text");
+        auto txtDescriptionNegative = frameDesc->findField("inventory mouse tooltip description negative text");
+        
+        {
+            static ConsoleVariable<int> cvar_item_tooltip_attr_padding("/item_tooltip_attr_padding", -4);
+            txtPrimaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtPrimaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtPrimaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtPrimaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            
+            txtSecondaryValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtSecondaryValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtSecondaryValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtSecondaryValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            
+            txtThirdValue->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtThirdValueHighlight->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtThirdValuePositive->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+            txtThirdValueNegative->setPaddingPerLine(*cvar_item_tooltip_attr_padding);
+        }
+        
+        if ( itemTooltip.icons.size() > 0 )
+        {
+            int index = 0;
+            for ( auto& icon : itemTooltip.icons )
+            {
+                if ( icon.conditionalAttribute.compare("") != 0 )
+                {
+                    if ( itemCategory(item) == MAGICSTAFF )
+                    {
+                        if ( icon.conditionalAttribute.find("magicstaff_") != std::string::npos )
+                        {
+                            if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
+                            {
+                                continue;
+                            }
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                        }
+                    }
+                    else if ( itemCategory(item) == SCROLL )
+                    {
+                        if ( icon.conditionalAttribute.find("scroll_") != std::string::npos )
+                        {
+                            if ( ItemTooltips.tmpItems[item->type].internalName != icon.conditionalAttribute )
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                    else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+                             || item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
+                    {
+                        if ( icon.conditionalAttribute == "TINKERBOT_UPGRADEABLE" )
+                        {
+                            if ( item->status == EXCELLENT || item->status == BROKEN )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( icon.conditionalAttribute == "TINKERBOT_BROKEN" )
+                        {
+                            if ( item->status != BROKEN )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( item->status == BROKEN )
+                        {
+                            continue;
+                        }
+                        else if ( icon.conditionalAttribute == "TINKERBOT_MAGICATK" )
+                        {
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                        }
+                    }
+                    else if ( item->type == SPELL_ITEM )
+                    {
+                        if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
+                        {
+                            icon.iconPath = "images/ui/HUD/statusfx/magic_effect.png";
+                        }
+                        else if ( icon.conditionalAttribute.find("spell_") != std::string::npos )
+                        {
+                            spell_t* spell = getSpellFromItem(player, item);
+                            if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
+                            {
+                                // current spell uses this attribute
+                            }
+                            else
+                            {
+                                continue; // no spell, or spellname doesn't match attribute
+                            }
+                        }
+                    }
+                    else if ( itemCategory(item) == SPELLBOOK
+                             && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
+                    {
+                        spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+                        int skillLVL = std::min(100, stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity));
+                        bool isGoblin = (stats[player]
+                                         && (stats[player]->type == GOBLIN
+                                             || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)));
+                        if ( icon.conditionalAttribute == "SPELLBOOK_CAST_BONUS" )
+                        {
+                            if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
+                            {
+                                continue;
+                            }
+                            if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 25 )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNED" )
+                        {
+                            if ( isGoblin || playerLearnedSpellbook(player, item) || (spell && skillLVL >= spell->difficulty) )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( icon.conditionalAttribute == "SPELLBOOK_UNLEARNABLE" )
+                        {
+                            if ( !isGoblin ) { continue; }
+                            if ( playerLearnedSpellbook(player, item) )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( icon.conditionalAttribute == "SPELLBOOK_LEARNABLE" )
+                        {
+                            if ( isGoblin ) { continue; }
+                            if ( playerLearnedSpellbook(player, item) || (spell && skillLVL < spell->difficulty) )
+                            {
+                                continue;
+                            }
+                        }
+                        else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
+                                 || icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
+                        {
+                            if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
+                            {
+                                if ( !playerLearnedSpellbook(player, item) )
+                                {
+                                    continue;
+                                }
+                            }
+                            else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
+                            {
+                                if ( playerLearnedSpellbook(player, item) )
+                                {
+                                    continue;
+                                }
+                            }
+                            icon.iconPath = ItemTooltips.getSpellIconPath(player, *item);
+                        }
+                        else if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if ( !items[item->type].hasAttribute(icon.conditionalAttribute) )
+                        {
+                            continue;
+                        }
+                    }
+                    if ( itemCategory(item) == RING && index > 0 && icon.conditionalAttribute == "AC" )
+                    {
+                        if ( item->armorGetAC(stats[player]) == 0 )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                
+                std::map<int, Uint32> positiveWordIndexes;
+                std::map<int, Uint32> negativeWordIndexes;
+                std::map<int, Uint32> highlightWordIndexes;
+                
+                if ( index == 0 )
+                {
+                    imgPrimaryIcon->disabled = false;
+                    imgPrimaryIcon->path = icon.iconPath;
+                    
+                    std::string iconText = icon.text;
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    
+                    if ( tooltipType.find("tooltip_spell_") != std::string::npos && iconText == "" )
+                    {
+                        imgPrimaryIcon->disabled = true;
+                        continue;
+                    }
+                    
+                    std::string bracketText = "";
+                    ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+                    std::string positiveText = "";
+                    std::string negativeText = "";
+                    ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+                    ItemTooltips.getWordIndexesItemDetails(txtPrimaryValue, iconText, bracketText, positiveText, negativeText,
+                                                           highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
+                    
+                    txtPrimaryValue->setText(iconText.c_str());
+                    txtPrimaryValue->setTextColor(icon.textColor);
+                    
+                    //txtPrimaryValueHighlight->setText(bracketText.c_str());
+                    txtPrimaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
+                    
+                    //txtPrimaryValuePositive->setText(positiveText.c_str());
+                    txtPrimaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
+                    
+                    //txtPrimaryValueNegative->setText(negativeText.c_str());
+                    txtPrimaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
+                }
+                else if ( index == 1 )
+                {
+                    imgSecondaryIcon->disabled = false;
+                    imgSecondaryIcon->path = icon.iconPath;
+                    
+                    std::string iconText = icon.text;
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    
+                    std::string bracketText = "";
+                    ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+                    std::string positiveText = "";
+                    std::string negativeText = "";
+                    ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+                    ItemTooltips.getWordIndexesItemDetails(txtSecondaryValue, iconText, bracketText, positiveText, negativeText,
+                                                           highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
+                    
+                    txtSecondaryValue->setText(iconText.c_str());
+                    txtSecondaryValue->setTextColor(icon.textColor);
+                    //txtSecondaryValueHighlight->setText(bracketText.c_str());
+                    txtSecondaryValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
+                    
+                    //txtSecondaryValuePositive->setText(positiveText.c_str());
+                    txtSecondaryValuePositive->setTextColor(itemTooltip.positiveTextColor);
+                    
+                    //txtSecondaryValueNegative->setText(negativeText.c_str());
+                    txtSecondaryValueNegative->setTextColor(itemTooltip.negativeTextColor);
+                }
+                else if ( index == 2 )
+                {
+                    imgThirdIcon->disabled = false;
+                    imgThirdIcon->path = icon.iconPath;
+                    
+                    std::string iconText = icon.text;
+                    ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute);
+                    
+                    std::string bracketText = "";
+                    ItemTooltips.stripOutHighlightBracketText(iconText, bracketText);
+                    std::string positiveText = "";
+                    std::string negativeText = "";
+                    ItemTooltips.stripOutPositiveNegativeItemDetails(iconText, positiveText, negativeText);
+                    ItemTooltips.getWordIndexesItemDetails(txtThirdValue, iconText, bracketText, positiveText, negativeText,
+                                                           highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
+                    
+                    txtThirdValue->setText(iconText.c_str());
+                    txtThirdValue->setTextColor(icon.textColor);
+                    //txtThirdValueHighlight->setText(bracketText.c_str());
+                    txtThirdValueHighlight->setTextColor(itemTooltip.statusEffectTextColor);
+                    
+                    //txtThirdValuePositive->setText(positiveText.c_str());
+                    txtThirdValuePositive->setTextColor(itemTooltip.positiveTextColor);
+                    
+                    //txtThirdValueNegative->setText(negativeText.c_str());
+                    txtThirdValueNegative->setTextColor(itemTooltip.negativeTextColor);
+                }
+                else
+                {
+                    break;
+                }
+                ++index;
+            }
+        }
+        
+        auto txtAttributes = frameAttr->findField("inventory mouse tooltip attributes text");
+        txtAttributes->setDisabled(true);
+        
+        std::string descriptionTextString = "";
+        if ( !doShortTooltip && (itemTooltip.descriptionText.size() > 0 || descriptionTextString.size() > 0) )
+        {
+            txtAttributes->setDisabled(false);
+            txtAttributes->setColor(itemTooltip.descriptionTextColor);
+            int index = 0;
+            for ( auto it = itemTooltip.descriptionText.begin(); it != itemTooltip.descriptionText.end(); ++it )
+            {
+                descriptionTextString += (*it);
+                if ( std::next(it) != itemTooltip.descriptionText.end() )
+                {
+                    descriptionTextString += '\n';
+                }
+            }
+            ItemTooltips.formatItemDescription(player, tooltipType, *item, descriptionTextString);
+            txtAttributes->setText(descriptionTextString.c_str());
+            
+            if ( descriptionTextString == "" )
+            {
+                txtAttributes->setDisabled(true);
+            }
+        }
+        
+        frameDesc->setDisabled(true);
+        
+        std::string detailsTextString = "";
+        if ( !doShortTooltip && itemTooltip.detailsText.size() > 0 )
+        {
+            frameDesc->setDisabled(false);
+            txtDescription->setTextColor(itemTooltip.detailsTextColor);
+            int index = 0;
+            
+            for ( auto& tag : itemTooltip.detailsTextInsertOrder )
+            {
+                if ( itemCategory(item) == POTION )
+                {
+                    if ( tag.compare("potion_on_cursed") == 0 &&
+                        (!items[item->type].hasAttribute("POTION_CURSED_SIDE_EFFECT") || item->beatitude >= 0) )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("potion_on_blessed") == 0 && item->beatitude <= 0 )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("alchemy_details") == 0 )
+                    {
+                        if ( detailsTextString.compare("") != 0 ) // non-empty
+                        {
+                            detailsTextString += '\n'; // add a padding newline
+                        }
+                    }
+                }
+                else if ( item->type == TOOL_BEARTRAP )
+                {
+                    if ( tag.compare("beartrap_degrade_on_use_cursed") == 0 )
+                    {
+                        if ( item->status == BROKEN || item->beatitude >= 0 ) { continue; }
+                    }
+                    else if ( tag.compare("beartrap_degrade_on_use") == 0 )
+                    {
+                        if ( item->status == BROKEN || item->beatitude < 0 )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("on_use") == 0 )
+                    {
+                        if ( item->status == BROKEN )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+                         || item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT )
+                {
+                    if ( item->status == BROKEN )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("tinkerbot_atk_initiative") == 0 )
+                    {
+                        if ( item->status < SERVICABLE )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("gyrobot_info_interact") == 0 )
+                    {
+                        if ( item->status < SERVICABLE )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( itemCategory(item) == SCROLL )
+                {
+                    if ( tag.compare("scroll_on_cursed_sideeffect") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("SCROLL_CURSED_SIDE_EFFECT") )
+                        {
+                            continue;
+                        }
+                        else if ( item->beatitude >= 0 )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( itemCategory(item) == FOOD )
+                {
+                    if ( tag.compare("food_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
+                    {
+                        continue;
+                    }
+                }
+                else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == TOOL
+                         || itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type)
+                         || itemCategory(item) == GEM )
+                {
+                    if ( tag.compare("weapon_durability") == 0 )
+                    {
+                        int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED : getWeaponSkill(item);
+                        if ( stats[player]->PROFICIENCIES[proficiency] == SKILL_LEVEL_LEGENDARY )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("weapon_legendary_durability") == 0 )
+                    {
+                        int proficiency = itemCategory(item) == ARMOR ? PRO_UNARMED: getWeaponSkill(item);
+                        if ( stats[player]->PROFICIENCIES[proficiency] != SKILL_LEVEL_LEGENDARY )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("weapon_bonus_exp") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("BONUS_SKILL_EXP") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("equipment_fragile_durability") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("FRAGILE") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("equipment_fragile_durability") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("FRAGILE") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("weapon_ranged_quiver_augment") == 0 )
+                    {
+                        if ( items[item->type].hasAttribute("RANGED_NO_QUIVER") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("weapon_ranged_rate_of_fire") == 0 )
+                    {
+                        // skip on 0, 100 or non-existing
+                        if ( !items[item->type].hasAttribute("RATE_OF_FIRE") )
+                        {
+                            continue;
+                        }
+                        else if ( items[item->type].hasAttribute("RATE_OF_FIRE")
+                                 && (items[item->type].attributes["RATE_OF_FIRE"] == 100
+                                     || items[item->type].attributes["RATE_OF_FIRE"] == 0) )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("weapon_ranged_armor_pierce") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("ARMOR_PIERCE") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.find("EFF_") != std::string::npos )
+                    {
+                        if ( !items[item->type].hasAttribute(tag) )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("equipment_stat_bonus") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("STR")
+                            && !items[item->type].hasAttribute("DEX")
+                            && !items[item->type].hasAttribute("CON")
+                            && !items[item->type].hasAttribute("INT")
+                            && !items[item->type].hasAttribute("PER")
+                            && !items[item->type].hasAttribute("CHR") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("attributes_text_if_armor_has_stats") == 0
+                             || tag.compare("blank_text_if_armor_has_stats") == 0 )
+                    {
+                        bool skip = true;
+                        for ( auto it = ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].begin();
+                             it != ItemTooltips.templates["template_attributes_text_armor_conditional_tags"].end(); ++it )
+                        {
+                            if ( items[item->type].hasAttribute(*it) )
+                            {
+                                skip = false;
+                                break;
+                            }
+                        }
+                        if ( skip ) { continue; } // no attributes found, don't put this block of text in
+                    }
+                    else if ( tag.compare("equipment_on_cursed_sideeffect") == 0 && item->beatitude >= 0 )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("armor_on_cursed_sideeffect") == 0
+                             && (item->beatitude >= 0 || !items[item->type].hasAttribute("ARMOR_CURSED_SIDEEFFECT")) )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("ring_on_cursed_sideeffect") == 0
+                             && (item->beatitude >= 0 || !items[item->type].hasAttribute("RING_CURSED_SIDEEFFECT")) )
+                    {
+                        continue;
+                    }
+                    else if ( tag.compare("on_degraded") == 0 )
+                    {
+                        if ( items[item->type].hasAttribute("ARTIFACT_STATUS_ATK") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("artifact_armor_on_degraded") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("ARTIFACT_STATUS_AC") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("artifact_weapon_on_degraded") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("ARTIFACT_STATUS_ATK") )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( itemCategory(item) == SPELLBOOK )
+                {
+                    if ( tag.compare("spellbook_cast_bonus") == 0 )
+                    {
+                        if ( !items[item->type].hasAttribute("SPELLBOOK_CAST_BONUS") )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("spellbook_cast_success") == 0
+                             || tag.compare("spellbook_extramana_chance") == 0 )
+                    {
+                        bool newbie = isSpellcasterBeginnerFromSpellbook(player, players[player]->entity, stats[player],
+                                                                         getSpellFromID(getSpellIDFromSpellbook(item->type)), item);
+                        if ( !newbie )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("spellbook_magic_requirement") == 0
+                             || tag.compare("spellbook_magic_current") == 0
+                             || tag.compare("spellbook_unlearned_blank_space") == 0 )
+                    {
+                        if ( playerLearnedSpellbook(player, item) )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( itemCategory(item) == SPELL_CAT )
+                {
+                    spell_t* spell = getSpellFromItem(player, item);
+                    if ( tag.compare("spell_damage_bonus") == 0 )
+                    {
+                        if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("spell_cast_success") == 0
+                             || tag.compare("spell_extramana_chance") == 0 )
+                    {
+                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
+                        if ( !newbie )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("spell_newbie_newline") == 0 )
+                    {
+                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
+                        if ( !newbie )
+                        {
+                            continue;
+                        }
+                        else if ( detailsTextString.compare("") == 0 )
+                        {
+                            continue; // don't insert this newline
+                        }
+                    }
+                    else if ( tag.find("attribute_spell_") != std::string::npos )
+                    {
+                        spell_t* spell = getSpellFromItem(player, item);
+                        if ( !spell ) { continue; }
+                        std::string subs = tag.substr(10, std::string::npos);
+                        if ( !spell || ItemTooltips.spellItems[spell->ID].internalName != subs )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else if ( itemCategory(item) == MAGICSTAFF )
+                {
+                    if ( tag.compare("magicstaff_degrade_chance") == 0 )
+                    {
+                        if ( item->type == MAGICSTAFF_CHARM )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("magicstaff_charm_degrade_chance") == 0 )
+                    {
+                        if ( item->type != MAGICSTAFF_CHARM )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.find("attribute_spell_") != std::string::npos )
+                    {
+                        spell_t* spell = nullptr;
+                        for ( auto& s : ItemTooltips.spellItems )
+                        {
+                            if ( s.second.magicstaffId == item->type )
+                            {
+                                spell = getSpellFromID(s.first);
+                                break;
+                            }
+                        }
+                        if ( !spell ) { continue; }
+                        std::string subs = tag.substr(10, std::string::npos);
+                        if ( !spell || ItemTooltips.spellItems[spell->ID].internalName != subs )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                
+                if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
+                {
+                    if ( tag.compare("shield_durability") == 0 )
+                    {
+                        if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+                        {
+                            continue;
+                        }
+                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] == SKILL_LEVEL_LEGENDARY )
+                        {
+                            continue;
+                        }
+                    }
+                    else if ( tag.compare("shield_legendary_durability") == 0 )
+                    {
+                        if ( items[item->type].hasAttribute("EFF_SHIELD_BRITTLE") )
+                        {
+                            continue;
+                        }
+                        if ( stats[player]->PROFICIENCIES[PRO_SHIELD] != SKILL_LEVEL_LEGENDARY )
+                        {
+                            continue;
+                        }
+                    }
+                }
+                
+                std::string tagText = "";
+                for ( auto it = itemTooltip.detailsText[tag.c_str()].begin(); it != itemTooltip.detailsText[tag.c_str()].end(); ++it )
+                {
+                    tagText += (*it);
+                    if ( std::next(it) != itemTooltip.detailsText[tag.c_str()].end() )
+                    {
+                        tagText += '\n';
+                    }
+                }
+                ItemTooltips.formatItemDetails(player, tooltipType, *item, tagText, tag);
+                if ( detailsTextString.compare("") != 0 )
+                {
+                    detailsTextString += '\n';
+                }
+                detailsTextString += tagText;
+            }
+            txtDescription->setText(detailsTextString.c_str());
+        }
+        
+        if ( detailsTextString == "" )
+        {
+            frameDesc->setDisabled(true);
+        }
+        
+        const int imgToTextOffset = 0;
+        txtPrimaryValue->setDisabled(true);
+        txtPrimaryValueHighlight->setDisabled(txtPrimaryValue->isDisabled());
+        txtPrimaryValuePositive->setDisabled(txtPrimaryValue->isDisabled());
+        txtPrimaryValueNegative->setDisabled(txtPrimaryValue->isDisabled());
+        txtPrimaryValue->setDisabled(imgPrimaryIcon->disabled);
+        
+        auto txtSlotName = frameAttr->findField("inventory mouse tooltip primary value slot name");
+        txtSlotName->setDisabled(true);
+        if ( items[item->type].item_slot != ItemEquippableSlot::NO_EQUIP )
+        {
+            txtSlotName->setDisabled(false);
+            txtSlotName->setColor(itemTooltip.faintTextColor);
+            txtSlotName->setSize(SDL_Rect{padx, pady * 2 + imgToTextOffset + 1, txtHeader->getSize().w, imgPrimaryIcon->pos.h});
+            txtSlotName->setText(ItemTooltips.getItemSlotName(items[item->type].item_slot).c_str());
+        }
+        
+        const int iconPadx = 8;
+        const int iconTextPadx = 4;
+        
+        int numPrimaryLines = 0;
+        if ( !imgPrimaryIcon->disabled )
+        {
+            imgPrimaryIcon->pos.x = iconPadx;
+            imgPrimaryIcon->pos.y = pady * 2;
+            
+            if ( !imgSpellIcon->disabled )
+            {
+                static ConsoleVariable<int> cvar_spelltooltipIconY2("/spell_tooltip_icon_y2", -2);
+                imgPrimaryIcon->pos.y = imgSpellIcon->pos.y + (imgSpellIcon->pos.h / 2) - imgPrimaryIcon->pos.h / 2 + *cvar_spelltooltipIconY2;
+            }
+            
+            int iconMultipleLinePadding = 0;
+            numPrimaryLines = txtPrimaryValue->getNumTextLines();
+            if ( numPrimaryLines > 1 )
+            {
+                imgPrimaryIcon->pos.y += pady * (std::max(0, numPrimaryLines - 1)); // for each line > 1 add padding
+                iconMultipleLinePadding = numPrimaryLines * Font::get(txtPrimaryValue->getFont())->height() - imgPrimaryIcon->pos.h;
+            }
+            
+            SDL_Rect txtPos {
+                imgPrimaryIcon->pos.x + imgPrimaryIcon->pos.w + padx + iconTextPadx,
+                imgPrimaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numPrimaryLines - 1) * txtPrimaryValue->getPaddingPerLine() / 2),
+                txtHeader->getSize().w,
+                imgPrimaryIcon->pos.h + iconMultipleLinePadding
+            };
+            if ( txtPos.y % 2 == 0 )
+            {
+                ++txtPos.y;
+            }
+            txtPrimaryValue->setSize(txtPos);
+            txtPrimaryValueHighlight->setSize(txtPos);
+            txtPrimaryValuePositive->setSize(txtPos);
+            txtPrimaryValueNegative->setSize(txtPos);
+        }
+        
+        txtSecondaryValue->setDisabled(true);
+        txtSecondaryValueHighlight->setDisabled(txtSecondaryValue->isDisabled());
+        txtSecondaryValuePositive->setDisabled(txtSecondaryValue->isDisabled());
+        txtSecondaryValueNegative->setDisabled(txtSecondaryValue->isDisabled());
+        txtSecondaryValue->setDisabled(imgSecondaryIcon->disabled);
+        
+        txtThirdValue->setDisabled(true);
+        txtThirdValueHighlight->setDisabled(txtThirdValue->isDisabled());
+        txtThirdValuePositive->setDisabled(txtThirdValue->isDisabled());
+        txtThirdValueNegative->setDisabled(txtThirdValue->isDisabled());
+        txtThirdValue->setDisabled(imgThirdIcon->disabled);
+        
+        int numSecondaryLines = 0;
+        if ( !imgSecondaryIcon->disabled )
+        {
+            imgSecondaryIcon->pos.x = iconPadx;
+            if ( imgPrimaryIcon->disabled )
+            {
+                imgSecondaryIcon->pos.y = pady * 2;
+            }
+            else
+            {
+                imgSecondaryIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+            }
+            
+            int iconMultipleLinePadding = 0;
+            numSecondaryLines = txtSecondaryValue->getNumTextLines();
+            if ( numSecondaryLines > 1 )
+            {
+                imgSecondaryIcon->pos.y += pady * (std::max(0, numSecondaryLines - 1)); // for each line > 1 add padding
+                iconMultipleLinePadding = numSecondaryLines * Font::get(txtSecondaryValue->getFont())->height() - imgSecondaryIcon->pos.h;
+            }
+            
+            SDL_Rect txtPos {
+                imgSecondaryIcon->pos.x + imgSecondaryIcon->pos.w + padx + iconTextPadx,
+                imgSecondaryIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numSecondaryLines - 1) * txtSecondaryValue->getPaddingPerLine() / 2),
+                txtHeader->getSize().w,
+                imgSecondaryIcon->pos.h + iconMultipleLinePadding
+            };
+            if ( txtPos.y % 2 == 0 )
+            {
+                ++txtPos.y;
+            }
+            txtSecondaryValue->setSize(txtPos);
+            txtSecondaryValueHighlight->setSize(txtPos);
+            txtSecondaryValuePositive->setSize(txtPos);
+            txtSecondaryValueNegative->setSize(txtPos);
+        }
+        
+        int numThirdLines = 0;
+        if ( !imgThirdIcon->disabled )
+        {
+            imgThirdIcon->pos.x = iconPadx;
+            if ( imgPrimaryIcon->disabled )
+            {
+                imgThirdIcon->pos.y = pady * 2;
+            }
+            else if ( imgSecondaryIcon->disabled )
+            {
+                imgThirdIcon->pos.y = pady * 2 + imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h;
+            }
+            else
+            {
+                imgThirdIcon->pos.y = pady * 2 + imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h;
+            }
+            
+            int iconMultipleLinePadding = 0;
+            numThirdLines = txtThirdValue->getNumTextLines();
+            if ( numThirdLines > 1 )
+            {
+                imgThirdIcon->pos.y += pady * (std::max(0, numThirdLines - 1)); // for each line > 1 add padding
+                iconMultipleLinePadding = numThirdLines * Font::get(txtThirdValue->getFont())->height() - imgThirdIcon->pos.h;
+            }
+            
+            SDL_Rect txtPos {
+                imgThirdIcon->pos.x + imgThirdIcon->pos.w + padx + iconTextPadx,
+                imgThirdIcon->pos.y + imgToTextOffset - iconMultipleLinePadding / 2 - (std::max(0, numThirdLines - 1) * txtThirdValue->getPaddingPerLine() / 2),
+                txtHeader->getSize().w,
+                imgThirdIcon->pos.h + iconMultipleLinePadding
+            };
+            if ( txtPos.y % 2 == 0 )
+            {
+                ++txtPos.y;
+            }
+            txtThirdValue->setSize(txtPos);
+            txtThirdValueHighlight->setSize(txtPos);
+            txtThirdValuePositive->setSize(txtPos);
+            txtThirdValueNegative->setSize(txtPos);
+        }
+        
+        bool imagesDisabled = true;
+        for ( auto image : frameAttr->getImages() )
+        {
+            if ( !image->disabled )
+            {
+                imagesDisabled = false;
+            }
+        }
+        // attribute frame size - add height after the icons
+        if ( imagesDisabled )
+        {
+            frameAttrPos.h += 2 * pady; // no icons, just text.
+        }
+        else
+        {
+            // original - int iconHeight1 = imgPrimaryIcon->disabled ? 0 : (imgPrimaryIcon->pos.y + std::max(txtPrimaryValue->getSize().h, imgPrimaryIcon->pos.h));
+            int iconHeight1 = imgPrimaryIcon->disabled ? 0 :
+            (std::max(txtPrimaryValue->getSize().y + txtPrimaryValue->getSize().h
+                      + (numPrimaryLines > 1 ? (numPrimaryLines - 1) * (int)(txtPrimaryValue->getPaddingPerLine()) : 0),
+                      imgPrimaryIcon->pos.y + imgPrimaryIcon->pos.h));
+            int iconHeight2 = imgSecondaryIcon->disabled ? 0 :
+            (std::max(txtSecondaryValue->getSize().y + txtSecondaryValue->getSize().h
+                      + (numSecondaryLines > 1 ? (numSecondaryLines - 1) * (int)(txtSecondaryValue->getPaddingPerLine()) : 0),
+                      imgSecondaryIcon->pos.y + imgSecondaryIcon->pos.h));
+            int iconHeight3 = imgThirdIcon->disabled ? 0 :
+            (std::max(txtThirdValue->getSize().y + txtThirdValue->getSize().h
+                      + (numThirdLines > 1 ? (numThirdLines - 1) * (int)(txtThirdValue->getPaddingPerLine()) : 0),
+                      imgThirdIcon->pos.y + imgThirdIcon->pos.h));
+            
+            if ( !imgSpellIcon->disabled && txtPrimaryValue->getNumTextLines() <= 1 )
+            {
+                iconHeight1 += 2 * pady; // extra padding for the spell icon
+            }
+            
+            frameAttrPos.h += std::max(std::max(iconHeight1, iconHeight2), iconHeight3);
+            frameAttrPos.h += pady;
+            
+            if ( txtAttributes->isDisabled() )
+            {
+                //frameAttrPos.h += pady; // no description, add some padding
+            }
+        }
+        
+        if ( !txtAttributes->isDisabled() )
+        {
+            int charHeight = 13;
+            Font::get(txtAttributes->getFont())->sizeText("_", nullptr, &charHeight);
+            //messagePlayer(0, "%d", charHeight);
+            
+            
+            int attributesWidth = frameAttrPos.w;
+            txtAttributes->setSize(SDL_Rect{ padx * 2, frameAttrPos.h + pady, attributesWidth - padx * 2, frameAttrPos.h - pady });
+            if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+            {
+                // don't reflow
+            }
+            else
+            {
+                txtAttributes->reflowTextToFit(-1);
+            }
+            int currentHeight = frameAttrPos.h;
+            frameAttrPos.h += txtAttributes->getNumTextLines() * charHeight + pady * 3;
+            txtAttributes->setSize(SDL_Rect{ padx * 2, currentHeight + pady, attributesWidth - padx * 2, frameAttrPos.h - pady });
+        }
+        
+        frameAttr->setSize(frameAttrPos);
+        tooltipDisplayedSettings.tooltipAttributeHeight = frameAttrPos.h;
+        totalHeight += frameAttrPos.h;
+        
+        SDL_Rect frameDescPos = frameAttrPos;
+        if ( !frameDesc->isDisabled() )
+        {
+            frameDescPos.y = frameAttrPos.y + frameAttrPos.h;
+            frameDescPos.h = pady;
+            
+            int _pady = pady;
+            if ( !imagesDisabled || !txtAttributes->isDisabled() )
+            {
+                _pady = 2 * pady;
+            }
+            
+            int charHeight = 13;
+            Font::get(txtDescription->getFont())->sizeText("_", nullptr, &charHeight);
+            
+            txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady });
+            
+            if ( tooltipType == "tooltip_spell_item" || tooltipType == "tooltip_whip" )
+            {
+                txtDescription->reflowTextToFit(1);
+            }
+            else
+            {
+                txtDescription->reflowTextToFit(-1);
+            }
+            
+            std::string detailsPositiveText = "";
+            std::string detailsNegativeText = "";
+            
+            detailsTextString = txtDescription->getText();
+            ItemTooltips.stripOutPositiveNegativeItemDetails(detailsTextString, detailsPositiveText, detailsNegativeText);
+            
+            std::map<int, Uint32> positiveWordIndexes;
+            std::map<int, Uint32> negativeWordIndexes;
+            std::map<int, Uint32> highlightWordIndexes;
+            std::string empty;
+            ItemTooltips.getWordIndexesItemDetails(txtDescription, detailsTextString, empty, detailsPositiveText, detailsNegativeText,
+                                                   highlightWordIndexes, positiveWordIndexes, negativeWordIndexes, itemTooltip);
+            txtDescription->setText(detailsTextString.c_str());
+            
+            //txtDescriptionPositive->setText(detailsPositiveText.c_str());
+            //txtDescriptionPositive->setTextColor(itemTooltip.positiveTextColor);
+            //txtDescriptionNegative->setText(detailsNegativeText.c_str());
+            //txtDescriptionNegative->setTextColor(itemTooltip.negativeTextColor);
+            
+            txtDescriptionPositive->setDisabled(true);
+            txtDescriptionNegative->setDisabled(true);
+            
+            frameDescPos.h += txtDescription->getNumTextLines() * charHeight + pady * 3;
+            
+            txtDescription->setSize(SDL_Rect{ padx * 2, _pady /*pady + tmpx*/, frameDescPos.w, frameDescPos.h - pady});
+            txtDescription->setScroll(true);
+            
+            txtDescriptionPositive->setSize(txtDescription->getSize());
+            txtDescriptionNegative->setSize(txtDescription->getSize());
+            
+            tooltipDisplayedSettings.tooltipDescriptionHeight = frameDescPos.h;
+            //frameDescPos.h *= (tooltipDisplayedSettings.expandCurrent);
+            
+            frameDesc->setSize(frameDescPos);
+            totalHeight += frameDescPos.h;
+        }
+        else
+        {
+            tooltipDisplayedSettings.tooltipDescriptionHeight = 0;
+        }
+        
+        auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
+        auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
+        auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
+        
+        SDL_Rect frameValuesPos = frameDescPos;
+        if ( !frameValues->isDisabled() )
+        {
+            frameValuesPos.y = frameDescPos.y + frameDescPos.h;
+            frameValuesPos.h = 0;
+            
+            char valueBuf[64];
+            if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+            {
+                imgWeightIcon->disabled = true;
+                txtWeightValue->setDisabled(true);
+                
+                std::string spellCost = ItemTooltips.getCostOfSpellString(player, *item);
+                txtGoldValue->setText(spellCost.c_str());
+                if ( txtGoldValue->getNumTextLines() > 1 )
+                {
+                    txtWeightValue->setText(spellCost.substr(spellCost.find('\n') + 1).c_str());
+                    txtGoldValue->setText(spellCost.substr(0, spellCost.find('\n')).c_str());
+                    txtWeightValue->setDisabled(false);
+                }
+            }
+            else
+            {
+                snprintf(valueBuf, sizeof(valueBuf), "%d", item->sellValue(player));
+                txtGoldValue->setText(valueBuf);
+            }
+            txtGoldValue->setDisabled(false);
+            
+            int charWidth = 8;
+            int charHeight = 13;
+            const int lowerIconImgToTextOffset = 0;
+            
+            const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
+            const std::string weightImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png";
+            const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
+            
+            Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
+            Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
+            if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+            {
+                auto imgMPCost = imgGoldIcon;
+                auto imgSustainedMPCost = imgWeightIcon;
+                auto txtMPCost = txtGoldValue;
+                auto txtSustainedMPCost = txtWeightValue;
+                
+                auto textGetMPCost = Text::get(txtMPCost->getText(), txtMPCost->getFont(),
+                                               txtMPCost->getTextColor(), txtMPCost->getOutlineColor());
+                
+                imgMPCost->pos.x = frameValuesPos.w - (textGetMPCost->getWidth()) - (imgMPCost->pos.w + padx);
+                imgMPCost->pos.y = pady;
+                txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
+                    imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
+                imgMPCost->path = spellMPCostImagePath;
+                
+                frameValuesPos.h += imgMPCost->disabled ? 0 : (imgMPCost->pos.y + imgMPCost->pos.h);
+                frameValuesPos.h += pady;
+                
+                if ( !txtSustainedMPCost->isDisabled() )
+                {
+                    // get alignment of longer text for sustained MP cost
+                    auto textGetSustainedMPCost = Text::get(txtSustainedMPCost->getText(), txtSustainedMPCost->getFont(),
+                                                            txtSustainedMPCost->getTextColor(), txtSustainedMPCost->getOutlineColor());
+                    
+                    imgSustainedMPCost->pos.x = frameValuesPos.w - (textGetSustainedMPCost->getWidth()) - (imgSustainedMPCost->pos.w + padx);
+                    imgSustainedMPCost->pos.y = pady + imgMPCost->pos.h;
+                    txtSustainedMPCost->setSize(SDL_Rect{ imgSustainedMPCost->pos.x + imgSustainedMPCost->pos.w + padx,
+                        imgSustainedMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgSustainedMPCost->pos.h });
+                    
+                    frameValuesPos.h += imgSustainedMPCost->pos.h;
+                    
+                    // align left MP cost x to leftmost of sustained cost
+                    imgMPCost->pos.x = imgSustainedMPCost->pos.x;
+                    txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
+                        imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
+                    
+                    // move the MP cost image between the 2 lines, and a little left.
+                    imgMPCost->pos.y += imgMPCost->pos.h / 2;
+                    imgMPCost->pos.x -= padx;
+                }
+            }
+            else
+            {
+                auto textGetGoldValue = Text::get(txtGoldValue->getText(), txtGoldValue->getFont(),
+                                                  txtGoldValue->getTextColor(), txtGoldValue->getOutlineColor());
+                
+                imgGoldIcon->pos.x = frameValuesPos.w - (textGetGoldValue->getWidth()) - (imgGoldIcon->pos.w + padx);
+                imgGoldIcon->pos.y = pady;
+                txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
+                    imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
+                imgGoldIcon->path = goldImagePath;
+                
+                snprintf(valueBuf, sizeof(valueBuf), "%d", item->getWeight());
+                txtWeightValue->setText(valueBuf);
+                txtWeightValue->setDisabled(false);
+                imgWeightIcon->disabled = false;
+                
+                auto textGetWeightValue = Text::get(txtWeightValue->getText(), txtWeightValue->getFont(),
+                                                    txtWeightValue->getTextColor(), txtWeightValue->getOutlineColor());
+                
+                imgWeightIcon->pos.x = imgGoldIcon->pos.x - padx - (textGetWeightValue->getWidth()) - (imgWeightIcon->pos.w + padx);
+                imgWeightIcon->pos.y = pady;
+                txtWeightValue->setSize(SDL_Rect{ imgWeightIcon->pos.x + imgWeightIcon->pos.w + padx,
+                    imgWeightIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgWeightIcon->pos.h });
+                imgWeightIcon->path = weightImagePath;
+                frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
+                frameValuesPos.h += pady;
+            }
+            
+            frameValues->setSize(frameValuesPos);
+            totalHeight += frameValuesPos.h;
+            
+            txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + lowerIconImgToTextOffset,
+                frameValuesPos.w - padx, txtGoldValue->getSize().h });
+            
+            if ( tooltipType.find("tooltip_spell_") != std::string::npos )
+            {
+                txtIdentifiedValue->setText(ItemTooltips.getSpellTypeString(player, *item).c_str());
+            }
+            else if ( !item->identified )
+            {
+                txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["unidentified"].c_str());
+            }
+            else if ( item->beatitude > 0 )
+            {
+                txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["blessed"].c_str());
+            }
+            else if ( item->beatitude < 0 )
+            {
+                txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["cursed"].c_str());
+            }
+            else
+            {
+                txtIdentifiedValue->setText(ItemTooltips.adjectives["item_identified_status"]["uncursed"].c_str());
+            }
+            
+            imgValueBackground->pos = SDL_Rect{0, 0, frameValuesPos.w, frameValuesPos.h };
+            imgValueBackground->disabled = true;
+        }
+        else
+        {
+            txtGoldValue->setDisabled(true);
+            txtWeightValue->setDisabled(true);
+        }
+        
+        // add dividers
+        auto divDesc = frameDesc->findImage("inventory mouse tooltip description divider");
+        auto divValue = frameValues->findImage("inventory mouse tooltip value divider");
+        divDesc->disabled = true;
+        divValue->disabled = true;
+        if ( (!imagesDisabled || !txtAttributes->isDisabled()) && !frameAttr->isDisabled() && !frameDesc->isDisabled() )
+        {
+            divDesc->disabled = false;
+            divDesc->pos.x = padx;
+            divDesc->pos.w = frameDescPos.w - 2 * padx;
+        }
+        if ( !frameValues->isDisabled() && (!imagesDisabled || !frameDesc->isDisabled() || !txtAttributes->isDisabled()) )
+        {
+            divValue->disabled = false;
+            divValue->pos.x = padx;
+            divValue->pos.w = frameValuesPos.w - 2 * padx;
+        }
+        
+        // button prompts
+        {
+            SDL_Rect framePromptPos = frameValuesPos;
+            framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
+            framePromptPos.h = imgBottomBackground->pos.h;
+            
+            if ( (!item->identified
+                  && (!isItemFromInventory || (isItemFromInventory && inputs.getVirtualMouse(player)->draw_cursor && appraisal.current_item != item->uid)))
+                || doShortTooltip
+                || (frameDesc->isDisabled() && item->identified) )
+            {
+                imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00_NoPrompt.png";
+                imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01_NoPrompt.png";
+                imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01_NoPrompt.png";
+                txtPrompt->setDisabled(true);
+                totalHeight += 4;
+            }
+            else
+            {
+                imgBottomBackground->path = "images/ui/Inventory/tooltips/Hover_B00.png";
+                imgBottomBackgroundLeft->path = "images/ui/Inventory/tooltips/Hover_BL01.png";
+                imgBottomBackgroundRight->path = "images/ui/Inventory/tooltips/Hover_BR01.png";
+                totalHeight += framePromptPos.h;
+                txtPrompt->setDisabled(false);
+            }
+            txtPrompt->setSize(SDL_Rect{ 0, 1, framePromptPos.w, framePromptPos.h });
+            
+            framePrompt->setSize(framePromptPos);
+        }
+        
+        tooltipDisplayedSettings.tooltipHeight = totalHeight;
+    }
+    
+    // realign stuff based on expanded animation status
+    int scrollOverflow = 0;
+    auto gradientTop = frameMain->findImage("inventory mouse tooltip fade top");
+    auto gradientBottom = frameMain->findImage("inventory mouse tooltip fade bottom");
+    auto& frameTooltipScrollSetpoint = tooltipDisplayedSettings.frameTooltipScrollSetpoint;
+    auto& frameTooltipScrollAnim = tooltipDisplayedSettings.frameTooltipScrollAnim;
+    bool wasScrollable = tooltipDisplayedSettings.scrollable;
+    {
+        SDL_Rect frameDescPos = frameDesc->getSize();
+        frameDescPos.h = tooltipDisplayedSettings.tooltipDescriptionHeight;
+        
+        static ConsoleVariable<int> cvar_item_tooltip_max_height("/item_tooltip_max_height", 348);
+        static ConsoleVariable<int> cvar_item_tooltip_max_height_compact("/item_tooltip_max_height_compact", 264);
+        int maxHeight = !players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_max_height : *cvar_item_tooltip_max_height_compact;
+        
+        if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && players[player]->bUseCompactGUIHeight() )
+        {
+            maxHeight -= 68;
+        }
+        
+        scrollOverflow = std::max(0, frameAttr->getSize().y + frameAttr->getSize().h + tooltipDisplayedSettings.tooltipDescriptionHeight - maxHeight);
+        tooltipDisplayedSettings.scrollable = scrollOverflow > 0 && tooltipDisplayedSettings.expanded;
+        frameDescPos.h = std::max(0, frameDescPos.h - scrollOverflow);
+        frameDescPos.h *= tooltipDisplayedSettings.expandCurrent;
+        int heightDiff = tooltipDisplayedSettings.tooltipDescriptionHeight - frameDescPos.h;
+        frameDesc->setSize(frameDescPos);
+        
+        
+        if ( tooltipDisplayedSettings.expanded )
+        {
+            if ( tooltipDisplayedSettings.scrollable )
+            {
+                const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+                if ( inputs.bPlayerUsingKeyboardControl(player) )
+                {
+                    if ( Input::inputs[player].binaryToggle("MenuMouseWheelUpAlt") )
+                    {
+                        frameTooltipScrollSetpoint -= 24.0;
+                    }
+                    else if ( Input::inputs[player].binaryToggle("MenuMouseWheelDownAlt") )
+                    {
+                        frameTooltipScrollSetpoint += 24.0;
+                    }
+                }
+                if ( Input::inputs[player].binaryToggle("MenuScrollUp") )
+                {
+                    frameTooltipScrollSetpoint -= 8.0 * fpsScale;
+                }
+                else if ( Input::inputs[player].binaryToggle("MenuScrollDown") )
+                {
+                    frameTooltipScrollSetpoint += 8.0 * fpsScale;
+                }
+            }
+            frameTooltipScrollSetpoint = std::max(0.0, frameTooltipScrollSetpoint);
+            if ( frameTooltipScrollSetpoint > scrollOverflow )
+            {
+                frameTooltipScrollSetpoint = scrollOverflow;
+            }
+            else
+            {
+                if ( frameTooltipScrollSetpoint == scrollOverflow )
+                {
+                    tooltipDisplayedSettings.scrolledToMax = scrollOverflow;
+                }
+                if ( tooltipDisplayedSettings.scrolledToMax != 0
+                    && tooltipDisplayedSettings.scrolledToMax != scrollOverflow
+                    && frameTooltipScrollSetpoint != scrollOverflow )
+                {
+                    frameTooltipScrollSetpoint = scrollOverflow; // snap to new value (moving between tooltips)
+                    frameTooltipScrollAnim = frameTooltipScrollSetpoint;
+                }
+                if ( frameTooltipScrollSetpoint < scrollOverflow )
+                {
+                    tooltipDisplayedSettings.scrolledToMax = 0;
+                }
+            }
+            if ( frameTooltipScrollAnim > scrollOverflow )
+            {
+                frameTooltipScrollAnim = scrollOverflow;
+            }
+            
+            SDL_Rect actualSize = frameAttr->getActualSize();
+            actualSize.h = std::max(frameAttr->getSize().h * 2, tooltipDisplayedSettings.tooltipDescriptionHeight);
+            actualSize.y = frameTooltipScrollAnim;
+            frameAttr->setActualSize(actualSize);
+            frameAttr->setAllowScrollBinds(false);
+            frameAttr->setScrollBarsEnabled(false);
+            
+            if ( abs(frameTooltipScrollSetpoint - frameTooltipScrollAnim) > 0.00001 )
+            {
+                const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+                real_t setpointDiff = 0.0;
+                if ( frameTooltipScrollSetpoint - frameTooltipScrollAnim > 0.0 )
+                {
+                    setpointDiff = fpsScale * std::max(3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
+                }
+                else
+                {
+                    setpointDiff = fpsScale * std::min(-3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
+                }
+                frameTooltipScrollAnim += setpointDiff;
+                if ( setpointDiff > 0.0 )
+                {
+                    frameTooltipScrollAnim = std::min(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
+                }
+                else
+                {
+                    frameTooltipScrollAnim = std::max(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
+                }
+            }
+            else
+            {
+                frameTooltipScrollAnim = frameTooltipScrollSetpoint;
+            }
+            
+            const int scrolledPastAttrFrame = frameAttr->getSize().h - frameAttr->getActualSize().y;
+            frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttr->getActualSize().y);
+            frameDescPos.h += std::min(frameAttr->getActualSize().y, frameAttr->getSize().h);
+            if ( scrolledPastAttrFrame < 0 )
+            {
+                SDL_Rect actualSize = frameDesc->getActualSize();
+                actualSize.y = -scrolledPastAttrFrame;
+                actualSize.h = tooltipDisplayedSettings.tooltipDescriptionHeight * 2;
+                frameDesc->setActualSize(actualSize);
+                frameDesc->setAllowScrollBinds(false);
+                frameDesc->setScrollBarsEnabled(false);
+            }
+            else
+            {
+                SDL_Rect actualSize = frameDesc->getActualSize();
+                actualSize.y = 0;
+                frameDesc->setActualSize(actualSize);
+                frameDesc->setAllowScrollBinds(false);
+                frameDesc->setScrollBarsEnabled(false);
+            }
+            frameDesc->setSize(frameDescPos);
+        }
+        else
+        {
+            SDL_Rect frameAttrActualSize = frameAttr->getActualSize();
+            frameAttrActualSize.y = 0;
+            frameAttrActualSize.h = frameAttr->getSize().h * 2;
+            frameAttr->setActualSize(frameAttrActualSize);
+            frameAttr->setAllowScrollBinds(false);
+            frameAttr->setScrollBarsEnabled(false);
+            
+            heightDiff += std::min(frameAttrActualSize.y, frameAttr->getSize().h);
+            
+            SDL_Rect actualSize = frameDesc->getActualSize();
+            actualSize.y = 0;
+            frameDesc->setActualSize(actualSize);
+            frameDesc->setAllowScrollBinds(false);
+            frameDesc->setScrollBarsEnabled(false);
+            
+            frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttrActualSize.y);
+            frameDesc->setSize(frameDescPos);
+            
+            frameTooltipScrollSetpoint = 0.0;
+            frameTooltipScrollAnim = 0.0;
+        }
+        
+        
+        SDL_Rect frameValuesPos = frameValues->getSize();
+        if ( !frameDesc->isDisabled() )
+        {
+            frameValuesPos.y = frameDescPos.y + frameDescPos.h;
+            frameValues->setSize(frameValuesPos);
+        }
+        
+        SDL_Rect framePromptPos = framePrompt->getSize();
+        framePromptPos.y = frameValuesPos.y + frameValuesPos.h;
+        framePrompt->setSize(framePromptPos);
+        
+        bool doAppraisalPrompt = !item->identified && isItemFromInventory && appraisal.current_item != item->uid;
+        bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid;
+        if ( doAppraisalProgressPrompt )
+        {
+            real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+            char buf[32];
+            snprintf(buf, sizeof(buf), language[4198], percent);
+            txtPrompt->setText(buf);
+        }
+        else if ( doAppraisalPrompt )
+        {
+            txtPrompt->setText(language[4102]);
+        }
+        else if ( !tooltipDisplayedSettings.expanded )
+        {
+            if ( itemCategory(item) == SPELL_CAT )
+            {
+                txtPrompt->setText(language[4103]); // show spell details
+            }
+            else
+            {
+                txtPrompt->setText(language[4086]); // show item details
+            }
+        }
+        else
+        {
+            if ( itemCategory(item) == SPELL_CAT )
+            {
+                txtPrompt->setText(language[4104]); // hide spell details
+            }
+            else
+            {
+                txtPrompt->setText(language[4087]); // hide item details
+            }
+        }
+        
+        // get left anchor for tooltip - if we want moving x tooltips, otherwise currently anchor to right of inventory panel
+        //auto inventoryBgFrame = frameInventory->findFrame("inventory base");
+        //const int tooltipPosX = frameInventory->getSize().x + inventoryBgFrame->getSize().x + inventoryBgFrame->getSize().w + 8;
+        SDL_Rect newPos { x, y, tooltipDisplayedSettings.tooltipWidth, tooltipDisplayedSettings.tooltipHeight - heightDiff };
+        if ( justify == Player::PANEL_JUSTIFY_RIGHT )
+        {
+            newPos.x -= newPos.w;
+        }
+        frameMain->setSize(newPos);
+        
+        // prompt for expanding tooltip position
+        auto promptImg = frameMain->findImage("inventory mouse tooltip prompt img");
+        promptImg->disabled = true;
+        if ( !players[player]->shootmode
+            && !txtPrompt->isDisabled()
+            && !doAppraisalProgressPrompt
+            && (!doAppraisalPrompt || (doAppraisalPrompt && stats[player]->HP > 0)) )
+        {
+            auto binding = Input::inputs[player].input("Expand Inventory Tooltip");
+            bool pressedGlyph = false;
+            if ( binding.isBindingUsingGamepad()
+                && (binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSTICK
+                    || binding.padButton == SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSTICK) )
+            {
+                pressedGlyph = true;
+            }
+            promptImg->path = Input::inputs[player].getGlyphPathForBinding(binding, pressedGlyph);
+            if ( auto imgGet = Image::get(promptImg->path.c_str()) )
+            {
+                unsigned int largestTextWidth = 0;
+                std::vector<int> languageIndexes;
+                if ( doAppraisalPrompt )
+                {
+                    languageIndexes.push_back(4102);
+                }
+                else if ( itemCategory(item) == SPELL_CAT )
+                {
+                    languageIndexes.push_back(4103);
+                    languageIndexes.push_back(4104);
+                }
+                else
+                {
+                    languageIndexes.push_back(4086);
+                    languageIndexes.push_back(4087);
+                }
+                
+                for ( auto index : languageIndexes )
+                {
+                    if ( auto textGet = Text::get(language[index], txtPrompt->getFont(),
+                                                  txtPrompt->getTextColor(), txtPrompt->getOutlineColor()) )
+                    {
+                        largestTextWidth = std::max(textGet->getWidth(), largestTextWidth);
+                    }
+                }
+                promptImg->disabled = false;
+                promptImg->pos.w = imgGet->getWidth();
+                promptImg->pos.h = imgGet->getHeight();
+                promptImg->pos.x = framePromptPos.x + framePromptPos.w - 4 - largestTextWidth - promptImg->pos.w;
+                promptImg->pos.y = framePromptPos.y;
+                if ( promptImg->pos.y + promptImg->pos.h > frameMain->getSize().h )
+                {
+                    promptImg->pos.y -= (promptImg->pos.y + promptImg->pos.h) - frameMain->getSize().h;
+                }
+            }
+            if ( doAppraisalPrompt && expandBindingPressed )
+            {
+                players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_APPRAISE);
+            }
+        }
+    }
+    
+    // position the background elements.
+    {
+        imgTopBackgroundLeft->pos.x = 0;
+        imgTopBackgroundLeft->pos.y = 0;
+        imgTopBackgroundRight->pos.x = frameMain->getSize().w - imgTopBackgroundRight->pos.w;
+        imgTopBackgroundRight->pos.y = 0;
+        
+        imgTopBackground->pos.x = imgTopBackgroundLeft->pos.x + imgTopBackgroundLeft->pos.w;
+        imgTopBackground->pos.y = 0;
+        imgTopBackground->pos.w = imgTopBackgroundRight->pos.x - (imgTopBackground->pos.x);
+        
+        imgMiddleBackgroundLeft->pos.x = 0;
+        imgMiddleBackgroundLeft->pos.y = imgTopBackgroundLeft->pos.h;
+        imgMiddleBackgroundRight->pos.x = frameMain->getSize().w - imgTopBackgroundRight->pos.w;
+        imgMiddleBackgroundRight->pos.y = imgMiddleBackgroundLeft->pos.y;
+        
+        imgMiddleBackground->pos.x = imgMiddleBackgroundLeft->pos.x + imgMiddleBackgroundLeft->pos.w;
+        imgMiddleBackground->pos.y = imgMiddleBackgroundLeft->pos.y;
+        imgMiddleBackground->pos.w = imgMiddleBackgroundRight->pos.x - (imgMiddleBackground->pos.x);
+        
+        imgBottomBackgroundLeft->pos.x = 0;
+        imgBottomBackgroundLeft->pos.y = frameMain->getSize().h - imgBottomBackgroundLeft->pos.h;
+        imgBottomBackgroundRight->pos.x = frameMain->getSize().w - imgBottomBackgroundRight->pos.w;
+        imgBottomBackgroundRight->pos.y = frameMain->getSize().h - imgBottomBackgroundLeft->pos.h;
+        
+        imgBottomBackground->pos.x = imgBottomBackgroundLeft->pos.x + imgBottomBackgroundLeft->pos.w;
+        imgBottomBackground->pos.y = imgBottomBackgroundLeft->pos.y;
+        imgBottomBackground->pos.w = imgBottomBackgroundRight->pos.x - (imgBottomBackground->pos.x);
+        
+        // resize the middle section height
+        imgMiddleBackgroundLeft->pos.h = imgBottomBackground->pos.y - (imgTopBackground->pos.y + imgTopBackground->pos.h);
+        imgMiddleBackgroundRight->pos.h = imgMiddleBackgroundLeft->pos.h;
+        imgMiddleBackground->pos.h = imgMiddleBackgroundLeft->pos.h;
+        
+        if ( tooltipDisplayedSettings.expanded && tooltipDisplayedSettings.expandCurrent > 0.1 )
+        {
+            if ( scrollOverflow > 0 )
+            {
+                if ( tooltipDisplayedSettings.expandCurrent >= .95 ) // already open, but gradient disabled from previous item
+                {
+                    if ( frameTooltipScrollSetpoint < scrollOverflow && !wasScrollable )
+                    {
+                        if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 255); }
+                    }
+                    if ( frameTooltipScrollSetpoint > 0 && !wasScrollable )
+                    {
+                        if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 255); }
+                    }
+                }
+                
+                gradientBottom->disabled = false;
+                gradientTop->disabled = false;
+                
+                real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+                if ( frameTooltipScrollSetpoint < scrollOverflow )
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientBottom->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha += fpsScale * (10); // constant speed
+                    newAlpha = std::min(newAlpha, 255);
+                    a = newAlpha;
+                    gradientBottom->color = makeColor(r, g, b, a);
+                }
+                else
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientBottom->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha -= fpsScale * (10); // constant speed
+                    newAlpha = std::max(newAlpha, 0);
+                    a = newAlpha;
+                    gradientBottom->color = makeColor(r, g, b, a);
+                    if ( a == 0 )
+                    {
+                        gradientBottom->disabled = true;
+                    }
+                }
+                
+                if ( frameTooltipScrollSetpoint > 0 )
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientTop->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha += fpsScale * (10); // constant speed
+                    newAlpha = std::min(newAlpha, 255);
+                    a = newAlpha;
+                    gradientTop->color = makeColor(r, g, b, a);
+                }
+                else
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientTop->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha -= fpsScale * (10); // constant speed
+                    newAlpha = std::max(newAlpha, 0);
+                    a = newAlpha;
+                    gradientTop->color = makeColor(r, g, b, a);
+                    
+                    if ( a == 0 )
+                    {
+                        gradientTop->disabled = true;
+                    }
+                }
+            }
+            else
+            {
+                gradientTop->disabled = true;
+                gradientBottom->disabled = true;
+            }
+        }
+        else
+        {
+            if ( scrollOverflow > 0 )
+            {
+                real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientTop->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha -= fpsScale * (10); // constant speed
+                    newAlpha = std::max(newAlpha, 0);
+                    a = newAlpha;
+                    gradientTop->color = makeColor(r, g, b, a);
+                    
+                    if ( a == 0 )
+                    {
+                        gradientTop->disabled = true;
+                    }
+                }
+                {
+                    Uint8 r, g, b, a;
+                    getColor(gradientBottom->color, &r, &g, &b, &a);
+                    int newAlpha = a;
+                    newAlpha -= fpsScale * (10); // constant speed
+                    newAlpha = std::max(newAlpha, 0);
+                    a = newAlpha;
+                    gradientBottom->color = makeColor(r, g, b, a);
+                    if ( a == 0 )
+                    {
+                        gradientBottom->disabled = true;
+                    }
+                }
+            }
+            else
+            {
+                gradientTop->disabled = true;
+                gradientBottom->disabled = true;
+            }
+        }
+        if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 0); }
+        if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 0); }
+        
+        gradientBottom->pos.h = 42;
+        gradientBottom->pos.x = imgBottomBackground->pos.x - 10;
+        gradientBottom->pos.y = frameValues->getSize().y - gradientBottom->pos.h;
+        gradientBottom->pos.w = imgBottomBackground->pos.w + 20;
+        
+        gradientTop->pos.h = 42;
+        gradientTop->pos.x = imgMiddleBackground->pos.x - 10;
+        gradientTop->pos.y = imgMiddleBackground->pos.y;
+        gradientTop->pos.w = imgMiddleBackground->pos.w + 20;
+    }
+    
+    finalizeFrameTooltip(item, x, y, justify);
+}
+
+void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, int justify)
+{
+    const int player = this->player.playernum;
+    const bool doTitleOnlyTooltip = players[player]->shootmode && !(enableDebugKeys && keystatus[SDLK_g]);
+    auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
+    
+    auto frameMain = this->player.inventoryUI.tooltipFrame;
+    if ( !frameMain )
+    {
+        return;
+    }
+    
+    auto frameInventory = this->player.inventoryUI.frame;
+    if ( !frameInventory )
+    {
+        return;
+    }
+    
+    auto frameInteract = this->player.inventoryUI.interactFrame;
+    if ( !frameInteract )
+    {
+        return;
+    }
+    
+    auto frameTooltipPrompt = this->player.inventoryUI.tooltipPromptFrame;
+    if ( !frameTooltipPrompt )
+    {
+        return;
+    }
+    
+    auto titleOnlyFrame = this->player.inventoryUI.titleOnlyTooltipFrame;
+    
 	if ( !doTitleOnlyTooltip )
 	{
 		tooltipDisplayedSettings.opacitySetpoint = 0;
