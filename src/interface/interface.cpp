@@ -9425,6 +9425,9 @@ void getGeneralItemRepairCostWithoutRequirements(const int player, Item* item, i
 	magic = magicSalvage * 8;
 	int blessingOrCurse = abs(item->beatitude);
 	magic += blessingOrCurse * 4;
+
+	metal = std::min(99, metal);
+	magic = std::min(99, magic);
 }
 
 bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
