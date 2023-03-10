@@ -932,8 +932,14 @@ public:
 			int expandSetpoint = 1;
 			real_t expandCurrent = 1.0;
 			bool expanded = false;
+			real_t frameTooltipScrollAnim = 0.0;
+			real_t frameTooltipScrollSetpoint = 0.0;
+			int scrolledToMax = 0;
+			real_t frameTooltipScrollPrevSetpoint = 0.0;
+			bool scrollable = false;
 
 			int tooltipDescriptionHeight = 0;
+			int tooltipAttributeHeight = 0;
 			int tooltipWidth = 0;
 			int tooltipHeight = 0;
 
