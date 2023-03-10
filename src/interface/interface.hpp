@@ -1236,24 +1236,40 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output);
 class MinimapPing
 {
 public:
-	Sint32 tickStart;
+	Uint32 tickStart;
 	Uint8 player;
 	Uint8 x;
 	Uint8 y;
 	bool radiusPing;
-	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
+	enum PingType : Uint8
+	{
+		PING_DEFAULT,
+		PING_DEATH_MARKER
+	};
+	PingType pingType = PING_DEFAULT;
+	MinimapPing(Uint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
 		tickStart(tickStart),
 		player(player),
 		x(x),
 		y(y),
-		radiusPing(false) {}
+		radiusPing(false),
+		pingType(PING_DEFAULT) {}
 
-	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y, bool radiusPing) :
+	MinimapPing(Uint32 tickStart, Uint8 player, Uint8 x, Uint8 y, bool radiusPing) :
 		tickStart(tickStart),
 		player(player),
 		x(x),
 		y(y),
-		radiusPing(radiusPing) {}
+		radiusPing(radiusPing),
+		pingType(PING_DEFAULT) {}
+
+	MinimapPing(Uint32 tickStart, Uint8 player, Uint8 x, Uint8 y, bool radiusPing, PingType pingType) :
+		tickStart(tickStart),
+		player(player),
+		x(x),
+		y(y),
+		radiusPing(radiusPing),
+		pingType(pingType) {}
 };
 
 extern std::vector<MinimapPing> minimapPings[MAXPLAYERS];

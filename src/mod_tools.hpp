@@ -3121,4 +3121,61 @@ struct LocalAchievements_t
 	void updateStatistic(const int stat_num, const int value);
 };
 extern LocalAchievements_t LocalAchievements;
-#endif // !EDITOR
+
+class GameplayPreferences_t
+{
+	//Player& player;
+	int player = -1;
+public:
+	enum GameplayerPrefIndexes : int
+	{
+		GPREF_ARACHNOPHOBIA = 0,
+		GPREF_ENUM_END
+	};
+	struct GameplayPreference_t
+	{
+		int value = 0;
+		bool needsUpdate = true;
+		void set(const int _value);
+		void reset()
+		{
+			value = 0;
+			needsUpdate = true;
+		}
+	};
+	GameplayPreference_t preferences[GPREF_ENUM_END];
+	bool isInit = false;
+	/*GameplayPreferences_t(Player& p) : player(p)
+	{};*/
+	GameplayPreferences_t() {};
+	~GameplayPreferences_t() {};
+	Uint32 lastUpdateTick = 0;
+	void requestUpdateFromClient();
+	void sendToClients(const int targetPlayer);
+	void process();
+	void sendToServer();
+	static void receivePacket();
+
+	enum GameConfigIndexes : int
+	{
+		GOPT_ARACHNOPHOBIA = 0,
+		GOPT_ENUM_END
+	};
+	static GameplayPreference_t gameConfig[GOPT_ENUM_END];
+	static int getGameConfigValue(GameConfigIndexes index)
+	{
+		if ( index >= 0 && index < GOPT_ENUM_END )
+		{
+			return gameConfig[index].value;
+		}
+		return 0;
+	}
+	static void serverProcessGameConfig();
+	static void serverUpdateGameConfig();
+	static void receiveGameConfig();
+	static Uint32 lastGameConfigUpdateTick;
+	static void reset();
+};
+
+extern GameplayPreferences_t gameplayPreferences[MAXPLAYERS];
+#endif

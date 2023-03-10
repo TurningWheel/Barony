@@ -287,9 +287,9 @@ void actItem(Entity* my)
 						{
 							// auto salvage this item, don't pick it up.
 							bool salvaged = false;
-							if ( GenericGUI[i].isItemSalvageable(item2, i) )
+							if ( GenericGUI[0].isItemSalvageable(item2, i) ) // let the server [0] salvage for client i
 							{
-								if ( GenericGUI[i].tinkeringSalvageItem(item2, true, i) )
+								if ( GenericGUI[0].tinkeringSalvageItem(item2, true, i) ) // let the server [0] salvage for client i
 								{
 									salvaged = true;
 								}

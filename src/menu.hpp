@@ -89,7 +89,7 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my);
 void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
-void buttonReplayLastCharacter(button_t* my);
+bool replayLastCharacter(const int index, int multiplayer);
 void buttonDeleteScoreWindow(button_t* my);
 void buttonOpenScoresWindow(button_t* my);
 void buttonRandomName(button_t* my);
@@ -323,3 +323,26 @@ enum CharacterDLCValidation : int
 	INVALID_REQUIREDLC2,
 	INVALID_REQUIRE_ACHIEVEMENT
 };
+
+struct LastCreatedCharacter {
+	static const int NUM_LAST_CHARACTERS = 6;
+	static const int LASTCHAR_LAN_PERSONA_INDEX = 4;
+	static const int LASTCHAR_ONLINE_PERSONA_INDEX = 5;
+	int characterClass[NUM_LAST_CHARACTERS];
+	int characterAppearance[NUM_LAST_CHARACTERS];
+	int characterSex[NUM_LAST_CHARACTERS];
+	int characterRace[NUM_LAST_CHARACTERS];
+	std::string characterName[NUM_LAST_CHARACTERS];
+	LastCreatedCharacter()
+	{
+		for ( int i = 0; i < NUM_LAST_CHARACTERS; ++i )
+		{
+			characterClass[i] = -1;
+			characterAppearance[i] = -1;
+			characterSex[i] = -1;
+			characterRace[i] = -1;
+			characterName[i] = "";
+		}
+	}
+};
+extern LastCreatedCharacter LastCreatedCharacterSettings;

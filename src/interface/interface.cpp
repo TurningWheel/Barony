@@ -4158,10 +4158,14 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			strcat(interactText, language[4044]); // "switch"
 		}
 	}
-	else if ( (selectedEntity.behavior == &actTeleportShrine ) && interactWorld && followerStats->type != GYROBOT )
+	else if ( (selectedEntity.behavior == &actTeleportShrine ) && (interactWorld || interactItems || enableAttack) && followerStats->type != GYROBOT )
 	{
 		if ( updateInteractText )
 		{
+			if ( !interactItems && !interactWorld && enableAttack )
+			{
+				strcpy(interactText, language[4014]); // "Interact with "
+			}
 			strcat(interactText, language[4309]); // "shrine"
 		}
 	}
@@ -9425,6 +9429,9 @@ void getGeneralItemRepairCostWithoutRequirements(const int player, Item* item, i
 	magic = magicSalvage * 8;
 	int blessingOrCurse = abs(item->beatitude);
 	magic += blessingOrCurse * 4;
+
+	metal = std::min(99, metal);
+	magic = std::min(99, magic);
 }
 
 bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)

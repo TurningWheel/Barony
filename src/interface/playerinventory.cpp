@@ -4322,35 +4322,35 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 	std::string bindingName = getContextMenuOptionBindingName(player, prompt);
 	if ( bindingName == "MenuAlt1" )
 	{
-#ifdef NINTENDO
-		return 1;
-#else
 		return 2;
-#endif
+//#ifdef NINTENDO
+//		return 1;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuAlt2" )
 	{
-#ifdef NINTENDO
-		return 2;
-#else
 		return 1;
-#endif
+//#ifdef NINTENDO
+//		return 2;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuConfirm" )
 	{
-#ifdef NINTENDO
-		return 3;
-#else
 		return 4;
-#endif
+//#ifdef NINTENDO
+//		return 3;
+//#else
+//#endif
 	}
 	else if ( bindingName == "MenuCancel" )
 	{
-#ifdef NINTENDO
-		return 4;
-#else
 		return 3;
-#endif
+//#ifdef NINTENDO
+//		return 4;
+//#else
+//#endif
 	}
 	return 5;
 }
@@ -5926,6 +5926,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		}
 
 		frameAttr->setSize(frameAttrPos);
+		tooltipDisplayedSettings.tooltipAttributeHeight = frameAttrPos.h;
 		totalHeight += frameAttrPos.h;
 
 		SDL_Rect frameDescPos = frameAttrPos;
@@ -6195,13 +6196,166 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 	}
 
 	// realign stuff based on expanded animation status
+	int scrollOverflow = 0;
+	auto gradientTop = frameMain->findImage("inventory mouse tooltip fade top");
+	auto gradientBottom = frameMain->findImage("inventory mouse tooltip fade bottom");
+	auto& frameTooltipScrollSetpoint = tooltipDisplayedSettings.frameTooltipScrollSetpoint;
+	auto& frameTooltipScrollAnim = tooltipDisplayedSettings.frameTooltipScrollAnim;
+	bool wasScrollable = tooltipDisplayedSettings.scrollable;
 	{
 		SDL_Rect frameDescPos = frameDesc->getSize();
 		frameDescPos.h = tooltipDisplayedSettings.tooltipDescriptionHeight;
+
+		static ConsoleVariable<int> cvar_item_tooltip_max_height("/item_tooltip_max_height", 348);
+		static ConsoleVariable<int> cvar_item_tooltip_max_height_compact("/item_tooltip_max_height_compact", 264);
+		int maxHeight = !players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_max_height : *cvar_item_tooltip_max_height_compact;
+
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR && players[player]->bUseCompactGUIHeight() )
+		{
+			maxHeight -= 68;
+		}
+
+		scrollOverflow = std::max(0, frameAttr->getSize().y + frameAttr->getSize().h + tooltipDisplayedSettings.tooltipDescriptionHeight - maxHeight);
+		tooltipDisplayedSettings.scrollable = scrollOverflow > 0 && tooltipDisplayedSettings.expanded;
+		frameDescPos.h = std::max(0, frameDescPos.h - scrollOverflow);
 		frameDescPos.h *= tooltipDisplayedSettings.expandCurrent;
+		int heightDiff = tooltipDisplayedSettings.tooltipDescriptionHeight - frameDescPos.h;
 		frameDesc->setSize(frameDescPos);
 
-		const int heightDiff = tooltipDisplayedSettings.tooltipDescriptionHeight - frameDescPos.h;
+
+		if ( tooltipDisplayedSettings.expanded )
+		{
+			if ( tooltipDisplayedSettings.scrollable )
+			{
+				const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+				if ( inputs.bPlayerUsingKeyboardControl(player) )
+				{
+					if ( Input::inputs[player].binaryToggle("MenuMouseWheelUpAlt") )
+					{
+						frameTooltipScrollSetpoint -= 24.0;
+					}
+					else if ( Input::inputs[player].binaryToggle("MenuMouseWheelDownAlt") )
+					{
+						frameTooltipScrollSetpoint += 24.0;
+					}
+				}
+				if ( Input::inputs[player].binaryToggle("MenuScrollUp") )
+				{
+					frameTooltipScrollSetpoint -= 8.0 * fpsScale;
+				}
+				else if ( Input::inputs[player].binaryToggle("MenuScrollDown") )
+				{
+					frameTooltipScrollSetpoint += 8.0 * fpsScale;
+				}
+			}
+			frameTooltipScrollSetpoint = std::max(0.0, frameTooltipScrollSetpoint);
+			if ( frameTooltipScrollSetpoint > scrollOverflow )
+			{
+				frameTooltipScrollSetpoint = scrollOverflow;
+			}
+			else
+			{
+				if ( frameTooltipScrollSetpoint == scrollOverflow )
+				{
+					tooltipDisplayedSettings.scrolledToMax = scrollOverflow;
+				}
+				if ( tooltipDisplayedSettings.scrolledToMax != 0 
+					&& tooltipDisplayedSettings.scrolledToMax != scrollOverflow
+					&& frameTooltipScrollSetpoint != scrollOverflow )
+				{
+					frameTooltipScrollSetpoint = scrollOverflow; // snap to new value (moving between tooltips)
+					frameTooltipScrollAnim = frameTooltipScrollSetpoint;
+				}
+				if ( frameTooltipScrollSetpoint < scrollOverflow )
+				{
+					tooltipDisplayedSettings.scrolledToMax = 0;
+				}
+			}
+			if ( frameTooltipScrollAnim > scrollOverflow )
+			{
+				frameTooltipScrollAnim = scrollOverflow;
+			}
+
+			SDL_Rect actualSize = frameAttr->getActualSize();
+			actualSize.h = std::max(frameAttr->getSize().h * 2, tooltipDisplayedSettings.tooltipDescriptionHeight);
+			actualSize.y = frameTooltipScrollAnim;
+			frameAttr->setActualSize(actualSize);
+			frameAttr->setAllowScrollBinds(false);
+			frameAttr->setScrollBarsEnabled(false);
+
+			if ( abs(frameTooltipScrollSetpoint - frameTooltipScrollAnim) > 0.00001 )
+			{
+				const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+				real_t setpointDiff = 0.0;
+				if ( frameTooltipScrollSetpoint - frameTooltipScrollAnim > 0.0 )
+				{
+					setpointDiff = fpsScale * std::max(3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
+				}
+				else
+				{
+					setpointDiff = fpsScale * std::min(-3.0, (frameTooltipScrollSetpoint - frameTooltipScrollAnim)) / 3.0;
+				}
+				frameTooltipScrollAnim += setpointDiff;
+				if ( setpointDiff > 0.0 )
+				{
+					frameTooltipScrollAnim = std::min(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
+				}
+				else
+				{
+					frameTooltipScrollAnim = std::max(frameTooltipScrollSetpoint, frameTooltipScrollAnim);
+				}
+			}
+			else
+			{
+				frameTooltipScrollAnim = frameTooltipScrollSetpoint;
+			}
+			
+			const int scrolledPastAttrFrame = frameAttr->getSize().h - frameAttr->getActualSize().y;
+			frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttr->getActualSize().y);
+			frameDescPos.h += std::min(frameAttr->getActualSize().y, frameAttr->getSize().h);
+			if ( scrolledPastAttrFrame < 0 )
+			{
+				SDL_Rect actualSize = frameDesc->getActualSize();
+				actualSize.y = -scrolledPastAttrFrame;
+				actualSize.h = tooltipDisplayedSettings.tooltipDescriptionHeight * 2;
+				frameDesc->setActualSize(actualSize);
+				frameDesc->setAllowScrollBinds(false);
+				frameDesc->setScrollBarsEnabled(false);
+			}
+			else
+			{
+				SDL_Rect actualSize = frameDesc->getActualSize();
+				actualSize.y = 0;
+				frameDesc->setActualSize(actualSize);
+				frameDesc->setAllowScrollBinds(false);
+				frameDesc->setScrollBarsEnabled(false);
+			}
+			frameDesc->setSize(frameDescPos);
+		}
+		else
+		{
+			SDL_Rect frameAttrActualSize = frameAttr->getActualSize();
+			frameAttrActualSize.y = 0;
+			frameAttrActualSize.h = frameAttr->getSize().h * 2;
+			frameAttr->setActualSize(frameAttrActualSize);
+			frameAttr->setAllowScrollBinds(false);
+			frameAttr->setScrollBarsEnabled(false);
+
+			heightDiff += std::min(frameAttrActualSize.y, frameAttr->getSize().h);
+
+			SDL_Rect actualSize = frameDesc->getActualSize();
+			actualSize.y = 0;
+			frameDesc->setActualSize(actualSize);
+			frameDesc->setAllowScrollBinds(false);
+			frameDesc->setScrollBarsEnabled(false);
+
+			frameDescPos.y = std::max(frameAttr->getSize().y, frameAttr->getSize().y + frameAttr->getSize().h - frameAttrActualSize.y);
+			frameDesc->setSize(frameDescPos);
+
+			frameTooltipScrollSetpoint = 0.0;
+			frameTooltipScrollAnim = 0.0;
+		}
+
 		
 		SDL_Rect frameValuesPos = frameValues->getSize();
 		if ( !frameDesc->isDisabled() )
@@ -6354,6 +6508,135 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 		imgMiddleBackgroundLeft->pos.h = imgBottomBackground->pos.y - (imgTopBackground->pos.y + imgTopBackground->pos.h);
 		imgMiddleBackgroundRight->pos.h = imgMiddleBackgroundLeft->pos.h;
 		imgMiddleBackground->pos.h = imgMiddleBackgroundLeft->pos.h;
+
+		if ( tooltipDisplayedSettings.expanded && tooltipDisplayedSettings.expandCurrent > 0.1 )
+		{
+			if ( scrollOverflow > 0 )
+			{
+				if ( tooltipDisplayedSettings.expandCurrent >= .95 ) // already open, but gradient disabled from previous item
+				{
+					if ( frameTooltipScrollSetpoint < scrollOverflow && !wasScrollable )
+					{
+						if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 255); }
+					}
+					if ( frameTooltipScrollSetpoint > 0 && !wasScrollable )
+					{
+						if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 255); }
+					}
+				}
+
+				gradientBottom->disabled = false;
+				gradientTop->disabled = false;
+
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				if ( frameTooltipScrollSetpoint < scrollOverflow )
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientBottom->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha += fpsScale * (10); // constant speed
+					newAlpha = std::min(newAlpha, 255);
+					a = newAlpha;
+					gradientBottom->color = makeColor(r, g, b, a);
+				}
+				else
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientBottom->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha -= fpsScale * (10); // constant speed
+					newAlpha = std::max(newAlpha, 0);
+					a = newAlpha;
+					gradientBottom->color = makeColor(r, g, b, a);
+					if ( a == 0 )
+					{
+						gradientBottom->disabled = true;
+					}
+				}
+				
+				if ( frameTooltipScrollSetpoint > 0 )
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientTop->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha += fpsScale * (10); // constant speed
+					newAlpha = std::min(newAlpha, 255);
+					a = newAlpha;
+					gradientTop->color = makeColor(r, g, b, a);
+				}
+				else
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientTop->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha -= fpsScale * (10); // constant speed
+					newAlpha = std::max(newAlpha, 0);
+					a = newAlpha;
+					gradientTop->color = makeColor(r, g, b, a);
+
+					if ( a == 0 )
+					{
+						gradientTop->disabled = true;
+					}
+				}
+			}
+			else
+			{
+				gradientTop->disabled = true;
+				gradientBottom->disabled = true;
+			}
+		}
+		else
+		{
+			if ( scrollOverflow > 0 )
+			{
+				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientTop->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha -= fpsScale * (10); // constant speed
+					newAlpha = std::max(newAlpha, 0);
+					a = newAlpha;
+					gradientTop->color = makeColor(r, g, b, a);
+
+					if ( a == 0 )
+					{
+						gradientTop->disabled = true;
+					}
+				}
+				{
+					Uint8 r, g, b, a;
+					getColor(gradientBottom->color, &r, &g, &b, &a);
+					int newAlpha = a;
+					newAlpha -= fpsScale * (10); // constant speed
+					newAlpha = std::max(newAlpha, 0);
+					a = newAlpha;
+					gradientBottom->color = makeColor(r, g, b, a);
+					if ( a == 0 )
+					{
+						gradientBottom->disabled = true;
+					}
+				}
+			}
+			else
+			{
+				gradientTop->disabled = true;
+				gradientBottom->disabled = true;
+			}
+		}
+		if ( gradientBottom->disabled ) { gradientBottom->color = makeColor(255, 255, 255, 0); }
+		if ( gradientTop->disabled ) { gradientTop->color = makeColor(255, 255, 255, 0); }
+
+		gradientBottom->pos.h = 42;
+		gradientBottom->pos.x = imgBottomBackground->pos.x - 10;
+		gradientBottom->pos.y = frameValues->getSize().y - gradientBottom->pos.h;
+		gradientBottom->pos.w = imgBottomBackground->pos.w + 20;
+
+		gradientTop->pos.h = 42;
+		gradientTop->pos.x = imgMiddleBackground->pos.x - 10;
+		gradientTop->pos.y = imgMiddleBackground->pos.y;
+		gradientTop->pos.w = imgMiddleBackground->pos.w + 20;
 	}
 
 TOOLTIP_FINALIZE_LABEL:
@@ -6642,6 +6925,27 @@ TOOLTIP_FINALIZE_LABEL:
 		tooltipDisplayedSettings.titleOnlyOpacityAnimate = 1.0;
 		titleOnlyFrame->setDisabled(false);
 		titleOnlyFrame->setOpacity(100.0);
+	}
+	else
+	{
+		static ConsoleVariable<int> cvar_item_tooltip_lowest_y("/item_tooltip_lowest_y", 90);
+		static ConsoleVariable<int> cvar_item_tooltip_lowest_y_compact("/item_tooltip_lowest_y_compact", 0);
+		SDL_Rect mainPos = frameMain->getSize();
+		int totalHeight = mainPos.y + mainPos.h;
+		if ( !frameTooltipPrompt->isDisabled() )
+		{
+			totalHeight += frameTooltipPrompt->getSize().h - 2;
+		}
+		const int lowestY = players[player]->camera_virtualHeight() - 
+			(players[player]->bUseCompactGUIHeight() ? *cvar_item_tooltip_lowest_y_compact : *cvar_item_tooltip_lowest_y);
+		if ( totalHeight > lowestY )
+		{
+			mainPos.y -= (totalHeight - lowestY);
+			SDL_Rect promptPos = frameTooltipPrompt->getSize();
+			promptPos.y -= (totalHeight - lowestY);
+			frameTooltipPrompt->setSize(promptPos);
+			frameMain->setSize(mainPos);
+		}
 	}
 }
 
@@ -6976,6 +7280,10 @@ void Player::Inventory_t::closeInventory()
 	itemTooltipDisplay.expandSetpoint = 0;
 	itemTooltipDisplay.expandCurrent = 0;
 	itemTooltipDisplay.expandAnimate = 0;
+	itemTooltipDisplay.frameTooltipScrollAnim = 0.0;
+	itemTooltipDisplay.frameTooltipScrollSetpoint = 0.0;
+	itemTooltipDisplay.frameTooltipScrollPrevSetpoint = 0.0;
+	itemTooltipDisplay.scrolledToMax = 0;
 }
 
 bool Player::Inventory_t::guiAllowDefaultRightClick() const

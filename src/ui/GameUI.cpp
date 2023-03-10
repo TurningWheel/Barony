@@ -15876,10 +15876,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = tooltipPos.w - (2 * (entryPos.x));
 			entry->setSize(entryPos);
-			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != txt->getText() )
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
 			{
-				txt->reflowTextToFit(0);
-				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = txt->getText();
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
 			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + 4;
 			entry->setSize(entryPos);
@@ -18139,6 +18139,15 @@ void createInventoryTooltipFrame(const int player)
 			0xFFFFFFFF, "images/system/white.png", "inventory mouse tooltip header bg new");
 		tmp->color = makeColor( 255, 255, 0, 255);
 		tmp->disabled = true;
+
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			makeColor(255, 255, 255, 0), "images/ui/Inventory/tooltips/TooltipGradientTop.png", "inventory mouse tooltip fade top");
+		tmp->disabled = true;
+		tmp->ontop = true;
+		tmp = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			makeColor(255, 255, 255, 0), "images/ui/Inventory/tooltips/TooltipGradientBottom.png", "inventory mouse tooltip fade bottom");
+		tmp->disabled = true;
+		tmp->ontop = true;
 	}
 
 	if ( auto attrFrame = tooltipFrame->addFrame("inventory mouse tooltip attributes frame") )
@@ -21443,13 +21452,16 @@ void createPlayerInventory(const int player)
 				if ( players[player]->GUI.bActiveModuleUsesInventory() 
 					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 				{
-					if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+					if ( !players[player]->inventoryUI.itemTooltipDisplay.scrollable )
 					{
-						camera_charsheet_offsetyaw -= 0.05;
-					}
-					else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
-					{
-						camera_charsheet_offsetyaw += 0.05;
+						if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+						{
+							camera_charsheet_offsetyaw -= 0.05;
+						}
+						else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+						{
+							camera_charsheet_offsetyaw += 0.05;
+						}
 					}
 					if ( camera_charsheet_offsetyaw > 2 * PI )
 					{
@@ -30544,8 +30556,9 @@ void Player::SkillSheet_t::processSkillSheet()
 				legendTextPos.w = tm->pos.w;
 				legendText->setSize(legendTextPos);
 				legendText->reflowTextToFit(0);
-				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight/*actualFont->height(true)*/;
-				legendTextPos.y = tm->pos.y + tm->pos.h / 2;
+				legendTextPos.h = legendText->getNumTextLines() * actualFontHeight;
+				legendTextPos.y = tm->pos.y + tm->pos.h / 2 + 2;
+				legendTextPos.h += 4; // handle hanging chars
 				legendText->setSize(legendTextPos);
 
 				auto ml = legendFrame->findImage("middle left img");
@@ -30719,11 +30732,20 @@ void Player::SkillSheet_t::processSkillSheet()
 		scrollAreaPos = scrollArea->getSize();
 		if ( lowestY > scrollAreaOuterFrame->getSize().h )
 		{
-			scrollAreaPos.y = -(lowestY - scrollAreaOuterFrame->getSize().h) * scrollPercent;
+			SDL_Rect actualSize = scrollArea->getActualSize();
+			actualSize.y = (lowestY - scrollAreaOuterFrame->getSize().h) * scrollPercent;
+			actualSize.h = scrollAreaPos.h;
+			scrollArea->setActualSize(actualSize);
+			
+			scrollAreaPos.y = 0;
 			slider->setDisabled(false);
 		}
 		else
 		{
+			SDL_Rect actualSize = scrollArea->getActualSize();
+			actualSize.y = 0;
+			scrollArea->setActualSize(actualSize);
+
 			scrollAreaPos.y = 0;
 			slider->setDisabled(true);
 		}
@@ -31136,32 +31158,35 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 				&& player.GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
 			{
 				auto& input = Input::inputs[player.playernum];
-				if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+				if ( !player.inventoryUI.itemTooltipDisplay.scrollable )
 				{
-					if ( input.binaryToggle("MenuMouseWheelDown") )
+					if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
+					{
+						if ( input.binaryToggle("MenuMouseWheelDown") )
+						{
+							scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+						}
+						if ( input.binaryToggle("MenuMouseWheelUp") )
+						{
+							scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+						}
+					}
+
+					if ( input.consumeBinaryToggle("MenuScrollDown") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						{
+							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
 					}
-					if ( input.binaryToggle("MenuMouseWheelUp") )
+					else if ( input.consumeBinaryToggle("MenuScrollUp") )
 					{
 						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-					}
-				}
-
-				if ( input.consumeBinaryToggle("MenuScrollDown") )
-				{
-					scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
-					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
-					{
-						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
-					}
-				}
-				else if ( input.consumeBinaryToggle("MenuScrollUp") )
-				{
-					scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-					if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
-					{
-						player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						{
+							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
 					}
 				}
 			}

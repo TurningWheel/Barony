@@ -2024,7 +2024,7 @@ void glDrawWorld(view_t* camera, int mode)
 	{
 		for ( int y = 0; y < map.height; y++ )
 		{
-		    if (!map.vismap[y + x * map.height])
+		    if (!camera->vismap[y + x * map.height])
 		    {
 		        continue;
 		    }

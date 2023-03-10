@@ -26,6 +26,9 @@
 #include "items.hpp"
 #include "interface/interface.hpp"
 #include "mod_tools.hpp"
+#ifdef EDITOR
+#include "editor.hpp"
+#endif
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
@@ -602,20 +605,20 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "underworld08c.lmp", 27050 },
 	{ "underworld08d.lmp", 38494 },
 	{ "underworld08e.lmp", 66467 },
-	{ "underworld09.lmp", 76992 },
-	{ "underworld09a.lmp", 32467 },
+	{ "underworld09.lmp", 76902 },
+	{ "underworld09a.lmp", 29965 },
 	{ "underworld09b.lmp", 44375 },
 	{ "underworld09c.lmp", 35307 },
-	{ "underworld09d.lmp", 23598 },
-	{ "underworld09e.lmp", 31008 },
-	{ "underworld10.lmp", 118384 },
-	{ "underworld10a.lmp", 99959 },
+	{ "underworld09d.lmp", 27376 },
+	{ "underworld09e.lmp", 30058 },
+	{ "underworld10.lmp", 119996 },
+	{ "underworld10a.lmp", 135977 },
 	{ "underworld10b.lmp", 47378 },
 	{ "underworld10c.lmp", 37212 },
 	{ "underworld10d.lmp", 41839 },
-	{ "underworld10e.lmp", 48179 },
+	{ "underworld10e.lmp", 41223 },
 	{ "underworld10f.lmp", 50632 },
-	{ "underworld11.lmp", 71754 },
+	{ "underworld11.lmp", 118540 },
 	{ "underworld11a.lmp", 12213 },
 	{ "underworld11b.lmp", 25786 },
 	{ "underworld11c.lmp", 13884 },
@@ -644,7 +647,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "underworld15a.lmp", 48251 },
 	{ "underworld15b.lmp", 48500 },
 	{ "underworld15c.lmp", 39405 },
-	{ "underworld15d.lmp", 22539 },
+	{ "underworld15d.lmp", 22683 },
 	{ "underworld15e.lmp", 88967 },
 	{ "underworld16.lmp", 7801 },
 	{ "underworld16a.lmp", 1213 },
@@ -823,7 +826,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "hell14.lmp", 159494 },
 	{ "hell14a.lmp", 185994 },
 	{ "hell14b.lmp", 111381 },
-	{ "hell14c.lmp", 741626 },
+	{ "hell14c.lmp", 1156179 },
 	{ "hell14d.lmp", 1080797 },
 	{ "hell14e.lmp", 43268 },
 	{ "hell15.lmp", 186638 },
@@ -873,7 +876,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "hell22a.lmp", 481602 },
 	{ "hell22b.lmp", 955291 },
 	{ "hell22c.lmp", 232845 },
-	{ "hell22d.lmp", 90481 },
+	{ "hell22d.lmp", 89909 },
 	{ "hell22e.lmp", 122584 },
 	{ "hell23.lmp", 21689 },
 	{ "hell23a.lmp", 9093 },
@@ -1533,10 +1536,28 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		free(destmap->tiles);
 		destmap->tiles = nullptr;
 	}
-	if ( destmap->vismap != nullptr )
+	if ( destmap == &map )
 	{
-		free(destmap->vismap);
-		destmap->vismap = nullptr;
+#ifdef EDITOR
+		if ( camera.vismap != nullptr )
+		{
+			free(camera.vismap);
+			camera.vismap = nullptr;
+		}
+#endif
+		if ( menucam.vismap != nullptr )
+		{
+			free(menucam.vismap);
+			menucam.vismap = nullptr;
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( cameras[i].vismap != nullptr )
+			{
+				free(cameras[i].vismap);
+				cameras[i].vismap = nullptr;
+			}
+		}
 	}
 	fp->read(destmap->name, sizeof(char), 32); // map name
 	fp->read(destmap->author, sizeof(char), 32); // map author
@@ -1575,7 +1596,17 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		fp->read(destmap->flags, sizeof(Sint32), MAPFLAGS); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
-	destmap->vismap = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
+	if ( destmap == &map )
+	{
+#ifdef EDITOR
+		camera.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+#endif
+		menucam.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			cameras[i].vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+		}
+	}
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
 	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 

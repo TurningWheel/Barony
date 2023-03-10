@@ -420,29 +420,6 @@ namespace ConsoleCommands {
 		lastname = name.c_str();
 		});
 
-	static ConsoleCommand ccmd_lastchar("/lastcharacter", "set last character attribute", []CCMD{
-		for (int c = 1; c < argc; ++c)
-		{
-			switch (c)
-			{
-				case 1:
-					lastCreatedCharacterSex = atoi(argv[c]);
-					break;
-				case 2:
-					lastCreatedCharacterClass = atoi(argv[c]);
-					break;
-				case 3:
-					lastCreatedCharacterAppearance = atoi(argv[c]);
-					break;
-				case 4:
-					lastCreatedCharacterRace = atoi(argv[c]);
-					break;
-				default:
-					break;
-			}
-		}
-		});
-
 	static ConsoleCommand ccmd_spawnitem("/spawnitem", "spawn an item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{

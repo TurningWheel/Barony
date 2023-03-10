@@ -7192,4 +7192,376 @@ void LocalAchievements_t::updateStatistic(const int stat_num, const int value)
 		stat.value = value;
 	}
 }
+
+GameplayPreferences_t gameplayPreferences[MAXPLAYERS];
+
+void GameplayPreferences_t::GameplayPreference_t::set(const int _value)
+{
+	if ( value != _value )
+	{
+		needsUpdate = true;
+	}
+	value = _value;
+}
+
+void GameplayPreferences_t::requestUpdateFromClient()
+{
+	if ( player == 0 ) { return; }
+	if ( client_disconnected[player] ) { return; }
+	if ( !net_packet )
+	{
+		return;
+
+	}
+	strcpy((char*)net_packet->data, "GPPU");
+	net_packet->data[4] = (Uint8)player;
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 5;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void GameplayPreferences_t::sendToClients(const int targetPlayer)
+{
+	if ( targetPlayer == 0 ) { return; }
+	if ( client_disconnected[targetPlayer] ) { return; }
+	if ( !net_packet )
+	{
+		return;
+	}
+
+	strcpy((char*)net_packet->data, "GPPR");
+	net_packet->data[4] = (Uint8)player;
+	net_packet->data[5] = (Uint8)GPREF_ENUM_END;
+	int index = 0;
+	for ( auto& pref : preferences )
+	{
+		Uint8 data = (pref.value & 0xFF);
+		net_packet->data[6 + index] = data;
+		++index;
+	}
+	net_packet->address.host = net_clients[targetPlayer - 1].host;
+	net_packet->address.port = net_clients[targetPlayer - 1].port;
+	net_packet->len = 6 + index;
+	sendPacketSafe(net_sock, -1, net_packet, targetPlayer - 1);
+}
+
+void GameplayPreferences_t::receivePacket()
+{
+	if ( !net_packet )
+	{
+		return;
+	}
+	int player = (Uint8)net_packet->data[4];
+	if ( player >= 0 && player < MAXPLAYERS )
+	{
+		auto& playerPrefs = gameplayPreferences[player];
+		const int numPrefs = (Uint8)net_packet->data[5];
+		for ( int i = 0; i < numPrefs && i < GPREF_ENUM_END; ++i )
+		{
+			int data = (net_packet->data[6 + i] & 0xFF);
+			playerPrefs.preferences[i].value = data;
+			playerPrefs.preferences[i].needsUpdate = false;
+			//messagePlayer(clientnum, MESSAGE_DEBUG, "%d rcv: %d : %d", player, i, playerPrefs.preferences[i].value);
+		}
+		playerPrefs.lastUpdateTick = ticks;
+	}
+}
+
+void GameplayPreferences_t::sendToServer()
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !net_packet )
+	{
+		return;
+	}
+
+	strcpy((char*)net_packet->data, "GPPR");
+	net_packet->data[4] = (Uint8)player;
+	net_packet->data[5] = (Uint8)GPREF_ENUM_END;
+	int index = 0;
+	for ( auto& pref : preferences )
+	{
+		Uint8 data = (pref.value & 0xFF);
+		net_packet->data[6 + index] = data;
+		++index;
+		pref.needsUpdate = false;
+	}
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 6 + index;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
+void GameplayPreferences_t::process()
+{
+	if ( player < 0 )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( &gameplayPreferences[i] == this )
+			{
+				player = i;
+				break;
+			}
+		}
+	}
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		int index = 0;
+		for ( auto& pref : preferences )
+		{
+			switch ( index )
+			{
+				case GPREF_ARACHNOPHOBIA:
+					pref.set(MainMenu::arachnophobia_filter ? 1 : 0);
+					break;
+				default:
+					break;
+			}
+			++index;
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		bool doUpdate = false;
+		if ( players[player]->isLocalPlayer() )
+		{
+			for ( auto& pref : preferences )
+			{
+				if ( pref.needsUpdate )
+				{
+					doUpdate = true;
+					pref.needsUpdate = false;
+				}
+			}
+			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			{
+				doUpdate = true;
+			}
+			if ( doUpdate )
+			{
+				sendToServer();
+			}
+			isInit = true;
+		}
+		if ( doUpdate )
+		{
+			lastUpdateTick = ticks;
+		}
+	}
+	else if ( multiplayer == SERVER )
+	{
+		bool doUpdate = false;
+		if ( players[player]->isLocalPlayer() )
+		{
+			isInit = true;
+			/*for ( auto& pref : preferences )
+			{
+			if ( pref.needsUpdate )
+			{
+			doUpdate = true;
+			pref.needsUpdate = false;
+			}
+			}
+
+			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			{
+			doUpdate = true;
+			}
+
+			if ( doUpdate )
+			{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+			if ( !players[i]->isLocalPlayer() )
+			{
+			sendToClients(i);
+			}
+			}
+			}*/
+		}
+		else
+		{
+			if ( !client_disconnected[player] )
+			{
+				isInit = true;
+				for ( auto& pref : preferences )
+				{
+					if ( pref.needsUpdate )
+					{
+						doUpdate = true;
+						pref.needsUpdate = false;
+					}
+				}
+
+				if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+				{
+					doUpdate = true;
+				}
+
+				if ( doUpdate )
+				{
+					requestUpdateFromClient();
+				}
+			}
+			else
+			{
+				if ( isInit )
+				{
+					for ( auto& pref : preferences )
+					{
+						pref.reset();
+					}
+					isInit = false;
+				}
+			}
+		}
+
+		if ( doUpdate )
+		{
+			lastUpdateTick = ticks;
+		}
+	}
+
+	if ( multiplayer != CLIENT && player == clientnum )
+	{
+		isInit = true;
+		GameplayPreferences_t::serverProcessGameConfig();
+	}
+}
+
+GameplayPreferences_t::GameplayPreference_t GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ENUM_END];
+Uint32 GameplayPreferences_t::lastGameConfigUpdateTick = 0;
+void GameplayPreferences_t::reset()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		for ( auto& pref : gameplayPreferences[i].preferences )
+		{
+			pref.reset();
+		}
+		gameplayPreferences[i].lastUpdateTick = 0;
+		gameplayPreferences[i].isInit = false;
+	}
+	for ( auto& conf : gameConfig )
+	{
+		conf.reset();
+	}
+	lastGameConfigUpdateTick = 0;
+}
+void GameplayPreferences_t::serverUpdateGameConfig()
+{
+	lastGameConfigUpdateTick = ticks;
+	if ( !net_packet )
+	{
+		return;
+	}
+	for ( int i = 1; i < MAXPLAYERS; ++i )
+	{
+		if ( !players[i]->isLocalPlayer() && !client_disconnected[i] )
+		{
+			strcpy((char*)net_packet->data, "GOPT");
+			net_packet->data[4] = (Uint8)GOPT_ENUM_END;
+			int index = 0;
+			for ( auto& conf : gameConfig )
+			{
+				Uint8 data = (conf.value & 0xFF);
+				net_packet->data[5 + index] = data;
+				++index;
+			}
+			net_packet->address.host = net_clients[i - 1].host;
+			net_packet->address.port = net_clients[i - 1].port;
+			net_packet->len = 5 + index;
+			sendPacketSafe(net_sock, -1, net_packet, i - 1);
+		}
+	}
+}
+
+void GameplayPreferences_t::receiveGameConfig()
+{
+	if ( !net_packet ) { return; }
+	auto& gameConfig = GameplayPreferences_t::gameConfig;
+	const int numConfigs = (Uint8)net_packet->data[4];
+	for ( int i = 0; i < numConfigs && i < GOPT_ENUM_END; ++i )
+	{
+		int data = (net_packet->data[5 + i] & 0xFF);
+		gameConfig[i].value = data;
+		gameConfig[i].needsUpdate = false;
+		//messagePlayer(clientnum, MESSAGE_DEBUG, "GOPT %d rcv: %d", i, gameConfig[i].value);
+	}
+	lastGameConfigUpdateTick = ticks;
+}
+
+void GameplayPreferences_t::serverProcessGameConfig()
+{
+	bool doUpdate = false;
+	for ( int pref = 0; pref < GOPT_ENUM_END; ++pref )
+	{
+		int value = 0;
+		switch ( pref )
+		{
+			case GOPT_ARACHNOPHOBIA:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						if ( gameplayPreferences[i].preferences[GPREF_ARACHNOPHOBIA].value != 0 )
+						{
+							value = 1;
+						}
+					}
+				}
+				if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, language[4333]);
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, language[4334]);
+								}
+							}
+						}
+					}
+				}
+				break;
+			}
+			default:
+				break;
+		}
+		gameConfig[pref].set(value);
+		if ( gameConfig[pref].needsUpdate )
+		{
+			doUpdate = true;
+		}
+		gameConfig[pref].needsUpdate = false;
+	}
+
+	if ( ticks - lastGameConfigUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+	{
+		doUpdate = true;
+	}
+
+	if ( doUpdate && multiplayer == SERVER )
+	{
+		serverUpdateGameConfig();
+	}
+
+	if ( doUpdate )
+	{
+		lastGameConfigUpdateTick = ticks;
+	}
+}
 #endif // !EDITOR

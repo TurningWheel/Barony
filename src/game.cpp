@@ -993,6 +993,10 @@ void gameLogic(void)
 		auto& camera_shakey2 = cameravars[c].shakey2;
 		if ( shaking )
 		{
+			static ConsoleVariable<int> cvar_shake_max("/shake_max", 15);
+			camera_shakex = std::min(camera_shakex, *cvar_shake_max / 100.0);
+			camera_shakey = std::min(camera_shakey, *cvar_shake_max);
+
 			camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
 			camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
 			if ( camera_shakex2 > 0 )
@@ -1397,11 +1401,20 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if ( doLavaParticles )
 											{
-												if ( *cvar_lava_use_vismap && !splitscreen )
+												if ( *cvar_lava_use_vismap && !intro )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														if ( !map.vismap[y + x * map.height] )
+														bool anyVismap = false;
+														for ( int i = 0; i < MAXPLAYERS; ++i )
+														{
+															if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+															{
+																anyVismap = true;
+																break;
+															}
+														}
+														if ( !anyVismap )
 														{
 															doLavaParticles = false;
 														}
@@ -1607,7 +1620,10 @@ void gameLogic(void)
 				}
 				updateGameplayStatisticsInMainLoop();
 			}
-
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				gameplayPreferences[i].process();
+			}
 			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
@@ -2809,11 +2825,20 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if (doLavaParticles)
 											{
-												if ( *cvar_lava_use_vismap && !splitscreen )
+												if ( *cvar_lava_use_vismap && !intro )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														if ( !map.vismap[y + x * map.height] )
+														bool anyVismap = false;
+														for ( int i = 0; i < MAXPLAYERS; ++i )
+														{
+															if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+															{
+																anyVismap = true;
+																break;
+															}
+														}
+														if ( !anyVismap )
 														{
 															doLavaParticles = false;
 														}
@@ -2863,6 +2888,10 @@ void gameLogic(void)
 				updateGameplayStatisticsInMainLoop();
 			}
 
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				gameplayPreferences[i].process();
+			}
 			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
@@ -6339,7 +6368,6 @@ int main(int argc, char** argv)
 
 		// initialize map
 		map.tiles = nullptr;
-		map.vismap = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
 		map.entities->first = nullptr;
 		map.entities->last = nullptr;

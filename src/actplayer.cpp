@@ -4673,7 +4673,7 @@ void actPlayer(Entity* my)
 				&& !gamePaused
 				&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 			{
-				auto& b = input.getBindings();
+				auto& b = (multiplayer != SINGLE && PLAYER_NUM != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 				bool showNPCCommandsOnGamepad = false;
 				auto showNPCCommandsFind = b.find("Show NPC Commands");
 				std::string showNPCCommandsInputStr = "";
@@ -5258,6 +5258,12 @@ void actPlayer(Entity* my)
 				                sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
 				            }
 			            }
+
+						if ( (multiplayer == SERVER || (multiplayer == SINGLE && splitscreen))
+							&& keepInventoryGlobal )
+						{
+							sendMinimapPing(PLAYER_NUM, my->x / 16.0, my->y / 16.0, MinimapPing::PING_DEATH_MARKER);
+						}
 
 						for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )
 						{

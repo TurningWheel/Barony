@@ -56,15 +56,15 @@ void cleanupMinimapTextures() {
 
 void drawMinimap(const int player, SDL_Rect rect)
 {
-	if (gameplayCustomManager.inUse()) {
-		if (CustomHelpers::isLevelPartOfSet(
-		    currentlevel, secretlevel, gameplayCustomManager.minimapDisableFloors)) {
+	if ( gameplayCustomManager.inUse() ) {
+		if ( CustomHelpers::isLevelPartOfSet(
+			currentlevel, secretlevel, gameplayCustomManager.minimapDisableFloors) ) {
 			return;
 		}
 	}
 
 	int numplayers = 0;
-	for (int i = 0; i < MAXPLAYERS; ++i) {
+	for ( int i = 0; i < MAXPLAYERS; ++i ) {
 		if ( players[i]->isLocalPlayer() ) {
 			++numplayers;
 		}
@@ -75,8 +75,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 	const int windowGCD = std::max(rect.w, rect.h);
 	const int mapLCD = std::min(map.width, map.height);
 	const int mapGCD = std::max(map.width, map.height);
-    const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
-    const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+	const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+	const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -95,39 +95,39 @@ void drawMinimap(const int player, SDL_Rect rect)
 	const int xmax = map.width - xmin;
 	const int ymin = ((int)map.height - mapGCD) / 2;
 	const int ymax = map.height - ymin;
-	for (int x = xmin; x < xmax; ++x) {
-		for (int y = ymin; y < ymax; ++y) {
-		    Uint32 color = 0;
-		    Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
-		    Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
-			if (x < 0 || y < 0 || x >= map.width || y >= map.height)
+	for ( int x = xmin; x < xmax; ++x ) {
+		for ( int y = ymin; y < ymax; ++y ) {
+			Uint32 color = 0;
+			Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
+			Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
+			if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 			{
-			    // out-of-bounds
-			    color = makeColor(0, 64, 64, backgroundAlpha);
+				// out-of-bounds
+				color = makeColor(0, 64, 64, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 0 )
 			{
-			    // unknown / no floor
+				// unknown / no floor
 				color = makeColor(0, 64, 64, backgroundAlpha);
 			}
 			else if ( minimap[y][x] == 1 )
 			{
-			    // walkable space
+				// walkable space
 				color = makeColor(0, 128, 128, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 2 )
 			{
-			    // wall
+				// wall
 				color = makeColor(0, 255, 255, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 3 )
 			{
-			    // mapped but undiscovered walkable ground
+				// mapped but undiscovered walkable ground
 				color = makeColor(64, 64, 64, foregroundAlpha);
 			}
 			else if ( minimap[y][x] == 4 )
 			{
-			    // mapped but undiscovered wall
+				// mapped but undiscovered wall
 				color = makeColor(128, 128, 128, foregroundAlpha);
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
@@ -135,26 +135,27 @@ void drawMinimap(const int player, SDL_Rect rect)
 	}
 
 	// upload minimap image to an OpenGL texture, if it is different
-	if (minimapSurfaces[player]) {
+	if ( minimapSurfaces[player] ) {
 		SDL_LockSurface(minimapSurfaces[player]);
 	}
 	auto m1 = minimapSurface;
 	auto m2 = minimapSurfaces[player];
 	const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
 	const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
-	if (size1 != size2 || memcmp(m1, m2, size2)) {
-		if (!minimapTextures[player]) {
+	if ( size1 != size2 || memcmp(m1, m2, size2) ) {
+		if ( !minimapTextures[player] ) {
 			minimapTextures[player] = new TempTexture();
 		}
 		minimapTextures[player]->load(minimapSurface, false, true);
-		if (minimapSurfaces[player]) {
+		if ( minimapSurfaces[player] ) {
 			SDL_UnlockSurface(minimapSurfaces[player]);
 			SDL_FreeSurface(minimapSurfaces[player]);
 		}
 		SDL_UnlockSurface(minimapSurface);
 		minimapSurfaces[player] = minimapSurface;
-	} else {
-		if (minimapSurfaces[player]) {
+	}
+	else {
+		if ( minimapSurfaces[player] ) {
 			SDL_UnlockSurface(minimapSurfaces[player]);
 		}
 		SDL_UnlockSurface(minimapSurface);
@@ -181,36 +182,89 @@ void drawMinimap(const int player, SDL_Rect rect)
 
 	// build a circle mesh
 	static std::vector<std::pair<real_t, real_t>> circle_mesh;
-	if (!circle_mesh.size()) {
-	    circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
-	    static const int num_circle_vertices = 32;
-	    for (int c = 0; c <= num_circle_vertices; ++c) {
-	        real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
-	        circle_mesh.emplace_back((real_t)(sin(ang) / 2.0), (real_t)(cos(ang) / 2.0));
-	    }
+	if ( !circle_mesh.size() ) {
+		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+		static const int num_circle_vertices = 32;
+		for ( int c = 0; c <= num_circle_vertices; ++c ) {
+			real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
+			circle_mesh.emplace_back((real_t)(sin(ang) / 2.0), (real_t)(cos(ang) / 2.0));
+		}
 	}
 
-	auto drawCircleMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color){
-	    const int windowLCD = std::min(rect.w, rect.h);
-	    const int windowGCD = std::max(rect.w, rect.h);
-	    const int mapLCD = std::min(map.width, map.height);
-	    const int mapGCD = std::max(map.width, map.height);
-	    const int xmin = ((int)map.width - mapGCD) / 2;
-	    const int ymin = ((int)map.height - mapGCD) / 2;
-        const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
-        const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-        x = (x - xmin) * unitX + rect.x;
-        y = (y - ymin) * unitY + rect.y;
+	auto drawCircleMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const int windowLCD = std::min(rect.w, rect.h);
+		const int windowGCD = std::max(rect.w, rect.h);
+		const int mapLCD = std::min(map.width, map.height);
+		const int mapGCD = std::max(map.width, map.height);
+		const int xmin = ((int)map.width - mapGCD) / 2;
+		const int ymin = ((int)map.height - mapGCD) / 2;
+		const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+		const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+		x = (x - xmin) * unitX + rect.x;
+		y = (y - ymin) * unitY + rect.y;
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-        glBegin(GL_TRIANGLE_FAN);
-        for (auto& pair : circle_mesh) {
-            const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0) * size;
-            const real_t sy = pair.second * unitY * (minimapObjectZoom / 100.0) * size;
-            glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-        }
-        glEnd();
+		glBegin(GL_TRIANGLE_FAN);
+		for ( auto& pair : circle_mesh ) {
+			const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0) * size;
+			const real_t sy = pair.second * unitY * (minimapObjectZoom / 100.0) * size;
+			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
+		}
+		glEnd();
+	};
+
+	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
+
+	auto drawSkull = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+		const int windowLCD = std::min(rect.w, rect.h);
+		const int windowGCD = std::max(rect.w, rect.h);
+		const int mapLCD = std::min(map.width, map.height);
+		const int mapGCD = std::max(map.width, map.height);
+		const int xmin = ((int)map.width - mapGCD) / 2;
+		const int ymin = ((int)map.height - mapGCD) / 2;
+		const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
+		const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
+		x = (x - xmin) * unitX + rect.x;
+		y = (y - ymin) * unitY + rect.y;
+
+		auto imgGet = Image::get("*images/ui/HUD/death_skull.png");
+		imgGet->bind();
+
+		Uint8 r, g, b, a;
+		getColor(color, &r, &g, &b, &a);
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+
+		glBegin(GL_QUADS);
+
+		const real_t sx = unitX * (minimapObjectZoom / 100.0) * size;
+		const real_t sy = unitY * (minimapObjectZoom / 100.0) * size;
+
+
+		SDL_Rect secondsrc;
+		SDL_Rect src;
+		src.x = 0;
+		src.y = 0;
+		src.w = imgGet->getSurf()->w;
+		src.h = imgGet->getSurf()->h;
+
+		SDL_Rect dest;
+		dest.x = x - sx / 2;
+		dest.y = y - sy / 2;
+		dest.w = sx;
+		dest.h = sy;
+
+		SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+
+		glTexCoord2f(1.0 * ((real_t)src.x / imgGet->getSurf()->w), 1.0 * ((real_t)src.y / imgGet->getSurf()->h));
+		glVertex2f(dest.x, viewport.h - dest.y);
+		glTexCoord2f(1.0 * ((real_t)src.x / imgGet->getSurf()->w), 1.0 * (((real_t)src.y + src.h) / imgGet->getSurf()->h));
+		glVertex2f(dest.x, viewport.h - dest.y - dest.h);
+		glTexCoord2f(1.0 * (((real_t)src.x + src.w) / imgGet->getSurf()->w), 1.0 * (((real_t)src.y + src.h) / imgGet->getSurf()->h));
+		glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
+		glTexCoord2f(1.0 * (((real_t)src.x + src.w) / imgGet->getSurf()->w), 1.0 * ((real_t)src.y / imgGet->getSurf()->h));
+		glVertex2f(dest.x + dest.w, viewport.h - dest.y);
+		glEnd();
 	};
 
 	// draw special points of interest (exits, items, revealed monsters, etc)
@@ -228,8 +282,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
-					    // exit
-			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 0, 0, 255));
+						// exit
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 0, 0, 255));
 					}
 				}
 			}
@@ -253,11 +307,11 @@ void drawMinimap(const int player, SDL_Rect rect)
 					|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
 				{
 					warningEffect = true;
-				    int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-				    int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
+					int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+					int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
 				}
-				if ( !warningEffect 
+				if ( !warningEffect
 					&& ((stats[player]->ring && stats[player]->ring->type == RING_WARNING)
 						|| (entity->entityShowOnMap > 0)) )
 				{
@@ -284,9 +338,9 @@ void drawMinimap(const int player, SDL_Rect rect)
 					}
 					if ( doEffect )
 					{
-				        int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-				        int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			            drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+						int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+						int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
 						warningEffect = true;
 					}
 				}
@@ -299,9 +353,9 @@ void drawMinimap(const int player, SDL_Rect rect)
 							&& entityDist(players[player]->entity, entity) < 16.0 * 20 )
 						{
 							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
-				            int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-				            int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-			                drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+							int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+							drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
 						}
 					}
 				}
@@ -312,9 +366,18 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
 				{
-				    // boulder
-			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 63, 0, 255));
+					// boulder
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 63, 0, 255));
 				}
+			}
+			else if ( entity->behavior == &actItem && entity->sprite >= items[TOOL_PLAYER_LOOT_BAG].index &&
+				entity->sprite < (items[TOOL_PLAYER_LOOT_BAG].index + items[TOOL_PLAYER_LOOT_BAG].variations) )
+			{
+				real_t skullx = std::min<real_t>(std::max(0.0, entity->x / 16), map.width - 1);
+				real_t skully = std::min<real_t>(std::max(0.0, entity->y / 16), map.height - 1);
+				int playerOwner = entity->sprite - items[TOOL_PLAYER_LOOT_BAG].index;
+				Uint32 color = playerColor(playerOwner, colorblind, false);
+				deathboxSkulls.push_back(std::make_pair(color, std::make_pair(skullx, skully)));
 			}
 			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
 			{
@@ -322,8 +385,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( ticks % 40 - ticks % 20 )
 				{
-				    // item
-			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+					// item
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
 				}
 			}
 			else if ( entity->entityShowOnMap > 0 )
@@ -332,38 +395,73 @@ void drawMinimap(const int player, SDL_Rect rect)
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( ticks % 40 - ticks % 20 )
 				{
-			        drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
 				}
 			}
 		}
-		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks ) 
+		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
 		{
 			// only decrease the entities' shown duration when the global game timer passes a tick
 			// (drawMinimap doesn't follow game tick intervals)
 			--entity->entityShowOnMap;
 		}
 	}
+
+	static ConsoleVariable<float> cvar_skullscale("/minimap_skullscale", 1.75);
+	for ( auto& skullInfo : deathboxSkulls )
+	{
+		Uint32 color = skullInfo.first;
+		Uint8 r, g, b, a;
+		getColor(color, &r, &g, &b, &a);
+		const int glowRate = TICKS_PER_SECOND * 2;
+		const int intensity = 4;
+		if ( ticks % (glowRate) < (glowRate / 2) )
+		{
+			a = (255 - (glowRate / 2) * intensity) + (ticks % (glowRate)) * intensity;
+		}
+		else
+		{
+			a = 255 - ((ticks % (glowRate)) - (glowRate / 2)) * intensity;
+		}
+		color = makeColor(r, g, b, a);
+
+		drawSkull(skullInfo.second.first, skullInfo.second.second, *cvar_skullscale, rect, color);
+		white->bind();
+	}
+
 	lastMapTick = ticks;
 
 	// draw player pings
 	if ( !minimapPings[player].empty() )
 	{
 	    int minimapTotalScale = minimapScale;
+		const int DEFAULT_PING_TIME = TICKS_PER_SECOND * 2.5;
+		const int DEATH_PING_TIME = TICKS_PER_SECOND * 9.5;
 		for ( std::vector<MinimapPing>::iterator it = minimapPings[player].begin(); it != minimapPings[player].end();)
 		{
 			MinimapPing ping = *it;
 
 			int aliveTime = ticks - ping.tickStart;
-			if ( aliveTime < TICKS_PER_SECOND * 2.5 ) // 2.5 second duration.
+			if ( (aliveTime < TICKS_PER_SECOND * DEFAULT_PING_TIME && ping.pingType == MinimapPing::PING_DEFAULT)
+				|| (aliveTime < TICKS_PER_SECOND * DEATH_PING_TIME && ping.pingType == MinimapPing::PING_DEATH_MARKER) )
 			{
 				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND || ping.radiusPing )
 				{
 					// draw the ping blinking every 5 ticks if less than 1 second lifetime, otherwise constantly draw.
 					Uint8 alpha = ping.radiusPing ? 50 : 255;
-					if ( aliveTime >= TICKS_PER_SECOND * 2 )
+					if ( ping.pingType == MinimapPing::PING_DEATH_MARKER )
+					{
+						if ( aliveTime >= (DEATH_PING_TIME - (TICKS_PER_SECOND * .5)) )
+						{
+							// start fading ping after 9 seconds, lasting 0.5 seconds.
+							real_t alphafade = 1 - (aliveTime - (DEATH_PING_TIME - (TICKS_PER_SECOND * .5))) / static_cast<real_t>(TICKS_PER_SECOND * 0.5);
+							alpha = std::max((int)(alphafade * alpha), 0);
+						}
+					}
+					else if ( aliveTime >= (DEFAULT_PING_TIME - (TICKS_PER_SECOND * .5)) )
 					{
 						// start fading ping after 2 seconds, lasting 0.5 seconds.
-						real_t alphafade = 1 - (aliveTime - TICKS_PER_SECOND * 2) / static_cast<real_t>(TICKS_PER_SECOND * 0.5);
+						real_t alphafade = 1 - (aliveTime - (DEFAULT_PING_TIME - (TICKS_PER_SECOND * .5))) / static_cast<real_t>(TICKS_PER_SECOND * 0.5);
 						alpha = std::max((int)(alphafade * alpha), 0);
 					}
 
@@ -374,13 +472,21 @@ void drawMinimap(const int player, SDL_Rect rect)
 			        color = makeColor(r, g, b, alpha);
 
 					// draw a circle
-					if (ping.radiusPing) {
+					if (ping.radiusPing) 
+					{
 					    static ConsoleVariable<float> pingSize("/map_radiusping_size", 20.f);
 					    static ConsoleVariable<float> pingRate("/map_radiusping_rate", 0.4f);
 					    int rate = (int)(TICKS_PER_SECOND / *pingRate);
 					    real_t scale = (((ticks - ping.tickStart) % rate) / (real_t)rate) * (*pingSize);
 			            drawCircleMesh((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, scale, rect, color);
-			        } else {
+			        } 
+					else if ( ping.pingType == MinimapPing::PING_DEATH_MARKER )
+					{
+						drawSkull((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, *cvar_skullscale, rect, color);
+						white->bind();
+					}
+					else
+					{
 			            drawCircleMesh((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, (real_t)1.0, rect, color);
 			        }
 				}
@@ -388,13 +494,17 @@ void drawMinimap(const int player, SDL_Rect rect)
 
 
 			// prune old pings > 2.5 seconds
-			if ( aliveTime > TICKS_PER_SECOND * 2.5 )
+			if ( (aliveTime > DEFAULT_PING_TIME && ping.pingType == MinimapPing::PING_DEFAULT)
+				|| (aliveTime > DEATH_PING_TIME && ping.pingType == MinimapPing::PING_DEATH_MARKER) )
 			{
 				if ( ping.player == player )
 				{
-					if ( minimapPingGimpTimer[player] > TICKS_PER_SECOND / 4 )
+					if ( ping.pingType == MinimapPing::PING_DEFAULT )
 					{
-						minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4; // reduce the gimp timer when one of the player's own pings fades.
+						if ( minimapPingGimpTimer[player] > TICKS_PER_SECOND / 4 )
+						{
+							minimapPingGimpTimer[player] = TICKS_PER_SECOND / 4; // reduce the gimp timer when one of the player's own pings fades.
+						}
 					}
 				}
 				it = minimapPings[player].erase(it);
@@ -587,6 +697,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
 }
 
 void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing)
@@ -610,7 +721,7 @@ void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPi
 		for ( std::vector<MinimapPing>::iterator it = minimapPings[destPlayer].begin(); it != minimapPings[destPlayer].end();)
 		{
 			MinimapPing ping = *it;
-			if ( ping.player == newPing.player && !newPing.radiusPing )
+			if ( ping.player == newPing.player && !newPing.radiusPing && newPing.pingType == MinimapPing::PING_DEFAULT )
 			{
 				++numPlayerPings;
 				// prune pings if too many by same player.
@@ -628,7 +739,7 @@ void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPi
 			++it;
 		}
 	}
-	if ( !minimapPingMute && !newPing.radiusPing )
+	if ( !minimapPingMute && !newPing.radiusPing && newPing.pingType == MinimapPing::PING_DEFAULT )
 	{
 		if ( static_cast<Sint8>(newPing.player) == -1 
 			|| (newPing.player == destPlayer) 

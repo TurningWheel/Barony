@@ -86,8 +86,8 @@ namespace MainMenu {
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "DpadX+", emptyBinding},
-		{"Show NPC Commands", "C", "DpadX-", emptyBinding},
+		{"Command NPC", "Q", "DpadX-", emptyBinding},
+		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
 		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
@@ -199,6 +199,32 @@ namespace MainMenu {
 		bool serialize(FileInterface*);
 	};
 
+	struct LastCreatedCharacter {
+		static const int NUM_LAST_CHARACTERS = 6;
+		static const int LASTCHAR_LAN_PERSONA_INDEX = 4;
+		static const int LASTCHAR_ONLINE_PERSONA_INDEX = 5;
+		int characterClass[NUM_LAST_CHARACTERS];
+		int characterAppearance[NUM_LAST_CHARACTERS];
+		int characterSex[NUM_LAST_CHARACTERS];
+		int characterRace[NUM_LAST_CHARACTERS];
+		std::string characterName[NUM_LAST_CHARACTERS];
+		inline void save();
+		static inline LastCreatedCharacter load();
+		static inline LastCreatedCharacter reset();
+		bool serialize(FileInterface*);
+		LastCreatedCharacter()
+		{
+			for ( int i = 0; i < NUM_LAST_CHARACTERS; ++i )
+			{
+				characterClass[i] = -1;
+				characterAppearance[i] = -1;
+				characterSex[i] = -1;
+				characterRace[i] = -1;
+				characterName[i] = "";
+			}
+		}
+	};
+
     // Binding options
 	struct Bindings {
 		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
@@ -266,6 +292,7 @@ namespace MainMenu {
 		float world_tooltip_scale_splitscreen = 150.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
+		LastCreatedCharacter lastCharacter;
 		bool use_on_release_enabled;
         bool ui_filter_enabled = false;
         float ui_scale = 100.f;
@@ -558,6 +585,7 @@ namespace MainMenu {
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
 	static void handleNetwork();
+	static void saveLastCharacter(const int index, int multiplayer);
 
 /******************************************************************************/
 
@@ -1927,6 +1955,56 @@ namespace MainMenu {
 		return true;
 	}
 
+	/******************************************************************************/
+
+	inline void LastCreatedCharacter::save() {
+		for ( int i = 0; i < NUM_LAST_CHARACTERS; ++i )
+		{
+			LastCreatedCharacterSettings.characterClass[i] = characterClass[i];
+			LastCreatedCharacterSettings.characterSex[i] = characterSex[i];
+			LastCreatedCharacterSettings.characterRace[i] = characterRace[i];
+			LastCreatedCharacterSettings.characterAppearance[i] = characterAppearance[i];
+			LastCreatedCharacterSettings.characterName[i] = characterName[i];
+		}
+	}
+
+	inline LastCreatedCharacter LastCreatedCharacter::load() {
+		LastCreatedCharacter lastCharacter;
+		for ( int i = 0; i < NUM_LAST_CHARACTERS; ++i )
+		{
+			lastCharacter.characterClass[i] = LastCreatedCharacterSettings.characterClass[i];
+			lastCharacter.characterSex[i] = LastCreatedCharacterSettings.characterSex[i];
+			lastCharacter.characterRace[i] = LastCreatedCharacterSettings.characterRace[i];
+			lastCharacter.characterAppearance[i] = LastCreatedCharacterSettings.characterAppearance[i];
+			lastCharacter.characterName[i] = LastCreatedCharacterSettings.characterName[i];
+		}
+		return lastCharacter;
+	}
+
+	inline LastCreatedCharacter LastCreatedCharacter::reset() {
+		return LastCreatedCharacter();
+	}
+
+	bool LastCreatedCharacter::serialize(FileInterface* file) {
+		int version = 0;
+		file->property("version", version);
+
+		file->propertyName("players");
+		Uint32 sizeArray = NUM_LAST_CHARACTERS;
+		file->beginArray(sizeArray);
+		for ( int c = 0; c < NUM_LAST_CHARACTERS; ++c ) {
+			file->beginObject();
+			file->property("class", characterClass[c]);
+			file->property("sex", characterSex[c]);
+			file->property("race", characterRace[c]);
+			file->property("appearance", characterAppearance[c]);
+			file->property("name", characterName[c]);
+			file->endObject();
+		}
+		file->endArray();
+		return true;
+	}
+
 /******************************************************************************/
 
 	static Bindings old_bindings;
@@ -2193,6 +2271,7 @@ namespace MainMenu {
 		*cvar_worldtooltip_scale_splitscreen = world_tooltip_scale_splitscreen;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
+		lastCharacter.save();
 		right_click_protect = !use_on_release_enabled;
 		minimap.save();
         const bool oldUIFilter = *ui_filter;
@@ -2300,6 +2379,7 @@ namespace MainMenu {
 		settings.world_tooltip_scale_splitscreen = *cvar_worldtooltip_scale_splitscreen;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
+		settings.lastCharacter = LastCreatedCharacter::load();
 		settings.use_on_release_enabled = !right_click_protect;
 		settings.minimap = Minimap::load();
         settings.ui_scale = 100.f - 50.f * ((uiDefaultHeight - 720) / 720.f);
@@ -2368,6 +2448,7 @@ namespace MainMenu {
 		settings.world_tooltip_scale_splitscreen = 150.f;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
+		settings.lastCharacter = LastCreatedCharacter::reset();
 		settings.use_on_release_enabled = true;
 		settings.minimap = Minimap::reset();
 		settings.show_messages_enabled = true;
@@ -2426,7 +2507,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 9;
+	    int version = 10;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2440,6 +2521,14 @@ namespace MainMenu {
 		else
 		{
 			file->property("inventory_sorting", inventory_sorting);
+		}
+		if ( version < 10 )
+		{
+			lastCharacter = LastCreatedCharacter::reset();
+		}
+		else
+		{
+			file->property("last_characters", lastCharacter);
 		}
 		file->property("use_on_release_enabled", use_on_release_enabled);
 		file->property("minimap", minimap);
@@ -7652,6 +7741,43 @@ bind_failed:
 		}
 	}
 
+	static void saveLastCharacter(const int index, int multiplayer)
+	{
+		if ( !loadingsavegame )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				if ( index == clientnum )
+				{
+					if ( directConnect )
+					{
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->sex;
+						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->playerRace;
+						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = client_classes[clientnum];
+						LastCreatedCharacterSettings.characterName[LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX] = stats[clientnum]->name;
+					}
+					else
+					{
+						LastCreatedCharacterSettings.characterAppearance[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->appearance;
+						LastCreatedCharacterSettings.characterSex[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->sex;
+						LastCreatedCharacterSettings.characterRace[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->playerRace;
+						LastCreatedCharacterSettings.characterClass[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = client_classes[clientnum];
+						LastCreatedCharacterSettings.characterName[LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX] = stats[clientnum]->name;
+					}
+				}
+			}
+			else
+			{
+				LastCreatedCharacterSettings.characterAppearance[index] = stats[index]->appearance;
+				LastCreatedCharacterSettings.characterSex[index] = stats[index]->sex;
+				LastCreatedCharacterSettings.characterRace[index] = stats[index]->playerRace;
+				LastCreatedCharacterSettings.characterClass[index] = client_classes[index];
+				LastCreatedCharacterSettings.characterName[index] = stats[index]->name;
+			}
+		}
+	}
+
 	static void sendPlayerOverNet() {
 	    if (multiplayer != SERVER && multiplayer != CLIENT) {
 	        return;
@@ -8089,6 +8215,11 @@ bind_failed:
 			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 			client_keepalive[player] = ticks;
 		}},
+
+		// the client sent a gameplayer preferences update
+		{'GPPR', []() {
+			GameplayPreferences_t::receivePacket();
+		}},
     };
 
 	static void handlePacketsAsServer() {
@@ -8400,6 +8531,21 @@ bind_failed:
 	    {'KPAL', [](){
 		    return; // just a keep alive
 	    }},
+
+		// the server sent a game player preferences update
+		{'GPPR', []() {
+			GameplayPreferences_t::receivePacket();
+		}},
+
+		// the server requested a game player preferences update
+		{'GPPU', []() {
+			gameplayPreferences[clientnum].sendToServer();
+		}},
+
+		// the server sent a game config update
+		{'GOPT', []() {
+			GameplayPreferences_t::receiveGameConfig();
+		}},
 	};
 
 	static void handlePacketsAsClient() {
@@ -9873,6 +10019,7 @@ failed:
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
+		saveLastCharacter(index, multiplayer);
 
 		auto card = static_cast<Frame*>(frame->getParent());
 		if (card) {
@@ -9932,6 +10079,7 @@ failed:
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
+		saveLastCharacter(index, multiplayer);
 		update_details_text(*card);
 	}
 
@@ -9987,6 +10135,7 @@ failed:
 		stats[index]->clearStats();
 		initClass(index);
 		sendPlayerOverNet();
+		saveLastCharacter(index, multiplayer);
 		update_details_text(*card);
 	}
 
@@ -11640,6 +11789,7 @@ failed:
 					stats[index]->clearStats();
 					initClass(index);
 					sendPlayerOverNet();
+					saveLastCharacter(index, multiplayer);
 				} else {
 					soundCheckmark();
 				}
@@ -12528,6 +12678,7 @@ failed:
 				stats[index]->clearStats();
 				initClass(index);
 				sendPlayerOverNet();
+				saveLastCharacter(index, multiplayer);
 			};
 
 			button->setCallback([](Button& button){button_fn(button, button.getOwner());});
@@ -12646,6 +12797,7 @@ failed:
 		}
         sendReadyOverNet(index, false);
         sendPlayerOverNet();
+		saveLastCharacter(index, multiplayer);
 
 		auto card = initCharacterCard(index, 346);
 
@@ -12715,6 +12867,7 @@ failed:
 			if (new_len != old_len || memcmp(stats[index]->name, text, shortest_len)) {
 			    memcpy(stats[index]->name, text, new_len);
 			    sendPlayerOverNet();
+				saveLastCharacter(index, multiplayer);
 			}
 		};
 		name_field->setCallback([](Field& field){name_field_fn(field.getText(), field.getOwner());});
@@ -12994,6 +13147,7 @@ failed:
 			stats[index]->clearStats();
 			initClass(index);
 			sendPlayerOverNet();
+			saveLastCharacter(index, multiplayer);
 		};
 
 		auto randomize_class = card->addButton("randomize_class");
@@ -13966,27 +14120,62 @@ failed:
 		        if (type != LobbyType::LobbyJoined || c == clientnum) {
 		            playerSlotsLocked[c] = false;
 
-			        stats[c]->playerRace = RACE_HUMAN;
-			        stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
-			        stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
-			        stats[c]->clearStats();
-			        client_classes[c] = 0;
-			        initClass(c);
+					bool replayedLastCharacter = false;
+					if ( type == LobbyType::LobbyLAN )
+					{
+						// multiplayer/directConnect not initialised at this point for server,
+						replayedLastCharacter = replayLastCharacter(c, DIRECTSERVER);
+					}
+					else if ( type == LobbyType::LobbyOnline )
+					{
+						// multiplayer not initialised at this point for server,
+						// OK to pass in anything other than SINGLE
+						replayedLastCharacter = replayLastCharacter(c, SERVER);
+					}
+					else if ( type == LobbyType::LobbyJoined )
+					{
+						if ( directConnect )
+						{
+							replayedLastCharacter = replayLastCharacter(c, DIRECTCLIENT);
+						}
+						else
+						{
+							replayedLastCharacter = replayLastCharacter(c, CLIENT);
+						}
+					}
+					else if ( type == LobbyType::LobbyLocal )
+					{
+						replayedLastCharacter = replayLastCharacter(c, SINGLE);
+					}
+					if ( !replayedLastCharacter )
+					{
+						stats[c]->playerRace = RACE_HUMAN;
+						stats[c]->sex = static_cast<sex_t>(RNG.getU8() % 2);
+						stats[c]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+						client_classes[c] = 0;
 
-			        // random name
-			        auto& names = stats[c]->sex == sex_t::MALE ?
-				        randomPlayerNamesMale : randomPlayerNamesFemale;
-				    const int choice = RNG.uniform(0, names.size() - 1);
-			        auto name = names[choice].c_str();
-			        size_t len = strlen(name);
-			        len = std::min(sizeof(Stat::name) - 1, len);
-			        memcpy(stats[c]->name, name, len);
-			        stats[c]->name[len] = '\0';
+						stats[c]->clearStats();
+						initClass(c);
+
+						// random name
+						auto& names = stats[c]->sex == sex_t::MALE ?
+						    randomPlayerNamesMale : randomPlayerNamesFemale;
+						const int choice = RNG.uniform(0, names.size() - 1);
+						auto name = names[choice].c_str();
+						size_t len = strlen(name);
+						len = std::min(sizeof(Stat::name) - 1, len);
+						memcpy(stats[c]->name, name, len);
+						stats[c]->name[len] = '\0';
+					}
 			    }
 			}
 		}
+
+		GameplayPreferences_t::reset();
+
         if (type == LobbyType::LobbyJoined) {
             sendPlayerOverNet();
+			saveLastCharacter(clientnum, directConnect ? DIRECTCLIENT : CLIENT);
         }
 
 		currentLobbyType = type;
@@ -19056,6 +19245,26 @@ failed:
 
         if (!ingame) {
             handleNetwork();
+
+			if ( currentLobbyType != LobbyType::None )
+			{
+				int oldArachnophobiaFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					gameplayPreferences[i].process();
+				}
+				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA) != oldArachnophobiaFilter )
+				{
+					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ARACHNOPHOBIA].value != 0 )
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4333]);
+					}
+					else
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4334]);
+					}
+				}
+			}
         } else {
 #ifdef STEAMWORKS
 			if (ticks % 250 == 0) {

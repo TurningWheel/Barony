@@ -2772,15 +2772,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		}
 
 		// spawn particles
-		if ( *cvar_magic_fx_use_vismap && !splitscreen )
+		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
 			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				if ( map.vismap[y + x * map.height] )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					spawnMagicParticle(my);
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						spawnMagicParticle(my);
+						break;
+					}
 				}
 			}
 		}
@@ -2835,15 +2839,19 @@ void actMagicClient(Entity* my)
 	}
 
 	// spawn particles
-	if ( *cvar_magic_fx_use_vismap && !splitscreen)
+	if ( *cvar_magic_fx_use_vismap && !intro )
 	{
 		int x = my->x / 16.0;
 		int y = my->y / 16.0;
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 		{
-			if ( map.vismap[y + x * map.height] )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				spawnMagicParticle(my);
+				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+					break;
+				}
 			}
 		}
 	}
@@ -2856,15 +2864,19 @@ void actMagicClient(Entity* my)
 void actMagicClientNoLight(Entity* my)
 {
 	// simply spawn particles
-	if ( *cvar_magic_fx_use_vismap && !splitscreen)
+	if ( *cvar_magic_fx_use_vismap && !intro )
 	{
 		int x = my->x / 16.0;
 		int y = my->y / 16.0;
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 		{
-			if ( map.vismap[y + x * map.height] )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				spawnMagicParticle(my);
+				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				{
+					spawnMagicParticle(my);
+					break;
+				}
 			}
 		}
 	}
@@ -3772,15 +3784,19 @@ void actParticleErupt(Entity* my)
 		my->scalex *= 0.99;
 		my->scaley *= 0.99;
 		my->scalez *= 0.99;
-		if ( *cvar_magic_fx_use_vismap && !splitscreen)
+		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
 			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				if ( map.vismap[y + x * map.height] )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					spawnMagicParticle(my);
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						spawnMagicParticle(my);
+						break;
+					}
 				}
 			}
 		}
@@ -4297,15 +4313,19 @@ void actParticleSap(Entity* my)
 		}
 		else
 		{
-			if ( *cvar_magic_fx_use_vismap && !splitscreen)
+			if ( *cvar_magic_fx_use_vismap && !intro )
 			{
 				int x = my->x / 16.0;
 				int y = my->y / 16.0;
 				if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 				{
-					if ( map.vismap[y + x * map.height] )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						spawnMagicParticle(my);
+						if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+						{
+							spawnMagicParticle(my);
+							break;
+						}
 					}
 				}
 			}

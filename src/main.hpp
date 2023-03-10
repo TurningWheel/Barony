@@ -345,6 +345,7 @@ typedef struct view_t
     real_t globalLightModifier = 0.0;
     real_t globalLightModifierEntities = 0.0;
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+	bool* vismap = nullptr;
 } view_t;
 
 class Entity; //TODO: Bugger?
@@ -377,7 +378,7 @@ typedef struct map_t
 	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32 flags[16];
 	Sint32* tiles;
-	bool* vismap;
+	//bool* vismap;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
@@ -598,10 +599,6 @@ extern Sint32 mousexrel, mouseyrel;
 extern char* inputstr;
 extern int inputlen;
 extern string lastname;
-extern int lastCreatedCharacterClass;
-extern int lastCreatedCharacterAppearance;
-extern int lastCreatedCharacterSex;
-extern int lastCreatedCharacterRace;
 extern bool fingerdown;
 extern int fingerx;
 extern int fingery;

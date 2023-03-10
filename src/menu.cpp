@@ -12180,20 +12180,20 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
 
-	if ( lastCreatedCharacterClass >= 0
-		&& lastCreatedCharacterAppearance >= 0 
-		&& lastCreatedCharacterSex >= 0 )
-	{
-		button_t* replayCharacterBtn = newButton();
-		strcpy(replayCharacterBtn->label, language[3000]);
-		replayCharacterBtn->sizex = strlen(language[3000]) * 12 + 8;
-		replayCharacterBtn->sizey = 20;
-		replayCharacterBtn->x = button->x - (replayCharacterBtn->sizex + 4); // take position of button attributes above.
-		replayCharacterBtn->y = button->y;
-		replayCharacterBtn->action = &buttonReplayLastCharacter;
-		replayCharacterBtn->visible = 1;
-		replayCharacterBtn->focused = 1;
-	}
+	//if ( lastCreatedCharacterClass >= 0
+	//	&& lastCreatedCharacterAppearance >= 0 
+	//	&& lastCreatedCharacterSex >= 0 )
+	//{
+	//	button_t* replayCharacterBtn = newButton();
+	//	strcpy(replayCharacterBtn->label, language[3000]);
+	//	replayCharacterBtn->sizex = strlen(language[3000]) * 12 + 8;
+	//	replayCharacterBtn->sizey = 20;
+	//	replayCharacterBtn->x = button->x - (replayCharacterBtn->sizex + 4); // take position of button attributes above.
+	//	replayCharacterBtn->y = button->y;
+	//	replayCharacterBtn->action = &buttonReplayLastCharacter;
+	//	replayCharacterBtn->visible = 1;
+	//	replayCharacterBtn->focused = 1;
+	//}
 
 	// Continue ...
 	button = newButton();
@@ -12334,17 +12334,52 @@ void buttonRandomCharacter(button_t* my)
 	initClass(0);
 }
 
-void buttonReplayLastCharacter(button_t* my)
+bool replayLastCharacter(const int index, int multiplayer)
 {
-	if ( lastCreatedCharacterClass >= 0 )
+	if ( multiplayer != SINGLE )
 	{
-		playing_random_char = false;
-		camera_charsheet_offsetyaw = (330) * PI / 180;
-		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
-		stats[0]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastCreatedCharacterRace), static_cast<int>(RACE_INSECTOID));
-		client_classes[0] = std::min(std::max(0, lastCreatedCharacterClass), static_cast<int>(CLASS_HUNTER));
+		if ( index != clientnum )
+		{
+			return false;
+		}
+		if ( client_disconnected[index] )
+		{
+			return false;
+		}
+	}
+	
+	int savedCharacterIndex = index;
+	if ( multiplayer != SINGLE )
+	{
+		if ( multiplayer == DIRECTCLIENT || multiplayer == DIRECTSERVER )
+		{
+			savedCharacterIndex = LastCreatedCharacter::LASTCHAR_LAN_PERSONA_INDEX;
+		}
+		else
+		{
+			savedCharacterIndex = LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX;
+		}
+	}
 
-		switch ( isCharacterValidFromDLC(*stats[0], lastCreatedCharacterClass) )
+	if ( savedCharacterIndex < 0 || savedCharacterIndex > LastCreatedCharacter::LASTCHAR_ONLINE_PERSONA_INDEX )
+	{
+		return false;
+	}
+
+	auto& lastClass = LastCreatedCharacterSettings.characterClass[savedCharacterIndex];
+	auto& lastSex = LastCreatedCharacterSettings.characterSex[savedCharacterIndex];
+	auto& lastRace = LastCreatedCharacterSettings.characterRace[savedCharacterIndex];
+	auto& lastAppearance = LastCreatedCharacterSettings.characterAppearance[savedCharacterIndex];
+	auto& lastName = LastCreatedCharacterSettings.characterName[savedCharacterIndex];
+
+	if ( lastClass >= 0 && lastSex >= 0 && lastRace >= 0 && lastAppearance >= 0 && lastName != "" )
+	{
+		stats[index]->sex = static_cast<sex_t>(std::min(lastSex, (int)sex_t::FEMALE));
+		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(NUMPLAYABLERACES));
+		stats[index]->appearance = lastAppearance;
+		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(CLASS_HUNTER));
+
+		switch ( isCharacterValidFromDLC(*stats[index], lastClass) )
 		{
 			case VALID_OK_CHARACTER:
 				// do nothing.
@@ -12352,38 +12387,42 @@ void buttonReplayLastCharacter(button_t* my)
 			case INVALID_REQUIREDLC1:
 			case INVALID_REQUIREDLC2:
 				// class or race invalid.
-				if ( stats[0]->playerRace > RACE_HUMAN )
+				if ( stats[index]->playerRace > RACE_HUMAN )
 				{
-					stats[0]->playerRace = RACE_HUMAN;
+					stats[index]->playerRace = RACE_HUMAN;
 				}
-				if ( client_classes[0] > CLASS_MONK )
+				if ( client_classes[index] > CLASS_MONK )
 				{
-					client_classes[0] = CLASS_BARBARIAN;
+					client_classes[index] = CLASS_BARBARIAN;
 				}
 				break;
 			case INVALID_CHARACTER:
 				// invalid for whatever reason, reset.
-				stats[0]->playerRace = RACE_HUMAN;
-				client_classes[0] = CLASS_BARBARIAN;
+				stats[index]->playerRace = RACE_HUMAN;
+				client_classes[index] = CLASS_BARBARIAN;
 				break;
 			case INVALID_REQUIRE_ACHIEVEMENT:
 				// required achievement for class mixing among races, so race is valid.
-				client_classes[0] = CLASS_BARBARIAN;
+				client_classes[index] = CLASS_BARBARIAN;
 				break;
 			default:
 				// invalid for whatever reason, reset.
-				stats[0]->playerRace = RACE_HUMAN;
-				client_classes[0] = CLASS_BARBARIAN;
+				stats[index]->playerRace = RACE_HUMAN;
+				client_classes[index] = CLASS_BARBARIAN;
 				break;
 		}
 		
-		stats[0]->clearStats();
-		initClass(0);
-		stats[0]->appearance = lastCreatedCharacterAppearance;
-		strcpy(stats[0]->name, lastname.c_str());
-		charcreation_step = 4; // set the step to 4, so clicking continue advances to 5 (single/multiplayer select)
-		buttonContinue(nullptr);
+		stats[index]->clearStats();
+		initClass(index);
+
+		auto name = lastName.c_str();
+		size_t len = strlen(name);
+		len = std::min(sizeof(Stat::name) - 1, len);
+		memcpy(stats[index]->name, name, len);
+		stats[index]->name[len] = '\0';
+		return true;
 	}
+	return false;
 }
 
 void buttonRandomName(button_t* my)
@@ -14093,3 +14132,5 @@ void windowEnterSerialPrompt()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 #endif // STEAMWORKS
+
+LastCreatedCharacter LastCreatedCharacterSettings;
