@@ -993,6 +993,10 @@ void gameLogic(void)
 		auto& camera_shakey2 = cameravars[c].shakey2;
 		if ( shaking )
 		{
+			static ConsoleVariable<int> cvar_shake_max("/shake_max", 15);
+			camera_shakex = std::min(camera_shakex, *cvar_shake_max / 100.0);
+			camera_shakey = std::min(camera_shakey, *cvar_shake_max);
+
 			camera_shakex2 = (camera_shakex2 + camera_shakex) * .8;
 			camera_shakey2 = (camera_shakey2 + camera_shakey) * .9;
 			if ( camera_shakex2 > 0 )
