@@ -840,9 +840,9 @@ void steamAchievement(const char* achName)
 		SteamUserStats()->StoreStats();
 #else
 
-#ifdef LOCAL_ACHIEVEMENTS
+#if defined(LOCAL_ACHIEVEMENTS)
 		LocalAchievements.updateAchievement(achName, true);
-#elif USE_EOS
+#elif defined(USE_EOS)
 		EOS.unlockAchievement(achName);
 #endif
 
@@ -1152,9 +1152,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
 #else
 
-#ifdef LOCAL_ACHIEVEMENTS
+#if defined(LOCAL_ACHIEVEMENTS)
 	LocalAchievements.updateStatistic(statisticNum, g_SteamStats[statisticNum].m_iValue);
-#elif USE_EOS
+#elif defined(USE_EOS)
 	EOS.ingestStat(statisticNum, g_SteamStats[statisticNum].m_iValue);
 #endif
 
