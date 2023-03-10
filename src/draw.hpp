@@ -64,7 +64,7 @@ Uint32 getPixel(SDL_Surface* surface, int x, int y);
 void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel);
 void getColor(Uint32 color, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a);
 bool behindCamera(const view_t& camera, real_t x, real_t y);
-void occlusionCulling(map_t& map, const view_t& camera);
+void occlusionCulling(map_t& map, view_t& camera);
 
 constexpr Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     return ((Uint32)a << 24) | ((Uint32)b << 16) | ((Uint32)g << 8) | ((Uint32)r << 0);

@@ -1401,11 +1401,20 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if ( doLavaParticles )
 											{
-												if ( *cvar_lava_use_vismap && !splitscreen )
+												if ( *cvar_lava_use_vismap && !intro )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														if ( !map.vismap[y + x * map.height] )
+														bool anyVismap = false;
+														for ( int i = 0; i < MAXPLAYERS; ++i )
+														{
+															if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+															{
+																anyVismap = true;
+																break;
+															}
+														}
+														if ( !anyVismap )
 														{
 															doLavaParticles = false;
 														}
@@ -2816,11 +2825,20 @@ void gameLogic(void)
 											bool doLavaParticles = *cvar_lava_bubbles_enabled;
 											if (doLavaParticles)
 											{
-												if ( *cvar_lava_use_vismap && !splitscreen )
+												if ( *cvar_lava_use_vismap && !intro )
 												{
 													if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 													{
-														if ( !map.vismap[y + x * map.height] )
+														bool anyVismap = false;
+														for ( int i = 0; i < MAXPLAYERS; ++i )
+														{
+															if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+															{
+																anyVismap = true;
+																break;
+															}
+														}
+														if ( !anyVismap )
 														{
 															doLavaParticles = false;
 														}
@@ -6350,7 +6368,6 @@ int main(int argc, char** argv)
 
 		// initialize map
 		map.tiles = nullptr;
-		map.vismap = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
 		map.entities->first = nullptr;
 		map.entities->last = nullptr;

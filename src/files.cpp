@@ -26,6 +26,9 @@
 #include "items.hpp"
 #include "interface/interface.hpp"
 #include "mod_tools.hpp"
+#ifdef EDITOR
+#include "editor.hpp"
+#endif
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
@@ -1533,10 +1536,28 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		free(destmap->tiles);
 		destmap->tiles = nullptr;
 	}
-	if ( destmap->vismap != nullptr )
+	if ( destmap == &map )
 	{
-		free(destmap->vismap);
-		destmap->vismap = nullptr;
+#ifdef EDITOR
+		if ( camera.vismap != nullptr )
+		{
+			free(camera.vismap);
+			camera.vismap = nullptr;
+		}
+#endif
+		if ( menucam.vismap != nullptr )
+		{
+			free(menucam.vismap);
+			menucam.vismap = nullptr;
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( cameras[i].vismap != nullptr )
+			{
+				free(cameras[i].vismap);
+				cameras[i].vismap = nullptr;
+			}
+		}
 	}
 	fp->read(destmap->name, sizeof(char), 32); // map name
 	fp->read(destmap->author, sizeof(char), 32); // map author
@@ -1575,7 +1596,17 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		fp->read(destmap->flags, sizeof(Sint32), MAPFLAGS); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
-	destmap->vismap = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
+	if ( destmap == &map )
+	{
+#ifdef EDITOR
+		camera.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+#endif
+		menucam.vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			cameras[i].vismap = (bool*)malloc(sizeof(bool) * destmap->width * destmap->height);
+		}
+	}
 	fp->read(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS);
 	fp->read(&numentities, sizeof(Uint32), 1); // number of entities on the map
 

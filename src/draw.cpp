@@ -1801,7 +1801,7 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 		    if ( !entity->flags[OVERDRAW] )
 		    {
-		        if ( !map.vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
+		        if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
 		        {
 		            continue;
 		        }
@@ -3207,7 +3207,7 @@ bool testTileOccludes(map_t& map, int index) {
 	return true;
 }
 
-void occlusionCulling(map_t& map, const view_t& camera)
+void occlusionCulling(map_t& map, view_t& camera)
 {
 	// cvars
 #ifndef EDITOR
@@ -3238,7 +3238,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 	
     if (*disabled)
     {
-        memset(map.vismap, 1, sizeof(bool) * size);
+        memset(camera.vismap, 1, sizeof(bool) * size);
         return;
     }
 
@@ -3249,13 +3249,13 @@ void occlusionCulling(map_t& map, const view_t& camera)
     // don't do culling if camera in wall
 	if (*disableInWalls) {
 		if (map.tiles[OBSTACLELAYER + camy * MAPLAYERS + camx * MAPLAYERS * map.height] != 0) {
-			memset(map.vismap, 1, sizeof(bool) * size);
+			memset(camera.vismap, 1, sizeof(bool) * size);
 			return;
 		}
 	}
 
-    memset(map.vismap, 0, sizeof(bool) * size);
-    map.vismap[camy + camx * map.height] = true;
+    memset(camera.vismap, 0, sizeof(bool) * size);
+	camera.vismap[camy + camx * map.height] = true;
 
     const int hoff = MAPLAYERS;
     const int woff = MAPLAYERS * map.height;
@@ -3267,7 +3267,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 	const int endy = std::min((int)map.height - 1, camy + *max_distance);
 	for ( int u = beginx; u <= endx; u++ ) {
 		for ( int v = beginy; v <= endy; v++ ) {
-			if (map.vismap[v + u * map.height]) {
+			if ( camera.vismap[v + u * map.height] ) {
 				continue;
 			}
 			const int uvindex = v * hoff + u * woff;
@@ -3331,7 +3331,7 @@ void occlusionCulling(map_t& map, const view_t& camera)
 				        }
 			        }
 			        if (wallshit < *max_walls_hit) {
-                        map.vismap[v + u * map.height] = true;
+						camera.vismap[v + u * map.height] = true;
 						goto next;
 			        }
 		        }
@@ -3349,51 +3349,51 @@ next:;
     for ( int u = 0; u < w; u++ ) {
         for ( int v = 0; v < h; v++ ) {
             const int index = v + u * h;
-	        vmap[index] = map.vismap[index];
+	        vmap[index] = camera.vismap[index];
 		    if (!vmap[index]) {
 		        if (v >= 1) {
-		            if (map.vismap[index - 1]) {
+		            if ( camera.vismap[index - 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
 		            if (*diagonalCulling) {
-		                if (u >= 1 && map.vismap[index - h - 1]) {
+		                if (u >= 1 && camera.vismap[index - h - 1]) {
 		                    vmap[index] = true;
 		                    continue;
 		                }
-		                if (u < w1 && map.vismap[index + h - 1]) {
+		                if (u < w1 && camera.vismap[index + h - 1]) {
 		                    vmap[index] = true;
 		                    continue;
 		                }
 		            }
 		        }
 		        if (v < h1) {
-		            if (map.vismap[index + 1]) {
+		            if ( camera.vismap[index + 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
 		            if (*diagonalCulling) {
-		                if (u >= 1 && map.vismap[index - h + 1]) {
+		                if (u >= 1 && camera.vismap[index - h + 1]) {
 		                    vmap[index] = true;
 		                    continue;
 		                }
-		                if (u < w1 && map.vismap[index + h + 1]) {
+		                if (u < w1 && camera.vismap[index + h + 1]) {
 		                    vmap[index] = true;
 		                    continue;
 		                }
 		            }
 		        }
-		        if (u >= 1 && map.vismap[index - h]) {
+		        if (u >= 1 && camera.vismap[index - h]) {
 		            vmap[index] = true;
 		            continue;
 		        }
-		        if (u < w1 && map.vismap[index + h]) {
+		        if (u < w1 && camera.vismap[index + h]) {
 		            vmap[index] = true;
 		            continue;
 		        }
 		    }
 		}
 	}
-	free(map.vismap);
-	map.vismap = vmap;
+	free(camera.vismap);
+	camera.vismap = vmap;
 }

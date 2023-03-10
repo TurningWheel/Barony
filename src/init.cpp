@@ -2227,9 +2227,25 @@ int deinitApp()
 	{
 		free(map.tiles);
 	}
-	if ( map.vismap != nullptr )
+#ifdef EDITOR
+	if ( camera.vismap != nullptr )
 	{
-	    free(map.vismap);
+		free(camera.vismap);
+		camera.vismap = nullptr;
+	}
+#endif
+	if ( menucam.vismap != nullptr )
+	{
+		free(menucam.vismap);
+		menucam.vismap = nullptr;
+	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( cameras[i].vismap != nullptr )
+		{
+			free(cameras[i].vismap);
+			cameras[i].vismap = nullptr;
+		}
 	}
 	if ( lightmap != nullptr )
 	{

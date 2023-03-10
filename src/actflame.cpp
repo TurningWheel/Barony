@@ -88,7 +88,7 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	{
 		return nullptr;
 	}
-	if ( *cvar_flame_use_vismap && !splitscreen )
+	if ( *cvar_flame_use_vismap && !intro )
 	{
 		if ( parentent->behavior != actPlayer 
 			&& parentent->behavior != actPlayerLimb
@@ -99,7 +99,16 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 			int y = parentent->y / 16.0;
 			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				if ( !map.vismap[y + x * map.height] )
+				bool anyVismap = false;
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						anyVismap = true;
+						break;
+					}
+				}
+				if ( !anyVismap )
 				{
 					return nullptr;
 				}

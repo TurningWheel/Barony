@@ -214,3 +214,4 @@ void propertyPageError(int rowIndex, int resetValue);
 void propertyPageCursorFlash(int rowSpacing);
 void reselectEntityGroup(); // selects group of entities within current selection
 #define TICKS_PER_SECOND 50
+extern view_t camera;
