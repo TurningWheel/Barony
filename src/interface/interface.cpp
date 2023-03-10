@@ -4158,10 +4158,14 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			strcat(interactText, language[4044]); // "switch"
 		}
 	}
-	else if ( (selectedEntity.behavior == &actTeleportShrine ) && (interactWorld || interactItems) && followerStats->type != GYROBOT )
+	else if ( (selectedEntity.behavior == &actTeleportShrine ) && (interactWorld || interactItems || enableAttack) && followerStats->type != GYROBOT )
 	{
 		if ( updateInteractText )
 		{
+			if ( !interactItems && !interactWorld && enableAttack )
+			{
+				strcpy(interactText, language[4014]); // "Interact with "
+			}
 			strcat(interactText, language[4309]); // "shrine"
 		}
 	}
