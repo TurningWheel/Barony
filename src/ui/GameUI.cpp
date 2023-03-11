@@ -6161,7 +6161,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						}
 						notificationTxt->setText(definition.getName(variation).c_str());
 					}
-					notificationTxt->setDisabled(false);
+					if ( notificationImg->path != "" )
+					{
+						notificationTxt->setDisabled(false);
+					}
 				}
 			}
 			if ( auto textGet = notificationTxt->getTextObject() )
@@ -6525,8 +6528,19 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 									break;
 							}
 						}
+						if ( variation == -1 )
+						{
+							img->path = "";
+						}
+						else
+						{
+							img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+						}
 					}
-					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+					else
+					{
+						img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+					}
 				}
 			}
 		}
@@ -24784,7 +24798,15 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(i);
 					if ( !definition.neverDisplay )
 					{
-						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
 						if ( imgPath != "" )
 						{
 							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
@@ -24838,7 +24860,15 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
 					if ( !definition.neverDisplay )
 					{
-						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
 						if ( imgPath != "" )
 						{
 							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
@@ -24872,7 +24902,7 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		return nullptr;
 	}
 
-	SDL_Surface* sprite = SDL_CreateRGBSurface(0, iconWidth + 2, iconHeight + 2, 32,
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, (iconWidth + 2) * statusEffectIcons.size(), iconHeight + 2, 32,
 		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
 	for ( auto& icon : statusEffectIcons )
