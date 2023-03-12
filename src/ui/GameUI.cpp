@@ -22579,7 +22579,15 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else if ( !disableItemUsage )
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				if ( item->status > BROKEN )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
 			}
 			else
 			{
