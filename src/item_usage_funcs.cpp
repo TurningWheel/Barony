@@ -3393,6 +3393,11 @@ void item_ScrollRepair(Item* item, int player)
 					playSoundPlayer(player, 162, 64);
 					messagePlayer(player, MESSAGE_EQUIPMENT, language[2351], armor->getName());
 				}
+				else if ( itemCategory(armor) == SPELLBOOK )
+				{
+					playSoundPlayer(player, 414, 64);
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[3459], armor->getName());
+				}
 				else
 				{
 					playSoundPlayer(player, 76, 64);
