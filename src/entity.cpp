@@ -5933,10 +5933,10 @@ bool Entity::isInvisible() const
 			}
 		}
 	}
-	else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+	/*else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
 	{
 		return true;
-	}
+	}*/
 
 	return false;
 }
