@@ -5755,6 +5755,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	    else
 	    {
+			bool skipAnim = false;
 			bool effectActive = stats[player]->EFFECTS[i];
 			if ( i == EFF_LEVITATING && !effectActive )
 			{
@@ -5782,7 +5783,15 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			else if ( i == EFF_INVISIBLE && !effectActive && players[player]->entity )
 			{
+				bool oldSneaking = stats[player]->sneaking;
+				stats[player]->sneaking = false;
+				bool activeWithoutSneak = players[player]->entity->isInvisible();
+				stats[player]->sneaking = oldSneaking;
 				effectActive = players[player]->entity->isInvisible();
+				if ( !activeWithoutSneak )
+				{
+					skipAnim = true;
+				}
 			}
 
 		    if ( effectActive )
@@ -5799,6 +5808,29 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					else
 					{
 						insertEffect(i, -1);
+					}
+					if ( skipAnim )
+					{
+						auto& notif = notificationQueue.back();
+						notif.notificationState = StatusEffectQueueEntry_t::STATE_END;
+						notif.notificationStateInit = StatusEffectQueueEntry_t::STATE_END;
+
+						auto& entry = effectQueue.back();
+						entry.animateSetpointX = notif.notificationTargetPosition.x;
+						entry.animateSetpointY = notif.notificationTargetPosition.y;
+						entry.animateSetpointW = entry.notificationTargetPosition.w;
+						entry.animateSetpointH = entry.notificationTargetPosition.h;
+
+						entry.animateStartX = entry.animateSetpointX;
+						entry.animateStartY = entry.animateSetpointY;
+						entry.animateStartW = entry.animateSetpointW;
+						entry.animateStartH = entry.animateSetpointH;
+						entry.pos.x = entry.animateSetpointX;
+						entry.pos.y = entry.animateSetpointY;
+						entry.pos.w = entry.animateSetpointW;
+						entry.pos.h = entry.animateSetpointH;
+
+						notif.pos = entry.pos;
 					}
 			    }
 				else if ( i == EFF_SHAPESHIFT )
