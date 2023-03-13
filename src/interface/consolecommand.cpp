@@ -2082,30 +2082,38 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, "Please include the amount of gold to drop and player num. (eg: /dropgold 0 10)");
 			return;
 		}
-		int amount = atoi(argv[2]);
-		int player = atoi(argv[1]);
-		if (!stats[player])
-		{
-			return;
-		}
-		else if (stats[player]->HP <= 0 || !players[player] || !players[player]->entity)
-		{
+        
+        // select player
+		const int player = (int)strtol(argv[1], nullptr, 10);
+        if (player < 0 || player >= MAXPLAYERS)
+        {
+            return;
+        }
+        if (!players[player]->isLocalPlayerAlive())
+        {
 			return;
 		}
 		if (stats[player]->GOLD < 0)
 		{
 			stats[player]->GOLD = 0;
 		}
+        
+        // select gold
+        int amount = (int)strtol(argv[2], nullptr, 10);
+        if (amount > stats[player]->GOLD)
+        {
+            amount = stats[player]->GOLD;
+        }
+        if (amount < 0)
+        {
+            amount = 0;
+        }
 
-		//Drop gold.
+		// drop gold
 		int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
 		int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
 		if (map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height])
 		{
-			if (stats[player]->GOLD - amount < 0)
-			{
-				amount = stats[player]->GOLD;
-			}
 			if (amount == 0)
 			{
 				messagePlayer(player, MESSAGE_INVENTORY, language[2593]);
