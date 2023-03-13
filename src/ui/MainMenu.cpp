@@ -4030,7 +4030,8 @@ namespace MainMenu {
 		auto find = bindings.find(binding);
 		if (find != bindings.end()) {
 		    button->setText(find->second.c_str());
-		    auto glyph = Input::getGlyphPathForInput(button->getText());
+		    auto glyph = Input::getGlyphPathForInput(button->getText(),
+                false, Input::getControllerType(player_index));
 		    button->setIcon(glyph.c_str());
 		} else {
 			button->setText(emptyBinding);
@@ -4076,7 +4077,7 @@ namespace MainMenu {
 
 			// cycle icon
 			const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
-			button->setIcon(Input::getGlyphPathForInput(button->getText(), pressed).c_str());
+			button->setIcon(Input::getGlyphPathForInput(button->getText(), pressed, Input::getControllerType(player)).c_str());
 			});
 
 		return result;
@@ -5034,7 +5035,7 @@ namespace MainMenu {
 					auto tooltip = bindings->findField("tooltip"); assert(tooltip);
 					if (Input::lastInputOfAnyKind == "Escape") {
 						bound_button->setText(bound_input.c_str());
-		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Cancelled rebinding \"%s\"", bound_binding.c_str());
@@ -5055,7 +5056,7 @@ namespace MainMenu {
 						std::string newinput = begin == "Pad" || begin == "Joy" ?
 								Input::lastInputOfAnyKind.substr(4) : Input::lastInputOfAnyKind;
 						bound_button->setText(newinput.c_str());
-		                auto glyph = Input::getGlyphPathForInput(bound_button->getText());
+		                auto glyph = Input::getGlyphPathForInput(bound_button->getText(), false, Input::getControllerType(bound_player));
 		                bound_button->setIcon(glyph.c_str());
 						char buf[256];
 						snprintf(buf, sizeof(buf), "Bound \"%s\" to \"%s\"", bound_binding.c_str(), newinput.c_str());
@@ -13566,7 +13567,8 @@ failed:
 		    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 #ifdef NINTENDO
 			// draw A button
-			std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+			std::string path = Input::getGlyphPathForInput("ButtonA", pressed,
+                Input::ControllerType::NintendoSwitch);
 			auto image = Image::get((std::string("*") + path).c_str());
 			const int x = pos.x + pos.w / 2;
 			const int y = pos.y + pos.h / 2 + 16;
@@ -13587,7 +13589,7 @@ failed:
 		                image->draw(nullptr, SDL_Rect{x - w / 2, y - h / 2, w, h}, viewport);
                     }
                     {
-                        std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+                        std::string path = Input::getGlyphPathForInput("ButtonA", pressed, Input::getControllerType(player));
 		                auto image = Image::get((std::string("*") + path).c_str());
 		                const int x = pos.x + pos.w / 2 + 32;
 		                const int y = pos.y + pos.h / 2 + 16;
@@ -13607,7 +13609,7 @@ failed:
                 }
             } else if (controllerAvailable) {
                 // draw A button
-                std::string path = Input::getGlyphPathForInput("ButtonA", pressed);
+                std::string path = Input::getGlyphPathForInput("ButtonA", pressed, Input::getControllerType(player));
                 auto image = Image::get((std::string("*") + path).c_str());
                 const int x = pos.x + pos.w / 2;
                 const int y = pos.y + pos.h / 2 + 16;
@@ -14306,7 +14308,7 @@ failed:
 		        if (no_one_logged_in && countControllers() > 0) {
 		            const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
 		            const bool pressed = ticks % TICKS_PER_SECOND >= TICKS_PER_SECOND / 2;
-                    std::string path = Input::getGlyphPathForInput("ButtonB", pressed);
+                    std::string path = Input::getGlyphPathForInput("ButtonB", pressed, Input::getControllerType(widget.getOwner()));
                     auto image = Image::get((std::string("*") + path).c_str());
                     const int off_x = 1;
                     const int off_y = 4;
@@ -20625,7 +20627,7 @@ failed:
 	        }
 	    }
 
-        std::string path = Input::getGlyphPathForInput("ButtonA", false);
+        std::string path = Input::getGlyphPathForInput("ButtonA", false, Input::getControllerType(player));
         auto image = Image::get((std::string("*") + path).c_str());
         const int w = image->getWidth();
         const int h = image->getHeight();

@@ -3499,7 +3499,7 @@ void createHotbar(const int player)
 
 		char glyphname[32];
 		snprintf(glyphname, sizeof(glyphname), "hotbar glyph %d", i);
-		auto path = Input::getGlyphPathForInput("ButtonA", false);
+		auto path = Input::getGlyphPathForInput("ButtonA", false, Input::getControllerType(player));
 		auto glyph = hotbar_t.hotbarFrame->addImage(slotPos, 0xFFFFFFFF, path.c_str(), glyphname);
 		glyph->disabled = true;
 	}
