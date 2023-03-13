@@ -5988,12 +5988,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			amount = stats[player]->GOLD;
 		}
+        if ( amount <= 0 )
+        {
+            return;
+        }
 		stats[player]->GOLD -= amount;
 		stats[player]->GOLD = std::max(stats[player]->GOLD, 0);
-		if ( amount == 0 )
-		{
-			return;
-		}
 		if ( players[player] && players[player]->entity )
 		{
 			//Drop gold.
