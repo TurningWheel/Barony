@@ -342,7 +342,9 @@ Input::ControllerType Input::getControllerType() const {
 }
 
 Input::ControllerType Input::getControllerType(int index) {
-#if defined(NINTENDO)
+#if defined(EDITOR)
+    return ControllerType::Xbox;
+#elif defined(NINTENDO)
     // nintendo switch joycons
     return ControllerType::NintendoSwitch;
 #else
