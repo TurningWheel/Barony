@@ -15394,15 +15394,17 @@ failed:
 #endif
 
         closeNetworkInterfaces();
-        scan.close();
-
+        
+#ifndef NINTENDO
         // open a socket for network scanning
+        scan.close();
 	    scan.sock = SDLNet_UDP_Open(NETWORK_SCAN_PORT_CLIENT);
 	    assert(scan.sock);
 
         // allocate packet data for scanning
         scan.packet = SDLNet_AllocPacket(NET_PACKET_SIZE);
         assert(scan.packet);
+#endif
 
 		// remove "Local or Network" window
 		auto frame = static_cast<Frame*>(button.getParent());
@@ -15427,6 +15429,7 @@ failed:
 		window->setBorder(0);
 
 		// while the window is open, listen for SCAN packets
+#ifndef NINTENDO
 		window->setTickCallback([](Widget& widget){
 		    if (multiplayer != CLIENT && directConnect) {
 			    if (SDLNet_UDP_Recv(scan.sock, scan.packet)) {
@@ -15475,6 +15478,7 @@ failed:
 			    }
 			}
 		    });
+#endif
 
 		(void)createBackWidget(window, [](Button& button){
 			multiplayer = SINGLE;
@@ -19940,7 +19944,9 @@ failed:
 			main_menu_frame->removeSelf();
 			main_menu_frame = nullptr;
 		}
+#ifndef NINTENDO
 		scan.close(); // close network scan resources
+#endif
 		resetLobbyJoinFlowState();
 		cursor_delete_mode = false;
 		story_active = false;
