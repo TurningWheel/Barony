@@ -4242,56 +4242,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// kick
 	{'KICK', [](){
-		button_t* button;
-
-		printlog("kicked from server.\n");
-		pauseGame(2, 0);
-
-		// close current window
-		buttonCloseSubwindow(NULL);
-		node_t *node, *nextnode;
-		for ( node = button_l.first; node != NULL; node = nextnode )
-		{
-			nextnode = node->next;
-			button = (button_t*)node->element;
-			if ( button->focused )
-			{
-				list_RemoveNode(button->node);
-			}
-		}
-
-		// create new window
-		subwindow = 1;
-		subx1 = xres / 2 - 256;
-		subx2 = xres / 2 + 256;
-		suby1 = yres / 2 - 56;
-		suby2 = yres / 2 + 56;
-		strcpy(subtext, language[1127]);
-
-		// close button
-		button = newButton();
-		strcpy(button->label, "x");
-		button->x = subx2 - 20;
-		button->y = suby1;
-		button->sizex = 20;
-		button->sizey = 20;
-		button->action = &buttonCloseAndEndGameConfirm;
-		button->visible = 1;
-		button->focused = 1;
-
-		// okay button
-		button = newButton();
-		strcpy(button->label, language[732]);
-		button->x = subx2 - (subx2 - subx1) / 2 - 28;
-		button->y = suby2 - 28;
-		button->sizex = 56;
-		button->sizey = 20;
-		button->action = &buttonCloseAndEndGameConfirm;
-		button->visible = 1;
-		button->focused = 1;
-		button->key = SDLK_RETURN;
-
-		client_disconnected[0] = true;
+		MainMenu::timedOut();
 	}},
 
 	// win the game
