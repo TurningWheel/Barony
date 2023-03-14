@@ -20007,7 +20007,7 @@ failed:
 				11111);
 		}
 #else
-		disconnectedFromServer("Timeout: your connection\nhas been lost.");
+		disconnectedFromServer("The network connection\nhas been lost.");
 #endif
 	}
 
