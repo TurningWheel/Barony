@@ -299,6 +299,7 @@ int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
+int GAMEUI_FRAMEDATA_SHOP_ITEM = 6;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -17781,7 +17782,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				if ( !item->identified )
 				{
 					//beatitudeImg->color = makeColor( 128, 128, 0, 125);
-					beatitudeFrame->setDisabled(false);
+					if ( !(slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_SHOP_ITEM) )
+					{
+						beatitudeFrame->setDisabled(false);
+					}
 					//spriteImage->outlineColor = makeColor(210, 183, 76, 255);
 					//spriteImage->outline = true;
 				}
@@ -17884,7 +17888,8 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			if ( item->status == BROKEN )
 			{
 				if ( players[player]->shopGUI.bOpen 
-					&& isItemSellableToShop(player, item) )
+					&& isItemSellableToShop(player, item)
+					&& !(slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_SHOP_ITEM) )
 				{
 					// don't grey out this item
 				}
@@ -17994,7 +17999,11 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	{
 		appraisalFrame->setDisabled(true);
 		appraisalFrame->setDrawCallback(nullptr);
-		if ( item->notifyIcon )
+		if ( !item->identified )
+		{
+			appraisalFrame->setDisabled(false);
+		}
+		else if ( item->notifyIcon )
 		{
 			appraisalFrame->setDisabled(false);
 		}
@@ -18022,10 +18031,26 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			auto img = appraisalFrame->getImages()[SLOTFRAME_APPRAISAL_NOTIF_IMG];/*appraisalFrame->findImage("new notif img");*/
 			img->disabled = true;
-			if ( item->notifyIcon )
+			if ( !item->identified )
+			{
+				img->disabled = false;
+				img->path = "images/ui/Inventory/tooltips/Unidentified_Icon.png";
+				img->pos.x = 28;
+				img->pos.y = 4;
+				img->pos.w = 10;
+				img->pos.h = 14;
+				if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
+				{
+					img->pos.x = 30;
+					img->pos.y = 6;
+				}
+			}
+			else if ( item->notifyIcon )
 			{
 				img->pos.x = 4;
 				img->pos.y = 4;
+				img->pos.w = 6;
+				img->pos.h = 14;
 				if ( isHotbarIcon && !players[player]->hotbar.useHotbarFaceMenu )
 				{
 					img->pos.x = 10;

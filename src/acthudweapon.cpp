@@ -3416,12 +3416,15 @@ void actHudShield(Entity* my)
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield && (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
+			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
-				if (input.binaryToggle("Defend"))
+				if ( (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 				{
-				    defending = true;
-			    }
+					if (input.binaryToggle("Defend"))
+					{
+						defending = true;
+					}
+				}
 				wouldBeDefending = true;
 			}
 			if (input.binaryToggle("Sneak"))
@@ -3462,7 +3465,6 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = false;
 	}
-
 	if (multiplayer == CLIENT)
 	{
 		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0)
