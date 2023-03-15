@@ -329,13 +329,13 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 	{
 		return false;
 	}
-	if ( entity->x + entity->sizex >= x << 4 )
+	if ( (entity->x + entity->sizex) >= (x << 4) )
 	{
-		if ( entity->x - entity->sizex < (x + 1) << 4 )
+		if ( (entity->x - entity->sizex) < ((x + 1) << 4) )
 		{
-			if ( entity->y + entity->sizey >= y << 4 )
+			if ( (entity->y + entity->sizey) >= (y << 4) )
 			{
-				if ( entity->y - entity->sizey < (y + 1) << 4 )
+				if ( (entity->y - entity->sizey) < ((y + 1) << 4) )
 				{
 					if ( z == OBSTACLELAYER )
 					{
@@ -354,17 +354,13 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 						{
 							return true;
 						}
-						bool isMonster = false;
-						if ( entity )
-							if ( entity->behavior == &actMonster )
-							{
-								isMonster = true;
-							}
-						if ( (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-							&& isMonster )
-						{
-							return true;
-						}
+                        if (entity && entity->behavior == &actMonster) {
+                            if (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] ||
+                                lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]])
+                            {
+                                return true;
+                            }
+                        }
 					}
 				}
 			}
@@ -409,23 +405,19 @@ bool entityInsideEntity(Entity* entity1, Entity* entity2)
 
 bool entityInsideSomething(Entity* entity)
 {
-	node_t* node;
-	int z;
-	int x, y;
 	#ifdef __ARM_NEON__
-    float f = entity->x;
-	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&f), 1.0f/16.0f));
-	x = xy[0];
-	y = xy[1];
+    const float f[2] = { (float)entity->x, (float)entity->y };
+	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(f), 1.f/16.f));
+	const int x = xy[0];
+	const int y = xy[1];
 	#else
-	x = (long)floor(entity->x / 16);
-	y = (long)floor(entity->y / 16);
+	const int x = entity->x / 16;
+	const int y = entity->y / 16;
 	#endif
+    
 	// test against the map
-	for ( z = 0; z < MAPLAYERS; ++z )
-	{
-		if ( entityInsideTile(entity, x, y, z) )
-		{
+	for (int z = 0; z < MAPLAYERS; ++z) {
+		if (entityInsideTile(entity, x, y, z)) {
 			return true;
 		}
 	}
@@ -435,7 +427,7 @@ bool entityInsideSomething(Entity* entity)
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
-		for ( node = currentList->first; node != nullptr; node = node->next )
+		for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 		{
 			Entity* testEntity = (Entity*)node->element;
 			if ( testEntity == entity || testEntity->flags[PASSABLE] )
