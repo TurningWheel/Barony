@@ -15064,7 +15064,7 @@ failed:
         entry_name->ctrlClick = activate_fn;
         entry_name->highlight = selection_fn;
         entry_name->selected = selection_fn;
-        entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
+        entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(183, 155, 119, 255);
         entry_name->text = std::string("  ") + info.name;
         entry_name->data = (info.index < 0 || info.index >= lobbies.size()) ?
             (void*)lobbies.back().index : (void*)lobbies[info.index].index;
@@ -15585,7 +15585,7 @@ failed:
 		        label->setVJustify(Field::justify_t::CENTER);
 		        label->setSize(SDL_Rect{64, 72 + 24 * index, 192, 24});
 		        label->setFont(smallfont_outline);
-		        label->setColor(makeColor(102, 69, 36, 255));
+		        label->setColor(makeColor(183, 155, 119, 255));
 		        label->setText(filter_names[c]);
 
 		        std::string checkbox_name = std::string("filter_checkbox") + std::to_string(index);
@@ -15643,32 +15643,33 @@ failed:
                 const auto& lobby = lobbies[selectedLobby];
 
                 const char* flag_names[] = {
-                    "Cheats enabled",
-                    "Friendly fire",
-                    "Minotaurs enabled",
-                    "Hunger enabled",
-                    "Random traps enabled",
-                    "Hardcore mode",
-                    "Classic mode",
-                    "Keep items on death",
-                    "+1 Life",
+                    u8" \x1E Cheats\n",
+                    u8" \x1E Hurt allies\n",
+                    u8" \x1E Minotaurs\n",
+                    u8" \x1E Hunger\n",
+                    u8" \x1E Traps\n",
+                    u8" \x1E Hardcore\n",
+                    u8" \x1E Classic\n",
+                    u8" \x1E Keep items\n",
+                    u8" \x1E +1 Life\n",
                 };
                 constexpr int num_flag_names = sizeof(flag_names) / sizeof(flag_names[0]);
 
-                std::string flags;
+                std::string flags1, flags2;
                 bool foundFlags = false;
-                for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+                for (int c = 0, index = 0; c < NUM_SERVER_FLAGS; ++c) {
                     if (lobby.flags & (1 << c)) {
-                        if (foundFlags) {
-                            flags.append(", ");
+                        if (index & 1) {
+                            flags2.append(flag_names[c]);
                         } else {
-                            foundFlags = true;
+                            flags1.append(flag_names[c]);
                         }
-                        flags.append(flag_names[c]);
+                        foundFlags = true;
+                        ++index;
                     }
                 }
                 if (!foundFlags) {
-                    flags.append("None");
+                    flags1.append("None");
                 }
                 
                 auto frame = static_cast<Frame*>(&widget); assert(frame);
@@ -15695,9 +15696,12 @@ failed:
                 headers->setText(header_txt.c_str());
                 
                 auto values2 = frame->findField("values2"); assert(values2);
-                snprintf(buf, sizeof(buf), values2_txt.c_str(), flags.c_str());
+                snprintf(buf, sizeof(buf), values2_txt.c_str(), flags1.c_str());
                 values2->setText(buf);
-                values2->reflowTextToFit(0);
+                
+                auto values3 = frame->findField("values3"); assert(values3);
+                snprintf(buf, sizeof(buf), values2_txt.c_str(), flags2.c_str());
+                values3->setText(buf);
             } else {
                 widget.setInvisible(true);
             }
@@ -15724,21 +15728,28 @@ failed:
 		    headers->setVJustify(Field::justify_t::TOP);
 		    headers->setSize(SDL_Rect{30, 76, 244, 320});
 		    headers->setFont(smallfont_outline);
-		    headers->setColor(makeColor(180, 112, 24, 255));
+		    headers->setColor(makeColor(106, 192, 159, 255));
 
 		    auto values1 = frame_left->addField("values1", 1024);
 		    values1->setHJustify(Field::justify_t::LEFT);
 		    values1->setVJustify(Field::justify_t::TOP);
 		    values1->setSize(SDL_Rect{30, 76, 244, 320});
 		    values1->setFont(smallfont_outline);
-		    values1->setColor(makeColor(102, 69, 36, 255));
+		    values1->setColor(makeColor(183, 155, 119, 255));
             
             auto values2 = frame_left->addField("values2", 1024);
             values2->setHJustify(Field::justify_t::LEFT);
             values2->setVJustify(Field::justify_t::TOP);
-            values2->setSize(SDL_Rect{30, 76, 244, 320});
+            values2->setSize(SDL_Rect{30, 76, 122, 320});
             values2->setFont(smallfont_outline);
-            values2->setColor(makeColor(102, 69, 36, 255));
+            values2->setColor(makeColor(183, 155, 119, 255));
+            
+            auto values3 = frame_left->addField("values3", 1024);
+            values3->setHJustify(Field::justify_t::LEFT);
+            values3->setVJustify(Field::justify_t::TOP);
+            values3->setSize(SDL_Rect{152, 76, 122, 320});
+            values3->setFont(smallfont_outline);
+            values3->setColor(makeColor(183, 155, 119, 255));
 		}
 
 		auto online_tab = window->addButton("online_tab");
@@ -16028,10 +16039,10 @@ failed:
         {
 		    auto name_column_header = window->addField("name_column_header", 32);
 		    name_column_header->setHJustify(Field::justify_t::LEFT);
-		    name_column_header->setVJustify(Field::justify_t::CENTER);
+		    name_column_header->setVJustify(Field::justify_t::TOP);
 		    name_column_header->setFont(smallfont_no_outline);
 		    name_column_header->setSize(SDL_Rect{340, 116, 172, 20});
-		    name_column_header->setColor(makeColor(102, 69, 36, 255));
+		    name_column_header->setColor(makeColor(106, 192, 159, 255));
 		    name_column_header->setText(" Lobby Name");
 
 		    auto list = window->addFrame("names");
@@ -16070,10 +16081,10 @@ failed:
         {
 		    auto players_column_header = window->addField("players_column_header", 32);
 		    players_column_header->setHJustify(Field::justify_t::LEFT);
-		    players_column_header->setVJustify(Field::justify_t::CENTER);
+		    players_column_header->setVJustify(Field::justify_t::TOP);
 		    players_column_header->setFont(smallfont_no_outline);
 		    players_column_header->setSize(SDL_Rect{514, 116, 76, 20});
-		    players_column_header->setColor(makeColor(102, 69, 36, 255));
+		    players_column_header->setColor(makeColor(106, 192, 159, 255));
 		    players_column_header->setText(" Players");
 
 		    auto list = window->addFrame("players");
@@ -16112,10 +16123,10 @@ failed:
         {
 		    auto ping_column_header = window->addField("ping_column_header", 32);
 		    ping_column_header->setHJustify(Field::justify_t::LEFT);
-		    ping_column_header->setVJustify(Field::justify_t::CENTER);
+		    ping_column_header->setVJustify(Field::justify_t::TOP);
 		    ping_column_header->setFont(smallfont_no_outline);
 		    ping_column_header->setSize(SDL_Rect{592, 116, 48, 20});
-		    ping_column_header->setColor(makeColor(102, 69, 36, 255));
+		    ping_column_header->setColor(makeColor(106, 192, 159, 255));
 		    ping_column_header->setText(" Ping");
 
 		    auto list = window->addFrame("pings");
