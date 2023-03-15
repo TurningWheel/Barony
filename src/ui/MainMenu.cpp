@@ -6023,7 +6023,7 @@ bind_failed:
 		auto kills_banner = subframe->addField("kills_banner", 64);
 		kills_banner->setFont(bigfont_outline);
 		kills_banner->setSize(SDL_Rect{426, 188, 182, 34});
-		kills_banner->setColor(makeColor(151, 115, 58, 255));
+		kills_banner->setColor(makeColor(203, 171, 101, 255));
 		kills_banner->setHJustify(Field::justify_t::LEFT);
 		kills_banner->setVJustify(Field::justify_t::CENTER);
 		kills_banner->setText("Kills:");
@@ -6240,7 +6240,7 @@ bind_failed:
                     getMonsterLocalizedPlural((Monster)c);
                 snprintf(buf, sizeof(buf), "%3d %s", num_kills, name.c_str());
                 auto kill = kills->addEntry(buf, true);
-                kill->color = makeColor(151, 115, 58, 255);
+                kill->color = makeColor(203, 171, 101, 255);
                 kill->text = buf;
                 kill->clickable = (kills == kills_left);
                 kills = (kills == kills_left) ? kills_right : kills_left;
@@ -6655,8 +6655,9 @@ bind_failed:
             {"local", "Local\nSingleplayer", TAB_FN(BoardType::LOCAL_SINGLE)},
             {"lan", "Local\nMultiplayer", TAB_FN(BoardType::LOCAL_MULTI)},
 #ifdef STEAMWORKS
-            {"friends", "Leaderboard\nFriends", TAB_FN(BoardType::ONLINE_FRIENDS)},
-            {"world", "Leaderboard\nWorld", TAB_FN(BoardType::ONLINE_WORLD)},
+            // TODO for now these are disabled, @wallofjustice make better leaderboards in future
+            //{"friends", "Leaderboard\nFriends", TAB_FN(BoardType::ONLINE_FRIENDS)},
+            //{"world", "Leaderboard\nWorld", TAB_FN(BoardType::ONLINE_WORLD)},
 #endif
         };
         static constexpr int num_tabs = sizeof(tabs) / sizeof(tabs[0]);
@@ -6683,6 +6684,9 @@ bind_failed:
 					tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Selected_00.png");
 					tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedHigh_00.png");
 					tab->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_SelectedPress_00.png");
+                    if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
+                        widget.select(); // rescue focus
+                    }
 			    } else {
 					tab->setBackground("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_Unselected_00.png");
 					tab->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_Button_Subtitle_UnselectedHigh_00.png");
@@ -16327,8 +16331,17 @@ failed:
 	    // scan for lobbies immediately
 	    refresh->activate();
 #else
-        if (0) {
+        static ConsoleVariable<bool> cvar_testLobbyBrowser("/test_lobby_browser", false,
+            "Fill the lobby browser with bogus entries to test its features.");
+        if (*cvar_testLobbyBrowser) {
             // test lobbies
+            std::string allBlanks;
+            for (int c = 0; c < 64; ++c) {
+                allBlanks.append(u8"\uFFFD");
+                if (c && c % 12 == 0) {
+                    allBlanks.append("\n");
+                }
+            }
 		    addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
 		    addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
 		    addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
@@ -16338,6 +16351,7 @@ failed:
 		    addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
 		    addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
 		    addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
+            addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
 		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
 		    addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
 		    addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
@@ -17281,7 +17295,7 @@ failed:
 		auto tooltip = window->addField("tooltip", 1024);
 		tooltip->setSize(SDL_Rect{106, 398, 300, 48});
 		tooltip->setFont(smallfont_no_outline);
-		tooltip->setColor(makeColor(91, 76, 50, 255));
+		tooltip->setColor(makeColor(183, 155, 119, 255));
 		tooltip->setJustify(Field::justify_t::CENTER);
 		tooltip->setText("");
 	}

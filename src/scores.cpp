@@ -266,6 +266,10 @@ void scoreDeconstructor(void* data)
 
 int saveScore(int player)
 {
+    if (currentlevel <= 0) {
+        // don't save highscores for level 0...
+        return -1;
+    }
 	score_t* currentscore = scoreConstructor(player);
 	list_t* scoresPtr = &topscores;
 	if ( conductGameChallenges[CONDUCT_MULTIPLAYER] )
