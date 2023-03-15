@@ -6953,7 +6953,8 @@ bind_failed:
 			frame->setBorder(0);
 			frame->setSize(r);
 			createGenericWindowDecorations(*frame);
-			sizeWindowDecorations(*frame);
+            SDL_Rect r2 = r; r2.x = 0; r2.y = 0;
+            sizeWindowDecorations(*frame, r2);
 
 			const char* achName = nullptr;
 			const char* achDesc = nullptr;
@@ -11575,31 +11576,11 @@ failed:
 				appearance_uparrow->setInvisible(false);
 				appearance_downarrow->setDisabled(false);
 				appearance_downarrow->setInvisible(false);
-				auto card = static_cast<Frame*>(parent->getParent());
-				auto bottom = card->findFrame("bottom");
-				if (bottom) {
-					auto male = bottom->findButton("male");
-					auto female = bottom->findButton("female");
-					auto info = bottom->findButton("show_race_info");
-					male->setHideGlyphs(true);
-					female->setHideGlyphs(true);
-					info->setHideGlyphs(true);
-				}
 			} else if (deselected) {
 				appearance_uparrow->setDisabled(true);
 				appearance_uparrow->setInvisible(true);
 				appearance_downarrow->setDisabled(true);
 				appearance_downarrow->setInvisible(true);
-				auto card = static_cast<Frame*>(parent->getParent());
-				auto bottom = card->findFrame("bottom");
-				if (bottom) {
-					auto male = bottom->findButton("male");
-					auto female = bottom->findButton("female");
-					auto info = bottom->findButton("show_race_info");
-					male->setHideGlyphs(false);
-					female->setHideGlyphs(false);
-					info->setHideGlyphs(false);
-				}
 			}
 	        if (widget.isSelected()) {
 	            auto hover = parent->findImage("hover"); assert(hover);
@@ -14854,20 +14835,23 @@ failed:
 
 	struct LobbyInfo {
 	    std::string name;
+        std::string version;
 	    int players;
 	    int ping;
 	    bool locked;
 	    Uint32 flags;
 	    std::string address;
-	    int index = -1;
+	    intptr_t index = -1;
 	    LobbyInfo(
 	        const char* _name = "Barony",
+            const char* _version = VERSION,
 	        int _players = 0,
 	        int _ping = 0,
 	        bool _locked = false,
 	        Uint32 _flags = 0,
 	        const char* _address = ""):
 	        name(_name),
+            version(_version),
 	        players(_players),
 	        ping(_ping),
 	        locked(_locked),
@@ -14894,6 +14878,11 @@ failed:
 	        // probably the result of an out-of-date network scan
 	        return;
 	    }
+        
+        if (info.players <= 0) {
+            // do not include empty lobbies
+            return;
+        }
 
         if (info.index == -1) {
             lobbies.push_back(info);
@@ -15026,6 +15015,12 @@ failed:
 	        names->setSelection(selection);
 	        players->setSelection(selection);
 	        pings->setSelection(selection);
+            
+            auto mouse = inputs.getVirtualMouse(entry.parent.getOwner());
+            if (mouse && !mouse->draw_cursor) {
+                auto lobbyId = (intptr_t)entry.data;
+                selectedLobby = (int)lobbyId;
+            }
             };
 
         // function to choose a specific lobby
@@ -15039,16 +15034,16 @@ failed:
             names->setActivation(names->getEntries()[selection]);
             players->setActivation(players->getEntries()[selection]);
             pings->setActivation(pings->getEntries()[selection]);
-			int& lobbyId = *(int*)entry.data;
+			auto lobbyId = (intptr_t)entry.data;
 			if (selectedLobby != lobbyId) {
-				selectedLobby = lobbyId;
+				selectedLobby = (int)lobbyId;
 			} else {
 				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
                     if (lobbyId >= 0 && lobbyId < lobbies.size()) {
                         // pressing A on a lobby after selecting it will join that lobby
                         const auto& lobby = lobbies[lobbyId];
                         if (!lobby.locked) {
-                            if (connectToServer(lobby.address.c_str(), entry.data,
+                            if (connectToServer(lobby.address.c_str(), nullptr,
                                     directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                                 // only deselect the list if the connection begins
                                 entry.parent.deselect();
@@ -15072,7 +15067,7 @@ failed:
         entry_name->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(102, 69, 36, 255);
         entry_name->text = std::string("  ") + info.name;
         entry_name->data = (info.index < 0 || info.index >= lobbies.size()) ?
-            &(lobbies.back().index) : &(lobbies[info.index].index);
+            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
         // players cell
         const char* players_image;
@@ -15096,7 +15091,7 @@ failed:
         entry_players->color = 0xffffffff;
         entry_players->image = players_image;
         entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
-            &(lobbies.back().index) : &(lobbies[info.index].index);
+            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
         // ping cell
         auto entry_ping = pings->addEntry(info.name.c_str(), true);
@@ -15106,7 +15101,7 @@ failed:
         entry_ping->selected = selection_fn;
         entry_ping->color = 0xffffffff;
         entry_ping->data = (info.index < 0 || info.index >= lobbies.size()) ?
-            &(lobbies.back().index) : &(lobbies[info.index].index);
+            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
         if (!info.locked) {
             if (info.ping < 100) {
                 entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
@@ -15216,6 +15211,7 @@ failed:
 	                auto flags = (int)strtol(pchFlags, nullptr, 10);
 	                LobbyInfo info;
 	                info.name = lobbyText[c];
+                    info.version = lobbyVersion[c];
 	                info.players = lobbyPlayers[c];
 	                info.ping = 50; // TODO
 	                info.locked = false; // this will always be false because steam only reported joinable lobbies
@@ -15229,6 +15225,7 @@ failed:
 	                auto& lobby = EOS.LobbySearchResults.results[c];
 	                LobbyInfo info;
 	                info.name = lobby.LobbyAttributes.lobbyName;
+                    info.version = lobby.LobbyAttributes.gameVersion;
 	                info.players = MAXPLAYERS - lobby.FreeSlots;
 	                info.ping = 50; // TODO
 	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
@@ -15316,6 +15313,7 @@ failed:
 				for (int c = 0; c < result; ++c) {
 					LobbyInfo info;
 					info.name = nxLobbies[c].name;
+                    info.version = VERSION; // TODO
 					info.players = nxLobbies[c].numplayers;
 					info.ping = nxLobbies[c].ping;
 					info.locked = nxLobbies[c].ingame;
@@ -15550,6 +15548,9 @@ failed:
 			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Filters00.png",
 			    "background"
 		    );
+            
+            createGenericWindowDecorations(*frame_right);
+            sizeWindowDecorations(*frame_right, SDL_Rect{24, 72, 256, 312});
 
 		    auto label = frame_right->addField("label", 128);
 		    label->setJustify(Field::justify_t::CENTER);
@@ -15640,13 +15641,10 @@ failed:
                 widget.setInvisible(false);
 
                 const auto& lobby = lobbies[selectedLobby];
-		        auto frame = static_cast<Frame*>(&widget); assert(frame);
-                auto headers = frame->findField("headers"); assert(headers);
-                auto values = frame->findField("values"); assert(values);
 
                 const char* flag_names[] = {
                     "Cheats enabled",
-                    "Friendly fire enabled",
+                    "Friendly fire",
                     "Minotaurs enabled",
                     "Hunger enabled",
                     "Random traps enabled",
@@ -15658,20 +15656,48 @@ failed:
                 constexpr int num_flag_names = sizeof(flag_names) / sizeof(flag_names[0]);
 
                 std::string flags;
+                bool foundFlags = false;
                 for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
                     if (lobby.flags & (1 << c)) {
+                        if (foundFlags) {
+                            flags.append(", ");
+                        } else {
+                            foundFlags = true;
+                        }
                         flags.append(flag_names[c]);
-                        flags.append("\n");
                     }
                 }
+                if (!foundFlags) {
+                    flags.append("None");
+                }
+                
+                auto frame = static_cast<Frame*>(&widget); assert(frame);
 
 		        char buf[1024];
-                const char* header_fmt = "Name:\n\n\nFlags:";
-		        const char* values_fmt = "\n%s\n\n\n%s";
-		        snprintf(buf, sizeof(buf), values_fmt, lobby.name.c_str(), flags.c_str());
-
-                headers->setText(header_fmt);
-                values->setText(buf);
+                
+                auto values1 = frame->findField("values1"); assert(values1);
+                const char* values1_fmt = "\n%s (%s)";
+                snprintf(buf, sizeof(buf), values1_fmt, lobby.name.c_str(), lobby.version.c_str());
+                values1->setText(buf);
+                values1->reflowTextToFit(0);
+                const int numLines = values1->getNumTextLines();
+                
+                std::string header_txt = "Name:";
+                std::string values2_txt;
+                for (int c = 0; c <= numLines; ++c) {
+                    header_txt += "\n";
+                    values2_txt += "\n";
+                }
+                header_txt += "Flags:";
+                values2_txt += "\n%s";
+                
+                auto headers = frame->findField("headers"); assert(headers);
+                headers->setText(header_txt.c_str());
+                
+                auto values2 = frame->findField("values2"); assert(values2);
+                snprintf(buf, sizeof(buf), values2_txt.c_str(), flags.c_str());
+                values2->setText(buf);
+                values2->reflowTextToFit(0);
             } else {
                 widget.setInvisible(true);
             }
@@ -15683,6 +15709,9 @@ failed:
 			    "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window_Left00.png",
 			    "background"
 		    );
+            
+            createGenericWindowDecorations(*frame_left);
+            sizeWindowDecorations(*frame_left, SDL_Rect{24, 72, 256, 312});
 
 		    auto label = frame_left->addField("label", 128);
 		    label->setJustify(Field::justify_t::CENTER);
@@ -15693,16 +15722,23 @@ failed:
 		    auto headers = frame_left->addField("headers", 1024);
 		    headers->setHJustify(Field::justify_t::LEFT);
 		    headers->setVJustify(Field::justify_t::TOP);
-		    headers->setSize(SDL_Rect{72, 72, 210, 320});
+		    headers->setSize(SDL_Rect{30, 76, 244, 320});
 		    headers->setFont(smallfont_outline);
 		    headers->setColor(makeColor(180, 112, 24, 255));
 
-		    auto values = frame_left->addField("values", 1024);
-		    values->setHJustify(Field::justify_t::LEFT);
-		    values->setVJustify(Field::justify_t::TOP);
-		    values->setSize(SDL_Rect{72, 72, 210, 320});
-		    values->setFont(smallfont_outline);
-		    values->setColor(makeColor(102, 69, 36, 255));
+		    auto values1 = frame_left->addField("values1", 1024);
+		    values1->setHJustify(Field::justify_t::LEFT);
+		    values1->setVJustify(Field::justify_t::TOP);
+		    values1->setSize(SDL_Rect{30, 76, 244, 320});
+		    values1->setFont(smallfont_outline);
+		    values1->setColor(makeColor(102, 69, 36, 255));
+            
+            auto values2 = frame_left->addField("values2", 1024);
+            values2->setHJustify(Field::justify_t::LEFT);
+            values2->setVJustify(Field::justify_t::TOP);
+            values2->setSize(SDL_Rect{30, 76, 244, 320});
+            values2->setFont(smallfont_outline);
+            values2->setColor(makeColor(102, 69, 36, 255));
 		}
 
 		auto online_tab = window->addButton("online_tab");
@@ -15921,7 +15957,7 @@ failed:
 				button->setHighlightColor(makeColor(255, 255, 255, 255));
 				button->setColor(makeColor(255, 255, 255, 255));
 		    } else if (mode == BrowserMode::LAN) {
-		        button->setText("Enter IP\nAddress");
+                button->setText("Enter Lobby\nCode");
 				button->setTextColor(makeColor(127, 127, 127, 255));
 				button->setHighlightColor(makeColor(127, 127, 127, 255));
 				button->setColor(makeColor(127, 127, 127, 255));
@@ -16282,22 +16318,22 @@ failed:
 #else
         if (0) {
             // test lobbies
-		    addLobby(LobbyInfo("Ben", 1, 50, false, SV_FLAG_CHEATS));
-		    addLobby(LobbyInfo("Sheridan", 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
-		    addLobby(LobbyInfo("Paulie", 2, 250, false, SV_FLAG_HARDCORE));
-		    addLobby(LobbyInfo("Fart_Face", 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
-		    addLobby(LobbyInfo("Tim", 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
-		    addLobby(LobbyInfo("Johnny", 3, 30, false, SV_FLAG_FRIENDLYFIRE));
-		    addLobby(LobbyInfo("Boaty McBoatFace", 2, 20, false));
-		    addLobby(LobbyInfo("RIP_Morgan_", 0, 120, false));
-		    addLobby(LobbyInfo("What is the longest name we can fit in a Barony lobby?", 4, 150, false));
-		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", 16, 90, false));
-		    addLobby(LobbyInfo("ur mom", 16, 160, true));
-		    addLobby(LobbyInfo("waow more lobbies", 16, 160, true));
-		    addLobby(LobbyInfo("snobby lobby", 16, 260, true));
-		    addLobby(LobbyInfo("gAmERs RiSe uP!!", 16, 0, false));
-		    addLobby(LobbyInfo("a very unsuspicious lobby", 2, 130, false));
-		    addLobby(LobbyInfo("cool lobby bro!", 3, 240, false));
+		    addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
+		    addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
+		    addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
+		    addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
+		    addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
+		    addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
+		    addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
+		    addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
+		    addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
+		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
+		    addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
+		    addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
+		    addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
+		    addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
+		    addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
+		    addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
 		} else {
 		    refresh->activate();
 		}
