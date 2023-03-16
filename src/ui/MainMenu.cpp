@@ -7603,6 +7603,7 @@ bind_failed:
 	    closeNetworkInterfaces();
 
 #ifdef NINTENDO
+		nxEnableAutoSleep();
 		nxEndParentalControls();
 		nxShutdownWireless();
 		logoutOfEpic();
@@ -14072,6 +14073,12 @@ failed:
 		destroyMainMenu();
 		createDummyMainMenu();
 
+#ifdef NINTENDO
+		if (type != LobbyType::LobbyLocal) {
+			nxDisableAutoSleep();
+		}
+#endif
+
 		if (type == LobbyType::LobbyLocal) {
 #ifdef NINTENDO
 			if (!nxIsHandheldMode()) {
@@ -15332,6 +15339,7 @@ failed:
 				loadingsavegame = 0;
 				soundError();
 				closeNetworkInterfaces();
+				nxEnableAutoSleep();
 				nxEndParentalControls();
 				nxShutdownWireless();
 				logoutOfEpic();
@@ -15383,6 +15391,7 @@ failed:
 			destroyMainMenu();
 			createMainMenu(false);
 		}
+		nxDisableAutoSleep();
 #elif defined(STEAMWORKS)
 		mode = BrowserMode::Online;
 		directConnect = false;
@@ -15492,6 +15501,7 @@ failed:
 			gameModeManager.currentSession.restoreSavedServerFlags();
 
 #ifdef NINTENDO
+			nxEnableAutoSleep();
 			nxEndParentalControls();
 			logoutOfEpic();
 			nxShutdownWireless();
@@ -15859,6 +15869,7 @@ failed:
 		lan_tab->setWidgetDown("names");
 		lan_tab->setCallback([](Button& button){
 #ifdef NINTENDO
+			nxEnableAutoSleep();
 			nxEndParentalControls();
 			nxShutdownWireless();
 			logoutOfEpic();
@@ -16868,6 +16879,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEnableAutoSleep();
 						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
@@ -16890,6 +16902,7 @@ failed:
 						// this way if something fucked up
 						// (eg user is stuck in lobby in backend)
 						// the user state will be reset
+						nxEnableAutoSleep();
 						nxEndParentalControls();
 						logoutOfEpic();
 						nxErrorPrompt(
@@ -16981,6 +16994,7 @@ failed:
 					closeMono();
 					});
 #ifdef NINTENDO
+				nxEnableAutoSleep();
 				nxEndParentalControls();
 				logoutOfEpic();
 #endif
@@ -20056,6 +20070,7 @@ failed:
 			pauseGame(2, 0);
 		}
 		beginFade(FadeDestination::RootMainMenu);
+		nxEnableAutoSleep();
 		nxEndParentalControls();
 		nxShutdownWireless();
 		logoutOfEpic();

@@ -10583,6 +10583,7 @@ void doEndgame(bool saveHighscore) {
 	splitscreen = false;
 
 #ifdef NINTENDO
+	nxEnableAutoSleep();
 	nxEndParentalControls();
 	if (directConnect) {
 		// cleanse wireless connection state

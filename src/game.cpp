@@ -3629,9 +3629,9 @@ bool handleEvents(void)
 	}
 
 	// detect app focus changes
-	if (!intro && !gamePaused) {
-		if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
-			if (nxAppOutOfFocus()) {
+	if (nxAppOutOfFocus()) {
+		if (!intro && !gamePaused) {
+			if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
 				pauseGame(2, 0);
 			}
 		}
