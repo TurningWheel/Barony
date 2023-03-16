@@ -10588,6 +10588,8 @@ void doEndgame(bool saveHighscore) {
 	if (directConnect) {
 		// cleanse wireless connection state
 		nxShutdownWireless();
+	} else {
+		MainMenu::logoutOfEpic();
 	}
 #endif
 

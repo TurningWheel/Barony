@@ -1744,7 +1744,7 @@ namespace MainMenu {
 #endif
 	}
 
-	static void logoutOfEpic() {
+	void logoutOfEpic() {
 #ifdef USE_EOS
 #if defined(NINTENDO)
 		EOS.stop();
@@ -15382,6 +15382,7 @@ failed:
 #if defined(NINTENDO)
 		mode = BrowserMode::LAN;
 		directConnect = true;
+		logoutOfEpic();
 		nxShutdownWireless();
 		if (!nxInitWireless()) {
 			multiplayer = SINGLE;
