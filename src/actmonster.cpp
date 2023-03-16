@@ -3932,7 +3932,8 @@ void actMonster(Entity* my)
 						if (players[c] && players[c]->entity && my->checkEnemy(players[c]->entity))
 						{
 							list_t* playerPath = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
-								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity);
+								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity,
+								GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_IDLE);
 							if ( playerPath == NULL )
 							{
 								continue;
@@ -4273,7 +4274,8 @@ void actMonster(Entity* my)
 							break;
 						}
 					}*/
-					path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, NULL );
+					path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, NULL,
+						GeneratePathTypes::GENERATE_PATH_IDLE_WALK);
 					if ( my->children.first != NULL )
 					{
 						list_RemoveNode(my->children.first);
@@ -5089,7 +5091,8 @@ timeToGoAgain:
 			}
 			x = ((int)floor(my->monsterTargetX)) >> 4;
 			y = ((int)floor(my->monsterTargetY)) >> 4;
-			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget) );
+			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget),
+				GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET);
 			if ( my->children.first != nullptr )
 			{
 				list_RemoveNode(my->children.first);
@@ -5395,7 +5398,8 @@ timeToGoAgain:
 						if (players[c] && players[c]->entity)
 						{
 							list_t* playerPath = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16),
-								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity);
+								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity,
+								GeneratePathTypes::GENERATE_PATH_BOSS_TRACKING_HUNT);
 							if ( playerPath == NULL )
 							{
 								continue;
@@ -5542,7 +5546,8 @@ timeToGoAgain:
 									break;
 								}
 							}
-							path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
+							path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader,
+								GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_FOLLOW);
 							if ( my->children.first != NULL )
 							{
 								list_RemoveNode(my->children.first);
@@ -5595,7 +5600,8 @@ timeToGoAgain:
 										break;
 									}
 								}
-								path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
+								path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader,
+									GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_FOLLOW2);
 								if ( my->children.first != NULL )
 								{
 									list_RemoveNode(my->children.first);
@@ -9256,7 +9262,8 @@ void Entity::monsterMoveBackwardsAndPath()
 			foundplace = true;
 		}
 	}
-	path = generatePath((int)floor(x / 16), (int)floor(y / 16), x1, y1, this, this);
+	path = generatePath((int)floor(x / 16), (int)floor(y / 16), x1, y1, this, this,
+		GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS);
 	if ( children.first != NULL )
 	{
 		list_RemoveNode(children.first);
@@ -10042,7 +10049,8 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 		foundplace = true;
 	}
 
-	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, this, nullptr);
+	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, 
+		this, nullptr, GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO);
 	if ( children.first != NULL )
 	{
 		list_RemoveNode(children.first);
@@ -10113,7 +10121,8 @@ bool Entity::gyrobotSetPathToReturnLocation(int destX, int destY, int adjacentTi
 		foundplace = true;
 	}
 
-	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, this, nullptr);
+	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, 
+		this, nullptr, GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO);
 	if ( children.first != NULL )
 	{
 		list_RemoveNode(children.first);

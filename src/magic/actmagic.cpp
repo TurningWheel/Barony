@@ -266,7 +266,9 @@ void actMagiclightBall(Entity* my)
 					if (!my->path)
 					{
 						//messagePlayer(0, "[Light ball] Generating path.");
-						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
+						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
+							(int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent,
+							GeneratePathTypes::GENERATE_PATH_DEFAULT);
 						if ( path != NULL )
 						{
 							my->path = path;

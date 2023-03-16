@@ -333,7 +333,7 @@ int monsterCurve(int level)
 			case 0:
 				return KOBOLD;
 			case 1:
-				return SCARAB;
+				return INCUBUS;
 			case 2:
 			case 3:
 			case 4:
@@ -3136,7 +3136,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					entity2 = (Entity*)node->element;
 					if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
+						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, 
+							entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
 						if ( path == NULL )
 						{
 							nopath = true;
