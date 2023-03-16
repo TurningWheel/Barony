@@ -2215,14 +2215,16 @@ void Frame::activate() {
 	if (!list.size()) {
 		return;
 	}
-	activated = true;
-	if (selection < 0 || selection >= list.size()) {
-		selection = 0;
-	}
-    scrollToSelection();
-    auto entry = list[selection];
-    if (entry->selected) {
-        (*entry->selected)(*entry);
+    if (!activated) {
+        activated = true;
+        if (selection < 0 || selection >= list.size()) {
+            selection = 0;
+        }
+        scrollToSelection();
+        auto entry = list[selection];
+        if (entry->selected) {
+            (*entry->selected)(*entry);
+        }
     }
 }
 
@@ -2237,10 +2239,10 @@ void Frame::setSelection(int index) {
         selection = index;
         if (selection >= 0 && selection < list.size()) {
             scrollToSelection();
-            auto entry = list[selection];
+            /*auto entry = list[selection];
             if (entry->selected) {
                 (*entry->selected)(*entry);
-            }
+            }*/
         }
     }
 }
