@@ -382,7 +382,9 @@ void Frame::draw() const {
 	for (auto widget : selectedWidgets) {
         if (widget) {
             searchParents.push_back(widget->findSearchRoot());
-        }
+        } else {
+			searchParents.push_back(nullptr);
+		}
 	}
 	Frame::draw(size, _actualSize, selectedWidgets);
 	Frame::drawPost(size, _actualSize, selectedWidgets, searchParents);
