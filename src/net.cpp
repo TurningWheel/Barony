@@ -394,8 +394,15 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	if ( localPlayer )
 	{
 	    printlog("%s\n", str);
-	    auto string = newString(&messages, color, completionTime, player, str);
-	    addMessageToLogWindow(player, string);
+#ifdef NDEBUG
+		if (type != MESSAGE_DEBUG) { 
+			auto string = newString(&messages, color, completionTime, player, str);
+			addMessageToLogWindow(player, string);
+		}
+#else
+		auto string = newString(&messages, color, completionTime, player, str);
+		addMessageToLogWindow(player, string);
+#endif
 	    while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 	    {
 		    list_RemoveNode(messages.first);

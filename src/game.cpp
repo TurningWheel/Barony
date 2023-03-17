@@ -246,7 +246,11 @@ Frame::result_t framesProcResult{
     false
 };
 
+#ifdef NDEBUG
+Uint32 messagesEnabled = 0xffffffff & ~MESSAGE_DEBUG; // all but debug enabled
+#else
 Uint32 messagesEnabled = 0xffffffff; // all enabled
+#endif
 
 //ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
