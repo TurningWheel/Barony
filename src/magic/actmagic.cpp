@@ -1059,12 +1059,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										direction = -1;
 									}
-									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0) )
+									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0) )
+									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
@@ -1082,12 +1084,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										direction = -1;
 									}
 									// avoid x axis.
-									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0) )
+									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0) )
+									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);

@@ -4009,13 +4009,31 @@ void actMonster(Entity* my)
 						// draw line from the leaders direction until we hit a wall or 48 dist
 						real_t previousx = startx;
 						real_t previousy = starty;
-						for ( int iterations = 0; iterations < 16; ++iterations)
+						std::unordered_set<int> checkedTiles;
+						for ( int iterations = 0; iterations < 20; ++iterations)
 						{
 							startx += 4 * cos(leader->yaw);
 							starty += 4 * sin(leader->yaw);
-							int index = (static_cast<int>(starty + 16 * sin(leader->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(leader->yaw)) >> 4) * MAPLAYERS * map.height;
+
+							int mapx = (static_cast<int>(startx) >> 4);
+							int mapy = (static_cast<int>(starty) >> 4);
+							int index = (mapy) * MAPLAYERS + (mapx) * MAPLAYERS * map.height;
 							if ( !map.tiles[OBSTACLELAYER + index] )
 							{
+								bool foundObstacle = false;
+								if ( checkedTiles.find(mapx + mapy * 10000) == checkedTiles.end() )
+								{
+									if ( checkObstacle((mapx << 4) + 8, (mapy << 4) + 8, my, leader) )
+									{
+										foundObstacle = true;
+									}
+									checkedTiles.insert(mapx + mapy * 10000);
+								}
+								if ( foundObstacle )
+								{
+									break;
+								}
+
 								// store the last known good coordinate
 								previousx = startx;
 								previousy = starty;
@@ -4047,7 +4065,18 @@ void actMonster(Entity* my)
 						if ( doFollow )
 						{
 							my->monsterReleaseAttackTarget();
-							if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2) )
+
+							if ( myStats->type == GYROBOT )
+							{
+								if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
+								{
+									// try closest first
+									my->monsterState = MONSTER_STATE_HUNT; // hunt state
+								}
+							}
+							else if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2,
+								GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
 							{
 								my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							}
@@ -4076,7 +4105,8 @@ void actMonster(Entity* my)
 							if ( doFollow )
 							{
 								my->monsterReleaseAttackTarget();
-								if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
+								if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1,
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
 								{
 									my->monsterState = MONSTER_STATE_HUNT; // hunt state
 								}
@@ -5490,13 +5520,31 @@ timeToGoAgain:
 						real_t previousx = startx;
 						real_t previousy = starty;
 						real_t leadDistance = HUNT_FOLLOWDIST;
-						for ( int iterations = 0; iterations < 16; ++iterations )
+						std::unordered_set<int> checkedTiles;
+						for ( int iterations = 0; iterations < 20; ++iterations )
 						{
 							startx += 4 * cos(leader->yaw);
 							starty += 4 * sin(leader->yaw);
-							int index = (static_cast<int>(starty + 16 * sin(leader->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(leader->yaw)) >> 4) * MAPLAYERS * map.height;
+
+							int mapx = (static_cast<int>(startx) >> 4);
+							int mapy = (static_cast<int>(starty) >> 4);
+							int index = (mapy) * MAPLAYERS + (mapx) * MAPLAYERS * map.height;
 							if ( !map.tiles[OBSTACLELAYER + index] )
 							{
+								bool foundObstacle = false;
+								if ( checkedTiles.find(mapx + mapy * 10000) == checkedTiles.end() )
+								{
+									if ( checkObstacle((mapx << 4) + 8, (mapy << 4) + 8, my, leader) )
+									{
+										foundObstacle = true;
+									}
+									checkedTiles.insert(mapx + mapy * 10000);
+								}
+								if ( foundObstacle )
+								{
+									break;
+								}
+
 								// store the last known good coordinate
 								previousx = startx;
 								previousy = starty;
@@ -5525,11 +5573,11 @@ timeToGoAgain:
 
 						if ( doFollow )
 						{
-							x = ((int)floor(followx)) >> 4;
-							y = ((int)floor(followy)) >> 4;
-							int u, v;
-							bool foundplace = false;
-							for ( u = x - 1; u <= x + 1; u++ )
+							//x = ((int)floor(followx)) >> 4;
+							//y = ((int)floor(followy)) >> 4;
+							//int u, v;
+							//bool foundplace = false;
+							/*for ( u = x - 1; u <= x + 1; u++ )
 							{
 								for ( v = y - 1; v <= y + 1; v++ )
 								{
@@ -5554,7 +5602,17 @@ timeToGoAgain:
 							}
 							node = list_AddNodeFirst(&my->children);
 							node->element = path;
-							node->deconstructor = &listDeconstructor;
+							node->deconstructor = &listDeconstructor;*/
+							if ( myStats->type == GYROBOT )
+							{
+								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
+							}
+							else
+							{
+								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2,
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
+							}
 							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							if ( previousMonsterState != my->monsterState )
 							{
@@ -5601,7 +5659,7 @@ timeToGoAgain:
 									}
 								}
 								path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader,
-									GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_FOLLOW2);
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
 								if ( my->children.first != NULL )
 								{
 									list_RemoveNode(my->children.first);
@@ -6147,14 +6205,16 @@ timeToGoAgain:
 									}
 								}
 							}
-							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) ) // try closest tiles
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1,
+								GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE) ) // try closest tiles
 							{
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
 								//messagePlayer(0, "Moving to my interactable!.");
 								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_REPATH);
 							}
-							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 2) ) // expand search
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 2,
+								GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE) ) // expand search
 							{
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
@@ -9805,7 +9865,8 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				}
 				monsterAllyState = ALLY_STATE_DEFEND;
 			}
-			else if ( monsterSetPathToLocation(destX, destY, 1) )
+			else if ( monsterSetPathToLocation(destX, destY, 1,
+				GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO) )
 			{
 				monsterState = MONSTER_STATE_HUNT; // hunt state
 				monsterAllyState = ALLY_STATE_MOVETO;
@@ -10000,7 +10061,7 @@ void Entity::clearMonsterInteract()
 	interactedByMonster = 0;
 }
 
-bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot)
+bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, int pathingType, bool tryRandomSpot)
 {
 	int u, v;
 	bool foundplace = false;
@@ -10050,7 +10111,7 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 	}
 
 	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, 
-		this, nullptr, GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO);
+		this, nullptr, (GeneratePathTypes)pathingType);
 	if ( children.first != NULL )
 	{
 		list_RemoveNode(children.first);
@@ -10122,7 +10183,7 @@ bool Entity::gyrobotSetPathToReturnLocation(int destX, int destY, int adjacentTi
 	}
 
 	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, 
-		this, nullptr, GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO);
+		this, nullptr, GeneratePathTypes::GENERATE_PATH_PLAYER_GYRO_RETURN);
 	if ( children.first != NULL )
 	{
 		list_RemoveNode(children.first);

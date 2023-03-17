@@ -72,7 +72,7 @@ public:
 	//std::unordered_map<Uint32, CachedPaths_t> cachedPaths; // key: zone/zone*10000
 
 	std::map<int, GateNode_t> gateNodes;
-	std::unordered_set<int> connectedZones;
+	std::unordered_map<int, std::unordered_set<int>> connectedZones;
 	void buildGraph(const int parentMapType);
 	void fillPathMap(int x, int y);
 	bool generatePath(int x1, int y1, int x2, int y2);
@@ -117,6 +117,17 @@ public:
 	bool isConnected(int start, int end)
 	{
 		if ( start == end ) { return true; }
+		if ( start == 0 || end == 0 ) { return false; }
+
+		if ( connectedZones[start].find(end) != connectedZones[start].end() )
+		{
+			return true;
+		}
+		if ( connectedZones[end].find(start) != connectedZones[end].end() )
+		{
+			return true;
+		}
+
 		std::queue<int> frontier;
 		frontier.push(start);
 
@@ -450,7 +461,8 @@ static std::chrono::high_resolution_clock::time_point starttime;
 static std::chrono::microseconds ms(0);
 static Uint32 updatedOnTick = 0;
 static ConsoleVariable<int> cvar_pathlimit("/pathlimit", 200);
-static ConsoleVariable<bool> cvar_pathing_debug("/pathing_debug", true);
+static ConsoleVariable<bool> cvar_pathing_debug("/pathing_debug", false);
+int lastGeneratePathTries = 0;
 list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, GeneratePathTypes pathingType, bool lavaIsPassable)
 {
 	if ( *cvar_pathing_debug )
@@ -472,6 +484,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 			DebugStats.gui2 = DebugStats.gui2 + ms;
 		}
+		lastGeneratePathTries = 0;
 		return NULL;
 	}
 
@@ -540,6 +553,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 				DebugStats.gui2 = DebugStats.gui2 + ms;
 			}
+			lastGeneratePathTries = 0;
 			return NULL;
 		}
 		if ( my->behavior == &actMonster )
@@ -557,6 +571,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 						ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 						DebugStats.gui2 = DebugStats.gui2 + ms;
 					}
+					lastGeneratePathTries = 0;
 					return NULL;
 				}
 			}
@@ -686,8 +701,18 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	pathnode->h = heuristic(x1, y1, x2, y2);
 	heapAdd(binaryheap, pathnode, &heaplength);
 	int tries = 0;
+	int maxtries = *cvar_pathlimit;
+	static ConsoleVariable<int> cvar_pathlimit_idlewalk("/pathlimit_idlewalk", 40);
+	if ( pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS )
+	{
+		maxtries = *cvar_pathlimit_idlewalk;
+	}
 	while ( openList->first != NULL 
-		&& ((tries < *cvar_pathlimit && !playerCheckPathToExit && !loading)
+		&& ((tries < maxtries && !playerCheckPathToExit && !loading)
 			|| (tries < 10000 && (playerCheckPathToExit || loading))) )
 	{
 		/*pathnode = (pathnode_t *)openList->first->element;
@@ -738,6 +763,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				DebugStats.gui2 = DebugStats.gui2 + ms;
 				messagePlayer(0, MESSAGE_DEBUG, "PASS (%d): path tries: %d", (int)pathingType, tries);
 			}
+			lastGeneratePathTries = tries;
 			return path;
 		}
 
@@ -856,6 +882,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 								DebugStats.gui2 = DebugStats.gui2 + ms;
 								messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d): path tries: %d", (int)pathingType, tries);
 							}
+							lastGeneratePathTries = tries;
 							return NULL;
 						}
 						childnode = newPathnode(openList, pathnode->x + x, pathnode->y + y, pathnode, 1);
@@ -886,8 +913,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		auto now = std::chrono::high_resolution_clock::now();
 		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 		DebugStats.gui2 = DebugStats.gui2 + ms;
-		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d): path tries: %d (%d, %d) to (%d, %d)", (int)pathingType, tries, x1, y1, x2, y2);
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)", (int)pathingType, 
+			my->getUID(),
+			tries, x1, y1, x2, y2);
 	}
+	lastGeneratePathTries = tries;
 	return NULL;
 }
 
@@ -1329,17 +1359,27 @@ void GateGraph::buildGraph(const int parentMapType)
 	{
 		addEdge(pair.second.zone1, pair.second.zone2);
 	}
-	/*for ( int i = 0; i < numSubzones; ++i )
+
+	for ( int i = 0; i < numSubzones; ++i )
 	{
 		for ( int j = 0; j < numSubzones; ++j )
 		{
 			if ( i == j ) { continue; }
+			if ( connectedZones[i].find(j) != connectedZones[i].end() )
+			{
+				continue;
+			}
+			if ( connectedZones[j].find(i) != connectedZones[j].end() )
+			{
+				continue;
+			}
 			if ( isConnected(i, j) )
 			{
-				connectedZones.insert(i);
+				connectedZones[i].insert(j);
+				connectedZones[j].insert(i);
 			}
 		}
-	}*/
+	}
 
 	printlog("[Gate Graph]: Map %d Built successfully.", parentMapType);
 }
@@ -1578,6 +1618,11 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 	{
 		if ( srcZone == destZone ) { return true; }
 
+		if ( !isConnected(srcZone, destZone) )
+		{
+			return false;
+		}
+
 		auto path = getPath(srcZone, destZone);
 		if ( path.find(destZone) != path.end() )
 		{
@@ -1630,11 +1675,14 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 				int y3 = std::max(x, y);
 				if ( visited.find(x3 + y3 * 10000) == visited.end() )
 				{
-					auto path = getPath(x3, y3);
-					if ( path.find(destZone) != path.end() )
+					if ( isConnected(x3, y3) )
 					{
-						//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
-						return true;
+						auto path = getPath(x3, y3);
+						if ( path.find(y3) != path.end() )
+						{
+							//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+							return true;
+						}
 					}
 					visited.insert(x3 + y3 * 10000);
 					uniqueZones.insert(x);
