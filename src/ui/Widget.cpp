@@ -289,7 +289,9 @@ void Widget::findSelectedWidgets(std::vector<Widget*>& outResult) {
 	for (int c = 0; c < MAXPLAYERS; ++c) {
 	    if (_selectedWidgets[c] && _selectedWidgets[c]->isChildOf(*this)) {
 	        outResult.push_back(_selectedWidgets[c]);
-	    }
+        } else {
+            outResult.push_back(nullptr);
+        }
 	}
 }
 
@@ -297,7 +299,9 @@ void Widget::findSelectedWidgets(std::vector<const Widget*>& outResult) const {
 	for (int c = 0; c < MAXPLAYERS; ++c) {
 	    if (_selectedWidgets[c] && _selectedWidgets[c]->isChildOf(*this)) {
 	        outResult.push_back(_selectedWidgets[c]);
-	    }
+	    } else {
+            outResult.push_back(nullptr);
+        }
 	}
 }
 
@@ -305,7 +309,7 @@ Widget* Widget::findSelectedWidget(int owner) {
     std::vector<Widget*> selectedWidgets;
     findSelectedWidgets(selectedWidgets);
     for (auto widget : selectedWidgets) {
-        if (widget->owner == owner) {
+        if (widget && widget->owner == owner) {
             return widget;
         }
     }
@@ -350,7 +354,7 @@ void Widget::drawPost(const SDL_Rect size,
 	const Widget* searchParent = nullptr;
 	for (int c = 0; c < selectedWidgets.size(); ++c) {
 	    auto widget = selectedWidgets[c];
-		if (widget->owner == owner) {
+		if (widget && widget->owner == owner) {
 		    searchParent = searchParents[c];
 			selectedWidget = widget;
 			break;

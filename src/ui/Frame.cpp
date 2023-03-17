@@ -380,7 +380,11 @@ void Frame::draw() const {
 	std::vector<const Widget*> searchParents;
 	findSelectedWidgets(selectedWidgets);
 	for (auto widget : selectedWidgets) {
-	    searchParents.push_back(widget->findSearchRoot());
+        if (widget) {
+            searchParents.push_back(widget->findSearchRoot());
+        } else {
+			searchParents.push_back(nullptr);
+		}
 	}
 	Frame::draw(size, _actualSize, selectedWidgets);
 	Frame::drawPost(size, _actualSize, selectedWidgets, searchParents);
@@ -1149,7 +1153,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				}
 			}
 		}
-	} else if (selected) {
+	}
+    if (selected) {
 		if (!destWidget) {
 			destWidget = handleInput();
 		}
@@ -1540,7 +1545,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// scroll with arrows or left stick
-	if (result.usable && allowScrolling && allowScrollBinds && scrollWithLeftControls) {
+    const bool hasFocus = (selected || (selectedWidgets[owner] && selectedWidgets[owner]->isChildOf(*this)));
+    if (result.usable && allowScrolling && allowScrollBinds && scrollWithLeftControls && hasFocus) {
 		Input& input = Input::inputs[owner];
 
 		// x scroll
@@ -2211,10 +2217,17 @@ void Frame::activate() {
 	if (!list.size()) {
 		return;
 	}
-	activated = true;
-	if (selection < 0 || selection >= list.size()) {
-		selection = 0;
-	}
+    if (!activated) {
+        activated = true;
+        if (selection < 0 || selection >= list.size()) {
+            selection = 0;
+        }
+        scrollToSelection();
+        auto entry = list[selection];
+        if (entry->selected) {
+            (*entry->selected)(*entry);
+        }
+    }
 }
 
 void Frame::activateSelection() {
@@ -2224,7 +2237,16 @@ void Frame::activateSelection() {
 }
 
 void Frame::setSelection(int index) {
-	selection = index;
+    if (selection != index) {
+        selection = index;
+        if (selection >= 0 && selection < list.size()) {
+            scrollToSelection();
+            /*auto entry = list[selection];
+            if (entry->selected) {
+                (*entry->selected)(*entry);
+            }*/
+        }
+    }
 }
 
 void Frame::enableScroll(bool enabled) {

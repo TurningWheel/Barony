@@ -246,7 +246,11 @@ Frame::result_t framesProcResult{
     false
 };
 
+#ifdef NDEBUG
+Uint32 messagesEnabled = 0xffffffff & ~MESSAGE_DEBUG; // all but debug enabled
+#else
 Uint32 messagesEnabled = 0xffffffff; // all enabled
+#endif
 
 //ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
@@ -3629,9 +3633,9 @@ bool handleEvents(void)
 	}
 
 	// detect app focus changes
-	if (!intro && !gamePaused) {
-		if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
-			if (nxAppOutOfFocus()) {
+	if (nxAppOutOfFocus()) {
+		if (!intro && !gamePaused) {
+			if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
 				pauseGame(2, 0);
 			}
 		}

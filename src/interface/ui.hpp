@@ -294,4 +294,4 @@ extern UIToastNotificationManager_t UIToastNotificationManager;
 
 void openURLTryWithOverlay(const std::string& url, bool forceSystemBrowser = false);
 void createGenericWindowDecorations(Frame& frame);
-void sizeWindowDecorations(Frame& frame);
+void sizeWindowDecorations(Frame& frame, SDL_Rect size);

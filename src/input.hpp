@@ -164,10 +164,18 @@ public:
 
 	//! return the binding_t struct for the input name
 	binding_t input(const char* binding) const;
+    
+    enum class ControllerType {
+        PlayStation,
+        NintendoSwitch,
+        Xbox,
+    };
 
+    static ControllerType getControllerType(int index);
+    ControllerType getControllerType() const;
     static const char* getKeyboardGlyph();
     static const char* getControllerGlyph();
-	static std::string getGlyphPathForInput(const char* input, bool pressed = false);
+	static std::string getGlyphPathForInput(const char* input, bool pressed = false, ControllerType type = ControllerType::Xbox);
 	static std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false);
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;
 

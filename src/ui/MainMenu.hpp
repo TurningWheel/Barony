@@ -84,6 +84,7 @@ namespace MainMenu {
     void setHostname(const char* name);     // set local hostname
 	void randomizeUsername();				// randomize the username
 	void randomizeHostname();				// randomize the hostname
+	void logoutOfEpic();					// log out of epic online services
 
 	int getMenuOwner();					// get current pause menu owner
     bool isPlayerSignedIn(int index);   // checks whether a player is signed into a given slot

@@ -35,6 +35,7 @@ bool processLobbyInvite(void* lobby);
 extern Uint32 numSteamLobbies;
 extern int selectedSteamLobby;
 extern char lobbyText[MAX_STEAM_LOBBIES][64];
+extern char lobbyVersion[MAX_STEAM_LOBBIES][64];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 
