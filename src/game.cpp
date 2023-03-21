@@ -7037,6 +7037,17 @@ int main(int argc, char** argv)
 			if ( enableDebugKeys )
 			{
 				printTextFormatted(font8x8_bmp, 8, 20, "gui module: %d\ngui mode: %d", players[0]->GUI.activeModule, players[0]->gui_mode);
+				static ConsoleVariable<bool> cvar_map_debug("/mapdebug", false);
+				if ( *cvar_map_debug )
+				{
+					int ix = (int)cameras[clientnum].x;
+					int iy = (int)cameras[clientnum].y;
+					if ( ix >= 0 && ix < map.width && iy >= 0 && iy < map.height )
+					{
+						printTextFormatted(font8x8_bmp, 8, 44, "pos: x: %d y: %d pathmapZone: %d", 
+							ix, iy, pathMapGrounded[iy + ix * map.height]);
+					}
+				}
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();

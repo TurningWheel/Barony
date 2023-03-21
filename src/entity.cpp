@@ -1796,6 +1796,10 @@ void Entity::increaseSkill(int skill, bool notify)
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = skill;
 		net_packet->data[6] = myStats->PROFICIENCIES[skill];
+		if ( notify )
+		{
+			net_packet->data[6] |= (1 << 7);
+		}
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 7;
@@ -5929,10 +5933,10 @@ bool Entity::isInvisible() const
 			}
 		}
 	}
-	else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+	/*else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
 	{
 		return true;
-	}
+	}*/
 
 	return false;
 }
@@ -7911,7 +7915,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( myStats->type == GOBLIN )
 							{
 								chance = 10;
-								notify = false;
+								notify = true;
 							}
 
 							if ( local_rng.rand() % chance == 0 )
@@ -7936,7 +7940,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( myStats->type == GOBLIN )
 							{
 								chance = 12;
-								notify = false;
+								notify = true;
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
@@ -7951,7 +7955,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( myStats->type == GOBLIN && weaponskill != PRO_RANGED )
 							{
 								chance = 14;
-								notify = false;
+								notify = true;
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
@@ -16074,6 +16078,47 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	if ( this->behavior == &actPlayer )
 	{
 		playerhit = this->skill[2];
+	}
+
+	if ( armor.type == TOOL_TORCH && armor.count > 1 && playerhit >= 0 && &armor == stats[playerhit]->shield )
+	{
+		std::string itemName = armor.getName();
+		ItemType itemType = armor.type;
+		Status itemStatus = armor.status;
+
+		playSoundEntity(this, 76, 64);
+		messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[682], armor.getName()); // torch is destroyed
+
+		int qty = std::max(0, armor.count - 1);
+		Item* item = stats[playerhit]->shield;
+		consumeItem(item, playerhit);
+		if ( qty > 0 && item )
+		{
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
+			playSoundEntity(this, 134, 64); // ignite
+			if ( playerhit >= 0 && players[playerhit]->isLocalPlayer() )
+			{
+				players[playerhit]->hud.shieldSwitch = true;
+			}
+		}
+		if ( !item )
+		{
+			stats[playerhit]->shield = nullptr;
+		}
+
+		if ( multiplayer == SERVER && playerhit > 0 && !players[playerhit]->isLocalPlayer() )
+		{
+			strcpy((char*)net_packet->data, "TORC");
+			SDLNet_Write16((Sint16)itemType, &net_packet->data[4]);
+			net_packet->data[6] = itemStatus;
+			net_packet->data[7] = qty;
+			net_packet->address.host = net_clients[playerhit - 1].host;
+			net_packet->address.port = net_clients[playerhit - 1].port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+		}
+
+		return;
 	}
 
 	if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )

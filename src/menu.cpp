@@ -9612,6 +9612,8 @@ void doNewGame(bool makeHighscore) {
 	buddhamode = false;
 	everybodyfriendly = false;
 	gameloopFreezeEntities = false;
+	monsterGlobalAnimationMultiplier = 10;
+	monsterGlobalAttackTimeMultiplier = 1;
 	skipLevelsOnLoad = 0;
 
 #ifdef STEAMWORKS
@@ -10571,6 +10573,8 @@ void doEndgame(bool saveHighscore) {
 	buddhamode = false;
 	everybodyfriendly = false;
 	skipLevelsOnLoad = 0;
+	monsterGlobalAnimationMultiplier = 10;
+	monsterGlobalAttackTimeMultiplier = 1;
 
 	// reset game
 	darkmap = false;

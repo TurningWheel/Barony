@@ -299,6 +299,7 @@ int GAMEUI_FRAMEDATA_ALCHEMY_ITEM = 2;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
+int GAMEUI_FRAMEDATA_SHOP_ITEM = 6;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -5755,6 +5756,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	    else
 	    {
+			bool skipAnim = false;
 			bool effectActive = stats[player]->EFFECTS[i];
 			if ( i == EFF_LEVITATING && !effectActive )
 			{
@@ -5782,7 +5784,15 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			else if ( i == EFF_INVISIBLE && !effectActive && players[player]->entity )
 			{
+				bool oldSneaking = stats[player]->sneaking;
+				stats[player]->sneaking = false;
+				bool activeWithoutSneak = players[player]->entity->isInvisible();
+				stats[player]->sneaking = oldSneaking;
 				effectActive = players[player]->entity->isInvisible();
+				if ( !activeWithoutSneak )
+				{
+					skipAnim = true;
+				}
 			}
 
 		    if ( effectActive )
@@ -5799,6 +5809,29 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					else
 					{
 						insertEffect(i, -1);
+					}
+					if ( skipAnim )
+					{
+						auto& notif = notificationQueue.back();
+						notif.notificationState = StatusEffectQueueEntry_t::STATE_END;
+						notif.notificationStateInit = StatusEffectQueueEntry_t::STATE_END;
+
+						auto& entry = effectQueue.back();
+						entry.animateSetpointX = notif.notificationTargetPosition.x;
+						entry.animateSetpointY = notif.notificationTargetPosition.y;
+						entry.animateSetpointW = entry.notificationTargetPosition.w;
+						entry.animateSetpointH = entry.notificationTargetPosition.h;
+
+						entry.animateStartX = entry.animateSetpointX;
+						entry.animateStartY = entry.animateSetpointY;
+						entry.animateStartW = entry.animateSetpointW;
+						entry.animateStartH = entry.animateSetpointH;
+						entry.pos.x = entry.animateSetpointX;
+						entry.pos.y = entry.animateSetpointY;
+						entry.pos.w = entry.animateSetpointW;
+						entry.pos.h = entry.animateSetpointH;
+
+						notif.pos = entry.pos;
 					}
 			    }
 				else if ( i == EFF_SHAPESHIFT )
@@ -6161,7 +6194,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						}
 						notificationTxt->setText(definition.getName(variation).c_str());
 					}
-					notificationTxt->setDisabled(false);
+					if ( notificationImg->path != "" )
+					{
+						notificationTxt->setDisabled(false);
+					}
 				}
 			}
 			if ( auto textGet = notificationTxt->getTextObject() )
@@ -6525,8 +6561,19 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 									break;
 							}
 						}
+						if ( variation == -1 )
+						{
+							img->path = "";
+						}
+						else
+						{
+							img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+						}
 					}
-					img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+					else
+					{
+						img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+					}
 				}
 			}
 		}
@@ -17735,7 +17782,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				if ( !item->identified )
 				{
 					//beatitudeImg->color = makeColor( 128, 128, 0, 125);
-					beatitudeFrame->setDisabled(false);
+					if ( !(slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_SHOP_ITEM) )
+					{
+						beatitudeFrame->setDisabled(false);
+					}
 					//spriteImage->outlineColor = makeColor(210, 183, 76, 255);
 					//spriteImage->outline = true;
 				}
@@ -17838,7 +17888,8 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			if ( item->status == BROKEN )
 			{
 				if ( players[player]->shopGUI.bOpen 
-					&& isItemSellableToShop(player, item) )
+					&& isItemSellableToShop(player, item)
+					&& !(slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_SHOP_ITEM) )
 				{
 					// don't grey out this item
 				}
@@ -17948,7 +17999,11 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	{
 		appraisalFrame->setDisabled(true);
 		appraisalFrame->setDrawCallback(nullptr);
-		if ( item->notifyIcon )
+		if ( !item->identified )
+		{
+			appraisalFrame->setDisabled(false);
+		}
+		else if ( item->notifyIcon )
 		{
 			appraisalFrame->setDisabled(false);
 		}
@@ -17976,10 +18031,26 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			auto img = appraisalFrame->getImages()[SLOTFRAME_APPRAISAL_NOTIF_IMG];/*appraisalFrame->findImage("new notif img");*/
 			img->disabled = true;
-			if ( item->notifyIcon )
+			if ( !item->identified )
+			{
+				img->disabled = false;
+				img->path = "images/ui/Inventory/tooltips/Unidentified_Icon.png";
+				img->pos.x = 28;
+				img->pos.y = 4;
+				img->pos.w = 10;
+				img->pos.h = 14;
+				if ( isHotbarIcon || (slotFrame->getUserData() && *slotType == GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM) )
+				{
+					img->pos.x = 30;
+					img->pos.y = 6;
+				}
+			}
+			else if ( item->notifyIcon )
 			{
 				img->pos.x = 4;
 				img->pos.y = 4;
+				img->pos.w = 6;
+				img->pos.h = 14;
 				if ( isHotbarIcon && !players[player]->hotbar.useHotbarFaceMenu )
 				{
 					img->pos.x = 10;
@@ -22565,7 +22636,15 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else if ( !disableItemUsage )
 			{
-				GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				if ( item->status > BROKEN )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
 			}
 			else
 			{
@@ -24784,7 +24863,15 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(i);
 					if ( !definition.neverDisplay )
 					{
-						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
 						if ( imgPath != "" )
 						{
 							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
@@ -24838,7 +24925,15 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
 					if ( !definition.neverDisplay )
 					{
-						std::string imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
 						if ( imgPath != "" )
 						{
 							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
@@ -24872,7 +24967,7 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		return nullptr;
 	}
 
-	SDL_Surface* sprite = SDL_CreateRGBSurface(0, iconWidth + 2, iconHeight + 2, 32,
+	SDL_Surface* sprite = SDL_CreateRGBSurface(0, (iconWidth + 2) * statusEffectIcons.size(), iconHeight + 2, 32,
 		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
 	for ( auto& icon : statusEffectIcons )

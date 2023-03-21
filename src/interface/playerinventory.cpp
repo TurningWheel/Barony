@@ -8163,6 +8163,7 @@ void Player::Inventory_t::updateInventory()
 			{
 				if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 				{
+					slotFrame->setUserData(&GAMEUI_FRAMEDATA_SHOP_ITEM);
 					static ConsoleVariable<bool> cvar_shop_backgrounds("/shopbackgrounds", false);
 					if ( *cvar_shop_backgrounds )
 					{
@@ -8172,10 +8173,8 @@ void Player::Inventory_t::updateInventory()
 					{
 						bool oldIdentified = item->identified;
 						Sint32 oldBeatitude = item->beatitude;
-						item->identified = true;
 						item->beatitude = 0;
 						updateSlotFrameFromItem(slotFrame, item);
-						item->identified = oldIdentified;
 						item->beatitude = oldBeatitude;
 					}
 				}

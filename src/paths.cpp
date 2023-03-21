@@ -27,6 +27,265 @@ int pathMapZone = 1;
 #define STRAIGHTCOST 10
 #define DIAGONALCOST 14
 
+class GateGraph
+{
+	std::unordered_map<int, std::unordered_set<int>> edges;
+public:
+	int* mapSubzones;
+	int numSubzones = 1;
+	static const int GATE_GRAPH_GROUNDED = 0;
+	static const int GATE_GRAPH_FLYING = 1;
+	static const int GATE_GRAPH_NUM_PATHMAPS = 2;
+	int parentMapType = 0;
+	bool bIsInit = false;
+	struct GateNode_t
+	{
+		int x, y, zone1, zone2;
+		Uint32 uid = 0;
+		GateNode_t(int x, int y, int zone1, int zone2, Uint32 uid) :
+			x(x),
+			y(y),
+			zone1(zone1),
+			zone2(zone2)
+		{};
+		GateNode_t()
+		{
+			zone1 = -1;
+			zone2 = -1;
+			uid = 0;
+		}
+	};
+
+	//class CachedPaths_t
+	//{
+	//	bool bDirty = false;
+	//public:
+	//	std::unordered_map<int, int> path;
+	//	void setDirty(bool _bDirty) { bDirty = _bDirty; }
+	//	void setPath(std::unordered_map<int, int>& newPath)
+	//	{
+	//		path = newPath;
+	//		bDirty = false;
+	//	}
+	//	bool isDirty() { return bDirty; }
+	//};
+	//std::unordered_map<Uint32, CachedPaths_t> cachedPaths; // key: zone/zone*10000
+
+	std::map<int, GateNode_t> gateNodes;
+	std::unordered_map<int, std::unordered_set<int>> connectedZones;
+	void buildGraph(const int parentMapType);
+	void fillPathMap(int x, int y);
+	bool generatePath(int x1, int y1, int x2, int y2);
+	void reset()
+	{
+		if ( mapSubzones )
+		{
+			free(mapSubzones);
+		}
+		gateNodes.clear();
+		connectedZones.clear();
+		edges.clear();
+		//cachedPaths.clear();
+		numSubzones = 1;
+		bIsInit = false;
+	}
+	~GateGraph()
+	{
+		reset();
+	}
+	void addEdge(int a, int b)
+	{
+		edges[a].insert(b); // doubly linked
+		edges[b].insert(a);
+	}
+	static GateNode_t defaultGate;
+	GateNode_t& getGate(int x, int y)
+	{
+		Uint32 key = x + 10000 * y;
+		auto find = gateNodes.find(key);
+		if ( find == gateNodes.end() )
+		{
+			return defaultGate;
+		}
+		return (*find).second;
+	}
+	void addGate(int x, int y, int zone1, int zone2, Uint32 uid)
+	{
+		Uint32 key = x + 10000 * y;
+		gateNodes[key] = GateNode_t(x, y, zone1, zone2, uid);
+	}
+	bool isConnected(int start, int end)
+	{
+		if ( start == end ) { return true; }
+		if ( start == 0 || end == 0 ) { return false; }
+
+		if ( connectedZones[start].find(end) != connectedZones[start].end() )
+		{
+			return true;
+		}
+		if ( connectedZones[end].find(start) != connectedZones[end].end() )
+		{
+			return true;
+		}
+
+		std::queue<int> frontier;
+		frontier.push(start);
+
+		std::unordered_set<int> visited;
+		visited.insert(start);
+		while ( !frontier.empty() )
+		{
+			int current = frontier.front();
+			frontier.pop();
+			if ( current == end )
+			{
+				return true;
+			}
+			for ( auto neighbour : edges[current] )
+			{
+				if ( visited.find(neighbour) == visited.end() )
+				{
+					frontier.push(neighbour);
+					visited.insert(neighbour);
+				}
+			}
+		}
+		return false;
+	}
+
+	std::unordered_set<int> getAccessibleNeighbours(int index, bool ignorePassable)
+	{
+		std::unordered_set<int> neighbours;
+		for ( auto zone : edges[index] )
+		{
+			if ( ignorePassable )
+			{
+				neighbours.insert(zone);
+				continue;
+			}
+
+			for ( auto& pair : gateNodes )
+			{
+				auto& gate = pair.second;
+				// check the physical gate status
+				if ( (gate.zone1 == zone && gate.zone2 == index)
+					|| (gate.zone2 == zone && gate.zone1 == index) )
+				{
+					list_t* list = checkTileForEntity(gate.x, gate.y);
+					bool isImpassable = false;
+					if ( list )
+					{
+						node_t* node;
+						for ( node = list->first; node != NULL; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity )
+							{
+								if ( entity->behavior == &actGate )
+								{
+									if ( !entity->flags[PASSABLE] )
+									{
+										isImpassable = true;
+									}
+									break;
+								}
+							}
+						}
+					}
+					if ( !isImpassable )
+					{
+						neighbours.insert(zone);
+					}
+				}
+			}
+		}
+		return neighbours;
+	}
+
+	std::unordered_map<int, int> getPath(int start, int end)
+	{
+		Uint32 key = start + end * 10000;
+		if ( end < start )
+		{
+			key = end + start * 10000;
+		}
+		/*auto cacheFind = cachedPaths.find(key);
+		if ( cacheFind != cachedPaths.end() )
+		{
+			if ( !cacheFind->second.isDirty() )
+			{
+				messagePlayer(0, MESSAGE_DEBUG, "Found cached path for key %d", key);
+				return cacheFind->second.path;
+			}
+			else
+			{
+				messagePlayer(0, MESSAGE_DEBUG, "Found dirty path for key %d", key);
+			}
+		}*/
+		//auto& cachedPath = cachedPaths[key];
+		//cachedPath.setDirty(false);
+
+		std::queue<int> frontier;
+		frontier.push(start);
+
+		std::unordered_map<int, int> visited;
+		visited[start] = start;
+
+		while ( !frontier.empty() )
+		{
+			int current = frontier.front();
+			frontier.pop();
+			if ( current == end )
+			{
+				return visited;
+			}
+			for ( auto neighbour : getAccessibleNeighbours(current, false) )
+			{
+				if ( visited.find(neighbour) == visited.end() )
+				{
+					frontier.push(neighbour);
+					visited[neighbour] = current;
+				}
+			}
+		}
+
+		return visited;
+	}
+
+	void debugPaths();
+};
+GateGraph gateGraph[GateGraph::GATE_GRAPH_NUM_PATHMAPS];
+GateGraph::GateNode_t GateGraph::defaultGate(-1, -1, -1, -1, 0);
+void updateGatePath(Entity& entity)
+{
+	return;
+	/*int ix = ((int)entity.x >> 4);
+	int iy = ((int)entity.y >> 4);
+
+	for ( int i = 0; i < GateGraph::GATE_GRAPH_NUM_PATHMAPS; ++i )
+	{
+		auto& gate = gateGraph[i].getGate(ix, iy);
+		if ( gate.zone1 != -1 )
+		{
+			int zone1 = std::min(gate.zone1, gate.zone2);
+			int zone2 = std::max(gate.zone1, gate.zone2);
+			Uint32 key = zone1 + zone2 * 10000;
+			for ( auto pair : gateGraph[i].cachedPaths )
+			{
+				for ( auto node : pair.second.path )
+				{
+
+				}
+			}
+			auto find = gateGraph[i].cachedPaths.find(key);
+			if ( find != gateGraph[i].cachedPaths.end() )
+			{
+				find->second.setDirty(true);
+			}
+		}
+	}*/
+}
+
 /*-------------------------------------------------------------------------------
 
 	heuristic
@@ -197,10 +456,35 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 
 -------------------------------------------------------------------------------*/
 
-list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, bool lavaIsPassable)
+static std::chrono::high_resolution_clock::time_point pathtime;
+static std::chrono::high_resolution_clock::time_point starttime;
+static std::chrono::microseconds ms(0);
+static Uint32 updatedOnTick = 0;
+static ConsoleVariable<int> cvar_pathlimit("/pathlimit", 200);
+static ConsoleVariable<bool> cvar_pathing_debug("/pathing_debug", false);
+int lastGeneratePathTries = 0;
+list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, GeneratePathTypes pathingType, bool lavaIsPassable)
 {
+	if ( *cvar_pathing_debug )
+	{
+		pathtime = std::chrono::high_resolution_clock::now();
+		if ( updatedOnTick != ticks )
+		{
+			DebugStats.gui1 = starttime;
+			DebugStats.gui2 = {};
+			starttime = std::chrono::high_resolution_clock::now();
+			updatedOnTick = ticks;
+		}
+	}
 	if (!my)
 	{
+		if ( *cvar_pathing_debug )
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+			DebugStats.gui2 = DebugStats.gui2 + ms;
+		}
+		lastGeneratePathTries = 0;
 		return NULL;
 	}
 
@@ -243,11 +527,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	bool playerCheckAchievement = (my && my->behavior == &actPlayer
 		&& target && (target->behavior == &actBomb || target->behavior == &actPlayerLimb || target->behavior == &actItem || target->behavior == &actSwitch));
 
+	int pathMapType = GateGraph::GATE_GRAPH_GROUNDED;
 	if ( !loading )
 	{
 		if ( levitating || playerCheckPathToExit )
 		{
 			memcpy(pathMap, pathMapFlying, map.width * map.height * sizeof(int));
+			pathMapType = GateGraph::GATE_GRAPH_FLYING;
 		}
 		else
 		{
@@ -261,7 +547,34 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		if ( !myPathMap || myPathMap != pathMap[y2 + x2 * map.height] || !pathMap[y2 + x2 * map.height] || (x1 == x2 && y1 == y2) )
 		{
 			free(pathMap);
+			if ( *cvar_pathing_debug )
+			{
+				auto now = std::chrono::high_resolution_clock::now();
+				ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+				DebugStats.gui2 = DebugStats.gui2 + ms;
+			}
+			lastGeneratePathTries = 0;
 			return NULL;
+		}
+		if ( my->behavior == &actMonster )
+		{
+			if ( gateGraph[pathMapType].bIsInit )
+			{
+				bool bGatePath = gateGraph[pathMapType].generatePath(x1, y1, x2, y2);
+				if ( !bGatePath )
+				{
+					//messagePlayer(0, MESSAGE_DEBUG, "GATE GRAPH: %.4f", out1);
+					free(pathMap);
+					if ( *cvar_pathing_debug )
+					{
+						auto now = std::chrono::high_resolution_clock::now();
+						ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+						DebugStats.gui2 = DebugStats.gui2 + ms;
+					}
+					lastGeneratePathTries = 0;
+					return NULL;
+				}
+			}
 		}
 	}
 
@@ -388,8 +701,18 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	pathnode->h = heuristic(x1, y1, x2, y2);
 	heapAdd(binaryheap, pathnode, &heaplength);
 	int tries = 0;
+	int maxtries = *cvar_pathlimit;
+	static ConsoleVariable<int> cvar_pathlimit_idlewalk("/pathlimit_idlewalk", 40);
+	if ( pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS )
+	{
+		maxtries = *cvar_pathlimit_idlewalk;
+	}
 	while ( openList->first != NULL 
-		&& ((tries < 200 && !playerCheckPathToExit && !loading) 
+		&& ((tries < maxtries && !playerCheckPathToExit && !loading)
 			|| (tries < 10000 && (playerCheckPathToExit || loading))) )
 	{
 		/*pathnode = (pathnode_t *)openList->first->element;
@@ -432,6 +755,15 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			free(closedList);
 			free(binaryheap);
 			free(pathMap);
+
+			if ( *cvar_pathing_debug )
+			{
+				auto now = std::chrono::high_resolution_clock::now();
+				ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+				DebugStats.gui2 = DebugStats.gui2 + ms;
+				messagePlayer(0, MESSAGE_DEBUG, "PASS (%d): path tries: %d", (int)pathingType, tries);
+			}
+			lastGeneratePathTries = tries;
 			return path;
 		}
 
@@ -527,6 +859,14 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 					}
 					if ( alreadyadded == false )
 					{
+						/*if ( keystatus[SDLK_g] )
+						{
+							Entity* particle = spawnMagicParticle(my);
+							particle->sprite = 576;
+							particle->x = (pathnode->x + x) * 16.0 + 8.0;
+							particle->y = (pathnode->y + y) * 16.0 + 8.0;
+							particle->z = 0;
+						}*/
 						if ( list_Size(openList) >= 1000 )
 						{
 							list_FreeAll(openList);
@@ -535,6 +875,14 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 							free(closedList);
 							free(binaryheap);
 							free(pathMap);
+							if ( *cvar_pathing_debug )
+							{
+								auto now = std::chrono::high_resolution_clock::now();
+								ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+								DebugStats.gui2 = DebugStats.gui2 + ms;
+								messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d): path tries: %d", (int)pathingType, tries);
+							}
+							lastGeneratePathTries = tries;
 							return NULL;
 						}
 						childnode = newPathnode(openList, pathnode->x + x, pathnode->y + y, pathnode, 1);
@@ -554,13 +902,22 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 		++tries;
 	}
-	//messagePlayer(0, "tries %d", tries);
 	list_FreeAll(openList);
 	list_FreeAll(closedList);
 	free(openList);
 	free(closedList);
 	free(binaryheap);
 	free(pathMap);
+	if ( *cvar_pathing_debug )
+	{
+		auto now = std::chrono::high_resolution_clock::now();
+		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
+		DebugStats.gui2 = DebugStats.gui2 + ms;
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) uid: %d : path tries: %d (%d, %d) to (%d, %d)", (int)pathingType, 
+			my->getUID(),
+			tries, x1, y1, x2, y2);
+	}
+	lastGeneratePathTries = tries;
 	return NULL;
 }
 
@@ -582,12 +939,12 @@ void generatePathMaps()
 	{
 		free(pathMapGrounded);
 	}
-	pathMapGrounded = (int*) calloc(map.width * map.height, sizeof(int));
+	pathMapGrounded = (int*)calloc(map.width * map.height, sizeof(int));
 	if ( pathMapFlying )
 	{
 		free(pathMapFlying);
 	}
-	pathMapFlying = (int*) calloc(map.width * map.height, sizeof(int));
+	pathMapFlying = (int*)calloc(map.width * map.height, sizeof(int));
 
 	pathMapZone = 1;
 	for ( y = 0; y < map.height; y++ )
@@ -603,6 +960,14 @@ void generatePathMaps()
 				fillPathMap(pathMapFlying, x, y, pathMapZone);
 			}
 		}
+	}
+
+	for ( int i = 0; i < GateGraph::GATE_GRAPH_NUM_PATHMAPS; ++i )
+	{
+		auto& graph = gateGraph[i];
+		graph.reset();
+		graph.buildGraph(i);
+		graph.debugPaths();
 	}
 }
 
@@ -916,5 +1281,423 @@ bool isPathObstacle(Entity* entity)
 			return true;
 		}
 	}
+	return false;
+}
+
+
+void GateGraph::buildGraph(const int parentMapType)
+{
+	mapSubzones = (int*)calloc(map.width * map.height, sizeof(int));
+
+	int* parentMap = nullptr;
+	this->parentMapType = parentMapType;
+	if ( parentMapType == GateGraph::GATE_GRAPH_GROUNDED )
+	{
+		parentMap = pathMapGrounded;
+	}
+	else if ( parentMapType == GateGraph::GATE_GRAPH_FLYING )
+	{
+		parentMap = pathMapFlying;
+	}
+	else
+	{
+		printlog("[Gate Graph]: No matching type found: %d", parentMapType);
+		return;
+	}
+
+	if ( !parentMap )
+	{
+		printlog("[Gate Graph]: Parent map was NULL: %d", parentMapType);
+		return;
+	}
+
+	bIsInit = true;
+	numSubzones = 1;
+	for ( int y = 0; y < map.height; y++ )
+	{
+		for ( int x = 0; x < map.width; x++ )
+		{
+			int zone = parentMap[y + x * map.height];
+			if ( zone > 0 && !mapSubzones[y + x * map.height] )
+			{
+				fillPathMap(x, y);
+			}
+		}
+	}
+
+	for ( node_t* entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
+	{
+		Entity* entity = (Entity*)entityNode->element;
+		if ( entity->behavior == &actGate )
+		{
+			int ix = ((int)entity->x >> 4);
+			int iy = ((int)entity->y >> 4);
+			real_t angle = normaliseAngle2PI(entity->yaw);
+			if ( limbAngleWithinRange(angle, .05, PI / 2) || limbAngleWithinRange(angle, .05, 3 * PI / 2) )
+			{
+				int zone1 = mapSubzones[(iy - 1) + ix * map.height];
+				int zone2 = mapSubzones[(iy + 1) + ix * map.height];
+				int& middleZone = mapSubzones[iy + ix * map.height];
+				middleZone = zone1 + (zone2 * 10000);
+				addGate(ix, iy, zone1, zone2, entity->getUID());
+				/*printlog("N/S Gate: %d, %d: subzones: %d | %d (i am %d)", 
+					ix, iy, zone1, zone2, middleZone);*/
+			}
+			else
+			{
+				int zone1 = mapSubzones[iy + (ix - 1) * map.height];
+				int zone2 = mapSubzones[iy + (ix + 1) * map.height];
+				int& middleZone = mapSubzones[iy + ix * map.height];
+				middleZone = zone1 + (zone2 * 10000);
+				addGate(ix, iy,	zone1, zone2, entity->getUID());
+				/*printlog("E/W Gate: %d, %d: subzones: %d | %d (i am %d)", 
+					ix, iy, zone1, zone2, middleZone);*/
+			}
+		}
+	}
+	for ( auto& pair : gateNodes )
+	{
+		addEdge(pair.second.zone1, pair.second.zone2);
+	}
+
+	for ( int i = 0; i < numSubzones; ++i )
+	{
+		for ( int j = 0; j < numSubzones; ++j )
+		{
+			if ( i == j ) { continue; }
+			if ( connectedZones[i].find(j) != connectedZones[i].end() )
+			{
+				continue;
+			}
+			if ( connectedZones[j].find(i) != connectedZones[j].end() )
+			{
+				continue;
+			}
+			if ( isConnected(i, j) )
+			{
+				connectedZones[i].insert(j);
+				connectedZones[j].insert(i);
+			}
+		}
+	}
+
+	printlog("[Gate Graph]: Map %d Built successfully.", parentMapType);
+}
+
+void GateGraph::fillPathMap(int x, int y)
+{
+	int* parentMap = nullptr;
+	if ( parentMapType == GateGraph::GATE_GRAPH_GROUNDED )
+	{
+		parentMap = pathMapGrounded;
+	}
+	else if ( parentMapType == GateGraph::GATE_GRAPH_FLYING )
+	{
+		parentMap = pathMapFlying;
+	}
+
+	node_t* node;
+	list_t* list = checkTileForEntity(x, y);
+	if ( list )
+	{
+		for ( node = list->first; node != NULL; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity )
+			{
+				if ( entity->behavior == &actGate )
+				{
+					return;
+				}
+			}
+		}
+	}
+
+	mapSubzones[y + x * map.height] = numSubzones;
+
+	bool repeat;
+	do
+	{
+		repeat = false;
+
+		int u, v;
+		for ( u = 0; u < map.width; u++ )
+		{
+			for ( v = 0; v < map.height; v++ )
+			{
+				if ( mapSubzones[v + u * map.height] == numSubzones )
+				{
+					if ( u < map.width - 1 )
+					{
+						if ( !mapSubzones[v + (u + 1)*map.height] )
+						{
+							bool foundObstacle = false;
+							list_t* list = checkTileForEntity(u + 1, v);
+							if ( list )
+							{
+								node_t* node;
+								for ( node = list->first; node != NULL; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( entity )
+									{
+										if ( entity->behavior == &actGate )
+										{
+											foundObstacle = true;
+											break;
+										}
+									}
+								}
+							}
+							if ( !foundObstacle )
+							{
+								if ( parentMap[v + (u + 1)*map.height] )
+								{
+									mapSubzones[v + (u + 1)*map.height] = numSubzones;
+									repeat = true;
+								}
+							}
+						}
+					}
+					if ( u > 0 )
+					{
+						if ( !mapSubzones[v + (u - 1)*map.height] )
+						{
+							bool foundObstacle = false;
+							list_t* list = checkTileForEntity(u - 1, v);
+							if ( list )
+							{
+								node_t* node;
+								for ( node = list->first; node != NULL; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( entity )
+									{
+										if ( entity->behavior == &actGate )
+										{
+											foundObstacle = true;
+											break;
+										}
+									}
+								}
+							}
+							if ( !foundObstacle )
+							{
+								if ( parentMap[v + (u - 1)*map.height] )
+								{
+									mapSubzones[v + (u - 1)*map.height] = numSubzones;
+									repeat = true;
+								}
+							}
+						}
+					}
+					if ( v < map.height - 1 )
+					{
+						if ( !mapSubzones[(v + 1) + u * map.height] )
+						{
+							bool foundObstacle = false;
+							list_t* list = checkTileForEntity(u, v + 1);
+							if ( list )
+							{
+								node_t* node;
+								for ( node = list->first; node != NULL; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( entity )
+									{
+										if ( entity->behavior == &actGate )
+										{
+											foundObstacle = true;
+											break;
+										}
+									}
+								}
+							}
+							if ( !foundObstacle )
+							{
+								if ( parentMap[(v + 1) + u*map.height] )
+								{
+									mapSubzones[(v + 1) + u * map.height] = numSubzones;
+									repeat = true;
+								}
+							}
+						}
+					}
+					if ( v > 0 )
+					{
+						if ( !mapSubzones[(v - 1) + u * map.height] )
+						{
+							bool foundObstacle = false;
+							list_t* list = checkTileForEntity(u, v - 1);
+							if ( list )
+							{
+								node_t* node;
+								for ( node = list->first; node != NULL; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( entity )
+									{
+										if ( entity->behavior == &actGate )
+										{
+											foundObstacle = true;
+											break;
+										}
+									}
+								}
+							}
+							if ( !foundObstacle )
+							{
+								if ( parentMap[(v - 1) + u*map.height] )
+								{
+									mapSubzones[(v - 1) + u * map.height] = numSubzones;
+									repeat = true;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	} while ( repeat );
+	++numSubzones;
+}
+
+void GateGraph::debugPaths()
+{
+	return;
+	for ( int i = 0; i < numSubzones; ++i )
+	{
+		if ( connectedZones.find(i) == connectedZones.end() )
+		{
+			printlog("[Gate Graph]: Zone %d is isolated.", i);
+		}
+		else
+		{
+			for ( int j = 0; j < numSubzones; ++j )
+			{
+				if ( i == j ) { continue; }
+				auto pathMap = getPath(i, j);
+
+				if ( pathMap.find(j) == pathMap.end() )
+				{
+					printlog("[Gate Graph]: No path from %d to %d", i, j);
+				}
+				else
+				{
+					std::vector<int> path;
+					int current = j;
+					std::string pathStr = "[Gate Graph]: Path from ";
+					pathStr += std::to_string(i);
+					pathStr += " to ";
+					pathStr += std::to_string(j);
+					pathStr += ":    ";
+
+					while ( current != i )
+					{
+						path.push_back(current);
+						current = pathMap[current];
+					}
+					path.push_back(i);
+					for ( auto p : path )
+					{
+						pathStr += std::to_string(p);
+						pathStr += ",";
+					}
+					printlog(pathStr.c_str());
+				}
+			}
+		}
+	}
+}
+
+bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
+{
+	int srcZone = mapSubzones[y1 + x1 * map.height];
+	int destZone = mapSubzones[y2 + x2 * map.height];
+	if ( srcZone < numSubzones && destZone < numSubzones )
+	{
+		if ( srcZone == destZone ) { return true; }
+
+		if ( !isConnected(srcZone, destZone) )
+		{
+			return false;
+		}
+
+		auto path = getPath(srcZone, destZone);
+		if ( path.find(destZone) != path.end() )
+		{
+			//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+			return true;
+		}
+		//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+		return false;
+	}
+	else
+	{
+		// on a gate edge
+		std::vector<int> srcZonesToTest;
+		std::vector<int> destZonesToTest;
+		if ( srcZone >= numSubzones )
+		{
+			GateNode_t& srcGate = getGate(x1, y1);
+			if ( srcGate.zone1 != -1 )
+			{
+				srcZonesToTest.push_back(std::min(srcGate.zone1, srcGate.zone2));
+				srcZonesToTest.push_back(std::max(srcGate.zone1, srcGate.zone2));
+			}
+		}
+		else
+		{
+			srcZonesToTest.push_back(srcZone);
+		}
+		if ( destZone >= numSubzones )
+		{
+			GateNode_t& destGate = getGate(x2, y2);
+			if ( destGate.zone1 != -1 )
+			{
+				destZonesToTest.push_back(std::min(destGate.zone1, destGate.zone2));
+				destZonesToTest.push_back(std::max(destGate.zone1, destGate.zone2));
+			}
+		}
+		else
+		{
+			destZonesToTest.push_back(destZone);
+		}
+
+		std::unordered_set<int> visited;
+		std::unordered_set<int> uniqueZones;
+		for ( auto x : srcZonesToTest )
+		{
+			for ( auto y : destZonesToTest )
+			{
+				if ( x == y ) { continue; } // check the gate is open, same zone won't check gate
+				int x3 = std::min(x, y);
+				int y3 = std::max(x, y);
+				if ( visited.find(x3 + y3 * 10000) == visited.end() )
+				{
+					if ( isConnected(x3, y3) )
+					{
+						auto path = getPath(x3, y3);
+						if ( path.find(y3) != path.end() )
+						{
+							//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+							return true;
+						}
+					}
+					visited.insert(x3 + y3 * 10000);
+					uniqueZones.insert(x);
+					uniqueZones.insert(y);
+				}
+			}
+		}
+
+		if ( uniqueZones.size() == 1 )
+		{
+			//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d), no unique zones", x1, y1, x2, y2);
+			return true;
+		}
+	}
+
+	//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path found (%d-%d) from (%d, %d) to (%d, %d)", srcZone, destZone, x1, y1, x2, y2);
 	return false;
 }

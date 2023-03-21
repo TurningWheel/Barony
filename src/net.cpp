@@ -3670,7 +3670,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	{'SKIL', [](){
 	    const int pro = std::min(net_packet->data[5], (Uint8)(NUMPROFICIENCIES - 1));
 		int oldSkill = stats[clientnum]->PROFICIENCIES[pro];
-		stats[clientnum]->PROFICIENCIES[pro] = net_packet->data[6];
+		stats[clientnum]->PROFICIENCIES[pro] = (net_packet->data[6] & 0x7F);
+		bool notify = (net_packet->data[6] & (1 << 7)) != 0;
 
 		int statBonusSkill = getStatForProficiency(pro);
 
@@ -3687,7 +3688,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		if ( oldSkill < 100 )
 		{
-			skillUpAnimation[clientnum].addSkillUp(pro, oldSkill, stats[clientnum]->PROFICIENCIES[pro] - oldSkill);
+			if ( notify )
+			{
+				skillUpAnimation[clientnum].addSkillUp(pro, oldSkill, stats[clientnum]->PROFICIENCIES[pro] - oldSkill);
+			}
 		}
 	}},
 
