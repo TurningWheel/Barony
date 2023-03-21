@@ -61,6 +61,11 @@ void Entity::actChest()
 
 	if ( multiplayer == CLIENT )
 	{
+		if ( chestHasVampireBook )
+		{
+			spawnAmbientParticles(40, 600, 20 + local_rng.rand() % 30, 0.5, true);
+			spawnAmbientParticles(40, 600, 20 + local_rng.rand() % 30, 0.5, true);
+		}
 		return;
 	}
 

@@ -23,6 +23,7 @@
 #include "scores.hpp"
 #include "monster.hpp"
 #include "prng.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1204,7 +1205,8 @@ void actDecoyBox(Entity* my)
 								break;
 							}
 							if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] 
-								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
+								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
+									GeneratePathTypes::GENERATE_PATH_DEFAULT) && entity->children.first )
 							{
 								// path only if we're not on cooldown
 								entity->monsterLastDistractedByNoisemaker = my->getUID();

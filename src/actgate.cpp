@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "paths.hpp"
 
 void actGate(Entity* my)
 {
@@ -30,8 +31,7 @@ void actGate(Entity* my)
 
 void Entity::actGate()
 {
-	int i;
-
+	const bool oldPassable = flags[PASSABLE];
 	if ( multiplayer != CLIENT )
 	{
 		if ( circuit_status == 0 )
@@ -110,7 +110,7 @@ void Entity::actGate()
 	// rightclick message
 	if ( multiplayer != CLIENT )
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( selectedEntity[i] == this || client_selected[i] == this )
 			{
@@ -207,4 +207,12 @@ void Entity::actGate()
 	{
 		this->flags[PASSABLE] = true;
 	}
+
+	//if ( multiplayer != CLIENT )
+	//{
+	//	if ( flags[PASSABLE] != oldPassable )
+	//	{
+	//		updateGatePath(*this);
+	//	}
+	//}
 }

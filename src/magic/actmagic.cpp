@@ -266,7 +266,9 @@ void actMagiclightBall(Entity* my)
 					if (!my->path)
 					{
 						//messagePlayer(0, "[Light ball] Generating path.");
-						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
+						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
+							(int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent,
+							GeneratePathTypes::GENERATE_PATH_DEFAULT);
 						if ( path != NULL )
 						{
 							my->path = path;
@@ -1057,12 +1059,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										direction = -1;
 									}
-									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0) )
+									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0) )
+									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
@@ -1080,12 +1084,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										direction = -1;
 									}
 									// avoid x axis.
-									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0) )
+									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);
 									}
-									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0) )
+									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0,
+										GeneratePathTypes::GENERATE_PATH_MOVEASIDE) )
 									{
 										hit.entity->monsterState = MONSTER_STATE_HUNT;
 										serverUpdateEntitySkill(hit.entity, 0);

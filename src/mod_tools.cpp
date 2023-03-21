@@ -5682,8 +5682,11 @@ void ImGui_t::showHUDTimers()
 		switch ( i )
 		{
 			case 0:
-				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui2 - DebugStats.gui1).count();
+			{
+				auto ms = std::chrono::time_point_cast<std::chrono::microseconds>(DebugStats.gui2);
+				milliseconds = ms.time_since_epoch().count() / 1000.0;
 				break;
+			}
 			case 1:
 				milliseconds = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.gui3 - DebugStats.gui2).count();
 				break;

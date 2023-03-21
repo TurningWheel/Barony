@@ -5099,7 +5099,7 @@ bool AchievementObserver::PlayerAchievements::checkPathBetweenObjects(Entity* pl
 	}
 
 	list_t* playerPath = generatePath((int)floor(player->x / 16), (int)floor(player->y / 16),
-		(int)floor(target->x / 16), (int)floor(target->y / 16), player, target, true);
+		(int)floor(target->x / 16), (int)floor(target->y / 16), player, target, GeneratePathTypes::GENERATE_PATH_DEFAULT, true);
 	if ( playerPath == nullptr )
 	{
 		// no path.

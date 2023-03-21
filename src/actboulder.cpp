@@ -79,7 +79,7 @@ bool boulderCheckIfBlockedExit(Entity* my)
 				if ( players[c] && players[c]->entity )
 				{
 					list_t* path = generatePath(players[c]->entity->x / 16, players[c]->entity->y / 16, ladder->x / 16, ladder->y / 16,
-						players[c]->entity, ladder, true);
+						players[c]->entity, ladder, GeneratePathTypes::GENERATE_PATH_BOULDER_BREAK, true);
 					if ( path != NULL )
 					{
 						list_FreeAll(path);
