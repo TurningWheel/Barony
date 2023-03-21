@@ -3270,6 +3270,11 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->HUNGER = 100;
 			serverUpdateHunger(player);
 		}
+		else if ( myStats->type == SKELETON && myStats->HUNGER > 1500 )
+		{
+			myStats->HUNGER = 1499;
+			serverUpdateHunger(player);
+		}
 		if ( vampiricHunger > 0 )
 		{
 			if ( ticks % (TICKS_PER_SECOND * 25) == 0 )

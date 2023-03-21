@@ -316,7 +316,11 @@ void actFountain(Entity* my)
 								messagePlayer(i, MESSAGE_INTERACTION, language[470]);
 								messagePlayer(i, MESSAGE_INTERACTION, language[471]);
 								playSoundEntity(players[i]->entity, 52, 64);
-								stats[i]->HUNGER += 100;
+								if ( stats[i]->type != SKELETON )
+								{
+									stats[i]->HUNGER += 100;
+									serverUpdateHunger(i);
+								}
 								players[i]->entity->modHP(5);
 							}
 							else
