@@ -212,6 +212,11 @@ int initApp(char const * const title, int fullscreen)
 	g_SteamLeaderboards = new CSteamLeaderboards();
 	g_SteamWorkshop = new CSteamWorkshop();
 	g_SteamStatistics = new CSteamStatistics(g_SteamStats, g_SteamAPIGlobalStats, NUM_STEAM_STATISTICS);
+    if (xres == 1280 && yres == 720 && SteamUtils()->IsSteamRunningOnSteamDeck()) {
+        // default steam deck native resolution
+        xres = 1280;
+        yres = 800;
+    }
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
 #endif

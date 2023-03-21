@@ -337,6 +337,36 @@ Input::binding_t Input::input(const char* binding) const {
 	return b != bindings.end() ? (*b).second : Input::binding_t();
 }
 
+Input::ControllerType Input::getControllerType() const {
+    return getControllerType(player);
+}
+
+Input::ControllerType Input::getControllerType(int index) {
+#if defined(EDITOR)
+    return ControllerType::Xbox;
+#elif defined(NINTENDO)
+    // nintendo switch joycons
+    return ControllerType::NintendoSwitch;
+#else
+    // SDL lets us differentiate controller types
+    const int device = ::inputs.getControllerID(index);
+    auto type = SDL_GameControllerTypeForIndex(device);
+    switch(type) {
+    default:
+    case SDL_CONTROLLER_TYPE_UNKNOWN: return ControllerType::Xbox;
+    case SDL_CONTROLLER_TYPE_XBOX360: return ControllerType::Xbox;
+    case SDL_CONTROLLER_TYPE_XBOXONE: return ControllerType::Xbox;
+    case SDL_CONTROLLER_TYPE_PS3: return ControllerType::PlayStation;
+    case SDL_CONTROLLER_TYPE_PS4: return ControllerType::PlayStation;
+    case SDL_CONTROLLER_TYPE_PS5: return ControllerType::PlayStation;
+    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO: return ControllerType::NintendoSwitch;
+    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT: return ControllerType::NintendoSwitch;
+    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT: return ControllerType::NintendoSwitch;
+    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: return ControllerType::NintendoSwitch;
+    }
+#endif
+}
+
 const char* Input::getKeyboardGlyph() {
     return "*#images/ui/Glyphs/G_Control_KBM_01.png";
 }
@@ -349,182 +379,143 @@ const char* Input::getControllerGlyph() {
 #endif
 }
 
-std::string Input::getGlyphPathForInput(const char* input, bool pressed)
+std::string Input::getGlyphPathForInput(const char* input, bool pressed, ControllerType type)
 {
 #ifndef EDITOR
-	if (*cvar_hideGlyphs) {
-		return "";
-	}
-#endif
-    std::string in = input;
-	std::string rootPath = "images/ui/Glyphs/";
-#ifdef NINTENDO
-	if (in == "ButtonA") {
-		return pressed ? rootPath + "Button_Xbox_DarkA_Press_00.png" : rootPath + "Button_Xbox_DarkA_00.png";
-    }
-	if (in == "ButtonB") {
-		return pressed ? rootPath + "Button_Xbox_DarkB_Press_00.png" : rootPath + "Button_Xbox_DarkB_00.png";
-    }
-	if (in == "ButtonX") {
-		return pressed ? rootPath + "Button_Xbox_DarkX_Press_00.png" : rootPath + "Button_Xbox_DarkX_00.png";
-    }
-	if (in == "ButtonY") {
-		return pressed ? rootPath + "Button_Xbox_DarkY_Press_00.png" : rootPath + "Button_Xbox_DarkY_00.png";
-    }
-	if (in == "ButtonLeftBumper") {
-		return pressed ? rootPath + "G_Switch_L_Press00.png" : rootPath + "G_Switch_L00.png";
-    }
-	if (in == "ButtonRightBumper") {
-		return pressed ? rootPath + "G_Switch_R_Press00.png" : rootPath + "G_Switch_R00.png";
-    }
-	if ( in == "ButtonLeftStick" ) {
-		return pressed ? rootPath + "Stick_Switch_L_Pressed_00.png" : rootPath + "Stick_Switch_L_00.png";
-	}
-	if ( in == "ButtonRightStick" ) {
-		return pressed ? rootPath + "Stick_Switch_R_Pressed_00.png" : rootPath + "Stick_Switch_R_00.png";
-	}
-	if (in == "ButtonStart") {
-		return pressed ? rootPath + "PlusMed_Press00.png" : rootPath + "PlusMed00.png";
-    }
-	if (in == "ButtonBack") {
-		return pressed ? rootPath + "MinusMed_Press00.png" : rootPath + "MinusMed00.png";
-    }
-	if ( in == "StickLeftX-" ) {
-		return pressed ? rootPath + "Stick_Switch_L_Left_Pressed_00.png" : rootPath + "Stick_Switch_L_Left_00.png";
-	}
-	if ( in == "StickLeftX+" ) {
-		return pressed ? rootPath + "Stick_Switch_L_Right_Pressed_00.png" : rootPath + "Stick_Switch_L_Right_00.png";
-    }
-	if ( in == "StickLeftY-" ) {
-		return pressed ? rootPath + "Stick_Switch_L_Up_Pressed_00.png" : rootPath + "Stick_Switch_L_Up_00.png";
-	}
-	if ( in == "StickLeftY+" ) {
-		return pressed ? rootPath + "Stick_Switch_L_Down_Pressed_00.png" : rootPath + "Stick_Switch_L_Down_00.png";
-	}
-	if ( in == "StickRightX-" ) {
-		return pressed ? rootPath + "Stick_Switch_R_Left_Pressed_00.png" : rootPath + "Stick_Switch_R_Left_00.png";
-	}
-	if ( in == "StickRightX+" ) {
-		return pressed ? rootPath + "Stick_Switch_R_Right_Pressed_00.png" : rootPath + "Stick_Switch_R_Right_00.png";
-    }
-	if ( in == "StickRightY-" ) {
-		return pressed ? rootPath + "Stick_Switch_R_Up_Pressed_00.png" : rootPath + "Stick_Switch_R_Up_00.png";
-	}
-	if ( in == "StickRightY+" ) {
-		return pressed ? rootPath + "Stick_Switch_R_Down_Pressed_00.png" : rootPath + "Stick_Switch_R_Down_00.png";
-	}
-	if (in == "LeftTrigger") {
-		return pressed ? rootPath + "G_Switch_ZL00.png" : rootPath + "G_Switch_ZL_Press00.png";
-	}
-	if (in == "RightTrigger") {
-		return pressed ? rootPath + "G_Switch_ZR00.png" : rootPath + "G_Switch_ZR_Press00.png";
-	}
-	if (in == "DpadY-") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Up_Press00.png";
-    }
-	if (in == "DpadX-") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Left_Press00.png";
-    }
-	if (in == "DpadY+") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Down_Press00.png";
-    }
-	if (in == "DpadX+") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Right_Press00.png";
-    }
-#else
-	if (in == "ButtonA") {
-		return pressed ? rootPath + "Button_Xbox_DarkA_Press_00.png" : rootPath + "Button_Xbox_DarkA_00.png";
-    }
-	if (in == "ButtonB") {
-		return pressed ? rootPath + "Button_Xbox_DarkB_Press_00.png" : rootPath + "Button_Xbox_DarkB_00.png";
-    }
-	if (in == "ButtonX") {
-		return pressed ? rootPath + "Button_Xbox_DarkX_Press_00.png" : rootPath + "Button_Xbox_DarkX_00.png";
-    }
-	if (in == "ButtonY") {
-		return pressed ? rootPath + "Button_Xbox_DarkY_Press_00.png" : rootPath + "Button_Xbox_DarkY_00.png";
-    }
-	if (in == "ButtonLeftBumper") {
-		return pressed ? rootPath + "Button_Xbox_LB_Press_00.png" : rootPath + "Button_Xbox_LB_00.png";
-    }
-	if (in == "ButtonRightBumper") {
-		return pressed ? rootPath + "Button_Xbox_RB_Press_00.png" : rootPath + "Button_Xbox_RB_00.png";
-    }
-	if ( in == "ButtonLeftStick" ) {
-		return pressed ? rootPath + "Stick_Xbox_L_Pressed_00.png" : rootPath + "Stick_Xbox_L_00.png";
-	}
-	if ( in == "ButtonRightStick" ) {
-		return pressed ? rootPath + "Stick_Xbox_R_Pressed_00.png" : rootPath + "Stick_Xbox_R_00.png";
-	}
-	if (in == "ButtonStart") {
-		return pressed ? rootPath + "Button_Xbox_Menu_Press_00.png" : rootPath + "Button_Xbox_Menu_00.png";
-    }
-	if (in == "ButtonBack") {
-		return pressed ? rootPath + "Button_Xbox_View_Press_00.png" : rootPath + "Button_Xbox_View_00.png";
-    }
-	if ( in == "StickLeftX-" ) {
-		return pressed ? rootPath + "Stick_Xbox_L_Left_Pressed_00.png" : rootPath + "Stick_Xbox_L_Left_00.png";
-	}
-	if ( in == "StickLeftX+" ) {
-		return pressed ? rootPath + "Stick_Xbox_L_Right_Pressed_00.png" : rootPath + "Stick_Xbox_L_Right_00.png";
-    }
-	if ( in == "StickLeftY-" ) {
-		return pressed ? rootPath + "Stick_Xbox_L_Up_Pressed_00.png" : rootPath + "Stick_Xbox_L_Up_00.png";
-	}
-	if ( in == "StickLeftY+" ) {
-		return pressed ? rootPath + "Stick_Xbox_L_Down_Pressed_00.png" : rootPath + "Stick_Xbox_L_Down_00.png";
-	}
-	if ( in == "StickRightX-" ) {
-		return pressed ? rootPath + "Stick_Xbox_R_Left_Pressed_00.png" : rootPath + "Stick_Xbox_R_Left_00.png";
-	}
-	if ( in == "StickRightX+" ) {
-		return pressed ? rootPath + "Stick_Xbox_R_Right_Pressed_00.png" : rootPath + "Stick_Xbox_R_Right_00.png";
-    }
-	if ( in == "StickRightY-" ) {
-		return pressed ? rootPath + "Stick_Xbox_R_Up_Pressed_00.png" : rootPath + "Stick_Xbox_R_Up_00.png";
-	}
-	if ( in == "StickRightY+" ) {
-		return pressed ? rootPath + "Stick_Xbox_R_Down_Pressed_00.png" : rootPath + "Stick_Xbox_R_Down_00.png";
-	}
-	if (in == "LeftTrigger") {
-		return pressed ? rootPath + "Button_Xbox_LT_Press_00.png" : rootPath + "Button_Xbox_LT_00.png";
-	}
-	if (in == "RightTrigger") {
-		return pressed ? rootPath + "Button_Xbox_RT_Press_00.png" : rootPath + "Button_Xbox_RT_00.png";
-	}
-	if (in == "DpadY-") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Up_Press00.png";
-    }
-	if (in == "DpadX-") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Left_Press00.png";
-    }
-	if (in == "DpadY+") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Down_Press00.png";
-    }
-	if (in == "DpadX+") {
-		return pressed ? rootPath + "G_Direct_00.png" : rootPath + "G_Direct_Right_Press00.png";
+    if (*cvar_hideGlyphs) {
+        return "";
     }
 #endif
+    if (!input || !input[0]) {
+        return "";
+    }
+    
+    // base path
+    const std::string rootPath = "images/ui/Glyphs/";
+    
+    if (type == ControllerType::PlayStation) {
+        static const std::unordered_map<std::string, std::pair<std::string, std::string>> mappings = {
+            {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
+            {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
+            {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+            {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
+            {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
+            {"ButtonA", {"G_PS_X00.png", "G_PS_X_Press00.png"}},
+            {"ButtonB", {"G_PS_O00.png", "G_PS_O_Press00.png"}},
+            {"ButtonX", {"G_PS_Box00.png", "G_PS_Box_Press00.png"}},
+            {"ButtonY", {"G_PS_Tri00.png", "G_PS_Tri_Press00.png"}},
+            {"ButtonLeftBumper", {"Button_PS_L1_00.png", "Button_PS_L1_Press_00.png"}},
+            {"ButtonRightBumper", {"Button_PS_R1_00.png", "Button_PS_R1_Press_00.png"}},
+            {"ButtonLeftStick", {"Stick_PS_L_00.png", "Stick_PS_L_Pressed_00.png"}},
+            {"ButtonRightStick", {"Stick_PS_R_00.png", "Stick_PS_R_Pressed_00.png"}},
+            {"ButtonStart", {"Button_OptC.png", "Button_OptC_Press00.png"}},
+            {"ButtonBack", {"Button_Touchpad_PS5_00B.png", "Button_Touchpad_PS5_00C.png"}},
+            {"StickLeftX-", {"Stick_PS_L_Left_00.png", "Stick_PS_L_Left_Pressed_00.png"}},
+            {"StickLeftX+", {"Stick_PS_L_Right_00.png", "Stick_PS_L_Right_Pressed_00.png"}},
+            {"StickLeftY-", {"Stick_PS_L_Up_00.png", "Stick_PS_L_Up_Pressed_00.png"}},
+            {"StickLeftY+", {"Stick_PS_L_Down_00.png", "Stick_PS_L_Down_Pressed_00.png"}},
+            {"StickRightX-", {"Stick_PS_R_Left_00.png", "Stick_PS_R_Left_Pressed_00.png"}},
+            {"StickRightX+", {"Stick_PS_R_Right_00.png", "Stick_PS_R_Right_Pressed_00.png"}},
+            {"StickRightY-", {"Stick_PS_R_Up_00.png", "Stick_PS_R_Up_Pressed_00.png"}},
+            {"StickRightY+", {"Stick_PS_R_Down_00.png", "Stick_PS_R_Down_Pressed_00.png"}},
+            {"LeftTrigger", {"Button_PS_L2_00.png", "Button_PS_L2_Press_00.png"}},
+            {"RightTrigger", {"Button_PS_R2_00.png", "Button_PS_R2_Press_00.png"}},
+            {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
+            {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
+            {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
+            {"DpadY+", {"G_Direct_Down_Press00.png", "G_Direct_00.png"}},
+        };
+        
+        // look for glyph in table
+        auto find = mappings.find(input);
+        if (find != mappings.end()) {
+            auto& glyphs = find->second;
+            return pressed ? rootPath + glyphs.second : rootPath + glyphs.first;
+        }
+    }
+    else if (type == ControllerType::NintendoSwitch) {
+        static const std::unordered_map<std::string, std::pair<std::string, std::string>> mappings = {
+            {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
+            {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
+            {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+            {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
+            {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
+            {"ButtonA", {"Button_Xbox_DarkA_00.png", "Button_Xbox_DarkA_Press_00.png"}},
+            {"ButtonB", {"Button_Xbox_DarkB_00.png", "Button_Xbox_DarkB_Press_00.png"}},
+            {"ButtonX", {"Button_Xbox_DarkX_00.png", "Button_Xbox_DarkX_Press_00.png"}},
+            {"ButtonY", {"Button_Xbox_DarkY_00.png", "Button_Xbox_DarkY_Press_00.png"}},
+            {"ButtonLeftBumper", {"G_Switch_L00.png", "G_Switch_L_Press00.png"}},
+            {"ButtonRightBumper", {"G_Switch_R00.png", "G_Switch_R_Press00.png"}},
+            {"ButtonLeftStick", {"Stick_Switch_L_00.png", "Stick_Switch_L_Pressed_00.png"}},
+            {"ButtonRightStick", {"Stick_Switch_R_00.png", "Stick_Switch_R_Pressed_00.png"}},
+            {"ButtonStart", {"PlusMed00.png", "PlusMed_Press00.png"}},
+            {"ButtonBack", {"MinusMed00.png", "MinusMed_Press00.png"}},
+            {"StickLeftX-", {"Stick_Switch_L_Left_00.png", "Stick_Switch_L_Left_Pressed_00.png"}},
+            {"StickLeftX+", {"Stick_Switch_L_Right_00.png", "Stick_Switch_L_Right_Pressed_00.png"}},
+            {"StickLeftY-", {"Stick_Switch_L_Up_00.png", "Stick_Switch_L_Up_Pressed_00.png"}},
+            {"StickLeftY+", {"Stick_Switch_L_Down_00.png", "Stick_Switch_L_Down_Pressed_00.png"}},
+            {"StickRightX-", {"Stick_Switch_R_Left_00.png", "Stick_Switch_R_Left_Pressed_00.png"}},
+            {"StickRightX+", {"Stick_Switch_R_Right_00.png", "Stick_Switch_R_Right_Pressed_00.png"}},
+            {"StickRightY-", {"Stick_Switch_R_Up_00.png", "Stick_Switch_R_Up_Pressed_00.png"}},
+            {"StickRightY+", {"Stick_Switch_R_Down_00.png", "Stick_Switch_R_Down_Pressed_00.png"}},
+            {"LeftTrigger", {"G_Switch_ZL00.png", "G_Switch_ZL_Press00.png"}},
+            {"RightTrigger", {"G_Switch_ZR00.png", "G_Switch_ZR_Press00.png"}},
+            {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
+            {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
+            {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
+            {"DpadY+", {"G_Direct_Down_Press00.png", "G_Direct_00.png"}},
+        };
+        
+        // look for glyph in table
+        auto find = mappings.find(input);
+        if (find != mappings.end()) {
+            auto& glyphs = find->second;
+            return pressed ? rootPath + glyphs.second : rootPath + glyphs.first;
+        }
+    }
+    else if (type == ControllerType::Xbox) {
+        static const std::unordered_map<std::string, std::pair<std::string, std::string>> mappings =
+        {
+            {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
+            {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
+            {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+            {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
+            {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
+            {"ButtonA", {"Button_Xbox_DarkA_00.png", "Button_Xbox_DarkA_Press_00.png"}},
+            {"ButtonB", {"Button_Xbox_DarkB_00.png", "Button_Xbox_DarkB_Press_00.png"}},
+            {"ButtonX", {"Button_Xbox_DarkX_00.png", "Button_Xbox_DarkX_Press_00.png"}},
+            {"ButtonY", {"Button_Xbox_DarkY_00.png", "Button_Xbox_DarkY_Press_00.png"}},
+            {"ButtonLeftBumper", {"Button_Xbox_LB_00.png", "Button_Xbox_LB_Press_00.png"}},
+            {"ButtonRightBumper", {"Button_Xbox_RB_00.png", "Button_Xbox_RB_Press_00.png"}},
+            {"ButtonLeftStick", {"Stick_Xbox_L_00.png", "Stick_Xbox_L_Pressed_00.png"}},
+            {"ButtonRightStick", {"Stick_Xbox_R_00.png", "Stick_Xbox_R_Pressed_00.png"}},
+            {"ButtonStart", {"Button_Xbox_Menu_00.png", "Button_Xbox_Menu_Press_00.png"}},
+            {"ButtonBack", {"Button_Xbox_View_00.png", "Button_Xbox_View_Press_00.png"}},
+            {"StickLeftX-", {"Stick_Xbox_L_Left_00.png", "Stick_Xbox_L_Left_Pressed_00.png"}},
+            {"StickLeftX+", {"Stick_Xbox_L_Right_00.png", "Stick_Xbox_L_Right_Pressed_00.png"}},
+            {"StickLeftY-", {"Stick_Xbox_L_Up_00.png", "Stick_Xbox_L_Up_Pressed_00.png"}},
+            {"StickLeftY+", {"Stick_Xbox_L_Down_00.png", "Stick_Xbox_L_Down_Pressed_00.png"}},
+            {"StickRightX-", {"Stick_Xbox_R_Left_00.png", "Stick_Xbox_R_Left_Pressed_00.png"}},
+            {"StickRightX+", {"Stick_Xbox_R_Right_00.png", "Stick_Xbox_R_Right_Pressed_00.png"}},
+            {"StickRightY-", {"Stick_Xbox_R_Up_00.png", "Stick_Xbox_R_Up_Pressed_00.png"}},
+            {"StickRightY+", {"Stick_Xbox_R_Down_00.png", "Stick_Xbox_R_Down_Pressed_00.png"}},
+            {"LeftTrigger", {"Button_Xbox_LT_00.png", "Button_Xbox_LT_Press_00.png"}},
+            {"RightTrigger", {"Button_Xbox_RT_00.png", "Button_Xbox_RT_Press_00.png"}},
+            {"DpadX-", {"G_Direct_Left_Press00.png", "G_Direct_00.png"}},
+            {"DpadX+", {"G_Direct_Right_Press00.png", "G_Direct_00.png"}},
+            {"DpadY-", {"G_Direct_Up_Press00.png", "G_Direct_00.png"}},
+            {"DpadY+", {"G_Direct_Down_Press00.png", "G_Direct_00.png"}},
+        };
+        
+        // look for glyph in table
+        auto find = mappings.find(input);
+        if (find != mappings.end()) {
+            auto& glyphs = find->second;
+            return pressed ? rootPath + glyphs.second : rootPath + glyphs.first;
+        }
+    }
 
-	// mouse glyphs:
-
-	if (in == "Mouse1") {
-		return pressed ? rootPath + "Mouse/Mouse_LClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_LClick_Pressed_00.png";
-	}
-	if (in == "Mouse2") {
-		return pressed ? rootPath + "Mouse/Mouse_MClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_MClick_Pressed_00.png";
-	}
-	if (in == "Mouse3") {
-		return pressed ? rootPath + "Mouse/Mouse_RClick_Unpressed_00.png" : rootPath + "Mouse/Mouse_RClick_Pressed_00.png";
-	}
-	if (in == "MouseWheelDown") {
-		return pressed ? rootPath + "Mouse/Mouse_MWheelDown_Unpressed_00.png" : rootPath + "Mouse/Mouse_MWheelDown_Pressed_00.png";
-	}
-	if (in == "MouseWheelUp") {
-		return pressed ? rootPath + "Mouse/Mouse_MWheelUp_Unpressed_00.png" : rootPath + "Mouse/Mouse_MWheelUp_Pressed_00.png";
-	}
-
-	// if nothing else, its probably a keyboard glyph:
+	// if the above lookups don't work, it's probably a keyboard glyph
 	auto keycode = getKeycodeFromName(input);
 	return GlyphHelper.getGlyphPath(keycode, pressed);
 }
@@ -543,9 +534,10 @@ std::string Input::getGlyphPathForBinding(const binding_t& binding, bool pressed
 {
 	const auto prefix = binding.input.substr(0, 3);
 	if (prefix == "Pad" || prefix == "Joy") {
-		return getGlyphPathForInput(binding.input.c_str() + 4, pressed);
+        const int index = binding.input[3] - '0';
+		return getGlyphPathForInput(binding.input.c_str() + 4, pressed, getControllerType(index));
 	} else {
-		return getGlyphPathForInput(binding.input.c_str(), pressed);
+		return getGlyphPathForInput(binding.input.c_str(), pressed, ControllerType::Xbox);
 	}
 }
 
@@ -566,7 +558,7 @@ void Input::bind(const char* binding, const char* input) {
 		// game controller
 
 		char* type = nullptr;
-		Uint32 index = strtol((const char*)(input + 3), &type, 10);
+		Uint32 index = (Uint32)strtol((const char*)(input + 3), &type, 10);
 		bool foundControllerForPlayer = false;
 		SDL_GameController* pad = nullptr;
 #ifndef EDITOR
@@ -613,7 +605,8 @@ void Input::bind(const char* binding, const char* input) {
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "Back") == 0) {
-					(*b).second.padButton = SDL_CONTROLLER_BUTTON_BACK;
+					(*b).second.padButton = getControllerType() == ControllerType::PlayStation ?
+                        SDL_CONTROLLER_BUTTON_TOUCHPAD : SDL_CONTROLLER_BUTTON_BACK;
 					(*b).second.type = binding_t::CONTROLLER_BUTTON;
 					return;
 				} else if (strcmp((const char*)(type + 6), "Start") == 0) {
@@ -733,7 +726,7 @@ void Input::bind(const char* binding, const char* input) {
 		// joystick
 
 		char* type = nullptr;
-		Uint32 index = strtol((const char*)(input + 3), &type, 10);
+		Uint32 index = (Uint32)strtol((const char*)(input + 3), &type, 10);
 		auto& list = joysticks;
 		auto find = list.find(index);
 		if (find != list.end()) {
@@ -741,21 +734,21 @@ void Input::bind(const char* binding, const char* input) {
 			(*b).second.joystick = joystick;
 			if (strncmp(type, "Button", 6) == 0) {
 				(*b).second.type = binding_t::JOYSTICK_BUTTON;
-				(*b).second.joystickButton = strtol((const char*)(type + 6), nullptr, 10);
+				(*b).second.joystickButton = (Uint32)strtol((const char*)(type + 6), nullptr, 10);
 				return;
 			} else if (strncmp(type, "Axis-", 5) == 0) {
 				(*b).second.type = binding_t::JOYSTICK_AXIS;
 				(*b).second.joystickAxisNegative = true;
-				(*b).second.joystickAxis = strtol((const char*)(type + 5), nullptr, 10);
+				(*b).second.joystickAxis = (Uint32)strtol((const char*)(type + 5), nullptr, 10);
 				return;
 			} else if (strncmp(type, "Axis+", 5) == 0) {
 				(*b).second.type = binding_t::JOYSTICK_AXIS;
 				(*b).second.joystickAxisNegative = false;
-				(*b).second.joystickAxis = strtol((const char*)(type + 5), nullptr, 10);
+				(*b).second.joystickAxis = (Uint32)strtol((const char*)(type + 5), nullptr, 10);
 				return;
 			} else if (strncmp(type, "Hat", 3) == 0) {
 				(*b).second.type = binding_t::JOYSTICK_HAT;
-				(*b).second.joystickHat = strtol((const char*)(type + 3), nullptr, 10);
+				(*b).second.joystickHat = (Uint32)strtol((const char*)(type + 3), nullptr, 10);
 				if (type[3]) {
 					if (strncmp((const char*)(type + 4), "LeftUp", 6) == 0) {
 						(*b).second.joystickHatState = SDL_HAT_LEFTUP;
@@ -809,7 +802,7 @@ void Input::bind(const char* binding, const char* input) {
 			(*b).second.mouseButton = MOUSE_WHEEL_DOWN;
 			return;
 		}
-		Uint32 index = strtol((const char*)(input + 5), nullptr, 10);
+		Uint32 index = (Uint32)strtol((const char*)(input + 5), nullptr, 10);
 		int result = std::min(index, 15U);
 		(*b).second.mouseButton = result;
 		return;
@@ -824,7 +817,7 @@ void Input::bind(const char* binding, const char* input) {
 void Input::update() {
 	for (auto& pair : bindings) {
 		auto& binding = pair.second;
-		const float oldAnalog = binding.analog;
+		//const float oldAnalog = binding.analog;
 		binding.analog = analogOf(binding);
 		const bool oldBinary = binding.binary;
 		binding.binary = binaryOf(binding);

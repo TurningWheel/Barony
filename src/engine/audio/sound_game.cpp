@@ -288,23 +288,25 @@ FMOD::Channel* playSound(Uint16 snd, Uint8 vol)
 	{
 		return nullptr;
 	}
-	FMOD::Channel* channel;
+	FMOD::Channel* channel = nullptr;
 	fmod_result = fmod_system->playSound(sounds[snd], getChannelGroupForSoundIndex(snd), true, &channel);
-	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
-	FMOD_VECTOR position;
-	position.x = 0;
-	position.y = 0;
-	position.z = 0;
-
-	channel->set3DAttributes(&position, nullptr);
-	channel->setVolume(vol / 255.f);
-	channel->setMode(FMOD_3D_HEADRELATIVE);
-
-	if (FMODErrorCheck())
-	{
-		return nullptr;
-	}
-	channel->setPaused(false);
+    if (fmod_result == FMOD_OK && channel) {
+        //Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
+        FMOD_VECTOR position;
+        position.x = 0;
+        position.y = 0;
+        position.z = 0;
+        
+        channel->set3DAttributes(&position, nullptr);
+        channel->setVolume(vol / 255.f);
+        channel->setMode(FMOD_3D_HEADRELATIVE);
+        
+        if (FMODErrorCheck())
+        {
+            return nullptr;
+        }
+        channel->setPaused(false);
+    }
 	return channel;
 }
 

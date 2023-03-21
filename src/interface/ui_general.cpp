@@ -238,7 +238,8 @@ void UIToastNotification::drawDockedCard()
 	r.x = Frame::virtualScreenX - r.w + docked_animx;
 	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
-	sizeWindowDecorations(*frame);
+    SDL_Rect r2 = r; r2.x = 0; r2.y = 0;
+	sizeWindowDecorations(*frame, r2);
 
 #if defined(NINTENDO)
 	const bool clicking = fingerdown;
@@ -297,7 +298,8 @@ void UIToastNotification::drawMainCard()
 	r.x = Frame::virtualScreenX - r.w + animx;
 	r.y = Frame::virtualScreenY - r.h - posy;
 	frame->setSize(r);
-	sizeWindowDecorations(*frame);
+    SDL_Rect r2 = r; r2.x = 0; r2.y = 0;
+    sizeWindowDecorations(*frame, r2);
 
 	if (actionFlags & UI_NOTIFICATION_STATISTIC_UPDATE)
 	{
@@ -834,52 +836,51 @@ void createGenericWindowDecorations(Frame& frame) {
 	frame.addImage(SDL_Rect{ 0,0,0,0 }, 0xffffffff, "*#images/ui/GenericWindow.png", "bottomright");
 }
 
-void sizeWindowDecorations(Frame& frame) {
-	const auto r = frame.getSize();
+void sizeWindowDecorations(Frame& frame, SDL_Rect r) {
 	{
 		auto img = frame.findImage("topleft"); assert(img);
 		img->section = SDL_Rect{ 0, 0, 16, 16 };
-		img->pos = SDL_Rect{ 0, 0, 16, 16 };
+		img->pos = SDL_Rect{ r.x, r.y, 16, 16 };
 	}
 	{
 		auto img = frame.findImage("top"); assert(img);
 		img->section = SDL_Rect{ 16, 0, 16, 16 };
-		img->pos = SDL_Rect{ 16, 0, r.w - 32, 16 };
+		img->pos = SDL_Rect{ r.x + 16, r.y, r.w - 32, 16 };
 	}
 	{
 		auto img = frame.findImage("topright"); assert(img);
 		img->section = SDL_Rect{ 32, 0, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, 0, 16, 16 };
+		img->pos = SDL_Rect{ r.x + r.w - 16, r.y, 16, 16 };
 	}
 	{
 		auto img = frame.findImage("left"); assert(img);
 		img->section = SDL_Rect{ 0, 16, 16, 16 };
-		img->pos = SDL_Rect{ 0, 16, 16, r.h - 32 };
+		img->pos = SDL_Rect{ r.x, r.y + 16, 16, r.h - 32 };
 	}
 	{
 		auto img = frame.findImage("center"); assert(img);
 		img->section = SDL_Rect{ 16, 16, 16, 16 };
-		img->pos = SDL_Rect{ 16, 16, r.w - 32, r.h - 32 };
+		img->pos = SDL_Rect{ r.x + 16, r.y + 16, r.w - 32, r.h - 32 };
 	}
 	{
 		auto img = frame.findImage("right"); assert(img);
 		img->section = SDL_Rect{ 32, 16, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, 16, 16, r.h - 32 };
+		img->pos = SDL_Rect{ r.x + r.w - 16, r.y + 16, 16, r.h - 32 };
 	}
 	{
 		auto img = frame.findImage("bottomleft"); assert(img);
 		img->section = SDL_Rect{ 0, 32, 16, 16 };
-		img->pos = SDL_Rect{ 0, r.h - 16, 16, 16 };
+		img->pos = SDL_Rect{ r.x, r.y + r.h - 16, 16, 16 };
 	}
 	{
 		auto img = frame.findImage("bottom"); assert(img);
 		img->section = SDL_Rect{ 16, 32, 16, 16 };
-		img->pos = SDL_Rect{ 16, r.h - 16, r.w - 32, 16 };
+		img->pos = SDL_Rect{ r.x + 16, r.y + r.h - 16, r.w - 32, 16 };
 	}
 	{
 		auto img = frame.findImage("bottomright"); assert(img);
 		img->section = SDL_Rect{ 32, 32, 16, 16 };
-		img->pos = SDL_Rect{ r.w - 16, r.h - 16, 16, 16 };
+		img->pos = SDL_Rect{ r.x + r.w - 16, r.y + r.h - 16, 16, 16 };
 	}
 }
 
