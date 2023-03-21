@@ -5012,8 +5012,10 @@ namespace MainMenu {
 					}
 
 					tooltip->setText(buf);
-					Input::inputs[bound_player].setDisabled(true);
 					Input::lastInputOfAnyKind = "";
+					for (int c = 0; c < MAXPLAYERS; ++c) {
+						Input::inputs[c].setDisabled(true);
+					}
 					for (auto button : subwindow->getButtons()) {
 						button->setDisabled(true);
 					}
@@ -5096,7 +5098,9 @@ bind_failed:
 						button->setDisabled(false);
 					}
 
-					Input::inputs[bound_player].setDisabled(false);
+					for (int c = 0; c < MAXPLAYERS; ++c) {
+						Input::inputs[c].setDisabled(false);
+					}
 					bound_binding = "";
 					bind_mode = false;
 				}
@@ -15054,7 +15058,8 @@ failed:
                         // pressing A on a lobby after selecting it will join that lobby
                         const auto& lobby = lobbies[lobbyId];
                         if (!lobby.locked) {
-                            if (connectToServer(lobby.address.c_str(), nullptr,
+							int index = lobby.index;
+                            if (connectToServer(lobby.address.c_str(), &index,
                                     directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                                 // only deselect the list if the connection begins
                                 entry.parent.deselect();
