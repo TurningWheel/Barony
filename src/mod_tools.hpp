@@ -3179,3 +3179,30 @@ public:
 
 extern GameplayPreferences_t gameplayPreferences[MAXPLAYERS];
 #endif
+
+struct EditorEntityData_t
+{
+	struct EntityColliderData_t
+	{
+		int gib = 0;
+		int sfxBreak = 0;
+		int sfxHit = 0;
+		std::string damageCalculationType = "default";
+		std::string name = "";
+		std::string hpbarLookupName = "object";
+		int entityLangEntry = 4335;
+		int hitMessageLangEntry = 2509;
+		int breakMessageLangEntry = 2510;
+	};
+	struct ColliderDmgProperties_t
+	{
+		bool burnable = false;
+		bool minotaurPathThroughAndBreak = false;
+		bool meleeAffects = false;
+		bool magicAffects = false;
+	};
+	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
+	static std::map<int, EntityColliderData_t> colliderData;
+	static void readFromFile();
+};
+extern EditorEntityData_t editorEntityData;

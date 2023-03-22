@@ -397,6 +397,7 @@ public:
 	Sint32& colliderDamageTypes; //skill[11]
 	Sint32& colliderCurrentHP; //skill[12]
 	Sint32& colliderOldHP; //skill[13]
+	Sint32& colliderInit; //skill[14]
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
@@ -690,6 +691,7 @@ public:
 
 	//Door functions.
 	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
+	void colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
@@ -972,6 +974,12 @@ public:
 	bool bEntityTooltipRequiresButtonHeld() const;
 	bool bEntityHighlightedForPlayer(const int player) const;
 	void updateEntityOnHit(Entity* attacker, bool alertTarget);
+	bool isDamageableCollider() const;
+	bool isColliderDamageableByMelee() const;
+	bool isColliderDamageableByMagic() const;
+	int getColliderOnHitLangEntry() const;
+	int getColliderOnBreakLangEntry() const;
+	int getColliderLangName() const;
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

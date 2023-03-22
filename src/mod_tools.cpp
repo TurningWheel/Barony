@@ -7568,3 +7568,76 @@ void GameplayPreferences_t::serverProcessGameConfig()
 	}
 }
 #endif // !EDITOR
+
+EditorEntityData_t editorEntityData;
+std::map<int, EditorEntityData_t::EntityColliderData_t> EditorEntityData_t::colliderData;
+std::map<std::string, EditorEntityData_t::ColliderDmgProperties_t> EditorEntityData_t::colliderDmgTypes;
+void EditorEntityData_t::readFromFile()
+{
+	const std::string filename = "data/entity_data.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	char buf[65536];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.HasMember("version") || !d.HasMember("entities") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	colliderData.clear();
+	colliderDmgTypes.clear();
+	auto& entityTypes = d["entities"];
+	if ( entityTypes.HasMember("collider_dmg_calcs") )
+	{
+		for ( auto itr = entityTypes["collider_dmg_calcs"].MemberBegin(); itr != entityTypes["collider_dmg_calcs"].MemberEnd();
+			++itr )
+		{
+			auto& colliderDmg = colliderDmgTypes[itr->name.GetString()];
+			colliderDmg.burnable = itr->value["burnable"].GetBool();
+			colliderDmg.minotaurPathThroughAndBreak = itr->value["minotaur_path_and_break"].GetBool();
+			colliderDmg.meleeAffects = itr->value["melee"].GetBool();
+			colliderDmg.magicAffects = itr->value["magic"].GetBool();
+		}
+	}
+	if ( entityTypes.HasMember("collider_dmg_types") )
+	{
+		for ( auto itr = entityTypes["collider_dmg_types"].MemberBegin(); itr != entityTypes["collider_dmg_types"].MemberEnd();
+			++itr )
+		{
+			auto indexStr = itr->name.GetString();
+			int index = std::stoi(indexStr);
+			auto& collider = colliderData[index];
+			collider.name = itr->value["name"].GetString();
+			collider.gib = itr->value["gib_model"].GetInt();
+			collider.sfxBreak = itr->value["sfx_break"].GetInt();
+			collider.sfxHit = itr->value["sfx_hit"].GetInt();
+			collider.damageCalculationType = itr->value["damage_calc"].GetString();
+			collider.entityLangEntry = itr->value["entity_lang_entry"].GetInt();
+			collider.hitMessageLangEntry = itr->value["hit_message"].GetInt();
+			collider.breakMessageLangEntry = itr->value["break_message"].GetInt();
+			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
+		}
+	}
+}

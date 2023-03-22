@@ -362,6 +362,11 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 	{
 		return "chest";
 	}
+	else if ( entity->isDamageableCollider() )
+	{
+		auto& colliderData = EditorEntityData_t::colliderData[entity->colliderDamageTypes];
+		return colliderData.hpbarLookupName;
+	}
 	else if ( entity->behavior == &actFurniture )
 	{
 		switch ( entity->furnitureType )

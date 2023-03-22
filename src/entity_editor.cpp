@@ -254,6 +254,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	colliderDamageTypes(skill[11]),
 	colliderCurrentHP(skill[12]),
 	colliderOldHP(skill[13]),
+	colliderInit(skill[14]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),

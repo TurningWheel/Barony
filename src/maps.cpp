@@ -6644,10 +6644,17 @@ void assignActions(map_t* map)
 				}
 				entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
 				entity->flags[BLOCKSIGHT] = false;
-				entity->flags[UNCLICKABLE] = true;
 				entity->behavior = &actColliderDecoration;
 				entity->colliderCurrentHP = entity->colliderMaxHP;
 				entity->colliderOldHP = entity->colliderMaxHP;
+				if ( entity->isDamageableCollider() )
+				{
+					entity->flags[UNCLICKABLE] = false;
+				}
+				else
+				{
+					entity->flags[UNCLICKABLE] = true;
+				}
 				/*if ( multiplayer != CLIENT )
 				{
 				entity_uids--;

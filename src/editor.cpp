@@ -2033,6 +2033,7 @@ int main(int argc, char** argv)
 		}
 	}
 	loadTilePalettes();
+	EditorEntityData_t::readFromFile();
 
 	bool achievementCartographer = false;
 
@@ -8029,19 +8030,16 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 10 )
 								{
-									if ( propertyInt > 8 || propertyInt < 0 )
+									if ( EditorEntityData_t::colliderData.find(propertyInt) ==
+										EditorEntityData_t::colliderData.end() )
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
 									else
 									{
-										char tmpStr[32] = "";
-										switch ( propertyInt )
-										{
-											default:
-												strcpy(tmpStr, "Unimplemented");
-												break;
-										}
+										char tmpStr[64] = "";
+										auto& colliderData = EditorEntityData_t::colliderData[propertyInt];
+										snprintf(tmpStr, sizeof(tmpStr), "%s", colliderData.name.c_str());
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}
 								}

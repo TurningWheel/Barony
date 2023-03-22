@@ -958,7 +958,14 @@ void actMinotaurCeilingBuster(Entity* my)
 							{
 								if ( multiplayer != CLIENT )
 								{
-									entity->skill[4] = 0; // destroy the door
+									entity->doorHealth = 0; // destroy the door
+								}
+							}
+							else if ( entity->isDamageableCollider() )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									entity->colliderCurrentHP = 0;
 								}
 							}
 							else if ( entity->behavior == &actGate )

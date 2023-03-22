@@ -2557,7 +2557,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					createParticleDot(entity);
 					break;
 				case PARTICLE_EFFECT_ABILITY_ROCK:
-					createParticleRock(entity);
+					createParticleRock(entity, sprite);
 					break;
 				case PARTICLE_EFFECT_SHATTERED_GEM:
 					createParticleShatteredGem(entity->x, entity->y, 7.5, sprite, entity);

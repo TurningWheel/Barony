@@ -569,6 +569,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
+			if ( entity->isDamageableCollider() && entity->colliderHasCollision == 2
+				&& my->behavior == &actMonster && my->getMonsterTypeFromSprite() == MINOTAUR )
+			{
+				continue;
+			}
 			if ( (my->behavior == &actMonster || my->behavior == &actBoulder) && entity->behavior == &actDoorFrame )
 			{
 				continue;    // monsters don't have hard collision with door frames
@@ -1605,6 +1610,11 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 							continue;
 						}
 						if ( my && entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+						{
+							continue;
+						}
+						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR && entity->isDamageableCollider()
+							&& entity->colliderHasCollision == 2 )
 						{
 							continue;
 						}

@@ -529,6 +529,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 		{
 			hit.entity->doorHandleDamageMagic(damage, my, parent);
 		}
+		else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+		{
+			hit.entity->colliderHandleDamageMagic(damage, my, parent);
+		}
 		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
 	}
 	else
@@ -638,6 +642,10 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 		else if ( hit.entity->behavior == &actDoor )
 		{
 			hit.entity->doorHandleDamageMagic(damage, my, parent);
+		}
+		else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+		{
+			hit.entity->colliderHandleDamageMagic(damage, my, parent);
 		}
 		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
 	}

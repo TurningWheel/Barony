@@ -134,6 +134,10 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		{
 			oldhp = target->chestOldHealth;
 		}
+		else if ( target->isDamageableCollider() )
+		{
+			oldhp = target->colliderOldHP;
+		}
 		else
 		{
 			oldhp = hp;

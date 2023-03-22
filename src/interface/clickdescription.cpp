@@ -104,6 +104,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, language[256]);
 				}
+				else if ( entity->isDamageableCollider() )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, language[254], language[entity->getColliderLangName()]);
+				}
 				else if ( entity->behavior == &actItem )
 				{
 					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], false, NULL);

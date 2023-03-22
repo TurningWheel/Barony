@@ -282,6 +282,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	colliderDamageTypes(skill[11]),
 	colliderCurrentHP(skill[12]),
 	colliderOldHP(skill[13]),
+	colliderInit(skill[14]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -7081,9 +7082,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 			if ( hit.entity->behavior == &actBoulder )
 			{
-				if ( myStats->weapon != nullptr || pose == PLAYER_POSE_GOLEM_SMASH )
+				if ( (myStats->weapon != nullptr && !shapeshifted) || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
-					if ( (myStats->weapon && myStats->weapon->type == TOOL_PICKAXE) || pose == PLAYER_POSE_GOLEM_SMASH )
+					if ( (myStats->weapon && myStats->weapon->type == TOOL_PICKAXE && !shapeshifted) || pose == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// spawn several rock items
 						if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -7091,7 +7092,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							createParticleRock(hit.entity);
 							if ( multiplayer == SERVER )
 							{
-								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 0);
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 							}
 						}
 						else
@@ -7341,7 +7342,42 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity = ohitentity;
 				}
 			}
-			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest )
+			else if ( hit.entity->behavior == &actColliderDecoration
+				&& hit.entity->colliderDiggable != 0
+				&& ((myStats->weapon && myStats->weapon->type == TOOL_PICKAXE && !shapeshifted) || pose == PLAYER_POSE_GOLEM_SMASH) )
+			{
+				magicDig(this, nullptr, 1, 0);
+
+				if ( myStats->weapon && local_rng.rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
+				{
+					myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+					if ( myStats->weapon->status < BROKEN )
+					{
+						myStats->weapon->status = BROKEN; // bounds checking.
+					}
+					if ( myStats->weapon->status == BROKEN )
+					{
+						messagePlayer(player, MESSAGE_COMBAT, language[664]);
+						playSoundEntity(this, 76, 64);
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_COMBAT, language[665]);
+					}
+					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "ARMR");
+						net_packet->data[4] = 5;
+						net_packet->data[5] = myStats->weapon->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
+				}
+			}
+			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest
+				|| (hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMelee()) )
 			{
 				int axe = 0;
 				int damage = 1;
@@ -7390,14 +7426,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage *= 2;
 					}
 				}
-				if ( hit.entity->behavior != &::actChest )
-				{
-					hit.entity->skill[4] -= damage; // decrease door/furniture health
-				}
-				else
-				{
-					hit.entity->skill[3] -= damage; // decrease chest health extra
-				}
+
+				int& entityHP = hit.entity->behavior == &actColliderDecoration ? hit.entity->colliderCurrentHP :
+					(hit.entity->behavior == &::actChest ? hit.entity->chestHealth :
+					(hit.entity->behavior == &actDoor ? hit.entity->doorHealth :
+						hit.entity->furnitureHealth));
+
+				entityHP -= damage;
+
 				if ( whip )
 				{
 					playSoundEntity(hit.entity, 407 + local_rng.rand() % 3, 64);
@@ -7406,7 +7442,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					playSoundEntity(hit.entity, 28, 64);
 				}
-				if ( (hit.entity->behavior != &::actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &::actChest && hit.entity->skill[3] > 0) )
+				if ( entityHP > 0 )
 				{
 					if ( hit.entity->behavior == &actDoor )
 					{
@@ -7415,6 +7451,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[667]);
+					}
+					else if ( hit.entity->isDamageableCollider() )
+					{
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[hit.entity->getColliderOnHitLangEntry()],
+							language[hit.entity->getColliderLangName()]);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -7442,7 +7483,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
-					hit.entity->skill[4] = 0;
+					entityHP = 0;
 					if ( hit.entity->behavior == &actDoor )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, language[670]);
@@ -7458,6 +7499,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, language[671]);
+					}
+					else if ( hit.entity->isDamageableCollider() )
+					{
+						messagePlayer(player, MESSAGE_COMBAT, language[hit.entity->getColliderOnBreakLangEntry()],
+							language[hit.entity->getColliderLangName()]);
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
@@ -7485,30 +7531,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( hit.entity->behavior == &actDoor )
 				{
-					updateEnemyBar(this, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+					updateEnemyBar(this, hit.entity, language[674], entityHP, hit.entity->skill[9]);
 				}
 				else if ( hit.entity->behavior == &::actChest )
 				{
-					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
+					updateEnemyBar(this, hit.entity, language[675], entityHP, hit.entity->skill[8]);
+				}
+				else if ( hit.entity->isDamageableCollider() )
+				{
+					updateEnemyBar(this, hit.entity, language[hit.entity->getColliderLangName()], entityHP, hit.entity->colliderMaxHP);
 				}
 				else if ( hit.entity->behavior == &::actFurniture )
 				{
 					switch ( hit.entity->furnitureType )
 					{
 						case FURNITURE_CHAIR:
-							updateEnemyBar(this, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, language[677], entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_TABLE:
-							updateEnemyBar(this, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, language[676], entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_BED:
-							updateEnemyBar(this, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, language[2505], entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_BUNKBED:
-							updateEnemyBar(this, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, language[2506], entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_PODIUM:
-							updateEnemyBar(this, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, language[2507], entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						default:
 							break;
@@ -8702,7 +8752,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							createParticleRock(hit.entity);
 							if ( multiplayer == SERVER )
 							{
-								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 0);
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 							}
 							if ( target == nullptr )
 							{
