@@ -1197,9 +1197,6 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 				if (frameResult.tooltip != nullptr) {
 					result = frameResult;
 				}
-			} else {
-				delete frame;
-				frames.erase(frames.begin() + i);
 			}
 		}
 	}
@@ -1715,11 +1712,19 @@ void Frame::postprocess() {
 	if (!dontTickChildren) {
 	    for (int c = 0; c < frames.size(); ++c) {
 	        auto frame = frames[c];
-	        if (!frame->disabled) {
+	        if (!frame->disabled && !frame->toBeDeleted) {
 		        frame->postprocess();
 	        }
 	    }
 	}
+    for (int c = 0; c < frames.size(); ++c) {
+        auto frame = frames[c];
+        if (frame->toBeDeleted) {
+            delete frame;
+            frames.erase(frames.begin() + c);
+            --c;
+        }
+    }
 
 #ifndef EDITOR
 	if (dropDown && inputs.bPlayerUsingKeyboardControl(owner)) {
