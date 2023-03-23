@@ -367,6 +367,9 @@ public:
 
 	//--PUBLIC CEILING TILE SKILLS--
 	Sint32& ceilingTileModel; //skill[0]
+	Sint32& ceilingTileDir; //skill[1]
+	Sint32& ceilingTileAllowTrap; //skill[3]
+	Sint32& ceilingTileBreakable; //skill[4]
 
 	//--PUBLIC FLOOR DECORATION MODELS--
 	Sint32& floorDecorationModel; //skill[0]

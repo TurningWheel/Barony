@@ -1530,11 +1530,17 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// copy old entity attributes to newly created.
 			entityNew->ceilingTileModel = entityToCopy->ceilingTileModel;
+			entityNew->ceilingTileDir = entityToCopy->ceilingTileDir;
+			entityNew->ceilingTileAllowTrap = entityToCopy->ceilingTileAllowTrap;
+			entityNew->ceilingTileBreakable = entityToCopy->ceilingTileBreakable;
 		}
 		else
 		{
 			// set default new entity attributes.
 			entityNew->ceilingTileModel = 0;
+			entityNew->ceilingTileDir = 0;
+			entityNew->ceilingTileAllowTrap = 0;
+			entityNew->ceilingTileBreakable = 0;
 		}
 	}
 	// spell trap

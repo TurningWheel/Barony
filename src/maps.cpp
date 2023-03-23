@@ -2607,6 +2607,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			possiblelocations[c] = false;
 		}
+		std::unordered_map<int, int> trapLocationAndSide;
 		for ( y = 1; y < map.height - 1; ++y )
 		{
 			for ( x = 1; x < map.width - 1; ++x )
@@ -2632,10 +2633,31 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					sides++;
 				}
+				int side = 0;
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
+				{
+					side = 0;
+				}
+				else if ( !map.tiles[OBSTACLELAYER + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					side = 1;
+				}
+				else if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
+				{
+					side = 2;
+				}
+				else if ( !map.tiles[OBSTACLELAYER + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					side = 3;
+				}
 				if ( sides == 1 && (trapexcludelocations[x + y * map.width] == false) )
 				{
 					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
+
+					int trapTileX = x + (side == 0 ? 1 : 0) + (side == 2 ? -1 : 0);
+					int trapTileY = y + (side == 1 ? 1 : 0) + (side == 3 ? -1 : 0);
+					trapLocationAndSide[trapTileX + trapTileY * 10000] = side;
 				}
 			}
 		}
@@ -2654,20 +2676,71 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 		}
 
+		bool arrowtrappotential = false;
+		if ( !strncmp(map.name, "Hell", 4) )
+		{
+			arrowtrappotential = true;
+		}
+		else if ( currentlevel > 5 && currentlevel <= 25 )
+		{
+			arrowtrappotential = true;
+		}
+
+		std::vector<Entity*> ceilingTilesConflictingWithBoulders;
+		std::vector<Entity*> ceilingTilesToDeleteForBoulders;
+
 		// do a second pass to look for internal doorways
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			int x = entity->x / 16;
 			int y = entity->y / 16;
-			if ( (mapSpriteIsDoorway(entity->sprite) )
-				&& (x >= 0 && x < map.width)
-				&& (y >= 0 && y < map.height) )
+			if ( (x >= 1 && x < map.width - 1)
+				&& (y >= 1 && y < map.height - 1) )
 			{
-				if ( possiblelocations[y + x * map.height] )
+				if ( mapSpriteIsDoorway(entity->sprite) )
 				{
-					possiblelocations[y + x * map.height] = false;
-					--numpossiblelocations;
+					auto find = trapLocationAndSide.find(x + y * 10000);
+					if ( find != trapLocationAndSide.end() )
+					{
+						int side = find->second;
+						int trapx = x + (side == 0 ? -1 : 0) + (side == 2 ? 1 : 0);
+						int trapy = y + (side == 1 ? -1 : 0) + (side == 3 ? 1 : 0);
+						if ( possiblelocations[trapy + trapx * map.height] )
+						{
+							possiblelocations[trapy + trapx * map.height] = false;
+							--numpossiblelocations;
+						}
+					}
+				}
+				else if ( entity->sprite == 119 ) // ceiling tile
+				{
+					if ( entity->ceilingTileAllowTrap == 0 )
+					{
+						if ( !arrowtrappotential )
+						{
+							auto find = trapLocationAndSide.find(x + y * 10000);
+							if ( find != trapLocationAndSide.end() )
+							{
+								int side = find->second;
+								int trapx = x + (side == 0 ? -1 : 0) + (side == 2 ? 1 : 0);
+								int trapy = y + (side == 1 ? -1 : 0) + (side == 3 ? 1 : 0);
+								if ( possiblelocations[trapy + trapx * map.height] )
+								{
+									possiblelocations[trapy + trapx * map.height] = false;
+									--numpossiblelocations;
+								}
+							}
+						}
+						else
+						{
+							ceilingTilesConflictingWithBoulders.push_back(entity);
+						}
+					}
+					else if ( entity->ceilingTileAllowTrap == 1 )
+					{
+						ceilingTilesToDeleteForBoulders.push_back(entity);
+					}
 				}
 			}
 		}
@@ -2755,10 +2828,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			bool arrowtrap = false;
 			bool noceiling = false;
 			bool arrowtrapspawn = false;
-			bool arrowtrappotential = false;
 			if ( !strncmp(map.name, "Hell", 4) )
 			{
-				arrowtrappotential = true;
 				if ( side == 0 && !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 				{
 					noceiling = true;
@@ -2782,11 +2853,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				if ( currentlevel > 5 && currentlevel <= 25 )
-				{
-					arrowtrappotential = true;
-				}
-
 				if ( !strncmp(map.name, "Underworld", 10) )
 				{
 					arrowtrapspawn = true; // no boulders in underworld
@@ -2806,6 +2872,26 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 
+			// check if ceiling tiles prevent boulders
+			if ( !arrowtrapspawn )
+			{
+				for ( auto itr = ceilingTilesConflictingWithBoulders.begin();
+					itr != ceilingTilesConflictingWithBoulders.end(); ++itr )
+				{
+					auto ceilingTile = *itr;
+					int tx = ceilingTile->x / 16;
+					int ty = ceilingTile->y / 16;
+
+					int trapLocationX = x + ((side == 0) ? 1 : 0) + ((side == 2) ? -1 : 0);
+					int trapLocationY = y + ((side == 1) ? 1 : 0) + ((side == 3) ? -1 : 0);
+					if ( tx == trapLocationX && ty == trapLocationY )
+					{
+						arrowtrapspawn = true;
+						break;
+					}
+				}
+			}
+
 			if ( arrowtrapspawn || noceiling || (nofloor && arrowtrappotential) )
 			{
 				arrowtrap = true;
@@ -2818,6 +2904,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				//messagePlayer(0, "Included at x: %d, y: %d", x, y);
 				entity = newEntity(38, 1, map.entities, nullptr); // boulder trap
 				entity->behavior = &actBoulderTrap;
+
+				// delete ceiling tiles if need be
+				for ( auto itr = ceilingTilesToDeleteForBoulders.begin();
+					itr != ceilingTilesToDeleteForBoulders.end(); )
+				{
+					auto ceilingTile = *itr;
+					int tx = ceilingTile->x / 16;
+					int ty = ceilingTile->y / 16;
+					
+					int trapLocationX = x + ((side == 0) ? 1 : 0) + ((side == 2) ? -1 : 0);
+					int trapLocationY = y + ((side == 1) ? 1 : 0) + ((side == 3) ? -1 : 0);
+					if ( tx == trapLocationX && ty == trapLocationY )
+					{
+						list_RemoveNode(ceilingTile->mynode);
+						itr = ceilingTilesToDeleteForBoulders.erase(itr);
+					}
+					else
+					{
+						++itr;
+					}
+				}
 			}
 			entity->x = x * 16;
 			entity->y = y * 16;
@@ -6107,7 +6214,7 @@ void assignActions(map_t* map)
 				}
 				entity->sizex = 8;
 				entity->sizey = 8;
-				//entity->yaw = PI / 2;
+				entity->yaw = entity->ceilingTileDir * 90 * (PI / 180.f);
 				entity->behavior = &actCeilingTile;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BLOCKSIGHT] = false;

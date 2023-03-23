@@ -198,9 +198,12 @@ char teleporterPropertyNames[3][25] =
 	"Type of sprite (0-2)"
 };
 
-char ceilingTilePropertyNames[1][30] =
+char ceilingTilePropertyNames[4][30] =
 {
-	"Model texture to use (0-9999)"
+	"Model texture to use (0-9999)",
+	"Direction (0-3)",
+	"Allow boulder trap gen (0-2)",
+	"Allow minotaur break (0-1)"
 };
 
 char spellTrapPropertyNames[5][38] =
@@ -5512,6 +5515,84 @@ int main(int argc, char** argv)
 									if ( propertyInt > 9999 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "South");
+												break;
+											case 2:
+												strcpy(tmpStr, "West");
+												break;
+											case 3:
+												strcpy(tmpStr, "North");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 2 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case 0:
+												strcpy(tmpStr, "No trap spawn");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+												break;
+											case 1:
+												strcpy(tmpStr, "Allow spawn and destroy tile");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+												break;
+											case 2:
+												strcpy(tmpStr, "Allow spawn and keep tile");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorRandom, tmpStr);
+												break;
+											default:
+												break;
+										}
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt == 0 )
+										{
+											strcpy(tmpStr, "Indestructible");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+										}
+										else if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "Minotaur breaks");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+										}
 									}
 								}
 								else

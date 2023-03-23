@@ -6410,5 +6410,8 @@ for accessory to violence!#
 4332 You break the box open!#
 4333 Arachnophobia Filter has been enabled for the lobby.#
 4334 Arachnophobia Filter has been disabled for the lobby.#
+4335 object#
+4336 wall#
+4337 You destroy the %s!#
 
 4399 end#
