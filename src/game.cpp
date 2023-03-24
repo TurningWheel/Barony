@@ -3633,7 +3633,11 @@ bool handleEvents(void)
 	}
 
 	// detect app focus changes
-	if (nxAppOutOfFocus()) {
+	const bool asleep = nxAppOutOfFocus();
+#ifdef USE_EOS
+	EOS.SetSleepStatus(asleep);
+#endif
+	if (asleep) {
 		if (!intro && !gamePaused) {
 			if (!MainMenu::isMenuOpen() && !MainMenu::isCutsceneActive()) {
 				pauseGame(2, 0);
@@ -3659,40 +3663,45 @@ bool handleEvents(void)
 	    }
 	}
 
-	// detect timeouts and network disconnects
+	// update network state
 #if defined(NINTENDO)
 	if (initialized && !loading) {
-		const bool connected = nxConnectedToNetwork();
-#ifdef USE_EOS
-		EOS.SetNetworkAvailable(connected);
-#endif // USE_EOS
-		if (multiplayer != SINGLE) {
-			if (directConnect) {
-				if (!nxHandleWireless()) {
-					MainMenu::timedOut();
-				}
-				if (multiplayer == SERVER && !intro) {
-					if (ticks % TICKS_PER_SECOND == 0) {
-						int numplayers = 0;
-						for (int c = 0; c < MAXPLAYERS; ++c) {
-							if (!client_disconnected[c]) {
-								++numplayers;
-							}
-						}
-						char address[64];
-						nxGetWirelessAddress(address, sizeof(address));
-						bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
-						if (!result) {
-							MainMenu::timedOut();
+		// update local wireless communication mode
+		if (directConnect && multiplayer != SINGLE) {
+			if (!nxHandleWireless()) {
+				MainMenu::timedOut(); // handle wireless disconnect
+			}
+			if (multiplayer == SERVER && !intro) {
+				if (ticks % TICKS_PER_SECOND == 0) {
+					int numplayers = 0;
+					for (int c = 0; c < MAXPLAYERS; ++c) {
+						if (!client_disconnected[c]) {
+							++numplayers;
 						}
 					}
-				}
-			} else {
-				if (!connected) {
-					MainMenu::timedOut();
+					char address[64];
+					nxGetWirelessAddress(address, sizeof(address));
+					bool result = nxUpdateLobby(address, MainMenu::getHostname(), svFlags, numplayers);
+					if (!result) {
+						MainMenu::timedOut();
+					}
 				}
 			}
 		}
+
+#ifdef USE_EOS
+		// handle EOS timeouts and disconnects
+		const bool connected = nxConnectedToNetwork();
+		EOS.SetNetworkAvailable(connected && !asleep);
+		if (EOS.isInitialized() && EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid()) {
+			// I don't care if we're in the lobby browser, hosting a lobby, or playing a game.
+			// Any state we are in where EOS is connected, we need to end the game immediately if
+			// the network is lost. Or else Epic has a freakout.
+			if (!connected) {
+				MainMenu::timedOut();
+			}
+		}
+#endif // USE_EOS
 	}
 #endif // NINTENDO
 
@@ -6350,6 +6359,7 @@ int main(int argc, char** argv)
         }
 
 		Input::defaultBindings();
+		MainMenu::randomizeUsername();
 
 		// load config file
 		if ( loadingconfig )

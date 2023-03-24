@@ -1813,7 +1813,6 @@ namespace MainMenu {
 							} else {
 								if (!attemptedConnection) {
 									attemptedConnection = true;
-									randomizeUsername();
 									EOS.initPlatform(true);
 									EOS.SetNetworkAvailable(true);
 									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
@@ -1855,7 +1854,6 @@ namespace MainMenu {
 		}
 #else // NINTENDO
 		if (!isConnectedToEpic()) {
-			randomizeUsername();
 			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 			EOS.StatGlobalManager.queryGlobalStatUser();
 		}
@@ -7582,14 +7580,14 @@ bind_failed:
 				net_packet->len = 5;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-		}
 
-	    // this short delay makes sure that the disconnect message gets out
-	    Uint32 timetoshutdown = SDL_GetTicks();
-	    while ( SDL_GetTicks() - timetoshutdown < 200 )
-	    {
-	        pollNetworkForShutdown();
-	    }
+			// this short delay makes sure that the disconnect message gets out
+			Uint32 timetoshutdown = SDL_GetTicks();
+			while (SDL_GetTicks() - timetoshutdown < 200)
+			{
+				pollNetworkForShutdown();
+			}
+		}
 
         resetLobbyJoinFlowState();
 
@@ -15979,7 +15977,11 @@ failed:
 		enter_code->addWidgetAction("MenuAlt2", "refresh");
 		enter_code->setWidgetBack("back_button");
 		enter_code->setWidgetRight("join_lobby");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		enter_code->setWidgetUp("crossplay");
+#else
+		enter_code->setWidgetUp("filter_settings");
+#endif
 		enter_code->setTickCallback([](Widget& widget){
 #ifdef NINTENDO
 			auto button = static_cast<Button*>(&widget);
@@ -16043,7 +16045,11 @@ failed:
 		join_lobby->addWidgetAction("MenuAlt2", "refresh");
 		join_lobby->setWidgetBack("back_button");
 		join_lobby->setWidgetLeft("enter_code");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		join_lobby->setWidgetUp("crossplay");
+#else
+		join_lobby->setWidgetUp("filter_settings");
+#endif
 		join_lobby->setCallback(join_lobby_fn);
 
 		static auto tick_callback = [](Widget& widget){
@@ -16340,7 +16346,7 @@ failed:
 		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
 		filter_settings->addWidgetAction("MenuAlt2", "refresh");
 		filter_settings->setWidgetBack("back_button");
-		filter_settings->setWidgetDown("crossplay");
+		filter_settings->setWidgetDown("enter_code");
 		filter_settings->setWidgetUp("names");
 #endif
 
