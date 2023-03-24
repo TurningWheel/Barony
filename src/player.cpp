@@ -3749,7 +3749,8 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
 		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
-		|| entity.behavior == &actPowerCrystal )
+		|| entity.behavior == &actPowerCrystal
+		|| entity.behavior == &actColliderDecoration )
 	{
 		return false;
 	}

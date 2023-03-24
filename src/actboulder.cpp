@@ -910,22 +910,53 @@ void actBoulder(Entity* my)
 
 								BOULDER_DESTX = (int)(my->x / 16) * 16 + 8;
 								BOULDER_DESTY = (int)(my->y / 16) * 16 + 8;
-								if ( (int)(players[i]->entity->x / 16) < (int)(my->x / 16) )
+
+								real_t tangent = atan2(players[i]->entity->y - my->y, players[i]->entity->x - my->x);
+								while ( tangent >= 2 * PI )
+								{
+									tangent -= 2 * PI;
+								}
+								while ( tangent < 0 )
+								{
+									tangent += 2 * PI;
+								}
+								real_t angle = tangent * 180.0 / PI;
+								if ( (tangent >= PI - PI / 4) && tangent < (PI + PI / 4) )
 								{
 									BOULDER_ROLLDIR = 0; // east
+									//messagePlayer(0, MESSAGE_DEBUG, "GO EAST %.2f", angle);
 								}
-								else if ( (int)(players[i]->entity->y / 16) < (int)(my->y / 16) )
+								else if ( (tangent >= (3 * PI / 2) - PI / 4) && tangent < ((3 * PI / 2) + PI / 4) )
 								{
 									BOULDER_ROLLDIR = 1; // south
+									//messagePlayer(0, MESSAGE_DEBUG, "GO SOUTH %.2f", angle);
 								}
-								else if ( (int)(players[i]->entity->x / 16) > (int)(my->x / 16) )
+								else if ( (tangent >= (3 * PI / 2) + PI / 4) || tangent < (PI / 4) )
 								{
 									BOULDER_ROLLDIR = 2; // west
+									//messagePlayer(0, MESSAGE_DEBUG, "GO WEST %.2f", angle);
 								}
-								else if ( (int)(players[i]->entity->y / 16) > (int)(my->y / 16) )
+								else if ( (tangent >= PI / 4) && tangent < (PI - PI / 4) )
 								{
 									BOULDER_ROLLDIR = 3; // north
+									//messagePlayer(0, MESSAGE_DEBUG, "GO NORTH %.2f", angle);
 								}
+								//if ( (int)(players[i]->entity->x / 16) < (int)(my->x / 16) )
+								//{
+								//	BOULDER_ROLLDIR = 0; // east
+								//}
+								//else if ( (int)(players[i]->entity->y / 16) < (int)(my->y / 16) )
+								//{
+								//	BOULDER_ROLLDIR = 1; // south
+								//}
+								//else if ( (int)(players[i]->entity->x / 16) > (int)(my->x / 16) )
+								//{
+								//	BOULDER_ROLLDIR = 2; // west
+								//}
+								//else if ( (int)(players[i]->entity->y / 16) > (int)(my->y / 16) )
+								//{
+								//	BOULDER_ROLLDIR = 3; // north
+								//}
 								switch ( BOULDER_ROLLDIR )
 								{
 									case 0:

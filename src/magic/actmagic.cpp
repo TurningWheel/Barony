@@ -1242,6 +1242,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							list_RemoveNode(my->mynode);
 							return;
 						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
@@ -1349,6 +1359,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							damage /= (1 + (int)resistance);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
@@ -1612,6 +1645,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							return;
 						} 
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							damage /= (1 + (int)resistance);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
+							return;
+						}
 						else if (hit.entity->behavior == &actChest) 
 						{
 							int damage = element->damage;
@@ -2071,6 +2127,26 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							return;
 						}
+						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+						{
+							int damage = element->damage;
+							damage += (spellbookDamageBonus * damage);
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							damage /= (1 + (int)resistance);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							return;
+						}
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
@@ -2372,6 +2448,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								magicDig(parent, my, 8, 4);
 							}
+						}
+						else if ( hit.entity->behavior == &actColliderDecoration && hit.entity->colliderDiggable != 0 )
+						{
+							magicDig(parent, my, 1, 0);
 						}
 						else
 						{
@@ -3279,7 +3359,7 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	return entity;
 }
 
-void createParticleRock(Entity* parent)
+void createParticleRock(Entity* parent, int sprite)
 {
 	if ( !parent )
 	{
@@ -3287,7 +3367,7 @@ void createParticleRock(Entity* parent)
 	}
 	for ( int c = 0; c < 5; c++ )
 	{
-		Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
+		Entity* entity = newEntity(sprite != -1 ? sprite : 78, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x + (-4 + local_rng.rand() % 9);
@@ -5044,6 +5124,7 @@ bool Entity::magicOrbitingCollision()
 			if ( entity->behavior != &actMonster 
 				&& entity->behavior != &actPlayer
 				&& entity->behavior != &actDoor
+				&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
 				&& entity->behavior != &::actChest 
 				&& entity->behavior != &::actFurniture )
 			{
@@ -5785,6 +5866,32 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 		}
 		return false;
+	}
+	else if ( hit.entity->behavior == &actColliderDecoration && hit.entity->colliderDiggable != 0 )
+	{
+		int sprite = EditorEntityData_t::colliderData[hit.entity->colliderDamageTypes].gib;
+		if ( sprite > 0 )
+		{
+			createParticleRock(hit.entity, sprite);
+			if ( multiplayer == SERVER )
+			{
+				serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+			}
+		}
+
+		if ( parent )
+		{
+			if ( parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[4337],
+					language[hit.entity->getColliderLangName()]); // you destroy the %s!
+			}
+		}
+
+		// destroy the object
+		playSoundEntity(hit.entity, 67, 128);
+		list_RemoveNode(hit.entity->mynode);
+		return true;
 	}
 	else if ( hit.entity->behavior == &actBoulder )
 	{

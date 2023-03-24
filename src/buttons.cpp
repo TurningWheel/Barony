@@ -1925,6 +1925,9 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 10:
 				snprintf(spriteProperties[0], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileModel));
+				snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileDir));
+				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileAllowTrap));
+				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->ceilingTileBreakable));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -1932,8 +1935,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 12;
 				subx1 = xres / 2 - 170;
 				subx2 = xres / 2 + 170;
-				suby1 = yres / 2 - 60;
-				suby2 = yres / 2 + 60;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
 				strcpy(subtext, "Ceiling Tile Properties:");
 				break;
 			case 11:
@@ -3184,6 +3187,9 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 10: //ceiling tile model
 				selectedEntity[0]->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->ceilingTileDir = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->ceilingTileAllowTrap = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->ceilingTileBreakable = (Sint32)atoi(spriteProperties[3]);
 				break;
 			case 11: //spell trap ceiling
 				selectedEntity[0]->spellTrapType = (Sint32)atoi(spriteProperties[0]);

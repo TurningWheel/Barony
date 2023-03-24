@@ -4726,6 +4726,10 @@ timeToGoAgain:
 									{
 										hit.entity->skill[3] = 0; // chestHealth
 									}
+									else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
+									{
+										hit.entity->colliderCurrentHP = 0;
+									}
 									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 									{
 										// asplode the rock
@@ -5829,6 +5833,10 @@ timeToGoAgain:
 								else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
 								{
 									hit.entity->skill[3] = 0; // chestHealth
+								}
+								else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
+								{
+									hit.entity->colliderCurrentHP = 0;
 								}
 								else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 								{

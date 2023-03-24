@@ -4396,7 +4396,7 @@ namespace ConsoleCommands {
 			tmpEnt = (Entity*)tmpNode->element;
 			if ( tmpEnt->behavior == &actColliderDecoration )
 			{
-				if ( tmpEnt->colliderHasCollision == 1 )
+				if ( tmpEnt->colliderHasCollision != 0 )
 				{
 					messagePlayer(clientnum, MESSAGE_DEBUG, "Collider: %d | z: %4.2f | pos: x: %d y: %d", 
 						tmpEnt->sprite, tmpEnt->z, (int)tmpEnt->x / 16, (int)tmpEnt->y / 16);
@@ -4455,7 +4455,7 @@ namespace ConsoleCommands {
 							{
 								printlog("[Collider Verify]: x: %d y: %d has wrong mesh: %d in map %s", x, y, entity->colliderDecorationModel, f.c_str());
 							}
-							if ( entity->colliderHasCollision && (entity->colliderSizeX == 0 || entity->colliderSizeY == 0) )
+							if ( entity->colliderHasCollision != 0 && (entity->colliderSizeX == 0 || entity->colliderSizeY == 0) )
 							{
 								printlog("[Collider Verify]: x: %d y: %d has 0 collision size (x: %d, y: %d), mesh: %d in map %s", 
 									x, y, entity->colliderSizeX, entity->colliderSizeY, entity->colliderDecorationModel, f.c_str());
@@ -4496,6 +4496,10 @@ namespace ConsoleCommands {
 			castSpell(players[clientnum]->entity->getUID(),
 				spell, false, false, false);
 		}
+	});
+
+	static ConsoleCommand ccmd_load_entity_data("/loadentitydata", "reloads entity_data.json", []CCMD{
+		EditorEntityData_t::readFromFile();
 	});
 }
 

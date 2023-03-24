@@ -614,17 +614,80 @@ void Entity::actPistonCam()
 	}
 }
 
+bool Entity::isColliderDamageableByMelee() const
+{
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.meleeAffects;
+}
+
+bool Entity::isColliderDamageableByMagic() const
+{
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.magicAffects;
+}
+
+bool Entity::isDamageableCollider() const 
+{ 
+	return behavior == &actColliderDecoration && colliderMaxHP > 0;
+}
+
+int Entity::getColliderLangName() const
+{
+	if ( behavior != &actColliderDecoration ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.entityLangEntry;
+}
+
+int Entity::getColliderOnHitLangEntry() const
+{
+	if ( behavior != &actColliderDecoration ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.hitMessageLangEntry;
+}
+
+int Entity::getColliderOnBreakLangEntry() const
+{
+	if ( behavior != &actColliderDecoration ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.breakMessageLangEntry;
+}
+
 void actColliderDecoration(Entity* my)
 {
 	if ( !my )
 	{
 		return;
 	}
+
+	if ( !my->colliderInit )
+	{
+		my->colliderInit = 1;
+		if ( my->colliderDiggable != 0 )
+		{
+			my->colliderHasCollision = 1;
+		}
+		if ( my->isDamageableCollider() )
+		{
+			auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+			auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+			if ( colliderDmgType.burnable )
+			{
+				my->flags[BURNABLE] = true;
+			}
+			if ( colliderDmgType.minotaurPathThroughAndBreak )
+			{
+				my->colliderHasCollision = 2;
+			}
+		}
+	}
+
 	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
 	if ( multiplayer != CLIENT )
 	{
 		bool checkWallDeletion = false;
-		if ( my->colliderHasCollision == 1 )
+		if ( my->colliderHasCollision != 0 )
 		{
 			if ( my->sprite == 1203 || my->sprite == 1204 )
 			{
@@ -653,6 +716,75 @@ void actColliderDecoration(Entity* my)
 			}
 		}
 	}
+
+	if ( my->isDamageableCollider() )
+	{
+		auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+		if ( my->flags[BURNING] && my->flags[BURNABLE] )
+		{
+			if ( ticks % 30 == 0 )
+			{
+				my->colliderCurrentHP--;
+			}
+		}
+
+		my->colliderOldHP = my->colliderCurrentHP;
+
+		if ( my->colliderCurrentHP <= 0 )
+		{
+			int sprite = colliderData.gib;
+			if ( sprite > 0 )
+			{
+				createParticleRock(my, sprite);
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, sprite);
+				}
+			}
+			if ( colliderData.sfxBreak > 0 )
+			{
+				playSoundEntity(my, colliderData.sfxBreak, 128);
+			}
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+}
+
+void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+{
+	colliderCurrentHP -= damage; //Decrease object health.
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( colliderCurrentHP <= 0 )
+			{
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[hit.entity->getColliderLangName()]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2508], language[hit.entity->getColliderLangName()]);
+				}
+			}
+			else
+			{
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[hit.entity->getColliderLangName()]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[hit.entity->getColliderLangName()]);
+				}
+			}
+			updateEnemyBar(caster, this, language[getColliderLangName()], colliderCurrentHP, colliderMaxHP);
+		}
+	}
+
+	playSoundEntity(this, 28, 128);
 }
 
 void actFloorDecoration(Entity* my)

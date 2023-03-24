@@ -676,7 +676,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actBoulder && stats && stats->type == MINOTAUR )
+		if ( stats && stats->type == MINOTAUR && 
+			(entity->behavior == &actBoulder || (entity->isDamageableCollider() && entity->colliderHasCollision == 2)) )
 		{
 			// minotaurs bust through boulders, not an obstacle
 			continue;
@@ -1269,7 +1270,8 @@ bool isPathObstacle(Entity* entity)
 	{
 		return true;
 	}
-	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0 )
+	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0
+		&& !entity->isDamageableCollider() )
 	{
 		return true;
 	}

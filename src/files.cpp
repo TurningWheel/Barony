@@ -1457,7 +1457,12 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
-	if ( strncmp(valid_data, "BARONY LMPV2.7", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.8", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.7 version of editor - teleport shrine dest x update
+		editorVersion = 28;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.7", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.7 version of editor - teleport shrine dest x update
 		editorVersion = 27;
@@ -1645,6 +1650,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 25:
 			case 26:
 			case 27:
+			case 28:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -1811,7 +1817,18 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->teleporterType, sizeof(Sint32), 1);
 						break;
 					case 10:
-						fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
+						if ( editorVersion >= 28 )
+						{
+							fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
+							fp->read(&entity->ceilingTileDir, sizeof(Sint32), 1);
+							fp->read(&entity->ceilingTileAllowTrap, sizeof(Sint32), 1);
+							fp->read(&entity->ceilingTileBreakable, sizeof(Sint32), 1);
+						}
+						else
+						{
+							setSpriteAttributes(entity, nullptr, nullptr);
+							fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
+						}
 						break;
 					case 11:
 						fp->read(&entity->spellTrapType, sizeof(Sint32), 1);
@@ -2176,7 +2193,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fp->write("BARONY LMPV2.7", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write("BARONY LMPV2.8", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
 		fp->write(map.name, sizeof(char), 32); // map filename
 		fp->write(map.author, sizeof(char), 32); // map author
 		fp->write(&map.width, sizeof(Uint32), 1); // map width
@@ -2282,6 +2299,9 @@ int saveMap(const char* filename2)
 					break;
 				case 10:
 					fp->write(&entity->ceilingTileModel, sizeof(Sint32), 1);
+					fp->write(&entity->ceilingTileDir, sizeof(Sint32), 1);
+					fp->write(&entity->ceilingTileAllowTrap, sizeof(Sint32), 1);
+					fp->write(&entity->ceilingTileBreakable, sizeof(Sint32), 1);
 					break;
 				case 11:
 					fp->write(&entity->spellTrapType, sizeof(Sint32), 1);

@@ -958,7 +958,45 @@ void actMinotaurCeilingBuster(Entity* my)
 							{
 								if ( multiplayer != CLIENT )
 								{
-									entity->skill[4] = 0; // destroy the door
+									entity->doorHealth = 0; // destroy the door
+								}
+							}
+							else if ( entity->behavior == &actCeilingTile && entity->ceilingTileBreakable != 0 )
+							{
+								Entity *childEntity = nullptr;
+								if ( multiplayer == SERVER )
+								{
+									childEntity = spawnGib(my);
+								}
+								else
+								{
+									childEntity = spawnGibClient(my->x, my->y, my->z, 5);
+								}
+								if ( childEntity )
+								{
+									childEntity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
+									childEntity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
+									childEntity->z = -8;
+									childEntity->flags[PASSABLE] = true;
+									childEntity->flags[INVISIBLE] = false;
+									childEntity->flags[NOUPDATE] = true;
+									childEntity->flags[UPDATENEEDED] = false;
+									childEntity->sprite = items[GEM_ROCK].index;
+									childEntity->yaw = local_rng.rand() % 360 * PI / 180;
+									childEntity->pitch = local_rng.rand() % 360 * PI / 180;
+									childEntity->roll = local_rng.rand() % 360 * PI / 180;
+									childEntity->vel_x = (local_rng.rand() % 20 - 10) / 10.0;
+									childEntity->vel_y = (local_rng.rand() % 20 - 10) / 10.0;
+									childEntity->vel_z = -.25;
+									childEntity->fskill[3] = 0.03;
+								}
+								list_RemoveNode(entity->mynode);
+							}
+							else if ( entity->isDamageableCollider() )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									entity->colliderCurrentHP = 0;
 								}
 							}
 							else if ( entity->behavior == &actGate )
@@ -988,7 +1026,7 @@ void actMinotaurCeilingBuster(Entity* my)
 									{
 										childEntity = spawnGibClient(my->x, my->y, my->z, 5);
 									}
-									if ( entity )
+									if ( childEntity )
 									{
 										childEntity->x = ((int)(my->x / 16)) * 16 + local_rng.rand() % 16;
 										childEntity->y = ((int)(my->y / 16)) * 16 + local_rng.rand() % 16;
