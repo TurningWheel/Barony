@@ -629,6 +629,7 @@ int initApp(char const * const title, int fullscreen)
 					model->data = (Uint8*)malloc(size);
 					memcpy(model->data, models[0]->data, size);
 					memcpy(model->palette, models[0]->palette, sizeof(voxel_t::palette));
+					models[c] = model;
 				}
 			}
 		}
