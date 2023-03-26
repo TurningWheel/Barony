@@ -5845,9 +5845,9 @@ fine wares.#
 3900 You can't place that there!#
 
 # More keybinds
-3901 Hotbar Scroll Left#
-3902 Hotbar Scroll Right#
-3903 Hotbar Select#
+3901 Hotbar Left#
+3902 Hotbar Right#
+3903 Hotbar Up / Select#
 3904 #
 3905 #
 3906 #

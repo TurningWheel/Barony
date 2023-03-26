@@ -93,9 +93,16 @@ namespace MainMenu {
 		{"Open Log", "L", hiddenBinding, emptyBinding},
 		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
 		{"Toggle Minimap", "`", "DpadY-", emptyBinding},
-		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
-		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
-		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
+#ifdef NINTENDO
+        {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
+        {"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+        {"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
+#else
+		{"Hotbar Left", "MouseWheelUp", "ButtonX", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
+#endif
+        {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
 		{"Interact Tooltip Next", "R", "DpadX+", emptyBinding },
 		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
@@ -2068,13 +2075,16 @@ namespace MainMenu {
 				Uint32 count = bindings.size();
 				file->beginArray(count);
 				if (file->isReading()) {
+                    for (int index = 0; index < numBindings; ++index) {
+                        bindings[defaultBindings[index][0]] = defaultBindings[index][j + 1];
+                    }
 					for (Uint32 index = 0; index < count; ++index) {
 						file->beginObject();
 						std::string binding;
 						file->property("binding", binding);
 						std::string input;
 						file->property("input", input);
-						bindings.emplace(binding, input);
+						bindings[binding] = input;
 						file->endObject();
 					}
 				} else {
@@ -5539,9 +5549,9 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
 			allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
-		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
+		/*y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
 			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
-			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
+			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);*/
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
 			"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
@@ -5594,7 +5604,7 @@ bind_failed:
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
 			{Setting::Type::Slider, "mouse_sensitivity"},
-			{Setting::Type::Dropdown, "mkb_facehotbar"},
+			//{Setting::Type::Dropdown, "mkb_facehotbar"},
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},

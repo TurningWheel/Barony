@@ -5003,9 +5003,12 @@ void ingameHud()
 				players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 				input.consumeBinaryToggle("MenuCancel");
 				input.consumeBindingsSharedWithBinding("MenuCancel");
-				input.consumeBinaryToggle("HotbarFacebarLeft");
-				input.consumeBinaryToggle("HotbarFacebarUp");
-				input.consumeBinaryToggle("HotbarFacebarRight");
+                if (players[player]->hotbar.useHotbarFaceMenu)
+                {
+                    input.consumeBinaryToggle("Hotbar Left");
+                    input.consumeBinaryToggle("Hotbar Up / Select");
+                    input.consumeBinaryToggle("Hotbar Right");
+                }
 			}
 		}
 
