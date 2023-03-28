@@ -3692,7 +3692,7 @@ bool handleEvents(void)
 #ifdef USE_EOS
 		// handle EOS timeouts and disconnects
 		const bool connected = nxConnectedToNetwork();
-		EOS.SetNetworkAvailable(connected && !asleep);
+		EOS.SetNetworkAvailable(connected);
 		if (EOS.isInitialized() && EOS.CurrentUserInfo.isLoggedIn() && EOS.CurrentUserInfo.isValid()) {
 			// I don't care if we're in the lobby browser, hosting a lobby, or playing a game.
 			// Any state we are in where EOS is connected, we need to end the game immediately if
