@@ -516,9 +516,10 @@ public:
 				}
 #endif
 				EOS_Platform_Tick(PlatformHandle);
-				SDL_Delay(50);
-				if (SDL_GetTicks() - shutdownTicks >= 3000)
+				SDL_Delay(1);
+				if (SDL_GetTicks() - shutdownTicks >= 1000)
 				{
+					// only give 1 second for the leave callback to complete.
 					break;
 				}
 			}
@@ -811,7 +812,7 @@ public:
 #ifdef NINTENDO
 		if (oldNetworkStatus != available) {
 			oldNetworkStatus = available;
-			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
+			auto status = available ? EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Disabled;
 			if (PlatformHandle) {
 				EOS_Platform_SetNetworkStatus(PlatformHandle, status);
 			}

@@ -518,7 +518,7 @@ namespace MainMenu {
 				    if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
 					    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
 				    }
-				    SDL_Delay(10);
+				    SDL_Delay(1);
 				    if ((SDL_GetTicks() - startTicks) > msMax) {
 					    break;
 				    }
