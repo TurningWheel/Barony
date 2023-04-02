@@ -26810,22 +26810,25 @@ void Player::Hotbar_t::updateHotbar()
 
 	if ( !player.shootmode || FollowerMenu[player.playernum].followerMenuIsOpen() )
 	{
-		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarCancel") )
-		{
-			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarCancel");
-		}
-		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarLeft") )
-		{
-			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarLeft");
-		}
-		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarUp") )
-		{
-			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarUp");
-		}
-		if ( Input::inputs[player.playernum].binaryToggle("HotbarFacebarRight") )
-		{
-			Input::inputs[player.playernum].consumeBinaryToggle("HotbarFacebarRight");
-		}
+        if (player.hotbar.useHotbarFaceMenu)
+        {
+            if ( Input::inputs[player.playernum].binaryToggle("Hotbar Down / Cancel") )
+            {
+                Input::inputs[player.playernum].consumeBinaryToggle("Hotbar Down / Cancel");
+            }
+            if ( Input::inputs[player.playernum].binaryToggle("Hotbar Left") )
+            {
+                Input::inputs[player.playernum].consumeBinaryToggle("Hotbar Left");
+            }
+            if ( Input::inputs[player.playernum].binaryToggle("Hotbar Up / Select") )
+            {
+                Input::inputs[player.playernum].consumeBinaryToggle("Hotbar Up / Select");
+            }
+            if ( Input::inputs[player.playernum].binaryToggle("Hotbar Right") )
+            {
+                Input::inputs[player.playernum].consumeBinaryToggle("Hotbar Right");
+            }
+        }
 		faceMenuButtonHeld = FaceMenuGroup::GROUP_NONE;
 	}
 
@@ -26877,7 +26880,7 @@ void Player::Hotbar_t::updateHotbar()
 		cancelPromptTxt->setText(language[3063]);
 		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_y("/hotbar_cancel_prompt_y", -6);
 		static ConsoleVariable<int> cvar_hotbar_cancel_prompt_x("/hotbar_cancel_prompt_x", 29);
-		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarCancel");
+		cancelPromptGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Hotbar Down / Cancel");
 		if ( auto imgGet = Image::get(cancelPromptGlyph->path.c_str()) )
 		{
 			cancelPromptGlyph->pos.w = imgGet->getWidth();
@@ -27041,7 +27044,7 @@ void Player::Hotbar_t::updateHotbar()
 				case 1:
 					pos.x = centreXLeft - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarLeft",
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Hotbar Left",
 						faceMenuButtonHeld == FaceMenuGroup::GROUP_LEFT);
 					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_LEFT
 						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
@@ -27086,7 +27089,7 @@ void Player::Hotbar_t::updateHotbar()
 					pos.y = hotbarStartY1;
 					pos.y -= slotYMovement;
 					pos.x = centreX - pos.w / 2;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarUp",
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Hotbar Up / Select",
 						faceMenuButtonHeld == FaceMenuGroup::GROUP_MIDDLE);
 					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_MIDDLE
 						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )
@@ -27130,7 +27133,7 @@ void Player::Hotbar_t::updateHotbar()
 				case 7:
 					pos.x = centreXRight - pos.w / 2;
 					pos.y -= slotYMovement;
-					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("HotbarFacebarRight",
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("Hotbar Right",
 						faceMenuButtonHeld == FaceMenuGroup::GROUP_RIGHT);
 					if ( faceMenuButtonHeld != FaceMenuGroup::GROUP_RIGHT
 						&& faceMenuButtonHeld != FaceMenuGroup::GROUP_NONE )

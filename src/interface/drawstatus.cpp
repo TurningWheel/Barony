@@ -1861,7 +1861,7 @@ void drawStatus(int player)
 
 		Input& input = Input::inputs[player];
 
-		if ( input.consumeBinaryToggle("Hotbar Scroll Right")
+		if ( !players[player]->hotbar.useHotbarFaceMenu && input.consumeBinaryToggle("Hotbar Right")
 			&& players[player]->bControlEnabled && !gamePaused && !players[player]->usingCommand() )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
@@ -1877,7 +1877,7 @@ void drawStatus(int player)
 				hotbar_t.hotbarTooltipLastGameTick = 0;
 			}
 		}
-		if ( input.consumeBinaryToggle("Hotbar Scroll Left")
+		if ( !players[player]->hotbar.useHotbarFaceMenu && input.consumeBinaryToggle("Hotbar Left")
 			&& players[player]->bControlEnabled && !gamePaused && !players[player]->usingCommand() )
 		{
 			if ( shootmode && !inputs.getUIInteraction(player)->itemMenuOpen && !openedChest[player]
@@ -1904,7 +1904,8 @@ void drawStatus(int player)
 
 		if ( !inputs.getUIInteraction(player)->itemMenuOpen && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && input.consumeBinaryToggle("Hotbar Select")
+			if ( shootmode && input.consumeBinaryToggle("Hotbar Up / Select")
+                && (!hotbar_t.useHotbarFaceMenu || (hotbar_t.useHotbarFaceMenu && !inputs.hasController(player)))
 				&& players[player]->bControlEnabled && !gamePaused
 				&& !players[player]->usingCommand()
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
@@ -2955,13 +2956,13 @@ void drawStatusNew(const int player)
 				switch ( i )
 				{
 					case 0:
-						inputName = "HotbarFacebarLeft";
+						inputName = "Hotbar Left";
 						break;
 					case 1:
-						inputName = "HotbarFacebarUp";
+						inputName = "Hotbar Up / Select";
 						break;
 					case 2:
-						inputName = "HotbarFacebarRight";
+						inputName = "Hotbar Right";
 						break;
 					default:
 						break;
@@ -2969,11 +2970,11 @@ void drawStatusNew(const int player)
 
 				if ( Input::inputs[player].binaryToggle(inputName.c_str()) )
 				{
-					if ( Input::inputs[player].binaryToggle("HotbarFacebarCancel") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Down / Cancel") )
 					{
 						Input::inputs[player].consumeBinaryToggle(inputName.c_str());
-						Input::inputs[player].consumeBinaryToggle("HotbarFacebarCancel");
-						Input::inputs[player].consumeBindingsSharedWithBinding("HotbarFacebarCancel");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Down / Cancel");
+						Input::inputs[player].consumeBindingsSharedWithBinding("Hotbar Down / Cancel");
 
 						for ( auto& slot : players[player]->hotbar.slots() )
 						{
@@ -2996,17 +2997,17 @@ void drawStatusNew(const int player)
 
 					int centerSlot = 1;
 					std::array<int, 3> slotOrder = { 0, 1, 2 };
-					if ( inputName == "HotbarFacebarLeft" )
+					if ( inputName == "Hotbar Left" )
 					{
 						pressed = Player::Hotbar_t::GROUP_LEFT;
 					}
-					else if ( inputName == "HotbarFacebarUp" )
+					else if ( inputName == "Hotbar Up / Select" )
 					{
 						pressed = Player::Hotbar_t::GROUP_MIDDLE;
 						centerSlot = 4;
 						slotOrder = { 3, 4, 5 };
 					}
-					else if ( inputName == "HotbarFacebarRight" )
+					else if ( inputName == "Hotbar Right" )
 					{
 						pressed = Player::Hotbar_t::GROUP_RIGHT;
 						centerSlot = 7;
@@ -3093,10 +3094,10 @@ void drawStatusNew(const int player)
 		bool bumper_moved = false;
 
 		//Gamepad change hotbar selection.
-		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Right") )
+		if ( !players[player]->hotbar.useHotbarFaceMenu && Input::inputs[player].binaryToggle("Hotbar Right") )
 		{
 			bool usingMouseWheel = false;
-			const auto binding = Input::inputs[player].input("Hotbar Scroll Right");
+			const auto binding = Input::inputs[player].input("Hotbar Right");
 			if ( binding.type == Input::binding_t::bindtype_t::MOUSE_BUTTON )
 			{
 				if ( binding.mouseButton == Input::MOUSE_WHEEL_DOWN || binding.mouseButton == Input::MOUSE_WHEEL_UP )
@@ -3106,9 +3107,9 @@ void drawStatusNew(const int player)
 			}
 			if ( !usingMouseWheel )
 			{
-				Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Right");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Right");
 			}
-			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Right").isBindingUsingGamepad();
+			bool gamepadControl = Input::inputs[player].input("Hotbar Right").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
@@ -3140,10 +3141,10 @@ void drawStatusNew(const int player)
 				hotbar_t.hotbarTooltipLastGameTick = 0;
 			}
 		}
-		if ( Input::inputs[player].binaryToggle("Hotbar Scroll Left") )
+		if ( !players[player]->hotbar.useHotbarFaceMenu && Input::inputs[player].binaryToggle("Hotbar Left") )
 		{
 			bool usingMouseWheel = false;
-			const auto binding = Input::inputs[player].input("Hotbar Scroll Left");
+			const auto binding = Input::inputs[player].input("Hotbar Left");
 			if ( binding.type == Input::binding_t::bindtype_t::MOUSE_BUTTON )
 			{
 				if ( binding.mouseButton == Input::MOUSE_WHEEL_DOWN || binding.mouseButton == Input::MOUSE_WHEEL_UP )
@@ -3153,9 +3154,9 @@ void drawStatusNew(const int player)
 			}
 			if ( !usingMouseWheel )
 			{
-				Input::inputs[player].consumeBinaryToggle("Hotbar Scroll Left");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Left");
 			}
-			bool gamepadControl = Input::inputs[player].input("Hotbar Scroll Left").isBindingUsingGamepad();
+			bool gamepadControl = Input::inputs[player].input("Hotbar Left").isBindingUsingGamepad();
 			if ( gamepadControl && players[player]->hotbar.useHotbarFaceMenu )
 			{
 				// no action, gamepads can't scroll when useHotbarFaceMenu
@@ -3190,9 +3191,8 @@ void drawStatusNew(const int player)
 
 		if ( !players[player]->GUI.isDropdownActive() && !inputs.getUIInteraction(player)->selectedItem && !openedChest[player] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( input.consumeBinaryToggle("Hotbar Select") 
-				&& shootmode 
-				&& (!hotbar_t.useHotbarFaceMenu || (hotbar_t.useHotbarFaceMenu && !inputs.hasController(player)))
+			if ( (!hotbar_t.useHotbarFaceMenu || (hotbar_t.useHotbarFaceMenu && !inputs.hasController(player)))
+                && input.consumeBinaryToggle("Hotbar Up / Select") && shootmode
 				&& !openedChest[player] && gui_mode != (GUI_MODE_SHOP)
 				&& !players[player]->bookGUI.bBookOpen
 				&& !players[player]->signGUI.bSignOpen

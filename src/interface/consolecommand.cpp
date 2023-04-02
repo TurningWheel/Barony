@@ -4221,19 +4221,68 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_maphashcheck("/maphashcheck", "", []CCMD{
 #ifndef NINTENDO
-		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		const char* outpath = nullptr;
+		if (argc > 1) {
+			outpath = argv[1];
+		}
+		std::map<std::string, int> newMapHashes;
+		for (auto f : directoryContents("maps/", false, true))
 		{
-			std::string mapPath = "maps/";
-			mapPath += f;
-			if ( PHYSFS_getRealDir(mapPath.c_str()) )
+			map_t m;
+			m.tiles = nullptr;
+			m.entities = (list_t*)malloc(sizeof(list_t));
+			m.entities->first = nullptr;
+			m.entities->last = nullptr;
+			m.creatures = new list_t;
+			m.creatures->first = nullptr;
+			m.creatures->last = nullptr;
+			m.worldUI = new list_t;
+			m.worldUI->first = nullptr;
+			m.worldUI->last = nullptr;
+			const std::string mapPath = "maps/" + f;
+			auto path = PHYSFS_getRealDir(mapPath.c_str());
+			if (path)
 			{
 				int maphash = 0;
-				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
-				fullMapPath += PHYSFS_getDirSeparator();
-				fullMapPath += mapPath;
-				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, &maphash);
-				// will crash the game but will show results of every map load :)
+				const std::string fullMapPath = path + (PHYSFS_getDirSeparator() + mapPath);
+				int result = loadMap(fullMapPath.c_str(), &m, m.entities, m.creatures, &maphash);
+				if (result >= 0) {
+					(void)verifyMapHash(fullMapPath.c_str(), maphash);
+					if (outpath) {
+						newMapHashes[f] = maphash;
+					}
+				}
 			}
+			if (m.entities) {
+				list_FreeAll(m.entities);
+				free(m.entities);
+			}
+			if (m.creatures) {
+				list_FreeAll(m.creatures);
+				delete m.creatures;
+			}
+			if (m.worldUI) {
+				list_FreeAll(m.worldUI);
+				delete m.worldUI;
+			}
+			if (m.tiles) {
+				free(m.tiles);
+			}
+		}
+		if (outpath) {
+			char buf[16];
+			File* fp = FileIO::open(outpath, "wb");
+			fp->write("{\n", sizeof(char), 2);
+			for (auto& pair : newMapHashes) {
+				fp->write("\t{ \"", sizeof(char), 4);
+				fp->write(pair.first.c_str(), sizeof(char), pair.first.size());
+				fp->write("\", ", sizeof(char), 3);
+				int len = snprintf(buf, sizeof(buf), "%d", pair.second);
+				fp->write(buf, sizeof(char), len);
+				fp->write(" },\n", sizeof(char), 4);
+			}
+			fp->write("};", sizeof(char), 2);
+			FileIO::close(fp);
 		}
 #endif
 	});

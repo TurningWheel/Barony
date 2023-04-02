@@ -86,17 +86,18 @@ namespace MainMenu {
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "DpadX-", emptyBinding},
-		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
-		{"Cycle NPCs", "E", "DpadY+", emptyBinding},
+		{"Command NPC", "Q", "ButtonX", emptyBinding},
+		{"Show NPC Commands", "C", "ButtonY", emptyBinding},
+		{"Cycle NPCs", "E", "ButtonB", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
 		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
-		{"Toggle Minimap", "`", "DpadY-", emptyBinding},
-		{"Hotbar Scroll Left", "MouseWheelUp", "ButtonX", emptyBinding},
-		{"Hotbar Scroll Right", "MouseWheelDown", "ButtonB", emptyBinding},
-		{"Hotbar Select", "Mouse2", "ButtonY", emptyBinding},
-		{"Interact Tooltip Next", "R", "DpadX+", emptyBinding },
+		{"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
+		{"Hotbar Left", "MouseWheelUp", "DpadX-", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "DpadY-", emptyBinding},
+        {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+		{"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
 		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
 		{"Quick Turn", emptyBinding, "ButtonLeftBumper", emptyBinding },
@@ -517,7 +518,7 @@ namespace MainMenu {
 				    if (EOS.HandleReceivedMessagesAndIgnore(&newRemoteProductId)) {
 					    checkTicks = SDL_GetTicks(); // found a packet, extend the wait time.
 				    }
-				    SDL_Delay(10);
+				    SDL_Delay(1);
 				    if ((SDL_GetTicks() - startTicks) > msMax) {
 					    break;
 				    }
@@ -1813,7 +1814,6 @@ namespace MainMenu {
 							} else {
 								if (!attemptedConnection) {
 									attemptedConnection = true;
-									randomizeUsername();
 									EOS.initPlatform(true);
 									EOS.SetNetworkAvailable(true);
 									EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
@@ -1855,7 +1855,6 @@ namespace MainMenu {
 		}
 #else // NINTENDO
 		if (!isConnectedToEpic()) {
-			randomizeUsername();
 			EOS.CrossplayAccountManager.trySetupFromSettingsMenu = true;
 			EOS.StatGlobalManager.queryGlobalStatUser();
 		}
@@ -2070,13 +2069,16 @@ namespace MainMenu {
 				Uint32 count = bindings.size();
 				file->beginArray(count);
 				if (file->isReading()) {
+                    for (int index = 0; index < numBindings; ++index) {
+                        bindings[defaultBindings[index][0]] = defaultBindings[index][j + 1];
+                    }
 					for (Uint32 index = 0; index < count; ++index) {
 						file->beginObject();
 						std::string binding;
 						file->property("binding", binding);
 						std::string input;
 						file->property("input", input);
-						bindings.emplace(binding, input);
+						bindings[binding] = input;
 						file->endObject();
 					}
 				} else {
@@ -5541,9 +5543,9 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
 			"Control the speed by which mouse movement affects camera movement.",
 			allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
-		y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
+		/*y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
 			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
-			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);
+			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);*/
 		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
 			"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
 			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
@@ -5596,7 +5598,7 @@ bind_failed:
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Customize, "bindings"},
 			{Setting::Type::Slider, "mouse_sensitivity"},
-			{Setting::Type::Dropdown, "mkb_facehotbar"},
+			//{Setting::Type::Dropdown, "mkb_facehotbar"},
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},
@@ -7582,14 +7584,14 @@ bind_failed:
 				net_packet->len = 5;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-		}
 
-	    // this short delay makes sure that the disconnect message gets out
-	    Uint32 timetoshutdown = SDL_GetTicks();
-	    while ( SDL_GetTicks() - timetoshutdown < 200 )
-	    {
-	        pollNetworkForShutdown();
-	    }
+			// this short delay makes sure that the disconnect message gets out
+			Uint32 timetoshutdown = SDL_GetTicks();
+			while (SDL_GetTicks() - timetoshutdown < 200)
+			{
+				pollNetworkForShutdown();
+			}
+		}
 
         resetLobbyJoinFlowState();
 
@@ -15979,7 +15981,11 @@ failed:
 		enter_code->addWidgetAction("MenuAlt2", "refresh");
 		enter_code->setWidgetBack("back_button");
 		enter_code->setWidgetRight("join_lobby");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		enter_code->setWidgetUp("crossplay");
+#else
+		enter_code->setWidgetUp("filter_settings");
+#endif
 		enter_code->setTickCallback([](Widget& widget){
 #ifdef NINTENDO
 			auto button = static_cast<Button*>(&widget);
@@ -16043,7 +16049,11 @@ failed:
 		join_lobby->addWidgetAction("MenuAlt2", "refresh");
 		join_lobby->setWidgetBack("back_button");
 		join_lobby->setWidgetLeft("enter_code");
+#if defined(STEAMWORKS) && defined(USE_EOS)
 		join_lobby->setWidgetUp("crossplay");
+#else
+		join_lobby->setWidgetUp("filter_settings");
+#endif
 		join_lobby->setCallback(join_lobby_fn);
 
 		static auto tick_callback = [](Widget& widget){
@@ -16340,7 +16350,7 @@ failed:
 		filter_settings->addWidgetAction("MenuAlt1", "enter_code");
 		filter_settings->addWidgetAction("MenuAlt2", "refresh");
 		filter_settings->setWidgetBack("back_button");
-		filter_settings->setWidgetDown("crossplay");
+		filter_settings->setWidgetDown("enter_code");
 		filter_settings->setWidgetUp("names");
 #endif
 

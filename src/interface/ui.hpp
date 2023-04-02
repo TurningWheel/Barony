@@ -202,7 +202,7 @@ public:
 	UIToastNotificationManager_t() = default;
 	~UIToastNotificationManager_t()
 	{
-		assert(!bIsInit);
+        term(true);
 	}
 
 	const char* getImage(const char* image)

@@ -9742,7 +9742,7 @@ void doNewGame(bool makeHighscore) {
 		if ( loadingmap == false )
 		{
 			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-			if ( checkMapHash == 0 )
+			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
 				gamemods_disableSteamAchievements = true;
@@ -9754,7 +9754,7 @@ void doNewGame(bool makeHighscore) {
 			{
 				std::string fullMapName = physfsFormatMapName(maptoload);
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-				if ( checkMapHash == 0 )
+				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
 					gamemods_disableSteamAchievements = true;
@@ -10039,7 +10039,7 @@ void doNewGame(bool makeHighscore) {
 		if ( loadingmap == false )
 		{
 			physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-			if ( checkMapHash == 0 )
+			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
 				gamemods_disableSteamAchievements = true;
@@ -10051,7 +10051,7 @@ void doNewGame(bool makeHighscore) {
 			{
 				std::string fullMapName = physfsFormatMapName(maptoload);
 				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
-				if ( checkMapHash == 0 )
+				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
 					gamemods_disableSteamAchievements = true;

@@ -1206,7 +1206,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 		else
 		{
 			logInfo("SetLogCallbackResult: Logging Callback set");
-			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
+			EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Verbose);
 		}
 	}
 
@@ -1250,7 +1250,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 #ifdef NINTENDO
 	const bool connected = nxConnectedToNetwork();
 	auto networkStatus = connected ?
-		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Offline;
+		EOS_ENetworkStatus::EOS_NS_Online : EOS_ENetworkStatus::EOS_NS_Disabled;
 	EOS_Platform_SetNetworkStatus(PlatformHandle, networkStatus);
 	EOS_Platform_SetNetworkStatus(ServerPlatformHandle, networkStatus);
 	oldNetworkStatus = connected;
@@ -3228,7 +3228,7 @@ bool EOSFuncs::initAuth(std::string hostname, std::string tokenName)
 		}
 #endif
 		EOS_Platform_Tick(PlatformHandle);
-		SDL_Delay(50);
+		SDL_Delay(1);
 		currentAuthTicks = SDL_GetTicks();
 		if ( currentAuthTicks - startAuthTicks >= 3000 ) // spin the wheels for 3 seconds
 		{

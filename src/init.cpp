@@ -618,6 +618,19 @@ int initApp(char const * const title, int fullscreen)
 					loading_done = true;
 					return 12;
 				}
+				else
+				{
+					printlog("copying model 0 for %d as a fallback\n", c);
+					auto model = (voxel_t*)malloc(sizeof(voxel_t));
+					model->sizex = models[0]->sizex;
+					model->sizey = models[0]->sizey;
+					model->sizez = models[0]->sizez;
+					const auto size = sizeof(Uint8) * model->sizex * model->sizey * model->sizez;
+					model->data = (Uint8*)malloc(size);
+					memcpy(model->data, models[0]->data, size);
+					memcpy(model->palette, models[0]->palette, sizeof(voxel_t::palette));
+					models[c] = model;
+				}
 			}
 		}
 		updateLoadingScreen(30);

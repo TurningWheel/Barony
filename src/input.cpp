@@ -76,6 +76,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuScrollRight", (std::string("Pad") + std::to_string(c) + std::string("StickRightX+")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MenuScrollDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 
+        /*
 #ifdef NINTENDO
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarLeft", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarUp", (std::string("Pad") + std::to_string(c) + std::string("ButtonX")).c_str()));
@@ -85,9 +86,10 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarUp", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonB")).c_str()));
 #endif
+        */
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarModifierLeft", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftBumper")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarModifierRight", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
-		inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarCancel", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str()));
+		//inputs[c].gamepad_system_bindings.insert(std::make_pair("HotbarFacebarCancel", (std::string("Pad") + std::to_string(c) + std::string("DpadY+")).c_str()));
 
 		//inputs[c].bind("HotbarInventoryClearSlot", (std::string("Pad") + std::to_string(c) + std::string("ButtonY")).c_str()));
 
@@ -1171,10 +1173,10 @@ void Input::consumeBindingsSharedWithFaceHotbar()
 		{
 			const std::unordered_map<std::string, binding_t> faceMenuBindings =
 			{
-				std::make_pair("HotbarFacebarCancel", input("HotbarFacebarCancel")),
-				std::make_pair("HotbarFacebarLeft", input("HotbarFacebarLeft")),
-				std::make_pair("HotbarFacebarUp", input("HotbarFacebarUp")),
-				std::make_pair("HotbarFacebarRight", input("HotbarFacebarRight")),
+				std::make_pair("Hotbar Right", input("Hotbar Right")),
+				std::make_pair("Hotbar Left", input("Hotbar Left")),
+				std::make_pair("Hotbar Up / Select", input("Hotbar Up / Select")),
+				std::make_pair("Hotbar Down / Cancel", input("Hotbar Down / Cancel")),
 				std::make_pair("HotbarFacebarModifierLeft", input("HotbarFacebarModifierLeft")),
 				std::make_pair("HotbarFacebarModifierRight", input("HotbarFacebarModifierRight"))
 			};

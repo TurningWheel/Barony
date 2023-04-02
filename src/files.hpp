@@ -274,6 +274,7 @@ extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char const * const filename);
 voxel_t* loadVoxel(char* filename2);
+bool verifyMapHash(const char* filename, int hash);
 int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creatureList, int *checkMapHash = nullptr);
 int loadConfig(char* filename);
 int loadDefaultConfig();
