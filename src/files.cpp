@@ -1423,7 +1423,7 @@ bool verifyMapHash(const char* filename, int hash) {
 	auto r = strrchr(filename, '/');
 	auto it = mapHashes.find(r ? (r + 1) : filename);
 	const int canonical = it != mapHashes.end() ? it->second : -1;
-	const bool result = it != mapHashes.end() && (canonical == hash || canonical == -1);
+	const bool result = it != mapHashes.end() && (canonical == hash || canonical == -1 || hash == -1);
 	if (!result) {
 		printlog("map '%s' failed hash check (%d should be %d)", filename, hash, canonical);
 	}
