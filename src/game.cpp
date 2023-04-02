@@ -2084,7 +2084,7 @@ void gameLogic(void)
 
 					    int checkMapHash = -1;
 					    int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
-					    if ( checkMapHash == 0 )
+					    if (!verifyMapHash(map.filename, checkMapHash))
 					    {
 						    conductGameChallenges[CONDUCT_MODDED] = 1;
 						    gamemods_disableSteamAchievements = true;

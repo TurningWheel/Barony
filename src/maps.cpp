@@ -905,7 +905,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog("error: no level of set '%s' could be found.\n", levelset);
 		return -1;
 	}
-	if ( checkMapHash == 0 )
+	if ( !verifyMapHash(fullMapPath.c_str(), checkMapHash) )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
 		gamemods_disableSteamAchievements = true;
@@ -1091,7 +1091,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					free(shopmap.tiles);
 				}
 			}
-			if ( checkMapHash == 0 )
+			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
 				gamemods_disableSteamAchievements = true;
@@ -1134,7 +1134,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			mapDeconstructor((void*)tempMap);
 			continue; // failed to load level
 		}
-		if ( checkMapHash == 0 )
+		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 			gamemods_disableSteamAchievements = true;
@@ -1287,7 +1287,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				mapDeconstructor((void*)subRoomMap);
 				continue; // failed to load level
 			}
-			if ( checkMapHash == 0 )
+			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
 				gamemods_disableSteamAchievements = true;
@@ -1427,7 +1427,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			mapDeconstructor((void*)subRoomMap);
 			continue; // failed to load level
 		}
-		if ( checkMapHash == 0 )
+		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 			gamemods_disableSteamAchievements = true;
@@ -1567,7 +1567,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						free(secretlevelmap.tiles);
 					}
 				}
-				if ( checkMapHash == 0 )
+				if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
 					gamemods_disableSteamAchievements = true;
