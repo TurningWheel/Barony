@@ -137,7 +137,9 @@ extern bool autoLimbReload;
   #include <GL/gl.h>
   #include <GL/glu.h>
  #endif
+#ifndef WINDOWS
  #include <GL/glext.h>
+#endif
  #include "SDL_opengl.h"
 #endif // !APPLE
 
