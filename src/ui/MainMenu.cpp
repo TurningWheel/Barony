@@ -10484,7 +10484,11 @@ failed:
 		custom_difficulty->select();
 
 		auto invite_label = card->addField("invite_label", 64);
-		invite_label->setSize(SDL_Rect{82, 146, 122, 26});
+#ifdef NINTENDO
+		invite_label->setSize(SDL_Rect{ 82, 154, 122, 26 });
+#else
+		invite_label->setSize(SDL_Rect{ 82, 146, 122, 26 });
+#endif
 		invite_label->setFont(smallfont_outline);
 		invite_label->setText("Invite Only");
 		invite_label->setJustify(Field::justify_t::CENTER);
@@ -10501,7 +10505,11 @@ failed:
 			invite_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto invite = card->addButton("invite");
-			invite->setSize(SDL_Rect{202, 144, 30, 30});
+#ifdef NINTENDO
+			invite->setSize(SDL_Rect{ 202, 152, 30, 30 });
+#else
+			invite->setSize(SDL_Rect{ 202, 144, 30, 30 });
+#endif
 			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			invite->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
 			invite->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
@@ -10656,7 +10664,11 @@ failed:
 #endif
 
 		auto open_label = card->addField("open_label", 64);
-		open_label->setSize(SDL_Rect{82, 210, 122, 26});
+#ifdef NINTENDO
+		open_label->setSize(SDL_Rect{ 82, 202, 122, 26 });
+#else
+		open_label->setSize(SDL_Rect{ 82, 210, 122, 26 });
+#endif
 		open_label->setFont(smallfont_outline);
 		open_label->setText("Open Lobby");
 		open_label->setJustify(Field::justify_t::CENTER);
@@ -10673,7 +10685,11 @@ failed:
 			open_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto open = card->addButton("open");
-			open->setSize(SDL_Rect{202, 208, 30, 30});
+#ifdef NINTENDO
+			open->setSize(SDL_Rect{ 202, 200, 30, 30 });
+#else
+			open->setSize(SDL_Rect{ 202, 208, 30, 30 });
+#endif
 			open->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			open->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
 			open->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
