@@ -6454,12 +6454,18 @@ bind_failed:
                         if (node->prev) {
                             auto prev = (score_t*)node->prev->element;
                             snprintf(prev_buf, sizeof(prev_buf), fmt, index, prev->stats->name);
-                        }
+                        } else {
+							auto prev = (score_t*)node->list->last->element;
+							snprintf(prev_buf, sizeof(prev_buf), fmt, list_Size(scores), prev->stats->name);
+						}
                         char next_buf[128] = "";
                         if (node->next) {
                             auto next = (score_t*)node->next->element;
                             snprintf(next_buf, sizeof(next_buf), fmt, index + 2, next->stats->name);
-                        }
+                        } else {
+							auto next = (score_t*)node->list->first->element;
+							snprintf(next_buf, sizeof(next_buf), fmt, 1, next->stats->name);
+						}
                         add_score(score, score->stats->name, prev_buf, next_buf, index);
                     }
                 } else {
@@ -6632,12 +6638,18 @@ bind_failed:
                         if (index > 0) {
                             snprintf(prev_buf, sizeof(prev_buf), fmt, index,
                                 g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str());
-                        }
+                        } else {
+							snprintf(prev_buf, sizeof(prev_buf), fmt, num_scores,
+								g_SteamLeaderboards->leaderBoardSteamUsernames[num_scores - 1].c_str());
+						}
                         char next_buf[128] = "";
                         if (index < num_scores - 1) {
                             snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
                                 g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str());
-                        }
+                        } else {
+							snprintf(next_buf, sizeof(next_buf), fmt, 1,
+								g_SteamLeaderboards->leaderBoardSteamUsernames[0].c_str());
+						}
                         add_score(score, name, prev_buf, next_buf, index);
                     }
                     set_links();
@@ -17765,6 +17777,12 @@ failed:
                     class_name_c[0] = (char)toupper((int)class_name[0]);
                     const int dungeon_lvl = saveGameInfo.dungeon_lvl;
                     const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.LVL;
+					int numplayers = 0;
+					for (auto p : saveGameInfo.players_connected) {
+						if (p) {
+							++numplayers;
+						}
+					}
 
                     // create shortened player name
                     char shortened_name[20] = { '\0' };
@@ -17774,10 +17792,23 @@ failed:
                         strcat(shortened_name, "...");
                     }
 
+					// create game type string
+					char game_type[32] = { '\0' };
+					switch (saveGameInfo.multiplayer_type) {
+					default:
+					case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
+					case SERVER: snprintf(game_type, sizeof(game_type), "Online Host (#1/%d)", numplayers); break;
+					case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
+					case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host (#1/%d)", numplayers); break;
+					case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
+					case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host (#1/%d)", numplayers); break;
+					case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen [1-%d]", numplayers); break;
+					}
+
                     // format book label string
 		            char text[1024];
-		            snprintf(text, sizeof(text), "%s\n%s LVL %d\nDungeon LVL %d",
-		                shortened_name, class_name.c_str(), player_lvl, dungeon_lvl);
+		            snprintf(text, sizeof(text), "%s\n%s\nDungeon LVL %d",
+		                shortened_name, game_type, dungeon_lvl);
 		            savegame_book->setText(text);
 
                     // offset text
