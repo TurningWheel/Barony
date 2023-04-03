@@ -689,6 +689,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						player = hit.entity->skill[2];
+					}
 				}
 				if ( hitstats )
 				{
@@ -751,7 +755,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 
-						player = hit.entity->skill[2];
 						if ( my->actmagicCastByTinkerTrap == 1 )
 						{
 							skipMessage = true;
