@@ -1902,7 +1902,12 @@ void EOSFuncs::createLobby()
 	CreateOptions.LobbyId = nullptr;
 
 	currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+
+#ifdef NINTENDO
+	bFriendsOnly = false;
+#else
 	bFriendsOnly = loadingsavegame ? false : true;
+#endif
 
 	EOS_Lobby_CreateLobby(LobbyHandle, &CreateOptions, nullptr, OnCreateLobbyFinished);
 	CurrentLobbyData.MaxPlayers = CreateOptions.MaxLobbyMembers;

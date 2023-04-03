@@ -10517,7 +10517,11 @@ failed:
 			invite->addWidgetAction("MenuPageLeftAlt", "privacy");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom_difficulty");
+#ifdef NINTENDO
+			invite->setWidgetDown("open");
+#else
 			invite->setWidgetDown("friends");
+#endif
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE) {
@@ -10563,6 +10567,7 @@ failed:
 			}
 		}
 
+#ifndef NINTENDO
 		auto friends_label = card->addField("friends_label", 64);
 		friends_label->setSize(SDL_Rect{82, 178, 122, 26});
 		friends_label->setFont(smallfont_outline);
@@ -10648,6 +10653,7 @@ failed:
 			        });
 			}
 		}
+#endif
 
 		auto open_label = card->addField("open_label", 64);
 		open_label->setSize(SDL_Rect{82, 210, 122, 26});
@@ -10682,7 +10688,11 @@ failed:
 			open->addWidgetAction("MenuPageRightAlt", "chat");
 			open->addWidgetAction("MenuPageLeftAlt", "privacy");
 			open->setWidgetBack("back_button");
+#ifdef NINTENDO
+			open->setWidgetUp("invite");
+#else
 			open->setWidgetUp("friends");
+#endif
 			open->setWidgetDown("player_count_2");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
@@ -13676,6 +13686,10 @@ failed:
 	        return;
 	    }
 
+		if (multiplayer == SERVER) {
+			newPlayer[index] = true;
+		}
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -14558,11 +14572,19 @@ failed:
 						hide_roomcode(*roomcode, button, !hidden_roomcode);
 						});
 					privacy->setTickCallback([](Widget& widget){
+						auto& input = Input::inputs[widget.getOwner()];
+
+						// this refocuses the player card
 						if (widget.isSelected()) {
-							auto& input = Input::inputs[widget.getOwner()];
 							if (input.consumeBinaryToggle("MenuCancel")) {
 								widget.deselect();
 							}
+						}
+
+						// activate from anywhere, in any state
+						if (input.consumeBinaryToggle("MenuPageLeftAlt")) {
+							widget.select();
+							widget.activate();
 						}
 						});
 
@@ -14598,12 +14620,16 @@ failed:
 				chat_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		        chat_button->setWidgetLeft(roomcodeDisabled ? "lobby_name" : "privacy");
 		        chat_button->setTickCallback([](Widget& widget){
+					auto& input = Input::inputs[widget.getOwner()];
+
+					// this refocuses the player card
 					if (widget.isSelected()) {
-						auto& input = Input::inputs[widget.getOwner()];
 						if (input.consumeBinaryToggle("MenuCancel")) {
 							widget.deselect();
 						}
 					}
+
+					// flash text
 		            auto button = static_cast<Button*>(&widget);
 		            if (new_lobby_chat_message_alert) {
 		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % 20;
@@ -14618,6 +14644,12 @@ failed:
 			            button->setTextHighlightColor(uint32ColorWhite);
 		                button->setTextColor(uint32ColorWhite);
 		            }
+
+					// activate from anywhere, in any state
+					if (input.consumeBinaryToggle("MenuPageRightAlt")) {
+						widget.select();
+						widget.activate();
+					}
 		            });
 		    }
 		}
@@ -15601,6 +15633,13 @@ failed:
                     // skip "friends only" filter in direct connect mode.
                     continue;
                 }
+#ifdef NINTENDO
+				if (c == 1) {
+					// nintendo has no "friends-only" filter.
+					continue;
+				}
+#endif // NINTENDO
+
 
 		        auto label = frame_right->addField("filter_label", 128);
 		        label->setHJustify(Field::justify_t::LEFT);
