@@ -10485,7 +10485,7 @@ failed:
 
 		auto invite_label = card->addField("invite_label", 64);
 #ifdef NINTENDO
-		invite_label->setSize(SDL_Rect{ 82, 154, 122, 26 });
+		invite_label->setSize(SDL_Rect{ 82, 158, 122, 26 });
 #else
 		invite_label->setSize(SDL_Rect{ 82, 146, 122, 26 });
 #endif
@@ -10506,7 +10506,7 @@ failed:
 
 			auto invite = card->addButton("invite");
 #ifdef NINTENDO
-			invite->setSize(SDL_Rect{ 202, 152, 30, 30 });
+			invite->setSize(SDL_Rect{ 202, 156, 30, 30 });
 #else
 			invite->setSize(SDL_Rect{ 202, 144, 30, 30 });
 #endif
@@ -10665,7 +10665,7 @@ failed:
 
 		auto open_label = card->addField("open_label", 64);
 #ifdef NINTENDO
-		open_label->setSize(SDL_Rect{ 82, 202, 122, 26 });
+		open_label->setSize(SDL_Rect{ 82, 198, 122, 26 });
 #else
 		open_label->setSize(SDL_Rect{ 82, 210, 122, 26 });
 #endif
@@ -10686,7 +10686,7 @@ failed:
 
 			auto open = card->addButton("open");
 #ifdef NINTENDO
-			open->setSize(SDL_Rect{ 202, 200, 30, 30 });
+			open->setSize(SDL_Rect{ 202, 196, 30, 30 });
 #else
 			open->setSize(SDL_Rect{ 202, 208, 30, 30 });
 #endif
