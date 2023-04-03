@@ -614,8 +614,33 @@ void Entity::actPistonCam()
 	}
 }
 
+bool Entity::isColliderShownAsWallOnMinimap() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.showAsWallOnMinimap;
+}
+
+bool Entity::isColliderWeakToBoulders() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.boulderDestroys;
+}
+
+bool Entity::isColliderWeakToSkill(int proficiency) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.proficiencyBonusDamage.find(proficiency) != colliderDmgType.proficiencyBonusDamage.end();
+}
+
 bool Entity::isColliderDamageableByMelee() const
 {
+	if ( !isDamageableCollider() ) { return false; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
 	return colliderDmgType.meleeAffects;
@@ -623,6 +648,7 @@ bool Entity::isColliderDamageableByMelee() const
 
 bool Entity::isColliderDamageableByMagic() const
 {
+	if ( !isDamageableCollider() ) { return false; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
 	return colliderDmgType.magicAffects;
@@ -635,21 +661,21 @@ bool Entity::isDamageableCollider() const
 
 int Entity::getColliderLangName() const
 {
-	if ( behavior != &actColliderDecoration ) { return 1; }
+	if ( !isDamageableCollider() ) { return 1; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	return colliderData.entityLangEntry;
 }
 
 int Entity::getColliderOnHitLangEntry() const
 {
-	if ( behavior != &actColliderDecoration ) { return 1; }
+	if ( !isDamageableCollider() ) { return 1; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	return colliderData.hitMessageLangEntry;
 }
 
 int Entity::getColliderOnBreakLangEntry() const
 {
-	if ( behavior != &actColliderDecoration ) { return 1; }
+	if ( !isDamageableCollider() ) { return 1; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	return colliderData.breakMessageLangEntry;
 }

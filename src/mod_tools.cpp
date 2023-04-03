@@ -7619,6 +7619,43 @@ void EditorEntityData_t::readFromFile()
 			colliderDmg.minotaurPathThroughAndBreak = itr->value["minotaur_path_and_break"].GetBool();
 			colliderDmg.meleeAffects = itr->value["melee"].GetBool();
 			colliderDmg.magicAffects = itr->value["magic"].GetBool();
+			colliderDmg.boulderDestroys = itr->value["boulder_destroy"].GetBool();
+			colliderDmg.showAsWallOnMinimap = itr->value["minimap_appear_as_wall"].GetBool();
+			if ( itr->value.HasMember("bonus_damage_skills") && itr->value["bonus_damage_skills"].IsArray() )
+			{
+				for ( auto itr2 = itr->value["bonus_damage_skills"].Begin(); itr2 != itr->value["bonus_damage_skills"].End(); ++itr2 )
+				{
+					std::string s = itr2->GetString();
+					if ( s == "PRO_AXE" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_AXE);
+					}
+					else if ( s == "PRO_SWORD" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_SWORD);
+					}
+					else if ( s == "PRO_MACE" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_MACE);
+					}
+					else if ( s == "PRO_POLEARM" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_POLEARM);
+					}
+					else if ( s == "PRO_UNARMED" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_UNARMED);
+					}
+					else if ( s == "PRO_MAGIC" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_MAGIC);
+					}
+					else if ( s == "PRO_RANGED" )
+					{
+						colliderDmg.proficiencyBonusDamage.insert(PRO_RANGED);
+					}
+				}
+			}
 		}
 	}
 	if ( entityTypes.HasMember("collider_dmg_types") )

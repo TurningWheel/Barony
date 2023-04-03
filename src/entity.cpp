@@ -7388,10 +7388,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( myStats->weapon && !shapeshifted )
 				{
 					weaponskill = getWeaponSkill(myStats->weapon);
-					if ( weaponskill == PRO_AXE )
+					if ( hit.entity->behavior == &actColliderDecoration )
 					{
-						axe = (myStats->PROFICIENCIES[PRO_AXE] / 20);
-						if ( myStats->PROFICIENCIES[PRO_AXE] >= SKILL_LEVEL_LEGENDARY )
+						if ( weaponskill >= 0 && hit.entity->isColliderWeakToSkill(weaponskill) )
+						{
+							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							{
+								axe = 9;
+							}
+						}
+					}
+					else if ( weaponskill == PRO_AXE )
+					{
+						axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+						if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
 						{
 							axe = 9;
 						}
@@ -7400,7 +7411,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else
 				{
 					weaponskill = PRO_UNARMED;
-					if ( hit.entity->behavior != &::actChest )
+					if ( hit.entity->behavior == &actColliderDecoration )
+					{
+						if ( hit.entity->isColliderWeakToSkill(weaponskill) )
+						{
+							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							{
+								axe = 9;
+							}
+						}
+					}
+					else if ( hit.entity->behavior != &::actChest )
 					{
 						axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 						if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )

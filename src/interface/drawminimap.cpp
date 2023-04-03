@@ -91,6 +91,68 @@ void drawMinimap(const int player, SDL_Rect rect)
 		0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
 	assert(minimapSurface);
 	SDL_LockSurface(minimapSurface);
+
+	std::vector<Entity*> entityPointsOfInterest;
+	std::unordered_set<int> customWalls;
+	// get special points of interest (exits, items, revealed monsters, etc)
+	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
+			|| entity->behavior == &actCustomPortal )   // ladder or portal models
+		{
+			entityPointsOfInterest.push_back(entity);
+		}
+		else if ( entity->behavior == &actColliderDecoration && entity->isColliderShownAsWallOnMinimap() )
+		{
+			if ( entity->x >= 0 && entity->y >= 0 && entity->x < map.width << 4 && entity->y < map.height << 4 )
+			{
+				int x = floor(entity->x / 16);
+				int y = floor(entity->y / 16);
+				customWalls.insert(x + y * 10000);
+			}
+		}
+		else
+		{
+			if ( entity->skill[28] > 0 ) // mechanism
+			{
+				if ( entity->behavior == &actCustomPortal
+					|| entity->behavior == &actTextSource
+					|| entity->behavior == &actFloorDecoration )
+				{
+					continue;
+				}
+			}
+			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->isBoulderSprite() )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->behavior == &actItem && entity->sprite >= items[TOOL_PLAYER_LOOT_BAG].index &&
+				entity->sprite < (items[TOOL_PLAYER_LOOT_BAG].index + items[TOOL_PLAYER_LOOT_BAG].variations) )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->entityShowOnMap > 0 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+		}
+		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
+		{
+			// only decrease the entities' shown duration when the global game timer passes a tick
+			// (drawMinimap doesn't follow game tick intervals)
+			--entity->entityShowOnMap;
+		}
+	}
+
 	const int xmin = ((int)map.width - mapGCD) / 2;
 	const int xmax = map.width - xmin;
 	const int ymin = ((int)map.height - mapGCD) / 2;
@@ -100,35 +162,46 @@ void drawMinimap(const int player, SDL_Rect rect)
 			Uint32 color = 0;
 			Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
 			Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
+			auto foundCustomWall = customWalls.find(x + y * 10000);
 			if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 			{
 				// out-of-bounds
 				color = makeColor(0, 64, 64, backgroundAlpha);
 			}
-			else if ( minimap[y][x] == 0 )
+			else
 			{
-				// unknown / no floor
-				color = makeColor(0, 64, 64, backgroundAlpha);
-			}
-			else if ( minimap[y][x] == 1 )
-			{
-				// walkable space
-				color = makeColor(0, 128, 128, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 2 )
-			{
-				// wall
-				color = makeColor(0, 255, 255, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 3 )
-			{
-				// mapped but undiscovered walkable ground
-				color = makeColor(64, 64, 64, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 4 )
-			{
-				// mapped but undiscovered wall
-				color = makeColor(128, 128, 128, foregroundAlpha);
+				Sint8 mapIndex = minimap[y][x];
+				if ( foundCustomWall != customWalls.end() )
+				{
+					if ( mapIndex == 1 ) { mapIndex = 2; } // force walkable to wall
+					else if ( mapIndex == 3 ) { mapIndex = 4; } // force undiscovered walkable to wall
+				}
+
+				if ( mapIndex == 0 )
+				{
+					// unknown / no floor
+					color = makeColor(0, 64, 64, backgroundAlpha);
+				}
+				else if ( mapIndex == 1 )
+				{
+					// walkable space
+					color = makeColor(0, 128, 128, foregroundAlpha);
+				}
+				else if ( mapIndex == 2 )
+				{
+					// wall
+					color = makeColor(0, 255, 255, foregroundAlpha);
+				}
+				else if ( mapIndex == 3 )
+				{
+					// mapped but undiscovered walkable ground
+					color = makeColor(64, 64, 64, foregroundAlpha);
+				}
+				else if ( mapIndex == 4 )
+				{
+					// mapped but undiscovered wall
+					color = makeColor(128, 128, 128, foregroundAlpha);
+				}
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
 		}
@@ -268,9 +341,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 	};
 
 	// draw special points of interest (exits, items, revealed monsters, etc)
-	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	for ( auto entity : entityPointsOfInterest )
 	{
-		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
 			|| entity->behavior == &actCustomPortal )   // ladder or portal models
 		{
@@ -290,15 +362,6 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 		else
 		{
-			if ( entity->skill[28] > 0 ) // mechanism
-			{
-				if ( entity->behavior == &actCustomPortal
-					|| entity->behavior == &actTextSource
-					|| entity->behavior == &actFloorDecoration )
-				{
-					continue;
-				}
-			}
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
@@ -398,12 +461,6 @@ void drawMinimap(const int player, SDL_Rect rect)
 					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
 				}
 			}
-		}
-		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
-		{
-			// only decrease the entities' shown duration when the global game timer passes a tick
-			// (drawMinimap doesn't follow game tick intervals)
-			--entity->entityShowOnMap;
 		}
 	}
 
@@ -580,7 +637,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 					color_edge = uint32ColorBlack;
 					if ( !splitscreen )
 					{
-						if (!players[player] || !players[player]->entity) {
+						if (!players[player] /*|| !players[player]->entity*/) {
 							continue;
 						}
 					}

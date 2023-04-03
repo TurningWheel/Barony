@@ -172,7 +172,7 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
-	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0 )
+	else if ( entity->behavior == &actColliderDecoration && entity->colliderHasCollision != 0 && !(entity->isColliderWeakToBoulders()) )
 	{
 		return true;
 	}
@@ -479,6 +479,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 		{
 			playSoundEntity(entity, 28, 64);
 			entity->furnitureHealth = 0;
+			playSoundEntity(my, 181, 128);
+		}
+	}
+	else if ( entity->isDamageableCollider() && entity->isColliderWeakToBoulders() )
+	{
+		if ( ignoreInsideEntity || entityInsideEntity(my, entity) )
+		{
+			playSoundEntity(entity, 28, 64);
+			entity->colliderCurrentHP = 0;
 			playSoundEntity(my, 181, 128);
 		}
 	}

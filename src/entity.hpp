@@ -979,6 +979,9 @@ public:
 	void updateEntityOnHit(Entity* attacker, bool alertTarget);
 	bool isDamageableCollider() const;
 	bool isColliderDamageableByMelee() const;
+	bool isColliderWeakToSkill(const int proficiency) const;
+	bool isColliderWeakToBoulders() const;
+	bool isColliderShownAsWallOnMinimap() const;
 	bool isColliderDamageableByMagic() const;
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
