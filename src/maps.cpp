@@ -2742,6 +2742,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						ceilingTilesToDeleteForBoulders.push_back(entity);
 					}
 				}
+				else if ( entity->sprite == 179 && entity->colliderHasCollision == 1 ) // collider
+				{
+					auto find = trapLocationAndSide.find(x + y * 10000);
+					if ( find != trapLocationAndSide.end() )
+					{
+						int side = find->second;
+						int trapx = x + (side == 0 ? -1 : 0) + (side == 2 ? 1 : 0);
+						int trapy = y + (side == 1 ? -1 : 0) + (side == 3 ? 1 : 0);
+						if ( possiblelocations[trapy + trapx * map.height] )
+						{
+							possiblelocations[trapy + trapx * map.height] = false;
+							--numpossiblelocations;
+						}
+					}
+				}
 			}
 		}
 
