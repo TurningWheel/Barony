@@ -54,7 +54,7 @@ void cleanupMinimapTextures() {
 	}
 }
 
-void drawMinimap(const int player, SDL_Rect rect)
+void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
 	if ( gameplayCustomManager.inUse() ) {
 		if ( CustomHelpers::isLevelPartOfSet(
@@ -365,60 +365,165 @@ void drawMinimap(const int player, SDL_Rect rect)
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
-				if ( (players[player] && players[player]->entity
-					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID())
-					|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
 				{
-					warningEffect = true;
-					int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-					int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
-				}
-				if ( !warningEffect
-					&& ((stats[player]->ring && stats[player]->ring->type == RING_WARNING)
-						|| (entity->entityShowOnMap > 0)) )
-				{
-					int beatitude = 0;
-					if ( stats[player]->ring && stats[player]->ring->type == RING_WARNING )
+					if ( drawingSharedMap )
 					{
-						beatitude = stats[player]->ring->beatitude;
-						// invert for succ/incubus
-						if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[player]) )
+						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
-							beatitude = abs(stats[player]->ring->beatitude);
+							if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+							if ( (players[i] && players[i]->entity
+								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
+								|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+							{
+								warningEffect = true;
+								int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+								int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+								drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
+								break;
+							}
+						}
+					}
+					else
+					{
+						const int i = player;
+						if ( (players[i] && players[i]->entity
+							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
+							|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+						{
+							warningEffect = true;
+							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+							int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+							drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
 						}
 					}
 
-					bool doEffect = false;
-					if ( entity->entityShowOnMap > 0 )
+					if ( !warningEffect )
 					{
-						doEffect = true;
-					}
-					else if ( stats[player]->ring && players[player] && players[player]->entity
-						&& entityDist(players[player]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
-					{
-						doEffect = true;
-					}
-					if ( doEffect )
-					{
-						int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-						int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
-						warningEffect = true;
-					}
-				}
-				if ( !warningEffect && stats[player]->shoes != NULL )
-				{
-					if ( stats[player]->shoes->type == ARTIFACT_BOOTS )
-					{
-						if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
-							&& players[player] && players[player]->entity
-							&& entityDist(players[player]->entity, entity) < 16.0 * 20 )
+						if ( drawingSharedMap )
 						{
-							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
-							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-							int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-							drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+								if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
+									|| (entity->entityShowOnMap > 0) )
+								{
+									int beatitude = 0;
+									if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
+									{
+										beatitude = stats[i]->ring->beatitude;
+										// invert for succ/incubus
+										if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[i]) )
+										{
+											beatitude = abs(stats[i]->ring->beatitude);
+										}
+									}
+
+									bool doEffect = false;
+									if ( entity->entityShowOnMap > 0 )
+									{
+										doEffect = true;
+									}
+									else if ( stats[i]->ring && players[i] && players[i]->entity
+										&& entityDist(players[i]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
+									{
+										doEffect = true;
+									}
+									if ( doEffect )
+									{
+										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										warningEffect = true;
+										break;
+									}
+								}
+							}
+						}
+						else
+						{
+							const int i = player;
+							if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
+									|| (entity->entityShowOnMap > 0) )
+							{
+								int beatitude = 0;
+								if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
+								{
+									beatitude = stats[i]->ring->beatitude;
+									// invert for succ/incubus
+									if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[i]) )
+									{
+										beatitude = abs(stats[i]->ring->beatitude);
+									}
+								}
+
+								bool doEffect = false;
+								if ( entity->entityShowOnMap > 0 )
+								{
+									doEffect = true;
+								}
+								else if ( stats[i]->ring && players[i] && players[i]->entity
+									&& entityDist(players[i]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
+								{
+									doEffect = true;
+								}
+								if ( doEffect )
+								{
+									int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+									int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+									drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+									warningEffect = true;
+								}
+							}
+						}
+					}
+					if ( !warningEffect )
+					{
+						if ( drawingSharedMap )
+						{
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+								if ( stats[i]->shoes != NULL )
+								{
+									if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+									{
+										if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
+											&& players[i] && players[i]->entity
+											&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
+										{
+											entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+											int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+											int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+											warningEffect = true;
+											break;
+										}
+									}
+								}
+							}
+						}
+						else
+						{
+							const int i = player;
+							if ( stats[i]->shoes != NULL )
+							{
+								if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+								{
+									if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
+										&& players[i] && players[i]->entity
+										&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
+									{
+										entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										warningEffect = true;
+									}
+								}
+							}
 						}
 					}
 				}
