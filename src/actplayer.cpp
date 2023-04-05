@@ -1902,6 +1902,68 @@ void doStatueEditor(int player)
 	}
 }
 
+int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
+    if (race == HUMAN) {
+        if (appearance < 5) {
+            return 113 + 12 * sex + appearance;
+        }
+        else if (appearance == 5) {
+            return 332 + sex;
+        }
+        else if (appearance >= 6 && appearance < 12) {
+            return 341 + sex * 13 + appearance - 6;
+        }
+        else if (appearance >= 12) {
+            return 367 + sex * 13 + appearance - 12;
+        }
+        else {
+            return 113; // default human head
+        }
+    }
+    else if (race == SKELETON) {
+        return sex == FEMALE ? 1049 : 686;
+    }
+    else if (race == RAT) {
+        return frame ?
+            (frame < 5 ? 1043 :
+            (frame < 9 ? 1044 : 814)) :
+            814;
+    }
+    else if (race == TROLL) {
+        return 817;
+    }
+    else if (race == SPIDER) {
+        return arachnophobia_filter ? 1001 : 823;
+    }
+    else if (race == CREATURE_IMP) {
+        return 827;
+    }
+    else if (race == GOBLIN) {
+        return sex == FEMALE ? 752 : 694;
+    }
+    else if (race == INCUBUS) {
+        return 702;
+    }
+    else if (race == SUCCUBUS) {
+        return 710;
+    }
+    else if (race == VAMPIRE) {
+        return sex == FEMALE ? 756 : 718;
+    }
+    else if (race == INSECTOID) {
+        return sex == FEMALE ? 760 : 726;
+    }
+    else if (race == GOATMAN) {
+        return sex == FEMALE ? 768 : 734;
+    }
+    else if (race == AUTOMATON) {
+        return sex == FEMALE ? 770 : 742;
+    }
+    else {
+        return 481; // shadow head due to unknown creature
+    }
+}
+
 void actPlayer(Entity* my)
 {
 	if (!my)
@@ -4992,115 +5054,8 @@ void actPlayer(Entity* my)
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )
 	{
 		// set head model
-		if ( playerRace != HUMAN )
-		{
-			if ( playerRace == SKELETON )
-			{
-				my->sprite = stats[PLAYER_NUM]->sex == FEMALE ? 1049 : 686;
-			}
-			else if ( playerRace == RAT )
-			{
-				my->sprite = PLAYER_ATTACK ?
-				    (PLAYER_ATTACKTIME < 5 ? 1043 :
-				    (PLAYER_ATTACKTIME < 10 ? 1044 : 814)) :
-				    814;
-			}
-			else if ( playerRace == TROLL )
-			{
-				my->sprite = 817;
-			}
-			else if ( playerRace == SPIDER )
-			{
-				my->sprite = arachnophobia_filter ? 1001 : 823;
-			}
-			else if ( playerRace == CREATURE_IMP )
-			{
-				my->sprite = 827;
-			}
-			else if ( playerRace == GOBLIN )
-			{
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					my->sprite = 752;
-				}
-				else
-				{
-					my->sprite = 694;
-				}
-			}
-			else if ( playerRace == INCUBUS )
-			{
-				my->sprite = 702;
-			}
-			else if ( playerRace == SUCCUBUS )
-			{
-				my->sprite = 710;
-			}
-			else if ( playerRace == VAMPIRE )
-			{
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					my->sprite = 756;
-				}
-				else
-				{
-					my->sprite = 718;
-				}
-			}
-			else if ( playerRace == INSECTOID )
-			{
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					my->sprite = 760;
-				}
-				else
-				{
-					my->sprite = 726;
-				}
-			}
-			else if ( playerRace == GOATMAN )
-			{
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					my->sprite = 768;
-				}
-				else
-				{
-					my->sprite = 734;
-				}
-			}
-			else if ( playerRace == AUTOMATON )
-			{
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					my->sprite = 770;
-				}
-				else
-				{
-					my->sprite = 742;
-				}
-			}
-		}
-		else if ( playerAppearance < 5 )
-		{
-			my->sprite = 113 + 12 * stats[PLAYER_NUM]->sex + playerAppearance;
-		}
-		else if ( playerAppearance == 5 )
-		{
-			my->sprite = 332 + stats[PLAYER_NUM]->sex;
-		}
-		else if ( playerAppearance >= 6 && playerAppearance < 12 )
-		{
-			my->sprite = 341 + stats[PLAYER_NUM]->sex * 13 + playerAppearance - 6;
-		}
-		else if ( playerAppearance >= 12 )
-		{
-			my->sprite = 367 + stats[PLAYER_NUM]->sex * 13 + playerAppearance - 12;
-		}
-		else
-		{
-			my->sprite = 113; // default
-		}
+        my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
+            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0);
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -7720,7 +7675,7 @@ bool Entity::isPlayerHeadSprite() const
 	return Entity::isPlayerHeadSprite(sprite);
 }
 
-Monster Entity::getMonsterFromPlayerRace(int playerRace)
+Monster getMonsterFromPlayerRace(int playerRace)
 {
 	switch ( playerRace )
 	{
@@ -7732,13 +7687,6 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			break;
 		case RACE_INCUBUS:
 			return INCUBUS;
-			/*if ( stats[this->skill[2]]->sex == FEMALE )
-			{
-				return SUCCUBUS;
-			}
-			else
-			{
-			}*/
 			break;
 		case RACE_GOBLIN:
 			return GOBLIN;
@@ -7775,6 +7723,11 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			break;
 	}
 	return HUMAN;
+}
+
+Monster Entity::getMonsterFromPlayerRace(int playerRace)
+{
+    return ::getMonsterFromPlayerRace(playerRace);
 }
 
 void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)

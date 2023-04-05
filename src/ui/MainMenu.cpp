@@ -17664,7 +17664,60 @@ failed:
 	        },
 	        false, false); // both buttons are yellow
 	}
-
+                  
+    static void addContinuePlayerInfo(Frame& frame, SaveGameInfo& info, int player, int x, int y, bool show_pnum) {
+        auto subframe = frame.addFrame("info");
+        subframe->setSize(SDL_Rect{x, y, 64, 64});
+        subframe->setHollow(true);
+        subframe->setColor(0);
+        
+        // player num + level text
+        char buf[16];
+        auto lvl = subframe->addField("player_lvl", 8);
+        if (show_pnum) {
+            snprintf(buf, sizeof(buf), "P%d\nLVL%d", player + 1, info.players[player].stats.LVL);
+            lvl->setTextColor(playerColor(player, colorblind, false));
+            lvl->setOutlineColor(makeColorRGB(0, 0, 0));
+        } else {
+            snprintf(buf, sizeof(buf), "LVL%d", info.players[player].stats.LVL);
+            lvl->setTextColor(makeColorRGB(255, 255, 255));
+            lvl->setOutlineColor(makeColorRGB(52, 32, 23));
+        }
+        lvl->setHJustify(Field::justify_t::LEFT);
+        lvl->setVJustify(Field::justify_t::BOTTOM);
+        lvl->setSize(SDL_Rect{0, 3, 64, 64});
+        lvl->setColor(0xffffffff);
+        lvl->setFont(smallfont_outline);
+        lvl->setText(buf);
+        
+        // class image
+        const int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+        const int class_index = (info.players[player].char_class + 1) % num_classes;
+        const auto class_name = classes_in_order[class_index];
+        const auto class_find = classes.find(class_name);
+        if (class_find != classes.end()) {
+            std::string class_img_path = "#*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+            class_img_path += class_find->second.image_highlighted;
+            auto class_img = subframe->addImage(
+                SDL_Rect{2, 0, 54, 54},
+                0xffffffff,
+                class_img_path.c_str(),
+                "class_img");
+        }
+        
+        // portrait
+        const std::string portrait_path =
+            monsterData.getAllyIconFromSprite(playerHeadSprite(
+                (Monster)getMonsterFromPlayerRace(info.players[player].race),
+                (sex_t)info.players[player].stats.sex,
+                (int)info.players[player].stats.appearance));
+        auto portrait = subframe->addImage(
+            SDL_Rect{32, 24, 32, 32},
+            0xffffffff,
+            portrait_path.c_str(),
+            "portrait");
+    }
+                
 	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
 	    static Uint32 timeSinceScroll = 0;
 		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
@@ -17682,9 +17735,10 @@ failed:
             int saveGameCount = 0;
 		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                 if (saveGameExists(singleplayer, i)) {
+                    const int posX = saveGameCount * 256 + (898 - 220) / 2;
                     auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
                     auto savegame_book = subwindow.addButton(str.c_str());
-                    savegame_book->setSize(SDL_Rect{saveGameCount * 256 + (898 - 220) / 2, 0, 220, 280});
+                    savegame_book->setSize(SDL_Rect{posX, 0, 220, 280});
                     savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
 		            savegame_book->setColor(makeColor(255, 255, 255, 255));
 		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -17797,12 +17851,12 @@ failed:
 					switch (saveGameInfo.multiplayer_type) {
 					default:
 					case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
-					case SERVER: snprintf(game_type, sizeof(game_type), "Online Host (#1/%d)", numplayers); break;
-					case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
-					case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host (#1/%d)", numplayers); break;
+					case SERVER: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+					case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client %dp (#%d)", numplayers, saveGameInfo.player_num + 1); break;
+					case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host %dp (#1)", numplayers); break;
 					case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
-					case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host (#1/%d)", numplayers); break;
-					case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen [1-%d]", numplayers); break;
+					case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+					case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen %dp", numplayers); break;
 					}
 
                     // format book label string
@@ -17832,6 +17886,11 @@ failed:
 		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 		                screenshot->section.w = image->getHeight();
 		            }*/
+                    
+                    auto cover = subwindow.addFrame("bookcover");
+                    cover->setSize(SDL_Rect{posX, 0, 220, 280});
+                    cover->setColor(0);
+                    cover->setHollow(true);
 
 					// add savegame picture
 					std::string screenshot_path = "images/ui/Main Menus/ContinueGame/savescreens/";
@@ -17895,25 +17954,66 @@ failed:
 						}
 					}
 
-					auto screenshot = subwindow.addImage(
-						SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+					auto screenshot = cover->addImage(
+						SDL_Rect{32, 16, 160, 162},
 						0xffffffff,
 						screenshot_path.c_str(),
 						(str + "_screenshot").c_str()
 					);
-					screenshot->ontop = true;
 					Image* image = Image::get(screenshot_path.c_str()); assert(image);
 					screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 					screenshot->section.w = image->getHeight();
 
 		            // add book overlay
-		            auto overlay = subwindow.addImage(
-		                SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+		            auto overlay = cover->addImage(
+		                SDL_Rect{32, 16, 160, 162},
 		                0xffffffff,
 		                "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
 		                (str + "_overlay").c_str()
 		            );
-		            overlay->ontop = true;
+                    
+                    // add player info
+                    if (numplayers == 1) {
+                        addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
+                    }
+                    else if (numplayers == 2) {
+                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                            if (saveGameInfo.players_connected[c]) {
+                                switch (index) {
+                                default:
+                                case 0:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                    break;
+                                case 1:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                    break;
+                                }
+                                ++index;
+                            }
+                        }
+                    }
+                    else if (numplayers >= 3) {
+                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                            if (saveGameInfo.players_connected[c]) {
+                                switch (index) {
+                                default:
+                                case 0:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+                                    break;
+                                case 1:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+                                    break;
+                                case 2:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                    break;
+                                case 3:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                    break;
+                                }
+                                ++index;
+                            }
+                        }
+                    }
 
 		            ++saveGameCount;
                 }

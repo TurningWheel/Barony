@@ -985,6 +985,7 @@ public:
 	int getColliderLangName() const;
 };
 
+Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
 Sint32 statGetSTR(Stat* entitystats, Entity* my);
 Sint32 statGetDEX(Stat* entitystats, Entity* my);
 Sint32 statGetCON(Stat* entitystats, Entity* my);
@@ -1024,6 +1025,7 @@ int getBaseManaRegen(Entity* my, Stat& myStats);
 
 //--- Entity act* functions ---
 void actMonster(Entity* my);
+int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame = 0);
 void actPlayer(Entity* my);
 void playerAnimateRat(Entity* my);
 void playerAnimateSpider(Entity* my);

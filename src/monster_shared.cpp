@@ -360,7 +360,7 @@ void Entity::spawnBlood(int bloodSprite)
 
 MonsterData_t monsterData;
 std::map<int, MonsterData_t::MonsterDataEntry_t> MonsterData_t::monsterDataEntries;
-std::string MonsterData_t::iconDefaultString = "";
+std::string MonsterData_t::iconDefaultString = "#*images/ui/HUD/allies/icons/Icon_HeadDefaultM_00.png";
 std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
 {
 	if ( type < NOTHING || type >= NUMMONSTERS )
@@ -372,8 +372,14 @@ std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
 	{
 		return iconDefaultString;
 	}
-
-	return monsterDataEntries[type].iconSpritesAndPaths[sprite];
+    
+    auto& data = monsterDataEntries[type];
+    auto find = data.iconSpritesAndPaths.find(sprite);
+    if (find == data.iconSpritesAndPaths.end()) {
+        return data.defaultIconPath;
+    } else {
+        return find->second;
+    }
 }
 
 int MonsterData_t::getSpecialNPCBaseModel(Stat& myStats)
