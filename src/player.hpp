@@ -1338,6 +1338,7 @@ public:
 				std::string statIconPath;
 				std::string description;
 				std::string legendaryDescription;
+				int skillSfx = 552;
 				int effectStartOffsetX = 72;
 				int effectBackgroundOffsetX = 8;
 				int effectBackgroundWidth = 80;

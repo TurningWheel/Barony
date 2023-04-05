@@ -680,6 +680,20 @@ int Entity::getColliderOnBreakLangEntry() const
 	return colliderData.breakMessageLangEntry;
 }
 
+int Entity::getColliderSfxOnHit() const
+{
+	if ( !isDamageableCollider() ) { return 0; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.sfxHit;
+}
+
+int Entity::getColliderSfxOnBreak() const
+{
+	if ( !isDamageableCollider() ) { return 0; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.sfxBreak;
+}
+
 void actColliderDecoration(Entity* my)
 {
 	if ( !my )
@@ -810,7 +824,12 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 		}
 	}
 
-	playSoundEntity(this, 28, 128);
+	int sound = 28; //damage.ogg
+	if ( getColliderSfxOnHit() > 0 )
+	{
+		sound = getColliderSfxOnHit();
+	}
+	playSoundEntity(this, sound, 64);
 }
 
 void actFloorDecoration(Entity* my)

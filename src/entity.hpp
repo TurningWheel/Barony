@@ -985,6 +985,8 @@ public:
 	bool isColliderDamageableByMagic() const;
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
+	int getColliderSfxOnHit() const;
+	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;
 };
 

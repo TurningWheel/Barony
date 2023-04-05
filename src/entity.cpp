@@ -7465,7 +7465,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
-					playSoundEntity(hit.entity, 28, 64);
+					int sound = 28; //damage.ogg
+					if ( hit.entity->behavior == &actColliderDecoration && hit.entity->getColliderSfxOnHit() > 0 )
+					{
+						sound = hit.entity->getColliderSfxOnHit();
+					}
+					playSoundEntity(hit.entity, sound, 64);
 				}
 				if ( entityHP > 0 )
 				{
