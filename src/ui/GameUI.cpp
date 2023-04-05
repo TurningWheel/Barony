@@ -5588,10 +5588,25 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						tooltipDesc->setText(descStr.c_str());
 					}
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectDisabledHPRegen )
+				{
+					variation = 0;
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						variation = 1;
+					}
+
+					std::string newHeader = definition.getName(-1).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					tooltipDesc->setText(definition.getDesc(variation).c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 
 				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger
 					&& effectID != StatusEffectQueue_t::kEffectWanted
-					&& effectID != StatusEffectQueue_t::kEffectWantedInShop )
+					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
+					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
@@ -5873,6 +5888,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			miscEffects[kEffectBurning] = true;
 		}
+		if ( !(svFlags & SV_FLAG_HUNGER) )
+		{
+			miscEffects[kEffectDisabledHPRegen] = true;
+		}
 		if ( stats[player] )
 		{
 			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
@@ -5887,7 +5906,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
 			{
-				if ( !(svFlags & SV_FLAG_HUNGER) )
+				if ( (svFlags & SV_FLAG_HUNGER) )
 				{
 					miscEffects[kEffectDisabledHPRegen] = true;
 				}
@@ -5903,7 +5922,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->ring && stats[player]->ring->type == RING_SLOWDIGESTION
 				&& (stats[player]->ring->beatitude >= 0 || cursedItemIsBuff) )
 			{
-				if ( !(svFlags & SV_FLAG_HUNGER) )
+				if ( (svFlags & SV_FLAG_HUNGER) )
 				{
 					miscEffects[kEffectSlowDigestion] = true;
 				}
@@ -6259,6 +6278,9 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	auto frameImagesIterator = frameImages.begin();
 	bool bFrameCapturesMouse = false;
 	if ( !players[player]->shootmode && inputs.getVirtualMouse(player)->draw_cursor 
+		&& !players[player]->skillSheet.bSkillSheetOpen
+		&& !players[player]->bookGUI.bBookOpen
+		&& !players[player]->signGUI.bSignOpen
 		&& !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive() )
 	{
 		bFrameCapturesMouse = statusEffectFrame->capturesMouse();
@@ -8657,7 +8679,7 @@ void doSharedMinimap() {
 		minimapFrame->setHollow(true);
 		minimapFrame->setInvisible(true);
 		minimapFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect){
-            drawMinimap(widget.getOwner(), rect);
+            drawMinimap(widget.getOwner(), rect, true);
             });
 		minimapFrame->setTickCallback([](Widget& widget){
 	        int playercount = 0;
@@ -8702,7 +8724,7 @@ static Frame* createMinimap(int player) {
     window->setColor(0);
     window->setOwner(player);
     window->setDrawCallback([](const Widget& widget, SDL_Rect rect){
-        drawMinimap(widget.getOwner(), rect);
+        drawMinimap(widget.getOwner(), rect, false);
         });
 
     window->setTickCallback([](Widget& widget){
@@ -9118,7 +9140,14 @@ void openMapWindow(int player) {
 
 	minimap->setDrawCallback([](const Widget& widget, SDL_Rect rect){
 	    int player = widget.getOwner();
-        drawMinimap(player, rect);
+		if ( ::minimapFrame && !::minimapFrame->isInvisible() )
+		{
+			drawMinimap(0, rect, true); // use the same texture
+		}
+		else
+		{
+			drawMinimap(player, rect, false);
+		}
         if (!inputs.getVirtualMouse(player)->draw_cursor) {
 	        auto& cursor = minimap_cursor[player];
 			auto image = Image::get("*#images/ui/MapAndLog/cursor.png");
@@ -18890,6 +18919,10 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 						if ( (*itr).HasMember("id") )
 						{
 							entry.skillId = (*itr)["id"].GetInt();
+						}
+						if ( (*itr).HasMember("sfx") )
+						{
+							entry.skillSfx = (*itr)["sfx"].GetInt();
 						}
 						if ( (*itr).HasMember("icon_base_path") )
 						{
@@ -34105,14 +34138,8 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::setAnimatePosition(int destx, int 
 
 static ConsoleVariable<int> cvar_skill_ding_sfx("/skill_sfx_ding", 554);
 static ConsoleVariable<int> cvar_lvl_ding_sfx("/lvl_sfx_ding", 555);
-static ConsoleVariable<int> cvar_skill_sfx("/skill_sfx", 552);
-static ConsoleVariable<int> cvar_skill_appraisal_sfx("/skill_sfx_appraise", 550);
-static ConsoleVariable<int> cvar_skill_sneak_sfx("/skill_sfx_sneak", 549);
-static ConsoleVariable<int> cvar_skill_magic_sfx("/skill_sfx_magic", 551);
-static ConsoleVariable<int> cvar_skill_casting_sfx("/skill_sfx_casting", 552);
+static ConsoleVariable<int> cvar_skill_sfx_volume("/skill_sfx_volume", 128);
 static ConsoleVariable<int> cvar_skill_newspell_sfx("/skill_sfx_newspell", 560);
-static ConsoleVariable<int> cvar_skill_combat_sfx("/skill_sfx_combat", 530);
-static ConsoleVariable<int> cvar_skill_leader_sfx("/skill_sfx_leader", 552);
 
 bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 {
@@ -34125,18 +34152,16 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	{
 		return true;
 	}
-	else if ( index == *cvar_skill_sfx
-		|| index == *cvar_skill_appraisal_sfx
-		|| index == *cvar_skill_sneak_sfx
-		|| index == *cvar_skill_magic_sfx
-		|| index == *cvar_skill_casting_sfx
-		|| index == *cvar_skill_newspell_sfx
-		|| index == *cvar_skill_combat_sfx
-		|| index == *cvar_skill_leader_sfx )
+	else
 	{
-		return true;
+		for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( index == skill.skillSfx )
+			{
+				return true;
+			}
+		}
 	}
-	
 	return false;
 }
 
@@ -35509,46 +35534,19 @@ void updateSkillUpFrame(const int player)
 			skillUp.pos.h = skillImg->pos.h;
 			skillUp.init = true;
 
-			if ( skillUp.whichSkill == PRO_SPELLCASTING )
+			if ( skillUp.isSpell )
 			{
-				playSound(*cvar_skill_casting_sfx, 128);
-			}
-			else if ( skillUp.whichSkill == PRO_MAGIC )
-			{
-				playSound(*cvar_skill_magic_sfx, 128);
-			}
-			else if ( skillUp.isSpell )
-			{
-				playSound(*cvar_skill_newspell_sfx, 128);
-			}
-			else if ( skillUp.whichSkill == PRO_RANGED
-				|| skillUp.whichSkill == PRO_SWORD
-				|| skillUp.whichSkill == PRO_POLEARM
-				|| skillUp.whichSkill == PRO_AXE
-				|| skillUp.whichSkill == PRO_MACE
-				|| skillUp.whichSkill == PRO_UNARMED
-				|| skillUp.whichSkill == PRO_SHIELD
-				)
-			{
-				playSound(*cvar_skill_combat_sfx, 128);
-			}
-			else if ( skillUp.whichSkill == PRO_STEALTH )
-			{
-				playSound(*cvar_skill_sneak_sfx, 128);
-			}
-			else if ( skillUp.whichSkill == PRO_APPRAISAL )
-			{
-				playSound(*cvar_skill_appraisal_sfx, 128);
-			}
-			else if ( skillUp.whichSkill == PRO_LEADERSHIP )
-			{
-				playSound(*cvar_skill_leader_sfx, 128);
+				playSound(*cvar_skill_newspell_sfx, *cvar_skill_sfx_volume);
 			}
 			else
 			{
-				if ( *cvar_skill_sfx != 0 )
+				for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
-					playSound(*cvar_skill_sfx, 128);
+					if ( skill.skillId == skillUp.whichSkill )
+					{
+						playSound(skill.skillSfx, *cvar_skill_sfx_volume);
+						break;
+					}
 				}
 			}
 		}
