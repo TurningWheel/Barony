@@ -56,7 +56,9 @@ void actItem(Entity* my)
         my->sprite == items[ARTIFACT_ORB_GREEN].index ||
         my->sprite == items[ARTIFACT_ORB_BLUE].index ||
         my->sprite == items[ARTIFACT_ORB_PURPLE].index ||
-        my->sprite == items[TOOL_PLAYER_LOOT_BAG].index;
+        ((my->sprite >= (items[TOOL_PLAYER_LOOT_BAG].index) 
+			&& (my->sprite < (items[TOOL_PLAYER_LOOT_BAG].index + items[TOOL_PLAYER_LOOT_BAG].variations)))
+			);
 	if (!isArtifact) {
 		my->flags[BURNABLE] = true;
 	}
