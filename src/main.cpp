@@ -518,6 +518,7 @@ std::unordered_map<std::string, int> achievementProgress; // ->second is the ass
 std::unordered_map<std::string, int64_t> achievementUnlockTime;
 
 std::unordered_set<std::string> achievementUnlockedLookup;
+bool achievementsNeedResort = true;
 Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;
