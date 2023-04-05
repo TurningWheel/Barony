@@ -18578,7 +18578,9 @@ failed:
 				"Controls",
 			};
 			if (intro) {
+#ifndef NINTENDO
 			    tabs.push_back("Online");
+#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -18695,23 +18697,27 @@ failed:
 				"Controls",
 			};
 			if (intro) {
+#ifndef NINTENDO
 			    tabs.push_back("Online");
+#endif
 			} else {
 				tabs.push_back("Game");
 			}
 			const char* prevtab = nullptr;
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-					if (prevtab) {
-						auto prevbutton = settings->findButton(prevtab); assert(prevbutton);
-						prevbutton->select();
-						prevbutton->activate();
-					}
-					return; 
-				}
-				prevtab = tab;
+				auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        if (prevtab) {
+                            auto prevbutton = settings->findButton(prevtab); assert(prevbutton);
+                            prevbutton->select();
+                            prevbutton->activate();
+                        }
+                        return;
+                    }
+                    prevtab = tab;
+                }
 			}
 			});
 		tab_left->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -18727,7 +18733,11 @@ failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
+#ifdef NINTENDO
+        tab_right->setWidgetLeft(intro ? "Controls" : "Game");
+#else
 		tab_right->setWidgetLeft(intro ? "Online" : "Game");
+#endif
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -18748,17 +18758,19 @@ failed:
 			}
 			const char* nexttab = nullptr;
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-					if (nexttab) {
-						auto nextbutton = settings->findButton(nexttab); assert(nextbutton);
-						nextbutton->select();
-						nextbutton->activate();
-					}
-					return;
-				}
-				nexttab = tab;
+                auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        if (nexttab) {
+                            auto nextbutton = settings->findButton(nexttab); assert(nextbutton);
+                            nextbutton->select();
+                            nextbutton->activate();
+                        }
+                        return;
+                    }
+                    nexttab = tab;
+                }
 			}
 			});
 		tab_right->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -18797,19 +18809,23 @@ failed:
 				"Video",
 				"General",
 			};
-			if (intro) {
+            if (intro) {
+#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
+#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-				    button->select();
-				    button->activate();
-					return;
-				}
+				auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        button->select();
+                        button->activate();
+                        return;
+                    }
+                }
 			}
 			});
 
