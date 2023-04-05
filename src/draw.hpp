@@ -186,6 +186,7 @@ struct framebuffer {
 };
 
 extern framebuffer main_framebuffer;
+extern Shader voxelShader;
 
 void createCommonDrawResources();
 void destroyCommonDrawResources();

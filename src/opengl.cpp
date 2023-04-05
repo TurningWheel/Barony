@@ -22,7 +22,7 @@
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
 
-void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	GLdouble fW, fH;
 
@@ -185,6 +185,71 @@ mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2) {
 		add_vec4(&v[3], pow_vec4(&v[4], &m1->z, m2->w.z), pow_vec4(&v[5], &m1->w, m2->w.w))
 	);
 	return result;
+}
+
+mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
+    vec4_t t[5];
+    result->x = m->x;
+    result->y = m->y;
+    result->z = m->z;
+    (void)add_vec4(&result->w, &m->w,
+        add_vec4(&t[0], add_vec4(&t[1], pow_vec4(&t[2], &m->x, v->x), pow_vec4(&t[3], &m->y, v->y)), pow_vec4(&t[4], &m->z, v->z)));
+    return result;
+}
+
+mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v) {
+    const float a = angle;
+    const float c = cos(a);
+    const float s = sin(a);
+
+    vec4_t axis; (void)normal_vec4(&axis, v);
+    vec4_t temp; (void)pow_vec4(&temp, &axis, 1.f - c);
+
+    mat4x4_t rotate;
+    rotate.x.x = c + temp.x * axis.x;
+    rotate.x.y = temp.x * axis.y + s * axis.z;
+    rotate.x.z = temp.x * axis.z - s * axis.y;
+
+    rotate.y.x = temp.y * axis.x - s * axis.z;
+    rotate.y.y = c + temp.y * axis.y;
+    rotate.y.z = temp.y * axis.z + s * axis.x;
+
+    rotate.z.x = temp.z * axis.x + s * axis.y;
+    rotate.z.y = temp.z * axis.y - s * axis.x;
+    rotate.z.z = c + temp.z * axis.z;
+
+    mat4x4_t t;
+    (void)add_vec4(&result->x,
+        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.x.x), pow_vec4(&t.z, &m->y, rotate.x.y)),
+        pow_vec4(&t.w, &m->z, rotate.x.z));
+    (void)add_vec4(&result->y,
+        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.y.x), pow_vec4(&t.z, &m->y, rotate.y.y)),
+        pow_vec4(&t.w, &m->z, rotate.y.z));
+    (void)add_vec4(&result->z,
+        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.z.x), pow_vec4(&t.z, &m->y, rotate.z.y)),
+        pow_vec4(&t.w, &m->z, rotate.z.z));
+    result->w = m->w;
+    return result;
+}
+
+mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
+    (void)pow_vec4(&result->x, &m->x, v->x);
+    (void)pow_vec4(&result->y, &m->y, v->y);
+    (void)pow_vec4(&result->z, &m->z, v->z);
+    result->w = m->w;
+    return result;
+}
+
+mat4x4_t* perspective(mat4x4_t* result, float fovy, float aspect, float zNear, float zFar) {
+    const float tanHalfFovy = tan(fovy / 2.f);
+    
+    *result = mat4x4(0.f);
+    result->x.x = 1.f / (aspect * tanHalfFovy);
+    result->y.y = 1.f / tanHalfFovy;
+    result->z.z = zFar / (zNear - zFar);
+    result->z.w = -1.f;
+    result->w.z = -(zFar * zNear) / (zFar - zNear);
+    return result;
 }
 
 mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
@@ -428,19 +493,32 @@ void glBeginCamera(view_t* camera)
 	// setup state
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	glEnable(GL_DEPTH_TEST);
+    
+    const float aspect = (real_t)camera->winw / (real_t)camera->winh;
 
-	// setup projection
+	// setup projection (legacy)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
-	const float rotx = camera->vang * 180 / PI; // get x rotation
-	const float roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	const float rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+	perspectiveGL(fov, aspect, CLIPNEAR, CLIPFAR);
+	const float rotx = camera->vang * 180.f / PI; // get x rotation
+	const float roty = (camera->ang - 3.f * PI / 2.f) * 180.f / PI; // get y rotation
+	const float rotz = 0.f; // get z rotation
+	glRotatef(rotx, 1.f, 0.f, 0.f); // rotate pitch
+	glRotatef(roty, 0.f, 1.f, 0.f); // rotate yaw
+	glRotatef(rotz, 0.f, 0.f, 1.f); // rotate roll
+	glTranslatef(-camera->x * 32.f, camera->z, -camera->y * 32.f); // translates the scene based on camera position
+    
+    // setup projection + view matrix (shader)
+    mat4x4_t proj, view, view2, identity;
+    vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
+    (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
+    (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
+    (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
+    (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
+    (void)translate_mat(&view, &view2, &translate);
+    glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, &proj.x.x);
+    glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, &view.x.x);
 }
 
 void glEndCamera(view_t* camera)
@@ -451,119 +529,58 @@ void glEndCamera(view_t* camera)
 	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 }
 
-bool wholevoxels = false;
-void glDrawVoxel(view_t* camera, Entity* entity, int mode)
-{
-	real_t dx, dy, dz;
-	int voxX, voxY, voxZ;
-	real_t s = 1;
-	//int x = 0;
-	//int y = 0;
-	uint64_t index;
-	uint64_t indexdown[3];
-	voxel_t* model;
-	int modelindex = -1;
-	GLfloat rotx, roty, rotz;
-	//GLuint uidcolor;
-
-	if (!entity)
-	{
+void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
+	if (!entity) {
 		return;
 	}
 
 	// assign model
+    voxel_t* model = nullptr;
+    int modelindex = -1;
 #ifndef EDITOR
 	static ConsoleVariable<int> cvar_forceModel("/forcemodel", -1, "force all voxel models to use a specific index");
 	modelindex = *cvar_forceModel;
 #endif
-	if (modelindex < 0)
-	{
+	if (modelindex < 0) {
 		modelindex = entity->sprite;
 	}
-	if (modelindex >= 0 && modelindex < nummodels)
-	{
-		if (models[modelindex] != NULL)
-		{
+	if (modelindex >= 0 && modelindex < nummodels) {
+		if (models[modelindex] != NULL) {
 			model = models[modelindex];
-		}
-		else
-		{
+		} else {
 			model = models[0];
 		}
-	}
-	else
-	{
+	} else {
 		model = models[0];
 		modelindex = 0;
 	}
 
-	if ( model == models[0] )
-	{
+	if (!model || model == models[0]) {
 		return; // don't draw green balls
 	}
-
-	// model array indexes
-	indexdown[0] = model->sizez * model->sizey;
-	indexdown[1] = model->sizez;
-	indexdown[2] = 1;
-
-	// setup model matrix
-	glMatrixMode( GL_MODELVIEW );
-	glPushMatrix();
-	glLoadIdentity();
-	if (entity->flags[OVERDRAW]) {
-		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-		rotx = 0; // get x rotation
-		roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-		rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate pitch
-		glRotatef(rotx, 1, 0, 0); // rotate roll
+    
+	if (mode == REALCOLORS) {
+		glEnable(GL_BLEND);
+	} else {
+		glDisable(GL_BLEND);
 	}
-	rotx = entity->roll * 180.0 / PI; // get x rotation
-	roty = 360.0 - entity->yaw * 180.0 / PI; // get y rotation
-	rotz = 360.0 - entity->pitch * 180.0 / PI; // get z rotation
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate pitch
-	glRotatef(rotx, 1, 0, 0); // rotate roll
-	glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
-#ifndef EDITOR
-    static ConsoleVariable<bool> reverseWhip("/reversewhip", false);
-    if (*reverseWhip) {
-        int chop = entity->skill[0];
-	    if (entity->behavior == &actHudWeapon && modelindex == 868 &&
-	        (chop == 1 || chop == 2 || chop == 4 || chop == 5)) {
-	        // whips get turned around when attacking
-	        // gross hack, but it works, and we don't have quaternions. so this is way easier
-	        glRotatef(180, 0, 1, 0);
-	        glRotatef(60, 0, 0, 1);
-	    }
-	}
-#endif
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
 
-	if ( entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) )
-	{
+	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro)) {
 		glDepthRange(0, 0.1);
 	}
 
 	bool highlightEntity = false;
 	bool highlightEntityFromParent = false;
 	int player = -1;
-	for ( player = 0; player < MAXPLAYERS; ++player )
-	{
-		if ( &cameras[player] == camera )
-		{
+	for (player = 0; player < MAXPLAYERS; ++player) {
+		if (&cameras[player] == camera) {
 			break;
 		}
 	}
 	highlightEntity = entity->bEntityHighlightedForPlayer(player);
-	if ( !highlightEntity && (modelindex == 184 || modelindex == 585 || modelindex == 216) ) // lever base/chest lid
-	{
+    if (!highlightEntity && (modelindex == 184 || modelindex == 585 || modelindex == 216)) { // lever base/chest lid
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->bEntityHighlightedForPlayer(player) )
-		{
+		if (parent && parent->bEntityHighlightedForPlayer(player)) {
 			entity->highlightForUIGlow = parent->highlightForUIGlow;
 			highlightEntityFromParent = true;
 			highlightEntity = highlightEntityFromParent;
@@ -572,347 +589,220 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 
 	bool doGrayScale = false;
 	real_t grayScaleFactor = 0.0;
-	if ( entity->grayscaleGLRender > 0.001 )
-	{
+	if (entity->grayscaleGLRender > 0.001) {
 		doGrayScale = true;
 		grayScaleFactor = entity->grayscaleGLRender;
 	}
 
 	// get shade factor
-	if (!entity->flags[BRIGHT])
-	{
-		if ( !entity->flags[OVERDRAW] )
-		{
-			if ( entity->monsterEntityRenderAsTelepath == 1 && !intro )
-			{
-				if ( camera->globalLightModifierActive )
-				{
+    real_t s = 1.0;
+	if (!entity->flags[BRIGHT]) {
+		if (!entity->flags[OVERDRAW]) {
+			if (entity->monsterEntityRenderAsTelepath == 1 && !intro) {
+				if (camera->globalLightModifierActive) {
 					s = camera->globalLightModifierEntities;
 				}
-			}
-			else
-			{
+			} else {
 				s = getLightForEntity(entity->x / 16, entity->y / 16);
 			}
-		}
-		else
-		{
+		} else {
 			s = getLightForEntity(camera->x, camera->y);
 		}
 	}
 
-	if ( camera->globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 )
-	{
+	if ( camera->globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 ) {
 		s *= camera->globalLightModifier;
 	}
-
-	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
-	if ( wholevoxels )
-	{
-		glBegin( GL_QUADS );
-		for ( index = 0, voxX = 0; voxX < model->sizex; voxX++ )
-		{
-			for ( voxY = 0; voxY < model->sizey; voxY++ )
-			{
-				for ( voxZ = 0; voxZ < model->sizez; voxZ++, index++ )
-				{
-					// get the bit color
-					if ( model->data[index] == 255 || model->data[index] == 0 )
-					{
-						continue;
-					}
-					if ( mode == REALCOLORS )
-					{
-						glColor3f((model->palette[model->data[index]][0] / 255.0)*s, (model->palette[model->data[index]][1] / 255.0)*s, (model->palette[model->data[index]][2] / 255.0)*s );
-					}
-					else
-					{
-						Uint32 uid = entity->getUID();
-						glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-					}
-
-					// calculate model offsets
-					dx = (real_t)voxX - ((real_t)model->sizex) / 2.f;
-					dy = (real_t)voxY - ((real_t)model->sizey) / 2.f;
-					dz = ((real_t)model->sizez) / 2.f - (real_t)voxZ;
-
-					// draw front of cube
-					bool drawFront = false;
-					if ( voxX == model->sizex - 1 )
-					{
-						drawFront = true;
-					}
-					else if ( model->data[index + indexdown[0]] == 255 )
-					{
-						drawFront = true;
-					}
-					if ( drawFront )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						//glEnd();
-					}
-
-					// draw back of cube
-					bool drawBack = false;
-					if ( voxX == 0 )
-					{
-						drawBack = true;
-					}
-					else if ( model->data[index - indexdown[0]] == 255 )
-					{
-						drawBack = true;
-					}
-					if ( drawBack )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						//glEnd();
-					}
-
-					// draw right side of cube
-					bool drawRight = false;
-					if ( voxY == model->sizey - 1 )
-					{
-						drawRight = true;
-					}
-					else if ( model->data[index + indexdown[1]] == 255 )
-					{
-						drawRight = true;
-					}
-					if ( drawRight )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						//glEnd();
-					}
-
-					// draw left side of cube
-					bool drawLeft = false;
-					if ( voxY == 0 )
-					{
-						drawLeft = true;
-					}
-					else if ( model->data[index - indexdown[1]] == 255 )
-					{
-						drawLeft = true;
-					}
-					if ( drawLeft )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						//glEnd();
-					}
-
-					// draw bottom of cube
-					bool drawBottom = false;
-					if ( voxZ == model->sizez - 1 )
-					{
-						drawBottom = true;
-					}
-					else if ( model->data[index + indexdown[2]] == 255 )
-					{
-						drawBottom = true;
-					}
-					if ( drawBottom )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 0);
-						glVertex3f(dx + 1, dz + 0, dy + 1);
-						glVertex3f(dx + 0, dz + 0, dy + 1);
-						//glEnd();
-					}
-
-					// draw top of cube
-					bool drawTop = false;
-					if ( voxZ == 0 )
-					{
-						drawTop = true;
-					}
-					else if ( model->data[index - indexdown[2]] == 255 )
-					{
-						drawTop = true;
-					}
-					if ( drawTop )
-					{
-						//glBegin( GL_QUADS );
-						glVertex3f(dx + 0, dz + 1, dy + 0);
-						glVertex3f(dx + 0, dz + 1, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 1);
-						glVertex3f(dx + 1, dz + 1, dy + 0);
-						//glEnd();
-					}
-				}
-			}
-		}
-		glEnd();
-	}
-	else
-	{
-		if ( disablevbos )
-		{
-			glBegin( GL_TRIANGLES ); //moved outside
-			for ( index = 0; index < polymodels[modelindex].numfaces; index++ )
-			{
-				if ( mode == REALCOLORS )
-				{
-					Uint8 r, g, b;
-					r = polymodels[modelindex].faces[index].r;
-					b = polymodels[modelindex].faces[index].g;
-					g = polymodels[modelindex].faces[index].b;
-
-					if ( entity->flags[USERFLAG2] )
-					{
-						if ( entity->behavior == &actMonster 
-							&& (entity->isPlayerHeadSprite() || modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
-						{
-							// dont invert human heads, or automaton heads.
-							glColor3f((r / 255.f)*s, (g / 255.f)*s, (b / 255.f)*s );
-						}
-						else
-						{
-							glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s);
-						}
-					}
-					else
-					{
-						glColor3f((b / 255.f)*s, (r / 255.f)*s, (g / 255.f)*s );
-					}
-				}
-				else
-				{
-					Uint32 uid = entity->getUID();
-					glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-				}
-
-				polytriangle_t* face = &polymodels[modelindex].faces[index];
-
-				//glBegin( GL_TRIANGLES );
-				glVertex3f(face->vertex[0].x, -face->vertex[0].z, face->vertex[0].y);
-				glVertex3f(face->vertex[1].x, -face->vertex[1].z, face->vertex[1].y);
-				glVertex3f(face->vertex[2].x, -face->vertex[2].z, face->vertex[2].y);
-				//glEnd();
-			}
-			glEnd();
-		}
-		else
-		{
-            glDisable(GL_TEXTURE_2D);
-			glBindVertexArray(polymodels[modelindex].va);
-			glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-			glVertexPointer( 3, GL_FLOAT, 0, (char*) NULL );  // Set The Vertex Pointer To The Vertex Buffer
-			glEnableClientState(GL_VERTEX_ARRAY); // enable the vertex array on the client side
-			if ( mode == REALCOLORS )
-			{
-				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
-				if ( entity->flags[USERFLAG2] )
-				{
-					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
-						|| modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
-					{
-						if ( doGrayScale )
-						{
-							glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
-						}
-						else
-						{
-							glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-						}
-					}
-					else
-					{
-						if ( doGrayScale )
-						{
-							glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
-						}
-						else
-						{
-							glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
-						}
-					}
-				}
-				else
-				{
-					if ( doGrayScale )
-					{
-						glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
-					}
-					else
-					{
-						glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-					}
-				}
-				glColorPointer(3, GL_FLOAT, 0, 0);
-				GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
-				if ( highlightEntity )
-				{
-					glEnable(GL_LIGHTING);
-					glEnable(GL_LIGHT1);
-					if ( !highlightEntityFromParent )
-					{
-						entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
-					}
-					real_t highlight = entity->highlightForUIGlow;
-					if ( highlight > 1.0 )
-					{
-						highlight = 1.0 - (highlight - 1.0);
-					}
-					GLfloat ambient[4] = { 
-						static_cast<GLfloat>(.15 + highlight * .15), 
-						static_cast<GLfloat>(.15 + highlight * .15), 
-						static_cast<GLfloat>(.15 + highlight * .15),
-						1.f };
-					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
-					glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-					glEnable(GL_COLOR_MATERIAL);
-				}
-				else
-				{
-					glEnable(GL_LIGHTING);
-					glEnable(GL_COLOR_MATERIAL);
-					glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
-				}
-			}
-			else
-			{
-				GLfloat uidcolors[4];
-				Uint32 uid = entity->getUID();
-				uidcolors[0] = ((Uint8)(uid)) / 255.f;
-				uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
-				uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
-				uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
-			}
-			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
-			if ( mode == REALCOLORS )
-			{
-				glDisable(GL_COLOR_MATERIAL);
-				glDisable(GL_LIGHTING);
-				if ( highlightEntity )
-				{
-					glDisable(GL_LIGHT1);
-				}
-				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
-			}
-			glDisableClientState(GL_VERTEX_ARRAY); // disable the vertex array on the client side
-            glEnable(GL_TEXTURE_2D);
-		}
-	}
-	glDepthRange(0, 1);
-	glPopMatrix();
+    
+    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
+    
+    if (*cvar_legacyVoxelDraw) {
+        // old rendering (fixed function)
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_1D);
+        
+        // setup model matrix
+        glMatrixMode( GL_MODELVIEW );
+        glPushMatrix();
+        glLoadIdentity();
+        GLfloat rotx, roty, rotz;
+        if (entity->flags[OVERDRAW]) {
+            glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
+            rotx = 0; // get x rotation
+            roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
+            rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
+            glRotatef(roty, 0, 1, 0); // rotate yaw
+            glRotatef(rotz, 0, 0, 1); // rotate pitch
+            glRotatef(rotx, 1, 0, 0); // rotate roll
+        }
+        rotx = entity->roll * 180.0 / PI; // get x rotation
+        roty = 360.0 - entity->yaw * 180.0 / PI; // get y rotation
+        rotz = 360.0 - entity->pitch * 180.0 / PI; // get z rotation
+        glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
+        glRotatef(roty, 0, 1, 0); // rotate yaw
+        glRotatef(rotz, 0, 0, 1); // rotate pitch
+        glRotatef(rotx, 1, 0, 0); // rotate roll
+        glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
+        glScalef(entity->scalex, entity->scalez, entity->scaley);
+        
+        // OpenGL 2.1 does not support vertex array objects
+        //glBindVertexArray(polymodels[modelindex].va);
+        
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
+        glVertexPointer(3, GL_FLOAT, 0, nullptr);
+        if (mode == REALCOLORS) {
+            glEnableClientState(GL_COLOR_ARRAY);
+            /*if (entity->flags[USERFLAG2]) {
+                if (entity->behavior == &actMonster && (entity->isPlayerHeadSprite() ||
+                    modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity))) {
+                    if ( doGrayScale ) {
+                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+                    } else {
+                        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+                    }
+                } else {
+                    if ( doGrayScale ) {
+                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
+                    } else {
+                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
+                    }
+                }
+            } else {
+                if (doGrayScale) {
+                    //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
+                } else {
+                    glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+                }
+            }*/
+            glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+            glColorPointer(3, GL_FLOAT, 0, nullptr);
+            GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
+            if (highlightEntity) {
+                glEnable(GL_LIGHTING);
+                glEnable(GL_LIGHT1);
+                if (!highlightEntityFromParent) {
+                    entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+                }
+                real_t highlight = entity->highlightForUIGlow;
+                if (highlight > 1.0) {
+                    highlight = 1.0 - (highlight - 1.0);
+                }
+                GLfloat ambient[4] = {
+                    static_cast<GLfloat>(.15 + highlight * .15),
+                    static_cast<GLfloat>(.15 + highlight * .15),
+                    static_cast<GLfloat>(.15 + highlight * .15),
+                    1.f };
+                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+                glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+                glEnable(GL_COLOR_MATERIAL);
+            } else {
+                glEnable(GL_LIGHTING);
+                glEnable(GL_COLOR_MATERIAL);
+                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+            }
+        } else {
+            GLfloat uidcolors[4];
+            Uint32 uid = entity->getUID();
+            uidcolors[0] = ((Uint8)(uid)) / 255.f;
+            uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+            uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+            uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
+            glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
+        }
+        glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
+        if (mode == REALCOLORS) {
+            glDisable(GL_COLOR_MATERIAL);
+            glDisable(GL_LIGHTING);
+            if (highlightEntity) {
+                glDisable(GL_LIGHT1);
+            }
+            glDisableClientState(GL_COLOR_ARRAY);
+        }
+        glDisableClientState(GL_VERTEX_ARRAY);
+        //glBindVertexArray(0);
+        glPopMatrix();
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_1D);
+    } else {
+        // new rendering (shader)
+        mat4x4_t m, t, i;
+        vec4_t v;
+        
+        // model matrix
+        float rotx, roty, rotz;
+        if (entity->flags[OVERDRAW]) {
+            v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+            (void)translate_mat(&m, &t, &v); t = m;
+            rotx = 0; // roll
+            roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+            rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+            (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+            (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+            (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        }
+        rotx = entity->roll * 180.0 / PI; // roll
+        roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+        (void)translate_mat(&m, &t, &v); t = m;
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+        v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+        (void)translate_mat(&m, &t, &v); t = m;
+        v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
+        (void)scale_mat(&m, &t, &v); t = m;
+        
+        // upload shader variables
+        glUniformMatrix4fv(voxelShader.uniform("uModel"), 1, false, &m.x.x); // model matrix
+        if (mode == REALCOLORS) {
+            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, &i.x.x);
+            
+            const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
+            glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
+            
+            constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+            glUniform4fv(voxelShader.uniform("uColorAdd"), 1, add);
+        } else {
+            mat4x4_t empty(0.f);
+            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, &empty.x.x);
+            
+            constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+            glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
+            
+            GLfloat uidcolors[4];
+            Uint32 uid = entity->getUID();
+            uidcolors[0] = ((Uint8)(uid)) / 255.f;
+            uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+            uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+            uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
+            glUniform4fv(voxelShader.uniform("uColorAdd"), 1, uidcolors);
+        }
+        
+        // draw
+        voxelShader.bind();
+        glDisable(GL_DEPTH_TEST);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(0);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
+        
+        glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
+        
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        
+        glEnable(GL_DEPTH_TEST);
+        voxelShader.unbind();
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDepthRange(0, 1);
 }
 
 /*-------------------------------------------------------------------------------

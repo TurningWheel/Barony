@@ -512,12 +512,12 @@ typedef struct polymodel_t
 {
 	polytriangle_t* faces;
 	uint64_t numfaces;
+    GLuint va;
 	GLuint vbo;
 	GLuint colors;
-	GLuint colors_shifted;
-	GLuint grayscale_colors;
-	GLuint grayscale_colors_shifted;
-	GLuint va;
+	//GLuint colors_shifted;
+	//GLuint grayscale_colors;
+	//GLuint grayscale_colors_shifted;
 } polymodel_t;
 
 // string structure
