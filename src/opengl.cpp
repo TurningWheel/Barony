@@ -522,6 +522,47 @@ void glEndCamera(view_t* camera)
 	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
 }
 
+// hsv values:
+// x = [0-360]
+// y = [0-100]
+// z = [0-100]
+// w = [0-1]
+static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
+    float h = fmodf(hsv->x, 360.f);
+    if (h < 0.f) {
+        h += 360.f;
+    }
+    const float s = hsv->y / 100.f;
+    const float v = hsv->z / 100.f;
+    const float C = s * v;
+    const float X = C * (1.f - fabsf(fmodf(h/60.f, 2.f) - 1.f));
+    const float m = v - C;
+    float r, g, b;
+    if (h >= 0 && h < 60) {
+        r = C; g = X; b = 0;
+    }
+    else if(h >= 60 && h < 120) {
+        r = X; g = C; b = 0;
+    }
+    else if(h >= 120 && h < 180) {
+        r = 0; g = C; b = X;
+    }
+    else if(h >= 180 && h < 240) {
+        r = 0; g = X; b = C;
+    }
+    else if(h >= 240 && h < 300) {
+        r = X; g = 0; b = C;
+    }
+    else {
+        r = C; g = 0; b = X;
+    }
+    result->x = r + m;
+    result->y = g + m;
+    result->z = b + m;
+    result->w = hsv->w;
+    return result;
+}
+
 void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	if (!entity) {
 		return;
@@ -771,6 +812,30 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
                     remap.z.x = 1.f;
                 }
             }
+#ifndef EDITOR
+            static ConsoleVariable<bool> cvar_rainbowTest("/rainbowtest", false);
+            if (*cvar_rainbowTest) {
+                remap = mat4x4_t(0.f);
+                
+                const auto period = TICKS_PER_SECOND * 3; // 3 seconds
+                const auto time = (ticks % period) / (real_t)period; // [0-1]
+                const auto amp = 360.0;
+                
+                vec4_t hsv;
+                hsv.y = 100.f; // saturation
+                hsv.z = 100.f; // value
+                hsv.w = 0.f;   // unused
+                
+                hsv.x = time * amp;
+                HSVtoRGB(&remap.x, &hsv); // red
+                
+                hsv.x = time * amp + 120;
+                HSVtoRGB(&remap.y, &hsv); // green
+                
+                hsv.x = time * amp + 240;
+                HSVtoRGB(&remap.z, &hsv); // blue
+            }
+#endif
             glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&remap);
             
             const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
