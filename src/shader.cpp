@@ -25,15 +25,22 @@ void Shader::unbind() {
     glUseProgram(0);
 }
 
-GLuint Shader::uniform(const char* name) {
+GLint Shader::uniform(const char* name) {
     auto find = uniforms.find(name);
     if (find == uniforms.end()) {
-        GLuint handle = glGetUniformLocation(program, (GLchar*)name);
+        GLint handle = glGetUniformLocation(program, (GLchar*)name);
+        if (handle == -1) {
+            printlog("uniform %s not found!", name);
+        }
         uniforms.emplace(name, handle);
         return handle;
     } else {
         return find->second;
     }
+}
+
+void Shader::bindAttribLocation(const char* attribute, int location) {
+    glBindAttribLocation(program, location, attribute);
 }
 
 bool Shader::compile(const char* source, size_t len, Shader::Type type) {

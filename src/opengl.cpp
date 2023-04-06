@@ -246,9 +246,9 @@ mat4x4_t* perspective(mat4x4_t* result, float fovy, float aspect, float zNear, f
     *result = mat4x4(0.f);
     result->x.x = 1.f / (aspect * tanHalfFovy);
     result->y.y = 1.f / tanHalfFovy;
-    result->z.z = zFar / (zNear - zFar);
+    result->z.z = -(zFar + zNear) / (zFar - zNear);
     result->z.w = -1.f;
-    result->w.z = -(zFar * zNear) / (zFar - zNear);
+    result->w.z = -(2.f * zFar * zNear) / (zFar - zNear);
     return result;
 }
 
@@ -517,8 +517,8 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
     (void)translate_mat(&view, &view2, &translate);
-    glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, &proj.x.x);
-    glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, &view.x.x);
+    glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, (float*)&proj);
+    glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
 }
 
 void glEndCamera(view_t* camera)
@@ -614,13 +614,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 		s *= camera->globalLightModifier;
 	}
     
-    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
+    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", true);
+    
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_1D);
     
     if (*cvar_legacyVoxelDraw) {
         // old rendering (fixed function)
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_TEXTURE_1D);
-        
         // setup model matrix
         glMatrixMode( GL_MODELVIEW );
         glPushMatrix();
@@ -722,8 +722,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         glDisableClientState(GL_VERTEX_ARRAY);
         //glBindVertexArray(0);
         glPopMatrix();
-        glEnable(GL_TEXTURE_2D);
-        glEnable(GL_TEXTURE_1D);
     } else {
         // new rendering (shader)
         mat4x4_t m, t, i;
@@ -755,9 +753,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)scale_mat(&m, &t, &v); t = m;
         
         // upload shader variables
-        glUniformMatrix4fv(voxelShader.uniform("uModel"), 1, false, &m.x.x); // model matrix
+        voxelShader.bind();
+        glUniformMatrix4fv(voxelShader.uniform("uModel"), 1, false, (float*)&m); // model matrix
         if (mode == REALCOLORS) {
-            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, &i.x.x);
+            mat4x4_t remap(1.f);
+            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&remap);
             
             const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
             glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
@@ -766,7 +766,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             glUniform4fv(voxelShader.uniform("uColorAdd"), 1, add);
         } else {
             mat4x4_t empty(0.f);
-            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, &empty.x.x);
+            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&empty);
             
             constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
             glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
@@ -781,27 +781,29 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         }
         
         // draw
-        voxelShader.bind();
-        glDisable(GL_DEPTH_TEST);
+        //glDisable(GL_DEPTH_TEST);
+        
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
         
         glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(0);
         
         glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(1);
         
         glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
         
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
         
-        glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_DEPTH_TEST);
         voxelShader.unbind();
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_1D);
     glDepthRange(0, 1);
 }
 

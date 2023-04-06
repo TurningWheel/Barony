@@ -15,7 +15,7 @@ public:
 
     bool bind();                        // bind the shader program
     static void unbind();               // unbind the shader program
-    GLuint uniform(const char* name);   // return a handle to a shader variable within the compiled program
+    GLint uniform(const char* name);    // return a handle to a shader variable within the compiled program
 
     enum class Type {
         Vertex,
@@ -23,11 +23,12 @@ public:
         Fragment,
     };
 
+    void bindAttribLocation(const char* attribute, int location);
     bool compile(const char* source, size_t len, Type type);
     bool link();
 
 private:
     std::vector<GLuint> shaders;
-    std::unordered_map<std::string, GLuint> uniforms;
+    std::unordered_map<std::string, GLint> uniforms;
     GLuint program = 0;
 };

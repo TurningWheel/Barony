@@ -2139,25 +2139,19 @@ void generateVBOs(int start, int end)
         // NOTE: OpenGL 2.1 does not support vertex array objects!!!
         
 		//glBindVertexArray(model->va);
-        
-        GLfloat positions[] = {
-            0.f, 0.f, 0.f,
-            1.f, 0.f, 0.f,
-            1.f, 1.f, 0.f
-        };
 
 		// vertex data
-		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
+		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 2.1 hardware)
+        glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
         glDisableVertexAttribArray(0);
 
 		// color data
+        glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, model->colors);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
         glDisableVertexAttribArray(1);
 
