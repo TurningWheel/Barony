@@ -108,50 +108,8 @@ void createCommonDrawResources() {
         "uniform mat4 uModel;"
         "varying vec3 Color;"
     
-        "mat4 frustum(float left, float right, float bottom, float top, float near, float far) {"
-        "mat4 result = mat4(0.0);"
-        "result[0][0] = (2.0 * near) / (right - left);"
-        "result[0][2] = (right + left) / (right - left);"
-        "result[1][1] = (2.0 * near) / (top - bottom);"
-        "result[1][2] = (top + bottom) / (top - bottom);"
-        "result[2][2] = -(far + near) / (far - near);"
-        "result[2][3] = (2.0 * far * near) / (far - near);"
-        "result[3][2] = -1.0;"
-        "return result;"
-        "}"
-    
-        "mat4 perspective(float fov, float aspect, float near, float far) {"
-        "float h = tan((fov / 360.0) * 3.14159) * near;"
-        "float w = h * aspect;"
-        "return frustum(-w, w, -h, h, near, far);"
-        "}"
-    
         "void main() {"
-    
-        /*"mat4 Proj = mat4(0.0);"
-        "float ang = (60.0 / 360.0) * 3.14159;"
-        "float tangent = tan(ang / 2.0);"
-        "float aspect = 16.0 / 9.0;"
-        "float zFar = 1024.0;"
-        "float zNear = 2.0;"
-        "Proj[0][0] = 1.0 / (aspect * tangent);"
-        "Proj[1][1] = 1.0 / tangent;"
-        "Proj[2][2] = -(zFar + zNear) / (zFar - zNear);"
-        "Proj[3][2] = -1.0;"
-        "Proj[2][3] = -(2.0 * zFar * zNear) / (zFar - zNear);"*/
-    
-        "mat4 Proj = perspective(60.0, 16.0 / 9.0, 2.0, 1024.0);"
-    
-        "mat4 View = mat4(1.0);"
-        "View[3][2] = 32.0;" // translate Z 32.0 normalized device coordinates (backward)
-        "mat4 Model = mat4(1.0);"
-        "vec4 Position = vec4(iPosition, 1.0);"
-        "gl_Position = Proj * View * Model * Position;"
-    
-        //"gl_Position = vec4(iPosition, 1.0);"
-        //"gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
-        //"gl_Position = uProj * vec4(iPosition, 1.0);"
-    
+        "gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
         "Color = iColor;"
         "}";
 
@@ -168,7 +126,6 @@ void createCommonDrawResources() {
         "    (uColorRemap[0].rgb * Color.r)+"
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
-        //"vec3 Remapped = Color;"
         "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";

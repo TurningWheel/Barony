@@ -193,12 +193,16 @@ mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     result->y = m->y;
     result->z = m->z;
     (void)add_vec4(&result->w, &m->w,
-        add_vec4(&t[0], add_vec4(&t[1], pow_vec4(&t[2], &m->x, v->x), pow_vec4(&t[3], &m->y, v->y)), pow_vec4(&t[4], &m->z, v->z)));
+        add_vec4(&t[0],
+            add_vec4(&t[1],
+                pow_vec4(&t[2], &m->x, v->x),
+                pow_vec4(&t[3], &m->y, v->y)),
+            pow_vec4(&t[4], &m->z, v->z)));
     return result;
 }
 
 mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v) {
-    const float a = angle;
+    const float a = (angle / 180.f) * PI;
     const float c = cos(a);
     const float s = sin(a);
 
@@ -218,16 +222,16 @@ mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec
     rotate.z.y = temp.z * axis.y - s * axis.x;
     rotate.z.z = c + temp.z * axis.z;
 
-    mat4x4_t t;
+    mat4x4_t t(0.f);
     (void)add_vec4(&result->x,
-        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.x.x), pow_vec4(&t.z, &m->y, rotate.x.y)),
-        pow_vec4(&t.w, &m->z, rotate.x.z));
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.x.x), pow_vec4(&t.y, &m->y, rotate.x.y)),
+        pow_vec4(&t.z, &m->z, rotate.x.z));
     (void)add_vec4(&result->y,
-        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.y.x), pow_vec4(&t.z, &m->y, rotate.y.y)),
-        pow_vec4(&t.w, &m->z, rotate.y.z));
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.y.x), pow_vec4(&t.y, &m->y, rotate.y.y)),
+        pow_vec4(&t.z, &m->z, rotate.y.z));
     (void)add_vec4(&result->z,
-        add_vec4(&t.x, pow_vec4(&t.y, &m->x, rotate.z.x), pow_vec4(&t.z, &m->y, rotate.z.y)),
-        pow_vec4(&t.w, &m->z, rotate.z.z));
+        add_vec4(&t.w, pow_vec4(&t.x, &m->x, rotate.z.x), pow_vec4(&t.y, &m->y, rotate.z.y)),
+        pow_vec4(&t.z, &m->z, rotate.z.z));
     result->w = m->w;
     return result;
 }
@@ -240,36 +244,22 @@ mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     return result;
 }
 
-mat4x4_t* perspective(mat4x4_t* result, float fovy, float aspect, float zNear, float zFar) {
-    const float tanHalfFovy = tan(fovy / 2.f);
+mat4x4_t* perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf(fov / 360.f * (float)PI);
+    const float w = h * aspect;
     
     *result = mat4x4(0.f);
-    result->x.x = 1.f / (aspect * tanHalfFovy);
-    result->y.y = 1.f / tanHalfFovy;
-    result->z.z = -(zFar + zNear) / (zFar - zNear);
+    result->x.x = 1.f / w;
+    result->y.y = 1.f / h;
+    result->z.z = -(far + near) / (far - near);
     result->z.w = -1.f;
-    result->w.z = -(2.f * zFar * zNear) / (zFar - zNear);
+    result->w.z = -(2.f * far * near) / (far - near);
     return result;
 }
 
 mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 {
-	result->x.x = matArray[0];
-	result->x.y = matArray[1];
-	result->x.z = matArray[2];
-	result->x.w = matArray[3];
-	result->y.x = matArray[4];
-	result->y.y = matArray[5];
-	result->y.z = matArray[6];
-	result->y.w = matArray[7];
-	result->z.x = matArray[8];
-	result->z.y = matArray[9];
-	result->z.z = matArray[10];
-	result->z.w = matArray[11];
-	result->w.x = matArray[12];
-	result->w.y = matArray[13];
-	result->w.z = matArray[14];
-	result->w.w = matArray[15];
+    memcpy((void*)result, (const void*)matArray, sizeof(mat4x4_t));
 	return result;
 }
 
@@ -496,7 +486,7 @@ void glBeginCamera(view_t* camera)
     
     const float aspect = (real_t)camera->winw / (real_t)camera->winh;
 
-	// setup projection (legacy)
+	// setup projection + view matrix (legacy)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -516,9 +506,12 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
-    (void)translate_mat(&view, &view2, &translate);
+    (void)translate_mat(&view, &view2, &translate); view2 = view;
+    
+    voxelShader.bind();
     glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, (float*)&proj);
     glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
+    voxelShader.unbind();
 }
 
 void glEndCamera(view_t* camera)
@@ -614,7 +607,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 		s *= camera->globalLightModifier;
 	}
     
-    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", true);
+    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
     
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_TEXTURE_1D);
@@ -757,6 +750,27 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         glUniformMatrix4fv(voxelShader.uniform("uModel"), 1, false, (float*)&m); // model matrix
         if (mode == REALCOLORS) {
             mat4x4_t remap(1.f);
+            if (doGrayScale) {
+                remap.x.x = 1.f / 3.f;
+                remap.x.y = 1.f / 3.f;
+                remap.x.z = 1.f / 3.f;
+                remap.y.x = 1.f / 3.f;
+                remap.y.y = 1.f / 3.f;
+                remap.y.z = 1.f / 3.f;
+                remap.z.x = 1.f / 3.f;
+                remap.z.y = 1.f / 3.f;
+                remap.z.z = 1.f / 3.f;
+            }
+            else if (entity->flags[USERFLAG2]) {
+                if (entity->behavior != &actMonster || (!entity->isPlayerHeadSprite() &&
+                    modelindex != 467 && monsterChangesColorWhenAlly(nullptr, entity))) {
+                    // certain allies use G/B/R color map
+                    remap = mat4x4_t(0.f);
+                    remap.x.y = 1.f;
+                    remap.y.z = 1.f;
+                    remap.z.x = 1.f;
+                }
+            }
             glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&remap);
             
             const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
@@ -909,7 +923,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1119,7 +1133,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1303,7 +1317,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -1771,6 +1785,13 @@ void glDrawWorld(view_t* camera, int mode)
 	bool clouds = false;
 	int cloudtile = 0;
 	int mapceilingtile = 50;
+    
+#ifndef EDITOR
+    static ConsoleVariable<bool> cvar_skipDrawWorld("/skipdrawworld", false);
+    if (*cvar_skipDrawWorld) {
+        return;
+    }
+#endif
 
 	if ( camera->globalLightModifierActive )
 	{
@@ -1845,7 +1866,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glPushMatrix();
 		glLoadIdentity();
-		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
+		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -1857,39 +1878,45 @@ void glDrawWorld(view_t* camera, int mode)
 		glLoadIdentity();
 		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
+        
+        const float size = CLIPFAR * 16.f;
+        const float htex_size = size / 64.f;
+        const float ltex_size = size / 32.f;
+        const float high_scroll = (float)(ticks % 60) / 60.f;
+        const float low_scroll = (float)(ticks % 120) / 120.f;
 
 		// first (higher) sky layer
-		glColor4f(1.f, 1.f, 1.f, getLightAtModifier);
+		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
 		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
-		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
+		glTexCoord2f(high_scroll, high_scroll);
+		glVertex3f(-size, 65.f, -size);
 
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
-		glVertex3f(CLIPFAR * 16, 64, -CLIPFAR * 16);
+		glTexCoord2f(htex_size + high_scroll, high_scroll);
+		glVertex3f(size, 65.f, -size);
 
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
-		glVertex3f(CLIPFAR * 16, 64, CLIPFAR * 16);
+		glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
+		glVertex3f(size, 65.f, size);
 
-		glTexCoord2f((real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
-		glVertex3f(-CLIPFAR * 16, 64, CLIPFAR * 16);
+		glTexCoord2f(high_scroll, htex_size + high_scroll);
+		glVertex3f(-size, 65.f, size);
 		glEnd();
 
 		// second (closer) sky layer
-		glColor4f(1.f, 1.f, 1.f, getLightAtModifier * .5);
+		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
 		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
-		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
+		glTexCoord2f(low_scroll, low_scroll);
+		glVertex3f(-size, 64.f, -size);
 
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
-		glVertex3f(CLIPFAR * 16, 32, -CLIPFAR * 16);
+		glTexCoord2f(ltex_size + low_scroll, low_scroll);
+		glVertex3f(size, 64.f, -size);
 
-		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
-		glVertex3f(CLIPFAR * 16, 32, CLIPFAR * 16);
+		glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
+		glVertex3f(size, 64.f, size);
 
-		glTexCoord2f((real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
-		glVertex3f(-CLIPFAR * 16, 32, CLIPFAR * 16);
+		glTexCoord2f(low_scroll, ltex_size + low_scroll);
+		glVertex3f(-size, 64.f, size);
 		glEnd();
 
 		glPopMatrix();
