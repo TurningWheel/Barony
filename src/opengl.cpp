@@ -776,8 +776,24 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
             glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
             
-            constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-            glUniform4fv(voxelShader.uniform("uColorAdd"), 1, add);
+            if (highlightEntity) {
+                if (!highlightEntityFromParent) {
+                    entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+                }
+                real_t highlight = entity->highlightForUIGlow;
+                if (highlight > 1.0) {
+                    highlight = 1.0 - (highlight - 1.0);
+                }
+                GLfloat ambient[4] = {
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    0.f };
+                glUniform4fv(voxelShader.uniform("uColorAdd"), 1, ambient);
+            } else {
+                constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+                glUniform4fv(voxelShader.uniform("uColorAdd"), 1, add);
+            }
         } else {
             mat4x4_t empty(0.f);
             glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&empty);
