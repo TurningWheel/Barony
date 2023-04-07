@@ -512,12 +512,12 @@ typedef struct polymodel_t
 {
 	polytriangle_t* faces;
 	uint64_t numfaces;
+    GLuint va;
 	GLuint vbo;
 	GLuint colors;
-	GLuint colors_shifted;
-	GLuint grayscale_colors;
-	GLuint grayscale_colors_shifted;
-	GLuint va;
+	//GLuint colors_shifted;
+	//GLuint grayscale_colors;
+	//GLuint grayscale_colors_shifted;
 } polymodel_t;
 
 // string structure
@@ -646,7 +646,7 @@ extern int minotaurlevel;
 #define SPLITSCREEN 6
 
 // language stuff
-#define NUMLANGENTRIES 4399
+#define NUMLANGENTRIES 4400
 extern char languageCode[32];
 extern char** language;
 

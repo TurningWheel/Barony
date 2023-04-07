@@ -2918,7 +2918,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			{
 				glDeleteVertexArrays(1, &polymodels[c].va);
 			}
-			if ( polymodels[c].colors_shifted )
+			/*if ( polymodels[c].colors_shifted )
 			{
 				glDeleteBuffers(1, &polymodels[c].colors_shifted);
 			}
@@ -2929,7 +2929,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			if ( polymodels[c].grayscale_colors_shifted )
 			{
 				glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-			}
+			}*/
 		}
 	}
 

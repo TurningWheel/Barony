@@ -63,9 +63,13 @@ Mesh framebuffer::mesh{
 };
 
 Shader framebuffer::shader;
+Shader voxelShader;
+TempTexture* lightmapTexture;
 
 void createCommonDrawResources() {
-	static const char vertex_glsl[] =
+    // framebuffer shader:
+    
+	static const char fb_vertex_glsl[] =
         "#version 120\n"
 		"attribute vec3 iPosition;"
 		"attribute vec2 iTexCoord;"
@@ -75,38 +79,102 @@ void createCommonDrawResources() {
         "TexCoord = iTexCoord;"
 		"}";
 
-	static const char fragment_glsl[] =
+	static const char fb_fragment_glsl[] =
 		"#version 120\n"
         "varying vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
 		"uniform float uGamma;"
-		"uniform int uTicks;"
+		//"uniform int uTicks;"
 		"void main() {"
-		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma * vec4(1.0, 1.0, 1.0, 1.0);"
+		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
 		"}";
 
 	framebuffer::mesh.init();
 	framebuffer::shader.init();
-	framebuffer::shader.compile(vertex_glsl, sizeof(vertex_glsl), Shader::Type::Vertex);
-	framebuffer::shader.compile(fragment_glsl, sizeof(fragment_glsl), Shader::Type::Fragment);
-	framebuffer::shader.link();
+	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
+    framebuffer::shader.bindAttribLocation("iPosition", 0);
+    framebuffer::shader.bindAttribLocation("iTexCoord", 1);
+    framebuffer::shader.link();
 	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    
+    // voxel shader:
+    
+    static const char vox_vertex_glsl[] =
+        "#version 120\n"
+        "attribute vec3 iPosition;"
+        "attribute vec3 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform mat4 uModel;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+    
+        "void main() {"
+        "WorldPos = uModel * vec4(iPosition, 1.0);"
+        "gl_Position = uProj * uView * WorldPos;"
+        "Color = iColor;"
+        "}";
+
+    static const char vox_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform int uUseLightmap;"
+        "uniform mat4 uColorRemap;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "void main() {"
+    
+        //"gl_FragColor = vec4(1.f, 0.f, 1.f, 1.f);" // totally pink (for testing)
+        //"gl_FragColor = vec4(Color, 1.0);" // fullbright model
+    
+        "vec3 Remapped ="
+        "    (uColorRemap[0].rgb * Color.r)+"
+        "    (uColorRemap[1].rgb * Color.g)+"
+        "    (uColorRemap[2].rgb * Color.b);"
+    
+        "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+    
+        "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+    
+        "if (uUseLightmap != 0) {"
+        "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
+        "}"
+    
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
+
+    voxelShader.init();
+    voxelShader.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
+    voxelShader.compile(vox_fragment_glsl, sizeof(vox_fragment_glsl), Shader::Type::Fragment);
+    voxelShader.bindAttribLocation("iPosition", 0);
+    voxelShader.bindAttribLocation("iColor", 1);
+    voxelShader.link();
+    
+    lightmapTexture = new TempTexture();
 }
 
 void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
+    voxelShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
+    delete lightmapTexture;
 }
 
 void Mesh::init() {
 	if (vao) {
 		return;
 	}
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+    
+    // NOTE: OpenGL 2.1 does not support vertex array functions
+	//glGenVertexArrays(1, &vao);
+	//glBindVertexArray(vao);
 
 	// data buffers
 	glGenBuffers((GLsizei)BufferType::Max, vbo);
@@ -115,14 +183,17 @@ void Mesh::init() {
 		assert(find != ElementsPerVBO.end());
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
 		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-		glEnableVertexAttribArray(c);
+		//glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
+		//glEnableVertexAttribArray(c);
 	}
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index.size() * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
-	glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+	//glBindVertexArray(0);
 
 	printlog("initialized mesh with %llu vertices", index.size());
 }
@@ -141,9 +212,31 @@ void Mesh::destroy() {
 }
 
 void Mesh::draw() const {
-	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, index.size(), GL_UNSIGNED_INT, nullptr);
-	glBindVertexArray(0);
+    // NOTE: OpenGL 2.1 does not support vertex arrays!
+    // if it did, all the bind/unbind buffer crap could be omitted.
+	//glBindVertexArray(vao);
+    
+    // bind buffers
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+        const auto& find = ElementsPerVBO.find((BufferType)c);
+        assert(find != ElementsPerVBO.end());
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
+        glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(c);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
+    
+    // draw elements
+	glDrawElements(GL_TRIANGLES, (int)index.size(), GL_UNSIGNED_INT, nullptr);
+    
+    // disable buffers
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+        glDisableVertexAttribArray(c);
+    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+	//glBindVertexArray(0);
 }
 
 void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
@@ -209,7 +302,7 @@ void framebuffer::bindForReading() const {
 void framebuffer::blit(float gamma) {
 	shader.bind();
 	glUniform1f(shader.uniform("uGamma"), gamma);
-	glUniform1i(shader.uniform("uTicks"), ticks);
+	//glUniform1i(shader.uniform("uTicks"), ticks);
 	mesh.draw();
 	shader.unbind();
 }
