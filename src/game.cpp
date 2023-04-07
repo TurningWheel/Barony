@@ -2125,6 +2125,7 @@ void gameLogic(void)
 						players[i]->hud.followerBars.clear();
 					}
 					EnemyHPDamageBarHandler::dumpCache();
+					monsterAllyFormations.reset();
 
 					achievementObserver.updateData();
 

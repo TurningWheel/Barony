@@ -1133,3 +1133,49 @@ public:
 	std::map<Monster, PlayerRaceHostility_t> playerHostility[MAXPLAYERS];
 };
 extern ShopkeeperPlayerHostility_t ShopkeeperPlayerHostility;
+
+struct MonsterAllyFormation_t
+{
+	struct MonsterAllies_t
+	{
+		struct FormationInfo_t
+		{
+			int x = 0;
+			int y = 0;
+			int pathingDelay = 0;
+			bool init = false;
+			bool expired = false;
+		};
+		std::unordered_map<Uint32, FormationInfo_t> meleeUnits;
+		std::unordered_map<Uint32, FormationInfo_t> rangedUnits;
+		Uint32 updatedOnTick = 0;
+	};
+	void updateFormation(Uint32 leaderUid, Uint32 monsterUpdateUid = 0);
+	bool getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos);
+	void updateOnPathFail(Uint32 uid, Entity* entity);
+	void updateOnPathSucceed(Uint32 uid, Entity* entity);
+	std::unordered_map<Uint32, MonsterAllies_t> units;
+	std::vector<std::pair<int, int>> formationShape;
+	MonsterAllyFormation_t()
+	{
+		formationShape.push_back(std::make_pair(-2, 0));
+		formationShape.push_back(std::make_pair(2, 0));
+		for ( int i = 1; i < 50; ++i )
+		{
+			if ( i % 2 == 0 )
+			{
+				formationShape.push_back(std::make_pair(-2, -i));
+				formationShape.push_back(std::make_pair(2, -i));
+				formationShape.push_back(std::make_pair(0, -i));
+			}
+			else
+			{
+				formationShape.push_back(std::make_pair(-1, -i));
+				formationShape.push_back(std::make_pair(1, -i));
+			}
+		}
+	}
+	void reset() { units.clear(); }
+	int getFollowerChaseLeaderInterval(Entity& my, Stat& myStats);
+};
+extern MonsterAllyFormation_t monsterAllyFormations;

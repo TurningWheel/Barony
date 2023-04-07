@@ -2089,6 +2089,7 @@ static void changeLevel() {
 		players[i]->hud.followerBars.clear();
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	monsterAllyFormations.reset();
 
 	// clear follower menu entities.
 	FollowerMenu[clientnum].closeFollowerMenuGUI(true);

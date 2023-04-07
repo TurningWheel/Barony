@@ -7050,13 +7050,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if ( whip )
 			{
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, 0, false);
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 			}
 			else
 			{
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 			}
 		}
 		else

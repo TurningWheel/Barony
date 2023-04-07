@@ -3432,6 +3432,14 @@ void actPlayer(Entity* my)
 		SteamUserStats()->StoreStats();
 	}*/
 
+	if ( multiplayer != CLIENT )
+	{
+		if ( my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+		{
+			monsterAllyFormations.updateFormation(my->getUID());
+		}
+	}
+
 	if ( players[PLAYER_NUM]->isLocalPlayer() 
 		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 )
 	{
