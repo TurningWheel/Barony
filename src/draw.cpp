@@ -64,6 +64,7 @@ Mesh framebuffer::mesh{
 
 Shader framebuffer::shader;
 Shader voxelShader;
+TempTexture* lightmapTexture;
 
 void createCommonDrawResources() {
     // framebuffer shader:
@@ -107,26 +108,42 @@ void createCommonDrawResources() {
         "uniform mat4 uView;"
         "uniform mat4 uModel;"
         "varying vec3 Color;"
+        "varying vec4 WorldPos;"
     
         "void main() {"
-        "gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
+        "WorldPos = uModel * vec4(iPosition, 1.0);"
+        "gl_Position = uProj * uView * WorldPos;"
         "Color = iColor;"
         "}";
 
     static const char vox_fragment_glsl[] =
         "#version 120\n"
         "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform int uUseLightmap;"
         "uniform mat4 uColorRemap;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
         "void main() {"
-        //"gl_FragColor = vec4(1.f, 0.f, 1.f, 1.f);"
-        //"gl_FragColor = vec4(Color, 1.0);"
+    
+        //"gl_FragColor = vec4(1.f, 0.f, 1.f, 1.f);" // totally pink (for testing)
+        //"gl_FragColor = vec4(Color, 1.0);" // fullbright model
+    
         "vec3 Remapped ="
         "    (uColorRemap[0].rgb * Color.r)+"
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
+    
+        "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+    
         "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+    
+        "if (uUseLightmap != 0) {"
+        "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
+        "}"
+    
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
@@ -136,6 +153,8 @@ void createCommonDrawResources() {
     voxelShader.bindAttribLocation("iPosition", 0);
     voxelShader.bindAttribLocation("iColor", 1);
     voxelShader.link();
+    
+    lightmapTexture = new TempTexture();
 }
 
 void destroyCommonDrawResources() {
@@ -145,6 +164,7 @@ void destroyCommonDrawResources() {
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
+    delete lightmapTexture;
 }
 
 void Mesh::init() {

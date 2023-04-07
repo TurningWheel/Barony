@@ -22,6 +22,9 @@
 #include "player.hpp"
 #include "ui/MainMenu.hpp"
 
+static real_t getLightAtModifier = 1.0;
+static real_t getLightAtAdder = 0.0;
+
 static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	GLdouble fW, fH;
@@ -478,6 +481,41 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
+static void loadLightmapTexture() {
+    vec4_t mapDims;
+    mapDims.x = map.width;
+    mapDims.y = map.height;
+    glUniform1i(voxelShader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
+    glUniform2fv(voxelShader.uniform("uMapDims"), 1, (float*)&mapDims);
+    glActiveTexture(GL_TEXTURE1);
+    
+    // allocate lightmap pixel data
+    SDL_Surface* lightmapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32,
+        0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+    assert(lightmapSurface);
+    
+    // build lightmap texture data
+    SDL_LockSurface(lightmapSurface);
+    for (int x = 0, index = 0; x < map.width; ++x) {
+        for (int y = 0; y < map.height; ++y, ++index) {
+            const auto light = getLightForEntity(x, y);
+            const Uint32 color = makeColorRGB(light * 255, light * 255, light * 255);
+            putPixel(lightmapSurface, x, y, color);
+        }
+    }
+    SDL_UnlockSurface(lightmapSurface);
+    
+    // load lightmap texture data
+    lightmapTexture->load(lightmapSurface, true, false);
+    lightmapTexture->bind();
+    
+    SDL_FreeSurface(lightmapSurface);
+    
+    // switch back to texture unit 0
+    // (only other texture unit we currently use)
+    glActiveTexture(GL_TEXTURE0);
+}
+
 void glBeginCamera(view_t* camera)
 {
 	// setup state
@@ -511,6 +549,7 @@ void glBeginCamera(view_t* camera)
     voxelShader.bind();
     glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, (float*)&proj);
     glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
+    loadLightmapTexture();
     voxelShader.unbind();
 }
 
@@ -649,9 +688,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	}
     
     static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
-    
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_1D);
     
     if (*cvar_legacyVoxelDraw) {
         // old rendering (fixed function)
@@ -838,8 +874,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #endif
             glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&remap);
             
-            const GLfloat light[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
+            const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
             glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
+            if (entity->flags[BRIGHT]) {
+                glUniform1i(voxelShader.uniform("uUseLightmap"), 0);
+            } else {
+                glUniform1i(voxelShader.uniform("uUseLightmap"), 1);
+            }
             
             if (highlightEntity) {
                 if (!highlightEntityFromParent) {
@@ -897,8 +938,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_TEXTURE_1D);
     glDepthRange(0, 1);
 }
 
@@ -1824,8 +1863,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 -------------------------------------------------------------------------------*/
 
-static real_t getLightAtModifier = 1.0;
-static real_t getLightAtAdder = 0.0;
 static real_t getLightAt(const int x, const int y)
 {
 #if !defined(EDITOR) && !defined(NDEBUG)

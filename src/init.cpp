@@ -2809,8 +2809,7 @@ bool initVideo()
 
 	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	    glEnable(GL_TEXTURE_2D);
-	    //glEnable(GL_CULL_FACE);
-        glDisable(GL_CULL_FACE);
+	    glEnable(GL_CULL_FACE);
 	    glCullFace(GL_BACK);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_LIGHTING);
