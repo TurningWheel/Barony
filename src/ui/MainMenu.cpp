@@ -6454,12 +6454,18 @@ bind_failed:
                         if (node->prev) {
                             auto prev = (score_t*)node->prev->element;
                             snprintf(prev_buf, sizeof(prev_buf), fmt, index, prev->stats->name);
-                        }
+                        } else {
+							auto prev = (score_t*)node->list->last->element;
+							snprintf(prev_buf, sizeof(prev_buf), fmt, list_Size(scores), prev->stats->name);
+						}
                         char next_buf[128] = "";
                         if (node->next) {
                             auto next = (score_t*)node->next->element;
                             snprintf(next_buf, sizeof(next_buf), fmt, index + 2, next->stats->name);
-                        }
+                        } else {
+							auto next = (score_t*)node->list->first->element;
+							snprintf(next_buf, sizeof(next_buf), fmt, 1, next->stats->name);
+						}
                         add_score(score, score->stats->name, prev_buf, next_buf, index);
                     }
                 } else {
@@ -6632,12 +6638,18 @@ bind_failed:
                         if (index > 0) {
                             snprintf(prev_buf, sizeof(prev_buf), fmt, index,
                                 g_SteamLeaderboards->leaderBoardSteamUsernames[index - 1].c_str());
-                        }
+                        } else {
+							snprintf(prev_buf, sizeof(prev_buf), fmt, num_scores,
+								g_SteamLeaderboards->leaderBoardSteamUsernames[num_scores - 1].c_str());
+						}
                         char next_buf[128] = "";
                         if (index < num_scores - 1) {
                             snprintf(next_buf, sizeof(next_buf), fmt, index + 2,
                                 g_SteamLeaderboards->leaderBoardSteamUsernames[index + 1].c_str());
-                        }
+                        } else {
+							snprintf(next_buf, sizeof(next_buf), fmt, 1,
+								g_SteamLeaderboards->leaderBoardSteamUsernames[0].c_str());
+						}
                         add_score(score, name, prev_buf, next_buf, index);
                     }
                     set_links();
@@ -10489,7 +10501,11 @@ failed:
 		custom_difficulty->select();
 
 		auto invite_label = card->addField("invite_label", 64);
-		invite_label->setSize(SDL_Rect{82, 146, 122, 26});
+#ifdef NINTENDO
+		invite_label->setSize(SDL_Rect{ 82, 158, 122, 26 });
+#else
+		invite_label->setSize(SDL_Rect{ 82, 146, 122, 26 });
+#endif
 		invite_label->setFont(smallfont_outline);
 		invite_label->setText("Invite Only");
 		invite_label->setJustify(Field::justify_t::CENTER);
@@ -10506,7 +10522,11 @@ failed:
 			invite_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto invite = card->addButton("invite");
-			invite->setSize(SDL_Rect{202, 144, 30, 30});
+#ifdef NINTENDO
+			invite->setSize(SDL_Rect{ 202, 156, 30, 30 });
+#else
+			invite->setSize(SDL_Rect{ 202, 144, 30, 30 });
+#endif
 			invite->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			invite->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
 			invite->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
@@ -10522,7 +10542,11 @@ failed:
 			invite->addWidgetAction("MenuPageLeftAlt", "privacy");
 			invite->setWidgetBack("back_button");
 			invite->setWidgetUp("custom_difficulty");
+#ifdef NINTENDO
+			invite->setWidgetDown("open");
+#else
 			invite->setWidgetDown("friends");
+#endif
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE) {
@@ -10568,6 +10592,7 @@ failed:
 			}
 		}
 
+#ifndef NINTENDO
 		auto friends_label = card->addField("friends_label", 64);
 		friends_label->setSize(SDL_Rect{82, 178, 122, 26});
 		friends_label->setFont(smallfont_outline);
@@ -10653,9 +10678,14 @@ failed:
 			        });
 			}
 		}
+#endif
 
 		auto open_label = card->addField("open_label", 64);
-		open_label->setSize(SDL_Rect{82, 210, 122, 26});
+#ifdef NINTENDO
+		open_label->setSize(SDL_Rect{ 82, 198, 122, 26 });
+#else
+		open_label->setSize(SDL_Rect{ 82, 210, 122, 26 });
+#endif
 		open_label->setFont(smallfont_outline);
 		open_label->setText("Open Lobby");
 		open_label->setJustify(Field::justify_t::CENTER);
@@ -10672,7 +10702,11 @@ failed:
 			open_label->setColor(makeColor(166, 123, 81, 255));
 
 			auto open = card->addButton("open");
-			open->setSize(SDL_Rect{202, 208, 30, 30});
+#ifdef NINTENDO
+			open->setSize(SDL_Rect{ 202, 196, 30, 30 });
+#else
+			open->setSize(SDL_Rect{ 202, 208, 30, 30 });
+#endif
 			open->setBackground("*images/ui/Main Menus/sublist_item-unpicked.png");
 			open->setBackgroundHighlighted("*images/ui/Main Menus/sublist_item-unpickedHigh.png");
 			open->setBackgroundActivated("*images/ui/Main Menus/sublist_item-unpickedPress.png");
@@ -10687,7 +10721,11 @@ failed:
 			open->addWidgetAction("MenuPageRightAlt", "chat");
 			open->addWidgetAction("MenuPageLeftAlt", "privacy");
 			open->setWidgetBack("back_button");
+#ifdef NINTENDO
+			open->setWidgetUp("invite");
+#else
 			open->setWidgetUp("friends");
+#endif
 			open->setWidgetDown("player_count_2");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
@@ -13681,6 +13719,10 @@ failed:
 	        return;
 	    }
 
+		if (multiplayer == SERVER) {
+			newPlayer[index] = true;
+		}
+
 		auto lobby = main_menu_frame->findFrame("lobby");
 		assert(lobby);
 
@@ -14563,11 +14605,19 @@ failed:
 						hide_roomcode(*roomcode, button, !hidden_roomcode);
 						});
 					privacy->setTickCallback([](Widget& widget){
+						auto& input = Input::inputs[widget.getOwner()];
+
+						// this refocuses the player card
 						if (widget.isSelected()) {
-							auto& input = Input::inputs[widget.getOwner()];
 							if (input.consumeBinaryToggle("MenuCancel")) {
 								widget.deselect();
 							}
+						}
+
+						// activate from anywhere, in any state
+						if (input.consumeBinaryToggle("MenuPageLeftAlt")) {
+							widget.select();
+							widget.activate();
 						}
 						});
 
@@ -14603,12 +14653,16 @@ failed:
 				chat_button->addWidgetAction("MenuPageLeftAlt", "privacy");
 		        chat_button->setWidgetLeft(roomcodeDisabled ? "lobby_name" : "privacy");
 		        chat_button->setTickCallback([](Widget& widget){
+					auto& input = Input::inputs[widget.getOwner()];
+
+					// this refocuses the player card
 					if (widget.isSelected()) {
-						auto& input = Input::inputs[widget.getOwner()];
 						if (input.consumeBinaryToggle("MenuCancel")) {
 							widget.deselect();
 						}
 					}
+
+					// flash text
 		            auto button = static_cast<Button*>(&widget);
 		            if (new_lobby_chat_message_alert) {
 		                const Uint32 time = (ticks - new_lobby_chat_message_alert) % 20;
@@ -14623,6 +14677,12 @@ failed:
 			            button->setTextHighlightColor(uint32ColorWhite);
 		                button->setTextColor(uint32ColorWhite);
 		            }
+
+					// activate from anywhere, in any state
+					if (input.consumeBinaryToggle("MenuPageRightAlt")) {
+						widget.select();
+						widget.activate();
+					}
 		            });
 		    }
 		}
@@ -15606,6 +15666,13 @@ failed:
                     // skip "friends only" filter in direct connect mode.
                     continue;
                 }
+#ifdef NINTENDO
+				if (c == 1) {
+					// nintendo has no "friends-only" filter.
+					continue;
+				}
+#endif // NINTENDO
+
 
 		        auto label = frame_right->addField("filter_label", 128);
 		        label->setHJustify(Field::justify_t::LEFT);
@@ -17602,7 +17669,60 @@ failed:
 	        },
 	        false, false); // both buttons are yellow
 	}
-
+                  
+    static void addContinuePlayerInfo(Frame& frame, SaveGameInfo& info, int player, int x, int y, bool show_pnum) {
+        auto subframe = frame.addFrame("info");
+        subframe->setSize(SDL_Rect{x, y, 64, 64});
+        subframe->setHollow(true);
+        subframe->setColor(0);
+        
+        // player num + level text
+        char buf[16];
+        auto lvl = subframe->addField("player_lvl", 8);
+        if (show_pnum) {
+            snprintf(buf, sizeof(buf), "P%d\nLVL%d", player + 1, info.players[player].stats.LVL);
+            lvl->setTextColor(playerColor(player, colorblind, false));
+            lvl->setOutlineColor(makeColorRGB(0, 0, 0));
+        } else {
+            snprintf(buf, sizeof(buf), "LVL%d", info.players[player].stats.LVL);
+            lvl->setTextColor(makeColorRGB(255, 255, 255));
+            lvl->setOutlineColor(makeColorRGB(52, 32, 23));
+        }
+        lvl->setHJustify(Field::justify_t::LEFT);
+        lvl->setVJustify(Field::justify_t::BOTTOM);
+        lvl->setSize(SDL_Rect{0, 3, 64, 64});
+        lvl->setColor(0xffffffff);
+        lvl->setFont(smallfont_outline);
+        lvl->setText(buf);
+        
+        // class image
+        const int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+        const int class_index = (info.players[player].char_class + 1) % num_classes;
+        const auto class_name = classes_in_order[class_index];
+        const auto class_find = classes.find(class_name);
+        if (class_find != classes.end()) {
+            std::string class_img_path = "#*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+            class_img_path += class_find->second.image_highlighted;
+            auto class_img = subframe->addImage(
+                SDL_Rect{2, 0, 54, 54},
+                0xffffffff,
+                class_img_path.c_str(),
+                "class_img");
+        }
+        
+        // portrait
+        const std::string portrait_path =
+            monsterData.getAllyIconFromSprite(playerHeadSprite(
+                (Monster)getMonsterFromPlayerRace(info.players[player].race),
+                (sex_t)info.players[player].stats.sex,
+                (int)info.players[player].stats.appearance));
+        auto portrait = subframe->addImage(
+            SDL_Rect{32, 24, 32, 32},
+            0xffffffff,
+            portrait_path.c_str(),
+            "portrait");
+    }
+                
 	static Button* populateContinueSubwindow(Frame& subwindow, bool singleplayer) {
 	    static Uint32 timeSinceScroll = 0;
 		subwindow.setActualSize(SDL_Rect{0, 0, 898, 294});
@@ -17620,9 +17740,10 @@ failed:
             int saveGameCount = 0;
 		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                 if (saveGameExists(singleplayer, i)) {
+                    const int posX = saveGameCount * 256 + (898 - 220) / 2;
                     auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
                     auto savegame_book = subwindow.addButton(str.c_str());
-                    savegame_book->setSize(SDL_Rect{saveGameCount * 256 + (898 - 220) / 2, 0, 220, 280});
+                    savegame_book->setSize(SDL_Rect{posX, 0, 220, 280});
                     savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
 		            savegame_book->setColor(makeColor(255, 255, 255, 255));
 		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
@@ -17715,6 +17836,12 @@ failed:
                     class_name_c[0] = (char)toupper((int)class_name[0]);
                     const int dungeon_lvl = saveGameInfo.dungeon_lvl;
                     const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.LVL;
+					int numplayers = 0;
+					for (auto p : saveGameInfo.players_connected) {
+						if (p) {
+							++numplayers;
+						}
+					}
 
                     // create shortened player name
                     char shortened_name[20] = { '\0' };
@@ -17724,10 +17851,23 @@ failed:
                         strcat(shortened_name, "...");
                     }
 
+					// create game type string
+					char game_type[32] = { '\0' };
+					switch (saveGameInfo.multiplayer_type) {
+					default:
+					case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
+					case SERVER: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+					case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client %dp (#%d)", numplayers, saveGameInfo.player_num + 1); break;
+					case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host %dp (#1)", numplayers); break;
+					case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
+					case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+					case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen %dp", numplayers); break;
+					}
+
                     // format book label string
 		            char text[1024];
-		            snprintf(text, sizeof(text), "%s\n%s LVL %d\nDungeon LVL %d",
-		                shortened_name, class_name.c_str(), player_lvl, dungeon_lvl);
+		            snprintf(text, sizeof(text), "%s\n%s\nDungeon LVL %d",
+		                shortened_name, game_type, dungeon_lvl);
 		            savegame_book->setText(text);
 
                     // offset text
@@ -17751,6 +17891,11 @@ failed:
 		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 		                screenshot->section.w = image->getHeight();
 		            }*/
+                    
+                    auto cover = subwindow.addFrame("bookcover");
+                    cover->setSize(SDL_Rect{posX, 0, 220, 280});
+                    cover->setColor(0);
+                    cover->setHollow(true);
 
 					// add savegame picture
 					std::string screenshot_path = "images/ui/Main Menus/ContinueGame/savescreens/";
@@ -17814,25 +17959,66 @@ failed:
 						}
 					}
 
-					auto screenshot = subwindow.addImage(
-						SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+					auto screenshot = cover->addImage(
+						SDL_Rect{32, 16, 160, 162},
 						0xffffffff,
 						screenshot_path.c_str(),
 						(str + "_screenshot").c_str()
 					);
-					screenshot->ontop = true;
 					Image* image = Image::get(screenshot_path.c_str()); assert(image);
 					screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 					screenshot->section.w = image->getHeight();
 
 		            // add book overlay
-		            auto overlay = subwindow.addImage(
-		                SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+		            auto overlay = cover->addImage(
+		                SDL_Rect{32, 16, 160, 162},
 		                0xffffffff,
 		                "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
 		                (str + "_overlay").c_str()
 		            );
-		            overlay->ontop = true;
+                    
+                    // add player info
+                    if (numplayers == 1) {
+                        addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
+                    }
+                    else if (numplayers == 2) {
+                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                            if (saveGameInfo.players_connected[c]) {
+                                switch (index) {
+                                default:
+                                case 0:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                    break;
+                                case 1:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                    break;
+                                }
+                                ++index;
+                            }
+                        }
+                    }
+                    else if (numplayers >= 3) {
+                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                            if (saveGameInfo.players_connected[c]) {
+                                switch (index) {
+                                default:
+                                case 0:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+                                    break;
+                                case 1:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+                                    break;
+                                case 2:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                    break;
+                                case 3:
+                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                    break;
+                                }
+                                ++index;
+                            }
+                        }
+                    }
 
 		            ++saveGameCount;
                 }
@@ -18397,7 +18583,9 @@ failed:
 				"Controls",
 			};
 			if (intro) {
+#ifndef NINTENDO
 			    tabs.push_back("Online");
+#endif
 			} else {
 				tabs.push_back("Game");
 			}
@@ -18514,23 +18702,27 @@ failed:
 				"Controls",
 			};
 			if (intro) {
+#ifndef NINTENDO
 			    tabs.push_back("Online");
+#endif
 			} else {
 				tabs.push_back("Game");
 			}
 			const char* prevtab = nullptr;
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-					if (prevtab) {
-						auto prevbutton = settings->findButton(prevtab); assert(prevbutton);
-						prevbutton->select();
-						prevbutton->activate();
-					}
-					return; 
-				}
-				prevtab = tab;
+				auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        if (prevtab) {
+                            auto prevbutton = settings->findButton(prevtab); assert(prevbutton);
+                            prevbutton->select();
+                            prevbutton->activate();
+                        }
+                        return;
+                    }
+                    prevtab = tab;
+                }
 			}
 			});
 		tab_left->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -18546,7 +18738,11 @@ failed:
 		tab_right->setWidgetBack("discard_and_exit");
 		tab_right->setWidgetPageLeft("tab_left");
 		tab_right->setWidgetPageRight("tab_right");
+#ifdef NINTENDO
+        tab_right->setWidgetLeft(intro ? "Controls" : "Game");
+#else
 		tab_right->setWidgetLeft(intro ? "Online" : "Game");
+#endif
 		tab_right->setWidgetDown("confirm_and_exit");
 		tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
 		tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
@@ -18567,17 +18763,19 @@ failed:
 			}
 			const char* nexttab = nullptr;
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-					if (nexttab) {
-						auto nextbutton = settings->findButton(nexttab); assert(nextbutton);
-						nextbutton->select();
-						nextbutton->activate();
-					}
-					return;
-				}
-				nexttab = tab;
+                auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        if (nexttab) {
+                            auto nextbutton = settings->findButton(nexttab); assert(nextbutton);
+                            nextbutton->select();
+                            nextbutton->activate();
+                        }
+                        return;
+                    }
+                    nexttab = tab;
+                }
 			}
 			});
 		tab_right->setGlyphPosition(Button::glyph_position_t::CENTERED);
@@ -18616,19 +18814,23 @@ failed:
 				"Video",
 				"General",
 			};
-			if (intro) {
+            if (intro) {
+#ifndef NINTENDO
 				tabs.insert(tabs.begin(), "Online");
+#endif
 			} else {
 			    tabs.insert(tabs.begin(), "Game");
 			}
 			for (auto tab : tabs) {
-				auto button = settings->findButton(tab); assert(button);
-				const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
-				if (strcmp(button->getBackground(), name) == 0) {
-				    button->select();
-				    button->activate();
-					return;
-				}
+				auto button = settings->findButton(tab);
+                if (button) {
+                    const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+                    if (strcmp(button->getBackground(), name) == 0) {
+                        button->select();
+                        button->activate();
+                        return;
+                    }
+                }
 			}
 			});
 

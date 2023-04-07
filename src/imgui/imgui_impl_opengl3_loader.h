@@ -650,7 +650,7 @@ static GL3WglProc get_proc(const char *proc)
     *(void **)(&res) = dlsym(libgl, proc);
     return res;
 }
-#elif defined(NINTENDO)
+#else
 static int open_libgl(void) { return GL3W_OK; }
 
 static void close_libgl(void) {}
@@ -659,31 +659,6 @@ static void close_libgl(void) {}
 static GL3WglProc get_proc(const char *proc)
 {
     return (GL3WglProc)SDL_GL_GetProcAddress(proc);
-}
-#else
-#include <dlfcn.h>
-
-static void *libgl;
-static GL3WglProc (*glx_get_proc_address)(const GLubyte *);
-
-static int open_libgl(void)
-{
-    libgl = dlopen("libGL.so.1", RTLD_LAZY | RTLD_LOCAL);
-    if (!libgl)
-        return GL3W_ERROR_LIBRARY_OPEN;
-    *(void **)(&glx_get_proc_address) = dlsym(libgl, "glXGetProcAddressARB");
-    return GL3W_OK;
-}
-
-static void close_libgl(void) { dlclose(libgl); }
-
-static GL3WglProc get_proc(const char *proc)
-{
-    GL3WglProc res;
-    res = glx_get_proc_address((const GLubyte *)proc);
-    if (!res)
-        *(void **)(&res) = dlsym(libgl, proc);
-    return res;
 }
 #endif
 
