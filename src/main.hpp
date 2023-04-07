@@ -871,3 +871,11 @@ std::string stackTrace();
 void stackTraceUnique();
 void finishStackTraceUnique();
 extern bool ENABLE_STACK_TRACES;
+
+// I can't believe windows still defines these...
+#ifdef far
+#undef far
+#endif
+#ifdef near
+#undef near
+#endif

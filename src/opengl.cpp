@@ -687,9 +687,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 		s *= camera->globalLightModifier;
 	}
     
+#ifndef EDITOR
     static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
+	const bool legacyVoxels = *cvar_legacyVoxelDraw;
+#else
+	const bool legacyVoxels = false;
+#endif
     
-    if (*cvar_legacyVoxelDraw) {
+    if (legacyVoxels) {
         // old rendering (fixed function)
         // setup model matrix
         glMatrixMode( GL_MODELVIEW );
