@@ -64,6 +64,7 @@ Mesh framebuffer::mesh{
 
 Shader framebuffer::shader;
 Shader voxelShader;
+Shader voxelShaderBright;
 TempTexture* lightmapTexture;
 
 void createCommonDrawResources() {
@@ -120,30 +121,37 @@ void createCommonDrawResources() {
         "#version 120\n"
         "varying vec3 Color;"
         "varying vec4 WorldPos;"
-        "uniform int uUseLightmap;"
         "uniform mat4 uColorRemap;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+    
         "void main() {"
-    
-        //"gl_FragColor = vec4(1.f, 0.f, 1.f, 1.f);" // totally pink (for testing)
-        //"gl_FragColor = vec4(Color, 1.0);" // fullbright model
-    
         "vec3 Remapped ="
         "    (uColorRemap[0].rgb * Color.r)+"
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
-    
         "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-    
         "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-    
-        "if (uUseLightmap != 0) {"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
-        "}"
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
     
+    static const char vox_bright_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform mat4 uColorRemap;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+    
+        "void main() {"
+        "vec3 Remapped ="
+        "    (uColorRemap[0].rgb * Color.r)+"
+        "    (uColorRemap[1].rgb * Color.g)+"
+        "    (uColorRemap[2].rgb * Color.b);"
+        "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
@@ -154,6 +162,13 @@ void createCommonDrawResources() {
     voxelShader.bindAttribLocation("iColor", 1);
     voxelShader.link();
     
+    voxelShaderBright.init();
+    voxelShaderBright.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
+    voxelShaderBright.compile(vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl), Shader::Type::Fragment);
+    voxelShaderBright.bindAttribLocation("iPosition", 0);
+    voxelShaderBright.bindAttribLocation("iColor", 1);
+    voxelShaderBright.link();
+    
     lightmapTexture = new TempTexture();
 }
 
@@ -161,6 +176,7 @@ void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
     voxelShader.destroy();
+    voxelShaderBright.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
