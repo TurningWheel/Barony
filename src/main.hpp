@@ -137,7 +137,9 @@ extern bool autoLimbReload;
   #include <GL/gl.h>
   #include <GL/glu.h>
  #endif
+#ifndef WINDOWS
  #include <GL/glext.h>
+#endif
  #include "SDL_opengl.h"
 #endif // !APPLE
 
@@ -704,6 +706,7 @@ extern std::set<std::pair<std::string, std::string>, Comparator> achievementName
 extern std::unordered_map<std::string, int> achievementProgress;
 extern std::unordered_map<std::string, int64_t> achievementUnlockTime;
 extern std::unordered_set<std::string> achievementUnlockedLookup;
+extern bool achievementsNeedResort;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
 extern bool useModelCache;

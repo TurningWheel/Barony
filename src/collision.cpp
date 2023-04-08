@@ -445,6 +445,25 @@ bool entityInsideSomething(Entity* entity)
 	return false;
 }
 
+static ConsoleVariable<float> cvar_linetrace_smallcollision("/linetrace_smallcollision", 4.0);
+bool useSmallCollision(Entity& my, Stat& myStats, Entity& your, Stat& yourStats)
+{
+	if ( (my.behavior == &actMonster || my.behavior == &actPlayer) &&
+		(your.behavior == &actMonster || your.behavior == &actPlayer) )
+	{
+		if ( my.getUID() == yourStats.leader_uid
+			|| your.getUID() == myStats.leader_uid
+			|| (myStats.leader_uid != 0 && myStats.leader_uid == yourStats.leader_uid)
+			|| (my.behavior == &actPlayer && your.behavior == &actPlayer)
+			|| (my.behavior == &actPlayer && your.monsterAllyGetPlayerLeader())
+			|| (your.behavior == &actPlayer && my.monsterAllyGetPlayerLeader()) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 /*-------------------------------------------------------------------------------
 
 	barony_clear
@@ -491,11 +510,47 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			levitating = true;
 		}
 	}
+
+	bool reduceCollisionSize = false;
+	bool tryReduceCollisionSize = false;
+	Entity* parent = nullptr;
+	Stat* parentStats = nullptr;
 	if ( my )
 	{
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
 		{
 			levitating = true;
+		}
+		if ( multiplayer != CLIENT )
+		{
+			if ( my->behavior == &actArrow || my->behavior == &actMagicMissile || my->behavior == &actThrown )
+			{
+				if ( parent = uidToEntity(my->parent) )
+				{
+					if ( my->behavior == &actThrown )
+					{
+						tryReduceCollisionSize = true;
+						if ( Item* item = newItemFromEntity(my) )
+						{
+							if ( itemCategory(item) == POTION && !item->doesPotionHarmAlliesOnThrown() )
+							{
+								tryReduceCollisionSize = false;
+							}
+							free(item);
+							item = nullptr;
+						}
+						if ( tryReduceCollisionSize )
+						{
+							parentStats = parent->getStats();
+						}
+					}
+					else
+					{
+						tryReduceCollisionSize = true;
+						parentStats = parent->getStats();
+					}
+				}
+			}
 		}
 	}
 
@@ -640,6 +695,12 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
+			else if ( multiplayer != CLIENT && parent && parentStats && yourStats 
+				&& tryReduceCollisionSize )
+			{
+				reduceCollisionSize = useSmallCollision(*parent, *parentStats, *entity, *yourStats);
+			}
+
 			if ( multiplayer == CLIENT )
 			{
 				// fixes bug where clients can't move through humans
@@ -653,8 +714,15 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue; // fix clients not being able to walk through friendly monsters
 				}
 			}
-			const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
-			const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+			real_t sizex = entity->sizex;
+			real_t sizey = entity->sizey;
+			if ( reduceCollisionSize )
+			{
+				sizex /= *cvar_linetrace_smallcollision;
+				sizey /= *cvar_linetrace_smallcollision;
+			}
+			const real_t eymin = entity->y - sizey, eymax = entity->y + sizey;
+			const real_t exmin = entity->x - sizex, exmax = entity->x + sizex;
 			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
 			{
 				if ( (entity->sizey > 0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
@@ -824,6 +892,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		entLists.push_back(map.entities); // default to old map.entities if client (if they ever call this function...)
 	}
 
+	Stat* myStats = my->getStats();
+
 	if ( angle >= PI / 2 && angle < PI ) // -x, +y
 	{
 		quadrant = 1;
@@ -923,14 +993,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my 
-				|| (entities && 
+				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
 							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] && entity->sprite != 889) )
 						)
 					) 
 				)
 			{
-				// if entities == 1, then ignore entities that block sight.
+				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
 				// 889 is dummybot "invisible" AI entity. so it's invisible, need to make it shown here.
 				continue;
@@ -942,13 +1012,32 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 
 			int entitymapx = static_cast<int>(entity->x) >> 4;
 			int entitymapy = static_cast<int>(entity->y) >> 4;
+			real_t sizex = entity->sizex;
+			real_t sizey = entity->sizey;
+			if ( entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE && multiplayer != CLIENT )
+			{
+				if ( (my->behavior == &actMonster || my->behavior == &actPlayer) 
+					&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+				{
+					Stat* yourStats = entity->getStats();
+					if ( myStats && yourStats )
+					{
+						if ( useSmallCollision(*my, *myStats, *entity, *yourStats) )
+						{
+							sizex /= *cvar_linetrace_smallcollision;
+							sizey /= *cvar_linetrace_smallcollision;
+						}
+					}
+				}
+			}
+
 			if ( quadrant == 2 || quadrant == 4 )
 			{
 				// upper right and lower left
-				real_t upperX = entity->x + entity->sizex;
-				real_t upperY = entity->y - entity->sizey;
-				real_t lowerX = entity->x - entity->sizex;
-				real_t lowerY = entity->y + entity->sizey;
+				real_t upperX = entity->x + sizex;
+				real_t upperY = entity->y - sizey;
+				real_t lowerX = entity->x - sizex;
+				real_t lowerY = entity->y + sizey;
 				real_t upperTan = atan2(upperY - y1, upperX - x1);
 				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 				if ( adjust )
@@ -1030,10 +1119,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			else
 			{
 				// upper left and lower right
-				real_t upperX = entity->x - entity->sizex;
-				real_t upperY = entity->y - entity->sizey;
-				real_t lowerX = entity->x + entity->sizex;
-				real_t lowerY = entity->y + entity->sizey;
+				real_t upperX = entity->x - sizex;
+				real_t upperY = entity->y - sizey;
+				real_t lowerX = entity->x + sizex;
+				real_t lowerY = entity->y + sizey;
 				real_t upperTan = atan2(upperY - y1, upperX - x1);
 				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 				if ( adjust )
@@ -1187,9 +1276,10 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 	}
 	d = 0;
 
+	Stat* stats = nullptr;
 	if ( my )
 	{
-		Stat* stats = my->getStats();
+		stats = my->getStats();
 		if ( stats )
 		{
 			if ( stats->type == DEVIL )
@@ -1204,6 +1294,31 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 	}
 
 	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, NULL);
+
+	Stat* yourStats = nullptr;
+	bool reduceCollisionSize = false;
+	real_t sizex = 0.0;
+	real_t sizey = 0.0;
+	if ( entity )
+	{
+		sizex = entity->sizex;
+		sizey = entity->sizey;
+
+		yourStats = entity->getStats();
+		if ( entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE )
+		{
+			if ( my && stats && (my->behavior == &actMonster || my->behavior == &actPlayer) &&
+				entity && (entity->behavior == &actMonster || entity->behavior == &actPlayer) && yourStats )
+			{
+				reduceCollisionSize = useSmallCollision(*my, *stats, *entity, *yourStats);
+				if ( reduceCollisionSize )
+				{
+					sizex /= *cvar_linetrace_smallcollision;
+					sizey /= *cvar_linetrace_smallcollision;
+				}
+			}
+		}
+	}
 
 	// trace the line
 	while ( d < range )
@@ -1265,7 +1380,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		if ( entity )
 		{
 			// debug particles.
-			if ( my && my->behavior == &actMonster && entities == 0 )
+			if ( my && my->behavior == &actPlayer && entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE )
 			{
 				static ConsoleVariable<bool> cvar_linetracedebug("/linetracedebug", false);
 				if ( *cvar_linetracedebug )
@@ -1302,9 +1417,9 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				}
 			}
 
-			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex )
+			if ( ix >= entity->x - sizex && ix <= entity->x + sizex )
 			{
-				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey )
+				if ( iy >= entity->y - sizey && iy <= entity->y + sizey )
 				{
 					hit.x = ix;
 					hit.y = iy;

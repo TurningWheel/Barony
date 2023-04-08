@@ -854,6 +854,7 @@ void steamAchievement(const char* achName)
 #else
 		achievementUnlockTime.emplace(std::make_pair(std::string(achName), time(nullptr)));
 #endif
+		achievementsNeedResort = true;
 	}
 }
 

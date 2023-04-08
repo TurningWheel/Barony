@@ -947,6 +947,8 @@ void loadAchievementData(const char* path) {
 
 void sortAchievementsForDisplay()
 {
+	achievementsNeedResort = false;
+
 	// sort achievements list
 	achievementNamesSorted.clear();
 	Comparator compFunctor =

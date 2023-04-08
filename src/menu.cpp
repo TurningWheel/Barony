@@ -9519,6 +9519,7 @@ void doNewGame(bool makeHighscore) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	monsterAllyFormations.reset();
 	currentlevel = startfloor;
 	secretlevel = false;
 	victory = 0;
@@ -10618,6 +10619,7 @@ void doEndgame(bool saveHighscore) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	monsterAllyFormations.reset();
 	gameModeManager.currentSession.restoreSavedServerFlags();
 	client_classes[0] = 0;
 	for ( c = 0; c < MAXPLAYERS; c++ )

@@ -5693,7 +5693,7 @@ bind_failed:
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "game", "Game Settings");
 		y += settingsAddBooleanOption(*settings_subwindow, y, "hunger", "Hunger",
-			"Toggle player hunger. When hunger is off, eating food heals the player directly.",
+			"When hunger is off, passive HP regeneration is disabled and eating food heals the player directly.",
 			allSettings.hunger_enabled, [](Button& button){soundToggle(); allSettings.hunger_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minotaur", "Minotaur",
 			"Toggle the minotaur's ability to spawn on many levels after a certain amount of time.",
@@ -6899,6 +6899,11 @@ bind_failed:
 
 	static void createSimpleAchievementsWindow() {
 		soundActivate();
+
+		if ( achievementsNeedResort )
+		{
+			sortAchievementsForDisplay();
+		}
 
 		auto window = genericWindow("achievements", "ACHIEVEMENTS", false);
 		assert(window);
@@ -8578,8 +8583,8 @@ bind_failed:
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
-				if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
-				    // 15 second timeout
+				if (ticks - client_keepalive[0] >= 30 * TICKS_PER_SECOND) {
+				    // 30 second timeout
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 					disconnectFromLobby(false);
@@ -8592,8 +8597,8 @@ bind_failed:
 #if defined USE_EOS
 			EOS_ProductUserId newRemoteProductId = nullptr;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-				if (ticks - client_keepalive[0] >= 15 * TICKS_PER_SECOND) {
-				    // 15 second timeout
+				if (ticks - client_keepalive[0] >= 30 * TICKS_PER_SECOND) {
+				    // 30 second timeout
 					auto error_code = static_cast<int>(LobbyHandler_t::LOBBY_JOIN_TIMEOUT);
 					auto error_str = LobbyHandler_t::getLobbyJoinFailedConnectString(error_code);
 					disconnectFromLobby(false);

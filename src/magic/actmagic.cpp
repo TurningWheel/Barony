@@ -240,7 +240,7 @@ void actMagiclightBall(Entity* my)
 			{
 				//messagePlayer(0, "****Moving.");
 				double tangent = atan2(parent->y - my->y, parent->x - my->x);
-				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, false, parent);
+				lineTraceTarget(my, my->x, my->y, tangent, 1024, LINETRACE_IGNORE_ENTITIES, false, parent);
 				if ( !hit.entity || hit.entity == parent )   //Line of sight to caster?
 				{
 					if (my->path != NULL)
@@ -689,6 +689,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						player = hit.entity->skill[2];
+					}
 				}
 				if ( hitstats )
 				{
@@ -751,7 +755,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 
-						player = hit.entity->skill[2];
 						if ( my->actmagicCastByTinkerTrap == 1 )
 						{
 							skipMessage = true;

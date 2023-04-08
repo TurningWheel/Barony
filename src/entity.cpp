@@ -7050,13 +7050,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if ( whip )
 			{
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, 0, false);
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 			}
 			else
 			{
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 			}
 		}
 		else
@@ -7388,10 +7388,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( myStats->weapon && !shapeshifted )
 				{
 					weaponskill = getWeaponSkill(myStats->weapon);
-					if ( weaponskill == PRO_AXE )
+					if ( hit.entity->behavior == &actColliderDecoration )
 					{
-						axe = (myStats->PROFICIENCIES[PRO_AXE] / 20);
-						if ( myStats->PROFICIENCIES[PRO_AXE] >= SKILL_LEVEL_LEGENDARY )
+						if ( weaponskill >= 0 && hit.entity->isColliderWeakToSkill(weaponskill) )
+						{
+							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							{
+								axe = 9;
+							}
+						}
+					}
+					else if ( weaponskill == PRO_AXE )
+					{
+						axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+						if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
 						{
 							axe = 9;
 						}
@@ -7400,7 +7411,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else
 				{
 					weaponskill = PRO_UNARMED;
-					if ( hit.entity->behavior != &::actChest )
+					if ( hit.entity->behavior == &actColliderDecoration )
+					{
+						if ( hit.entity->isColliderWeakToSkill(weaponskill) )
+						{
+							axe = (myStats->PROFICIENCIES[weaponskill] / 20);
+							if ( myStats->PROFICIENCIES[weaponskill] >= SKILL_LEVEL_LEGENDARY )
+							{
+								axe = 9;
+							}
+						}
+					}
+					else if ( hit.entity->behavior != &::actChest )
 					{
 						axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 						if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
@@ -7443,7 +7465,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
-					playSoundEntity(hit.entity, 28, 64);
+					int sound = 28; //damage.ogg
+					if ( hit.entity->behavior == &actColliderDecoration && hit.entity->getColliderSfxOnHit() > 0 )
+					{
+						sound = hit.entity->getColliderSfxOnHit();
+					}
+					playSoundEntity(hit.entity, sound, 64);
 				}
 				if ( entityHP > 0 )
 				{

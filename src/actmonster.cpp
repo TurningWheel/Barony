@@ -555,6 +555,318 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 	}
 }
 
+MonsterAllyFormation_t monsterAllyFormations;
+bool MonsterAllyFormation_t::getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos)
+{
+	outPos.first = -1;
+	outPos.second = -1;
+	Entity* leader = uidToEntity(leaderUid);
+	if ( !leader ) { return false; }
+	if ( leader->behavior != &actPlayer && leader->behavior != &actMonster ) { return false; }
+
+	auto& leaderUnits = units[leaderUid];
+	auto findMelee = leaderUnits.meleeUnits.find(uid);
+	auto findRanged = leaderUnits.rangedUnits.find(uid);
+
+	bool found = false;
+	if ( findMelee != leaderUnits.meleeUnits.end() )
+	{
+		outPos.first = findMelee->second.x;
+		outPos.second = findMelee->second.y;
+		found = true;
+	}
+	if ( findRanged != leaderUnits.rangedUnits.end() )
+	{
+		outPos.first = findRanged->second.x;
+		outPos.second = findRanged->second.y;
+		found = true;
+	}
+
+	return found;
+}
+
+void MonsterAllyFormation_t::updateOnPathFail(Uint32 uid, Entity* entity)
+{
+	if ( !entity )
+	{
+		entity = uidToEntity(uid);
+	}
+
+	if ( !entity )
+	{
+		return;
+	}
+
+	if ( Stat* myStats = entity->getStats() )
+	{
+		if ( myStats->leader_uid != 0 )
+		{
+			auto find = units.find(myStats->leader_uid);
+			if ( find != units.end() )
+			{
+				auto find2 = find->second.meleeUnits.find(uid);
+				if ( find2 != find->second.meleeUnits.end() )
+				{
+					find2->second.pathingDelay = std::min(10, find2->second.pathingDelay + 1);
+					return;
+				}
+				auto find3 = find->second.rangedUnits.find(uid);
+				if ( find3 != find->second.rangedUnits.end() )
+				{
+					find3->second.pathingDelay = std::min(10, find3->second.pathingDelay + 1);
+					return;
+				}
+			}
+		}
+	}
+}
+
+void MonsterAllyFormation_t::updateOnPathSucceed(Uint32 uid, Entity* entity)
+{
+	if ( !entity )
+	{
+		entity = uidToEntity(uid);
+	}
+
+	if ( !entity )
+	{
+		return;
+	}
+
+	if ( Stat* myStats = entity->getStats() )
+	{
+		if ( myStats->leader_uid != 0 )
+		{
+			auto find = units.find(myStats->leader_uid);
+			if ( find != units.end() )
+			{
+				auto find2 = find->second.meleeUnits.find(uid);
+				if ( find2 != find->second.meleeUnits.end() )
+				{
+					find2->second.pathingDelay = 0;
+					return;
+				}
+				auto find3 = find->second.rangedUnits.find(uid);
+				if ( find3 != find->second.rangedUnits.end() )
+				{
+					find3->second.pathingDelay = 0;
+					return;
+				}
+			}
+		}
+	}
+}
+
+int MonsterAllyFormation_t::getFollowerChaseLeaderInterval(Entity& my, Stat& myStats)
+{
+	if ( myStats.leader_uid != 0 )
+	{
+		auto find = units.find(myStats.leader_uid);
+		if ( find != units.end() )
+		{
+			auto find2 = find->second.meleeUnits.find(my.getUID());
+			if ( find2 != find->second.meleeUnits.end() )
+			{
+				return find2->second.pathingDelay * TICKS_PER_SECOND + TICKS_PER_SECOND;
+			}
+			auto find3 = find->second.rangedUnits.find(my.getUID());
+			if ( find3 != find->second.rangedUnits.end() )
+			{
+				return find3->second.pathingDelay * TICKS_PER_SECOND + TICKS_PER_SECOND;
+			}
+		}
+	}
+	return TICKS_PER_SECOND;
+}
+
+void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpdateUid)
+{
+	Entity* leader = uidToEntity(leaderUid);
+	if ( !leader ) { return; }
+	if ( !(leader->behavior == &actPlayer || leader->behavior == &actMonster) ) { return; }
+	auto& leaderUnits = units[leaderUid];
+
+	if ( monsterUpdateUid == 0 )
+	{
+		if ( (ticks - leaderUnits.updatedOnTick) < TICKS_PER_SECOND )
+		{
+			return;
+		}
+		leaderUnits.updatedOnTick = ticks;
+	}
+	else if ( monsterUpdateUid != 0 ) // monster updated on behalf of leader
+	{
+		if ( leaderUnits.meleeUnits.find(monsterUpdateUid) == leaderUnits.meleeUnits.end() )
+		{
+			leaderUnits.meleeUnits[monsterUpdateUid] = MonsterAllies_t::FormationInfo_t(); // insert myself
+		}
+		return;
+	}
+
+	if ( leader->behavior == &actPlayer )
+	{
+		if ( Stat* leaderStats = leader->getStats() )
+		{
+			for ( node_t* allyNode = leaderStats->FOLLOWERS.first; allyNode != nullptr; allyNode = allyNode->next )
+			{
+				Uint32* c = (Uint32*)allyNode->element;
+				if ( !c ) {	continue; }
+				Uint32 allyUid = *c;
+				Entity* ally = uidToEntity(allyUid);
+				if ( !ally ) { continue; }
+				Stat* stat = ally->getStats();
+				if ( !stat ) { continue; }
+				if ( stat->type == GYROBOT || monsterIsImmobileTurret(ally, stat) )
+				{
+					continue;
+				}
+
+				bool isRanged = ally->hasRangedWeapon();
+				if ( isRanged )
+				{
+					if ( leaderUnits.rangedUnits.find(allyUid) == leaderUnits.rangedUnits.end() )
+					{
+						leaderUnits.rangedUnits[allyUid] = MonsterAllies_t::FormationInfo_t();
+					}
+					if ( leaderUnits.meleeUnits.find(allyUid) != leaderUnits.meleeUnits.end() )
+					{
+						leaderUnits.meleeUnits.erase(allyUid);
+					}
+				}
+				else
+				{
+					if ( leaderUnits.meleeUnits.find(allyUid) == leaderUnits.meleeUnits.end() )
+					{
+						leaderUnits.meleeUnits[allyUid] = MonsterAllies_t::FormationInfo_t();
+					}
+					if ( leaderUnits.rangedUnits.find(allyUid) != leaderUnits.rangedUnits.end() )
+					{
+						leaderUnits.rangedUnits.erase(allyUid);
+					}
+				}
+			}
+		}
+	}
+
+	size_t formationIndex = 0;
+	for ( auto& unit : leaderUnits.meleeUnits )
+	{
+		if ( unit.second.expired ) { continue; }
+		Entity* ally = uidToEntity(unit.first);
+		if ( !ally )
+		{
+			unit.second.expired = true;
+			continue;
+		}
+		bool found = false;
+		while ( !found )
+		{
+			if ( formationIndex >= formationShape.size() )
+			{
+				break;
+			}
+
+			real_t offsetx = formationShape[formationIndex].second;
+			real_t offsety = formationShape[formationIndex].first;
+
+			real_t x = leader->x;
+			real_t y = leader->y;
+			x += (offsety * cos(leader->yaw + PI / 2) * 16.0);
+			y += (offsety * sin(leader->yaw + PI / 2) * 16.0);
+
+			x += (-offsetx * cos(leader->yaw + PI) * 16.0);
+			y += (-offsetx * sin(leader->yaw + PI) * 16.0);
+			/*messagePlayer(0, MESSAGE_DEBUG, "%.2f %.2f", x / 16, y / 16);
+
+			Entity* particle = spawnMagicParticle(leader);
+			particle->sprite = 576;
+			particle->x = x;
+			particle->y = y;
+			particle->z = 0;
+			particle->scalex = 2.0;
+			particle->scaley = 2.0;
+			particle->scalez = 2.0;*/
+
+			Entity* ohitentity = hit.entity;
+			real_t oldx = ally->x;
+			real_t oldy = ally->y;
+			ally->x = x;
+			ally->y = y;
+			double tangent = atan2(leader->y - ally->y, leader->x - ally->x);
+			lineTraceTarget(ally, ally->x, ally->y, tangent, 128, 0, false, leader);
+			if ( hit.entity == leader )
+			{
+				found = true;
+				unit.second.x = (static_cast<int>(x) >> 4);
+				unit.second.y = (static_cast<int>(y) >> 4);
+				unit.second.init = true;
+			}
+			ally->x = oldx;
+			ally->y = oldy;
+			hit.entity = ohitentity;
+			++formationIndex;
+		}
+	}
+	for ( auto& unit : leaderUnits.rangedUnits )
+	{
+		if ( unit.second.expired ) { continue; }
+		Entity* ally = uidToEntity(unit.first);
+		if ( !ally )
+		{
+			unit.second.expired = true;
+			continue;
+		}
+		bool found = false;
+		while ( !found )
+		{
+			if ( formationIndex >= formationShape.size() )
+			{
+				break;
+			}
+
+			real_t offsetx = formationShape[formationIndex].second;
+			real_t offsety = formationShape[formationIndex].first;
+
+			real_t x = leader->x;
+			real_t y = leader->y;
+			x += (offsety * cos(leader->yaw + PI / 2) * 16.0);
+			y += (offsety * sin(leader->yaw + PI / 2) * 16.0);
+
+			x += (-offsetx * cos(leader->yaw + PI) * 16.0);
+			y += (-offsetx * sin(leader->yaw + PI) * 16.0);
+			/*messagePlayer(0, MESSAGE_DEBUG, "%.2f %.2f", x / 16, y / 16);
+
+			Entity* particle = spawnMagicParticle(leader);
+			particle->sprite = 576;
+			particle->x = x;
+			particle->y = y;
+			particle->z = 0;
+			particle->scalex = 2.0;
+			particle->scaley = 2.0;
+			particle->scalez = 2.0;*/
+
+			Entity* ohitentity = hit.entity;
+			real_t oldx = ally->x;
+			real_t oldy = ally->y;
+			ally->x = x;
+			ally->y = y;
+			double tangent = atan2(leader->y - ally->y, leader->x - ally->x);
+			lineTraceTarget(ally, ally->x, ally->y, tangent, 128, 0, false, leader);
+			if ( hit.entity == leader )
+			{
+				found = true;
+				unit.second.x = (static_cast<int>(x) >> 4);
+				unit.second.y = (static_cast<int>(y) >> 4);
+				unit.second.init = true;
+			}
+			ally->x = oldx;
+			ally->y = oldy;
+			hit.entity = ohitentity;
+			++formationIndex;
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	summonMonster
@@ -3459,29 +3771,37 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
-		&& myStats && myStats->leader_uid != 0 && my->flags[USERFLAG2] )
+	if ( my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 	{
-		if ( !uidToEntity(myStats->leader_uid) )
+		if ( myStats && myStats->leader_uid != 0 )
 		{
-			my->flags[USERFLAG2] = false;
-			serverUpdateEntityFlag(my, USERFLAG2);
-			if ( monsterChangesColorWhenAlly(myStats) )
+			Entity* leader = uidToEntity(myStats->leader_uid);
+			if ( !leader && my->flags[USERFLAG2] )
 			{
-				int bodypart = 0;
-				for ( node_t* node = my->children.first; node != nullptr; node = node->next )
+				my->flags[USERFLAG2] = false;
+				serverUpdateEntityFlag(my, USERFLAG2);
+				if ( monsterChangesColorWhenAlly(myStats) )
 				{
-					if ( bodypart >= LIMB_HUMANOID_TORSO )
+					int bodypart = 0;
+					for ( node_t* node = my->children.first; node != nullptr; node = node->next )
 					{
-						Entity* tmp = (Entity*)node->element;
-						if ( tmp )
+						if ( bodypart >= LIMB_HUMANOID_TORSO )
 						{
-							tmp->flags[USERFLAG2] = false;
-							serverUpdateEntityFlag(tmp, USERFLAG2);
+							Entity* tmp = (Entity*)node->element;
+							if ( tmp )
+							{
+								tmp->flags[USERFLAG2] = false;
+								serverUpdateEntityFlag(tmp, USERFLAG2);
+							}
 						}
+						++bodypart;
 					}
-					++bodypart;
 				}
+			}
+			else if ( leader && leader->behavior == &actMonster )
+			{
+				monsterAllyFormations.updateFormation(myStats->leader_uid, my->getUID());
+				monsterAllyFormations.updateFormation(myStats->leader_uid);
 			}
 		}
 	}
@@ -3828,7 +4148,7 @@ void actMonster(Entity* my)
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, IGNORE_ENTITIES, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, LINETRACE_IGNORE_ENTITIES, false);
 								}
 								if ( !hit.entity )
 								{
@@ -3990,11 +4310,12 @@ void actMonster(Entity* my)
 			// follow the leader :)
 			if ( myStats->leader_uid != 0 
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
-				&& my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
 				&& !myStats->EFFECTS[EFF_FEAR]
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
 				&& !isIllusionTaunt
-				&& !monsterIsImmobileTurret(my, myStats) )
+				&& !monsterIsImmobileTurret(my, myStats)
+				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
+				 )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -4065,7 +4386,7 @@ void actMonster(Entity* my)
 						if ( doFollow )
 						{
 							my->monsterReleaseAttackTarget();
-
+							std::pair<int, int> followPos;
 							if ( myStats->type == GYROBOT )
 							{
 								if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
@@ -4075,10 +4396,13 @@ void actMonster(Entity* my)
 									my->monsterState = MONSTER_STATE_HUNT; // hunt state
 								}
 							}
-							else if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2,
-								GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
+							else if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
 							{
-								my->monsterState = MONSTER_STATE_HUNT; // hunt state
+								if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
+									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
+								{
+									my->monsterState = MONSTER_STATE_HUNT; // hunt state
+								}
 							}
 							if ( previousMonsterState != my->monsterState )
 							{
@@ -4105,17 +4429,21 @@ void actMonster(Entity* my)
 							if ( doFollow )
 							{
 								my->monsterReleaseAttackTarget();
-								if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1,
-									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
+								std::pair<int, int> followPos;
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
 								{
-									my->monsterState = MONSTER_STATE_HUNT; // hunt state
-								}
-								if ( previousMonsterState != my->monsterState )
-								{
-									serverUpdateEntitySkill(my, 0);
-									if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+									if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
+										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
 									{
-										serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+										my->monsterState = MONSTER_STATE_HUNT; // hunt state
+									}
+									if ( previousMonsterState != my->monsterState )
+									{
+										serverUpdateEntitySkill(my, 0);
+										if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+										{
+											serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+										}
 									}
 								}
 								return;
@@ -5507,8 +5835,11 @@ timeToGoAgain:
 
 			// follow the leader :)
 			if ( uidToEntity(my->monsterTarget) == nullptr 
-				&& myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
-				&& !monsterIsImmobileTurret(my, myStats) )
+				&& myStats->leader_uid != 0 
+				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
+				&& !monsterIsImmobileTurret(my, myStats)
+				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
+				 )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -5577,36 +5908,6 @@ timeToGoAgain:
 
 						if ( doFollow )
 						{
-							//x = ((int)floor(followx)) >> 4;
-							//y = ((int)floor(followy)) >> 4;
-							//int u, v;
-							//bool foundplace = false;
-							/*for ( u = x - 1; u <= x + 1; u++ )
-							{
-								for ( v = y - 1; v <= y + 1; v++ )
-								{
-									if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-									{
-										x = u;
-										y = v;
-										foundplace = true;
-										break;
-									}
-								}
-								if ( foundplace )
-								{
-									break;
-								}
-							}
-							path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader,
-								GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_FOLLOW);
-							if ( my->children.first != NULL )
-							{
-								list_RemoveNode(my->children.first);
-							}
-							node = list_AddNodeFirst(&my->children);
-							node->element = path;
-							node->deconstructor = &listDeconstructor;*/
 							if ( myStats->type == GYROBOT )
 							{
 								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
@@ -5614,8 +5915,12 @@ timeToGoAgain:
 							}
 							else
 							{
-								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2,
-									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
+								std::pair<int, int> followPos;
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
+								{
+									my->monsterSetPathToLocation(followPos.first, followPos.second, 2,
+										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
+								}
 							}
 							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							if ( previousMonsterState != my->monsterState )
@@ -5641,40 +5946,22 @@ timeToGoAgain:
 							if ( hit.entity != leader )
 							{
 								my->monsterReleaseAttackTarget();
-								int x = ((int)floor(leader->x)) >> 4;
-								int y = ((int)floor(leader->y)) >> 4;
-								int u, v;
-								bool foundplace = false;
-								for ( u = x - 1; u <= x + 1; u++ )
+								std::pair<int, int> followPos;
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
 								{
-									for ( v = y - 1; v <= y + 1; v++ )
+									if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
+										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
 									{
-										if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
+										my->monsterState = MONSTER_STATE_HUNT; // hunt state
+									}
+									if ( previousMonsterState != my->monsterState )
+									{
+										serverUpdateEntitySkill(my, 0);
+										if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
 										{
-											x = u;
-											y = v;
-											foundplace = true;
-											break;
+											serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 										}
 									}
-									if ( foundplace )
-									{
-										break;
-									}
-								}
-								path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader,
-									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
-								if ( my->children.first != NULL )
-								{
-									list_RemoveNode(my->children.first);
-								}
-								node = list_AddNodeFirst(&my->children);
-								node->element = path;
-								node->deconstructor = &listDeconstructor;
-								my->monsterState = MONSTER_STATE_HUNT; // hunt state
-								if ( previousMonsterState != my->monsterState )
-								{
-									serverUpdateEntitySkill(my, 0);
 								}
 								return;
 							}
@@ -10078,6 +10365,7 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 
 	if ( static_cast<int>(x / 16) == destX && static_cast<int>(y / 16) == destY )
 	{
+		monsterAllyFormations.updateOnPathSucceed(getUID(), this);
 		return true; // we're trying to move to the spot we're already at!
 	}
 	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )

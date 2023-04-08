@@ -54,7 +54,7 @@ void cleanupMinimapTextures() {
 	}
 }
 
-void drawMinimap(const int player, SDL_Rect rect)
+void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
 	if ( gameplayCustomManager.inUse() ) {
 		if ( CustomHelpers::isLevelPartOfSet(
@@ -91,6 +91,68 @@ void drawMinimap(const int player, SDL_Rect rect)
 		0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
 	assert(minimapSurface);
 	SDL_LockSurface(minimapSurface);
+
+	std::vector<Entity*> entityPointsOfInterest;
+	std::unordered_set<int> customWalls;
+	// get special points of interest (exits, items, revealed monsters, etc)
+	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
+			|| entity->behavior == &actCustomPortal )   // ladder or portal models
+		{
+			entityPointsOfInterest.push_back(entity);
+		}
+		else if ( entity->behavior == &actColliderDecoration && entity->isColliderShownAsWallOnMinimap() )
+		{
+			if ( entity->x >= 0 && entity->y >= 0 && entity->x < map.width << 4 && entity->y < map.height << 4 )
+			{
+				int x = floor(entity->x / 16);
+				int y = floor(entity->y / 16);
+				customWalls.insert(x + y * 10000);
+			}
+		}
+		else
+		{
+			if ( entity->skill[28] > 0 ) // mechanism
+			{
+				if ( entity->behavior == &actCustomPortal
+					|| entity->behavior == &actTextSource
+					|| entity->behavior == &actFloorDecoration )
+				{
+					continue;
+				}
+			}
+			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->isBoulderSprite() )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->behavior == &actItem && entity->sprite >= items[TOOL_PLAYER_LOOT_BAG].index &&
+				entity->sprite < (items[TOOL_PLAYER_LOOT_BAG].index + items[TOOL_PLAYER_LOOT_BAG].variations) )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+			else if ( entity->entityShowOnMap > 0 )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
+		}
+		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
+		{
+			// only decrease the entities' shown duration when the global game timer passes a tick
+			// (drawMinimap doesn't follow game tick intervals)
+			--entity->entityShowOnMap;
+		}
+	}
+
 	const int xmin = ((int)map.width - mapGCD) / 2;
 	const int xmax = map.width - xmin;
 	const int ymin = ((int)map.height - mapGCD) / 2;
@@ -100,35 +162,46 @@ void drawMinimap(const int player, SDL_Rect rect)
 			Uint32 color = 0;
 			Uint8 backgroundAlpha = 255 * ((100 - minimapTransparencyBackground) / 100.f);
 			Uint8 foregroundAlpha = 255 * ((100 - minimapTransparencyForeground) / 100.f);
+			auto foundCustomWall = customWalls.find(x + y * 10000);
 			if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 			{
 				// out-of-bounds
 				color = makeColor(0, 64, 64, backgroundAlpha);
 			}
-			else if ( minimap[y][x] == 0 )
+			else
 			{
-				// unknown / no floor
-				color = makeColor(0, 64, 64, backgroundAlpha);
-			}
-			else if ( minimap[y][x] == 1 )
-			{
-				// walkable space
-				color = makeColor(0, 128, 128, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 2 )
-			{
-				// wall
-				color = makeColor(0, 255, 255, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 3 )
-			{
-				// mapped but undiscovered walkable ground
-				color = makeColor(64, 64, 64, foregroundAlpha);
-			}
-			else if ( minimap[y][x] == 4 )
-			{
-				// mapped but undiscovered wall
-				color = makeColor(128, 128, 128, foregroundAlpha);
+				Sint8 mapIndex = minimap[y][x];
+				if ( foundCustomWall != customWalls.end() )
+				{
+					if ( mapIndex == 1 ) { mapIndex = 2; } // force walkable to wall
+					else if ( mapIndex == 3 ) { mapIndex = 4; } // force undiscovered walkable to wall
+				}
+
+				if ( mapIndex == 0 )
+				{
+					// unknown / no floor
+					color = makeColor(0, 64, 64, backgroundAlpha);
+				}
+				else if ( mapIndex == 1 )
+				{
+					// walkable space
+					color = makeColor(0, 128, 128, foregroundAlpha);
+				}
+				else if ( mapIndex == 2 )
+				{
+					// wall
+					color = makeColor(0, 255, 255, foregroundAlpha);
+				}
+				else if ( mapIndex == 3 )
+				{
+					// mapped but undiscovered walkable ground
+					color = makeColor(64, 64, 64, foregroundAlpha);
+				}
+				else if ( mapIndex == 4 )
+				{
+					// mapped but undiscovered wall
+					color = makeColor(128, 128, 128, foregroundAlpha);
+				}
 			}
 			putPixel(minimapSurface, x - xmin, y - ymin, color);
 		}
@@ -268,9 +341,8 @@ void drawMinimap(const int player, SDL_Rect rect)
 	};
 
 	// draw special points of interest (exits, items, revealed monsters, etc)
-	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	for ( auto entity : entityPointsOfInterest )
 	{
-		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
 			|| entity->behavior == &actCustomPortal )   // ladder or portal models
 		{
@@ -290,72 +362,168 @@ void drawMinimap(const int player, SDL_Rect rect)
 		}
 		else
 		{
-			if ( entity->skill[28] > 0 ) // mechanism
-			{
-				if ( entity->behavior == &actCustomPortal
-					|| entity->behavior == &actTextSource
-					|| entity->behavior == &actFloorDecoration )
-				{
-					continue;
-				}
-			}
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
-				if ( (players[player] && players[player]->entity
-					&& players[player]->entity->creatureShadowTaggedThisUid == entity->getUID())
-					|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
 				{
-					warningEffect = true;
-					int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-					int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
-				}
-				if ( !warningEffect
-					&& ((stats[player]->ring && stats[player]->ring->type == RING_WARNING)
-						|| (entity->entityShowOnMap > 0)) )
-				{
-					int beatitude = 0;
-					if ( stats[player]->ring && stats[player]->ring->type == RING_WARNING )
+					if ( drawingSharedMap )
 					{
-						beatitude = stats[player]->ring->beatitude;
-						// invert for succ/incubus
-						if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[player]) )
+						for ( int i = 0; i < MAXPLAYERS; ++i )
 						{
-							beatitude = abs(stats[player]->ring->beatitude);
+							if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+							if ( (players[i] && players[i]->entity
+								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
+								|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+							{
+								warningEffect = true;
+								int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+								int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+								drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
+								break;
+							}
+						}
+					}
+					else
+					{
+						const int i = player;
+						if ( (players[i] && players[i]->entity
+							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
+							|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+						{
+							warningEffect = true;
+							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+							int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+							drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 191, 191, 255));
 						}
 					}
 
-					bool doEffect = false;
-					if ( entity->entityShowOnMap > 0 )
+					if ( !warningEffect )
 					{
-						doEffect = true;
-					}
-					else if ( stats[player]->ring && players[player] && players[player]->entity
-						&& entityDist(players[player]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
-					{
-						doEffect = true;
-					}
-					if ( doEffect )
-					{
-						int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-						int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
-						warningEffect = true;
-					}
-				}
-				if ( !warningEffect && stats[player]->shoes != NULL )
-				{
-					if ( stats[player]->shoes->type == ARTIFACT_BOOTS )
-					{
-						if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
-							&& players[player] && players[player]->entity
-							&& entityDist(players[player]->entity, entity) < 16.0 * 20 )
+						if ( drawingSharedMap )
 						{
-							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
-							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
-							int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-							drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+								if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
+									|| (entity->entityShowOnMap > 0) )
+								{
+									int beatitude = 0;
+									if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
+									{
+										beatitude = stats[i]->ring->beatitude;
+										// invert for succ/incubus
+										if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[i]) )
+										{
+											beatitude = abs(stats[i]->ring->beatitude);
+										}
+									}
+
+									bool doEffect = false;
+									if ( entity->entityShowOnMap > 0 )
+									{
+										doEffect = true;
+									}
+									else if ( stats[i]->ring && players[i] && players[i]->entity
+										&& entityDist(players[i]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
+									{
+										doEffect = true;
+									}
+									if ( doEffect )
+									{
+										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										warningEffect = true;
+										break;
+									}
+								}
+							}
+						}
+						else
+						{
+							const int i = player;
+							if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
+									|| (entity->entityShowOnMap > 0) )
+							{
+								int beatitude = 0;
+								if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
+								{
+									beatitude = stats[i]->ring->beatitude;
+									// invert for succ/incubus
+									if ( beatitude < 0 && shouldInvertEquipmentBeatitude(stats[i]) )
+									{
+										beatitude = abs(stats[i]->ring->beatitude);
+									}
+								}
+
+								bool doEffect = false;
+								if ( entity->entityShowOnMap > 0 )
+								{
+									doEffect = true;
+								}
+								else if ( stats[i]->ring && players[i] && players[i]->entity
+									&& entityDist(players[i]->entity, entity) < 16.0 * std::max(3, (11 + 5 * beatitude)) )
+								{
+									doEffect = true;
+								}
+								if ( doEffect )
+								{
+									int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+									int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+									drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+									warningEffect = true;
+								}
+							}
+						}
+					}
+					if ( !warningEffect )
+					{
+						if ( drawingSharedMap )
+						{
+							for ( int i = 0; i < MAXPLAYERS; ++i )
+							{
+								if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
+
+								if ( stats[i]->shoes != NULL )
+								{
+									if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+									{
+										if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
+											&& players[i] && players[i]->entity
+											&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
+										{
+											entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+											int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+											int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+											warningEffect = true;
+											break;
+										}
+									}
+								}
+							}
+						}
+						else
+						{
+							const int i = player;
+							if ( stats[i]->shoes != NULL )
+							{
+								if ( stats[i]->shoes->type == ARTIFACT_BOOTS )
+								{
+									if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
+										&& players[i] && players[i]->entity
+										&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
+									{
+										entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										warningEffect = true;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -398,12 +566,6 @@ void drawMinimap(const int player, SDL_Rect rect)
 					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
 				}
 			}
-		}
-		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
-		{
-			// only decrease the entities' shown duration when the global game timer passes a tick
-			// (drawMinimap doesn't follow game tick intervals)
-			--entity->entityShowOnMap;
 		}
 	}
 
@@ -580,7 +742,7 @@ void drawMinimap(const int player, SDL_Rect rect)
 					color_edge = uint32ColorBlack;
 					if ( !splitscreen )
 					{
-						if (!players[player] || !players[player]->entity) {
+						if (!players[player] /*|| !players[player]->entity*/) {
 							continue;
 						}
 					}

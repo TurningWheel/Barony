@@ -554,6 +554,12 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				DebugStats.gui2 = DebugStats.gui2 + ms;
 			}
 			lastGeneratePathTries = 0;
+			if ( my->behavior == &actMonster
+				&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
+					|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
+			{
+				monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+			}
 			return NULL;
 		}
 		if ( my->behavior == &actMonster )
@@ -572,6 +578,12 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 						DebugStats.gui2 = DebugStats.gui2 + ms;
 					}
 					lastGeneratePathTries = 0;
+					if ( my->behavior == &actMonster
+						&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
+							|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
+					{
+						monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+					}
 					return NULL;
 				}
 			}
@@ -704,13 +716,23 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	int tries = 0;
 	int maxtries = *cvar_pathlimit;
 	static ConsoleVariable<int> cvar_pathlimit_idlewalk("/pathlimit_idlewalk", 40);
+	static ConsoleVariable<int> cvar_pathlimit_allyfollow("/pathlimit_allyfollow", 200);
+	static ConsoleVariable<int> cvar_pathlimit_commandmove("/pathlimit_commandmove", 1000);
 	if ( pathingType == GeneratePathTypes::GENERATE_PATH_IDLE_WALK
 		|| pathingType == GeneratePathTypes::GENERATE_PATH_MOVEASIDE
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW
-		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2
 		|| pathingType == GeneratePathTypes::GENERATE_PATH_MONSTER_MOVE_BACKWARDS )
 	{
 		maxtries = *cvar_pathlimit_idlewalk;
+	}
+	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2	)
+	{
+		maxtries = *cvar_pathlimit_allyfollow;
+	}
+	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO
+		|| pathingType == GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE )
+	{
+		maxtries = *cvar_pathlimit_commandmove;
 	}
 	while ( openList->first != NULL 
 		&& ((tries < maxtries && !playerCheckPathToExit && !loading)
@@ -765,6 +787,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				messagePlayer(0, MESSAGE_DEBUG, "PASS (%d): path tries: %d", (int)pathingType, tries);
 			}
 			lastGeneratePathTries = tries;
+			if ( my->behavior == &actMonster )
+			{
+				monsterAllyFormations.updateOnPathSucceed(my->getUID(), my);
+			}
 			return path;
 		}
 
@@ -860,13 +886,17 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 					}
 					if ( alreadyadded == false )
 					{
-						/*if ( keystatus[SDLK_g] )
+						/*if ( enableDebugKeys && *cvar_pathing_debug 
+							&& keystatus[SDLK_g] )
 						{
 							Entity* particle = spawnMagicParticle(my);
 							particle->sprite = 576;
 							particle->x = (pathnode->x + x) * 16.0 + 8.0;
 							particle->y = (pathnode->y + y) * 16.0 + 8.0;
 							particle->z = 0;
+							particle->scalex = 2.0;
+							particle->scaley = 2.0;
+							particle->scalez = 2.0;
 						}*/
 						if ( list_Size(openList) >= 1000 )
 						{
@@ -884,6 +914,12 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 								messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d): path tries: %d", (int)pathingType, tries);
 							}
 							lastGeneratePathTries = tries;
+							if ( my->behavior == &actMonster
+								&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
+									|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
+							{
+								monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+							}
 							return NULL;
 						}
 						childnode = newPathnode(openList, pathnode->x + x, pathnode->y + y, pathnode, 1);
@@ -919,6 +955,12 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			tries, x1, y1, x2, y2);
 	}
 	lastGeneratePathTries = tries;
+	if ( my->behavior == &actMonster
+		&& (pathingType == GENERATE_PATH_ALLY_FOLLOW
+			|| pathingType == GENERATE_PATH_ALLY_FOLLOW2) )
+	{
+		monsterAllyFormations.updateOnPathFail(my->getUID(), my);
+	}
 	return NULL;
 }
 
