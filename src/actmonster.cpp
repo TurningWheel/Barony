@@ -3798,7 +3798,7 @@ void actMonster(Entity* my)
 					}
 				}
 			}
-			else if ( leader->behavior == &actMonster )
+			else if ( leader && leader->behavior == &actMonster )
 			{
 				monsterAllyFormations.updateFormation(myStats->leader_uid, my->getUID());
 				monsterAllyFormations.updateFormation(myStats->leader_uid);
