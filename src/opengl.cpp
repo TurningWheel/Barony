@@ -551,6 +551,11 @@ void glBeginCamera(view_t* camera)
     glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
     loadLightmapTexture();
     voxelShader.unbind();
+    
+    voxelShaderBright.bind();
+    glUniformMatrix4fv(voxelShaderBright.uniform("uProj"), 1, false, (float*)&proj);
+    glUniformMatrix4fv(voxelShaderBright.uniform("uView"), 1, false, (float*)&view);
+    voxelShaderBright.unbind();
 }
 
 void glEndCamera(view_t* camera)
@@ -828,8 +833,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)scale_mat(&m, &t, &v); t = m;
         
         // upload shader variables
-        voxelShader.bind();
-        glUniformMatrix4fv(voxelShader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+        auto& shader = entity->flags[BRIGHT] ?
+            voxelShaderBright : voxelShader;
+        shader.bind();
+        glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
         if (mode == REALCOLORS) {
             mat4x4_t remap(1.f);
             if (doGrayScale) {
@@ -877,15 +884,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
                 HSVtoRGB(&remap.z, &hsv); // blue
             }
 #endif
-            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&remap);
+            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap);
             
             const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-            glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
-            if (entity->flags[BRIGHT]) {
-                glUniform1i(voxelShader.uniform("uUseLightmap"), 0);
-            } else {
-                glUniform1i(voxelShader.uniform("uUseLightmap"), 1);
-            }
+            glUniform4fv(shader.uniform("uLightColor"), 1, light);
             
             if (highlightEntity) {
                 if (!highlightEntityFromParent) {
@@ -900,17 +902,17 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
                     static_cast<GLfloat>((highlight - 0.5) * .1),
                     static_cast<GLfloat>((highlight - 0.5) * .1),
                     0.f };
-                glUniform4fv(voxelShader.uniform("uColorAdd"), 1, ambient);
+                glUniform4fv(shader.uniform("uColorAdd"), 1, ambient);
             } else {
                 constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-                glUniform4fv(voxelShader.uniform("uColorAdd"), 1, add);
+                glUniform4fv(shader.uniform("uColorAdd"), 1, add);
             }
         } else {
             mat4x4_t empty(0.f);
-            glUniformMatrix4fv(voxelShader.uniform("uColorRemap"), 1, false, (float*)&empty);
+            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
             
             constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-            glUniform4fv(voxelShader.uniform("uLightColor"), 1, light);
+            glUniform4fv(shader.uniform("uLightColor"), 1, light);
             
             GLfloat uidcolors[4];
             Uint32 uid = entity->getUID();
@@ -918,7 +920,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
             uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
             uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-            glUniform4fv(voxelShader.uniform("uColorAdd"), 1, uidcolors);
+            glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors);
         }
         
         // draw
@@ -939,7 +941,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         glDisableVertexAttribArray(1);
         
         //glEnable(GL_DEPTH_TEST);
-        voxelShader.unbind();
+        shader.unbind();
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);

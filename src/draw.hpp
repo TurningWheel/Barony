@@ -187,6 +187,7 @@ struct framebuffer {
 
 extern framebuffer main_framebuffer;
 extern Shader voxelShader;
+extern Shader voxelShaderBright;
 extern TempTexture* lightmapTexture;
 
 void createCommonDrawResources();
