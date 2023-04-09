@@ -2060,41 +2060,47 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #endif
 
 		// create new lightmap
-		if ( lightmap != NULL )
-		{
+		if ( lightmap ) {
 			free(lightmap);
 		}
-		if ( lightmapSmoothed )
-		{
+		if ( lightmapSmoothed ) {
 			free(lightmapSmoothed);
 		}
 
-		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
-		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (destmap->width + 2) * (destmap->height + 2));
+		lightmap = (vec4_t*) malloc(sizeof(vec4_t) * destmap->width * destmap->height);
+		lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (destmap->width + 2) * (destmap->height + 2));
 		if ( strncmp(map.name, "Hell", 4) )
 		{
-	        memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
-	        memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	        memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
+	        memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
 		}
 		else
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				lightmap[c] = 32;
+				lightmap[c].x = 32.f;
+                lightmap[c].y = 32.f;
+                lightmap[c].z = 32.f;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
-					lightmap[c] = *cvar_hell_ambience;
+					lightmap[c].x = *cvar_hell_ambience;
+                    lightmap[c].y = *cvar_hell_ambience;
+                    lightmap[c].z = *cvar_hell_ambience;
 				}
 #endif
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
-				lightmapSmoothed[c] = 32;
+				lightmapSmoothed[c].x = 32.f;
+                lightmapSmoothed[c].y = 32.f;
+                lightmapSmoothed[c].z = 32.f;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
-					lightmapSmoothed[c] = *cvar_hell_ambience;
+					lightmapSmoothed[c].x = *cvar_hell_ambience;
+                    lightmapSmoothed[c].y = *cvar_hell_ambience;
+                    lightmapSmoothed[c].z = *cvar_hell_ambience;
 				}
 #endif
 			}

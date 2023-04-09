@@ -6713,7 +6713,7 @@ int main(int argc, char** argv)
 							menucam.winy = 0;
 							menucam.winw = xres;
 							menucam.winh = yres;
-							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
 							occlusionCulling(map, menucam);
 							glBeginCamera(&menucam);
 							glDrawWorld(&menucam, REALCOLORS);

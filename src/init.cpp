@@ -2278,12 +2278,10 @@ int deinitApp()
 			cameras[i].vismap = nullptr;
 		}
 	}
-	if ( lightmap != nullptr )
-	{
+	if ( lightmap ) {
 		free(lightmap);
 	}
-	if ( lightmapSmoothed )
-	{
+	if ( lightmapSmoothed ) {
 		free(lightmapSmoothed);
 	}
 

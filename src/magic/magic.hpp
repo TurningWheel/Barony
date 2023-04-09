@@ -514,7 +514,6 @@ void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
-void createParticle1(Entity* caster, int player);
 void createParticleCircling(Entity* parent, int duration, int sprite);
 void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);

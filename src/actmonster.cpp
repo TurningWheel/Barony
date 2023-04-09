@@ -1952,7 +1952,7 @@ void actMonster(Entity* my)
 	my->removeLightField();
 	if ( my->flags[BURNING] )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 140);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, makeColorRGB(140, 70, 0));
 	}
 
 	// this is mostly a SERVER function.

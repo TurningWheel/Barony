@@ -193,6 +193,52 @@ extern bool autoLimbReload;
 
 #define PI 3.14159265358979323846
 
+typedef struct vec4 {
+    vec4(float f):
+        x(f),
+        y(f),
+        z(f),
+        w(f)
+    {}
+    vec4(float _x, float _y, float _z, float _w):
+        x(_x),
+        y(_y),
+        z(_z),
+        w(_w)
+    {}
+    vec4() = default;
+    float x;
+    float y;
+    float z;
+    float w;
+} vec4_t;
+
+typedef struct mat4x4 {
+    mat4x4(float f):
+        x(f, 0.f, 0.f, 0.f),
+        y(0.f, f, 0.f, 0.f),
+        z(0.f, 0.f, f, 0.f),
+        w(0.f, 0.f, 0.f, f)
+    {}
+    mat4x4(
+        float xx, float xy, float xz, float xw,
+        float yx, float yy, float yz, float yw,
+        float zx, float zy, float zz, float zw,
+        float wx, float wy, float wz, float ww):
+        x(xx, xy, xz, xw),
+        y(yx, yy, yz, yw),
+        z(zx, zy, zz, zw),
+        w(wx, wy, wz, ww)
+    {}
+    mat4x4():
+        mat4x4(1.f)
+    {}
+    vec4_t x;
+    vec4_t y;
+    vec4_t z;
+    vec4_t w;
+} mat4x4_t;
+
 extern FILE* logfile;
 extern SDL_bool EnableMouseCapture; // can disable this in main.cpp if mouse capture is causing problems with debugging on Linux
 extern bool& enableDebugKeys; // if true, certain special keys can be used for debugging
@@ -630,8 +676,8 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern Sint32* lightmap;
-extern Sint32* lightmapSmoothed;
+extern vec4_t* lightmap;
+extern vec4_t* lightmapSmoothed;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;

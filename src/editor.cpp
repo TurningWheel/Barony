@@ -1644,10 +1644,10 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	lightmap = (int*)malloc(sizeof(Sint32) * map.width * map.height);
-	lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (map.width + 2) * (map.height + 2));
-	memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
-	memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	lightmap = (vec4_t*)malloc(sizeof(vec4_t) * map.width * map.height);
+	lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+	memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
+	memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
 
 	// initialize camera position
 	camera.x = 4;
@@ -2436,7 +2436,7 @@ int main(int argc, char** argv)
 				camera.winy = 16;
 				camera.winw = xres - 128;
 				camera.winh = yres - 32;
-				light = lightSphere(camera.x, camera.y, 16, 255);
+				light = lightSphere(camera.x, camera.y, 16, 0xffffffff);
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;

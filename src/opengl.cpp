@@ -35,52 +35,6 @@ static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdoub
 	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
 }
 
-typedef struct vec4 {
-	vec4(float f):
-		x(f),
-		y(f),
-		z(f),
-		w(f)
-	{}
-	vec4(float _x, float _y, float _z, float _w):
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{}
-	vec4() = default;
-	float x;
-	float y;
-	float z;
-	float w;
-} vec4_t;
-
-typedef struct mat4x4 {
-	mat4x4(float f):
-		x(f, 0.f, 0.f, 0.f),
-		y(0.f, f, 0.f, 0.f),
-		z(0.f, 0.f, f, 0.f),
-		w(0.f, 0.f, 0.f, f)
-	{}
-	mat4x4(
-		float xx, float xy, float xz, float xw,
-		float yx, float yy, float yz, float yw,
-		float zx, float zy, float zz, float zw,
-		float wx, float wy, float wz, float ww):
-		x(xx, xy, xz, xw),
-		y(yx, yy, yz, yw),
-		z(zx, zy, zz, zw),
-		w(wx, wy, wz, ww)
-	{}
-	mat4x4():
-		mat4x4(1.f)
-	{}
-	vec4_t x;
-	vec4_t y;
-	vec4_t z;
-	vec4_t w;
-} mat4x4_t;
-
 vec4_t vec4_copy(const vec4_t* v) {
 	return vec4_t(v->x, v->y, v->z, v->w);
 }
@@ -469,8 +423,10 @@ real_t getLightForEntity(real_t x, real_t y)
 	}
 	int u = x;
 	int v = y;
-	constexpr real_t div = 1.0 / 255.0;
-	return std::min(std::max(0, lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)]), 255) * div;
+	constexpr float div = 1.f / 255.f;
+    const auto& l = lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)];
+    const auto light = (l.x + l.y + l.z) / 3.f;
+	return std::min(std::max(0.f, light), 255.f) * div;
 }
 
 /*-------------------------------------------------------------------------------
@@ -498,8 +454,11 @@ static void loadLightmapTexture() {
     SDL_LockSurface(lightmapSurface);
     for (int x = 0, index = 0; x < map.width; ++x) {
         for (int y = 0; y < map.height; ++y, ++index) {
-            const auto light = getLightForEntity(x, y);
-            const Uint32 color = makeColorRGB(light * 255, light * 255, light * 255);
+            const auto& l = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+            const auto r = std::min(std::max(0.f, l.x), 255.f);
+            const auto g = std::min(std::max(0.f, l.y), 255.f);
+            const auto b = std::min(std::max(0.f, l.z), 255.f);
+            const Uint32 color = makeColorRGB(r, g, b);
             putPixel(lightmapSurface, x, y, color);
         }
     }
@@ -1024,8 +983,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 		return false;
 	}
 
-	real_t s = 1;
-
 	// assign texture
 	TempTexture* tex = enemybar->worldTexture;
 	if (!doVisibilityCheckOnly)
@@ -1234,9 +1191,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	{
 		return;
 	}
-	real_t s = 1;
-
-	int player = dialogue->player;
 
 	// assign texture
 	TempTexture* tex = nullptr;
@@ -1870,7 +1824,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 -------------------------------------------------------------------------------*/
 
-static real_t getLightAt(const int x, const int y)
+static vec4_t getLightAt(const int x, const int y)
 {
 #if !defined(EDITOR) && !defined(NDEBUG)
     static ConsoleVariable<bool> cvar("/fullbright", false);
@@ -1881,16 +1835,19 @@ static real_t getLightAt(const int x, const int y)
 #endif
 	const int index = (y + 1) + (x + 1) * (map.height + 2);
 
-	real_t l = 0.0;
-	l += lightmapSmoothed[index - 1 - (map.height + 2)];
-	l += lightmapSmoothed[index - (map.height + 2)];
-	l += lightmapSmoothed[index - 1];
-	l += lightmapSmoothed[index];
-	l *= getLightAtModifier;
-	l += getLightAtAdder;
-	real_t div = 1.0 / (255.0 * 4.0);
-	l = std::min(std::max(0.0, l * div), 1.0);
-
+	vec4_t l(0.f), r(0.f);
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1 - (map.height + 2)]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - (map.height + 2)]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index]); l = r;
+    (void)pow_vec4(&r, &l, getLightAtModifier); l = r;
+    static const vec4_t added(getLightAtAdder);
+    (void)add_vec4(&r, &l, &added); l = r;
+	float div = 1.f / (255.f * 4.f);
+	l.x = std::min(std::max(0.f, l.x * div), 1.f);
+    l.y = std::min(std::max(0.f, l.y * div), 1.f);
+    l.z = std::min(std::max(0.f, l.z * div), 1.f);
+    l.w = std::min(std::max(0.f, l.w * div), 1.f);
 	return l;
 }
 
@@ -1906,11 +1863,6 @@ static real_t getLightAt(const int x, const int y)
 
 void glDrawWorld(view_t* camera, int mode)
 {
-	real_t s;
-	bool clouds = false;
-	int cloudtile = 0;
-	int mapceilingtile = 50;
-    
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_skipDrawWorld("/skipdrawworld", false);
     if (*cvar_skipDrawWorld) {
@@ -1927,6 +1879,8 @@ void glDrawWorld(view_t* camera, int mode)
 	    getLightAtModifier = 1.0;
 	}
 
+    bool clouds = false;
+    int cloudtile = 0;
 	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
 	{
 		clouds = true;
@@ -1951,32 +1905,31 @@ void glDrawWorld(view_t* camera, int mode)
 	            smoothindex += 2;
 	            v = 0;
 	        }
-	        const int difference = abs(lightmapSmoothed[smoothindex] - lightmap[index]);
+            
 #ifndef EDITOR
 	        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
 	        int smoothingRate = *cvar_smoothingRate;
 #else
             int smoothingRate = 1;
 #endif
-	        if ( difference > 64 )
-	        {
-		        smoothingRate *= 4;
-	        }
-	        else if ( difference > 32 )
-	        {
-		        smoothingRate *= 2;
-	        }
-	        if ( lightmapSmoothed[smoothindex] < lightmap[index] )
-	        {
-		        lightmapSmoothed[smoothindex] = std::min(lightmap[index], lightmapSmoothed[smoothindex] + smoothingRate);
-	        }
-	        else if ( lightmapSmoothed[smoothindex] > lightmap[index] )
-	        {
-		        lightmapSmoothed[smoothindex] = std::max(lightmap[index], lightmapSmoothed[smoothindex] - smoothingRate);
-	        }
+            smoothingRate *= 4;
+            
+            auto& d = lightmapSmoothed[smoothindex];
+            const auto& s = lightmap[index];
+            for (int c = 0; c < 4; ++c) {
+                auto& dc = *(&d.x + c);
+                const auto& sc = *(&s.x + c);
+                if (dc < sc) {
+                    dc = std::min(sc, dc + smoothingRate);
+                }
+                else if (dc > sc) {
+                    dc = std::max(sc, dc - smoothingRate);
+                }
+            }
 	    }
 	}
 
+    int mapceilingtile = 50;
 	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
 	{
 		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
@@ -2151,14 +2104,14 @@ void glDrawWorld(view_t* camera, int mode)
 							//glBegin( GL_QUADS );
 							if ( z )
 							{
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x + 1, y + 1);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
 								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 1);
 								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
 								glTexCoord2f(1, 0);
@@ -2166,18 +2119,18 @@ void glDrawWorld(view_t* camera, int mode)
 							}
 							else
 							{
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
+                                auto s = getLightAt(x + 1, y + 1);
+                                glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
 								glColor3f(0, 0, 0);
 								glTexCoord2f(0, 2);
 								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-								s = getLightAt(x + 1, y);
+                                s = getLightAt(x + 1, y);
 								glColor3f(0, 0, 0);
 								glTexCoord2f(1, 2);
 								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-								glColor3f(s, s, s);
+                                glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
 							}
@@ -2211,14 +2164,14 @@ void glDrawWorld(view_t* camera, int mode)
 							//glBegin( GL_QUADS );
 							if ( z )
 							{
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x, y + 1);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
 								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 1);
 								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
 								glTexCoord2f(1, 0);
@@ -2226,8 +2179,8 @@ void glDrawWorld(view_t* camera, int mode)
 							}
 							else
 							{
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x, y + 1);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
 								glColor3f(0, 0, 0);
@@ -2237,7 +2190,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glColor3f(0, 0, 0);
 								glTexCoord2f(1, 2);
 								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
 							}
@@ -2271,14 +2224,14 @@ void glDrawWorld(view_t* camera, int mode)
 							//glBegin( GL_QUADS );
 							if ( z )
 							{
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x, y);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
 								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 1);
 								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
 								glTexCoord2f(1, 0);
@@ -2286,8 +2239,8 @@ void glDrawWorld(view_t* camera, int mode)
 							}
 							else
 							{
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x, y);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
 								glColor3f(0, 0, 0);
@@ -2297,7 +2250,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glColor3f(0, 0, 0);
 								glTexCoord2f(1, 2);
 								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
 							}
@@ -2331,14 +2284,14 @@ void glDrawWorld(view_t* camera, int mode)
 							//glBegin( GL_QUADS );
 							if ( z )
 							{
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x + 1, y);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
 								s = getLightAt(x, y);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 1);
 								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
 								glTexCoord2f(1, 0);
@@ -2346,8 +2299,8 @@ void glDrawWorld(view_t* camera, int mode)
 							}
 							else
 							{
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
+								auto s = getLightAt(x + 1, y);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
 								glColor3f(0, 0, 0);
@@ -2357,7 +2310,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glColor3f(0, 0, 0);
 								glTexCoord2f(1, 2);
 								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-								glColor3f(s, s, s);
+								glColor3f(s.x, s.y, s.z);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
 							}
@@ -2455,20 +2408,20 @@ void glDrawWorld(view_t* camera, int mode)
 						if ( !map.tiles[index + 1] )
 						{
 							//glBegin( GL_QUADS );
-							s = getLightAt(x, y);
-							glColor3f(s, s, s);
+							auto s = getLightAt(x, y);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(0, 0);
 							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
 							s = getLightAt(x, y + 1);
-							glColor3f(s, s, s);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(0, 1);
 							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
 							s = getLightAt(x + 1, y + 1);
-							glColor3f(s, s, s);
+							glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(1, 1);
 							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
 							s = getLightAt(x + 1, y);
-							glColor3f(s, s, s);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(1, 0);
 							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
 							//glEnd();
@@ -2481,20 +2434,20 @@ void glDrawWorld(view_t* camera, int mode)
 						if ( !map.tiles[index - 1] )
 						{
 							//glBegin( GL_QUADS );
-							s = getLightAt(x, y);
-							glColor3f(s, s, s);
+							auto s = getLightAt(x, y);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(0, 0);
 							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
 							s = getLightAt(x + 1, y);
-							glColor3f(s, s, s);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(1, 0);
 							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
 							s = getLightAt(x + 1, y + 1);
-							glColor3f(s, s, s);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(1, 1);
 							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
 							s = getLightAt(x, y + 1);
-							glColor3f(s, s, s);
+                            glColor3f(s.x, s.y, s.z);
 							glTexCoord2f(0, 1);
 							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
 							//glEnd();

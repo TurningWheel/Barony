@@ -1617,7 +1617,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         const int mh;
         const view_t camera;
         const Sint32* tiles;
-        const Sint32* lights;
+        const vec4_t* lights;
         Sint8 (*minimap)[MINIMAP_MAX_DIMENSION];
     };
     auto shoot_ray = [](const ins_t&& ins) -> std::vector<outs_t>{
@@ -1710,11 +1710,12 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]) {
                             continue;
                         }
-                        const Uint8 light = std::min(std::max(0, lights[iny2 + inx2 * mh]), 255);
+                        auto& l = lights[iny2 + inx2 * mh];
+                        const auto light = std::max({0.f, l.x, l.y, l.z});
                         
                         // update minimap
                         if (d < 16 && z == OBSTACLELAYER) {
-                            if (light > 0) {
+                            if (light > 1.f) {
                                 // wall space
                                 if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 2});
@@ -1725,9 +1726,10 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         }
                     } else if (z == OBSTACLELAYER) {
                         // update minimap to show empty region
-                        const Uint8 light = std::min(std::max(0, lights[iny + inx * mh]), 255);
+                        auto& l = lights[iny2 + inx2 * mh];
+                        const auto light = std::max({0.f, l.x, l.y, l.z});
                         if (d < 16) {
-                            if (light > 0 && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            if (light > 1.f && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 1});

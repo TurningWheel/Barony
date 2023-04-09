@@ -78,7 +78,7 @@ void actTorch(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(192, 192, 192));
 		TORCH_LIGHTING = 1;
 	}
 	if ( flickerLights )
@@ -93,12 +93,12 @@ void actTorch(Entity* my)
 		if (TORCH_LIGHTING == 1)
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(192, 192, 192));
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(184, 184, 184));
 		}
 		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
@@ -229,7 +229,7 @@ void actCrystalShard(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(96, 128, 128));
 		TORCH_LIGHTING = 1;
 	}
 
@@ -245,12 +245,12 @@ void actCrystalShard(Entity* my)
 		if ( TORCH_LIGHTING == 1 )
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(96, 128, 128));
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 112);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(88, 120, 120));
 		}
 		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
@@ -352,7 +352,8 @@ void Entity::actLightSource()
 		// lighting
 		if ( !LIGHTSOURCE_LIGHT )
 		{
-			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+            const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
+			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
 			LIGHTSOURCE_LIGHT = 1;
 		}
 		if ( lightSourceFlicker && flickerLights )
@@ -364,7 +365,8 @@ void Entity::actLightSource()
 			LIGHTSOURCE_LIGHT = 1;
 			if ( !light )
 			{
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+                const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
 			}
 		}
 
@@ -375,12 +377,15 @@ void Entity::actLightSource()
 			if ( LIGHTSOURCE_LIGHT == 1 )
 			{
 				removeLightField();
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+                const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
 			}
 			else
 			{
 				removeLightField();
-				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, std::max(lightSourceBrightness - 16, 0));
+                const auto brightness = std::max(lightSourceBrightness - 16, 0);
+                const auto color = makeColorRGB(brightness, brightness, brightness);
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
 			}
 			LIGHTSOURCE_FLICKER = 2 + local_rng.rand() % 7;
 		}

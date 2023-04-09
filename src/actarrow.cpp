@@ -86,10 +86,10 @@ void actArrow(Entity* my)
 	{
 		if ( ARROW_LIFE > 1 )
 		{
-			int intensity = 64;
+            Uint32 intensity = makeColorRGB(64, 48, 4);
 			if ( abs(ARROW_VELX) < 0.01 && abs(ARROW_VELY) < 0.01 )
 			{
-				intensity = 192;
+				intensity = makeColorRGB(192, 128, 32);
 			}
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, intensity);
 			if ( flickerLights )
@@ -104,12 +104,14 @@ void actArrow(Entity* my)
 				if ( ARROW_LIGHTING == 1 )
 				{
 					my->removeLightField();
+                    intensity = makeColorRGB(192, 128, 32);
 					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, intensity);
 				}
 				else
 				{
 					my->removeLightField();
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, intensity - 16);
+                    intensity = makeColorRGB(192 - 16, 128 - 16, 32 - 16);
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, intensity);
 				}
 				ARROW_FLICKER = 0;
 			}

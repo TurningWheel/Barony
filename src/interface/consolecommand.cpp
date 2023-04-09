@@ -4518,6 +4518,22 @@ namespace ConsoleCommands {
 #endif
 	});
 
+    static ConsoleCommand ccmd_test_light("/test_light", "spawn a test light (r, g, b)", []CCMD{
+        const Uint8 r = argc >= 2 ? (Uint8)strtol(argv[1], nullptr, 10) : 255;
+        const Uint8 g = argc >= 3 ? (Uint8)strtol(argv[2], nullptr, 10) : 255;
+        const Uint8 b = argc >= 4 ? (Uint8)strtol(argv[3], nullptr, 10) : 255;
+        (void)lightSphereShadow(cameras[0].x, cameras[0].y, 4, makeColorRGB(r, g, b));
+    });
+
+    static ConsoleCommand ccmd_test_model("/test_model", "spawn an entity using a specific model", []CCMD{
+        auto sprite = argc >= 2 ? (int)strtol(argv[1], nullptr, 10) : 1;
+        auto entity = newEntity(sprite, 1, map.entities, nullptr);
+        entity->flags[PASSABLE] = true;
+        entity->x = cameras[0].x * 16;
+        entity->y = cameras[0].y * 16;
+        entity->z = cameras[0].z;
+    });
+
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{

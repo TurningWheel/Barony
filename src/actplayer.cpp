@@ -283,7 +283,7 @@ void actDeathCam(Entity* my)
 	}
 
 	my->removeLightField();
-	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
+	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(128, 128, 128));
 
 	real_t camx, camy, camz, camang, camvang;
 	camx = my->x / 16.f;
@@ -5051,11 +5051,15 @@ void actPlayer(Entity* my)
 
 	if ( my->flags[BURNING] )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), std::max(140, 50 + 15 * PLAYER_TORCH));
+        const auto brightness = std::max(140, 50 + 15 * PLAYER_TORCH);
+        const auto color = makeColorRGB(brightness, brightness * 0.9, brightness * 0.6);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), color);
 	}
 	else if ( PLAYER_TORCH && my->light == NULL )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
+        const auto brightness = 50 + 15 * PLAYER_TORCH;
+        const auto color = makeColorRGB(brightness, brightness, brightness);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, color);
 	}
 
 	// server controls players primarily

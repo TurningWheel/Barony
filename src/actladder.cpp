@@ -172,7 +172,7 @@ void actPortal(Entity* my)
 	{
 		my->createWorldUITooltip();
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 0, 255));
 		if ( !strncmp(map.name, "Cockatrice Lair", 15) )
 		{
 			my->flags[INVISIBLE] = true;
@@ -464,7 +464,7 @@ void actWinningPortal(Entity* my)
 	if ( !my->portalInit )
 	{
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 255, 255));
 	}
 
 	my->portalAmbience--;
@@ -685,7 +685,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 255, 255));
 	}
 
 	portalAmbience--;
@@ -885,7 +885,7 @@ void Entity::actMidGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(255, 0, 255));
 	}
 
 	portalAmbience--;
@@ -1255,7 +1255,7 @@ void actCustomPortal(Entity* my)
 		my->portalInit = 1;
 		if ( my->portalCustomSpriteAnimationFrames > 0 )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 0, 255));
 		}
 	}
 
