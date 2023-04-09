@@ -685,7 +685,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 255, 255));
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 192, 255));
 	}
 
 	portalAmbience--;
@@ -885,7 +885,7 @@ void Entity::actMidGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(255, 0, 255));
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 192, 255));
 	}
 
 	portalAmbience--;
