@@ -17678,9 +17678,9 @@ failed:
         
         // player num + level text
         char buf[16];
-        auto lvl = subframe->addField("player_lvl", 8);
+        auto lvl = subframe->addField("player_lvl", sizeof(buf));
         if (show_pnum) {
-            snprintf(buf, sizeof(buf), "P%d\nLVL%d", player + 1, info.players[player].stats.LVL);
+            snprintf(buf, sizeof(buf), "P%d\nLv%d", player + 1, info.players[player].stats.LVL);
             lvl->setTextColor(playerColor(player, colorblind, false));
             lvl->setOutlineColor(makeColorRGB(0, 0, 0));
         } else {
