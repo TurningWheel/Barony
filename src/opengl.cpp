@@ -201,8 +201,28 @@ mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     return result;
 }
 
-mat4x4_t* perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
-    const float h = tanf(fov / 360.f * (float)PI);
+mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(0.f);
+    result->x.x = 2.f / (right - left);
+    result->x.z = (right + left) / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->y.z = (top + bot) / (top - bot);
+    result->z.z = -(far + near) / (far - near);
+    result->z.w = -1.f;
+    result->w.z = -(2.f * far * near) / (far - near);
+    return result;
+}
+
+#define perspective fast_perspective
+
+mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
+    const float w = h * aspect;
+    return frustum(result, -w, w, -h, h, near, far);
+}
+
+mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
     const float w = h * aspect;
     
     *result = mat4x4(0.f);
