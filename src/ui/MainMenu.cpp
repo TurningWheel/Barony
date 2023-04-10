@@ -17684,7 +17684,7 @@ failed:
             lvl->setTextColor(playerColor(player, colorblind, false));
             lvl->setOutlineColor(makeColorRGB(0, 0, 0));
         } else {
-            snprintf(buf, sizeof(buf), "LVL%d", info.players[player].stats.LVL);
+            snprintf(buf, sizeof(buf), "Lv%d", info.players[player].stats.LVL);
             lvl->setTextColor(makeColorRGB(255, 255, 255));
             lvl->setOutlineColor(makeColorRGB(52, 32, 23));
         }
