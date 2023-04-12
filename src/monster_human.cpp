@@ -379,6 +379,39 @@ void initHuman(Entity* my, Stat* myStats)
 					my->monsterStoreType = (currentlevel / 5) * 3 + (local_rng.rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
 				}
 				myStats->EXP += 100 * my->monsterStoreType; // apply experience to level up the humans with floor depth.
+				while ( myStats->EXP >= 100 )
+				{
+					myStats->LVL++;
+					int increasestat[3] = { 0, 0, 0 };
+					Entity::monsterRollLevelUpStats(increasestat);
+					for ( int i = 0; i < 3; i++ )
+					{
+						switch ( increasestat[i] )
+						{
+						case STAT_STR:
+							myStats->STR++;
+							break;
+						case STAT_DEX:
+							myStats->DEX++;
+							break;
+						case STAT_CON:
+							myStats->CON++;
+							break;
+						case STAT_INT:
+							myStats->INT++;
+							break;
+						case STAT_PER:
+							myStats->PER++;
+							break;
+						case STAT_CHR:
+							myStats->CHR++;
+							break;
+						default:
+							break;
+						}
+					}
+					myStats->EXP -= 100;
+				}
 			}
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots

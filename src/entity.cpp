@@ -2737,6 +2737,22 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 	return hungerTickRate;
 }
 
+void Entity::monsterRollLevelUpStats(int increasestat[3])
+{
+	// monsters use this.
+	increasestat[0] = local_rng.rand() % 6;
+	int r = local_rng.rand() % 6;
+	while ( r == increasestat[0] ) {
+		r = local_rng.rand() % 6;
+	}
+	increasestat[1] = r;
+	r = local_rng.rand() % 6;
+	while ( r == increasestat[0] || r == increasestat[1] ) {
+		r = local_rng.rand() % 6;
+	}
+	increasestat[2] = r;
+}
+
 void Entity::handleEffects(Stat* myStats)
 {
 	int increasestat[3] = { 0, 0, 0 };
@@ -2956,17 +2972,7 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			// monsters use this.
-			increasestat[0] = local_rng.rand() % 6;
-			int r = local_rng.rand() % 6;
-			while ( r == increasestat[0] ) {
-				r = local_rng.rand() % 6;
-			}
-			increasestat[1] = r;
-			r = local_rng.rand() % 6;
-			while ( r == increasestat[0] || r == increasestat[1] ) {
-				r = local_rng.rand() % 6;
-			}
-			increasestat[2] = r;
+			Entity::monsterRollLevelUpStats(increasestat);
 
 			for ( i = 0; i < 3; i++ )
 			{
@@ -2989,6 +2995,8 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 					case STAT_CHR:
 						myStats->CHR++;
+						break;
+					default:
 						break;
 				}
 			}
