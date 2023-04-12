@@ -20329,22 +20329,17 @@ failed:
 		}
 
         // determine if we made highscore list
-	    int placement;
+        int placement = 1;
 	    score_t* score = scoreConstructor(player);
 	    Uint32 total = totalScore(score);
 	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
-	    if (list_Size(scoresPtr) < MAXTOPSCORES) {
-		    placement = list_Size(scoresPtr) + 1;
-	    } else {
-	        placement = 1;
-	        for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
-	            if (total > totalScore((score_t*)node->element)) {
-	                break;
-	            }
-	            ++placement;
-	        }
-	    }
-	    bool madetop = placement <= MAXTOPSCORES;
+        for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
+            if (total > totalScore((score_t*)node->element)) {
+                break;
+            }
+            ++placement;
+        }
+	    const bool madetop = placement <= MAXTOPSCORES;
 	    scoreDeconstructor((void*)score);
 
 		// identify all inventory items

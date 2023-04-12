@@ -301,10 +301,11 @@ int saveScore(int player)
 
     int c;
     node_t* node;
+    Uint32 total = totalScore(currentscore);
 	for ( c = 0, node = scoresPtr->first; node != NULL; node = node->next, c++ )
 	{
 		score_t* score = (score_t*)node->element;
-		if ( totalScore(score) <= totalScore(currentscore) )
+		if ( total > totalScore(score) )
 		{
 			node_t* newNode = list_AddNode(scoresPtr, c);
 			newNode->element = currentscore;
