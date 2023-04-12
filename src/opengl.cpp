@@ -643,7 +643,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 		glDisable(GL_BLEND);
 	}
 
-	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro)) {
+	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
+		|| modelindex == FOLLOWER_SELECTED_PARTICLE
+		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
 		glDepthRange(0, 0.1);
 	}
 

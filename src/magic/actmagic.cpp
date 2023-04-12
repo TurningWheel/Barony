@@ -5325,21 +5325,28 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 	return entity;
 }
 
-void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
+void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uint32 uid)
 {
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	//entity->sizex = 1;
 	//entity->sizey = 1;
 	entity->x = x;
 	entity->y = y;
-	entity->z = 7.5;
+	entity->z = 0;
 	entity->vel_z = -0.8;
 	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = 50;
+	entity->skill[1] = 0;
+	entity->parent = uid;
+	entity->fskill[1] = entity->z; // start z
 	entity->behavior = &actParticleFollowerCommand;
+	entity->scalex = 0.8;
+	entity->scaley = 0.8;
+	entity->scalez = 0.8;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5349,13 +5356,13 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 	// boosty boost
 	for ( int c = 0; c < 10; c++ )
 	{
-		entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+		entity = newEntity(174, 1, map.entities, nullptr); //Particle entity.
 		entity->x = x - 4 + local_rng.rand() % 9;
 		entity->y = y - 4 + local_rng.rand() % 9;
 		entity->z = z - 0 + local_rng.rand() % 11;
-		entity->scalex = 0.7;
-		entity->scaley = 0.7;
-		entity->scalez = 0.7;
+		entity->scalex = 0.5;
+		entity->scaley = 0.5;
+		entity->scalez = 0.5;
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
@@ -5374,6 +5381,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 
 }
 
+static ConsoleVariable<float> cvar_follower_particle_speed("/follower_particle_speed", 2.0);
 void actParticleFollowerCommand(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
@@ -5384,11 +5392,31 @@ void actParticleFollowerCommand(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
-		my->z += my->vel_z;
-		my->yaw += my->vel_z * 2;
-		if ( my->z < -3 )
+		if ( my->parent != 0 )
 		{
+			if ( Entity* parent = uidToEntity(my->parent) )
+			{
+				my->x = parent->x;
+				my->y = parent->y;
+			}
+		}
+		my->z += my->vel_z;
+		my->yaw += (std::min(my->vel_z * 2, -0.1)) / *cvar_follower_particle_speed;
+		if ( my->z < (my->fskill[1] - 3) )
+		{
+			my->skill[1] = 1;
 			my->vel_z *= 0.9;
+		}
+		if ( my->skill[1] != 0 && abs(my->vel_z) < 0.1 )
+		{
+			my->z += .1 * sin(my->fskill[0]);
+			my->fskill[0] += 1.0 * PI / 32;
+			/*if ( my->fskill[0] > PI / 2 )
+			{
+				my->scalex *= .9;
+				my->scaley *= .9;
+				my->scalez *= .9;
+			}*/
 		}
 	}
 }

@@ -9269,7 +9269,7 @@ void openMapWindow(int player) {
 			                if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 			                {
                                 if (!players[player]->usingCommand() && players[player]->bControlEnabled) {
-				                    createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
+				                    createParticleFollowerCommand(newPing.x, newPing.y, 0, FOLLOWER_TARGET_PARTICLE, 0);
 				                    followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
 				                    followerMenu.selectMoveTo = false;
 				                    followerMenu.moveToX = static_cast<int>(newPing.x);

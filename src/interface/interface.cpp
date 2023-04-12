@@ -4012,7 +4012,8 @@ void FollowerRadialMenu::selectNextFollower()
 			}
 			if ( recentEntity )
 			{
-				createParticleFollowerCommand(recentEntity->x, recentEntity->y, 0, 174);
+				createParticleFollowerCommand(recentEntity->x, recentEntity->y, 0, FOLLOWER_SELECTED_PARTICLE,
+					recentEntity->getUID());
 				playSound(139, 64);
 			}
 			return;
