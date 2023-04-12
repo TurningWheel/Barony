@@ -16413,6 +16413,24 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
+	Entity* leader = monsterAllyGetPlayerLeader();
+	if ( leader )
+	{
+		if ( monsterTarget != 0 )
+		{
+			if ( Entity* target = uidToEntity(monsterTarget) )
+			{
+				if ( target->behavior == &actMonster && target->monsterTarget == getUID() ) // my target is attacking me
+				{
+					if ( entityDist(this, target) < TOUCHRANGE )
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+	}
 
 	return true;
 }
