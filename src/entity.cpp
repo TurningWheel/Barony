@@ -16430,7 +16430,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 			{
 				if ( target->behavior == &actMonster && target->monsterTarget == getUID() ) // my target is attacking me
 				{
-					if ( entityDist(this, target) < TOUCHRANGE )
+					if ( entityDist(this, target) < TOUCHRANGE * 2 )
 					{
 						return true;
 					}
