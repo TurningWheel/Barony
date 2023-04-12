@@ -1126,13 +1126,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						playSoundEntity(caster, 167, 128);
 					}
 
-					if ( totalMetal > 0 )
+					int pickedUpMetal = 0;
+					while ( totalMetal > 0 )
 					{
-						Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, totalMetal, 0, true, nullptr);
+						int metal = std::min(totalMetal, SCRAP_MAX_STACK_QTY - 1);
+						totalMetal -= metal;
+						Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
 						if ( crafted )
 						{
 							Item* pickedUp = itemPickup(player, crafted);
-							messagePlayer(player, MESSAGE_INVENTORY, language[3665], totalMetal, items[pickedUp->type].getIdentifiedName());
+							pickedUpMetal += metal;
 							if ( i == 0 || players[i]->isLocalPlayer() ) // server/singleplayer
 							{
 								free(crafted); // if player != clientnum, then crafted == pickedUp
@@ -1143,13 +1146,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
-					if ( totalMagic > 0 )
+					if ( pickedUpMetal > 0 )
 					{
-						Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, totalMagic, 0, true, nullptr);
+						messagePlayer(player, MESSAGE_INVENTORY, language[3665], pickedUpMetal, items[TOOL_METAL_SCRAP].getIdentifiedName());
+					}
+					int pickedUpMagic = 0;
+					while ( totalMagic > 0 )
+					{
+						int magic = std::min(totalMagic, SCRAP_MAX_STACK_QTY - 1);
+						totalMagic -= magic;
+						Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
 						if ( crafted )
 						{
 							Item* pickedUp = itemPickup(player, crafted);
-							messagePlayer(player, MESSAGE_INVENTORY, language[3665], totalMagic, items[pickedUp->type].getIdentifiedName());
+							pickedUpMagic += magic;
 							if ( i == 0 || players[i]->isLocalPlayer() ) // server/singleplayer
 							{
 								free(crafted); // if player != clientnum, then crafted == pickedUp
@@ -1159,6 +1169,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								free(pickedUp);
 							}
 						}
+					}
+					if ( pickedUpMagic > 0 )
+					{
+						messagePlayer(player, MESSAGE_INVENTORY, language[3665], pickedUpMagic, items[TOOL_MAGIC_SCRAP].getIdentifiedName());
 					}
 					if ( !effectCoordinates.empty() )
 					{
@@ -1169,6 +1183,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					break;
 				}
 			}
 		}
