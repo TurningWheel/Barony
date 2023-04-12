@@ -816,14 +816,15 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
         (void)scale_mat(&m, &t, &v); t = m;
 
+        const bool useLightmap = mode == REALCOLORS && !entity->flags[BRIGHT];
 #ifndef EDITOR
 		static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
 		auto& shader = *cvar_testDithering ?
-			(entity->flags[BRIGHT] ? voxelBrightDitheredShader : voxelDitheredShader):
-			(entity->flags[BRIGHT] ? voxelBrightShader : voxelShader);
+			(useLightmap ? voxelDitheredShader : voxelBrightDitheredShader):
+			(useLightmap ? voxelShader : voxelBrightShader);
 #else
-		auto& shader = entity->flags[BRIGHT] ?
-			voxelBrightShader : voxelShader;
+		auto& shader = useLightmap ?
+			voxelShader : voxelBrightShader;
 #endif
 		shader.bind();
         
