@@ -5621,9 +5621,9 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && (!everybodyfriendly && !intro) && multiplayer != CLIENT )
+			if ( hit.entity && !intro && multiplayer != CLIENT )
 			{
-				if ( hit.entity->behavior == &actMonster )
+				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )
@@ -5672,9 +5672,9 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity )
+			if ( hit.entity && !intro )
 			{
-				if ( hit.entity->behavior == &actMonster )
+				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )
