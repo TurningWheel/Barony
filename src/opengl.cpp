@@ -458,11 +458,6 @@ real_t getLightForEntity(real_t x, real_t y)
 -------------------------------------------------------------------------------*/
 
 static void loadLightmapTexture() {
-    vec4_t mapDims;
-    mapDims.x = map.width;
-    mapDims.y = map.height;
-    glUniform1i(voxelShader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
-    glUniform2fv(voxelShader.uniform("uMapDims"), 1, (float*)&mapDims);
     glActiveTexture(GL_TEXTURE1);
     
     // allocate lightmap pixel data
@@ -495,6 +490,15 @@ static void loadLightmapTexture() {
     glActiveTexture(GL_TEXTURE0);
 }
 
+void voxelUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+	shader.bind();
+	if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
+	if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
+	if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
+	if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
+	shader.unbind();
+}
+
 void glBeginCamera(view_t* camera)
 {
 	// setup state
@@ -524,17 +528,18 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
     (void)translate_mat(&view, &view2, &translate); view2 = view;
+
+	// generate lightmap
+	vec4_t mapDims;
+	mapDims.x = map.width;
+	mapDims.y = map.height;
+	loadLightmapTexture();
     
-    voxelShader.bind();
-    glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, (float*)&proj);
-    glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
-    loadLightmapTexture();
-    voxelShader.unbind();
-    
-    voxelShaderBright.bind();
-    glUniformMatrix4fv(voxelShaderBright.uniform("uProj"), 1, false, (float*)&proj);
-    glUniformMatrix4fv(voxelShaderBright.uniform("uView"), 1, false, (float*)&view);
-    voxelShaderBright.unbind();
+	// upload uniforms
+	voxelUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+	voxelUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
+	voxelUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+	voxelUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
 }
 
 void glEndCamera(view_t* camera)
@@ -810,11 +815,19 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)translate_mat(&m, &t, &v); t = m;
         v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
         (void)scale_mat(&m, &t, &v); t = m;
+
+#ifndef EDITOR
+		static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
+		auto& shader = *cvar_testDithering ?
+			(entity->flags[BRIGHT] ? voxelBrightDitheredShader : voxelDitheredShader):
+			(entity->flags[BRIGHT] ? voxelBrightShader : voxelShader);
+#else
+		auto& shader = entity->flags[BRIGHT] ?
+			voxelBrightShader : voxelShader;
+#endif
+		shader.bind();
         
         // upload shader variables
-        auto& shader = entity->flags[BRIGHT] ?
-            voxelShaderBright : voxelShader;
-        shader.bind();
         glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
         if (mode == REALCOLORS) {
             mat4x4_t remap(1.f);

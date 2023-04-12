@@ -64,8 +64,22 @@ Mesh framebuffer::mesh{
 
 Shader framebuffer::shader;
 Shader voxelShader;
-Shader voxelShaderBright;
+Shader voxelBrightShader;
+Shader voxelDitheredShader;
+Shader voxelBrightDitheredShader;
 TempTexture* lightmapTexture;
+
+static void buildVoxelShader(Shader& shader,
+	const char* v, size_t size_v,
+	const char* f, size_t size_f)
+{
+	shader.init();
+	shader.compile(v, size_v, Shader::Type::Vertex);
+	shader.compile(f, size_f, Shader::Type::Fragment);
+	shader.bindAttribLocation("iPosition", 0);
+	shader.bindAttribLocation("iColor", 1);
+	shader.link();
+}
 
 void createCommonDrawResources() {
     // framebuffer shader:
@@ -137,6 +151,10 @@ void createCommonDrawResources() {
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
+
+	buildVoxelShader(voxelShader,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_fragment_glsl, sizeof(vox_fragment_glsl));
     
     static const char vox_bright_fragment_glsl[] =
         "#version 120\n"
@@ -155,19 +173,63 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
-    voxelShader.init();
-    voxelShader.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
-    voxelShader.compile(vox_fragment_glsl, sizeof(vox_fragment_glsl), Shader::Type::Fragment);
-    voxelShader.bindAttribLocation("iPosition", 0);
-    voxelShader.bindAttribLocation("iColor", 1);
-    voxelShader.link();
-    
-    voxelShaderBright.init();
-    voxelShaderBright.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
-    voxelShaderBright.compile(vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl), Shader::Type::Fragment);
-    voxelShaderBright.bindAttribLocation("iPosition", 0);
-    voxelShaderBright.bindAttribLocation("iColor", 1);
-    voxelShaderBright.link();
+	buildVoxelShader(voxelBrightShader,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
+
+	static const char vox_dithered_fragment_glsl[] =
+		"#version 120\n"
+		"#extension GL_EXT_gpu_shader4 : enable\n"
+		"varying vec3 Color;"
+		"varying vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+
+		"void main() {"
+		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
+		"discard;"
+		"}"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+		"gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
+		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+		"}";
+
+	buildVoxelShader(voxelDitheredShader,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
+
+	static const char vox_bright_dithered_fragment_glsl[] =
+		"#version 120\n"
+		"#extension GL_EXT_gpu_shader4 : enable\n"
+		"varying vec3 Color;"
+		"varying vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+
+		"void main() {"
+		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
+		"discard;"
+		"}"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+		"}";
+
+	buildVoxelShader(voxelBrightDitheredShader,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
     lightmapTexture = new TempTexture();
 }
@@ -176,7 +238,9 @@ void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
     voxelShader.destroy();
-    voxelShaderBright.destroy();
+    voxelBrightShader.destroy();
+	voxelDitheredShader.destroy();
+	voxelBrightDitheredShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
