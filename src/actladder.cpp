@@ -160,6 +160,16 @@ void actLadderUp(Entity* my)
 			}
 		}
 	}
+    
+    if (my->z > -20) {
+        const int x = my->x / 16;
+        const int y = my->y / 16;
+        const int index = (MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height;
+        if (!map.tiles[index]) {
+            list_RemoveNode(my->mynode);
+            return;
+        }
+    }
 }
 
 void actPortal(Entity* my)
