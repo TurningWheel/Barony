@@ -529,13 +529,22 @@ static void loadLightmapTexture() {
     glActiveTexture(GL_TEXTURE0);
 }
 
+static void updateChunks();
+
+void beginGraphics() {
+    // this runs exactly once each graphics frame.
+    fillSmoothLightmap();
+    loadLightmapTexture();
+    updateChunks();
+}
+
 void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
-	shader.bind();
-	if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
-	if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
-	if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
-	if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
-	shader.unbind();
+    shader.bind();
+    if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
+    if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
+    if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
+    if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
+    shader.unbind();
 }
 
 void glBeginCamera(view_t* camera)
@@ -570,12 +579,10 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
     (void)translate_mat(&view, &view2, &translate); view2 = view;
 
-	// generate lightmap
+	// lightmap dimensions
 	vec4_t mapDims;
 	mapDims.x = map.width;
 	mapDims.y = map.height;
-    fillSmoothLightmap();
-	loadLightmapTexture();
     
     // set ambient lighting
     if ( camera->globalLightModifierActive ) {
@@ -1971,6 +1978,10 @@ static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
     return clouds;
 }
 
+#include "ui/Image.hpp"
+
+std::vector<Chunk> chunks;
+
 void glDrawWorld(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -2000,9 +2011,24 @@ void glDrawWorld(view_t* camera, int mode)
     const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
     glUniform4fv(shader.uniform("uLightColor"), 1, light);
     
+    // bind texture
+    //auto image = Image::get("*images/tiles/Wood.png"); assert(image);
+    //glActiveTexture(GL_TEXTURE2);
+    //image->bind();
+    //glActiveTexture(GL_TEXTURE0);
+    glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
+    
     // draw tile chunks
     for (auto& chunk : chunks) {
-        chunk.draw();
+        for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
+            for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
+                if (camera->vismap[y + x * map.height]) {
+                    chunk.draw();
+                    goto next;
+                }
+            }
+        }
+    next:;
     }
     
     // unbind shader
@@ -2164,12 +2190,22 @@ void GO_SwapBuffers(SDL_Window* screen)
 	main_framebuffer.bindForWriting();
 }
 
-std::vector<Chunk> chunks;
+static float chunkTexCoords[3];
+static inline void makeTexCoords(float x, float y, float tile) {
+#define fdivf(A, B) A / B
+    constexpr float dim = 32.f;
+    chunkTexCoords[0] = floorf(fmodf(tile, dim) + x) / dim;
+    chunkTexCoords[1] = floorf(fdivf(tile, dim) + y) / dim;
+}
 
 void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w, int h) {
-    positions.clear();
-    texcoords.clear();
-    colors.clear();
+    std::vector<float> positions;
+    std::vector<float> texcoords;
+    std::vector<float> colors;
+    
+    positions.reserve(1200);
+    texcoords.reserve(800);
+    colors.reserve(1200);
     
     // determine ceiling texture
     int mapceilingtile = 50;
@@ -2177,13 +2213,33 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
         mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
     }
     
-    for (int x = startX; x < startX + w; ++x) {
-        for (int y = startY; y < startY + h; ++y) {
+    int index2 = 0;
+    const int endX = std::min((int)map.width, startX + w);
+    const int endY = std::min((int)map.height, startY + h);
+    
+    // copy tiles
+    if (this->tiles) {
+        delete[] this->tiles;
+    }
+    
+    this->x = startX;
+    this->y = startY;
+    this->w = endX - startX;
+    this->h = endY - startY;
+    const int sizeOfTiles = this->w * this->h * MAPLAYERS;
+    this->tiles = new Sint32[sizeOfTiles];
+    
+    for (int x = startX; x < endX; ++x) {
+        for (int y = startY; y < endY; ++y) {
             for (int z = 0; z < MAPLAYERS + 1; ++z) {
-                const int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
+                const int index = z + y * MAPLAYERS + x * map.height * MAPLAYERS;
 
                 // build walls
                 if (z >= 0 && z < MAPLAYERS) {
+                    assert(index2 < sizeOfTiles);
+                    this->tiles[index2] = map.tiles[index];
+                    ++index2;
+                    
                     // skip empty tiles
                     if (map.tiles[index] == 0) {
                         continue;
@@ -2225,53 +2281,70 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     if (x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE) {
                         if (z) { // normal wall
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
                         }
                         else { // darkened pit
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
                         }
                     }
 
@@ -2280,53 +2353,70 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     if (y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE) {
                         if (z) { // normal wall
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
                         }
                         else { // darkened pit
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
                         }
                     }
 
@@ -2335,53 +2425,70 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     if (x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE) {
                         if (z) { // normal wall
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
                         }
                         else { // darkened pit
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
                         }
                     }
 
@@ -2390,53 +2497,70 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     if (y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE) {
                         if (z) { // normal wall
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
                         }
                         else { // darkened pit
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
-                            
-                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
-                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
                         }
                     }
                 }
@@ -2467,27 +2591,33 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     if (z < OBSTACLELAYER) {
                         if (!map.tiles[index + 1] || map.tiles[index + 1] == TRANSPARENT_TILE) {
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
                         }
                     }
@@ -2496,27 +2626,33 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
                     else if (z > OBSTACLELAYER && (ceiling || z < MAPLAYERS)) {
                         if (!map.tiles[index - 1] || map.tiles[index - 1] == TRANSPARENT_TILE) {
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
                             
                             colors.insert(colors.end(), {1.f, 1.f, 1.f});
-                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
                             positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
                         }
                     }
@@ -2524,11 +2660,12 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
             }
         }
     }
-    indices = (int)positions.size() / 3;
-    printlog("built chunk with %d tris", indices);
+    indices = (int)texcoords.size() / 2;
+    buildBuffers(positions, texcoords, colors);
+    //printlog("built chunk with %d tris", indices);
 }
 
-void Chunk::buildBuffers() {
+void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
     // create buffers
     if (!vbo_positions) {
         glGenBuffers(1, &vbo_positions);
@@ -2551,7 +2688,7 @@ void Chunk::buildBuffers() {
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
     glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glDisableVertexAttribArray(1);
     
     // upload colors
@@ -2575,6 +2712,10 @@ void Chunk::destroyBuffers() {
         glDeleteBuffers(1, &vbo_colors);
         vbo_colors = 0;
     }
+    if (tiles) {
+        delete[] tiles;
+        tiles = nullptr;
+    }
     indices = 0;
 }
 
@@ -2589,7 +2730,7 @@ void Chunk::draw() {
     
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
@@ -2603,13 +2744,61 @@ void Chunk::draw() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+bool Chunk::isDirty(const map_t& map) {
+    if (!tiles) {
+        return true;
+    }
+    for (int u = 0; u < w; ++u) {
+        const int off0 = u * h * MAPLAYERS;
+        const int off1 = (u + x) * map.height * MAPLAYERS + y * MAPLAYERS;
+        const int size = MAPLAYERS * h;
+        assert(off0 + size <= w * h * MAPLAYERS);
+        assert(off1 + size <= map.width * map.height * MAPLAYERS);
+        if (memcmp(&tiles[off0], &map.tiles[off1], size * sizeof(Sint32))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void clearChunks() {
+    chunks.clear();
+}
+
+void createChunks() {
+    constexpr int chunkSize = 4;
+    chunks.reserve((map.width / chunkSize + 1) * (map.height / chunkSize + 1));
+    for (int x = 0; x < map.width; x += chunkSize) {
+        for (int y = 0; y < map.height; y += chunkSize) {
+            chunks.emplace_back();
+            auto& chunk = chunks.back();
+            chunk.build(map, !shouldDrawClouds(map), x, y, chunkSize, chunkSize);
+        }
+    }
+}
+
+void updateChunks() {
+    static int cachedW = -1;
+    static int cachedH = -1;
+    if (cachedW != map.width || cachedH != map.height) {
+        cachedW = map.width;
+        cachedH = map.height;
+        clearChunks();
+        createChunks();
+    } else {
+        for (auto& chunk : chunks) {
+            if (chunk.isDirty(map)) {
+                chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
+            }
+        }
+    }
+}
+
 #ifndef EDITOR
 static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk covering the whole level",
     [](int argc, const char* argv[]){
-    chunks.clear();
     chunks.emplace_back();
     auto& chunk = chunks.back();
     chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
-    chunk.buildBuffers();
     });
 #endif

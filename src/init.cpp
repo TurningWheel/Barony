@@ -63,6 +63,9 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 
 -------------------------------------------------------------------------------*/
 
+void generateTileTextures();
+void destroyTileTextures();
+
 #ifdef PANDORA
 // Pandora FBO
 GLuint fbo_fbo = 0;
@@ -661,6 +664,7 @@ int initApp(char const * const title, int fullscreen)
 	if (result == 0)
 	{
 		generateVBOs(0, nummodels);
+        generateTileTextures();
 	}
 
 #ifdef EDITOR
@@ -1970,6 +1974,42 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 -------------------------------------------------------------------------------*/
 
+static GLuint tileTextures = 0;
+
+void generateTileTextures() {
+    destroyTileTextures();
+    constexpr int w = 32; // width of a tile texture
+    constexpr int h = 32; // height of a tile texture
+    constexpr int dim = 32; // how many tile textures to put in each row and column
+    const int max = numtiles < dim * dim ? numtiles : dim * dim;
+    glActiveTexture(GL_TEXTURE2);
+    glGenTextures(1, &tileTextures);
+    glBindTexture(GL_TEXTURE_2D, tileTextures);
+    static Uint32 pixels[w * h * dim * dim] = { 0 };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    for (int c = 0; c < max; ++c) {
+        if (!tiles[c]) {
+            continue;
+        }
+        glTexSubImage2D(GL_TEXTURE_2D, 0,
+            (c % dim) * w,
+            (c / dim) * h,
+            w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels);
+    }
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glActiveTexture(GL_TEXTURE0);
+}
+
+void destroyTileTextures() {
+    if (tileTextures) {
+        glDeleteTextures(1, &tileTextures);
+        tileTextures = 0;
+    }
+}
+
 void reloadModels(int start, int end) {
 #ifdef WINDOWS
 	start = std::min((int)nummodels - 1, std::max(start, 0));
@@ -2236,6 +2276,7 @@ int deinitApp()
 	Image::dumpCache();
 	Font::dumpCache();
 	Frame::guiDestroy();
+    destroyTileTextures();
 
 	printlog("freeing map data...\n");
 	if ( map.entities != NULL )

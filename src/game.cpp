@@ -5738,6 +5738,9 @@ void drawAllPlayerCameras() {
         // drunkenness spinning
 	    double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 	    double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
+        
+        // setup a graphics frame
+        beginGraphics();
 
 		//int maximum = splitscreen ? MAXPLAYERS : 1;
 		for (int c = 0; c < MAXPLAYERS; ++c)
@@ -6715,6 +6718,7 @@ int main(int argc, char** argv)
 							menucam.winh = yres;
 							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
 							occlusionCulling(map, menucam);
+                            beginGraphics();
 							glBeginCamera(&menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);

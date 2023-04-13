@@ -257,11 +257,11 @@ void createCommonDrawResources() {
     static const char world_vertex_glsl[] =
         "#version 120\n"
         "attribute vec3 iPosition;"
-        "attribute vec3 iTexCoord;"
+        "attribute vec2 iTexCoord;"
         "attribute vec3 iColor;"
         "uniform mat4 uProj;"
         "uniform mat4 uView;"
-        "varying vec3 TexCoord;"
+        "varying vec2 TexCoord;"
         "varying vec3 Color;"
         "varying vec4 WorldPos;"
     
@@ -274,19 +274,18 @@ void createCommonDrawResources() {
 
     static const char world_fragment_glsl[] =
         "#version 120\n"
-        "#extension GL_EXT_texture_array : enable\n"
-        "varying vec3 TexCoord;"
+        "varying vec2 TexCoord;"
         "varying vec3 Color;"
         "varying vec4 WorldPos;"
         "uniform vec4 uLightColor;"
-        "uniform sampler2DArray uTextures;"
+        "uniform sampler2D uTextures;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
     
         "void main() {"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        //"gl_FragColor = texture2DArray(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
-        "gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
@@ -297,18 +296,15 @@ void createCommonDrawResources() {
     
     static const char world_bright_fragment_glsl[] =
         "#version 120\n"
-        "#extension GL_EXT_texture_array : enable\n"
-        "varying vec3 TexCoord;"
+        "varying vec2 TexCoord;"
         "varying vec3 Color;"
         "varying vec4 WorldPos;"
         "uniform vec4 uLightColor;"
-        "uniform sampler2DArray uTextures;"
+        "uniform sampler2D uTextures;"
 
         "void main() {"
-        //"vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        //"gl_FragColor = texture2DArray(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
-        "gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
-        //"gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
@@ -318,7 +314,7 @@ void createCommonDrawResources() {
     
     static const char world_dark_fragment_glsl[] =
         "#version 120\n"
-        "varying vec3 TexCoord;"
+        "varying vec2 TexCoord;"
         "varying vec3 Color;"
         "varying vec4 WorldPos;"
         "uniform vec4 uLightColor;"
@@ -344,7 +340,7 @@ void destroyCommonDrawResources() {
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
-    chunks.clear();
+    clearChunks();
     delete lightmapTexture;
 }
 

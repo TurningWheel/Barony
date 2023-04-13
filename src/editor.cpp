@@ -2445,6 +2445,7 @@ int main(int argc, char** argv)
 					entity->y += 8;
 				}
 				occlusionCulling(map, camera);
+                beginGraphics();
 				glBeginCamera(&camera);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);

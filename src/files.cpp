@@ -1441,7 +1441,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	Sint32 sprite;
 	Stat* myStats;
 	Stat* dummyStats;
-	sex_t s;
 	int editorVersion = 0;
 	char filename[1024];
 	int mapHashData = 0;

@@ -198,24 +198,75 @@ extern TempTexture* lightmapTexture;
 #define TRANSPARENT_TILE 246
 
 struct Chunk {
-    std::vector<float> positions;
-    std::vector<float> texcoords;
-    std::vector<float> colors;
     GLuint vbo_positions = 0;
     GLuint vbo_texcoords = 0;
     GLuint vbo_colors = 0;
     GLint indices = 0;
+    
+    Chunk() = default;
+    Chunk(const Chunk&) = delete;
+    Chunk& operator=(const Chunk&) = delete;
+    
+    Chunk(Chunk&& rhs) {
+        vbo_positions = rhs.vbo_positions;
+        vbo_texcoords = rhs.vbo_texcoords;
+        vbo_colors = rhs.vbo_colors;
+        indices = rhs.indices;
+        x = rhs.x;
+        y = rhs.y;
+        w = rhs.w;
+        h = rhs.h;
+        tiles = rhs.tiles;
+        
+        rhs.vbo_positions = 0;
+        rhs.vbo_texcoords = 0;
+        rhs.vbo_colors = 0;
+        rhs.indices = 0;
+        rhs.x = 0;
+        rhs.y = 0;
+        rhs.w = 0;
+        rhs.h = 0;
+        rhs.tiles = nullptr;
+    }
+    
+    Chunk& operator=(Chunk&& rhs) {
+        vbo_positions = rhs.vbo_positions;
+        vbo_texcoords = rhs.vbo_texcoords;
+        vbo_colors = rhs.vbo_colors;
+        indices = rhs.indices;
+        x = rhs.x;
+        y = rhs.y;
+        w = rhs.w;
+        h = rhs.h;
+        tiles = rhs.tiles;
+        
+        rhs.vbo_positions = 0;
+        rhs.vbo_texcoords = 0;
+        rhs.vbo_colors = 0;
+        rhs.indices = 0;
+        rhs.x = 0;
+        rhs.y = 0;
+        rhs.w = 0;
+        rhs.h = 0;
+        rhs.tiles = nullptr;
+        return *this;
+    }
     
     ~Chunk() {
         destroyBuffers();
     }
     
     void build(const map_t& map, bool ceiling, int startX, int startY, int w, int h);
+    void buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors);
     void destroyBuffers();
-    void buildBuffers();
     void draw();
+    bool isDirty(const map_t& map);
+    
+    int x = 0, y = 0, w = 0, h = 0;
+    Sint32* tiles = nullptr;
 };
-extern std::vector<Chunk> chunks;
+void clearChunks();
+void createChunks();
 
 void createCommonDrawResources();
 void destroyCommonDrawResources();
