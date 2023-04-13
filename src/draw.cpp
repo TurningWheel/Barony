@@ -3463,52 +3463,33 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
     return dot < c;
 }
 
-bool testTileOccludes(map_t& map, int index) {
+static inline bool testTileOccludes(const map_t& map, int index) {
     assert(index >= 0 && index <= map.width * map.height * MAPLAYERS - MAPLAYERS);
-	for (int z = 0; z < MAPLAYERS; z++) {
-		if (!map.tiles[index + z]) {
-			return false;
-		}
-	}
-	return true;
+    const Uint64& t0 = *(Uint64*)&map.tiles[index];
+    const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
+    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
 void occlusionCulling(map_t& map, view_t& camera)
 {
 	// cvars
 #ifndef EDITOR
-    static ConsoleVariable<int> max_distance("/culling_max_distance", CLIPFAR / 16);
-#ifdef NINTENDO
-	static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
-#else
-    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
-#endif // NINTENDO
-
-	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
     static ConsoleVariable<bool> disabled("/skipculling", false);
 	static ConsoleVariable<bool> disableInWalls("/disable_culling_in_walls", false);
 #else
-	static int ed_distance = CLIPFAR / 16;
-	static int ed_walls_hit = 2;
-	static bool ed_culling = true;
 	static bool ed_disabled = false;
 	static bool ed_disableInWalls = true;
-	auto* max_distance = &ed_distance;
-	auto* max_walls_hit = &ed_walls_hit;
-	auto* diagonalCulling = &ed_culling;
     auto* disabled = &ed_disabled;
 	auto* disableInWalls = &ed_disableInWalls;
 #endif
 
 	const int size = map.width * map.height;
 	
-    if (*disabled)
-    {
+    if (*disabled) {
         memset(camera.vismap, 1, sizeof(bool) * size);
         return;
     }
 
-    // clear vismap
     const int camx = std::min(std::max(0, (int)camera.x), (int)map.width - 1);
     const int camy = std::min(std::max(0, (int)camera.y), (int)map.height - 1);
 
@@ -3520,89 +3501,114 @@ void occlusionCulling(map_t& map, view_t& camera)
 		}
 	}
 
+    // clear vismap
     memset(camera.vismap, 0, sizeof(bool) * size);
 	camera.vismap[camy + camx * map.height] = true;
 
     const int hoff = MAPLAYERS;
     const int woff = MAPLAYERS * map.height;
+    
+    std::vector<std::pair<int, int>> open;
+    std::set<std::pair<int, int>> closed;
+    open.emplace_back(camx, camy);
+    closed.emplace(camx, camy);
 
     // do line tests throughout the map
-	const int beginx = std::max(0, camx - *max_distance);
-	const int beginy = std::max(0, camy - *max_distance);
-	const int endx = std::min((int)map.width - 1, camx + *max_distance);
-	const int endy = std::min((int)map.height - 1, camy + *max_distance);
-	for ( int u = beginx; u <= endx; u++ ) {
-		for ( int v = beginy; v <= endy; v++ ) {
-			if ( camera.vismap[v + u * map.height] ) {
-				continue;
-			}
-			const int uvindex = v * hoff + u * woff;
-			if (testTileOccludes(map, uvindex)) {
-				continue;
-			}
-			if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
-				continue;
-			}
-			for (int foo = -1; foo <= 1; ++foo) {
-				for (int bar = -1; bar <= 1; ++bar) {
-					if (!*diagonalCulling && foo && bar) {
-						continue;
-					}
-					const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
-					const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
-					const int xyindex = y * hoff + x * woff;
-					if (testTileOccludes(map, xyindex)) {
-						continue;
-					}
-			        const int dx = u - x;
-			        const int dy = v - y;
-			        const int sdx = sgn(dx);
-			        const int sdy = sgn(dy);
-			        const int dxabs = abs(dx);
-			        const int dyabs = abs(dy);
-			        int wallshit = 0;
-			        if (dxabs >= dyabs) { // the line is more horizontal than vertical
-			            int a = dxabs >> 1;
-			            int index = uvindex;
-				        for (int i = 1; i < dxabs; ++i) {
-					        index -= woff * sdx;
-					        a += dyabs;
-					        if (a >= dxabs) {
-						        a -= dxabs;
-						        index -= hoff * sdy;
-					        }
-					        if (testTileOccludes(map, index)) {
-						        ++wallshit;
-						        if (wallshit >= *max_walls_hit) {
-						            break;
-						        }
-					        }
-				        }
-			        } else { // the line is more vertical than horizontal
-			            int a = dyabs >> 1;
-			            int index = uvindex;
-				        for (int i = 1; i < dyabs; ++i) {
-					        index -= hoff * sdy;
-					        a += dxabs;
-					        if (a >= dyabs) {
-						        a -= dyabs;
-					            index -= woff * sdx;
-					        }
-					        if (testTileOccludes(map, index)) {
-						        ++wallshit;
-						        if (wallshit >= *max_walls_hit) {
-						            break;
-						        }
-					        }
-				        }
-			        }
-			        if (wallshit < *max_walls_hit) {
-						camera.vismap[v + u * map.height] = true;
-						goto next;
-			        }
-		        }
-	        }
-next:;
+    while (!open.empty()) {
+        const int u = open.back().first;
+        const int v = open.back().second;
+        const int uvindex = v * hoff + u * woff;
+        open.pop_back();
+        if (camera.vismap[v + u * map.height]) {
+            goto next;
+        }
+        if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
+            goto next;
+        }
+        for (int foo = -1; foo <= 1; ++foo) {
+            for (int bar = -1; bar <= 1; ++bar) {
+                const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
+                const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
+                const int xyindex = y * hoff + x * woff;
+                if (testTileOccludes(map, xyindex)) {
+                    continue;
+                }
+                const int dx = u - x;
+                const int dy = v - y;
+                const int sdx = sgn(dx);
+                const int sdy = sgn(dy);
+                const int dxabs = abs(dx);
+                const int dyabs = abs(dy);
+                bool wallhit = false;
+                if (dxabs >= dyabs) { // the line is more horizontal than vertical
+                    int a = dxabs >> 1;
+                    int index = uvindex;
+                    for (int i = 1; i < dxabs; ++i) {
+                        index -= woff * sdx;
+                        a += dyabs;
+                        if (a >= dxabs) {
+                            a -= dxabs;
+                            index -= hoff * sdy;
+                        }
+                        if (testTileOccludes(map, index)) {
+                            wallhit = true;
+                            break;
+                        }
+                    }
+                } else { // the line is more vertical than horizontal
+                    int a = dyabs >> 1;
+                    int index = uvindex;
+                    for (int i = 1; i < dyabs; ++i) {
+                        index -= hoff * sdy;
+                        a += dxabs;
+                        if (a >= dyabs) {
+                            a -= dyabs;
+                            index -= woff * sdx;
+                        }
+                        if (testTileOccludes(map, index)) {
+                            wallhit = true;
+                            break;
+                        }
+                    }
+                }
+                if (!wallhit) {
+                    camera.vismap[v + u * map.height] = true;
+                    goto next;
+                }
+            }
+        }
+        
+    next:
+        // if the vis check succeeded, explore adjacent tiles
+        if (camera.vismap[v + u * map.height]) {
+            if (u < map.width - 1) { // check tiles to the east
+                if (closed.emplace(u + 1, v).second) {
+                    if (!testTileOccludes(map, uvindex + woff)) {
+                        open.emplace_back(u + 1, v);
+                    }
+                }
+            }
+            if (v < map.height - 1) { // check tiles to the south
+                if (closed.emplace(u, v + 1).second) {
+                    if (!testTileOccludes(map, uvindex + hoff)) {
+                        open.emplace_back(u, v + 1);
+                    }
+                }
+            }
+            if (u > 0) { // check tiles to the west
+                if (closed.emplace(u - 1, v).second) {
+                    if (!testTileOccludes(map, uvindex - woff)) {
+                        open.emplace_back(u - 1, v);
+                    }
+                }
+            }
+            if (v > 0) { // check tiles to the north
+                if (closed.emplace(u, v - 1).second) {
+                    if (!testTileOccludes(map, uvindex - hoff)) {
+                        open.emplace_back(u, v - 1);
+                    }
+                }
+            }
         }
     }
 
@@ -3612,42 +3618,38 @@ next:;
 	const int h = map.height;
 	const int h1 = map.height - 1;
 	bool* vmap = (bool*)malloc(sizeof(bool) * size);
-    for ( int u = 0; u < w; u++ ) {
-        for ( int v = 0; v < h; v++ ) {
+    for (int u = 0; u < w; u++) {
+        for (int v = 0; v < h; v++) {
             const int index = v + u * h;
 	        vmap[index] = camera.vismap[index];
 		    if (!vmap[index]) {
 		        if (v >= 1) {
-		            if ( camera.vismap[index - 1]) {
+		            if (camera.vismap[index - 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (*diagonalCulling) {
-		                if (u >= 1 && camera.vismap[index - h - 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		                if (u < w1 && camera.vismap[index + h - 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		            }
+                    if (u >= 1 && camera.vismap[index - h - 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
+                    if (u < w1 && camera.vismap[index + h - 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
 		        }
 		        if (v < h1) {
-		            if ( camera.vismap[index + 1]) {
+		            if (camera.vismap[index + 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (*diagonalCulling) {
-		                if (u >= 1 && camera.vismap[index - h + 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		                if (u < w1 && camera.vismap[index + h + 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		            }
+                    if (u >= 1 && camera.vismap[index - h + 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
+                    if (u < w1 && camera.vismap[index + h + 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
 		        }
 		        if (u >= 1 && camera.vismap[index - h]) {
 		            vmap[index] = true;
