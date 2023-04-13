@@ -25,6 +25,10 @@
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_fullBright("/fullbright", false);
+#endif
+
 static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	GLdouble fW, fH;
@@ -457,6 +461,41 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
+static void fillSmoothLightmap() {
+    int v = 0;
+    int index = 0;
+    int smoothindex = 2 + map.height + 1;
+    const int size = map.width * map.height;
+    for ( ; index < size; ++index, ++v, ++smoothindex )
+    {
+        if ( v == map.height ) {
+            smoothindex += 2;
+            v = 0;
+        }
+        
+#ifndef EDITOR
+        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
+        int smoothingRate = *cvar_smoothingRate;
+#else
+        int smoothingRate = 1;
+#endif
+        smoothingRate *= 4;
+        
+        auto& d = lightmapSmoothed[smoothindex];
+        const auto& s = lightmap[index];
+        for (int c = 0; c < 4; ++c) {
+            auto& dc = *(&d.x + c);
+            const auto& sc = *(&s.x + c);
+            if (dc < sc) {
+                dc = std::min(sc, dc + smoothingRate);
+            }
+            else if (dc > sc) {
+                dc = std::max(sc, dc - smoothingRate);
+            }
+        }
+    }
+}
+
 static void loadLightmapTexture() {
     glActiveTexture(GL_TEXTURE1);
     
@@ -490,7 +529,7 @@ static void loadLightmapTexture() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-void voxelUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
 	shader.bind();
 	if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
 	if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
@@ -503,7 +542,9 @@ void glBeginCamera(view_t* camera)
 {
 	// setup state
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	glEnable(GL_DEPTH_TEST);
+    glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    glEnable(GL_SCISSOR_TEST);
+    glEnable(GL_DEPTH_TEST);
     
     const float aspect = (real_t)camera->winw / (real_t)camera->winh;
 
@@ -533,21 +574,35 @@ void glBeginCamera(view_t* camera)
 	vec4_t mapDims;
 	mapDims.x = map.width;
 	mapDims.y = map.height;
+    fillSmoothLightmap();
 	loadLightmapTexture();
     
+    // set ambient lighting
+    if ( camera->globalLightModifierActive ) {
+        getLightAtModifier = camera->globalLightModifier;
+    }
+    else {
+        getLightAtModifier = 1.0;
+    }
+    
 	// upload uniforms
-	voxelUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-	voxelUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
-	voxelUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-	voxelUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
 }
 
 void glEndCamera(view_t* camera)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	glDisable(GL_DEPTH_TEST);
 	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+    glDisable(GL_DEPTH_TEST);
+    glScissor(0, 0, xres, yres);
+    glDisable(GL_SCISSOR_TEST);
 }
 
 // hsv values:
@@ -816,7 +871,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
         (void)scale_mat(&m, &t, &v); t = m;
 
-        const bool useLightmap = mode == REALCOLORS && !entity->flags[BRIGHT];
+#ifndef EDITOR
+        const bool fullbright = *cvar_fullBright;
+#else
+        const bool fullbright = false;
+#endif
+        const bool useLightmap = mode == REALCOLORS && !entity->flags[BRIGHT] && !fullbright;
+        
 #ifndef EDITOR
 		static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
 		auto& shader = *cvar_testDithering ?
@@ -1893,7 +1954,22 @@ static vec4_t getLightAt(const int x, const int y)
 
 -------------------------------------------------------------------------------*/
 
-#define TRANSPARENT_TILE 246
+static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
+    bool clouds = false;
+    if (cloudtile) {
+        *cloudtile = 77; // hell clouds
+    }
+    if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
+        clouds = true;
+        if (cloudtile) {
+            if (strncmp(map.name, "Hell", 4)) {
+                // not a hell map, custom clouds
+                *cloudtile = map.skybox;
+            }
+        }
+    }
+    return clouds;
+}
 
 void glDrawWorld(view_t* camera, int mode)
 {
@@ -1904,638 +1980,103 @@ void glDrawWorld(view_t* camera, int mode)
     }
 #endif
 
-	if ( camera->globalLightModifierActive )
-	{
-		getLightAtModifier = camera->globalLightModifier;
-	}
-	else
-	{
-	    getLightAtModifier = 1.0;
-	}
-
-    bool clouds = false;
-    int cloudtile = 0;
-	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
-	{
-		clouds = true;
-		if ( !strncmp(map.name, "Hell", 4) )
-		{
-			cloudtile = 77;
-		}
-		else
-		{
-			cloudtile = map.skybox;
-		}
-	}
-
-    {
-	    int v = 0;
-	    int index = 0;
-	    int smoothindex = 2 + map.height + 1;
-	    const int size = map.width * map.height;
-	    for ( ; index < size; ++index, ++v, ++smoothindex )
-	    {
-	        if ( v == map.height ) {
-	            smoothindex += 2;
-	            v = 0;
-	        }
-            
+    // determine whether we should draw clouds, and their texture
+    int cloudtile;
+    const bool clouds = shouldDrawClouds(map, &cloudtile);
+    
 #ifndef EDITOR
-	        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
-	        int smoothingRate = *cvar_smoothingRate;
+    const bool fullbright = *cvar_fullBright;
 #else
-            int smoothingRate = 1;
+    const bool fullbright = false;
 #endif
-            smoothingRate *= 4;
-            
-            auto& d = lightmapSmoothed[smoothindex];
-            const auto& s = lightmap[index];
-            for (int c = 0; c < 4; ++c) {
-                auto& dc = *(&d.x + c);
-                const auto& sc = *(&s.x + c);
-                if (dc < sc) {
-                    dc = std::min(sc, dc + smoothingRate);
-                }
-                else if (dc > sc) {
-                    dc = std::max(sc, dc - smoothingRate);
-                }
-            }
-	    }
-	}
-
-    int mapceilingtile = 50;
-	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
-	{
-		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
-	}
-
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-
-	if ( clouds && mode == REALCOLORS )
-	{
-		// draw sky "box"
-		glMatrixMode( GL_PROJECTION );
-		glPushMatrix();
-		glLoadIdentity();
-		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glMatrixMode( GL_MODELVIEW );
-		glPushMatrix();
-		glLoadIdentity();
-		glDepthMask(GL_FALSE);
-		glEnable(GL_BLEND);
+    
+    // bind shader
+    auto& shader = fullbright ?
+        (mode == REALCOLORS ? worldBrightShader : worldDarkShader):
+        (mode == REALCOLORS ? worldShader : worldDarkShader);
+    shader.bind();
+    
+    // upload uniforms
+    const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+    glUniform4fv(shader.uniform("uLightColor"), 1, light);
+    
+    // draw tile chunks
+    for (auto& chunk : chunks) {
+        chunk.draw();
+    }
+    
+    // unbind shader
+    shader.unbind();
+    
+    // draw clouds
+    // do this after drawing walls/floors/etc because that way most of it can
+    // fail the depth test, improving fill rate.
+    if (clouds && mode == REALCOLORS) {
+        // setup projection
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
+        GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+        GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+        GLfloat rotz = 0; // get z rotation
+        glRotatef(rotx, 1, 0, 0); // rotate pitch
+        glRotatef(roty, 0, 1, 0); // rotate yaw
+        glRotatef(rotz, 0, 0, 1); // rotate roll
+        
+        // setup model matrix
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
         
         const float size = CLIPFAR * 16.f;
         const float htex_size = size / 64.f;
         const float ltex_size = size / 32.f;
         const float high_scroll = (float)(ticks % 60) / 60.f;
         const float low_scroll = (float)(ticks % 120) / 120.f;
-
-		// first (higher) sky layer
-		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f(high_scroll, high_scroll);
-		glVertex3f(-size, 65.f, -size);
-
-		glTexCoord2f(htex_size + high_scroll, high_scroll);
-		glVertex3f(size, 65.f, -size);
-
-		glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
-		glVertex3f(size, 65.f, size);
-
-		glTexCoord2f(high_scroll, htex_size + high_scroll);
-		glVertex3f(-size, 65.f, size);
-		glEnd();
-
-		// second (closer) sky layer
-		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f(low_scroll, low_scroll);
-		glVertex3f(-size, 64.f, -size);
-
-		glTexCoord2f(ltex_size + low_scroll, low_scroll);
-		glVertex3f(size, 64.f, -size);
-
-		glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
-		glVertex3f(size, 64.f, size);
-
-		glTexCoord2f(low_scroll, ltex_size + low_scroll);
-		glVertex3f(-size, 64.f, size);
-		glEnd();
-
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
         
+        // bind cloud texture
+        glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
+
+        // first (higher) sky layer
+        glBegin( GL_QUADS );
+        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
+        glTexCoord2f(high_scroll, high_scroll);
+        glVertex3f(-size, 65.f, -size);
+
+        glTexCoord2f(htex_size + high_scroll, high_scroll);
+        glVertex3f(size, 65.f, -size);
+
+        glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
+        glVertex3f(size, 65.f, size);
+
+        glTexCoord2f(high_scroll, htex_size + high_scroll);
+        glVertex3f(-size, 65.f, size);
+
+        // second (closer) sky layer
+        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
+        glTexCoord2f(low_scroll, low_scroll);
+        glVertex3f(-size, 64.f, -size);
+
+        glTexCoord2f(ltex_size + low_scroll, low_scroll);
+        glVertex3f(size, 64.f, -size);
+
+        glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
+        glVertex3f(size, 64.f, size);
+
+        glTexCoord2f(low_scroll, ltex_size + low_scroll);
+        glVertex3f(-size, 64.f, size);
+        glEnd();
+
+        // pop matrices
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
         glDisable(GL_BLEND);
-	}
-
-	// setup projection
-	glMatrixMode( GL_MODELVIEW );
-	glPushMatrix();
-	glLoadIdentity();
-	glDepthMask(GL_TRUE);
-
-	bool lavaTexture = false;
-
-	// glBegin / glEnd are also moved outside, 
-	// but needs to track the texture used to "flush" current drawing before switching
-	GLuint cur_tex = 0, new_tex = 0;
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	for ( int x = 0; x < map.width; x++ )
-	{
-		for ( int y = 0; y < map.height; y++ )
-		{
-		    if (!camera->vismap[y + x * map.height])
-		    {
-		        continue;
-		    }
-			for ( int z = 0; z < MAPLAYERS + 1; z++ )
-			{
-			    const real_t rx = (real_t)x + 0.5;
-			    const real_t ry = (real_t)y + 0.5;
-				int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
-
-				if ( z >= 0 && z < MAPLAYERS )
-				{
-					// skip "air" tiles
-					if ( map.tiles[index] == 0 )
-					{
-						continue;
-					}
-
-					// skip special transparent tile
-					if ( map.tiles[index] == TRANSPARENT_TILE )
-					{
-					    continue;
-					}
-
-					// select texture
-					int tile = 0;
-					if ( mode == REALCOLORS )
-					{
-						if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
-						{
-							new_tex = texid[(long int)sprites[0]->userdata];
-						}
-						else
-						{
-							if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
-								// water special case
-								tile = 267 + map.tiles[index] - 22;
-							}
-							else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
-								// lava special case
-								tile = 285 + map.tiles[index] - 64;
-							}
-							else {
-								tile = map.tiles[index];
-							}
-							new_tex = texid[(long int)tiles[tile]->userdata];
-						}
-					}
-					else
-					{
-						new_tex = 0;
-					}
-
-					// rebind texture if it changed (flushing drawing if it's the case)
-					if(new_tex != cur_tex)
-					{
-						glEnd();
-						glBindTexture(GL_TEXTURE_2D, new_tex);
-						cur_tex=new_tex;
-						glBegin(GL_QUADS);
-						if ((tile >= 64 && tile < 72) ||
-							(tile >= 129 && tile < 135) ||
-							(tile >= 136 && tile < 139) ||
-							(tile >= 285 && tile < 293) ||
-							(tile >= 294 && tile < 302)) {
-							getLightAtAdder = 1020.0;
-							lavaTexture = true;
-						}
-						else {
-							getLightAtAdder = 0.0;
-							lavaTexture = false;
-						}
-					}
-
-					// draw east wall
-					int easter = index + MAPLAYERS * map.height;
-					if ( x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								auto s = getLightAt(x + 1, y + 1);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								s = getLightAt(x + 1, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-							}
-							else
-							{
-                                auto s = getLightAt(x + 1, y + 1);
-                                glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-                                s = getLightAt(x + 1, y);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-                                glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw south wall
-					int souther = index + MAPLAYERS;
-					if ( y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								auto s = getLightAt(x, y + 1);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-							}
-							else
-							{
-								auto s = getLightAt(x, y + 1);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw west wall
-					int wester = index - MAPLAYERS * map.height;
-					if ( x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								auto s = getLightAt(x, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								s = getLightAt(x, y + 1);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-							}
-							else
-							{
-								auto s = getLightAt(x, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-								s = getLightAt(x, y + 1);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw north wall
-					int norther = index - MAPLAYERS;
-					if ( y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								auto s = getLightAt(x + 1, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								s = getLightAt(x, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-							}
-							else
-							{
-								auto s = getLightAt(x + 1, y);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-								s = getLightAt(x, y);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-								glColor3f(s.x, s.y, s.z);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								//glEnd();
-							}
-						}
-					}
-				}
-				else
-				{
-					// bind texture
-					if ( mode == REALCOLORS )
-					{
-						new_tex = texid[(long int)tiles[mapceilingtile]->userdata];
-						//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
-						if (cur_tex!=new_tex)
-						{
-							glEnd();
-							cur_tex = new_tex;
-							glBindTexture(GL_TEXTURE_2D, new_tex);
-							glBegin(GL_QUADS);
-							if ((mapceilingtile >= 64 && mapceilingtile < 72) ||
-								(mapceilingtile >= 129 && mapceilingtile < 135) ||
-								(mapceilingtile >= 136 && mapceilingtile < 139) ||
-								(mapceilingtile >= 285 && mapceilingtile < 293) ||
-								(mapceilingtile >= 294 && mapceilingtile < 302)) {
-								getLightAtAdder = 1020.0;
-								lavaTexture = true;
-							}
-							else {
-								getLightAtAdder = 0.0;
-								lavaTexture = false;
-							}
-						}
-					}
-					else
-					{
-						continue;
-					}
-				}
-
-				if ( mode == REALCOLORS )
-				{
-					// reselect texture for floor and ceiling
-					if (z >= 0 && z < MAPLAYERS) {
-						int tile;
-						if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
-							tile = 0;
-							new_tex = texid[(long int)sprites[0]->userdata];
-						} else {
-							tile = map.tiles[index];
-							new_tex = texid[(long int)tiles[tile]->userdata];
-						}
-
-						// rebind texture if it changed (flushing drawing if it's the case)
-						if (new_tex != cur_tex) {
-							glEnd();
-							glBindTexture(GL_TEXTURE_2D, new_tex);
-							cur_tex = new_tex;
-							glBegin(GL_QUADS);
-							if ((tile >= 64 && tile < 72) ||
-								(tile >= 129 && tile < 135) ||
-								(tile >= 136 && tile < 139) ||
-								(tile >= 285 && tile < 293) ||
-								(tile >= 294 && tile < 302)) {
-								getLightAtAdder = 1020.0;
-								lavaTexture = true;
-							}
-							else {
-								getLightAtAdder = 0.0;
-								lavaTexture = false;
-							}
-						}
-					}
-
-					// draw floor
-					if ( z < OBSTACLELAYER )
-					{
-						if ( !map.tiles[index + 1] )
-						{
-							//glBegin( GL_QUADS );
-							auto s = getLightAt(x, y);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-							s = getLightAt(x, y + 1);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-							s = getLightAt(x + 1, y + 1);
-							glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-							s = getLightAt(x + 1, y);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-							//glEnd();
-						}
-					}
-
-					// draw ceiling
-					else if ( z > OBSTACLELAYER && (!clouds || z < MAPLAYERS) )
-					{
-						if ( !map.tiles[index - 1] )
-						{
-							//glBegin( GL_QUADS );
-							auto s = getLightAt(x, y);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-							s = getLightAt(x + 1, y);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-							s = getLightAt(x + 1, y + 1);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-							s = getLightAt(x, y + 1);
-                            glColor3f(s.x, s.y, s.z);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-							//glEnd();
-						}
-					}
-				}
-				else
-				{
-					// draw floor
-					if ( z < OBSTACLELAYER )
-					{
-						if ( !map.tiles[index + 1] )
-						{
-							glColor4ub(0, 0, 0, 0);
-							//glBegin( GL_QUADS );
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-							//glEnd();
-						}
-					}
-
-					// draw ceiling
-					else if ( z > OBSTACLELAYER )
-					{
-						if ( !map.tiles[index - 1] )
-						{
-							glColor4ub(0, 0, 0, 0);
-							//glBegin( GL_QUADS );
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-							//glEnd();
-						}
-					}
-				}
-			}
-		}
-	}
-	glEnd();
-
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, xres, yres);
-	glPopMatrix();
+        glDepthMask(GL_TRUE);
+    }
 }
 
 static int dirty = 1;
@@ -2622,3 +2163,453 @@ void GO_SwapBuffers(SDL_Window* screen)
 	SDL_GL_SwapWindow(screen);
 	main_framebuffer.bindForWriting();
 }
+
+std::vector<Chunk> chunks;
+
+void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w, int h) {
+    positions.clear();
+    texcoords.clear();
+    colors.clear();
+    
+    // determine ceiling texture
+    int mapceilingtile = 50;
+    if (map.flags[MAP_FLAG_CEILINGTILE] > 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles) {
+        mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
+    }
+    
+    for (int x = startX; x < startX + w; ++x) {
+        for (int y = startY; y < startY + h; ++y) {
+            for (int z = 0; z < MAPLAYERS + 1; ++z) {
+                const int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
+
+                // build walls
+                if (z >= 0 && z < MAPLAYERS) {
+                    // skip empty tiles
+                    if (map.tiles[index] == 0) {
+                        continue;
+                    }
+
+                    // skip special transparent tile
+                    if (map.tiles[index] == TRANSPARENT_TILE) {
+                        continue;
+                    }
+
+                    // select texture
+                    float tile = mapceilingtile;
+                    if (map.tiles[index] >= 0 && map.tiles[index] < numtiles) {
+                        if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
+                            // water special case
+                            tile = 267 + map.tiles[index] - 22;
+                        }
+                        else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
+                            // lava special case
+                            tile = 285 + map.tiles[index] - 64;
+                        }
+                        else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+
+                    // draw east wall
+                    const int easter = index + MAPLAYERS * map.height;
+                    if (x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                    }
+
+                    // draw south wall
+                    const int souther = index + MAPLAYERS;
+                    if (y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                    }
+
+                    // draw west wall
+                    const int wester = index - MAPLAYERS * map.height;
+                    if (x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                    }
+
+                    // draw north wall
+                    const int norther = index - MAPLAYERS;
+                    if (y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {0.f, 0.f, 0.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f - 32.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                    }
+                }
+                
+                // build floor and ceiling
+                {
+                    // select floor/ceiling texture
+                    float tile = mapceilingtile;
+                    if (z >= 0 && z < MAPLAYERS) {
+                        if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
+                            tile = 0;
+                        } else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+                    
+                    // build floor
+                    if (z < OBSTACLELAYER) {
+                        if (!map.tiles[index + 1] || map.tiles[index + 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 1.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {1.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                        }
+                    }
+                    
+                    // build ceiling
+                    else if (z > OBSTACLELAYER && (ceiling || z < MAPLAYERS)) {
+                        if (!map.tiles[index - 1] || map.tiles[index - 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            texcoords.insert(texcoords.end(), {0.f, 0.f, tile});
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                        }
+                    }
+                }
+            }
+        }
+    }
+    indices = (int)positions.size() / 3;
+    printlog("built chunk with %d tris", indices);
+}
+
+void Chunk::buildBuffers() {
+    // create buffers
+    if (!vbo_positions) {
+        glGenBuffers(1, &vbo_positions);
+    }
+    if (!vbo_texcoords) {
+        glGenBuffers(1, &vbo_texcoords);
+    }
+    if (!vbo_colors) {
+        glGenBuffers(1, &vbo_colors);
+    }
+    
+    // upload positions
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(0);
+    
+    // upload texcoords
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
+    glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(1);
+    
+    // upload colors
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(2);
+}
+
+void Chunk::destroyBuffers() {
+    if (vbo_positions) {
+        glDeleteBuffers(1, &vbo_positions);
+        vbo_positions = 0;
+    }
+    if (vbo_texcoords) {
+        glDeleteBuffers(1, &vbo_texcoords);
+        vbo_texcoords = 0;
+    }
+    if (vbo_colors) {
+        glDeleteBuffers(1, &vbo_colors);
+        vbo_colors = 0;
+    }
+    indices = 0;
+}
+
+void Chunk::draw() {
+    if (!indices) {
+        return;
+    }
+    
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glDrawArrays(GL_TRIANGLES, 0, indices);
+    
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+#ifndef EDITOR
+static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk covering the whole level",
+    [](int argc, const char* argv[]){
+    chunks.clear();
+    chunks.emplace_back();
+    auto& chunk = chunks.back();
+    chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
+    chunk.buildBuffers();
+    });
+#endif

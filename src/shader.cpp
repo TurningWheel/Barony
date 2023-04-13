@@ -1,7 +1,13 @@
 #include "shader.hpp"
 
-void Shader::init() {
+void Shader::init(const char* name) {
+    this->name = name;
     program = glCreateProgram();
+    if (program) {
+        printlog("initialized shader program '%s' successfully", name);
+    } else {
+        printlog("failed to initialize shader program '%s'", name);
+    }
 }
 
 void Shader::destroy() {
@@ -52,7 +58,7 @@ bool Shader::compile(const char* source, size_t len, Shader::Type type) {
     case Shader::Type::Fragment: glType = GL_FRAGMENT_SHADER; break;
     }
 
-    const GLint glLen = len;
+    const GLint glLen = (GLint)len;
     auto shader = glCreateShader(glType);
     glShaderSource(shader, 1, &source, &glLen);
     glCompileShader(shader);
@@ -62,7 +68,7 @@ bool Shader::compile(const char* source, size_t len, Shader::Type type) {
     if (status) {
         glAttachShader(program, shader);
         shaders.push_back(shader);
-        printlog("compiled shader successfully");
+        printlog("compiled shader %d successfully", (int)shaders.size());
         return true;
     } else {
         char log[1024];
@@ -80,12 +86,12 @@ bool Shader::link() {
     GLint status;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if (status) {
-        printlog("linked shader program successfully");
+        printlog("linked shader program '%s' successfully", name);
         return true;
     } else {
         char log[1024];
         glGetProgramInfoLog(program, sizeof(log), nullptr, (GLchar*)log);
-        printlog("failed to link shaders: %s", log);
+        printlog("failed to link shaders for '%s': %s", name, log);
         return false;
     }
 }

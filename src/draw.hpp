@@ -190,7 +190,32 @@ extern Shader voxelShader;
 extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
 extern Shader voxelBrightDitheredShader;
+extern Shader worldShader;
+extern Shader worldBrightShader;
+extern Shader worldDarkShader;
 extern TempTexture* lightmapTexture;
+
+#define TRANSPARENT_TILE 246
+
+struct Chunk {
+    std::vector<float> positions;
+    std::vector<float> texcoords;
+    std::vector<float> colors;
+    GLuint vbo_positions = 0;
+    GLuint vbo_texcoords = 0;
+    GLuint vbo_colors = 0;
+    GLint indices = 0;
+    
+    ~Chunk() {
+        destroyBuffers();
+    }
+    
+    void build(const map_t& map, bool ceiling, int startX, int startY, int w, int h);
+    void destroyBuffers();
+    void buildBuffers();
+    void draw();
+};
+extern std::vector<Chunk> chunks;
 
 void createCommonDrawResources();
 void destroyCommonDrawResources();

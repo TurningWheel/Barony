@@ -67,18 +67,36 @@ Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
 Shader voxelBrightDitheredShader;
+Shader worldShader;
+Shader worldBrightShader;
+Shader worldDarkShader;
 TempTexture* lightmapTexture;
 
-static void buildVoxelShader(Shader& shader,
+static void buildVoxelShader(
+    Shader& shader, const char* name,
 	const char* v, size_t size_v,
 	const char* f, size_t size_f)
 {
-	shader.init();
+	shader.init(name);
 	shader.compile(v, size_v, Shader::Type::Vertex);
 	shader.compile(f, size_f, Shader::Type::Fragment);
 	shader.bindAttribLocation("iPosition", 0);
 	shader.bindAttribLocation("iColor", 1);
 	shader.link();
+}
+
+static void buildWorldShader(
+    Shader& shader, const char* name,
+    const char* v, size_t size_v,
+    const char* f, size_t size_f)
+{
+    shader.init(name);
+    shader.compile(v, size_v, Shader::Type::Vertex);
+    shader.compile(f, size_f, Shader::Type::Fragment);
+    shader.bindAttribLocation("iPosition", 0);
+    shader.bindAttribLocation("iTexCoord", 1);
+    shader.bindAttribLocation("iColor", 2);
+    shader.link();
 }
 
 void createCommonDrawResources() {
@@ -105,13 +123,16 @@ void createCommonDrawResources() {
 		"}";
 
 	framebuffer::mesh.init();
-	framebuffer::shader.init();
+	framebuffer::shader.init("framebuffer");
 	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
 	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
     framebuffer::shader.bindAttribLocation("iPosition", 0);
     framebuffer::shader.bindAttribLocation("iTexCoord", 1);
     framebuffer::shader.link();
 	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    
+    // create lightmap texture
+    lightmapTexture = new TempTexture();
     
     // voxel shader:
     
@@ -152,7 +173,7 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
-	buildVoxelShader(voxelShader,
+	buildVoxelShader(voxelShader, "voxelShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_fragment_glsl, sizeof(vox_fragment_glsl));
     
@@ -173,7 +194,7 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
-	buildVoxelShader(voxelBrightShader,
+	buildVoxelShader(voxelBrightShader, "voxelBrightShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
 
@@ -202,7 +223,7 @@ void createCommonDrawResources() {
 		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
 		"}";
 
-	buildVoxelShader(voxelDitheredShader,
+	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
 
@@ -227,11 +248,87 @@ void createCommonDrawResources() {
 		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
 		"}";
 
-	buildVoxelShader(voxelBrightDitheredShader,
+	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
-    lightmapTexture = new TempTexture();
+    // world shader:
+    
+    static const char world_vertex_glsl[] =
+        "#version 120\n"
+        "attribute vec3 iPosition;"
+        "attribute vec3 iTexCoord;"
+        "attribute vec3 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "varying vec3 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+    
+        "void main() {"
+        "WorldPos = vec4(iPosition, 1.0);"
+        "gl_Position = uProj * uView * WorldPos;"
+        "TexCoord = iTexCoord;"
+        "Color = iColor;"
+        "}";
+
+    static const char world_fragment_glsl[] =
+        "#version 120\n"
+        "#extension GL_EXT_texture_array : enable\n"
+        "varying vec3 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "uniform sampler2DArray uTextures;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+    
+        "void main() {"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        //"gl_FragColor = texture2DArray(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
+    
+    buildWorldShader(worldShader, "worldShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_fragment_glsl, sizeof(world_fragment_glsl));
+    
+    static const char world_bright_fragment_glsl[] =
+        "#version 120\n"
+        "#extension GL_EXT_texture_array : enable\n"
+        "varying vec3 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "uniform sampler2DArray uTextures;"
+
+        "void main() {"
+        //"vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        //"gl_FragColor = texture2DArray(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        //"gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
+    
+    buildWorldShader(worldBrightShader, "worldBrightShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_bright_fragment_glsl, sizeof(world_bright_fragment_glsl));
+    
+    static const char world_dark_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec3 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "void main() {"
+        "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "}";
+    
+    buildWorldShader(worldDarkShader, "worldDarkShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
 }
 
 void destroyCommonDrawResources() {
@@ -241,9 +338,13 @@ void destroyCommonDrawResources() {
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
 	voxelBrightDitheredShader.destroy();
+    worldShader.destroy();
+    worldBrightShader.destroy();
+    worldDarkShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
+    chunks.clear();
     delete lightmapTexture;
 }
 
@@ -261,10 +362,11 @@ void Mesh::init() {
 	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
 		const auto& find = ElementsPerVBO.find((BufferType)c);
 		assert(find != ElementsPerVBO.end());
+        glEnableVertexAttribArray(c);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
 		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		//glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-		//glEnableVertexAttribArray(c);
+		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glDisableVertexAttribArray(c);
 	}
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -304,10 +406,9 @@ void Mesh::draw() const {
         glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
         glEnableVertexAttribArray(c);
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
     
     // draw elements
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
 	glDrawElements(GL_TRIANGLES, (int)index.size(), GL_UNSIGNED_INT, nullptr);
     
     // disable buffers
@@ -315,6 +416,7 @@ void Mesh::draw() const {
         glDisableVertexAttribArray(c);
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 	//glBindVertexArray(0);
 }
@@ -1566,8 +1668,8 @@ void drawLayer(long camx, long camy, int z, map_t* map)
 			index = map->tiles[z + y * MAPLAYERS + x * MAPLAYERS * map->height];
 			if ( index > 0)
 			{
-				pos.x = (x << TEXTUREPOWER) - camx;
-				pos.y = (y << TEXTUREPOWER) - camy;
+				pos.x = (int)((x << TEXTUREPOWER) - camx);
+				pos.y = (int)((y << TEXTUREPOWER) - camy);
 				pos.w = TEXTURESIZE;
 				pos.h = TEXTURESIZE;
 				if ( index >= 0 && index < numtiles )
@@ -1592,8 +1694,7 @@ void drawLayer(long camx, long camy, int z, map_t* map)
 
 void drawBackground(long camx, long camy)
 {
-	long z;
-	for ( z = 0; z < OBSTACLELAYER; z++ )
+	for ( int z = 0; z < OBSTACLELAYER; z++ )
 	{
 		drawLayer(camx, camy, z, &map);
 	}
@@ -1601,8 +1702,7 @@ void drawBackground(long camx, long camy)
 
 void drawForeground(long camx, long camy)
 {
-	long z;
-	for ( z = OBSTACLELAYER; z < MAPLAYERS; z++ )
+	for ( int z = OBSTACLELAYER; z < MAPLAYERS; z++ )
 	{
 		drawLayer(camx, camy, z, &map);
 	}
@@ -1907,8 +2007,6 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 	}
 
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	node_t* nextnode = nullptr;
 	for ( node = map.entities->first; node != nullptr; node = nextnode )
 	{
@@ -2144,9 +2242,6 @@ void drawEntities3D(view_t* camera, int mode)
 #endif
 		}
 	}
-
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, xres, yres);
 }
 
 /*-------------------------------------------------------------------------------
