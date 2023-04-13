@@ -1216,18 +1216,19 @@ void gameLogic(void)
 				{
 					for ( z = 0; z < MAPLAYERS; z++ )
 					{
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+                        const int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
+						if ( animatedtiles[map.tiles[index]] )
 						{
-							map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]--;
-							if ( !animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							map.tiles[index]--;
+							if ( !animatedtiles[map.tiles[index]] )
 							{
-								int tile = map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height];
+								int tile = map.tiles[index];
 								do
 								{
 									tile++;
 								}
 								while ( animatedtiles[tile] );
-								map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] = tile - 1;
+								map.tiles[index] = tile - 1;
 							}
 						}
 					}

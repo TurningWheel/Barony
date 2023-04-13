@@ -2023,6 +2023,9 @@ void glDrawWorld(view_t* camera, int mode)
         for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
             for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
                 if (camera->vismap[y + x * map.height]) {
+                    if (chunk.isDirty(map)) {
+                        chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
+                    }
                     chunk.draw();
                     goto next;
                 }
@@ -2785,12 +2788,6 @@ void updateChunks() {
         cachedH = map.height;
         clearChunks();
         createChunks();
-    } else {
-        for (auto& chunk : chunks) {
-            if (chunk.isDirty(map)) {
-                chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
-            }
-        }
     }
 }
 
