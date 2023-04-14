@@ -22,13 +22,21 @@ void Shader::destroy() {
     }
 }
 
+static GLuint currentActiveShader = 0;
+
 bool Shader::bind() {
-    glUseProgram(program);
-    return program;
+    if (currentActiveShader != program) {
+        glUseProgram(program);
+        currentActiveShader = program;
+    }
+    return program != 0;
 }
 
 void Shader::unbind() {
-    glUseProgram(0);
+    if (currentActiveShader) {
+        glUseProgram(0);
+        currentActiveShader = 0;
+    }
 }
 
 GLint Shader::uniform(const char* name) {

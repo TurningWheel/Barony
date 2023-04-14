@@ -10588,6 +10588,7 @@ void doEndgame(bool saveHighscore) {
 	splitscreen = false;
 
 #ifdef NINTENDO
+	fpsLimit = 60; // revert to 60 for the main menu
 	nxEnableAutoSleep();
 	nxEndParentalControls();
 	if (directConnect) {

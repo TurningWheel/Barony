@@ -676,6 +676,9 @@ namespace MainMenu {
 				players[c]->camera().winw = xres;
 				players[c]->camera().winh = yres;
 			}
+#ifdef NINTENDO
+			fpsLimit = 60;
+#endif
 			return;
 		}
 
@@ -687,6 +690,11 @@ namespace MainMenu {
 			++playercount;
 	    }
 		splitscreen = playercount > 1;
+		
+		// on nintendo, we have to limit the FPS to 30 for 3+ players.
+#ifdef NINTENDO
+		fpsLimit = playercount > 2 ? 30 : 60;
+#endif
 
 		int c, playerindex;
 		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
@@ -19373,6 +19381,7 @@ failed:
 		            assert(playercount > 0 && clientnum != -1);
 		        } else if (currentLobbyType != LobbyType::None) {
 		            // this is an online game. make SURE the splitscreen variable is false
+					// (are we really, really certain this code is needed? assert here and check)
 		            splitscreen = false;
 		        }
 

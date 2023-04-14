@@ -1740,12 +1740,12 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
     // save time. this makes this function less accurate at distance,
     // but that's good enough!
 #ifdef EDITOR
-    static constexpr int NumRays = 200;
+    static constexpr int NumRays = 100;
     static constexpr int NumRaysPerJob = 50;
     static constexpr bool DoRaysInParallel = true;
     static constexpr bool WriteOutsSequentially = false;
 #else
-    static ConsoleVariable<int> cvar_numRays("/raycast_num", 200);
+    static ConsoleVariable<int> cvar_numRays("/raycast_num", 100);
     static ConsoleVariable<int> cvar_numRaysPerJob("/raycast_num_per_job", 50);
     static ConsoleVariable<bool> cvar_parallelRays("/raycast_multithread", false); // note: crashes on nintendo
     static ConsoleVariable<bool> cvar_writeOutsSequentially("/raycast_write_outs_sequentially", false);
@@ -1969,10 +1969,6 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 
 void drawEntities3D(view_t* camera, int mode)
 {
-	node_t* node;
-	Entity* entity;
-	long x, y;
-
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_drawEnts("/draw_entities", true);
 	if (!*cvar_drawEnts) {
@@ -2004,9 +2000,9 @@ void drawEntities3D(view_t* camera, int mode)
 	}
 
 	node_t* nextnode = nullptr;
-	for ( node = map.entities->first; node != nullptr; node = nextnode )
+	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
 	{
-		entity = (Entity*)node->element;
+		Entity* entity = (Entity*)node->element;
 		nextnode = node->next;
 		if ( node->next == nullptr && node->list == map.entities )
 		{
@@ -2064,85 +2060,76 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 
-		x = entity->x / 16;
-		y = entity->y / 16;
-		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+		int x = entity->x / 16;
+		int y = entity->y / 16;
+		if ( !entity->flags[OVERDRAW] )
 		{
-		    if ( !entity->flags[OVERDRAW] )
-		    {
-		        if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
-		        {
-		            continue;
-		        }
-				const real_t rx = entity->x / 16.0;
-				const real_t ry = entity->y / 16.0;
-				if ( behindCamera(*camera, rx, ry) )
+			if (x >= 0 && y >= 0 && x < map.width && y < map.height)
+			{
+				if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
 				{
 					continue;
 				}
-		    }
-			if ( entity->flags[SPRITE] == false )
-			{
-				glDrawVoxel(camera, entity, mode);
 			}
-			else
+			const real_t rx = entity->x / 16.0;
+			const real_t ry = entity->y / 16.0;
+			if ( behindCamera(*camera, rx, ry) )
 			{
-				if ( entity->behavior == &actSpriteNametag )
-				{
-					int playersTag = playerEntityMatchesUid(entity->parent);
-					if ( playersTag >= 0 )
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-				}
-				else if ( entity->behavior == &actSpriteWorldTooltip )
+				continue;
+			}
+		}
+		if ( entity->flags[SPRITE] == false )
+		{
+			glDrawVoxel(camera, entity, mode);
+		}
+		else
+		{
+			if ( entity->behavior == &actSpriteNametag )
+			{
+				int playersTag = playerEntityMatchesUid(entity->parent);
+				if ( playersTag >= 0 )
 				{
 					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
 						+ pow(camera->y * 16.0 - entity->y, 2));
 					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 				}
-				else if ( entity->behavior == &actDamageGib )
-				{
-					if ( currentPlayerViewport != entity->skill[1] ) // skill[1] is player num, don't draw gibs on me
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-				}
-				else
-				{
-					if ( !entity->flags[OVERDRAW] )
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-					else
-					{
-						glDrawSprite(camera, entity, mode);
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( entity->flags[SPRITE] == false )
-			{
-				glDrawVoxel(camera, entity, mode);
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
-				glDrawWorldUISprite(camera, entity, mode);
+				real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+					+ pow(camera->y * 16.0 - entity->y, 2));
+				spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 			}
-			else 
+			else if ( entity->behavior == &actDamageGib )
 			{
-				glDrawSprite(camera, entity, mode);
+				if ( currentPlayerViewport != entity->skill[1] ) // skill[1] is player num, don't draw gibs on me
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+			}
+			else
+			{
+				if ( !entity->flags[OVERDRAW] )
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+				else
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
 			}
 		}
 	}
+
+	// unbind the currently active voxel shader,
+	// as we're going to draw sprites from here on
+	Shader::unbind();
 
 #ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -3508,8 +3495,16 @@ void occlusionCulling(map_t& map, view_t& camera)
     const int hoff = MAPLAYERS;
     const int woff = MAPLAYERS * map.height;
     
-    std::vector<std::pair<int, int>> open;
-    std::set<std::pair<int, int>> closed;
+	// making these static saves a lot of redundant
+	// putting up / pulling down of structures in
+	// memory, which saves measurable time on more
+	// constrained platforms like nintendo.
+	// plus this function isn't threaded so who cares.
+    static std::vector<std::pair<int, int>> open;
+    static std::set<std::pair<int, int>> closed;
+	open.clear();
+	open.reserve(size);
+	closed.clear();
     open.emplace_back(camx, camy);
     closed.emplace(camx, camy);
 
@@ -3613,11 +3608,13 @@ void occlusionCulling(map_t& map, view_t& camera)
     }
 
 	// expand vismap one tile in each direction
+	constexpr int VMAP_MAX_DIMENSION = 128;
+	static bool vmap[VMAP_MAX_DIMENSION * VMAP_MAX_DIMENSION];
+	assert(size <= sizeof(vmap) / sizeof(vmap[0]));
 	const int w = map.width;
 	const int w1 = map.width - 1;
 	const int h = map.height;
 	const int h1 = map.height - 1;
-	bool* vmap = (bool*)malloc(sizeof(bool) * size);
     for (int u = 0; u < w; u++) {
         for (int v = 0; v < h; v++) {
             const int index = v + u * h;
@@ -3662,6 +3659,5 @@ void occlusionCulling(map_t& map, view_t& camera)
 		    }
 		}
 	}
-	free(camera.vismap);
-	camera.vismap = vmap;
+	memcpy(camera.vismap, vmap, size);
 }

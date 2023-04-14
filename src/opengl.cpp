@@ -1002,7 +1002,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         glDisableVertexAttribArray(1);
         
         //glEnable(GL_DEPTH_TEST);
-        shader.unbind();
+        //shader.unbind();
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);

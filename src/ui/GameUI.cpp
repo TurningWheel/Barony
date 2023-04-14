@@ -18812,6 +18812,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
+			Shader::unbind(); // unbind voxel shader
 		}
 		players[player]->entity->flags[BRIGHT] = b;
 		int c = 0;
@@ -18830,6 +18831,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
 					glDrawVoxel(&view, entity, REALCOLORS);
+					Shader::unbind(); // unbind voxel shader
 					entity->flags[BRIGHT] = b;
 				}
 				c++;
@@ -18860,6 +18862,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					else
 					{
 						glDrawVoxel(&view, entity, REALCOLORS);
+						Shader::unbind(); // unbind voxel shader
 					}
 					entity->flags[BRIGHT] = b;
 				}
