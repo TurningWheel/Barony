@@ -153,6 +153,7 @@ void actWallBuilder(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
+		generatePathMaps();
 		list_RemoveNode(my->mynode);
 	}
 }
