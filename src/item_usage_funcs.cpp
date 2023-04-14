@@ -2483,9 +2483,14 @@ void item_ScrollLight(Item* item, int player)
 	}
 	item->identified = 1;
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
+    
+    const auto color = makeColorRGB(150, 150, 150);
 
 	messagePlayer(player, MESSAGE_HINT, language[851]);
-	lightSphereShadow(players[player]->entity->x / 16, players[player]->entity->y / 16, 8, 150);
+	lightSphereShadow(
+        players[player]->entity->x / 16,
+        players[player]->entity->y / 16, 8,
+        color);
 
 	// send new light info to clients
 	if (multiplayer == SERVER)
@@ -2500,10 +2505,10 @@ void item_ScrollLight(Item* item, int player)
 			SDLNet_Write16(players[player]->entity->x / 16, &net_packet->data[4]);
 			SDLNet_Write16(players[player]->entity->y / 16, &net_packet->data[6]);
 			SDLNet_Write16(8, &net_packet->data[8]);
-			SDLNet_Write16(150, &net_packet->data[10]);
+			SDLNet_Write32(color, &net_packet->data[10]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 12;
+			net_packet->len = 14;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}

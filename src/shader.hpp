@@ -10,7 +10,7 @@
 
 class Shader {
 public:
-    void init();    // initialize shader program
+    void init(const char* name); // initialize shader program
     void destroy(); // delete shader program
 
     bool bind();                        // bind the shader program
@@ -28,6 +28,7 @@ public:
     bool link();
 
 private:
+    const char* name = "untitled";
     std::vector<GLuint> shaders;
     std::unordered_map<std::string, GLint> uniforms;
     GLuint program = 0;

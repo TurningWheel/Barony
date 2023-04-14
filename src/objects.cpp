@@ -135,7 +135,12 @@ void lightDeconstructor(void* data)
 					if ( x + light->x - light->radius >= 0 && x + light->x - light->radius < map.width )
 						if ( y + light->y - light->radius >= 0 && y + light->y - light->radius < map.height )
 						{
-							lightmap[(y + light->y - light->radius) + (x + light->x - light->radius)*map.height] -= light->tiles[y + x * (light->radius * 2 + 1)];
+                            auto& d = lightmap[(y + light->y - light->radius) + (x + light->x - light->radius)*map.height];
+                            const auto& s = light->tiles[y + x * (light->radius * 2 + 1)];
+							d.x -= s.x;
+                            d.y -= s.y;
+                            d.z -= s.z;
+                            d.w -= s.w;
 						}
 				}
 			}
@@ -295,7 +300,7 @@ button_t* newButton(void)
 
 -------------------------------------------------------------------------------*/
 
-light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
+light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 {
 	light_t* light;
 
@@ -316,15 +321,15 @@ light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 	light->x = x;
 	light->y = y;
 	light->radius = radius;
-	light->intensity = intensity;
+	light->color = color;
 	if ( light->radius > 0 )
 	{
-		light->tiles = (Sint32*) malloc(sizeof(Sint32) * (radius * 2 + 1) * (radius * 2 + 1));
-		memset(light->tiles, 0, sizeof(Sint32) * (radius * 2 + 1) * (radius * 2 + 1));
+		light->tiles = (vec4_t*) malloc(sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1));
+		memset(light->tiles, 0, sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1));
 	}
 	else
 	{
-		light->tiles = NULL;
+		light->tiles = nullptr;
 	}
 	return light;
 }

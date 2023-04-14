@@ -294,7 +294,9 @@ void Entity::actMonsterLimb(bool processLight)
 
 		if ( carryingLightSource != 0 )
 		{
-			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, 50 + 15 * carryingLightSource);
+            const auto brightness = 50 + 15 * carryingLightSource;
+            const auto color = makeColorRGB(brightness, brightness * 0.9, brightness * 0.8);
+			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, color);
 		}
 	}
 

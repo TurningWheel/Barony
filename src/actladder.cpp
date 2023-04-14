@@ -160,6 +160,16 @@ void actLadderUp(Entity* my)
 			}
 		}
 	}
+    
+    if (my->z > -20) {
+        const int x = my->x / 16;
+        const int y = my->y / 16;
+        const int index = (MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height;
+        if (!map.tiles[index]) {
+            list_RemoveNode(my->mynode);
+            return;
+        }
+    }
 }
 
 void actPortal(Entity* my)
@@ -172,7 +182,7 @@ void actPortal(Entity* my)
 	{
 		my->createWorldUITooltip();
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 0, 255));
 		if ( !strncmp(map.name, "Cockatrice Lair", 15) )
 		{
 			my->flags[INVISIBLE] = true;
@@ -464,7 +474,7 @@ void actWinningPortal(Entity* my)
 	if ( !my->portalInit )
 	{
 		my->portalInit = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 255, 255));
 	}
 
 	my->portalAmbience--;
@@ -685,7 +695,7 @@ void Entity::actExpansionEndGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 192, 255));
 	}
 
 	portalAmbience--;
@@ -885,7 +895,7 @@ void Entity::actMidGamePortal()
 	if ( !portalInit )
 	{
 		portalInit = 1;
-		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(0, 192, 255));
 	}
 
 	portalAmbience--;
@@ -1255,7 +1265,7 @@ void actCustomPortal(Entity* my)
 		my->portalInit = 1;
 		if ( my->portalCustomSpriteAnimationFrames > 0 )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(255, 0, 255));
 		}
 	}
 

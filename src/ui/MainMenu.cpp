@@ -676,6 +676,9 @@ namespace MainMenu {
 				players[c]->camera().winw = xres;
 				players[c]->camera().winh = yres;
 			}
+#ifdef NINTENDO
+			fpsLimit = 60;
+#endif
 			return;
 		}
 
@@ -687,6 +690,11 @@ namespace MainMenu {
 			++playercount;
 	    }
 		splitscreen = playercount > 1;
+		
+		// on nintendo, we have to limit the FPS to 30 for 3+ players.
+#ifdef NINTENDO
+		fpsLimit = playercount > 2 ? 30 : 60;
+#endif
 
 		int c, playerindex;
 		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
@@ -2277,10 +2285,10 @@ namespace MainMenu {
 		right_click_protect = !use_on_release_enabled;
 		minimap.save();
         const bool oldUIFilter = *ui_filter;
-        const int oldUIDefaultHeight = uiDefaultHeight;
+        const float oldUIScale = uiScale;
         *ui_filter = ui_filter_enabled;
-        uiDefaultHeight = 1440 - 720 * ((ui_scale - 50.f) / 50.f);
-        result |= (oldUIFilter != *ui_filter || oldUIDefaultHeight != uiDefaultHeight) ?
+        uiScale = ui_scale / 100.f;
+        result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
             VideoRefresh::General : VideoRefresh::None;
 		disable_messages = !show_messages_enabled;
 		show_messages.save();
@@ -2384,7 +2392,7 @@ namespace MainMenu {
 		settings.lastCharacter = LastCreatedCharacter::load();
 		settings.use_on_release_enabled = !right_click_protect;
 		settings.minimap = Minimap::load();
-        settings.ui_scale = 100.f - 50.f * ((uiDefaultHeight - 720) / 720.f);
+        settings.ui_scale = uiScale * 100.f;
         settings.ui_filter_enabled = *ui_filter;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
@@ -5154,7 +5162,7 @@ bind_failed:
         y += settingsAddSlider(*settings_subwindow, y, "ui_scale", "HUD Scaling",
             "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
             allSettings.ui_scale, 50.f, 100.f, sliderPercent,
-            [](Slider& slider){soundSlider(true); allSettings.ui_scale = slider.getValue();});
+            [](Slider& slider){soundSlider(true); allSettings.ui_scale = floorf(slider.getValue());});
         y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
             "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
             allSettings.ui_filter_enabled, [](Button& button){soundToggle(); allSettings.ui_filter_enabled = button.isPressed();});
@@ -17684,7 +17692,7 @@ failed:
             lvl->setTextColor(playerColor(player, colorblind, false));
             lvl->setOutlineColor(makeColorRGB(0, 0, 0));
         } else {
-            snprintf(buf, sizeof(buf), "LVL%d", info.players[player].stats.LVL);
+            snprintf(buf, sizeof(buf), "Lv%d", info.players[player].stats.LVL);
             lvl->setTextColor(makeColorRGB(255, 255, 255));
             lvl->setOutlineColor(makeColorRGB(52, 32, 23));
         }
@@ -19373,6 +19381,7 @@ failed:
 		            assert(playercount > 0 && clientnum != -1);
 		        } else if (currentLobbyType != LobbyType::None) {
 		            // this is an online game. make SURE the splitscreen variable is false
+					// (are we really, really certain this code is needed? assert here and check)
 		            splitscreen = false;
 		        }
 
@@ -20329,22 +20338,17 @@ failed:
 		}
 
         // determine if we made highscore list
-	    int placement;
+        int placement = 1;
 	    score_t* score = scoreConstructor(player);
 	    Uint32 total = totalScore(score);
 	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
-	    if (list_Size(scoresPtr) < MAXTOPSCORES) {
-		    placement = list_Size(scoresPtr) + 1;
-	    } else {
-	        placement = 1;
-	        for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
-	            if (total > totalScore((score_t*)node->element)) {
-	                break;
-	            }
-	            ++placement;
-	        }
-	    }
-	    bool madetop = placement <= MAXTOPSCORES;
+        for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
+            if (total > totalScore((score_t*)node->element)) {
+                break;
+            }
+            ++placement;
+        }
+	    const bool madetop = placement <= MAXTOPSCORES;
 	    scoreDeconstructor((void*)score);
 
 		// identify all inventory items

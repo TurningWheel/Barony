@@ -21,7 +21,7 @@
 bool drawingGui = false;
 const Sint32 Frame::sliderSize = 16;
 
-int uiDefaultHeight = 720;
+extern float uiScale = 1.f;
 
 static const int _virtualScreenMinWidth = 120;
 static const int _virtualScreenMinHeight = 120;
@@ -138,10 +138,24 @@ void Frame::fboDestroy() {
 
 void Frame::guiInit() {
 	if ( _virtualScreenX == 0 && _virtualScreenY == 0 ) {
-		const int defaultWidth = (xres * uiDefaultHeight) / yres;
-		const int defaultHeight = uiDefaultHeight;
-		_virtualScreenX = std::max(defaultWidth, _virtualScreenMinWidth);
-		_virtualScreenY = std::max(defaultHeight, _virtualScreenMinHeight);
+		constexpr int defaultWidth = 1280;
+		constexpr int defaultHeight = 720;
+
+		const int lockedHeightY = 1440.f - 720.f * ((uiScale - .5f) / .5f);
+		const int lockedHeightX = (xres * lockedHeightY) / yres;
+		const int lockedHeightSize = lockedHeightX * lockedHeightY;
+
+		const int lockedWidthX = 2560.f - 1280.f * ((uiScale - .5f) / .5f);
+		const int lockedWidthY = (yres * lockedWidthX) / xres;
+		const int lockedWidthSize = lockedWidthX * lockedWidthY;
+
+		if (lockedWidthSize > lockedHeightSize) {
+			_virtualScreenX = std::max(lockedWidthX, _virtualScreenMinWidth);
+			_virtualScreenY = std::max(lockedWidthY, _virtualScreenMinHeight);
+		} else {
+			_virtualScreenX = std::max(lockedHeightX, _virtualScreenMinWidth);
+			_virtualScreenY = std::max(lockedHeightY, _virtualScreenMinHeight);
+		}
 	}
 	fboInit();
 
