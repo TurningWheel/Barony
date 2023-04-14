@@ -1985,8 +1985,7 @@ void generateTileTextures() {
     glActiveTexture(GL_TEXTURE2);
     glGenTextures(1, &tileTextures);
     glBindTexture(GL_TEXTURE_2D, tileTextures);
-    static Uint32 pixels[w * h * dim * dim] = { 0 };
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     for (int c = 0; c < max; ++c) {
         if (!tiles[c]) {
             continue;
