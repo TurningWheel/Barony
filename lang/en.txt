@@ -6413,5 +6413,9 @@ for accessory to violence!#
 4335 object#
 4336 wall#
 4337 You destroy the %s!#
+4338 web#
+4339 foliage#
+4340 webbing#
+4341 barricade#
 
 4399 end#
