@@ -4534,6 +4534,25 @@ namespace ConsoleCommands {
         entity->z = cameras[0].z;
     });
 
+    static ConsoleCommand ccmd_load_map("/loadmap", "load specified map file", []CCMD{
+        if ( !(svFlags & SV_FLAG_CHEATS) )
+        {
+            messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+            return;
+        }
+        if ( multiplayer != SINGLE )
+        {
+            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
+            return;
+        }
+        if (argc < 2) {
+            return;
+        }
+        loadMap(argv[1], &map, map.entities, map.creatures, nullptr);
+        numplayers = 0;
+        assignActions(&map);
+    });
+
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{

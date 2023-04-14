@@ -2022,9 +2022,9 @@ void glDrawWorld(view_t* camera, int mode)
     
     // draw tile chunks
     int index = 0;
-    constexpr int xoff = 1;
-    constexpr int dim = 4; // size of chunk in tiles
-    const int yoff = (map.width / dim) + ((map.width % dim) ? 1 : 0);
+    const int dim = 4; // size of chunk in tiles
+    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
+    const int yoff = 1;
     for (auto& chunk : chunks) {
         for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
             for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
