@@ -1065,7 +1065,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "tutorial7.lmp", 4087427 },
 	{ "tutorial8.lmp", 1643229 },
 	{ "tutorial9.lmp", 3275999 },
-	{ "tutorial_hub.lmp", 28312359 },
+	{ "tutorial_hub.lmp", 25015665 },
 	{ "underworld.lmp", 253866 },
 	{ "underworld00.lmp", 26338 },
 	{ "underworld01.lmp", 63364 },
