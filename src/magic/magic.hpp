@@ -541,8 +541,8 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uint32 uid);
-static const int FOLLOWER_SELECTED_PARTICLE = 1224;
-static const int FOLLOWER_TARGET_PARTICLE = 1225;
+static const int FOLLOWER_SELECTED_PARTICLE = 1229;
+static const int FOLLOWER_TARGET_PARTICLE = 1230;
 void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 
