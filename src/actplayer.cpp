@@ -4673,7 +4673,7 @@ void actPlayer(Entity* my)
 									}
 								}
 
-								createParticleFollowerCommand(previousx, previousy, 0, 174);
+								createParticleFollowerCommand(previousx, previousy, 0, FOLLOWER_TARGET_PARTICLE, 0);
 								followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
 								followerMenu.selectMoveTo = false;
 								followerMenu.moveToX = static_cast<int>(previousx) / 16;
@@ -4687,7 +4687,7 @@ void actPlayer(Entity* my)
 							Entity* target = entityClicked(nullptr, false, PLAYER_NUM, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
 							input.consumeBinaryToggle("Use");
 							//input.consumeBindingsSharedWithBinding("Use");
-							if ( target )
+							if ( target && followerMenu.followerToCommand )
 							{
 								Entity* parent = uidToEntity(target->skill[2]);
 								if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
@@ -4708,7 +4708,8 @@ void actPlayer(Entity* my)
 								}
 								if ( followerMenu.allowedInteractEntity(*target) )
 								{
-									createParticleFollowerCommand(target->x, target->y, 0, 174);
+									createParticleFollowerCommand(target->x, target->y, 0, FOLLOWER_TARGET_PARTICLE,
+										target->getUID());
 									followerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
 									followerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
 								}
@@ -5625,9 +5626,9 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && (!everybodyfriendly && !intro) && multiplayer != CLIENT )
+			if ( hit.entity && !intro && multiplayer != CLIENT )
 			{
-				if ( hit.entity->behavior == &actMonster )
+				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )
@@ -5676,9 +5677,9 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity )
+			if ( hit.entity && !intro )
 			{
-				if ( hit.entity->behavior == &actMonster )
+				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 				{
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )

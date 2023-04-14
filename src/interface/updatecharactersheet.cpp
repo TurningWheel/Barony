@@ -1525,7 +1525,8 @@ void drawPartySheet(const int player)
 									inputs.mouseClearLeft(player);
 									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, FOLLOWER_TARGET_PARTICLE,
+											0);
 									}
 								}
 								else if ( Input::inputs[player].binary("Use") )
@@ -1539,7 +1540,8 @@ void drawPartySheet(const int player)
 									followerMenu.updateScrollPartySheet();
 									if ( followerMenu.recentEntity )
 									{
-										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, 174);
+										createParticleFollowerCommand(followerMenu.recentEntity->x, followerMenu.recentEntity->y, 0, FOLLOWER_TARGET_PARTICLE,
+											0);
 									}
 								}
 							}

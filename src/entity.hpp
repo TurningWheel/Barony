@@ -988,6 +988,7 @@ public:
 	int getColliderSfxOnHit() const;
 	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;
+	static void monsterRollLevelUpStats(int increasestat[3]);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type

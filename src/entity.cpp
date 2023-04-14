@@ -2738,6 +2738,22 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 	return hungerTickRate;
 }
 
+void Entity::monsterRollLevelUpStats(int increasestat[3])
+{
+	// monsters use this.
+	increasestat[0] = local_rng.rand() % 6;
+	int r = local_rng.rand() % 6;
+	while ( r == increasestat[0] ) {
+		r = local_rng.rand() % 6;
+	}
+	increasestat[1] = r;
+	r = local_rng.rand() % 6;
+	while ( r == increasestat[0] || r == increasestat[1] ) {
+		r = local_rng.rand() % 6;
+	}
+	increasestat[2] = r;
+}
+
 void Entity::handleEffects(Stat* myStats)
 {
 	int increasestat[3] = { 0, 0, 0 };
@@ -2957,17 +2973,7 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			// monsters use this.
-			increasestat[0] = local_rng.rand() % 6;
-			int r = local_rng.rand() % 6;
-			while ( r == increasestat[0] ) {
-				r = local_rng.rand() % 6;
-			}
-			increasestat[1] = r;
-			r = local_rng.rand() % 6;
-			while ( r == increasestat[0] || r == increasestat[1] ) {
-				r = local_rng.rand() % 6;
-			}
-			increasestat[2] = r;
+			Entity::monsterRollLevelUpStats(increasestat);
 
 			for ( i = 0; i < 3; i++ )
 			{
@@ -2990,6 +2996,8 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 					case STAT_CHR:
 						myStats->CHR++;
+						break;
+					default:
 						break;
 				}
 			}
@@ -16413,6 +16421,24 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || MonsterData_t::nameMatchesSpecialNPCName(myStats, "bram kindly")) )
 	{
 		return false;
+	}
+	Entity* leader = monsterAllyGetPlayerLeader();
+	if ( leader )
+	{
+		if ( monsterTarget != 0 )
+		{
+			if ( Entity* target = uidToEntity(monsterTarget) )
+			{
+				if ( target->behavior == &actMonster && target->monsterTarget == getUID() ) // my target is attacking me
+				{
+					if ( entityDist(this, target) < TOUCHRANGE * 2 )
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 	}
 
 	return true;

@@ -3168,7 +3168,7 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 				maxStack = SCRAP_MAX_STACK_QTY;
 			}
 
-			if ( itemDestinationStack->count == maxStack - 1 )
+			if ( itemDestinationStack->count >= maxStack - 1 )
 			{
 				// can't add anymore to this stack, let's skip over this.
 				newQtyForDestItem = itemDestinationStack->count;

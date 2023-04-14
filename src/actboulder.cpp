@@ -41,12 +41,17 @@
 const int BOULDER_LAVA_SPRITE = 989;
 const int BOULDER_ARCANE_SPRITE = 990;
 
+static ConsoleVariable<bool> cvar_boulderDisableAutoBreak("/boulder_disable_auto_break", false);
 bool boulderCheckIfBlockedExit(Entity* my)
 {
-	if ( conductGameChallenges[CONDUCT_MODDED] )
+	if ( *cvar_boulderDisableAutoBreak )
 	{
-		return true; // ignore for custom maps.
+		return true; // skip check if cvar enabled
 	}
+	//if ( conductGameChallenges[CONDUCT_MODDED] )
+	//{
+	//	return true; // ignore for custom maps.
+	//}
 	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
 	{
 		return true; // ignore for custom modes.
