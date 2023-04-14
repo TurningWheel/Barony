@@ -479,7 +479,7 @@ private:
 extern Frame* gui;
 extern bool drawingGui;
 void createTestUI();
-extern int uiDefaultHeight;
+extern float uiScale;
 
 #ifndef EDITOR
 #include "../interface/consolecommand.hpp"

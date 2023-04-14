@@ -98,7 +98,7 @@ void Entity::actMagicTrapCeiling()
 					break;
 			}
 		}
-		//light = lightSphere(my->x / 16, my->y / 16, 3, 192);
+		//light = lightSphere(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 192));
 	}
 
 	++spellTrapCounter;
@@ -205,7 +205,7 @@ void actMagicTrap(Entity* my)
 				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
 				break;
 		}
-		my->light = lightSphere(my->x / 16, my->y / 16, 3, 192);
+		my->light = lightSphere(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 192));
 	}
 
 	// eliminate traps that have been destroyed.
@@ -292,7 +292,7 @@ void Entity::actTeleportShrine()
 	this->removeLightField();
 	if ( shrineActivateDelay == 0 )
 	{
-		this->light = lightSphereShadow(this->x / 16, this->y / 16, 3, 128);
+		this->light = lightSphereShadow(this->x / 16, this->y / 16, 3, makeColorRGB(96, 0, 128));
 		spawnAmbientParticles(80, 576, 10 + local_rng.rand() % 40, 1.0, false);
 	}
 

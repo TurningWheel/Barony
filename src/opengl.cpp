@@ -25,6 +25,10 @@
 static real_t getLightAtModifier = 1.0;
 static real_t getLightAtAdder = 0.0;
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_fullBright("/fullbright", false);
+#endif
+
 static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
 	GLdouble fW, fH;
@@ -34,52 +38,6 @@ static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdoub
 
 	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
 }
-
-typedef struct vec4 {
-	vec4(float f):
-		x(f),
-		y(f),
-		z(f),
-		w(f)
-	{}
-	vec4(float _x, float _y, float _z, float _w):
-		x(_x),
-		y(_y),
-		z(_z),
-		w(_w)
-	{}
-	vec4() = default;
-	float x;
-	float y;
-	float z;
-	float w;
-} vec4_t;
-
-typedef struct mat4x4 {
-	mat4x4(float f):
-		x(f, 0.f, 0.f, 0.f),
-		y(0.f, f, 0.f, 0.f),
-		z(0.f, 0.f, f, 0.f),
-		w(0.f, 0.f, 0.f, f)
-	{}
-	mat4x4(
-		float xx, float xy, float xz, float xw,
-		float yx, float yy, float yz, float yw,
-		float zx, float zy, float zz, float zw,
-		float wx, float wy, float wz, float ww):
-		x(xx, xy, xz, xw),
-		y(yx, yy, yz, yw),
-		z(zx, zy, zz, zw),
-		w(wx, wy, wz, ww)
-	{}
-	mat4x4():
-		mat4x4(1.f)
-	{}
-	vec4_t x;
-	vec4_t y;
-	vec4_t z;
-	vec4_t w;
-} mat4x4_t;
 
 vec4_t vec4_copy(const vec4_t* v) {
 	return vec4_t(v->x, v->y, v->z, v->w);
@@ -247,8 +205,28 @@ mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     return result;
 }
 
-mat4x4_t* perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
-    const float h = tanf(fov / 360.f * (float)PI);
+mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(0.f);
+    result->x.x = 2.f / (right - left);
+    result->x.z = (right + left) / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->y.z = (top + bot) / (top - bot);
+    result->z.z = -(far + near) / (far - near);
+    result->z.w = -1.f;
+    result->w.z = -(2.f * far * near) / (far - near);
+    return result;
+}
+
+#define perspective fast_perspective
+
+mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
+    const float w = h * aspect;
+    return frustum(result, -w, w, -h, h, near, far);
+}
+
+mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
+    const float h = tanf((fov / 180.f * (float)PI) / 2.f);
     const float w = h * aspect;
     
     *result = mat4x4(0.f);
@@ -469,8 +447,10 @@ real_t getLightForEntity(real_t x, real_t y)
 	}
 	int u = x;
 	int v = y;
-	constexpr real_t div = 1.0 / 255.0;
-	return std::min(std::max(0, lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)]), 255) * div;
+	constexpr float div = 1.f / 255.f;
+    const auto& l = lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)];
+    const auto light = (l.x + l.y + l.z) / 3.f;
+	return std::min(std::max(0.f, light), 255.f) * div;
 }
 
 /*-------------------------------------------------------------------------------
@@ -481,12 +461,42 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
+static void fillSmoothLightmap() {
+    int v = 0;
+    int index = 0;
+    int smoothindex = 2 + map.height + 1;
+    const int size = map.width * map.height;
+    for ( ; index < size; ++index, ++v, ++smoothindex )
+    {
+        if ( v == map.height ) {
+            smoothindex += 2;
+            v = 0;
+        }
+        
+#ifndef EDITOR
+        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
+        int smoothingRate = *cvar_smoothingRate;
+#else
+        int smoothingRate = 1;
+#endif
+        smoothingRate *= 4;
+        
+        auto& d = lightmapSmoothed[smoothindex];
+        const auto& s = lightmap[index];
+        for (int c = 0; c < 4; ++c) {
+            auto& dc = *(&d.x + c);
+            const auto& sc = *(&s.x + c);
+            if (dc < sc) {
+                dc = std::min(sc, dc + smoothingRate);
+            }
+            else if (dc > sc) {
+                dc = std::max(sc, dc - smoothingRate);
+            }
+        }
+    }
+}
+
 static void loadLightmapTexture() {
-    vec4_t mapDims;
-    mapDims.x = map.width;
-    mapDims.y = map.height;
-    glUniform1i(voxelShader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
-    glUniform2fv(voxelShader.uniform("uMapDims"), 1, (float*)&mapDims);
     glActiveTexture(GL_TEXTURE1);
     
     // allocate lightmap pixel data
@@ -498,8 +508,11 @@ static void loadLightmapTexture() {
     SDL_LockSurface(lightmapSurface);
     for (int x = 0, index = 0; x < map.width; ++x) {
         for (int y = 0; y < map.height; ++y, ++index) {
-            const auto light = getLightForEntity(x, y);
-            const Uint32 color = makeColorRGB(light * 255, light * 255, light * 255);
+            const auto& l = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+            const auto r = std::min(std::max(0.f, l.x), 255.f);
+            const auto g = std::min(std::max(0.f, l.y), 255.f);
+            const auto b = std::min(std::max(0.f, l.z), 255.f);
+            const Uint32 color = makeColorRGB(r, g, b);
             putPixel(lightmapSurface, x, y, color);
         }
     }
@@ -516,11 +529,31 @@ static void loadLightmapTexture() {
     glActiveTexture(GL_TEXTURE0);
 }
 
+static void updateChunks();
+
+void beginGraphics() {
+    // this runs exactly once each graphics frame.
+    fillSmoothLightmap();
+    loadLightmapTexture();
+    updateChunks();
+}
+
+void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+    shader.bind();
+    if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
+    if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
+    if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
+    if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
+    shader.unbind();
+}
+
 void glBeginCamera(view_t* camera)
 {
 	// setup state
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	glEnable(GL_DEPTH_TEST);
+    glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    glEnable(GL_SCISSOR_TEST);
+    glEnable(GL_DEPTH_TEST);
     
     const float aspect = (real_t)camera->winw / (real_t)camera->winh;
 
@@ -545,25 +578,38 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
     (void)translate_mat(&view, &view2, &translate); view2 = view;
+
+	// lightmap dimensions
+	vec4_t mapDims;
+	mapDims.x = map.width;
+	mapDims.y = map.height;
     
-    voxelShader.bind();
-    glUniformMatrix4fv(voxelShader.uniform("uProj"), 1, false, (float*)&proj);
-    glUniformMatrix4fv(voxelShader.uniform("uView"), 1, false, (float*)&view);
-    loadLightmapTexture();
-    voxelShader.unbind();
+    // set ambient lighting
+    if ( camera->globalLightModifierActive ) {
+        getLightAtModifier = camera->globalLightModifier;
+    }
+    else {
+        getLightAtModifier = 1.0;
+    }
     
-    voxelShaderBright.bind();
-    glUniformMatrix4fv(voxelShaderBright.uniform("uProj"), 1, false, (float*)&proj);
-    glUniformMatrix4fv(voxelShaderBright.uniform("uView"), 1, false, (float*)&view);
-    voxelShaderBright.unbind();
+	// upload uniforms
+    uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
 }
 
 void glEndCamera(view_t* camera)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	glDisable(GL_DEPTH_TEST);
 	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+    glDisable(GL_DEPTH_TEST);
+    glScissor(0, 0, xres, yres);
+    glDisable(GL_SCISSOR_TEST);
 }
 
 // hsv values:
@@ -831,11 +877,26 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)translate_mat(&m, &t, &v); t = m;
         v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
         (void)scale_mat(&m, &t, &v); t = m;
+
+#ifndef EDITOR
+        const bool fullbright = *cvar_fullBright;
+#else
+        const bool fullbright = false;
+#endif
+        const bool useLightmap = mode == REALCOLORS && !entity->flags[BRIGHT] && !fullbright;
+        
+#ifndef EDITOR
+		static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
+		auto& shader = *cvar_testDithering ?
+			(useLightmap ? voxelDitheredShader : voxelBrightDitheredShader):
+			(useLightmap ? voxelShader : voxelBrightShader);
+#else
+		auto& shader = useLightmap ?
+			voxelShader : voxelBrightShader;
+#endif
+		shader.bind();
         
         // upload shader variables
-        auto& shader = entity->flags[BRIGHT] ?
-            voxelShaderBright : voxelShader;
-        shader.bind();
         glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
         if (mode == REALCOLORS) {
             mat4x4_t remap(1.f);
@@ -941,7 +1002,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         glDisableVertexAttribArray(1);
         
         //glEnable(GL_DEPTH_TEST);
-        shader.unbind();
+        //shader.unbind();
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1023,8 +1084,6 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 	{
 		return false;
 	}
-
-	real_t s = 1;
 
 	// assign texture
 	TempTexture* tex = enemybar->worldTexture;
@@ -1234,9 +1293,6 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	{
 		return;
 	}
-	real_t s = 1;
-
-	int player = dialogue->player;
 
 	// assign texture
 	TempTexture* tex = nullptr;
@@ -1870,7 +1926,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 -------------------------------------------------------------------------------*/
 
-static real_t getLightAt(const int x, const int y)
+static vec4_t getLightAt(const int x, const int y)
 {
 #if !defined(EDITOR) && !defined(NDEBUG)
     static ConsoleVariable<bool> cvar("/fullbright", false);
@@ -1881,16 +1937,19 @@ static real_t getLightAt(const int x, const int y)
 #endif
 	const int index = (y + 1) + (x + 1) * (map.height + 2);
 
-	real_t l = 0.0;
-	l += lightmapSmoothed[index - 1 - (map.height + 2)];
-	l += lightmapSmoothed[index - (map.height + 2)];
-	l += lightmapSmoothed[index - 1];
-	l += lightmapSmoothed[index];
-	l *= getLightAtModifier;
-	l += getLightAtAdder;
-	real_t div = 1.0 / (255.0 * 4.0);
-	l = std::min(std::max(0.0, l * div), 1.0);
-
+	vec4_t l(0.f), r(0.f);
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1 - (map.height + 2)]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - (map.height + 2)]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1]); l = r;
+    (void)add_vec4(&r, &l, &lightmapSmoothed[index]); l = r;
+    (void)pow_vec4(&r, &l, getLightAtModifier); l = r;
+    static const vec4_t added(getLightAtAdder);
+    (void)add_vec4(&r, &l, &added); l = r;
+	float div = 1.f / (255.f * 4.f);
+	l.x = std::min(std::max(0.f, l.x * div), 1.f);
+    l.y = std::min(std::max(0.f, l.y * div), 1.f);
+    l.z = std::min(std::max(0.f, l.z * div), 1.f);
+    l.w = std::min(std::max(0.f, l.w * div), 1.f);
 	return l;
 }
 
@@ -1902,15 +1961,29 @@ static real_t getLightAt(const int x, const int y)
 
 -------------------------------------------------------------------------------*/
 
-#define TRANSPARENT_TILE 246
+static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
+    bool clouds = false;
+    if (cloudtile) {
+        *cloudtile = 77; // hell clouds
+    }
+    if ((!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting) {
+        clouds = true;
+        if (cloudtile) {
+            if (strncmp(map.name, "Hell", 4)) {
+                // not a hell map, custom clouds
+                *cloudtile = map.skybox;
+            }
+        }
+    }
+    return clouds;
+}
+
+#include "ui/Image.hpp"
+
+std::vector<Chunk> chunks;
 
 void glDrawWorld(view_t* camera, int mode)
 {
-	real_t s;
-	bool clouds = false;
-	int cloudtile = 0;
-	int mapceilingtile = 50;
-    
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_skipDrawWorld("/skipdrawworld", false);
     if (*cvar_skipDrawWorld) {
@@ -1918,637 +1991,121 @@ void glDrawWorld(view_t* camera, int mode)
     }
 #endif
 
-	if ( camera->globalLightModifierActive )
-	{
-		getLightAtModifier = camera->globalLightModifier;
-	}
-	else
-	{
-	    getLightAtModifier = 1.0;
-	}
-
-	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
-	{
-		clouds = true;
-		if ( !strncmp(map.name, "Hell", 4) )
-		{
-			cloudtile = 77;
-		}
-		else
-		{
-			cloudtile = map.skybox;
-		}
-	}
-
-    {
-	    int v = 0;
-	    int index = 0;
-	    int smoothindex = 2 + map.height + 1;
-	    const int size = map.width * map.height;
-	    for ( ; index < size; ++index, ++v, ++smoothindex )
-	    {
-	        if ( v == map.height ) {
-	            smoothindex += 2;
-	            v = 0;
-	        }
-	        const int difference = abs(lightmapSmoothed[smoothindex] - lightmap[index]);
+    // determine whether we should draw clouds, and their texture
+    int cloudtile;
+    const bool clouds = shouldDrawClouds(map, &cloudtile);
+    
 #ifndef EDITOR
-	        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
-	        int smoothingRate = *cvar_smoothingRate;
+    const bool fullbright = *cvar_fullBright;
 #else
-            int smoothingRate = 1;
+    const bool fullbright = false;
 #endif
-	        if ( difference > 64 )
-	        {
-		        smoothingRate *= 4;
-	        }
-	        else if ( difference > 32 )
-	        {
-		        smoothingRate *= 2;
-	        }
-	        if ( lightmapSmoothed[smoothindex] < lightmap[index] )
-	        {
-		        lightmapSmoothed[smoothindex] = std::min(lightmap[index], lightmapSmoothed[smoothindex] + smoothingRate);
-	        }
-	        else if ( lightmapSmoothed[smoothindex] > lightmap[index] )
-	        {
-		        lightmapSmoothed[smoothindex] = std::max(lightmap[index], lightmapSmoothed[smoothindex] - smoothingRate);
-	        }
-	    }
-	}
-
-	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
-	{
-		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
-	}
-
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-
-	if ( clouds && mode == REALCOLORS )
-	{
-		// draw sky "box"
-		glMatrixMode( GL_PROJECTION );
-		glPushMatrix();
-		glLoadIdentity();
-		perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-		GLfloat rotz = 0; // get z rotation
-		glRotatef(rotx, 1, 0, 0); // rotate pitch
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate roll
-		glMatrixMode( GL_MODELVIEW );
-		glPushMatrix();
-		glLoadIdentity();
-		glDepthMask(GL_FALSE);
-		glEnable(GL_BLEND);
+    
+    // bind shader
+    auto& shader = fullbright ?
+        (mode == REALCOLORS ? worldBrightShader : worldDarkShader):
+        (mode == REALCOLORS ? worldShader : worldDarkShader);
+    shader.bind();
+    
+    // upload uniforms
+    const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+    glUniform4fv(shader.uniform("uLightColor"), 1, light);
+    
+    // bind texture
+    //auto image = Image::get("*images/tiles/Wood.png"); assert(image);
+    //glActiveTexture(GL_TEXTURE2);
+    //image->bind();
+    //glActiveTexture(GL_TEXTURE0);
+    glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
+    
+    // draw tile chunks
+    for (auto& chunk : chunks) {
+        for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
+            for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
+                if (camera->vismap[y + x * map.height]) {
+                    if (chunk.isDirty(map)) {
+                        chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
+                    }
+                    chunk.draw();
+                    goto next;
+                }
+            }
+        }
+    next:;
+    }
+    
+    // unbind shader
+    shader.unbind();
+    
+    // draw clouds
+    // do this after drawing walls/floors/etc because that way most of it can
+    // fail the depth test, improving fill rate.
+    if (clouds && mode == REALCOLORS) {
+        // setup projection
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
+        GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+        GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+        GLfloat rotz = 0; // get z rotation
+        glRotatef(rotx, 1, 0, 0); // rotate pitch
+        glRotatef(roty, 0, 1, 0); // rotate yaw
+        glRotatef(rotz, 0, 0, 1); // rotate roll
+        
+        // setup model matrix
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
         
         const float size = CLIPFAR * 16.f;
         const float htex_size = size / 64.f;
         const float ltex_size = size / 32.f;
         const float high_scroll = (float)(ticks % 60) / 60.f;
         const float low_scroll = (float)(ticks % 120) / 120.f;
-
-		// first (higher) sky layer
-		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f(high_scroll, high_scroll);
-		glVertex3f(-size, 65.f, -size);
-
-		glTexCoord2f(htex_size + high_scroll, high_scroll);
-		glVertex3f(size, 65.f, -size);
-
-		glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
-		glVertex3f(size, 65.f, size);
-
-		glTexCoord2f(high_scroll, htex_size + high_scroll);
-		glVertex3f(-size, 65.f, size);
-		glEnd();
-
-		// second (closer) sky layer
-		glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]); // sky tile
-		glBegin( GL_QUADS );
-		glTexCoord2f(low_scroll, low_scroll);
-		glVertex3f(-size, 64.f, -size);
-
-		glTexCoord2f(ltex_size + low_scroll, low_scroll);
-		glVertex3f(size, 64.f, -size);
-
-		glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
-		glVertex3f(size, 64.f, size);
-
-		glTexCoord2f(low_scroll, ltex_size + low_scroll);
-		glVertex3f(-size, 64.f, size);
-		glEnd();
-
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
         
+        // bind cloud texture
+        glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
+
+        // first (higher) sky layer
+        glBegin( GL_QUADS );
+        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
+        glTexCoord2f(high_scroll, high_scroll);
+        glVertex3f(-size, 65.f, -size);
+
+        glTexCoord2f(htex_size + high_scroll, high_scroll);
+        glVertex3f(size, 65.f, -size);
+
+        glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
+        glVertex3f(size, 65.f, size);
+
+        glTexCoord2f(high_scroll, htex_size + high_scroll);
+        glVertex3f(-size, 65.f, size);
+
+        // second (closer) sky layer
+        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
+        glTexCoord2f(low_scroll, low_scroll);
+        glVertex3f(-size, 64.f, -size);
+
+        glTexCoord2f(ltex_size + low_scroll, low_scroll);
+        glVertex3f(size, 64.f, -size);
+
+        glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
+        glVertex3f(size, 64.f, size);
+
+        glTexCoord2f(low_scroll, ltex_size + low_scroll);
+        glVertex3f(-size, 64.f, size);
+        glEnd();
+
+        // pop matrices
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
         glDisable(GL_BLEND);
-	}
-
-	// setup projection
-	glMatrixMode( GL_MODELVIEW );
-	glPushMatrix();
-	glLoadIdentity();
-	glDepthMask(GL_TRUE);
-
-	bool lavaTexture = false;
-
-	// glBegin / glEnd are also moved outside, 
-	// but needs to track the texture used to "flush" current drawing before switching
-	GLuint cur_tex = 0, new_tex = 0;
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	for ( int x = 0; x < map.width; x++ )
-	{
-		for ( int y = 0; y < map.height; y++ )
-		{
-		    if (!camera->vismap[y + x * map.height])
-		    {
-		        continue;
-		    }
-			for ( int z = 0; z < MAPLAYERS + 1; z++ )
-			{
-			    const real_t rx = (real_t)x + 0.5;
-			    const real_t ry = (real_t)y + 0.5;
-				int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
-
-				if ( z >= 0 && z < MAPLAYERS )
-				{
-					// skip "air" tiles
-					if ( map.tiles[index] == 0 )
-					{
-						continue;
-					}
-
-					// skip special transparent tile
-					if ( map.tiles[index] == TRANSPARENT_TILE )
-					{
-					    continue;
-					}
-
-					// select texture
-					int tile = 0;
-					if ( mode == REALCOLORS )
-					{
-						if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
-						{
-							new_tex = texid[(long int)sprites[0]->userdata];
-						}
-						else
-						{
-							if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
-								// water special case
-								tile = 267 + map.tiles[index] - 22;
-							}
-							else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
-								// lava special case
-								tile = 285 + map.tiles[index] - 64;
-							}
-							else {
-								tile = map.tiles[index];
-							}
-							new_tex = texid[(long int)tiles[tile]->userdata];
-						}
-					}
-					else
-					{
-						new_tex = 0;
-					}
-
-					// rebind texture if it changed (flushing drawing if it's the case)
-					if(new_tex != cur_tex)
-					{
-						glEnd();
-						glBindTexture(GL_TEXTURE_2D, new_tex);
-						cur_tex=new_tex;
-						glBegin(GL_QUADS);
-						if ((tile >= 64 && tile < 72) ||
-							(tile >= 129 && tile < 135) ||
-							(tile >= 136 && tile < 139) ||
-							(tile >= 285 && tile < 293) ||
-							(tile >= 294 && tile < 302)) {
-							getLightAtAdder = 1020.0;
-							lavaTexture = true;
-						}
-						else {
-							getLightAtAdder = 0.0;
-							lavaTexture = false;
-						}
-					}
-
-					// draw east wall
-					int easter = index + MAPLAYERS * map.height;
-					if ( x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-							}
-							else
-							{
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-								s = getLightAt(x + 1, y);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw south wall
-					int souther = index + MAPLAYERS;
-					if ( y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-							}
-							else
-							{
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-								s = getLightAt(x + 1, y + 1);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw west wall
-					int wester = index - MAPLAYERS * map.height;
-					if ( x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								s = getLightAt(x, y + 1);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-							}
-							else
-							{
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-								s = getLightAt(x, y + 1);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 32);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-								//glEnd();
-							}
-						}
-					}
-
-					// draw north wall
-					int norther = index - MAPLAYERS;
-					if ( y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE )
-					{
-						if ( mode == REALCOLORS )
-						{
-							//glBegin( GL_QUADS );
-							if ( z )
-							{
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								s = getLightAt(x, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-							}
-							else
-							{
-								s = getLightAt(x + 1, y);
-								glColor3f(s, s, s);
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(0, 2);
-								glVertex3f(x * 32 + 32, z * 32 - 48 - 32, y * 32 + 0);
-								s = getLightAt(x, y);
-								glColor3f(0, 0, 0);
-								glTexCoord2f(1, 2);
-								glVertex3f(x * 32 + 0, z * 32 - 48 - 32, y * 32 + 0);
-								glColor3f(s, s, s);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-							}
-							//glEnd();
-						}
-						else
-						{
-							if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
-							{
-							    glColor4ub(0, 0, 0, 0);
-								//glBegin( GL_QUADS );
-								glTexCoord2f(0, 0);
-								glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-								glTexCoord2f(0, 1);
-								glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 1);
-								glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
-								glTexCoord2f(1, 0);
-								glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-								//glEnd();
-							}
-						}
-					}
-				}
-				else
-				{
-					// bind texture
-					if ( mode == REALCOLORS )
-					{
-						new_tex = texid[(long int)tiles[mapceilingtile]->userdata];
-						//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
-						if (cur_tex!=new_tex)
-						{
-							glEnd();
-							cur_tex = new_tex;
-							glBindTexture(GL_TEXTURE_2D, new_tex);
-							glBegin(GL_QUADS);
-							if ((mapceilingtile >= 64 && mapceilingtile < 72) ||
-								(mapceilingtile >= 129 && mapceilingtile < 135) ||
-								(mapceilingtile >= 136 && mapceilingtile < 139) ||
-								(mapceilingtile >= 285 && mapceilingtile < 293) ||
-								(mapceilingtile >= 294 && mapceilingtile < 302)) {
-								getLightAtAdder = 1020.0;
-								lavaTexture = true;
-							}
-							else {
-								getLightAtAdder = 0.0;
-								lavaTexture = false;
-							}
-						}
-					}
-					else
-					{
-						continue;
-					}
-				}
-
-				if ( mode == REALCOLORS )
-				{
-					// reselect texture for floor and ceiling
-					if (z >= 0 && z < MAPLAYERS) {
-						int tile;
-						if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
-							tile = 0;
-							new_tex = texid[(long int)sprites[0]->userdata];
-						} else {
-							tile = map.tiles[index];
-							new_tex = texid[(long int)tiles[tile]->userdata];
-						}
-
-						// rebind texture if it changed (flushing drawing if it's the case)
-						if (new_tex != cur_tex) {
-							glEnd();
-							glBindTexture(GL_TEXTURE_2D, new_tex);
-							cur_tex = new_tex;
-							glBegin(GL_QUADS);
-							if ((tile >= 64 && tile < 72) ||
-								(tile >= 129 && tile < 135) ||
-								(tile >= 136 && tile < 139) ||
-								(tile >= 285 && tile < 293) ||
-								(tile >= 294 && tile < 302)) {
-								getLightAtAdder = 1020.0;
-								lavaTexture = true;
-							}
-							else {
-								getLightAtAdder = 0.0;
-								lavaTexture = false;
-							}
-						}
-					}
-
-					// draw floor
-					if ( z < OBSTACLELAYER )
-					{
-						if ( !map.tiles[index + 1] )
-						{
-							//glBegin( GL_QUADS );
-							s = getLightAt(x, y);
-							glColor3f(s, s, s);
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-							s = getLightAt(x, y + 1);
-							glColor3f(s, s, s);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-							s = getLightAt(x + 1, y + 1);
-							glColor3f(s, s, s);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-							s = getLightAt(x + 1, y);
-							glColor3f(s, s, s);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-							//glEnd();
-						}
-					}
-
-					// draw ceiling
-					else if ( z > OBSTACLELAYER && (!clouds || z < MAPLAYERS) )
-					{
-						if ( !map.tiles[index - 1] )
-						{
-							//glBegin( GL_QUADS );
-							s = getLightAt(x, y);
-							glColor3f(s, s, s);
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-							s = getLightAt(x + 1, y);
-							glColor3f(s, s, s);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-							s = getLightAt(x + 1, y + 1);
-							glColor3f(s, s, s);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-							s = getLightAt(x, y + 1);
-							glColor3f(s, s, s);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-							//glEnd();
-						}
-					}
-				}
-				else
-				{
-					// draw floor
-					if ( z < OBSTACLELAYER )
-					{
-						if ( !map.tiles[index + 1] )
-						{
-							glColor4ub(0, 0, 0, 0);
-							//glBegin( GL_QUADS );
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 32);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-							//glEnd();
-						}
-					}
-
-					// draw ceiling
-					else if ( z > OBSTACLELAYER )
-					{
-						if ( !map.tiles[index - 1] )
-						{
-							glColor4ub(0, 0, 0, 0);
-							//glBegin( GL_QUADS );
-							glTexCoord2f(0, 0);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
-							glTexCoord2f(1, 0);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 0);
-							glTexCoord2f(1, 1);
-							glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
-							glTexCoord2f(0, 1);
-							glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-							//glEnd();
-						}
-					}
-				}
-			}
-		}
-	}
-	glEnd();
-
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, xres, yres);
-	glPopMatrix();
+        glDepthMask(GL_TRUE);
+    }
 }
 
 static int dirty = 1;
@@ -2635,3 +2192,610 @@ void GO_SwapBuffers(SDL_Window* screen)
 	SDL_GL_SwapWindow(screen);
 	main_framebuffer.bindForWriting();
 }
+
+static float chunkTexCoords[3];
+static inline void makeTexCoords(float x, float y, float tile) {
+#define fdivf(A, B) A / B
+    constexpr float dim = 32.f;
+    chunkTexCoords[0] = floorf(fmodf(tile, dim) + x) / dim;
+    chunkTexCoords[1] = floorf(fdivf(tile, dim) + y) / dim;
+}
+
+void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w, int h) {
+    std::vector<float> positions;
+    std::vector<float> texcoords;
+    std::vector<float> colors;
+    
+    positions.reserve(1200);
+    texcoords.reserve(800);
+    colors.reserve(1200);
+    
+    // determine ceiling texture
+    int mapceilingtile = 50;
+    if (map.flags[MAP_FLAG_CEILINGTILE] > 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles) {
+        mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
+    }
+    
+    int index2 = 0;
+    const int endX = std::min((int)map.width, startX + w);
+    const int endY = std::min((int)map.height, startY + h);
+    
+    // copy tiles
+    if (this->tiles) {
+        delete[] this->tiles;
+    }
+    
+    this->x = startX;
+    this->y = startY;
+    this->w = endX - startX;
+    this->h = endY - startY;
+    const int sizeOfTiles = this->w * this->h * MAPLAYERS;
+    this->tiles = new Sint32[sizeOfTiles];
+    
+    for (int x = startX; x < endX; ++x) {
+        for (int y = startY; y < endY; ++y) {
+            for (int z = 0; z < MAPLAYERS + 1; ++z) {
+                const int index = z + y * MAPLAYERS + x * map.height * MAPLAYERS;
+
+                // build walls
+                if (z >= 0 && z < MAPLAYERS) {
+                    assert(index2 < sizeOfTiles);
+                    this->tiles[index2] = map.tiles[index];
+                    ++index2;
+                    
+                    // skip empty tiles
+                    if (map.tiles[index] == 0) {
+                        continue;
+                    }
+
+                    // skip special transparent tile
+                    if (map.tiles[index] == TRANSPARENT_TILE) {
+                        continue;
+                    }
+
+                    // select texture
+                    float tile = mapceilingtile;
+                    if (map.tiles[index] >= 0 && map.tiles[index] < numtiles) {
+                        if (map.tiles[index] >= 22 && map.tiles[index] < 30) {
+                            // water special case
+                            tile = 267 + map.tiles[index] - 22;
+                        }
+                        else if (map.tiles[index] >= 64 && map.tiles[index] < 72) {
+                            // lava special case
+                            tile = 285 + map.tiles[index] - 64;
+                        }
+                        else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+
+                    // draw east wall
+                    const int easter = index + MAPLAYERS * map.height;
+                    if (x == map.width - 1 || !map.tiles[easter] || map.tiles[easter] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
+                        }
+                    }
+
+                    // draw south wall
+                    const int souther = index + MAPLAYERS;
+                    if (y == map.height - 1 || !map.tiles[souther] || map.tiles[souther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
+                        }
+                    }
+
+                    // draw west wall
+                    const int wester = index - MAPLAYERS * map.height;
+                    if (x == 0 || !map.tiles[wester] || map.tiles[wester] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 32.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 32.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 32.f});
+                            }
+                        }
+                    }
+
+                    // draw north wall
+                    const int norther = index - MAPLAYERS;
+                    if (y == 0 || !map.tiles[norther] || map.tiles[norther] == TRANSPARENT_TILE) {
+                        if (z) { // normal wall
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 48.f, y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, z * 32.f - 16.f, y * 32.f + 0.f});
+                        }
+                        else { // darkened pit
+                            for (int j = z - 1; j <= z; ++j) {
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(0.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(0.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 32.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                                
+                                if (j == z - 1) { colors.insert(colors.end(), {0.f, 0.f, 0.f}); }
+                                else { colors.insert(colors.end(), {1.f, 1.f, 1.f}); }
+                                makeTexCoords(1.f, 1.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 48.f, y * 32.f + 0.f});
+                                
+                                colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                                makeTexCoords(1.f, 0.f, tile);
+                                texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                                positions.insert(positions.end(), {x * 32.f + 0.f, j * 32.f - 16.f, y * 32.f + 0.f});
+                            }
+                        }
+                    }
+                }
+                
+                // build floor and ceiling
+                {
+                    // select floor/ceiling texture
+                    float tile = mapceilingtile;
+                    if (z >= 0 && z < MAPLAYERS) {
+                        if (map.tiles[index] < 0 || map.tiles[index] >= numtiles) {
+                            tile = 0;
+                        } else {
+                            tile = map.tiles[index];
+                        }
+                    }
+                    
+                    // determine lava texture
+                    bool lavaTexture = false;
+                    if ((tile >= 64 && tile < 72) ||
+                        (tile >= 129 && tile < 135) ||
+                        (tile >= 136 && tile < 139) ||
+                        (tile >= 285 && tile < 293) ||
+                        (tile >= 294 && tile < 302)) {
+                        lavaTexture = true;
+                    }
+                    
+                    // build floor
+                    if (z < OBSTACLELAYER) {
+                        if (!map.tiles[index + 1] || map.tiles[index + 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, -16.f - 32.f * abs(z), y * 32.f + 0.f});
+                        }
+                    }
+                    
+                    // build ceiling
+                    else if (z > OBSTACLELAYER && (ceiling || z < MAPLAYERS)) {
+                        if (!map.tiles[index - 1] || map.tiles[index - 1] == TRANSPARENT_TILE) {
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 0.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 0.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(1.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 32.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                            
+                            colors.insert(colors.end(), {1.f, 1.f, 1.f});
+                            makeTexCoords(0.f, 1.f, tile);
+                            texcoords.insert(texcoords.end(), &chunkTexCoords[0], &chunkTexCoords[2]);
+                            positions.insert(positions.end(), {x * 32.f + 0.f, 16.f + 32.f * abs(z - 2), y * 32.f + 32.f});
+                        }
+                    }
+                }
+            }
+        }
+    }
+    indices = (int)texcoords.size() / 2;
+    buildBuffers(positions, texcoords, colors);
+    //printlog("built chunk with %d tris", indices);
+}
+
+void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
+    // create buffers
+    if (!vbo_positions) {
+        glGenBuffers(1, &vbo_positions);
+    }
+    if (!vbo_texcoords) {
+        glGenBuffers(1, &vbo_texcoords);
+    }
+    if (!vbo_colors) {
+        glGenBuffers(1, &vbo_colors);
+    }
+    
+    // upload positions
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(0);
+    
+    // upload texcoords
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
+    glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(1);
+    
+    // upload colors
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glDisableVertexAttribArray(2);
+}
+
+void Chunk::destroyBuffers() {
+    if (vbo_positions) {
+        glDeleteBuffers(1, &vbo_positions);
+        vbo_positions = 0;
+    }
+    if (vbo_texcoords) {
+        glDeleteBuffers(1, &vbo_texcoords);
+        vbo_texcoords = 0;
+    }
+    if (vbo_colors) {
+        glDeleteBuffers(1, &vbo_colors);
+        vbo_colors = 0;
+    }
+    if (tiles) {
+        delete[] tiles;
+        tiles = nullptr;
+    }
+    indices = 0;
+}
+
+void Chunk::draw() {
+    if (!indices) {
+        return;
+    }
+    
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    
+    glDrawArrays(GL_TRIANGLES, 0, indices);
+    
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+bool Chunk::isDirty(const map_t& map) {
+    if (!tiles) {
+        return true;
+    }
+    for (int u = 0; u < w; ++u) {
+        const int off0 = u * h * MAPLAYERS;
+        const int off1 = (u + x) * map.height * MAPLAYERS + y * MAPLAYERS;
+        const int size = MAPLAYERS * h;
+        assert(off0 + size <= w * h * MAPLAYERS);
+        assert(off1 + size <= map.width * map.height * MAPLAYERS);
+        if (memcmp(&tiles[off0], &map.tiles[off1], size * sizeof(Sint32))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void clearChunks() {
+    chunks.clear();
+}
+
+void createChunks() {
+    constexpr int chunkSize = 4;
+    chunks.reserve((map.width / chunkSize + 1) * (map.height / chunkSize + 1));
+    for (int x = 0; x < map.width; x += chunkSize) {
+        for (int y = 0; y < map.height; y += chunkSize) {
+            chunks.emplace_back();
+            auto& chunk = chunks.back();
+            chunk.build(map, !shouldDrawClouds(map), x, y, chunkSize, chunkSize);
+        }
+    }
+}
+
+void updateChunks() {
+    static int cachedW = -1;
+    static int cachedH = -1;
+    if (cachedW != map.width || cachedH != map.height) {
+        cachedW = map.width;
+        cachedH = map.height;
+        clearChunks();
+        createChunks();
+    }
+}
+
+#ifndef EDITOR
+static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk covering the whole level",
+    [](int argc, const char* argv[]){
+    chunks.emplace_back();
+    auto& chunk = chunks.back();
+    chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
+    });
+#endif

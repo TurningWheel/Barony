@@ -40,7 +40,7 @@ void actSprite(Entity* my)
 	if ( !my->skill[6] && SPRITE_LIT )
 	{
 		my->skill[6] = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, 256);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, makeColorRGB(255, 255, 255));
 	}
 	else if ( !SPRITE_LIT )
 	{

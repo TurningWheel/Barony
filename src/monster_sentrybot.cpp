@@ -1205,10 +1205,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		switch ( my->monsterAllyClass )
 		{
 			case ALLY_GYRO_LIGHT_FAINT:
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(8, 128, 64));
 				break;
 			case ALLY_GYRO_LIGHT_BRIGHT:
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 128);
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(16, 192, 96));
 				break;
 			default:
 				break;

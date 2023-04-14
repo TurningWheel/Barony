@@ -64,8 +64,40 @@ Mesh framebuffer::mesh{
 
 Shader framebuffer::shader;
 Shader voxelShader;
-Shader voxelShaderBright;
+Shader voxelBrightShader;
+Shader voxelDitheredShader;
+Shader voxelBrightDitheredShader;
+Shader worldShader;
+Shader worldBrightShader;
+Shader worldDarkShader;
 TempTexture* lightmapTexture;
+
+static void buildVoxelShader(
+    Shader& shader, const char* name,
+	const char* v, size_t size_v,
+	const char* f, size_t size_f)
+{
+	shader.init(name);
+	shader.compile(v, size_v, Shader::Type::Vertex);
+	shader.compile(f, size_f, Shader::Type::Fragment);
+	shader.bindAttribLocation("iPosition", 0);
+	shader.bindAttribLocation("iColor", 1);
+	shader.link();
+}
+
+static void buildWorldShader(
+    Shader& shader, const char* name,
+    const char* v, size_t size_v,
+    const char* f, size_t size_f)
+{
+    shader.init(name);
+    shader.compile(v, size_v, Shader::Type::Vertex);
+    shader.compile(f, size_f, Shader::Type::Fragment);
+    shader.bindAttribLocation("iPosition", 0);
+    shader.bindAttribLocation("iTexCoord", 1);
+    shader.bindAttribLocation("iColor", 2);
+    shader.link();
+}
 
 void createCommonDrawResources() {
     // framebuffer shader:
@@ -91,13 +123,16 @@ void createCommonDrawResources() {
 		"}";
 
 	framebuffer::mesh.init();
-	framebuffer::shader.init();
+	framebuffer::shader.init("framebuffer");
 	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
 	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
     framebuffer::shader.bindAttribLocation("iPosition", 0);
     framebuffer::shader.bindAttribLocation("iTexCoord", 1);
     framebuffer::shader.link();
 	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    
+    // create lightmap texture
+    lightmapTexture = new TempTexture();
     
     // voxel shader:
     
@@ -137,6 +172,10 @@ void createCommonDrawResources() {
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
+
+	buildVoxelShader(voxelShader, "voxelShader",
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_fragment_glsl, sizeof(vox_fragment_glsl));
     
     static const char vox_bright_fragment_glsl[] =
         "#version 120\n"
@@ -155,31 +194,153 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
-    voxelShader.init();
-    voxelShader.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
-    voxelShader.compile(vox_fragment_glsl, sizeof(vox_fragment_glsl), Shader::Type::Fragment);
-    voxelShader.bindAttribLocation("iPosition", 0);
-    voxelShader.bindAttribLocation("iColor", 1);
-    voxelShader.link();
+	buildVoxelShader(voxelBrightShader, "voxelBrightShader",
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
+
+	static const char vox_dithered_fragment_glsl[] =
+		"#version 120\n"
+		"#extension GL_EXT_gpu_shader4 : enable\n"
+		"varying vec3 Color;"
+		"varying vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+
+		"void main() {"
+		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
+		"discard;"
+		"}"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+		"gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
+		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+		"}";
+
+	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
+
+	static const char vox_bright_dithered_fragment_glsl[] =
+		"#version 120\n"
+		"#extension GL_EXT_gpu_shader4 : enable\n"
+		"varying vec3 Color;"
+		"varying vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+
+		"void main() {"
+		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
+		"discard;"
+		"}"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
+		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+		"}";
+
+	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader",
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
-    voxelShaderBright.init();
-    voxelShaderBright.compile(vox_vertex_glsl, sizeof(vox_vertex_glsl), Shader::Type::Vertex);
-    voxelShaderBright.compile(vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl), Shader::Type::Fragment);
-    voxelShaderBright.bindAttribLocation("iPosition", 0);
-    voxelShaderBright.bindAttribLocation("iColor", 1);
-    voxelShaderBright.link();
+    // world shader:
     
-    lightmapTexture = new TempTexture();
+    static const char world_vertex_glsl[] =
+        "#version 120\n"
+        "attribute vec3 iPosition;"
+        "attribute vec2 iTexCoord;"
+        "attribute vec3 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "varying vec2 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+    
+        "void main() {"
+        "WorldPos = vec4(iPosition, 1.0);"
+        "gl_Position = uProj * uView * WorldPos;"
+        "TexCoord = iTexCoord;"
+        "Color = iColor;"
+        "}";
+
+    static const char world_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "uniform sampler2D uTextures;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+    
+        "void main() {"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
+    
+    buildWorldShader(worldShader, "worldShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_fragment_glsl, sizeof(world_fragment_glsl));
+    
+    static const char world_bright_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "uniform sampler2D uTextures;"
+
+        "void main() {"
+        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
+        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "}";
+    
+    buildWorldShader(worldBrightShader, "worldBrightShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_bright_fragment_glsl, sizeof(world_bright_fragment_glsl));
+    
+    static const char world_dark_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "varying vec3 Color;"
+        "varying vec4 WorldPos;"
+        "uniform vec4 uLightColor;"
+        "void main() {"
+        "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "}";
+    
+    buildWorldShader(worldDarkShader, "worldDarkShader",
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
 }
 
 void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
     voxelShader.destroy();
-    voxelShaderBright.destroy();
+    voxelBrightShader.destroy();
+	voxelDitheredShader.destroy();
+	voxelBrightDitheredShader.destroy();
+    worldShader.destroy();
+    worldBrightShader.destroy();
+    worldDarkShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
+    clearChunks();
     delete lightmapTexture;
 }
 
@@ -197,10 +358,11 @@ void Mesh::init() {
 	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
 		const auto& find = ElementsPerVBO.find((BufferType)c);
 		assert(find != ElementsPerVBO.end());
+        glEnableVertexAttribArray(c);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
 		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		//glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-		//glEnableVertexAttribArray(c);
+		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glDisableVertexAttribArray(c);
 	}
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -240,10 +402,9 @@ void Mesh::draw() const {
         glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
         glEnableVertexAttribArray(c);
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
     
     // draw elements
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
 	glDrawElements(GL_TRIANGLES, (int)index.size(), GL_UNSIGNED_INT, nullptr);
     
     // disable buffers
@@ -251,6 +412,7 @@ void Mesh::draw() const {
         glDisableVertexAttribArray(c);
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 	//glBindVertexArray(0);
 }
@@ -1502,8 +1664,8 @@ void drawLayer(long camx, long camy, int z, map_t* map)
 			index = map->tiles[z + y * MAPLAYERS + x * MAPLAYERS * map->height];
 			if ( index > 0)
 			{
-				pos.x = (x << TEXTUREPOWER) - camx;
-				pos.y = (y << TEXTUREPOWER) - camy;
+				pos.x = (int)((x << TEXTUREPOWER) - camx);
+				pos.y = (int)((y << TEXTUREPOWER) - camy);
 				pos.w = TEXTURESIZE;
 				pos.h = TEXTURESIZE;
 				if ( index >= 0 && index < numtiles )
@@ -1528,8 +1690,7 @@ void drawLayer(long camx, long camy, int z, map_t* map)
 
 void drawBackground(long camx, long camy)
 {
-	long z;
-	for ( z = 0; z < OBSTACLELAYER; z++ )
+	for ( int z = 0; z < OBSTACLELAYER; z++ )
 	{
 		drawLayer(camx, camy, z, &map);
 	}
@@ -1537,8 +1698,7 @@ void drawBackground(long camx, long camy)
 
 void drawForeground(long camx, long camy)
 {
-	long z;
-	for ( z = OBSTACLELAYER; z < MAPLAYERS; z++ )
+	for ( int z = OBSTACLELAYER; z < MAPLAYERS; z++ )
 	{
 		drawLayer(camx, camy, z, &map);
 	}
@@ -1580,12 +1740,12 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
     // save time. this makes this function less accurate at distance,
     // but that's good enough!
 #ifdef EDITOR
-    static constexpr int NumRays = 200;
+    static constexpr int NumRays = 100;
     static constexpr int NumRaysPerJob = 50;
     static constexpr bool DoRaysInParallel = true;
     static constexpr bool WriteOutsSequentially = false;
 #else
-    static ConsoleVariable<int> cvar_numRays("/raycast_num", 200);
+    static ConsoleVariable<int> cvar_numRays("/raycast_num", 100);
     static ConsoleVariable<int> cvar_numRaysPerJob("/raycast_num_per_job", 50);
     static ConsoleVariable<bool> cvar_parallelRays("/raycast_multithread", false); // note: crashes on nintendo
     static ConsoleVariable<bool> cvar_writeOutsSequentially("/raycast_write_outs_sequentially", false);
@@ -1617,7 +1777,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
         const int mh;
         const view_t camera;
         const Sint32* tiles;
-        const Sint32* lights;
+        const vec4_t* lights;
         Sint8 (*minimap)[MINIMAP_MAX_DIMENSION];
     };
     auto shoot_ray = [](const ins_t&& ins) -> std::vector<outs_t>{
@@ -1710,11 +1870,12 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]) {
                             continue;
                         }
-                        const Uint8 light = std::min(std::max(0, lights[iny2 + inx2 * mh]), 255);
+                        auto& l = lights[iny2 + inx2 * mh];
+                        const auto light = std::max({0.f, l.x, l.y, l.z});
                         
                         // update minimap
                         if (d < 16 && z == OBSTACLELAYER) {
-                            if (light > 0) {
+                            if (light > 1.f) {
                                 // wall space
                                 if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 2});
@@ -1725,9 +1886,10 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
                         }
                     } else if (z == OBSTACLELAYER) {
                         // update minimap to show empty region
-                        const Uint8 light = std::min(std::max(0, lights[iny + inx * mh]), 255);
+                        auto& l = lights[iny2 + inx2 * mh];
+                        const auto light = std::max({0.f, l.x, l.y, l.z});
                         if (d < 16) {
-                            if (light > 0 && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            if (light > 1.f && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 1});
@@ -1807,10 +1969,6 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 
 void drawEntities3D(view_t* camera, int mode)
 {
-	node_t* node;
-	Entity* entity;
-	long x, y;
-
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_drawEnts("/draw_entities", true);
 	if (!*cvar_drawEnts) {
@@ -1841,12 +1999,10 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 	}
 
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	node_t* nextnode = nullptr;
-	for ( node = map.entities->first; node != nullptr; node = nextnode )
+	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
 	{
-		entity = (Entity*)node->element;
+		Entity* entity = (Entity*)node->element;
 		nextnode = node->next;
 		if ( node->next == nullptr && node->list == map.entities )
 		{
@@ -1904,85 +2060,76 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 
-		x = entity->x / 16;
-		y = entity->y / 16;
-		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+		int x = entity->x / 16;
+		int y = entity->y / 16;
+		if ( !entity->flags[OVERDRAW] )
 		{
-		    if ( !entity->flags[OVERDRAW] )
-		    {
-		        if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
-		        {
-		            continue;
-		        }
-				const real_t rx = entity->x / 16.0;
-				const real_t ry = entity->y / 16.0;
-				if ( behindCamera(*camera, rx, ry) )
+			if (x >= 0 && y >= 0 && x < map.width && y < map.height)
+			{
+				if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
 				{
 					continue;
 				}
-		    }
-			if ( entity->flags[SPRITE] == false )
-			{
-				glDrawVoxel(camera, entity, mode);
 			}
-			else
+			const real_t rx = entity->x / 16.0;
+			const real_t ry = entity->y / 16.0;
+			if ( behindCamera(*camera, rx, ry) )
 			{
-				if ( entity->behavior == &actSpriteNametag )
-				{
-					int playersTag = playerEntityMatchesUid(entity->parent);
-					if ( playersTag >= 0 )
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-				}
-				else if ( entity->behavior == &actSpriteWorldTooltip )
+				continue;
+			}
+		}
+		if ( entity->flags[SPRITE] == false )
+		{
+			glDrawVoxel(camera, entity, mode);
+		}
+		else
+		{
+			if ( entity->behavior == &actSpriteNametag )
+			{
+				int playersTag = playerEntityMatchesUid(entity->parent);
+				if ( playersTag >= 0 )
 				{
 					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
 						+ pow(camera->y * 16.0 - entity->y, 2));
 					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 				}
-				else if ( entity->behavior == &actDamageGib )
-				{
-					if ( currentPlayerViewport != entity->skill[1] ) // skill[1] is player num, don't draw gibs on me
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-				}
-				else
-				{
-					if ( !entity->flags[OVERDRAW] )
-					{
-						real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-							+ pow(camera->y * 16.0 - entity->y, 2));
-						spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-					}
-					else
-					{
-						glDrawSprite(camera, entity, mode);
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( entity->flags[SPRITE] == false )
-			{
-				glDrawVoxel(camera, entity, mode);
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
-				glDrawWorldUISprite(camera, entity, mode);
+				real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+					+ pow(camera->y * 16.0 - entity->y, 2));
+				spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 			}
-			else 
+			else if ( entity->behavior == &actDamageGib )
 			{
-				glDrawSprite(camera, entity, mode);
+				if ( currentPlayerViewport != entity->skill[1] ) // skill[1] is player num, don't draw gibs on me
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+			}
+			else
+			{
+				if ( !entity->flags[OVERDRAW] )
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
+				else
+				{
+					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+						+ pow(camera->y * 16.0 - entity->y, 2));
+					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
+				}
 			}
 		}
 	}
+
+	// unbind the currently active voxel shader,
+	// as we're going to draw sprites from here on
+	Shader::unbind();
 
 #ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -2078,9 +2225,6 @@ void drawEntities3D(view_t* camera, int mode)
 #endif
 		}
 	}
-
-	glDisable(GL_SCISSOR_TEST);
-	glScissor(0, 0, xres, yres);
 }
 
 /*-------------------------------------------------------------------------------
@@ -3306,52 +3450,33 @@ bool behindCamera(const view_t& camera, real_t x, real_t y)
     return dot < c;
 }
 
-bool testTileOccludes(map_t& map, int index) {
+static inline bool testTileOccludes(const map_t& map, int index) {
     assert(index >= 0 && index <= map.width * map.height * MAPLAYERS - MAPLAYERS);
-	for (int z = 0; z < MAPLAYERS; z++) {
-		if (!map.tiles[index + z]) {
-			return false;
-		}
-	}
-	return true;
+    const Uint64& t0 = *(Uint64*)&map.tiles[index];
+    const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
+    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
 void occlusionCulling(map_t& map, view_t& camera)
 {
 	// cvars
 #ifndef EDITOR
-    static ConsoleVariable<int> max_distance("/culling_max_distance", CLIPFAR / 16);
-#ifdef NINTENDO
-	static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 1);
-#else
-    static ConsoleVariable<int> max_walls_hit("/culling_max_walls", 2);
-#endif // NINTENDO
-
-	static ConsoleVariable<bool> diagonalCulling("/culling_expand_diagonal", true);
     static ConsoleVariable<bool> disabled("/skipculling", false);
 	static ConsoleVariable<bool> disableInWalls("/disable_culling_in_walls", false);
 #else
-	static int ed_distance = CLIPFAR / 16;
-	static int ed_walls_hit = 2;
-	static bool ed_culling = true;
 	static bool ed_disabled = false;
 	static bool ed_disableInWalls = true;
-	auto* max_distance = &ed_distance;
-	auto* max_walls_hit = &ed_walls_hit;
-	auto* diagonalCulling = &ed_culling;
     auto* disabled = &ed_disabled;
 	auto* disableInWalls = &ed_disableInWalls;
 #endif
 
 	const int size = map.width * map.height;
 	
-    if (*disabled)
-    {
+    if (*disabled) {
         memset(camera.vismap, 1, sizeof(bool) * size);
         return;
     }
 
-    // clear vismap
     const int camx = std::min(std::max(0, (int)camera.x), (int)map.width - 1);
     const int camy = std::min(std::max(0, (int)camera.y), (int)map.height - 1);
 
@@ -3363,134 +3488,165 @@ void occlusionCulling(map_t& map, view_t& camera)
 		}
 	}
 
+    // clear vismap
     memset(camera.vismap, 0, sizeof(bool) * size);
 	camera.vismap[camy + camx * map.height] = true;
 
     const int hoff = MAPLAYERS;
     const int woff = MAPLAYERS * map.height;
+    
+	// making these static saves a lot of redundant
+	// putting up / pulling down of structures in
+	// memory, which saves measurable time on more
+	// constrained platforms like nintendo.
+	// plus this function isn't threaded so who cares.
+    static std::vector<std::pair<int, int>> open;
+    static std::set<std::pair<int, int>> closed;
+	open.clear();
+	open.reserve(size);
+	closed.clear();
+    open.emplace_back(camx, camy);
+    closed.emplace(camx, camy);
 
     // do line tests throughout the map
-	const int beginx = std::max(0, camx - *max_distance);
-	const int beginy = std::max(0, camy - *max_distance);
-	const int endx = std::min((int)map.width - 1, camx + *max_distance);
-	const int endy = std::min((int)map.height - 1, camy + *max_distance);
-	for ( int u = beginx; u <= endx; u++ ) {
-		for ( int v = beginy; v <= endy; v++ ) {
-			if ( camera.vismap[v + u * map.height] ) {
-				continue;
-			}
-			const int uvindex = v * hoff + u * woff;
-			if (testTileOccludes(map, uvindex)) {
-				continue;
-			}
-			if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
-				continue;
-			}
-			for (int foo = -1; foo <= 1; ++foo) {
-				for (int bar = -1; bar <= 1; ++bar) {
-					if (!*diagonalCulling && foo && bar) {
-						continue;
-					}
-					const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
-					const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
-					const int xyindex = y * hoff + x * woff;
-					if (testTileOccludes(map, xyindex)) {
-						continue;
-					}
-			        const int dx = u - x;
-			        const int dy = v - y;
-			        const int sdx = sgn(dx);
-			        const int sdy = sgn(dy);
-			        const int dxabs = abs(dx);
-			        const int dyabs = abs(dy);
-			        int wallshit = 0;
-			        if (dxabs >= dyabs) { // the line is more horizontal than vertical
-			            int a = dxabs >> 1;
-			            int index = uvindex;
-				        for (int i = 1; i < dxabs; ++i) {
-					        index -= woff * sdx;
-					        a += dyabs;
-					        if (a >= dxabs) {
-						        a -= dxabs;
-						        index -= hoff * sdy;
-					        }
-					        if (testTileOccludes(map, index)) {
-						        ++wallshit;
-						        if (wallshit >= *max_walls_hit) {
-						            break;
-						        }
-					        }
-				        }
-			        } else { // the line is more vertical than horizontal
-			            int a = dyabs >> 1;
-			            int index = uvindex;
-				        for (int i = 1; i < dyabs; ++i) {
-					        index -= hoff * sdy;
-					        a += dxabs;
-					        if (a >= dyabs) {
-						        a -= dyabs;
-					            index -= woff * sdx;
-					        }
-					        if (testTileOccludes(map, index)) {
-						        ++wallshit;
-						        if (wallshit >= *max_walls_hit) {
-						            break;
-						        }
-					        }
-				        }
-			        }
-			        if (wallshit < *max_walls_hit) {
-						camera.vismap[v + u * map.height] = true;
-						goto next;
-			        }
-		        }
-	        }
-next:;
+    while (!open.empty()) {
+        const int u = open.back().first;
+        const int v = open.back().second;
+        const int uvindex = v * hoff + u * woff;
+        open.pop_back();
+        if (camera.vismap[v + u * map.height]) {
+            goto next;
+        }
+        if (behindCamera(camera, (real_t)u + 0.5, (real_t)v + 0.5)) {
+            goto next;
+        }
+        for (int foo = -1; foo <= 1; ++foo) {
+            for (int bar = -1; bar <= 1; ++bar) {
+                const int x = std::min(std::max(0, camx + foo), (int)map.width - 1);
+                const int y = std::min(std::max(0, camy + bar), (int)map.height - 1);
+                const int xyindex = y * hoff + x * woff;
+                if (testTileOccludes(map, xyindex)) {
+                    continue;
+                }
+                const int dx = u - x;
+                const int dy = v - y;
+                const int sdx = sgn(dx);
+                const int sdy = sgn(dy);
+                const int dxabs = abs(dx);
+                const int dyabs = abs(dy);
+                bool wallhit = false;
+                if (dxabs >= dyabs) { // the line is more horizontal than vertical
+                    int a = dxabs >> 1;
+                    int index = uvindex;
+                    for (int i = 1; i < dxabs; ++i) {
+                        index -= woff * sdx;
+                        a += dyabs;
+                        if (a >= dxabs) {
+                            a -= dxabs;
+                            index -= hoff * sdy;
+                        }
+                        if (testTileOccludes(map, index)) {
+                            wallhit = true;
+                            break;
+                        }
+                    }
+                } else { // the line is more vertical than horizontal
+                    int a = dyabs >> 1;
+                    int index = uvindex;
+                    for (int i = 1; i < dyabs; ++i) {
+                        index -= hoff * sdy;
+                        a += dxabs;
+                        if (a >= dyabs) {
+                            a -= dyabs;
+                            index -= woff * sdx;
+                        }
+                        if (testTileOccludes(map, index)) {
+                            wallhit = true;
+                            break;
+                        }
+                    }
+                }
+                if (!wallhit) {
+                    camera.vismap[v + u * map.height] = true;
+                    goto next;
+                }
+            }
+        }
+        
+    next:
+        // if the vis check succeeded, explore adjacent tiles
+        if (camera.vismap[v + u * map.height]) {
+            if (u < map.width - 1) { // check tiles to the east
+                if (closed.emplace(u + 1, v).second) {
+                    if (!testTileOccludes(map, uvindex + woff)) {
+                        open.emplace_back(u + 1, v);
+                    }
+                }
+            }
+            if (v < map.height - 1) { // check tiles to the south
+                if (closed.emplace(u, v + 1).second) {
+                    if (!testTileOccludes(map, uvindex + hoff)) {
+                        open.emplace_back(u, v + 1);
+                    }
+                }
+            }
+            if (u > 0) { // check tiles to the west
+                if (closed.emplace(u - 1, v).second) {
+                    if (!testTileOccludes(map, uvindex - woff)) {
+                        open.emplace_back(u - 1, v);
+                    }
+                }
+            }
+            if (v > 0) { // check tiles to the north
+                if (closed.emplace(u, v - 1).second) {
+                    if (!testTileOccludes(map, uvindex - hoff)) {
+                        open.emplace_back(u, v - 1);
+                    }
+                }
+            }
         }
     }
 
 	// expand vismap one tile in each direction
+	constexpr int VMAP_MAX_DIMENSION = 128;
+	static bool vmap[VMAP_MAX_DIMENSION * VMAP_MAX_DIMENSION];
+	assert(size <= sizeof(vmap) / sizeof(vmap[0]));
 	const int w = map.width;
 	const int w1 = map.width - 1;
 	const int h = map.height;
 	const int h1 = map.height - 1;
-	bool* vmap = (bool*)malloc(sizeof(bool) * size);
-    for ( int u = 0; u < w; u++ ) {
-        for ( int v = 0; v < h; v++ ) {
+    for (int u = 0; u < w; u++) {
+        for (int v = 0; v < h; v++) {
             const int index = v + u * h;
 	        vmap[index] = camera.vismap[index];
 		    if (!vmap[index]) {
 		        if (v >= 1) {
-		            if ( camera.vismap[index - 1]) {
+		            if (camera.vismap[index - 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (*diagonalCulling) {
-		                if (u >= 1 && camera.vismap[index - h - 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		                if (u < w1 && camera.vismap[index + h - 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		            }
+                    if (u >= 1 && camera.vismap[index - h - 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
+                    if (u < w1 && camera.vismap[index + h - 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
 		        }
 		        if (v < h1) {
-		            if ( camera.vismap[index + 1]) {
+		            if (camera.vismap[index + 1]) {
 		                vmap[index] = true;
 		                continue;
 		            }
-		            if (*diagonalCulling) {
-		                if (u >= 1 && camera.vismap[index - h + 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		                if (u < w1 && camera.vismap[index + h + 1]) {
-		                    vmap[index] = true;
-		                    continue;
-		                }
-		            }
+                    if (u >= 1 && camera.vismap[index - h + 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
+                    if (u < w1 && camera.vismap[index + h + 1]) {
+                        vmap[index] = true;
+                        continue;
+                    }
 		        }
 		        if (u >= 1 && camera.vismap[index - h]) {
 		            vmap[index] = true;
@@ -3503,6 +3659,5 @@ next:;
 		    }
 		}
 	}
-	free(camera.vismap);
-	camera.vismap = vmap;
+	memcpy(camera.vismap, vmap, size);
 }

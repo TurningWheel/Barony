@@ -1216,18 +1216,19 @@ void gameLogic(void)
 				{
 					for ( z = 0; z < MAPLAYERS; z++ )
 					{
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+                        const int index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
+						if ( animatedtiles[map.tiles[index]] )
 						{
-							map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]--;
-							if ( !animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							map.tiles[index]--;
+							if ( !animatedtiles[map.tiles[index]] )
 							{
-								int tile = map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height];
+								int tile = map.tiles[index];
 								do
 								{
 									tile++;
 								}
 								while ( animatedtiles[tile] );
-								map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] = tile - 1;
+								map.tiles[index] = tile - 1;
 							}
 						}
 					}
@@ -5738,6 +5739,9 @@ void drawAllPlayerCameras() {
         // drunkenness spinning
 	    double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
 	    double sinspin = sin(ticks % 360 * PI / 180.f) * 0.25;
+        
+        // setup a graphics frame
+        beginGraphics();
 
 		//int maximum = splitscreen ? MAXPLAYERS : 1;
 		for (int c = 0; c < MAXPLAYERS; ++c)
@@ -6713,8 +6717,9 @@ int main(int argc, char** argv)
 							menucam.winy = 0;
 							menucam.winw = xres;
 							menucam.winh = yres;
-							light = lightSphere(menucam.x, menucam.y, 16, 64);
+							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
 							occlusionCulling(map, menucam);
+                            beginGraphics();
 							glBeginCamera(&menucam);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);

@@ -103,50 +103,6 @@ void actLiquid(Entity* my)
 
 	list_RemoveNode(my->mynode);
 	return;
-
-	if ( !LIQUID_INIT )
-	{
-		LIQUID_INIT = 1;
-		LIQUID_TIMER = 60 * (local_rng.rand() % 20);
-		if ( LIQUID_LAVA )
-		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 2, 128);
-		}
-	}
-	LIQUID_TIMER--;
-	if ( LIQUID_TIMER <= 0 )
-	{
-		LIQUID_TIMER = 60 * 20 + 60 * (local_rng.rand() % 20);
-		if ( !LIQUID_LAVA )
-		{
-			playSoundEntityLocal( my, 135, 32 );
-		}
-		else
-		{
-			playSoundEntityLocal( my, 155, 100 );
-		}
-	}
-	if ( LIQUID_LAVA && !LIQUID_LAVANOBUBBLE )
-	{
-		if ( ticks % 40 == my->getUID() % 40 && local_rng.rand() % 3 == 0 )
-		{
-			int c, j = 1 + local_rng.rand() % 2;
-			for ( c = 0; c < j; c++ )
-			{
-				Entity* entity = spawnGib( my );
-				entity->x += local_rng.rand() % 16 - 8;
-				entity->y += local_rng.rand() % 16 - 8;
-				entity->flags[SPRITE] = true;
-				entity->sprite = 42;
-				entity->fskill[3] = 0.01;
-				double vel = (local_rng.rand() % 10) / 20.f;
-				entity->vel_x = vel * cos(entity->yaw);
-				entity->vel_y = vel * sin(entity->yaw);
-				entity->vel_z = -.15 - (local_rng.rand() % 15) / 100.f;
-				entity->z = 7.5;
-			}
-		}
-	}
 }
 
 void actEmpty(Entity* my)

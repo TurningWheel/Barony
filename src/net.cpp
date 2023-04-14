@@ -3146,7 +3146,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    SDLNet_Read16(&net_packet->data[4]),
 		    SDLNet_Read16(&net_packet->data[6]),
 		    SDLNet_Read16(&net_packet->data[8]),
-		    SDLNet_Read16(&net_packet->data[10]));
+		    SDLNet_Read32(&net_packet->data[10]));
 	}},
 
 	// new light, unshadowed
@@ -3155,7 +3155,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    SDLNet_Read16(&net_packet->data[4]),
 		    SDLNet_Read16(&net_packet->data[6]),
 		    SDLNet_Read16(&net_packet->data[8]),
-		    SDLNet_Read16(&net_packet->data[10]));
+		    SDLNet_Read32(&net_packet->data[10]));
 	}},
 
 	// create wall

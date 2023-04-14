@@ -369,25 +369,64 @@ void actItem(Entity* my)
 	{
 		switch ( my->sprite )
 		{
-			case 610: // orbs
-			case 611:
-			case 612:
-			case 613:
+			case 610: // orbs (blue)
+                my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 0, 192));
+                }
+                break;
+			case 611: // red
+                my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 0));
+                }
+                break;
+			case 612: // purple
+                my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 192));
+                }
+                break;
+			case 613: // green
 				my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
 				if ( !my->light )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 192, 0));
 				}
 				break;
-			case 1206: // loot bags
-			case 1207:
-			case 1208:
-			case 1209:
+			case 1206: // loot bags (yellow)
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 0));
+                }
+                break;
+			case 1207: // green
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 192, 0));
+                }
+                break;
+			case 1208: // red
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 0));
+                }
+                break;
+			case 1209: // pink
 				if ( !my->light )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 128, 192));
 				}
 				break;
+            case 1210: // white
+                if ( !my->light )
+                {
+                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 192));
+                }
+                break;
 			default:
 				break;
 		}

@@ -3897,7 +3897,7 @@ void assignActions(map_t* map)
 		{
 			if ( lavatiles[map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height]] )
 			{
-				lightSphereShadow(x, y, 2, 128);
+				lightSphereShadow(x, y, 2, makeColorRGB(255, 12, 0));
 			}
 		}
 	}
@@ -4772,7 +4772,7 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 5.45;
+				entity->z = 5.5;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actLadder;
 				entity->sprite = 161; // ladder
@@ -5293,11 +5293,11 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						entity->z = -21.49;
+						entity->z = -6.25 - 16.0;
 					}
 					else
 					{
-						entity->z = -5.49;
+						entity->z = -6.25;
 					}
 				}
 				break;
@@ -5333,7 +5333,7 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
-				entity->z = 5.45;
+				entity->z = 5.5;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actLadder;
 				entity->sprite = 161; // ladder
@@ -6186,11 +6186,11 @@ void assignActions(map_t* map)
 					{
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
-							entity->z = -21.49;
+							entity->z = -6.25 - 16.0;
 						}
 						else
 						{
-							entity->z = -5.49;
+							entity->z = -6.25;
 						}
 					}
 				}
@@ -6198,7 +6198,7 @@ void assignActions(map_t* map)
 				{
 					entity->sizex = 4;
 					entity->sizey = 4;
-					entity->z = 5.45;
+					entity->z = 5.5;
 					entity->flags[PASSABLE] = true;
 					entity->behavior = &actTeleporter;
 					entity->sprite = 619; // ladder

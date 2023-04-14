@@ -155,7 +155,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "citadelsecret.lmp", 104229 },
 	{ "gnomishmines.lmp", 603055 },
 	{ "greatcastle.lmp", 9868075 },
-	{ "hamlet.lmp", 8786398 },
+	{ "hamlet.lmp", 8994375 },
 	{ "hell.lmp", 3511919 },
 	{ "hell00.lmp", 28651 },
 	{ "hell01.lmp", 22399 },
@@ -341,70 +341,202 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "labyrinth.lmp", 397402 },
 	{ "labyrinth00.lmp", 119759 },
 	{ "labyrinth01.lmp", 32319 },
-	{ "labyrinth01a.lmp", 57960 },
+	{ "labyrinth01a.lmp", 64189 },
+	{ "labyrinth01b.lmp", 65337 },
+	{ "labyrinth01c.lmp", 43746 },
+	{ "labyrinth01d.lmp", 26536 },
+	{ "labyrinth01e.lmp", 19636 },
 	{ "labyrinth02.lmp", 40567 },
 	{ "labyrinth02a.lmp", 420 },
-	{ "labyrinth03.lmp", 183217 },
+	{ "labyrinth02b.lmp", 38920 },
+	{ "labyrinth02c.lmp", 16008 },
+	{ "labyrinth02d.lmp", 24253 },
+	{ "labyrinth02e.lmp", 63921 },
+	{ "labyrinth02f.lmp", 126844 },
+	{ "labyrinth03.lmp", 149405 },
 	{ "labyrinth03a.lmp", 16472 },
+	{ "labyrinth03b.lmp", 111509 },
+	{ "labyrinth03c.lmp", 50370 },
+	{ "labyrinth03d.lmp", 236316 },
+	{ "labyrinth03e.lmp", 82737 },
+	{ "labyrinth03f.lmp", 191286 },
 	{ "labyrinth04.lmp", 109784 },
-	{ "labyrinth04a.lmp", 73194 },
+	{ "labyrinth04a.lmp", 66827 },
+	{ "labyrinth04b.lmp", 80896 },
+	{ "labyrinth04c.lmp", 107797 },
+	{ "labyrinth04d.lmp", 89364 },
+	{ "labyrinth04e.lmp", 91803 },
+	{ "labyrinth04f.lmp", 67426 },
 	{ "labyrinth05.lmp", 110121 },
 	{ "labyrinth05a.lmp", 53007 },
+	{ "labyrinth05b.lmp", 47308 },
+	{ "labyrinth05c.lmp", 66118 },
+	{ "labyrinth05d.lmp", 53922 },
+	{ "labyrinth05e.lmp", 66820 },
 	{ "labyrinth06.lmp", 39633 },
 	{ "labyrinth06a.lmp", 16213 },
+	{ "labyrinth06b.lmp", 41773 },
+	{ "labyrinth06c.lmp", 52793 },
+	{ "labyrinth06d.lmp", 33467 },
+	{ "labyrinth06e.lmp", 35252 },
 	{ "labyrinth07.lmp", 39633 },
 	{ "labyrinth07a.lmp", 16244 },
+	{ "labyrinth07b.lmp", 64137 },
+	{ "labyrinth07c.lmp", 43007 },
+	{ "labyrinth07d.lmp", 49006 },
+	{ "labyrinth07e.lmp", 48286 },
 	{ "labyrinth08.lmp", 91975 },
-	{ "labyrinth08a.lmp", 107406 },
+	{ "labyrinth08a.lmp", 126344 },
+	{ "labyrinth08b.lmp", 261965 },
+	{ "labyrinth08c.lmp", 116805 },
+	{ "labyrinth08d.lmp", 93423 },
+	{ "labyrinth08e.lmp", 166877 },
 	{ "labyrinth09.lmp", 70907 },
 	{ "labyrinth09a.lmp", 42123 },
+	{ "labyrinth09b.lmp", 123680 },
+	{ "labyrinth09c.lmp", 158047 },
+	{ "labyrinth09d.lmp", 41246 },
+	{ "labyrinth09e.lmp", 53113 },
 	{ "labyrinth10.lmp", 70911 },
 	{ "labyrinth10a.lmp", 37919 },
+	{ "labyrinth10b.lmp", 52942 },
+	{ "labyrinth10c.lmp", 104651 },
+	{ "labyrinth10d.lmp", 41875 },
+	{ "labyrinth10e.lmp", 77554 },
 	{ "labyrinth11.lmp", 102011 },
 	{ "labyrinth11a.lmp", 85306 },
-	{ "labyrinth12.lmp", 108448 },
+	{ "labyrinth11b.lmp", 44855 },
+	{ "labyrinth11c.lmp", 121035 },
+	{ "labyrinth11d.lmp", 245955 },
+	{ "labyrinth11e.lmp", 92172 },
+	{ "labyrinth12.lmp", 108662 },
 	{ "labyrinth12a.lmp", 248043 },
+	{ "labyrinth12b.lmp", 75322 },
+	{ "labyrinth12c.lmp", 251882 },
+	{ "labyrinth12d.lmp", 285746 },
+	{ "labyrinth12e.lmp", 93600 },
 	{ "labyrinth13.lmp", 42829 },
 	{ "labyrinth13a.lmp", 30982 },
-	{ "labyrinth14.lmp", 67078 },
+	{ "labyrinth13b.lmp", 21962 },
+	{ "labyrinth13c.lmp", 31714 },
+	{ "labyrinth13d.lmp", 9987 },
+	{ "labyrinth13e.lmp", 20182 },
+	{ "labyrinth13f.lmp", 12578 },
+	{ "labyrinth14.lmp", 67079 },
 	{ "labyrinth14a.lmp", 129808 },
+	{ "labyrinth14b.lmp", 45415 },
+	{ "labyrinth14c.lmp", 44746 },
+	{ "labyrinth14d.lmp", 100542 },
+	{ "labyrinth14e.lmp", 31548 },
 	{ "labyrinth15.lmp", 287900 },
 	{ "labyrinth15a.lmp", 22984 },
-	{ "labyrinth16.lmp", 77023 },
+	{ "labyrinth15b.lmp", 104822 },
+	{ "labyrinth15c.lmp", 114256 },
+	{ "labyrinth15d.lmp", 104887 },
+	{ "labyrinth15e.lmp", 64426 },
+	{ "labyrinth16.lmp", 92449 },
 	{ "labyrinth16a.lmp", 12211 },
-	{ "labyrinth17.lmp", 398390 },
-	{ "labyrinth17a.lmp", 27933 },
-	{ "labyrinth18.lmp", 142731 },
-	{ "labyrinth18a.lmp", 119368 },
-	{ "labyrinth19.lmp", 56047 },
-	{ "labyrinth19a.lmp", 3699 },
-	{ "labyrinth20.lmp", 67906 },
+	{ "labyrinth16b.lmp", 62760 },
+	{ "labyrinth16c.lmp", 77205 },
+	{ "labyrinth16d.lmp", 39180 },
+	{ "labyrinth16e.lmp", 30724 },
+	{ "labyrinth17.lmp", 358170 },
+	{ "labyrinth17a.lmp", 27749 },
+	{ "labyrinth17b.lmp", 43026 },
+	{ "labyrinth17c.lmp", 33891 },
+	{ "labyrinth17d.lmp", 70771 },
+	{ "labyrinth17e.lmp", 123853 },
+	{ "labyrinth18.lmp", 142769 },
+	{ "labyrinth18a.lmp", 108928 },
+	{ "labyrinth18b.lmp", 103153 },
+	{ "labyrinth18c.lmp", 69372 },
+	{ "labyrinth18d.lmp", 68465 },
+	{ "labyrinth18e.lmp", 99163 },
+	{ "labyrinth19.lmp", 56735 },
+	{ "labyrinth19a.lmp", 3275 },
+	{ "labyrinth19b.lmp", 15120 },
+	{ "labyrinth19c.lmp", 37342 },
+	{ "labyrinth19d.lmp", 30150 },
+	{ "labyrinth19e.lmp", 63796 },
+	{ "labyrinth20.lmp", 68928 },
 	{ "labyrinth20a.lmp", 9243 },
+	{ "labyrinth20b.lmp", 68327 },
+	{ "labyrinth20c.lmp", 59151 },
+	{ "labyrinth20d.lmp", 42530 },
+	{ "labyrinth20e.lmp", 76531 },
 	{ "labyrinth21.lmp", 53319 },
 	{ "labyrinth21a.lmp", 3161 },
+	{ "labyrinth21b.lmp", 38170 },
+	{ "labyrinth21c.lmp", 12316 },
+	{ "labyrinth21d.lmp", 25530 },
+	{ "labyrinth21e.lmp", 60942 },
 	{ "labyrinth22.lmp", 35351 },
 	{ "labyrinth22a.lmp", 10229 },
+	{ "labyrinth22b.lmp", 12801 },
+	{ "labyrinth22c.lmp", 12265 },
+	{ "labyrinth22d.lmp", 10832 },
+	{ "labyrinth22e.lmp", 15763 },
 	{ "labyrinth23.lmp", 84812 },
 	{ "labyrinth23a.lmp", 60989 },
+	{ "labyrinth23b.lmp", 46318 },
+	{ "labyrinth23c.lmp", 38896 },
+	{ "labyrinth23d.lmp", 233512 },
+	{ "labyrinth23e.lmp", 81611 },
 	{ "labyrinth24.lmp", 55073 },
 	{ "labyrinth24a.lmp", 188853 },
+	{ "labyrinth24b.lmp", 74991 },
+	{ "labyrinth24c.lmp", 39266 },
+	{ "labyrinth24d.lmp", 17045 },
+	{ "labyrinth24e.lmp", 23087 },
 	{ "labyrinth25.lmp", 60492 },
 	{ "labyrinth25a.lmp", 11150 },
+	{ "labyrinth25b.lmp", 6878 },
+	{ "labyrinth25c.lmp", 11057 },
+	{ "labyrinth25d.lmp", 7201 },
+	{ "labyrinth25e.lmp", 4705 },
 	{ "labyrinth26.lmp", 10430 },
 	{ "labyrinth26a.lmp", 4453 },
+	{ "labyrinth26b.lmp", 5457 },
+	{ "labyrinth26c.lmp", 8932 },
+	{ "labyrinth26d.lmp", 3908 },
+	{ "labyrinth26e.lmp", 4013 },
 	{ "labyrinth27.lmp", 10433 },
 	{ "labyrinth27a.lmp", 4453 },
+	{ "labyrinth27b.lmp", 8752 },
+	{ "labyrinth27c.lmp", 4702 },
+	{ "labyrinth27d.lmp", 3343 },
+	{ "labyrinth27e.lmp", 4163 },
 	{ "labyrinth28.lmp", 20971 },
 	{ "labyrinth28a.lmp", 5511 },
+	{ "labyrinth28b.lmp", 4837 },
+	{ "labyrinth28c.lmp", 8471 },
+	{ "labyrinth28d.lmp", 5907 },
+	{ "labyrinth28e.lmp", 5629 },
 	{ "labyrinth29.lmp", 20516 },
 	{ "labyrinth29a.lmp", 2709 },
-	{ "labyrinth30.lmp", 57108 },
-	{ "labyrinth30a.lmp", 151311 },
-	{ "labyrinth31.lmp", 65198 },
-	{ "labyrinth31a.lmp", 18244 },
+	{ "labyrinth29b.lmp", 14281 },
+	{ "labyrinth29c.lmp", 12255 },
+	{ "labyrinth29d.lmp", 13714 },
+	{ "labyrinth29e.lmp", 27632 },
+	{ "labyrinth30.lmp", 67775 },
+	{ "labyrinth30a.lmp", 250787 },
+	{ "labyrinth30b.lmp", 76890 },
+	{ "labyrinth30c.lmp", 42344 },
+	{ "labyrinth30d.lmp", 122312 },
+	{ "labyrinth30e.lmp", 30839 },
+	{ "labyrinth31.lmp", 65567 },
+	{ "labyrinth31a.lmp", 18532 },
+	{ "labyrinth31b.lmp", 26136 },
+	{ "labyrinth31c.lmp", 44440 },
+	{ "labyrinth31d.lmp", 23865 },
+	{ "labyrinth31e.lmp", 21255 },
 	{ "labyrinth32.lmp", 49841 },
 	{ "labyrinth32a.lmp", 30907 },
-	{ "labyrinthsecret.lmp", 64363 },
+	{ "labyrinth32b.lmp", 35643 },
+	{ "labyrinth32c.lmp", 25911 },
+	{ "labyrinth32d.lmp", 5279 },
+	{ "labyrinth32e.lmp", 26968 },
+	{ "labyrinthsecret.lmp", 73135 },
 	{ "labyrinthtoruins.lmp", 137530 },
 	{ "mainmenu1.lmp", 12427 },
 	{ "mainmenu2.lmp", 23291 },
@@ -424,7 +556,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine01d.lmp", 2848 },
 	{ "mine01e.lmp", 33508 },
 	{ "mine01f.lmp", 2424 },
-	{ "mine01g.lmp", 14146 },
+	{ "mine01g.lmp", 14706 },
 	{ "mine02.lmp", 16102 },
 	{ "mine02a.lmp", 1964 },
 	{ "mine02b.lmp", 2050 },
@@ -440,10 +572,11 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine03d.lmp", 1451 },
 	{ "mine03e.lmp", 1335 },
 	{ "mine03f.lmp", 6794 },
+	{ "mine03g.lmp", 1152 },
 	{ "mine04.lmp", 21711 },
 	{ "mine04a.lmp", 2250 },
-	{ "mine04b.lmp", 5791 },
-	{ "mine04c.lmp", 7082 },
+	{ "mine04b.lmp", 6197 },
+	{ "mine04c.lmp", 4200 },
 	{ "mine04d.lmp", 2925 },
 	{ "mine04e.lmp", 914 },
 	{ "mine04f.lmp", 1042 },
@@ -485,7 +618,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine10d.lmp", 52593 },
 	{ "mine10e.lmp", 60889 },
 	{ "mine11.lmp", 74234 },
-	{ "mine11a.lmp", 7752 },
+	{ "mine11a.lmp", 7475 },
 	{ "mine11b.lmp", 7909 },
 	{ "mine11c.lmp", 4787 },
 	{ "mine11d.lmp", 20681 },
@@ -546,7 +679,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine19e.lmp", 4139 },
 	{ "mine20.lmp", 16836 },
 	{ "mine20a.lmp", 968 },
-	{ "mine20b.lmp", 1281 },
+	{ "mine20b.lmp", 1473 },
 	{ "mine20c.lmp", 2087 },
 	{ "mine20d.lmp", 1077 },
 	{ "mine20e.lmp", 10418 },
@@ -564,24 +697,24 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine22e.lmp", 3687 },
 	{ "mine22f.lmp", 28494 },
 	{ "mine23.lmp", 20477 },
-	{ "mine23a.lmp", 2292 },
+	{ "mine23a.lmp", 2274 },
 	{ "mine23b.lmp", 2524 },
-	{ "mine23c.lmp", 2557 },
+	{ "mine23c.lmp", 2689 },
 	{ "mine23d.lmp", 1984 },
 	{ "mine23e.lmp", 14561 },
 	{ "mine23f.lmp", 3794 },
-	{ "mine24.lmp", 17657 },
+	{ "mine24.lmp", 17630 },
 	{ "mine24a.lmp", 2300 },
 	{ "mine24b.lmp", 2455 },
 	{ "mine24c.lmp", 1544 },
 	{ "mine24d.lmp", 868 },
-	{ "mine24e.lmp", 1612 },
+	{ "mine24e.lmp", 1541 },
 	{ "mine25.lmp", 11992 },
 	{ "mine25a.lmp", 1508 },
 	{ "mine25b.lmp", 1095 },
 	{ "mine25c.lmp", 7206 },
 	{ "mine25d.lmp", 475 },
-	{ "mine25e.lmp", 945 },
+	{ "mine25e.lmp", 1159 },
 	{ "mine26.lmp", 6638 },
 	{ "mine26a.lmp", 646 },
 	{ "mine26b.lmp", 568 },
@@ -598,7 +731,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine28a.lmp", 1867 },
 	{ "mine28b.lmp", 1981 },
 	{ "mine28c.lmp", 2255 },
-	{ "mine28d.lmp", 2242 },
+	{ "mine28d.lmp", 2264 },
 	{ "mine28e.lmp", 2099 },
 	{ "mine29.lmp", 7172 },
 	{ "mine29a.lmp", 631 },
@@ -1441,7 +1574,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	Sint32 sprite;
 	Stat* myStats;
 	Stat* dummyStats;
-	sex_t s;
 	int editorVersion = 0;
 	char filename[1024];
 	int mapHashData = 0;
@@ -2060,41 +2192,47 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #endif
 
 		// create new lightmap
-		if ( lightmap != NULL )
-		{
+		if ( lightmap ) {
 			free(lightmap);
 		}
-		if ( lightmapSmoothed )
-		{
+		if ( lightmapSmoothed ) {
 			free(lightmapSmoothed);
 		}
 
-		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
-		lightmapSmoothed = (int*)malloc(sizeof(Sint32) * (destmap->width + 2) * (destmap->height + 2));
+		lightmap = (vec4_t*) malloc(sizeof(vec4_t) * destmap->width * destmap->height);
+		lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (destmap->width + 2) * (destmap->height + 2));
 		if ( strncmp(map.name, "Hell", 4) )
 		{
-	        memset(lightmap, 0, sizeof(Sint32) * map.width * map.height);
-	        memset(lightmapSmoothed, 0, sizeof(Sint32) * (map.width + 2) * (map.height + 2));
+	        memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
+	        memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
 		}
 		else
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				lightmap[c] = 32;
+				lightmap[c].x = 32.f;
+                lightmap[c].y = 32.f;
+                lightmap[c].z = 32.f;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
-					lightmap[c] = *cvar_hell_ambience;
+					lightmap[c].x = *cvar_hell_ambience;
+                    lightmap[c].y = *cvar_hell_ambience;
+                    lightmap[c].z = *cvar_hell_ambience;
 				}
 #endif
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
-				lightmapSmoothed[c] = 32;
+				lightmapSmoothed[c].x = 32.f;
+                lightmapSmoothed[c].y = 32.f;
+                lightmapSmoothed[c].z = 32.f;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
-					lightmapSmoothed[c] = *cvar_hell_ambience;
+					lightmapSmoothed[c].x = *cvar_hell_ambience;
+                    lightmapSmoothed[c].y = *cvar_hell_ambience;
+                    lightmapSmoothed[c].z = *cvar_hell_ambience;
 				}
 #endif
 			}

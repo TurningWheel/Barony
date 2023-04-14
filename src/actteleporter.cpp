@@ -99,7 +99,7 @@ void Entity::actTeleporter()
 	{
 		if ( !light )
 		{
-			light = lightSphereShadow(x / 16, y / 16, 3, 255);
+			light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(255, 0, 255));
 		}
 		yaw += 0.01; // rotate slowly on my axis
 		sprite = 620;
