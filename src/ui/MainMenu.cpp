@@ -596,7 +596,7 @@ namespace MainMenu {
     static SDL_Surface* fireSurface = nullptr;
     static TempTexture* fireTexture = nullptr;
 
-	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", false);
+	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", true);
 
     static void fireStart() {
 		if ( !*cvar_story_fire_fx )
@@ -633,12 +633,14 @@ namespace MainMenu {
     }
 
     static inline void fireUpdate(Uint32* p) {
+        SDL_LockSurface(fireSurface);
         int w = Frame::virtualScreenX / firePixelSize;
 	    const int diff = std::max(0, RNG.getI32() % 5 - 3);
 	    const int below = (p[w] & 0xff000000) >> 24;
 	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
 	    *newPixel = makeColor(0, 0, 0, intensity);
+        SDL_UnlockSurface(fireSurface);
     }
 
     static void fire() {

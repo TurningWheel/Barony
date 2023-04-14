@@ -9768,6 +9768,8 @@ void doNewGame(bool makeHighscore) {
 		}
 		assignActions(&map);
 		generatePathMaps();
+        clearChunks();
+        createChunks();
 
 		achievementObserver.updateData();
 
@@ -10065,6 +10067,8 @@ void doNewGame(bool makeHighscore) {
 		}
 		assignActions(&map);
 		generatePathMaps();
+        clearChunks();
+        createChunks();
 
 		node_t* nextnode;
 		for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )

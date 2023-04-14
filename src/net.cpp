@@ -2141,6 +2141,9 @@ static void changeLevel() {
     destroyLoadingScreen();
 	loading = false;
     int result = loading_task.get();
+    
+    clearChunks();
+    createChunks();
 
 	// (special) unlock temple achievement
 	if ( secretlevel && currentlevel == 8 )

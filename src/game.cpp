@@ -2108,6 +2108,8 @@ void gameLogic(void)
 		                std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	                }
 	                destroyLoadingScreen();
+                    clearChunks();
+                    createChunks();
 		            loading = false;
 	                int result = loading_task.get();
 

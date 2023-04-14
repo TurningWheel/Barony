@@ -2021,19 +2021,43 @@ void glDrawWorld(view_t* camera, int mode)
     glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
     
     // draw tile chunks
+    int index = 0;
+    constexpr int xoff = 1;
+    constexpr int dim = 4; // size of chunk in tiles
+    const int yoff = (map.width / dim) + ((map.width % dim) ? 1 : 0);
     for (auto& chunk : chunks) {
         for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
             for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
                 if (camera->vismap[y + x * map.height]) {
                     if (chunk.isDirty(map)) {
-                        chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
+                        const auto ceiling = !shouldDrawClouds(map);
+                        chunk.build(map, ceiling, chunk.x, chunk.y, chunk.w, chunk.h);
+                        
+                        // build neighbor chunks as well (in-case there are shared walls)
+                        if (chunk.x + chunk.w < map.width) { // build east chunk
+                            auto& nChunk = chunks[index + xoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.y + chunk.h < map.height) { // build south chunk
+                            auto& nChunk = chunks[index + yoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.x > 0) { // build west chunk
+                            auto& nChunk = chunks[index - xoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.y > 0) { // build north chunk
+                            auto& nChunk = chunks[index - yoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
                     }
                     chunk.draw();
                     goto next;
                 }
             }
         }
-    next:;
+    next:
+        ++index;
     }
     
     // unbind shader

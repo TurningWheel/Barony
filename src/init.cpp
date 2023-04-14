@@ -1990,10 +1990,12 @@ void generateTileTextures() {
         if (!tiles[c]) {
             continue;
         }
+        SDL_LockSurface(tiles[c]);
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             (c % dim) * w,
             (c / dim) * h,
             w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels);
+        SDL_UnlockSurface(tiles[c]);
     }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
