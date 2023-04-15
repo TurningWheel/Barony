@@ -133,6 +133,9 @@ void createCommonDrawResources() {
     
     // create lightmap texture
     lightmapTexture = new TempTexture();
+    glActiveTexture(GL_TEXTURE1);
+    lightmapTexture->bind();
+    glActiveTexture(GL_TEXTURE0);
     
     // voxel shader:
     

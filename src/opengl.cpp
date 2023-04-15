@@ -496,37 +496,50 @@ static void fillSmoothLightmap() {
     }
 }
 
+static inline bool testTileOccludes(const map_t& map, int index) {
+    if (index < 0 || index > map.width * map.height * MAPLAYERS - MAPLAYERS) {
+        return true;
+    }
+    const Uint64& t0 = *(Uint64*)&map.tiles[index];
+    const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
+    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
+}
+
 static void loadLightmapTexture() {
-    glActiveTexture(GL_TEXTURE1);
-    
     // allocate lightmap pixel data
     SDL_Surface* lightmapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32,
         0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
     assert(lightmapSurface);
     
     // build lightmap texture data
+    const int xoff = MAPLAYERS * map.height;
+    const int yoff = MAPLAYERS;
     SDL_LockSurface(lightmapSurface);
     for (int x = 0, index = 0; x < map.width; ++x) {
-        for (int y = 0; y < map.height; ++y, ++index) {
-            const auto& l = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
-            const auto r = std::min(std::max(0.f, l.x), 255.f);
-            const auto g = std::min(std::max(0.f, l.y), 255.f);
-            const auto b = std::min(std::max(0.f, l.z), 255.f);
-            const Uint32 color = makeColorRGB(r, g, b);
-            putPixel(lightmapSurface, x, y, color);
+        for (int y = 0; y < map.height; ++y, index += yoff) {
+            if (!testTileOccludes(map, index)) {
+                int count = 1;
+                vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+                if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
+                const auto r = std::min(std::max(0.f, total.x / count), 255.f);
+                const auto g = std::min(std::max(0.f, total.y / count), 255.f);
+                const auto b = std::min(std::max(0.f, total.z / count), 255.f);
+                const Uint32 color = makeColorRGB(r, g, b);
+                putPixel(lightmapSurface, x, y, color);
+            } else {
+                putPixel(lightmapSurface, x, y, makeColorRGB(0, 0, 0));
+            }
         }
     }
     SDL_UnlockSurface(lightmapSurface);
     
     // load lightmap texture data
     lightmapTexture->load(lightmapSurface, true, false);
-    lightmapTexture->bind();
     
     SDL_FreeSurface(lightmapSurface);
-    
-    // switch back to texture unit 0
-    // (only other texture unit we currently use)
-    glActiveTexture(GL_TEXTURE0);
 }
 
 static void updateChunks();
