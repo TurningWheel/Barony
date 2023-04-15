@@ -507,39 +507,36 @@ static inline bool testTileOccludes(const map_t& map, int index) {
 
 static void loadLightmapTexture() {
     // allocate lightmap pixel data
-    SDL_Surface* lightmapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32,
-        0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-    assert(lightmapSurface);
+    static std::vector<float> pixels;
+    pixels.clear();
+    pixels.reserve(map.width * map.height * 4);
     
     // build lightmap texture data
+    const float div = 1.f / 255.f;
     const int xoff = MAPLAYERS * map.height;
     const int yoff = MAPLAYERS;
-    SDL_LockSurface(lightmapSurface);
-    for (int x = 0, index = 0; x < map.width; ++x) {
-        for (int y = 0; y < map.height; ++y, index += yoff) {
+    for (int y = 0; y < map.height; ++y) {
+        for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
             if (!testTileOccludes(map, index)) {
-                int count = 1;
+                float count = 1.f;
                 vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
                 if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
                 if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
                 if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
                 if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
-                const auto r = std::min(std::max(0.f, total.x / count), 255.f);
-                const auto g = std::min(std::max(0.f, total.y / count), 255.f);
-                const auto b = std::min(std::max(0.f, total.z / count), 255.f);
-                const Uint32 color = makeColorRGB(r, g, b);
-                putPixel(lightmapSurface, x, y, color);
+                total.x = (total.x / count) * div;
+                total.y = (total.y / count) * div;
+                total.z = (total.z / count) * div;
+                total.w = 1.f;
+                pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
             } else {
-                putPixel(lightmapSurface, x, y, makeColorRGB(0, 0, 0));
+                pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
             }
         }
     }
-    SDL_UnlockSurface(lightmapSurface);
     
     // load lightmap texture data
-    lightmapTexture->load(lightmapSurface, true, false);
-    
-    SDL_FreeSurface(lightmapSurface);
+    lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
 }
 
 static void updateChunks();
