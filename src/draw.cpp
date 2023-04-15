@@ -271,7 +271,7 @@ void createCommonDrawResources() {
         "TexCoord = iTexCoord;"
         "Color = iColor;"
         "}";
-
+    
     static const char world_fragment_glsl[] =
         "#version 120\n"
         "varying vec2 TexCoord;"
@@ -287,6 +287,7 @@ void createCommonDrawResources() {
         "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
         //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+    
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
@@ -2563,35 +2564,35 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Type: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							strcpy(tmpStr2, monsterEditorNameStrings[entity->skill[0]]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Qty: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[1]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Time: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[2]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Amount: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[3]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Power to: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							if ( selectedEntity[0]->skill[4] == 1 )
 							{
@@ -2605,7 +2606,7 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Stop Chance: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[5]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
@@ -2619,7 +2620,7 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Facing: ");
 							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							switch ( (int)entity->yaw )
 							{
 								case 0:
@@ -2643,14 +2644,14 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Nodes: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->crystalNumElectricityNodes);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Rotation: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							switch ( (int)entity->crystalTurnReverse )
 							{
@@ -2669,7 +2670,7 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Spell to Activate: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							switch ( (int)entity->crystalSpellToActivate )
 							{
@@ -2714,7 +2715,6 @@ void drawEntities2D(long camx, long camy)
 							{
 								buf[totalChars] = '\0';
 							}
-							int numLines = 0;
 							std::vector<std::string> lines;
 							lines.push_back(spriteEditorNameStrings[selectedEntity[0]->sprite]);
 
@@ -2756,9 +2756,9 @@ void drawEntities2D(long camx, long camy)
 
 							SDL_Rect tooltip;
 							tooltip.x = padx + offsetx - 4;
-							tooltip.w = TTF8_WIDTH * longestLine + 8;
+							tooltip.w = TTF8_WIDTH * (int)longestLine + 8;
 							tooltip.y = pady + offsety - 4;
-							tooltip.h = lines.size() * TTF8_HEIGHT + 8;
+							tooltip.h = (int)lines.size() * TTF8_HEIGHT + 8;
 							if ( lines.size() > 1 )
 							{
 								drawTooltip(&tooltip);
@@ -3048,7 +3048,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 	int h = 0;
 	char buf[1024] = { '\0' };
     char* ptr = buf;
-    snprintf(buf, sizeof(buf), str);
+    snprintf(buf, sizeof(buf), "%s", str);
     for (int c = 0; c < sizeof(buf) && ptr[c] != '\0'; ++c) {
         if (ptr[c] == '\n') {
             ptr[c] = '\0';
@@ -3148,7 +3148,7 @@ void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 	}
 
 	// format the string
-	numbytes = strlen(str);
+	numbytes = (int)strlen(str);
 
 	// define font dimensions
 	dest.x = x;
