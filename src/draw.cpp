@@ -422,6 +422,12 @@ void Mesh::draw() const {
 }
 
 void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
+    if (fbo) {
+        if (xsize == _xsize && ysize == _ysize) {
+            return;
+        }
+        destroy();
+    }
 	xsize = _xsize;
 	ysize = _ysize;
 
@@ -470,11 +476,14 @@ void framebuffer::destroy() {
 	}
 }
 
+static std::vector<framebuffer*> fbStack;
+
 void framebuffer::bindForWriting() {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
 	glViewport(0, 0, xsize, ysize);
+    fbStack.push_back(this);
 }
 
 void framebuffer::bindForReading() const {
@@ -490,7 +499,17 @@ void framebuffer::blit(float gamma) {
 }
 
 void framebuffer::unbindForWriting() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (!fbStack.empty()) {
+        fbStack.pop_back();
+    }
+    if (fbStack.empty()) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, xres, yres);
+    } else {
+        auto fb = fbStack.back();
+        fbStack.pop_back();
+        fb->bindForWriting();
+    }
 }
 
 void framebuffer::unbindForReading() {
@@ -498,9 +517,8 @@ void framebuffer::unbindForReading() {
 }
 
 void framebuffer::unbindAll() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glViewport(0, 0, xres, yres);
+    unbindForWriting();
+    unbindForReading();
 }
 
 /*-------------------------------------------------------------------------------

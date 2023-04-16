@@ -557,11 +557,34 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.unbind();
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", false);
+#endif
+
+static int oldViewport[4];
+
 void glBeginCamera(view_t* camera)
 {
-	// setup state
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-    glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    if (!camera) {
+        return;
+    }
+    
+    // setup viewport
+#ifdef EDITOR
+    const bool hdr = false;
+#else
+    const bool hdr = *cvar_hdrEnabled;
+#endif
+    if (hdr) {
+        camera->fb.init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
+        camera->fb.bindForWriting();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glScissor(0, 0, camera->winw, camera->winh);
+    } else {
+        glGetIntegerv(GL_VIEWPORT, oldViewport);
+        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    }
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_TEST);
     
@@ -614,12 +637,31 @@ void glBeginCamera(view_t* camera)
 
 void glEndCamera(view_t* camera)
 {
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+    if (!camera) {
+        return;
+    }
+    
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
     glDisable(GL_DEPTH_TEST);
-    glScissor(0, 0, xres, yres);
     glDisable(GL_SCISSOR_TEST);
+    
+#ifdef EDITOR
+    const bool hdr = false;
+#else
+    const bool hdr = *cvar_hdrEnabled;
+#endif
+    if (hdr) {
+        camera->fb.unbindForWriting();
+        glGetIntegerv(GL_VIEWPORT, oldViewport);
+        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        camera->fb.bindForReading();
+        camera->fb.blit();
+        camera->fb.unbindForReading();
+        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+    } else {
+        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+    }
 }
 
 // hsv values:
@@ -2152,7 +2194,9 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
 	if(!dirty && (oldx==x) && (oldy==y))
 		return oldpix;
-
+    
+    main_framebuffer.unbindForWriting();
+    
 	if(dirty) {
 #ifdef PANDORA
 		// Pandora fbo
@@ -2161,7 +2205,6 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		}
 #endif
 		// generate object buffer
-		framebuffer::unbindAll();
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glBeginCamera(&camera);
 		glDrawWorld(&camera, ENTITYUIDS);
@@ -2220,8 +2263,8 @@ void GO_SwapBuffers(SDL_Window* screen)
 
 	return;
 #endif
-
-	framebuffer::unbindAll();
+    
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.bindForReading();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	main_framebuffer.blit(vidgamma);

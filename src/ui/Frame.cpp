@@ -267,7 +267,7 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 #if !defined(EDITOR)
 void Frame::predraw() {
 	drawingGui = true;
-	glViewport(0, 0, virtualScreenX, virtualScreenY);
+	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
 
 	// setup projection matrix
@@ -313,34 +313,24 @@ void Frame::postdraw() {
 		return;
 	}
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    gui_fb.unbindForWriting();
+    gui_fb.bindForReading();
     if (*ui_downscale) {
-	    gui_fb.bindForReading();
         gui_fb_downscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
-
-        main_framebuffer.bindForWriting();
+        gui_fb_downscaled.unbindForWriting();
         gui_fb_downscaled.bindForReading();
-        framebuffer::blit();
-        framebuffer::unbindForReading();
     }
     else if (*ui_upscale) {
-	    gui_fb.bindForReading();
         gui_fb_upscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
-
-        main_framebuffer.bindForWriting();
+        gui_fb_upscaled.unbindForWriting();
         gui_fb_upscaled.bindForReading();
-        framebuffer::blit();
-        framebuffer::unbindForReading();
     }
-    else {
-        main_framebuffer.bindForWriting();
-	    gui_fb.bindForReading();
-	    framebuffer::blit();
-        framebuffer::unbindForReading();
-    }
+    framebuffer::blit();
+    framebuffer::unbindForReading();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_BLEND);
 }
@@ -348,7 +338,7 @@ void Frame::postdraw() {
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = false;
-	glViewport(0, 0, virtualScreenX, virtualScreenY);
+	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
 
 	// setup projection matrix
@@ -379,7 +369,7 @@ void Frame::postdraw() {
 		return;
 	}
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
-	main_framebuffer.bindForWriting();
+    gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
 	framebuffer::blit();
 	framebuffer::unbindForReading();

@@ -2923,7 +2923,8 @@ bool changeVideoMode(int new_xres, int new_yres)
 		}
 	}
 
-	// create new frame fbo
+    // create new framebuffers
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
 	main_framebuffer.bindForWriting();
 	Frame::fboInit();
@@ -2955,7 +2956,8 @@ bool resizeWindow(int new_xres, int new_yres)
     }
 #endif
 
-	// create new frame fbo
+	// create new framebuffers
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
 	main_framebuffer.bindForWriting();
 	Frame::fboInit();
