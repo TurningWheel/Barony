@@ -37,16 +37,12 @@ void takeScreenshot(const char* output_path)
     if (output_path) {
         (void)completePath(filename, output_path, outputdir);
     } else {
+        char buffer[32];
 	    char filename2[PATH_MAX];
-	    strcpy( filename2, "Screenshot " );
-	    time_t timer;
-	    char buffer[32];
-	    struct tm* tm_info;
-	    time(&timer);
-	    tm_info = localtime(&timer);
-	    strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
-	    strcat( filename2, buffer );
-	    strcat( filename2, ".png" );
+	    strcpy(filename2, "Screenshot ");
+        getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
+	    strcat(filename2, buffer);
+	    strcat(filename2, ".png");
         (void)completePath(filename, filename2, outputdir);
 	}
 

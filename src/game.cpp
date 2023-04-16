@@ -6440,12 +6440,8 @@ int main(int argc, char** argv)
 
 		// init message
 		printlog("Barony version: %s\n", VERSION);
-		time_t timething;
 		char buffer[32];
-		struct tm* tm_info;
-		time(&timething);
-		tm_info = localtime(&timething);
-		strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
+        getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
 		printlog("Launch time: %s\n", buffer);
 
 		if ( (c = initGame()) )

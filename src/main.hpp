@@ -891,6 +891,10 @@ void stackTraceUnique();
 void finishStackTraceUnique();
 extern bool ENABLE_STACK_TRACES;
 
+time_t getTime();
+char* getTimeFormatted(time_t t, char* buf, size_t size);
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size);
+
 // I can't believe windows still defines these...
 #ifdef far
 #undef far

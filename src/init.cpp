@@ -2520,7 +2520,7 @@ int deinitApp()
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.
 	char lognamewithTimestamp[128];
-	std::time_t timeNow = std::time(nullptr);
+    std::time_t timeNow = getTime();
 	struct tm *localTimeNow = nullptr;
 	localTimeNow = std::localtime(&timeNow);
 

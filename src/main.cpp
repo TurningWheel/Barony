@@ -674,17 +674,13 @@ void printlog(const char* str, ...)
 	va_end( argptr );
 
 	// timestamp the message
-	time_t timer;
 	char buffer[32];
-	struct tm* tm_info;
-	time(&timer);
-	tm_info = localtime(&timer);
-	strftime( buffer, 32, "%H-%M-%S", tm_info );
+    getTimeFormatted(getTime(), buffer, sizeof(buffer));
 
 	// print to the log
 	if ( newstr[strlen(newstr) - 1] != '\n' )
 	{
-		int c = strlen(newstr);
+		int c = (int)strlen(newstr);
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;
 	}
@@ -802,4 +798,34 @@ static ConsoleCommand purgeStackTraces("/purge_stack_traces", "purge stack trace
     [](int argc, const char* argv[]){
     finishStackTraceUnique();
     });
+#endif
+
+#ifdef NINTENDO
+time_t getTime() {
+    return nxGetTime();
+}
+
+char* getTimeFormatted(time_t t, char* buf, size_t size) {
+    return nxGetTimeFormatted(t, buf, size);
+}
+
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
+    return nxGetTimeFormatted(t, buf, size);
+}
+#else // NINTENDO
+time_t getTime() {
+    return time(nullptr);
+}
+
+char* getTimeFormatted(time_t t, char* buf, size_t size) {
+    struct tm* tm = localtime(&t);
+    strftime(buf, size, "%H-%M-%S", tm);
+    return buf;
+}
+
+char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
+    struct tm* tm = localtime(&t);
+    strftime(buf, size, "%Y-%m-%d %H-%M-%S", tm);
+    return buf;
+}
 #endif

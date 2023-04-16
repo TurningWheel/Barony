@@ -7175,11 +7175,7 @@ void LocalAchievements_t::updateAchievement(const char* name, const bool unlocke
 		ach.unlocked = unlocked;
 		if ( ach.unlocked && !oldUnlocked )
 		{
-#ifdef NINTENDO
-			auto t = nxGetTime();
-#else
-			auto t = time(nullptr);
-#endif
+			auto t = getTime();
 			ach.unlockTime = t;
 
 			UIToastNotificationManager.createAchievementNotification(name);

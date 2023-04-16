@@ -5369,18 +5369,7 @@ void handleMainMenu(bool mode)
 				// draw unlock time
 				if ( unlocked )
 				{
-					auto it = achievementUnlockTime.find(item.first);
-					if ( it != achievementUnlockTime.end() )
-					{
-						char buffer[64];
-						time_t t = (time_t)it->second;
-						struct tm* tm_info = localtime(&t);
-						strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
-
-						char text[64];
-						snprintf(text, sizeof(text), "%32s", buffer);
-						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorYellow, true, text);
-					}
+					// deprecated
 				}
 
 				// draw image

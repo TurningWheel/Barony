@@ -7089,14 +7089,9 @@ bind_failed:
 					char buffer[64];
 					time_t t = (time_t)it->second;
 
-#ifdef NINTENDO
 					char tbuf[64];
-					nxGetTimeFormatted(t, tbuf, sizeof(tbuf));
+					getTimeAndDateFormatted(t, tbuf, sizeof(tbuf));
 					snprintf(buffer, sizeof(buffer), "Unlocked %s", tbuf);
-#else
-					struct tm* tm_info = localtime(&t);
-					strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
-#endif
 
 					auto unlockField = frame->addField("unlock", 64);
 					unlockField->setFont(smallfont_outline);
@@ -7258,11 +7253,7 @@ bind_failed:
         }
 
         constexpr Uint32 seconds_in_day = 86400;
-#ifdef NINTENDO
-		const Uint32 seconds = nxGetTime() % seconds_in_day;
-#else
-		const Uint32 seconds = time(NULL) % seconds_in_day;
-#endif
+		const Uint32 seconds = getTime() % seconds_in_day;
 
         if (add_to_list) {
             playSound(238, 64);

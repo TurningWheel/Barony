@@ -2847,7 +2847,7 @@ bool EOSFuncs::initAchievements()
 void EOS_CALL EOSFuncs::OnUnlockAchievement(const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* data)
 {
 	assert(data != NULL);
-	//int64_t t = (int64_t)time(NULL);
+	//int64_t t = getTime();
 	//achievementUnlockTime.emplace(std::make_pair(std::string((const char*)data->ClientData), t));
 	if ( data->ResultCode == EOS_EResult::EOS_Success )
 	{

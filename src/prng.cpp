@@ -213,11 +213,7 @@ void BaronyRNG::seedBytes(const void* key, size_t size) {
 
 void BaronyRNG::seedTime() {
     // we only want a 32-bit seed
-#ifdef NINTENDO
-    uint32_t t = (uint32_t)nxGetTime();
-#else
-	uint32_t t = (uint32_t)time(nullptr);
-#endif
+    uint32_t t = (uint32_t)getTime();
 	seedImpl(&t, sizeof(t));
 }
 
@@ -242,11 +238,7 @@ void BaronyRNG::getBytes(void* data_, size_t size) {
 	if (!seeded) {
 	    printlog("rng not seeded, seeding by unix time");
         // we only want a 32-bit seed
-#ifdef NINTENDO
-        uint32_t t = (uint32_t)nxGetTime();
-#else
-        uint32_t t = (uint32_t)time(nullptr);
-#endif
+        uint32_t t = (uint32_t)getTime();
 	    seedImpl(&t, sizeof(t));
 	}
 	for (uint8_t* data = static_cast<uint8_t*>(data_); size-- > 0; ++data) {

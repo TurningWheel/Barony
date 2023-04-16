@@ -5281,16 +5281,13 @@ int saveGame(int saveIndex) {
 	
 	SaveGameInfo info;
 	
-#ifdef NINTENDO
-    auto t = nxGetTime();
-#else
-	auto t = time(nullptr);
-#endif
+    auto t = getTime();
 	struct tm* tm = localtime(&t); assert(tm);
 
 	// save info
+    char buf[64];
 	info.game_version = getSavegameVersion(VERSION);
-	info.timestamp = asctime(tm);
+	info.timestamp = getTimeAndDateFormatted(t, buf, sizeof(buf));
 
 	// savefile hash
 	info.hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
