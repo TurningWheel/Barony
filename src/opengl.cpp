@@ -474,24 +474,21 @@ static void fillSmoothLightmap() {
         }
         
 #ifndef EDITOR
-        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
-        int smoothingRate = *cvar_smoothingRate;
+        static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", 1.f);
+        const float smoothingRate = *cvar_smoothingRate;
 #else
-        int smoothingRate = 1;
+        const float smoothingRate = 1.f;
 #endif
-        smoothingRate *= 4;
+        const float rate = smoothingRate * (1.f / fpsLimit) * 4.f;
         
         auto& d = lightmapSmoothed[smoothindex];
         const auto& s = lightmap[index];
         for (int c = 0; c < 4; ++c) {
             auto& dc = *(&d.x + c);
             const auto& sc = *(&s.x + c);
-            if (dc < sc) {
-                dc = std::min(sc, dc + smoothingRate);
-            }
-            else if (dc > sc) {
-                dc = std::max(sc, dc - smoothingRate);
-            }
+            const auto diff = sc - dc;
+            if (fabsf(diff) < 1.f) { dc += diff; }
+            else { dc += diff * rate; }
         }
     }
 }
