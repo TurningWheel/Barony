@@ -3,8 +3,8 @@
 #pragma once
 
 #include "Frame.hpp"
-#include "stat.hpp"
-#include "game.hpp"
+#include "../stat.hpp"
+#include "../game.hpp"
 #include "../interface/consolecommand.hpp"
 #include <deque>
 
