@@ -67,7 +67,7 @@ extern bool uiscale_skillspage;
 extern real_t uiscale_hotbar;
 extern real_t uiscale_inventory;
 
-#include "entity.hpp"
+#include "../entity.hpp"
 
 class EnemyHPDamageBarHandler
 {
