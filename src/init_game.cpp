@@ -97,7 +97,6 @@ int initGame()
 	}
 
 	// load item types
-	int newItems = 0;
 	printlog("loading items...\n");
 	//std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
 	//itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
@@ -226,15 +225,12 @@ int initGame()
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
-		int c, x;
-		char name[32];
-
 		// load model offsets
 		printlog( "loading model offsets...\n");
-		for ( c = 1; c < NUMMONSTERS; c++ )
+		for ( int c = 1; c < NUMMONSTERS; c++ )
 		{
 			// initialize all offsets to zero
-			for ( x = 0; x < 20; x++ )
+			for ( int x = 0; x < 20; x++ )
 			{
 				limbs[c][x][0] = 0;
 				limbs[c][x][1] = 0;
@@ -370,7 +366,7 @@ int initGame()
 		removedEntities.last = NULL;
 		safePacketsSent.first = NULL;
 		safePacketsSent.last = NULL;
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
 			safePacketsReceivedMap[c].clear();
 		}
@@ -387,7 +383,7 @@ int initGame()
 		}
 		command_history.first = NULL;
 		command_history.last = NULL;
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		for ( int c = 0; c < MAXPLAYERS; c++ )
 		{
 			openedChest[c] = NULL;
 		}
@@ -840,7 +836,7 @@ void deinitGame()
 		cpp_Free_CSteamID(currentLobby); //TODO: Remove these bodges.
 		currentLobby = NULL;
 	}
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		if ( steamIDRemote[c] )
 		{
@@ -848,7 +844,7 @@ void deinitGame()
 			steamIDRemote[c] = NULL;
 		}
 	}
-	for ( c = 0; c < MAX_STEAM_LOBBIES; c++ )
+	for ( int c = 0; c < MAX_STEAM_LOBBIES; c++ )
 	{
 		if ( lobbyIDs[c] )
 		{

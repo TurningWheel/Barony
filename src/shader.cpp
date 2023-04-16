@@ -1,4 +1,5 @@
 #include "shader.hpp"
+#include "main.hpp"
 
 void Shader::init(const char* name) {
     this->name = name;
@@ -22,7 +23,7 @@ void Shader::destroy() {
     }
 }
 
-static GLuint currentActiveShader = 0;
+static unsigned int currentActiveShader = 0;
 
 bool Shader::bind() {
     if (currentActiveShader != program) {
@@ -39,14 +40,14 @@ void Shader::unbind() {
     }
 }
 
-GLint Shader::uniform(const char* name) {
+int Shader::uniform(const char* name) {
     auto find = uniforms.find(name);
     if (find == uniforms.end()) {
-        GLint handle = glGetUniformLocation(program, (GLchar*)name);
+        int handle = glGetUniformLocation(program, (GLchar*)name);
         if (handle == -1) {
             printlog("uniform %s not found!", name);
         }
-        uniforms.emplace(name, handle);
+        uniforms.emplace(std::string(name), handle);
         return handle;
     } else {
         return find->second;
