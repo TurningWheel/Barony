@@ -114,12 +114,14 @@ struct framebuffer {
     void bindForReading() const;
 
     static void blit(float gamma = 1.f);
+    static void hdrBlit(float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
 
     static Mesh mesh;
     static Shader shader;
+    static Shader hdrShader;
 };
 
 // view structure

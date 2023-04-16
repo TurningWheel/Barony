@@ -63,6 +63,7 @@ Mesh framebuffer::mesh{
 };
 
 Shader framebuffer::shader;
+Shader framebuffer::hdrShader;
 Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
@@ -117,12 +118,38 @@ void createCommonDrawResources() {
         "varying vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
 		"uniform float uGamma;"
-		//"uniform int uTicks;"
 		"void main() {"
 		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
 		"}";
+    
+    static const char fb_hdr_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "uniform sampler2D uTexture;"
+        "uniform float uGamma;"
+        "uniform float uExposure;"
+        "void main() {"
+        "vec3 color = texture2D(uTexture, TexCoord).rgb;"
+    
+        // tone-mapping examples
+        //https://www.shadertoy.com/view/lslGzl
+    
+        // luma-based reinhard tone mapping
+        "float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));"
+        "float toneMappedLuma = luma / (1.0 + luma);"
+        "color *= toneMappedLuma / luma;"
+    
+        // two different kinds of reinhard tone mapping
+        //"color = color * (uExposure / (1.0 + color / uExposure));"
+        //"color = vec3(1.0) - exp(-color * uExposure);"
+    
+        "color = pow(color, vec3(1.0 / uGamma));"
+    
+        "gl_FragColor = vec4(color, 1.0);"
+        "}";
 
 	framebuffer::mesh.init();
+    
 	framebuffer::shader.init("framebuffer");
 	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
 	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
@@ -130,6 +157,14 @@ void createCommonDrawResources() {
     framebuffer::shader.bindAttribLocation("iTexCoord", 1);
     framebuffer::shader.link();
 	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    
+    framebuffer::hdrShader.init("hdr framebuffer");
+    framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+    framebuffer::hdrShader.compile(fb_hdr_fragment_glsl, sizeof(fb_hdr_fragment_glsl), Shader::Type::Fragment);
+    framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
+    framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
+    framebuffer::hdrShader.link();
+    glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0);
     
     // create lightmap texture
     lightmapTexture = new TempTexture();
@@ -334,6 +369,7 @@ void createCommonDrawResources() {
 void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
+    framebuffer::hdrShader.destroy();
     voxelShader.destroy();
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
@@ -493,9 +529,16 @@ void framebuffer::bindForReading() const {
 void framebuffer::blit(float gamma) {
 	shader.bind();
 	glUniform1f(shader.uniform("uGamma"), gamma);
-	//glUniform1i(shader.uniform("uTicks"), ticks);
 	mesh.draw();
 	shader.unbind();
+}
+
+void framebuffer::hdrBlit(float gamma, float exposure) {
+    hdrShader.bind();
+    glUniform1f(hdrShader.uniform("uGamma"), gamma);
+    glUniform1f(hdrShader.uniform("uExposure"), exposure);
+    mesh.draw();
+    hdrShader.unbind();
 }
 
 void framebuffer::unbindForWriting() {

@@ -559,6 +559,8 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
 
 #ifndef EDITOR
 static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", false);
+static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", 1.f);
+static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", 2.2f);
 #endif
 
 static int oldViewport[4];
@@ -648,15 +650,19 @@ void glEndCamera(view_t* camera)
     
 #ifdef EDITOR
     const bool hdr = false;
+    const float exposure = 1.f;
+    const float gamma = 1.f;
 #else
     const bool hdr = *cvar_hdrEnabled;
+    const float exposure = *cvar_hdrExposure;
+    const float gamma = *cvar_hdrGamma;
 #endif
     if (hdr) {
         camera->fb.unbindForWriting();
         glGetIntegerv(GL_VIEWPORT, oldViewport);
         glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
         camera->fb.bindForReading();
-        camera->fb.blit();
+        camera->fb.hdrBlit(gamma, exposure);
         camera->fb.unbindForReading();
         glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
     } else {
