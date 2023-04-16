@@ -552,6 +552,8 @@ extern ConsoleVariable<bool> cvar_enableKeepAlives;
 extern DebugStatsClass DebugStats;
 //extern ConsoleVariable<bool> cvar_useTimerInterpolation;
 
+#include "draw.hpp"
+
 class TimerExperiments
 {
 public:

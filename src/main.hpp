@@ -383,19 +383,6 @@ enum LightModifierValues : int
 	GLOBAL_LIGHT_MODIFIER_DISSIPATING
 };
 
-// view structure
-typedef struct view_t
-{
-	real_t x, y, z;
-	real_t ang;
-	real_t vang;
-	Sint32 winx, winy, winw, winh;
-    real_t globalLightModifier = 0.0;
-    real_t globalLightModifierEntities = 0.0;
-    int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-	bool* vismap = nullptr;
-} view_t;
-
 class Entity; //TODO: Bugger?
 
 // node structure
@@ -682,8 +669,6 @@ extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
-extern view_t cameras[MAXPLAYERS];
-extern view_t menucam;
 extern int minotaurlevel;
 #define SINGLE 0
 #define SERVER 1
@@ -826,21 +811,6 @@ button_t* newButton(void);
 string_t* newString(list_t* list, Uint32 color, Uint32 time, int player, char const * const content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
-// function prototypes for opengl.c:
-#define REALCOLORS 0
-#define ENTITYUIDS 1
-real_t getLightForEntity(real_t x, real_t y);
-void beginGraphics();
-void glBeginCamera(view_t* camera);
-void glDrawVoxel(view_t* camera, Entity* entity, int mode);
-void glDrawSprite(view_t* camera, Entity* entity, int mode);
-void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
-void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
-bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
-void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
-void glDrawWorld(view_t* camera, int mode);
-void glEndCamera(view_t* camera);
-
 // function prototypes for cursors.c:
 SDL_Cursor* newCursor(char const * const image[]);
 
@@ -866,7 +836,6 @@ extern bool initialized; //So that messagePlayer doesn't explode before the game
  extern GLuint fbo_ren;
 #endif // PANDORA
 void GO_SwapBuffers(SDL_Window* screen);
-unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 static const int NUM_STEAM_STATISTICS = 49;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];

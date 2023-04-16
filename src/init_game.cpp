@@ -529,7 +529,12 @@ int initGame()
 
 void deinitGame()
 {
-	int c, x;
+    // destroy camera framebuffers
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        cameras[c].fb.destroy();
+        playerPortraitView[c].fb.destroy();
+    }
+    menucam.fb.destroy();
 
 	// send disconnect messages
 	if (multiplayer != SINGLE) {
@@ -545,7 +550,7 @@ void deinitGame()
 	    }
 	    else if ( multiplayer == SERVER )
 	    {
-		    for ( x = 1; x < MAXPLAYERS; x++ )
+		    for ( int x = 1; x < MAXPLAYERS; x++ )
 		    {
 			    if ( client_disconnected[x] == true )
 			    {
@@ -617,7 +622,7 @@ void deinitGame()
 	}
 	freeInterfaceResources();
 	bookParser_t.deleteBooks();
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
@@ -653,20 +658,20 @@ void deinitGame()
 	}
 	else if ( multiplayer == SERVER )
 	{
-		for ( c = 0; c < MAXPLAYERS; ++c )
+		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
 	}
 
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		list_FreeAll(&players[c]->magic.spellList);
 	}
 	list_FreeAll(&command_history);
 
 	list_FreeAll(&safePacketsSent);
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	for ( int c = 0; c < MAXPLAYERS; c++ )
 	{
 		safePacketsReceivedMap[c].clear();
 	}
@@ -699,7 +704,7 @@ void deinitGame()
 		hamletmusic->release();
 		tutorialmusic->release();
 
-		for ( c = 0; c < NUMMINESMUSIC; c++ )
+		for ( int c = 0; c < NUMMINESMUSIC; c++ )
 		{
 			minesmusic[c]->release();
 		}
@@ -707,7 +712,7 @@ void deinitGame()
 		{
 			free(minesmusic);
 		}
-		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+		for ( int c = 0; c < NUMSWAMPMUSIC; c++ )
 		{
 			swampmusic[c]->release();
 		}
@@ -715,7 +720,7 @@ void deinitGame()
 		{
 			free(swampmusic);
 		}
-		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+		for ( int c = 0; c < NUMLABYRINTHMUSIC; c++ )
 		{
 			labyrinthmusic[c]->release();
 		}
@@ -723,7 +728,7 @@ void deinitGame()
 		{
 			free(labyrinthmusic);
 		}
-		for ( c = 0; c < NUMRUINSMUSIC; c++ )
+		for ( int c = 0; c < NUMRUINSMUSIC; c++ )
 		{
 			ruinsmusic[c]->release();
 		}
@@ -731,7 +736,7 @@ void deinitGame()
 		{
 			free(ruinsmusic);
 		}
-		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+		for ( int c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 		{
 			underworldmusic[c]->release();
 		}
@@ -739,7 +744,7 @@ void deinitGame()
 		{
 			free(underworldmusic);
 		}
-		for ( c = 0; c < NUMHELLMUSIC; c++ )
+		for ( int c = 0; c < NUMHELLMUSIC; c++ )
 		{
 			hellmusic[c]->release();
 		}
@@ -747,7 +752,7 @@ void deinitGame()
 		{
 			free(hellmusic);
 		}
-		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+		for ( int c = 0; c < NUMMINOTAURMUSIC; c++ )
 		{
 			minotaurmusic[c]->release();
 		}
@@ -755,7 +760,7 @@ void deinitGame()
 		{
 			free(minotaurmusic);
 		}
-		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		for ( int c = 0; c < NUMCAVESMUSIC; c++ )
 		{
 			cavesmusic[c]->release();
 		}
@@ -763,7 +768,7 @@ void deinitGame()
 		{
 			free(cavesmusic);
 		}
-		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		for ( int c = 0; c < NUMCITADELMUSIC; c++ )
 		{
 			citadelmusic[c]->release();
 		}
@@ -771,7 +776,7 @@ void deinitGame()
 		{
 			free(citadelmusic);
 		}
-		for ( c = 0; c < NUMINTROMUSIC; c++ )
+		for ( int c = 0; c < NUMINTROMUSIC; c++ )
 		{
 			intromusic[c]->release();
 		}
@@ -788,7 +793,7 @@ void deinitGame()
 
 	// free items
 	printlog( "freeing item data...\n");
-	for ( c = 0; c < NUMITEMS; c++ )
+	for ( int c = 0; c < NUMITEMS; c++ )
 	{
 		list_FreeAll(&items[c].images);
 		node_t* node, *nextnode;
@@ -908,7 +913,7 @@ void loadAchievementData(const char* path) {
 	}
 
 	char buf[65536];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+	int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
 	FileIO::close(fp);

@@ -3,6 +3,8 @@
 #pragma once
 
 #include "Frame.hpp"
+#include "stat.hpp"
+#include "game.hpp"
 #include "../interface/consolecommand.hpp"
 #include <deque>
 
@@ -16,6 +18,7 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw);
+extern view_t playerPortraitView[MAXPLAYERS];
 void toggleShopBuybackView(const int player);
 void loadHUDSettingsJSON();
 struct EnemyBarSettings_t
