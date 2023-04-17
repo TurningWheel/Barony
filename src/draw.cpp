@@ -2238,6 +2238,7 @@ void drawEntities3D(view_t* camera, int mode)
 			if ( entity->behavior == &actSpriteNametag )
 			{
 				if ( intro ) { continue; } // don't draw on main menu
+#ifndef EDITOR
                 auto parent = uidToEntity(entity->parent);
                 if (parent) {
                     if (multiplayer == CLIENT) {
@@ -2258,6 +2259,9 @@ void drawEntities3D(view_t* camera, int mode)
                         }
                     }
                 }
+#else // EDITOR
+                glDrawSpriteFromImage(camera, entity, entity->string ? entity->string : "", mode);
+#endif
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
