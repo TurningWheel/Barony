@@ -810,7 +810,7 @@ char* getTimeFormatted(time_t t, char* buf, size_t size) {
 }
 
 char* getTimeAndDateFormatted(time_t t, char* buf, size_t size) {
-    return nxGetTimeFormatted(t, buf, size);
+    return nxGetTimeAndDateFormatted(t, buf, size);
 }
 #else // NINTENDO
 time_t getTime() {
