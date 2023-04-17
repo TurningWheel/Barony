@@ -2151,13 +2151,9 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 			if ( entity->behavior == &actSpriteNametag )
 			{
-				int playersTag = playerEntityMatchesUid(entity->parent);
-				if ( playersTag >= 0 )
-				{
-					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-						+ pow(camera->y * 16.0 - entity->y, 2));
-					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-				}
+                real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+                    + pow(camera->y * 16.0 - entity->y, 2));
+                spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
@@ -2242,11 +2238,26 @@ void drawEntities3D(view_t* camera, int mode)
 			if ( entity->behavior == &actSpriteNametag )
 			{
 				if ( intro ) { continue; } // don't draw on main menu
-				int playersTag = playerEntityMatchesUid(entity->parent);
-				if ( playersTag >= 0 )
-				{
-					glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
-				}
+                auto parent = uidToEntity(entity->parent);
+                if (parent) {
+                    if (multiplayer == CLIENT) {
+                        auto stats = parent->behavior == &actPlayer ?
+                            parent->getStats() : (parent->clientsHaveItsStats ? parent->clientStats : nullptr);
+                        if (stats && stats->name[0]) {
+                            glDrawSpriteFromImage(camera, entity, stats->name, mode);
+                        }
+                    } else {
+                        auto stats = parent->getStats();
+                        if (stats && stats->name[0]) {
+                            auto player = stats->leader_uid ?
+                                playerEntityMatchesUid(stats->leader_uid):
+                                playerEntityMatchesUid(entity->parent);
+                            if (player >= 0 && (!stats->leader_uid || camera == &players[player]->camera())) {
+                                glDrawSpriteFromImage(camera, entity, stats->name, mode);
+                            }
+                        }
+                    }
+                }
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{

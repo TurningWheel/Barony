@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		84222CCC29ECB510000BF08E /* npcnames-female.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84222CCA29ECB510000BF08E /* npcnames-female.txt */; };
+		84222CCD29ECB510000BF08E /* npcnames-male.txt in Resources */ = {isa = PBXBuildFile; fileRef = 84222CCB29ECB510000BF08E /* npcnames-male.txt */; };
 		844D4A262925E64C005907BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844D4A252925E64C005907BA /* Assets.xcassets */; };
 		844D4A37292724EE005907BA /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84C3DB19291F8A1C0084EAD5 /* OpenGL.framework */; };
 		844D4A3C292724FE005907BA /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844D4A38292724FE005907BA /* SDL2.framework */; };
@@ -301,6 +303,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		84222CCA29ECB510000BF08E /* npcnames-female.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "npcnames-female.txt"; path = "../../npcnames-female.txt"; sourceTree = "<group>"; };
+		84222CCB29ECB510000BF08E /* npcnames-male.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "npcnames-male.txt"; path = "../../npcnames-male.txt"; sourceTree = "<group>"; };
 		844D4A1F2925E64C005907BA /* Barony Editor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Barony Editor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		844D4A252925E64C005907BA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		844D4A38292724FE005907BA /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
@@ -863,6 +867,8 @@
 				847B3BEF296BF890002D8852 /* libpng16.16.dylib */,
 				84C3DB12291F799D0084EAD5 /* Config.hpp */,
 				847E18F729239843003BD4E9 /* Info.plist */,
+				84222CCA29ECB510000BF08E /* npcnames-female.txt */,
+				84222CCB29ECB510000BF08E /* npcnames-male.txt */,
 				84C3DB2F292028790084EAD5 /* playernames-female.txt */,
 				84C3DB2D292028790084EAD5 /* playernames-male.txt */,
 				84F7109929236B0600AE0D03 /* steam_appid.txt */,
@@ -998,6 +1004,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84222CCC29ECB510000BF08E /* npcnames-female.txt in Resources */,
+				84222CCD29ECB510000BF08E /* npcnames-male.txt in Resources */,
 				84C3DB31292028790084EAD5 /* lang in Resources */,
 				84C3DB24292028630084EAD5 /* items in Resources */,
 				84C3DB25292028630084EAD5 /* maps in Resources */,

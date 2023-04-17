@@ -351,8 +351,12 @@ static const int EFFECT_WITHDRAWAL_BASE_TIME = TICKS_PER_SECOND * 60 * 8; // 8 m
 
 static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
+static const std::string NPCNAMES_MALE_FILE = "npcnames-male.txt";
+static const std::string NPCNAMES_FEMALE_FILE = "npcnames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
+extern std::vector<std::string> randomNPCNamesMale;
+extern std::vector<std::string> randomNPCNamesFemale;
 extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;

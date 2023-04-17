@@ -250,11 +250,12 @@ void spell_summonFamiliar(int player)
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
-					strcpy((char*)(&net_packet->data[8]), monsterStats->name);
-					net_packet->data[8 + strlen(monsterStats->name)] = 0;
+                    SDLNet_Write32(monsterStats->type, &net_packet->data[8]);
+					strcpy((char*)(&net_packet->data[12]), monsterStats->name);
+					net_packet->data[12 + strlen(monsterStats->name)] = 0;
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 8 + strlen(monsterStats->name) + 1;
+					net_packet->len = 12 + strlen(monsterStats->name) + 1;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);

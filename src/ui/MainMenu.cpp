@@ -12954,7 +12954,7 @@ failed:
 #else
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto choice = RNG.uniform(0, names.size() - 1);
+			auto choice = RNG.uniform(0, (int)names.size() - 1);
 			auto name = names[choice].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
@@ -14208,9 +14208,9 @@ failed:
 						// random name
 						auto& names = stats[c]->sex == sex_t::MALE ?
 						    randomPlayerNamesMale : randomPlayerNamesFemale;
-						const int choice = RNG.uniform(0, names.size() - 1);
+						const int choice = RNG.uniform(0, (int)names.size() - 1);
 						auto name = names[choice].c_str();
-						size_t len = strlen(name);
+						size_t len = names[choice].size();
 						len = std::min(sizeof(Stat::name) - 1, len);
 						memcpy(stats[c]->name, name, len);
 						stats[c]->name[len] = '\0';

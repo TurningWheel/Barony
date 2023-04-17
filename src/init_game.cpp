@@ -287,14 +287,19 @@ int initGame()
 		GlyphHelper.readFromFile();
 
 #ifdef NINTENDO
-		std::string maleNames, femaleNames;
-		maleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
-		femaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
-		randomPlayerNamesMale = getLinesFromDataFile(maleNames);
-		randomPlayerNamesFemale = getLinesFromDataFile(femaleNames);
+		const auto playerMaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_MALE_FILE;
+		const auto playerFemaleNames = BASE_DATA_DIR + std::string("/") + PLAYERNAMES_FEMALE_FILE;
+        const auto npcMaleNames = BASE_DATA_DIR + std::string("/") + NPCNAMES_MALE_FILE;
+        const auto npcFemaleNames = BASE_DATA_DIR + std::string("/") + NPCNAMES_FEMALE_FILE;
+		randomPlayerNamesMale = getLinesFromDataFile(playerMaleNames);
+		randomPlayerNamesFemale = getLinesFromDataFile(playerFemaleNames);
+        randomNPCNamesMale = getLinesFromDataFile(npcMaleNames);
+        randomNPCNamesFemale = getLinesFromDataFile(npcFemaleNames);
 #else // NINTENDO
 		randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
 		randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
+        randomNPCNamesMale = getLinesFromDataFile(NPCNAMES_MALE_FILE);
+        randomNPCNamesFemale = getLinesFromDataFile(NPCNAMES_FEMALE_FILE);
 #endif // !NINTENDO
 
 		updateLoadingScreen(94);

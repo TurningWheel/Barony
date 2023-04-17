@@ -3859,11 +3859,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			if ( monster->clientStats )
 			{
-				if ( (Sint8)net_packet->data[8] == '$' )
+                monster->clientStats->type = (Monster)SDLNet_Read32(&net_packet->data[8]);
+				if ( (Sint8)net_packet->data[12] == '$' )
 				{
 					char buf[128];
 					memset(buf, 0, sizeof(buf));
-					strcpy(buf, (char*)&net_packet->data[9]);
+					strcpy(buf, (char*)&net_packet->data[13]);
 					bool found = false;
 					for ( int type = 0; type < NUMMONSTERS; ++type )
 					{
@@ -3881,8 +3882,29 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				}
 				else
 				{
-					strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+					strcpy(monster->clientStats->name, (char*)&net_packet->data[12]);
 				}
+                if (monster->clientStats->type == HUMAN && monster->clientStats->name[0]) {
+                    Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+                    nametag->x = monster->x;
+                    nametag->y = monster->y;
+                    nametag->z = monster->z - 6;
+                    nametag->sizex = 1;
+                    nametag->sizey = 1;
+                    nametag->flags[NOUPDATE] = true;
+                    nametag->flags[PASSABLE] = true;
+                    nametag->flags[SPRITE] = true;
+                    nametag->flags[BRIGHT] = true;
+                    nametag->flags[UNCLICKABLE] = true;
+                    nametag->behavior = &actSpriteNametag;
+                    nametag->parent = monster->getUID();
+                    nametag->scalex = 0.2;
+                    nametag->scaley = 0.2;
+                    nametag->scalez = 0.2;
+                    nametag->skill[0] = clientnum;
+                    nametag->skill[1] = playerColor(clientnum, colorblind, true);
+                    nametag->setUID(-3);
+                }
 			}
 			if ( !FollowerMenu[clientnum].recentEntity )
 			{

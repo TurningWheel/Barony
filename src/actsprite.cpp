@@ -71,15 +71,16 @@ void actSpriteNametag(Entity* my)
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{
-		if ( !hide_playertags )
+		if ( hide_playertags )
 		{
-			my->flags[INVISIBLE] = false;
-			my->x = parent->x;
-			my->y = parent->y;
+            my->flags[INVISIBLE] = true;
 		}
 		else
 		{
-			my->flags[INVISIBLE] = true;
+            my->flags[INVISIBLE] = false;
+            my->x = parent->x;
+            my->y = parent->y;
+            my->z = parent->z - 6;
 		}
 	}
 	else
