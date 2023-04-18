@@ -15,6 +15,7 @@
 #include "../game.hpp"
 #include "../draw.hpp"
 #include "../ui/Frame.hpp"
+#include "../items.hpp"
 
 class Item;
 
@@ -65,6 +66,8 @@ extern bool uiscale_charactersheet;
 extern bool uiscale_skillspage;
 extern real_t uiscale_hotbar;
 extern real_t uiscale_inventory;
+
+#include "../entity.hpp"
 
 class EnemyHPDamageBarHandler
 {

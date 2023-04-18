@@ -11,8 +11,6 @@
 
 #pragma once
 
-#include "game.hpp"
-
 //TODO: Bugger all void pointers and helper funcs on these.
 void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 //void steam_OnGameOverlayActivated(void *callback);
@@ -107,6 +105,43 @@ extern void (*cpp_SteamServerClientWrapper_OnLobbyEntered)(void* pCallback, bool
 extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void* pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyMatchList_t.
 extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void* pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void* steamID);
+
+enum ESteamLeaderboardTitles : int
+{
+    LEADERBOARD_NONE,
+    LEADERBOARD_NORMAL_TIME,
+    LEADERBOARD_NORMAL_SCORE,
+    LEADERBOARD_MULTIPLAYER_TIME,
+    LEADERBOARD_MULTIPLAYER_SCORE,
+    LEADERBOARD_HELL_TIME,
+    LEADERBOARD_HELL_SCORE,
+    LEADERBOARD_HARDCORE_TIME,
+    LEADERBOARD_HARDCORE_SCORE,
+    LEADERBOARD_CLASSIC_TIME,
+    LEADERBOARD_CLASSIC_SCORE,
+    LEADERBOARD_CLASSIC_HARDCORE_TIME,
+    LEADERBOARD_CLASSIC_HARDCORE_SCORE,
+    LEADERBOARD_MULTIPLAYER_CLASSIC_TIME,
+    LEADERBOARD_MULTIPLAYER_CLASSIC_SCORE,
+    LEADERBOARD_MULTIPLAYER_HELL_TIME,
+    LEADERBOARD_MULTIPLAYER_HELL_SCORE,
+    LEADERBOARD_DLC_NORMAL_TIME,
+    LEADERBOARD_DLC_NORMAL_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_SCORE,
+    LEADERBOARD_DLC_HELL_TIME,
+    LEADERBOARD_DLC_HELL_SCORE,
+    LEADERBOARD_DLC_HARDCORE_TIME,
+    LEADERBOARD_DLC_HARDCORE_SCORE,
+    LEADERBOARD_DLC_CLASSIC_TIME,
+    LEADERBOARD_DLC_CLASSIC_SCORE,
+    LEADERBOARD_DLC_CLASSIC_HARDCORE_TIME,
+    LEADERBOARD_DLC_CLASSIC_HARDCORE_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_SCORE,
+    LEADERBOARD_DLC_MULTIPLAYER_HELL_TIME,
+    LEADERBOARD_DLC_MULTIPLAYER_HELL_SCORE
+};
 
 class CSteamLeaderboards
 {

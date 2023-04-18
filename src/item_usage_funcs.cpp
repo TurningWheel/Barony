@@ -3750,49 +3750,7 @@ void item_ScrollSummon(Item* item, int player)
 			Stat* monsterStats = monster->getStats();
 			if ( item->beatitude >= 0 && monsterStats )
 			{
-				monsterStats->leader_uid = players[player]->entity->getUID();
-				monster->flags[USERFLAG2] = true;
-				/*if ( !monsterally[HUMAN][monsterStats->type] )
-				{
-				}*/
-				monster->monsterAllyIndex = player;
-				if ( multiplayer == SERVER )
-				{
-					serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
-				}
-
-				// update followers for this player
-				node_t* newNode = list_AddNodeLast(&stats[player]->FOLLOWERS);
-				newNode->deconstructor = &defaultDeconstructor;
-				Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
-				newNode->element = myuid;
-				*myuid = monster->getUID();
-
-				// update client followers
-				if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-				{
-					strcpy((char*)net_packet->data, "LEAD");
-					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
-					std::string name = monsterStats->name;
-					if ( name != "" && name == MonsterData_t::getSpecialNPCName(*monsterStats) )
-					{
-						name = monsterStats->getAttribute("special_npc");
-						name.insert(0, "$");
-					}
-					strcpy((char*)(&net_packet->data[8]), name.c_str());
-					net_packet->data[8 + strlen(name.c_str())] = 0;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 8 + strlen(name.c_str()) + 1;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
-
-					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
-				}
-
-				if ( !FollowerMenu[player].recentEntity && players[player]->isLocalPlayer() )
-				{
-					FollowerMenu[player].recentEntity = monster;
-				}
+                forceFollower(*players[player]->entity, *monster);
 			}
 		}
 	}

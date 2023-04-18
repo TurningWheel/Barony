@@ -18776,9 +18776,14 @@ void createInventoryTooltipFrame(const int player)
 	}
 }
 
+view_t playerPortraitView[MAXPLAYERS];
+
 void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw)
 {
-	view_t view;
+    if (player < 0 || player >= MAXPLAYERS) {
+        return;
+    }
+    view_t& view = playerPortraitView[player];
 	auto ofov = ::fov;
 	::fov = fov;
 

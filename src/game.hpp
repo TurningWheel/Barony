@@ -202,43 +202,6 @@ enum PlayerRaces : int
 	RACE_IMP
 };
 
-enum ESteamLeaderboardTitles : int
-{
-	LEADERBOARD_NONE,
-	LEADERBOARD_NORMAL_TIME,
-	LEADERBOARD_NORMAL_SCORE,
-	LEADERBOARD_MULTIPLAYER_TIME,
-	LEADERBOARD_MULTIPLAYER_SCORE,
-	LEADERBOARD_HELL_TIME,
-	LEADERBOARD_HELL_SCORE,
-	LEADERBOARD_HARDCORE_TIME,
-	LEADERBOARD_HARDCORE_SCORE,
-	LEADERBOARD_CLASSIC_TIME,
-	LEADERBOARD_CLASSIC_SCORE,
-	LEADERBOARD_CLASSIC_HARDCORE_TIME,
-	LEADERBOARD_CLASSIC_HARDCORE_SCORE,
-	LEADERBOARD_MULTIPLAYER_CLASSIC_TIME,
-	LEADERBOARD_MULTIPLAYER_CLASSIC_SCORE,
-	LEADERBOARD_MULTIPLAYER_HELL_TIME,
-	LEADERBOARD_MULTIPLAYER_HELL_SCORE,
-	LEADERBOARD_DLC_NORMAL_TIME,
-	LEADERBOARD_DLC_NORMAL_SCORE,
-	LEADERBOARD_DLC_MULTIPLAYER_TIME,
-	LEADERBOARD_DLC_MULTIPLAYER_SCORE,
-	LEADERBOARD_DLC_HELL_TIME,
-	LEADERBOARD_DLC_HELL_SCORE,
-	LEADERBOARD_DLC_HARDCORE_TIME,
-	LEADERBOARD_DLC_HARDCORE_SCORE,
-	LEADERBOARD_DLC_CLASSIC_TIME,
-	LEADERBOARD_DLC_CLASSIC_SCORE,
-	LEADERBOARD_DLC_CLASSIC_HARDCORE_TIME,
-	LEADERBOARD_DLC_CLASSIC_HARDCORE_SCORE,
-	LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_TIME,
-	LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_SCORE,
-	LEADERBOARD_DLC_MULTIPLAYER_HELL_TIME,
-	LEADERBOARD_DLC_MULTIPLAYER_HELL_SCORE
-};
-
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
 void steamUnsetAchievement(const char* achName);
@@ -388,8 +351,12 @@ static const int EFFECT_WITHDRAWAL_BASE_TIME = TICKS_PER_SECOND * 60 * 8; // 8 m
 
 static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
+static const std::string NPCNAMES_MALE_FILE = "npcnames-male.txt";
+static const std::string NPCNAMES_FEMALE_FILE = "npcnames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
+extern std::vector<std::string> randomNPCNamesMale;
+extern std::vector<std::string> randomNPCNamesFemale;
 extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
 extern std::vector<std::string> physFSFilesInDirectory;
@@ -551,6 +518,8 @@ extern ConsoleVariable<bool> cvar_enableKeepAlives;
 
 extern DebugStatsClass DebugStats;
 //extern ConsoleVariable<bool> cvar_useTimerInterpolation;
+
+#include "draw.hpp"
 
 class TimerExperiments
 {

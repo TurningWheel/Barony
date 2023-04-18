@@ -10,7 +10,133 @@
 -------------------------------------------------------------------------------*/
 
 #pragma once
-#include "entity.hpp"
+
+class TempTexture {
+private:
+    GLuint _texid = 0;
+public:
+    const GLuint& texid = _texid;
+
+    TempTexture() {
+        glGenTextures(1, &_texid);
+    }
+
+    ~TempTexture() {
+        if( _texid ) {
+            glDeleteTextures(1,&_texid);
+            _texid = 0;
+        }
+    }
+    
+    void setParameters(bool clamp, bool point) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR);
+        //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+        //glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    void load(SDL_Surface* surf, bool clamp, bool point) {
+        SDL_LockSurface(surf);
+        glBindTexture(GL_TEXTURE_2D, _texid);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+        setParameters(clamp, point);
+        SDL_UnlockSurface(surf);
+    }
+    
+    void loadFloat(float* data, int width, int height, bool clamp, bool point) {
+        glBindTexture(GL_TEXTURE_2D, _texid);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data);
+        setParameters(clamp, point);
+    }
+
+    void bind() {
+        glBindTexture(GL_TEXTURE_2D, _texid);
+    }
+};
+
+#include <initializer_list>
+#include <cassert>
+
+struct Mesh {
+    enum class BufferType : unsigned int {
+        Position,    // vec3 float
+        TexCoord,    // vec2 float
+        Color,        // vec4 float
+        Index,        // uint
+        Max
+    };
+    static const std::unordered_map<BufferType, int> ElementsPerVBO;
+
+    Mesh(
+        std::initializer_list<float>&& positions,
+        std::initializer_list<float>&& texcoords,
+        std::initializer_list<float>&& colors,
+        std::initializer_list<unsigned int>&& indices) :
+        data{{positions}, {texcoords}, {colors}},
+        index(indices)
+        {}
+
+    Mesh(
+        const std::initializer_list<float>& positions,
+        const std::initializer_list<float>& texcoords,
+        const std::initializer_list<float>& colors,
+        const std::initializer_list<unsigned int>& indices) :
+        data{{positions}, {texcoords}, {colors}},
+        index(indices)
+        {}
+
+    const std::vector<float> data[(int)BufferType::Index];
+    const std::vector<unsigned int> index;
+
+    void init();
+    void destroy();
+    void draw() const;
+
+private:
+    unsigned int vao = 0; // vertex array object (mesh handle)
+    unsigned int vbo[(int)BufferType::Max]; // vertex buffer objects
+};
+
+#include "shader.hpp"
+
+struct framebuffer {
+    unsigned int fbo = 0;
+    unsigned int fbo_color = 0;
+    unsigned int fbo_depth = 0;
+    unsigned int xsize = 1280;
+    unsigned int ysize = 720;
+
+    void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
+    void destroy();
+    void bindForWriting();
+    void bindForReading() const;
+
+    static void blit(float gamma = 1.f);
+    static void hdrBlit(float gamma, float exposure);
+    static void unbindForWriting();
+    static void unbindForReading();
+    static void unbindAll();
+
+    static Mesh mesh;
+    static Shader shader;
+    static Shader hdrShader;
+};
+
+// view structure
+typedef struct view_t
+{
+    real_t x, y, z;
+    real_t ang;
+    real_t vang;
+    Sint32 winx, winy, winw, winh;
+    real_t globalLightModifier = 0.0;
+    real_t globalLightModifierEntities = 0.0;
+    int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+    framebuffer fb;
+    bool* vismap = nullptr;
+} view_t;
 
 #define FLIP_VERTICAL 1
 #define FLIP_HORIZONTAL 2
@@ -73,117 +199,6 @@ constexpr Uint32 makeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 constexpr Uint32 makeColorRGB(uint8_t r, uint8_t g, uint8_t b) {
     return 0xff000000 | ((Uint32)b << 16) | ((Uint32)g << 8) | ((Uint32)r << 0);
 }
-
-class TempTexture {
-private:
-	GLuint _texid = 0;
-public:
-    const GLuint& texid = _texid;
-
-	TempTexture() {
-		glGenTextures(1, &_texid);
-	}
-
-	~TempTexture() {
-		if( _texid ) {
-			glDeleteTextures(1,&_texid);
-			_texid = 0;
-		}
-	}
-
-	void load(SDL_Surface* surf, bool clamp, bool point) {
-		SDL_LockSurface(surf);
-		glBindTexture(GL_TEXTURE_2D, _texid);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-		if (clamp) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		}
-		if (point) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
-			//glGenerateMipmap(GL_TEXTURE_2D);
-		}
-		SDL_UnlockSurface(surf);
-	}
-
-	void bind() {
-		glBindTexture(GL_TEXTURE_2D, _texid);
-	}
-};
-
-#include <initializer_list>
-#include <cassert>
-
-struct Mesh {
-	enum class BufferType : unsigned int {
-		Position,	// vec3 float
-		TexCoord,	// vec2 float
-		Color,		// vec4 float
-		Index,		// uint
-		Max
-	};
-	static const std::unordered_map<BufferType, int> ElementsPerVBO;
-
-	Mesh(
-		std::initializer_list<float>&& positions,
-		std::initializer_list<float>&& texcoords,
-		std::initializer_list<float>&& colors,
-		std::initializer_list<unsigned int>&& indices) :
-		data{{positions}, {texcoords}, {colors}},
-		index(indices)
-		{}
-
-	Mesh(
-		const std::initializer_list<float>& positions,
-		const std::initializer_list<float>& texcoords,
-		const std::initializer_list<float>& colors,
-		const std::initializer_list<unsigned int>& indices) :
-		data{{positions}, {texcoords}, {colors}},
-		index(indices)
-		{}
-
-	const std::vector<float> data[(int)BufferType::Index];
-	const std::vector<unsigned int> index;
-
-	void init();
-	void destroy();
-	void draw() const;
-
-private:
-	unsigned int vao = 0; // vertex array object (mesh handle)
-	unsigned int vbo[(int)BufferType::Max]; // vertex buffer objects
-};
-
-#include "shader.hpp"
-
-struct framebuffer {
-    unsigned int fbo = 0;
-    unsigned int fbo_color = 0;
-    unsigned int fbo_depth = 0;
-    unsigned int xsize = 1280;
-    unsigned int ysize = 720;
-
-    void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
-    void destroy();
-    void bindForWriting();
-    void bindForReading() const;
-
-    static void blit(float gamma = 1.f);
-    static void unbindForWriting();
-    static void unbindForReading();
-    static void unbindAll();
-
-	static Mesh mesh;
-	static Shader shader;
-};
 
 extern framebuffer main_framebuffer;
 extern Shader voxelShader;
@@ -270,3 +285,23 @@ void createChunks();
 
 void createCommonDrawResources();
 void destroyCommonDrawResources();
+
+extern view_t cameras[MAXPLAYERS];
+extern view_t menucam;
+
+// function prototypes for opengl.c:
+#define REALCOLORS 0
+#define ENTITYUIDS 1
+real_t getLightForEntity(real_t x, real_t y);
+void beginGraphics();
+void glBeginCamera(view_t* camera);
+void glDrawVoxel(view_t* camera, Entity* entity, int mode);
+void glDrawSprite(view_t* camera, Entity* entity, int mode);
+void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
+void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
+bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
+void glDrawWorld(view_t* camera, int mode);
+void glEndCamera(view_t* camera);
+void glEndCamera(view_t* camera);
+unsigned int GO_GetPixelU32(int x, int y, view_t& camera);

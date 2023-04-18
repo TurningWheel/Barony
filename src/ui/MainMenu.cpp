@@ -596,7 +596,7 @@ namespace MainMenu {
     static SDL_Surface* fireSurface = nullptr;
     static TempTexture* fireTexture = nullptr;
 
-	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", false);
+	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", true);
 
     static void fireStart() {
 		if ( !*cvar_story_fire_fx )
@@ -633,12 +633,14 @@ namespace MainMenu {
     }
 
     static inline void fireUpdate(Uint32* p) {
+        SDL_LockSurface(fireSurface);
         int w = Frame::virtualScreenX / firePixelSize;
 	    const int diff = std::max(0, RNG.getI32() % 5 - 3);
 	    const int below = (p[w] & 0xff000000) >> 24;
 	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
 	    *newPixel = makeColor(0, 0, 0, intensity);
+        SDL_UnlockSurface(fireSurface);
     }
 
     static void fire() {
@@ -7087,14 +7089,9 @@ bind_failed:
 					char buffer[64];
 					time_t t = (time_t)it->second;
 
-#ifdef NINTENDO
 					char tbuf[64];
-					nxGetTimeFormatted(t, tbuf, sizeof(tbuf));
+					getTimeAndDateFormatted(t, tbuf, sizeof(tbuf));
 					snprintf(buffer, sizeof(buffer), "Unlocked %s", tbuf);
-#else
-					struct tm* tm_info = localtime(&t);
-					strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
-#endif
 
 					auto unlockField = frame->addField("unlock", 64);
 					unlockField->setFont(smallfont_outline);
@@ -7256,11 +7253,7 @@ bind_failed:
         }
 
         constexpr Uint32 seconds_in_day = 86400;
-#ifdef NINTENDO
-		const Uint32 seconds = nxGetTime() % seconds_in_day;
-#else
-		const Uint32 seconds = time(NULL) % seconds_in_day;
-#endif
+		const Uint32 seconds = getTime() % seconds_in_day;
 
         if (add_to_list) {
             playSound(238, 64);
@@ -12546,7 +12539,7 @@ failed:
 #else
 			auto& names = stats[index]->sex == sex_t::MALE ?
 				randomPlayerNamesMale : randomPlayerNamesFemale;
-			auto choice = RNG.uniform(0, names.size() - 1);
+			auto choice = RNG.uniform(0, (int)names.size() - 1);
 			auto name = names[choice].c_str();
 			name_field_fn(name, index);
 			auto card = static_cast<Frame*>(button.getParent());
@@ -13800,9 +13793,9 @@ failed:
 						// random name
 						auto& names = stats[c]->sex == sex_t::MALE ?
 						    randomPlayerNamesMale : randomPlayerNamesFemale;
-						const int choice = RNG.uniform(0, names.size() - 1);
+						const int choice = RNG.uniform(0, (int)names.size() - 1);
 						auto name = names[choice].c_str();
-						size_t len = strlen(name);
+						size_t len = names[choice].size();
 						len = std::min(sizeof(Stat::name) - 1, len);
 						memcpy(stats[c]->name, name, len);
 						stats[c]->name[len] = '\0';

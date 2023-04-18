@@ -21,7 +21,7 @@
 bool drawingGui = false;
 const Sint32 Frame::sliderSize = 16;
 
-extern float uiScale = 1.f;
+float uiScale = 1.f;
 
 static const int _virtualScreenMinWidth = 120;
 static const int _virtualScreenMinHeight = 120;
@@ -138,14 +138,14 @@ void Frame::fboDestroy() {
 
 void Frame::guiInit() {
 	if ( _virtualScreenX == 0 && _virtualScreenY == 0 ) {
-		constexpr int defaultWidth = 1280;
-		constexpr int defaultHeight = 720;
+		constexpr float defaultWidth = 1280.f;
+		constexpr float defaultHeight = 720.f;
 
-		const int lockedHeightY = 1440.f - 720.f * ((uiScale - .5f) / .5f);
+		const int lockedHeightY = defaultHeight * 2.f - defaultHeight * ((uiScale - .5f) / .5f);
 		const int lockedHeightX = (xres * lockedHeightY) / yres;
 		const int lockedHeightSize = lockedHeightX * lockedHeightY;
 
-		const int lockedWidthX = 2560.f - 1280.f * ((uiScale - .5f) / .5f);
+		const int lockedWidthX = defaultWidth * 2.f - defaultWidth * ((uiScale - .5f) / .5f);
 		const int lockedWidthY = (yres * lockedWidthX) / xres;
 		const int lockedWidthSize = lockedWidthX * lockedWidthY;
 
@@ -267,7 +267,7 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 #if !defined(EDITOR)
 void Frame::predraw() {
 	drawingGui = true;
-	glViewport(0, 0, virtualScreenX, virtualScreenY);
+	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
 
 	// setup projection matrix
@@ -313,34 +313,24 @@ void Frame::postdraw() {
 		return;
 	}
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    gui_fb.unbindForWriting();
+    gui_fb.bindForReading();
     if (*ui_downscale) {
-	    gui_fb.bindForReading();
         gui_fb_downscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
-
-        main_framebuffer.bindForWriting();
+        gui_fb_downscaled.unbindForWriting();
         gui_fb_downscaled.bindForReading();
-        framebuffer::blit();
-        framebuffer::unbindForReading();
     }
     else if (*ui_upscale) {
-	    gui_fb.bindForReading();
         gui_fb_upscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    framebuffer::blit();
-
-        main_framebuffer.bindForWriting();
+        gui_fb_upscaled.unbindForWriting();
         gui_fb_upscaled.bindForReading();
-        framebuffer::blit();
-        framebuffer::unbindForReading();
     }
-    else {
-        main_framebuffer.bindForWriting();
-	    gui_fb.bindForReading();
-	    framebuffer::blit();
-        framebuffer::unbindForReading();
-    }
+    framebuffer::blit();
+    framebuffer::unbindForReading();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_BLEND);
 }
@@ -348,7 +338,7 @@ void Frame::postdraw() {
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = false;
-	glViewport(0, 0, virtualScreenX, virtualScreenY);
+	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
 
 	// setup projection matrix
@@ -379,7 +369,7 @@ void Frame::postdraw() {
 		return;
 	}
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
-	main_framebuffer.bindForWriting();
+    gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
 	framebuffer::blit();
 	framebuffer::unbindForReading();
@@ -536,8 +526,6 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	scaledSize.w = _size.w;
 	scaledSize.h = _size.h;
 
-	auto white = Image::get("images/system/white.png");
-
 	// draw frame background
 	if ( !hollow ) {
 
@@ -588,12 +576,12 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	Sint32 mouseyrel = (::mouseyrel / (float)yres) * (float)Frame::virtualScreenY;
 #else
 	const int mouseowner = intro || gamePaused ? inputs.getPlayerIDAllowedKeyboard() : owner;
-	Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
+	//Sint32 mousex = (inputs.getMouse(mouseowner, Inputs::X) / (float)xres) * (float)Frame::virtualScreenX;
+	//Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	//Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	//Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	// horizontal slider
@@ -742,7 +730,6 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 	// draw list entries
 	if (list.size()) {
 		int listStart = std::min(std::max(0, scroll.y / entrySize), (int)list.size() - 1);
-		int i = listStart;
 		for (int i = listStart; i < list.size(); ++i) {
 			entry_t& entry = *list[i];
 
@@ -1073,8 +1060,8 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	Sint32 mousey = (inputs.getMouse(mouseowner, Inputs::Y) / (float)yres) * (float)Frame::virtualScreenY;
 	Sint32 omousex = (inputs.getMouse(mouseowner, Inputs::OX) / (float)xres) * (float)Frame::virtualScreenX;
 	Sint32 omousey = (inputs.getMouse(mouseowner, Inputs::OY) / (float)yres) * (float)Frame::virtualScreenY;
-	Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
-	Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
+	//Sint32 mousexrel = (inputs.getMouse(mouseowner, Inputs::XREL) / (float)xres) * (float)Frame::virtualScreenX;
+	//Sint32 mouseyrel = (inputs.getMouse(mouseowner, Inputs::YREL) / (float)yres) * (float)Frame::virtualScreenY;
 #endif
 
 	Input& input = Input::inputs[owner];
@@ -1184,7 +1171,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process "ontop" (widget) sliders
-	for (int i = sliders.size() - 1; i >= 0; --i) {
+	for (int i = (int)sliders.size() - 1; i >= 0; --i) {
 		Slider* slider = sliders[i];
 		if (slider->isOntop()) {
 			processSlider(_size, *slider, destWidget, result);
@@ -1192,7 +1179,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process "ontop" fields
-	for (int i = fields.size() - 1; i >= 0; --i) {
+	for (int i = (int)fields.size() - 1; i >= 0; --i) {
 		Field* field = fields[i];
 		if (field->isOntop()) {
             processField(_size, *field, destWidget, result);
@@ -1200,7 +1187,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process "ontop" buttons
-	for (int i = buttons.size() - 1; i >= 0; --i) {
+	for (int i = (int)buttons.size() - 1; i >= 0; --i) {
 		Button* button = buttons[i];
 		if (button->isOntop()) {
 		    processButton(_size, *button, destWidget, result);
@@ -1209,7 +1196,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 
 	// process frames
 	{
-		for (int i = frames.size() - 1; i >= 0; --i) {
+		for (int i = (int)frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
 			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, result.usable);
 			result.usable = frameResult.usable;
@@ -1482,7 +1469,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process buttons
-	for (int i = buttons.size() - 1; i >= 0; --i) {
+	for (int i = (int)buttons.size() - 1; i >= 0; --i) {
 		Button* button = buttons[i];
 		if (!button->isOntop()) {
 		    processButton(_size, *button, destWidget, result);
@@ -1490,7 +1477,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process fields
-	for (int i = fields.size() - 1; i >= 0; --i) {
+	for (int i = (int)fields.size() - 1; i >= 0; --i) {
 		Field* field = fields[i];
 		if (!field->isOntop()) {
             processField(_size, *field, destWidget, result);
@@ -1498,7 +1485,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// process (widget) sliders
-	for (int i = sliders.size() - 1; i >= 0; --i) {
+	for (int i = (int)sliders.size() - 1; i >= 0; --i) {
 		Slider* slider = sliders[i];
 		if (!slider->isOntop()) {
 			processSlider(_size, *slider, destWidget, result);
@@ -1663,10 +1650,7 @@ void Frame::processField(const SDL_Rect& _size, Field& field, Widget*& destWidge
 }
 
 void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWidget, result_t& result) {
-	Input& input = Input::inputs[owner];
-
 	const bool mouseActive = isMouseActive(owner);
-
 	if (!destWidget) {
 		destWidget = button.handleInput();
 	}
@@ -1690,8 +1674,6 @@ void Frame::processButton(const SDL_Rect& _size, Button& button, Widget*& destWi
 }
 
 void Frame::processSlider(const SDL_Rect& _size, Slider& slider, Widget*& destWidget, result_t& result) {
-	Input& input = Input::inputs[owner];
-
 	const bool mouseActive = isMouseActive(owner);
 
 	if (!destWidget && !slider.isActivated()) {
@@ -1940,7 +1922,6 @@ Frame* Frame::findFrame(const char* name, const FrameSearchType frameSearchType)
 	if ( frameSearchType == FRAME_SEARCH_DEPTH_FIRST )
 	{
 		++numFindFrameCalls;
-		int localNumberOfCalls = 0;
 		for (auto frame : frames) {
 			if (frame->toBeDeleted) {
 				continue;
@@ -2467,7 +2448,7 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 				int x = loopx - 1; // x is looking at the original image surface, offset by the outline border 1px
 				int y = loopy - 1; // y is looking at the original image surface, offset by the outline border 1px
 
-				Uint32 color = outlineColor;
+				//Uint32 color = outlineColor;
 				Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
 				Uint32 pixCurrent = 0;
 				int neighbours = 0;
@@ -2564,7 +2545,6 @@ void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, con
 			Uint32 color = borderColor;
 			Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
 			Uint32 pixCurrent = 0;
-			int neighbours = 0;
 
 			if ( x >= 0 && x < outlineSurface->w
 				&& y >= 0 && y < outlineSurface->h )
@@ -2839,7 +2819,7 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 }
 
 void Frame::addSyncScrollTarget(const char* name) {
-    syncScrollTargets.push_back(std::move(std::string(name)));
+    syncScrollTargets.push_back(std::string(name));
 }
 
 void Frame::syncScroll() {
@@ -2881,7 +2861,7 @@ Frame* Frame::findParentToBlitTo()
 		return this;
 	}
 	Frame* parent = this;
-	while ( parent = parent->getParent() )
+	while ((parent = parent->getParent()) != nullptr)
 	{
 		if ( parent->blitSurface )
 		{

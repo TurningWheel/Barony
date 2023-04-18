@@ -374,6 +374,7 @@ int initApp(char const * const title, int fullscreen)
 	createCommonDrawResources();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
 	main_framebuffer.bindForWriting();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
@@ -1990,10 +1991,12 @@ void generateTileTextures() {
         if (!tiles[c]) {
             continue;
         }
+        SDL_LockSurface(tiles[c]);
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             (c % dim) * w,
             (c / dim) * h,
             w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels);
+        SDL_UnlockSurface(tiles[c]);
     }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -2518,7 +2521,7 @@ int deinitApp()
 	int numLogFilesToKeepInArchive = 30;
 	// archive logfiles.
 	char lognamewithTimestamp[128];
-	std::time_t timeNow = std::time(nullptr);
+    std::time_t timeNow = getTime();
 	struct tm *localTimeNow = nullptr;
 	localTimeNow = std::localtime(&timeNow);
 
@@ -2921,10 +2924,12 @@ bool changeVideoMode(int new_xres, int new_yres)
 		}
 	}
 
-	// create new frame fbo
+    // create new framebuffers
+	Frame::fboInit();
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
 	main_framebuffer.bindForWriting();
-	Frame::fboInit();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// success
 	return true;
@@ -2953,10 +2958,12 @@ bool resizeWindow(int new_xres, int new_yres)
     }
 #endif
 
-	// create new frame fbo
+	// create new framebuffers
+	Frame::fboInit();
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
 	main_framebuffer.bindForWriting();
-	Frame::fboInit();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// success
 	return true;

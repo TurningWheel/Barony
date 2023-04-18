@@ -28,6 +28,7 @@
 #include "scores.hpp"
 #include "mod_tools.hpp"
 #include "ui/MainMenu.hpp"
+#include "menu.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -1571,7 +1572,42 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
 	newNode->element = myuid;
 	*myuid = my->getUID();
-
+    
+    if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && !myStats->name[0] && race == HUMAN)
+    {
+        // give us a random name
+        auto& names = myStats->sex == FEMALE ?
+            randomNPCNamesFemale : randomNPCNamesMale;
+        const int choice = local_rng.uniform(0, (int)names.size() - 1);
+        auto name = names[choice].c_str();
+        size_t len = names[choice].size();
+        stringCopy(myStats->name, name, sizeof(Stat::name), len);
+        
+        // ... and a nametag
+        if (monsterclicked == clientnum || splitscreen) {
+            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+            nametag->x = my->x;
+            nametag->y = my->y;
+            nametag->z = my->z - 6;
+            nametag->sizex = 1;
+            nametag->sizey = 1;
+            nametag->flags[NOUPDATE] = true;
+            nametag->flags[PASSABLE] = true;
+            nametag->flags[SPRITE] = true;
+            nametag->flags[BRIGHT] = true;
+            nametag->flags[UNCLICKABLE] = true;
+            nametag->behavior = &actSpriteNametag;
+            nametag->parent = my->getUID();
+            nametag->scalex = 0.2;
+            nametag->scaley = 0.2;
+            nametag->scalez = 0.2;
+            nametag->skill[0] = monsterclicked;
+            nametag->skill[1] = playerColor(monsterclicked, colorblind, true);
+            nametag->setUID(-3);
+            entity_uids--;
+        }
+    }
+    
 	if ( my->getINT() > -2 && race == HUMAN )
 	{
 		//messagePlayer(monsterclicked, MESSAGE_INTERACTION | MESSAGE_WORLD, language[525 + local_rng.rand() % 4], namesays, stats[monsterclicked]->name);
@@ -1604,11 +1640,12 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			name = myStats->getAttribute("special_npc");
 			name.insert(0, "$");
 		}
-		strcpy((char*)(&net_packet->data[8]), name.c_str());
-		net_packet->data[8 + strlen(name.c_str())] = 0;
+        SDLNet_Write32(myStats->type, &net_packet->data[8]);
+		strcpy((char*)(&net_packet->data[12]), name.c_str());
+		net_packet->data[12 + strlen(name.c_str())] = 0;
 		net_packet->address.host = net_clients[monsterclicked - 1].host;
 		net_packet->address.port = net_clients[monsterclicked - 1].port;
-		net_packet->len = 8 + strlen(name.c_str()) + 1;
+		net_packet->len = 12 + strlen(name.c_str()) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
@@ -8677,6 +8714,42 @@ bool forceFollower(Entity& leader, Entity& follower)
 	}
 
 	int player = leader.isEntityPlayer();
+    
+    if (player >= 0 && player < MAXPLAYERS && !followerStats->name[0] && followerStats->type == HUMAN)
+    {
+        // give us a random name
+        auto& names = followerStats->sex == FEMALE ?
+            randomNPCNamesFemale : randomNPCNamesMale;
+        const int choice = local_rng.uniform(0, (int)names.size() - 1);
+        auto name = names[choice].c_str();
+        size_t len = names[choice].size();
+        stringCopy(followerStats->name, name, sizeof(Stat::name), len);
+        
+        // ... and a nametag
+        if (player == clientnum || splitscreen) {
+            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+            nametag->x = follower.x;
+            nametag->y = follower.y;
+            nametag->z = follower.z - 6;
+            nametag->sizex = 1;
+            nametag->sizey = 1;
+            nametag->flags[NOUPDATE] = true;
+            nametag->flags[PASSABLE] = true;
+            nametag->flags[SPRITE] = true;
+            nametag->flags[BRIGHT] = true;
+            nametag->flags[UNCLICKABLE] = true;
+            nametag->behavior = &actSpriteNametag;
+            nametag->parent = follower.getUID();
+            nametag->scalex = 0.2;
+            nametag->scaley = 0.2;
+            nametag->scalez = 0.2;
+            nametag->skill[0] = player;
+            nametag->skill[1] = playerColor(player, colorblind, true);
+            nametag->setUID(-3);
+            entity_uids--;
+        }
+    }
+    
 	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client he suckered somebody into his cult.
@@ -8688,11 +8761,12 @@ bool forceFollower(Entity& leader, Entity& follower)
 			name = followerStats->getAttribute("special_npc");
 			name.insert(0, "$");
 		}
-		strcpy((char*)(&net_packet->data[8]), name.c_str());
-		net_packet->data[8 + strlen(name.c_str())] = 0;
+        SDLNet_Write32(followerStats->type, &net_packet->data[8]);
+		strcpy((char*)(&net_packet->data[12]), name.c_str());
+		net_packet->data[12 + strlen(name.c_str())] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8 + strlen(name.c_str()) + 1;
+		net_packet->len = 12 + strlen(name.c_str()) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);

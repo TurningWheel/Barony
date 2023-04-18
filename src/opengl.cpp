@@ -474,59 +474,66 @@ static void fillSmoothLightmap() {
         }
         
 #ifndef EDITOR
-        static ConsoleVariable<int> cvar_smoothingRate("/lightupdate", 1);
-        int smoothingRate = *cvar_smoothingRate;
+        static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", 1.f);
+        const float smoothingRate = *cvar_smoothingRate;
 #else
-        int smoothingRate = 1;
+        const float smoothingRate = 1.f;
 #endif
-        smoothingRate *= 4;
+        const float rate = smoothingRate * (1.f / fpsLimit) * 4.f;
         
         auto& d = lightmapSmoothed[smoothindex];
         const auto& s = lightmap[index];
         for (int c = 0; c < 4; ++c) {
             auto& dc = *(&d.x + c);
             const auto& sc = *(&s.x + c);
-            if (dc < sc) {
-                dc = std::min(sc, dc + smoothingRate);
-            }
-            else if (dc > sc) {
-                dc = std::max(sc, dc - smoothingRate);
-            }
+            const auto diff = sc - dc;
+            if (fabsf(diff) < 1.f) { dc += diff; }
+            else { dc += diff * rate; }
         }
     }
 }
 
+static inline bool testTileOccludes(const map_t& map, int index) {
+    if (index < 0 || index > map.width * map.height * MAPLAYERS - MAPLAYERS) {
+        return true;
+    }
+    const Uint64& t0 = *(Uint64*)&map.tiles[index];
+    const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
+    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
+}
+
 static void loadLightmapTexture() {
-    glActiveTexture(GL_TEXTURE1);
-    
     // allocate lightmap pixel data
-    SDL_Surface* lightmapSurface = SDL_CreateRGBSurface(0, map.width, map.height, 32,
-        0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-    assert(lightmapSurface);
+    static std::vector<float> pixels;
+    pixels.clear();
+    pixels.reserve(map.width * map.height * 4);
     
     // build lightmap texture data
-    SDL_LockSurface(lightmapSurface);
-    for (int x = 0, index = 0; x < map.width; ++x) {
-        for (int y = 0; y < map.height; ++y, ++index) {
-            const auto& l = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
-            const auto r = std::min(std::max(0.f, l.x), 255.f);
-            const auto g = std::min(std::max(0.f, l.y), 255.f);
-            const auto b = std::min(std::max(0.f, l.z), 255.f);
-            const Uint32 color = makeColorRGB(r, g, b);
-            putPixel(lightmapSurface, x, y, color);
+    const float div = 1.f / 255.f;
+    const int xoff = MAPLAYERS * map.height;
+    const int yoff = MAPLAYERS;
+    for (int y = 0; y < map.height; ++y) {
+        for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
+            if (!testTileOccludes(map, index)) {
+                float count = 1.f;
+                vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+                if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
+                total.x = (total.x / count) * div;
+                total.y = (total.y / count) * div;
+                total.z = (total.z / count) * div;
+                total.w = 1.f;
+                pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
+            } else {
+                pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+            }
         }
     }
-    SDL_UnlockSurface(lightmapSurface);
     
     // load lightmap texture data
-    lightmapTexture->load(lightmapSurface, true, false);
-    lightmapTexture->bind();
-    
-    SDL_FreeSurface(lightmapSurface);
-    
-    // switch back to texture unit 0
-    // (only other texture unit we currently use)
-    glActiveTexture(GL_TEXTURE0);
+    lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
 }
 
 static void updateChunks();
@@ -547,11 +554,36 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.unbind();
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", false);
+static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", 1.f);
+static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", 2.2f);
+#endif
+
+static int oldViewport[4];
+
 void glBeginCamera(view_t* camera)
 {
-	// setup state
-	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-    glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    if (!camera) {
+        return;
+    }
+    
+    // setup viewport
+#ifdef EDITOR
+    const bool hdr = false;
+#else
+    const bool hdr = *cvar_hdrEnabled;
+#endif
+    if (hdr) {
+        camera->fb.init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
+        camera->fb.bindForWriting();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glScissor(0, 0, camera->winw, camera->winh);
+    } else {
+        glGetIntegerv(GL_VIEWPORT, oldViewport);
+        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+    }
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_TEST);
     
@@ -604,12 +636,35 @@ void glBeginCamera(view_t* camera)
 
 void glEndCamera(view_t* camera)
 {
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
+    if (!camera) {
+        return;
+    }
+    
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
     glDisable(GL_DEPTH_TEST);
-    glScissor(0, 0, xres, yres);
     glDisable(GL_SCISSOR_TEST);
+    
+#ifdef EDITOR
+    const bool hdr = false;
+    const float exposure = 1.f;
+    const float gamma = 1.f;
+#else
+    const bool hdr = *cvar_hdrEnabled;
+    const float exposure = *cvar_hdrExposure;
+    const float gamma = *cvar_hdrGamma;
+#endif
+    if (hdr) {
+        camera->fb.unbindForWriting();
+        glGetIntegerv(GL_VIEWPORT, oldViewport);
+        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        camera->fb.bindForReading();
+        camera->fb.hdrBlit(gamma, exposure);
+        camera->fb.unbindForReading();
+        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+    } else {
+        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+    }
 }
 
 // hsv values:
@@ -2021,19 +2076,43 @@ void glDrawWorld(view_t* camera, int mode)
     glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
     
     // draw tile chunks
+    int index = 0;
+    const int dim = 4; // size of chunk in tiles
+    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
+    const int yoff = 1;
     for (auto& chunk : chunks) {
         for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
             for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
                 if (camera->vismap[y + x * map.height]) {
                     if (chunk.isDirty(map)) {
-                        chunk.build(map, !shouldDrawClouds(map), chunk.x, chunk.y, chunk.w, chunk.h);
+                        const auto ceiling = !shouldDrawClouds(map);
+                        chunk.build(map, ceiling, chunk.x, chunk.y, chunk.w, chunk.h);
+                        
+                        // build neighbor chunks as well (in-case there are shared walls)
+                        if (chunk.x + chunk.w < map.width) { // build east chunk
+                            auto& nChunk = chunks[index + xoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.y + chunk.h < map.height) { // build south chunk
+                            auto& nChunk = chunks[index + yoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.x > 0) { // build west chunk
+                            auto& nChunk = chunks[index - xoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
+                        if (chunk.y > 0) { // build north chunk
+                            auto& nChunk = chunks[index - yoff];
+                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                        }
                     }
                     chunk.draw();
                     goto next;
                 }
             }
         }
-    next:;
+    next:
+        ++index;
     }
     
     // unbind shader
@@ -2118,7 +2197,9 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
 	if(!dirty && (oldx==x) && (oldy==y))
 		return oldpix;
-
+    
+    main_framebuffer.unbindForWriting();
+    
 	if(dirty) {
 #ifdef PANDORA
 		// Pandora fbo
@@ -2127,7 +2208,6 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		}
 #endif
 		// generate object buffer
-		framebuffer::unbindAll();
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glBeginCamera(&camera);
 		glDrawWorld(&camera, ENTITYUIDS);
@@ -2186,8 +2266,8 @@ void GO_SwapBuffers(SDL_Window* screen)
 
 	return;
 #endif
-
-	framebuffer::unbindAll();
+    
+    main_framebuffer.unbindForWriting();
 	main_framebuffer.bindForReading();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	main_framebuffer.blit(vidgamma);

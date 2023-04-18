@@ -5052,13 +5052,13 @@ void actPlayer(Entity* my)
 
 	if ( my->flags[BURNING] )
 	{
-        const auto brightness = std::max(140, 50 + 15 * PLAYER_TORCH);
+        const auto brightness = std::min(std::max(140, 50 + 15 * PLAYER_TORCH), 255);
         const auto color = makeColorRGB(brightness, brightness * 0.9, brightness * 0.6);
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), color);
 	}
 	else if ( PLAYER_TORCH && my->light == NULL )
 	{
-        const auto brightness = 50 + 15 * PLAYER_TORCH;
+        const auto brightness = std::min(50 + 15 * PLAYER_TORCH, 255);
         const auto color = makeColorRGB(brightness, brightness, brightness);
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, color);
 	}

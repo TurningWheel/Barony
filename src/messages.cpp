@@ -10,9 +10,9 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "main.hpp"
 #include "draw.hpp"
 #include "messages.hpp"
-#include "main.hpp"
 #include "player.hpp"
 #include <regex>
 

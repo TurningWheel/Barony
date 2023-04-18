@@ -5369,18 +5369,7 @@ void handleMainMenu(bool mode)
 				// draw unlock time
 				if ( unlocked )
 				{
-					auto it = achievementUnlockTime.find(item.first);
-					if ( it != achievementUnlockTime.end() )
-					{
-						char buffer[64];
-						time_t t = (time_t)it->second;
-						struct tm* tm_info = localtime(&t);
-						strftime(buffer, sizeof(buffer), "Unlocked %Y/%m/%d at %H:%M:%S", tm_info);
-
-						char text[64];
-						snprintf(text, sizeof(text), "%32s", buffer);
-						ttfPrintTextColor(ttf12, subx2 - 330, suby1 + 92 + (index - first_ach) * 80, uint32ColorYellow, true, text);
-					}
+					// deprecated
 				}
 
 				// draw image
@@ -9768,6 +9757,8 @@ void doNewGame(bool makeHighscore) {
 		}
 		assignActions(&map);
 		generatePathMaps();
+        clearChunks();
+        createChunks();
 
 		achievementObserver.updateData();
 
@@ -9893,15 +9884,41 @@ void doNewGame(bool makeHighscore) {
 											name = monsterStats->getAttribute("special_npc");
 											name.insert(0, "$");
 										}
-										strcpy((char*)(&net_packet->data[8]), name.c_str());
-										net_packet->data[8 + strlen(name.c_str())] = 0;
+                                        SDLNet_Write32(monsterStats->type, &net_packet->data[8]);
+										strcpy((char*)(&net_packet->data[12]), name.c_str());
+										net_packet->data[12 + strlen(name.c_str())] = 0;
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
-										net_packet->len = 8 + strlen(name.c_str()) + 1;
+										net_packet->len = 12 + strlen(name.c_str()) + 1;
 										sendPacketSafe(net_sock, -1, net_packet, c - 1);
 
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
+                                    else if (multiplayer != CLIENT && players[c]->isLocalPlayer())
+                                    {
+                                        if (monsterStats->type == HUMAN && monsterStats->name[0]) {
+                                            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+                                            nametag->x = monster->x;
+                                            nametag->y = monster->y;
+                                            nametag->z = monster->z - 6;
+                                            nametag->sizex = 1;
+                                            nametag->sizey = 1;
+                                            nametag->flags[NOUPDATE] = true;
+                                            nametag->flags[PASSABLE] = true;
+                                            nametag->flags[SPRITE] = true;
+                                            nametag->flags[BRIGHT] = true;
+                                            nametag->flags[UNCLICKABLE] = true;
+                                            nametag->behavior = &actSpriteNametag;
+                                            nametag->parent = monster->getUID();
+                                            nametag->scalex = 0.2;
+                                            nametag->scaley = 0.2;
+                                            nametag->scalez = 0.2;
+                                            nametag->skill[0] = c;
+                                            nametag->skill[1] = playerColor(c, colorblind, true);
+                                            nametag->setUID(-3);
+                                            entity_uids--;
+                                        }
+                                    }
 
 									if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
 									{
@@ -10065,6 +10082,8 @@ void doNewGame(bool makeHighscore) {
 		}
 		assignActions(&map);
 		generatePathMaps();
+        clearChunks();
+        createChunks();
 
 		node_t* nextnode;
 		for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )

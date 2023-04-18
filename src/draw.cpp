@@ -63,6 +63,7 @@ Mesh framebuffer::mesh{
 };
 
 Shader framebuffer::shader;
+Shader framebuffer::hdrShader;
 Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
@@ -117,12 +118,38 @@ void createCommonDrawResources() {
         "varying vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
 		"uniform float uGamma;"
-		//"uniform int uTicks;"
 		"void main() {"
 		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
 		"}";
+    
+    static const char fb_hdr_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "uniform sampler2D uTexture;"
+        "uniform float uGamma;"
+        "uniform float uExposure;"
+        "void main() {"
+        "vec3 color = texture2D(uTexture, TexCoord).rgb;"
+    
+        // tone-mapping examples
+        //https://www.shadertoy.com/view/lslGzl
+    
+        // luma-based reinhard tone mapping
+        "float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));"
+        "float toneMappedLuma = luma / (1.0 + luma);"
+        "color *= toneMappedLuma / luma;"
+    
+        // two different kinds of reinhard tone mapping
+        //"color = color * (uExposure / (1.0 + color / uExposure));"
+        //"color = vec3(1.0) - exp(-color * uExposure);"
+    
+        "color = pow(color, vec3(1.0 / uGamma));"
+    
+        "gl_FragColor = vec4(color, 1.0);"
+        "}";
 
 	framebuffer::mesh.init();
+    
 	framebuffer::shader.init("framebuffer");
 	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
 	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
@@ -131,8 +158,19 @@ void createCommonDrawResources() {
     framebuffer::shader.link();
 	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
     
+    framebuffer::hdrShader.init("hdr framebuffer");
+    framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+    framebuffer::hdrShader.compile(fb_hdr_fragment_glsl, sizeof(fb_hdr_fragment_glsl), Shader::Type::Fragment);
+    framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
+    framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
+    framebuffer::hdrShader.link();
+    glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0);
+    
     // create lightmap texture
     lightmapTexture = new TempTexture();
+    glActiveTexture(GL_TEXTURE1);
+    lightmapTexture->bind();
+    glActiveTexture(GL_TEXTURE0);
     
     // voxel shader:
     
@@ -271,7 +309,7 @@ void createCommonDrawResources() {
         "TexCoord = iTexCoord;"
         "Color = iColor;"
         "}";
-
+    
     static const char world_fragment_glsl[] =
         "#version 120\n"
         "varying vec2 TexCoord;"
@@ -287,6 +325,7 @@ void createCommonDrawResources() {
         "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
         //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
+    
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
@@ -330,6 +369,7 @@ void createCommonDrawResources() {
 void destroyCommonDrawResources() {
 	framebuffer::mesh.destroy();
 	framebuffer::shader.destroy();
+    framebuffer::hdrShader.destroy();
     voxelShader.destroy();
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
@@ -418,6 +458,12 @@ void Mesh::draw() const {
 }
 
 void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
+    if (fbo) {
+        if (xsize == _xsize && ysize == _ysize) {
+            return;
+        }
+        destroy();
+    }
 	xsize = _xsize;
 	ysize = _ysize;
 
@@ -466,11 +512,14 @@ void framebuffer::destroy() {
 	}
 }
 
+static std::vector<framebuffer*> fbStack;
+
 void framebuffer::bindForWriting() {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
 	glViewport(0, 0, xsize, ysize);
+    fbStack.push_back(this);
 }
 
 void framebuffer::bindForReading() const {
@@ -480,13 +529,30 @@ void framebuffer::bindForReading() const {
 void framebuffer::blit(float gamma) {
 	shader.bind();
 	glUniform1f(shader.uniform("uGamma"), gamma);
-	//glUniform1i(shader.uniform("uTicks"), ticks);
 	mesh.draw();
 	shader.unbind();
 }
 
+void framebuffer::hdrBlit(float gamma, float exposure) {
+    hdrShader.bind();
+    glUniform1f(hdrShader.uniform("uGamma"), gamma);
+    glUniform1f(hdrShader.uniform("uExposure"), exposure);
+    mesh.draw();
+    hdrShader.unbind();
+}
+
 void framebuffer::unbindForWriting() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (!fbStack.empty()) {
+        fbStack.pop_back();
+    }
+    if (fbStack.empty()) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, xres, yres);
+    } else {
+        auto fb = fbStack.back();
+        fbStack.pop_back();
+        fb->bindForWriting();
+    }
 }
 
 void framebuffer::unbindForReading() {
@@ -494,9 +560,8 @@ void framebuffer::unbindForReading() {
 }
 
 void framebuffer::unbindAll() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glViewport(0, 0, xres, yres);
+    unbindForWriting();
+    unbindForReading();
 }
 
 /*-------------------------------------------------------------------------------
@@ -2086,13 +2151,9 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 			if ( entity->behavior == &actSpriteNametag )
 			{
-				int playersTag = playerEntityMatchesUid(entity->parent);
-				if ( playersTag >= 0 )
-				{
-					real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
-						+ pow(camera->y * 16.0 - entity->y, 2));
-					spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
-				}
+                real_t camDist = (pow(camera->x * 16.0 - entity->x, 2)
+                    + pow(camera->y * 16.0 - entity->y, 2));
+                spritesToDraw.push_back(std::make_tuple(camDist, entity, SPRITE_ENTITY));
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
@@ -2177,11 +2238,30 @@ void drawEntities3D(view_t* camera, int mode)
 			if ( entity->behavior == &actSpriteNametag )
 			{
 				if ( intro ) { continue; } // don't draw on main menu
-				int playersTag = playerEntityMatchesUid(entity->parent);
-				if ( playersTag >= 0 )
-				{
-					glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
-				}
+#ifndef EDITOR
+                auto parent = uidToEntity(entity->parent);
+                if (parent) {
+                    if (multiplayer == CLIENT) {
+                        auto stats = parent->behavior == &actPlayer ?
+                            parent->getStats() : (parent->clientsHaveItsStats ? parent->clientStats : nullptr);
+                        if (stats && stats->name[0]) {
+                            glDrawSpriteFromImage(camera, entity, stats->name, mode);
+                        }
+                    } else {
+                        auto stats = parent->getStats();
+                        if (stats && stats->name[0]) {
+                            auto player = stats->leader_uid ?
+                                playerEntityMatchesUid(stats->leader_uid):
+                                playerEntityMatchesUid(entity->parent);
+                            if (player >= 0 && (!stats->leader_uid || camera == &players[player]->camera())) {
+                                glDrawSpriteFromImage(camera, entity, stats->name, mode);
+                            }
+                        }
+                    }
+                }
+#else // EDITOR
+                glDrawSpriteFromImage(camera, entity, entity->string ? entity->string : "", mode);
+#endif
 			}
 			else if ( entity->behavior == &actSpriteWorldTooltip )
 			{
@@ -2563,35 +2643,35 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Type: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							strcpy(tmpStr2, monsterEditorNameStrings[entity->skill[0]]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Qty: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[1]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Time: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[2]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Amount: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[3]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Power to: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							if ( selectedEntity[0]->skill[4] == 1 )
 							{
@@ -2605,7 +2685,7 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Stop Chance: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->skill[5]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
@@ -2619,7 +2699,7 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Facing: ");
 							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							switch ( (int)entity->yaw )
 							{
 								case 0:
@@ -2643,14 +2723,14 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Nodes: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity[0]->crystalNumElectricityNodes);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Rotation: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							switch ( (int)entity->crystalTurnReverse )
 							{
@@ -2669,7 +2749,7 @@ void drawEntities2D(long camx, long camy)
 
 							offsety += 10;
 							strcpy(tmpStr, "Spell to Activate: ");
-							offsetx = strlen(tmpStr) * 8 - 8;
+							offsetx = (int)strlen(tmpStr) * 8 - 8;
 							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							switch ( (int)entity->crystalSpellToActivate )
 							{
@@ -2714,7 +2794,6 @@ void drawEntities2D(long camx, long camy)
 							{
 								buf[totalChars] = '\0';
 							}
-							int numLines = 0;
 							std::vector<std::string> lines;
 							lines.push_back(spriteEditorNameStrings[selectedEntity[0]->sprite]);
 
@@ -2756,9 +2835,9 @@ void drawEntities2D(long camx, long camy)
 
 							SDL_Rect tooltip;
 							tooltip.x = padx + offsetx - 4;
-							tooltip.w = TTF8_WIDTH * longestLine + 8;
+							tooltip.w = TTF8_WIDTH * (int)longestLine + 8;
 							tooltip.y = pady + offsety - 4;
-							tooltip.h = lines.size() * TTF8_HEIGHT + 8;
+							tooltip.h = (int)lines.size() * TTF8_HEIGHT + 8;
 							if ( lines.size() > 1 )
 							{
 								drawTooltip(&tooltip);
@@ -3048,7 +3127,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 	int h = 0;
 	char buf[1024] = { '\0' };
     char* ptr = buf;
-    snprintf(buf, sizeof(buf), str);
+    snprintf(buf, sizeof(buf), "%s", str);
     for (int c = 0; c < sizeof(buf) && ptr[c] != '\0'; ++c) {
         if (ptr[c] == '\n') {
             ptr[c] = '\0';
@@ -3148,7 +3227,7 @@ void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 	}
 
 	// format the string
-	numbytes = strlen(str);
+	numbytes = (int)strlen(str);
 
 	// define font dimensions
 	dest.x = x;

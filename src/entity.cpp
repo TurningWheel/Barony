@@ -14839,6 +14839,7 @@ void Entity::giveClientStats()
 	{
 		clientStats = new Stat(0);
 	}
+    clientsHaveItsStats = true;
 }
 
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool monsterWasHit)

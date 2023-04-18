@@ -4535,6 +4535,86 @@ namespace ConsoleCommands {
         entity->z = cameras[0].z;
     });
 
+    static ConsoleCommand ccmd_load_map("/loadmap", "load specified map file", []CCMD{
+        if ( !(svFlags & SV_FLAG_CHEATS) )
+        {
+            messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+            return;
+        }
+        if ( multiplayer != SINGLE )
+        {
+            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
+            return;
+        }
+        if (argc < 2) {
+            return;
+        }
+        loadMap(argv[1], &map, map.entities, map.creatures, nullptr);
+        numplayers = 0;
+        assignActions(&map);
+    });
+
+    static ConsoleCommand ccmd_enable_cheats("/enablecheats", "enables cheats", []CCMD{
+        if ( multiplayer == CLIENT )
+        {
+            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done by the server.");
+            return;
+        }
+        svFlags = svFlags | SV_FLAG_CHEATS;
+        if (multiplayer == SERVER)
+        {
+            // update client flags
+            strcpy((char*)net_packet->data, "SVFL");
+            SDLNet_Write32(svFlags, &net_packet->data[4]);
+            net_packet->len = 8;
+
+            for (int c = 1; c < MAXPLAYERS; c++)
+            {
+                if (client_disconnected[c] || players[c]->isLocalPlayer())
+                {
+                    continue;
+                }
+                net_packet->address.host = net_clients[c - 1].host;
+                net_packet->address.port = net_clients[c - 1].port;
+                sendPacketSafe(net_sock, -1, net_packet, c - 1);
+                messagePlayer(c, MESSAGE_MISC, language[276]);
+            }
+        }
+    });
+
+    static ConsoleCommand ccmd_quickstart("/quickstart", "quickly starts a new game (eg /quickstart monk)", []CCMD{
+        if (multiplayer != SINGLE) {
+            messagePlayer(clientnum, MESSAGE_MISC, "Can only be done in singleplayer.");
+            return;
+        }
+        
+        // choose class
+        const char* classtoquickstart = argc > 1 ? argv[1] : "barbarian";
+        for (int c = 0; c <= CLASS_MONK; ++c) {
+            if (!strcmp(classtoquickstart, playerClassLangEntry(c, clientnum))) {
+                client_classes[clientnum] = c;
+                break;
+            }
+        }
+
+        // initialize class
+        strcpy(stats[clientnum]->name, "Avatar");
+        stats[clientnum]->playerRace = RACE_HUMAN;
+        stats[clientnum]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+        stats[clientnum]->appearance = local_rng.rand() % NUMAPPEARANCES;
+        stats[clientnum]->clearStats();
+        initClass(clientnum);
+
+        // generate unique game key
+        local_rng.seedTime();
+        local_rng.getSeed(&uniqueGameKey, sizeof(uniqueGameKey));
+        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+        doNewGame(false);
+        
+        // this just fixes the command buffer coming up again immediately after doNewGame()
+        Input::inputs[clientnum].consumeBinary("Chat");
+    });
+
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
