@@ -37,6 +37,7 @@
 #include "ui/LoadingScreen.hpp"
 #include "ui/GameUI.hpp"
 #include "ui/Text.hpp"
+#include "ui/MainMenu.hpp"
 
 #include <thread>
 #include <future>
@@ -223,6 +224,8 @@ int initGame()
 	ShopkeeperConsumables_t::readFromFile();
 	EditorEntityData_t::readFromFile();
 	ClassHotbarConfig_t::init();
+	MainMenu::RaceDescriptions::readFromFile();
+	MainMenu::ClassDescriptions::readFromFile();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){
