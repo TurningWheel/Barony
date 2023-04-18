@@ -3750,7 +3750,35 @@ void item_ScrollSummon(Item* item, int player)
 			Stat* monsterStats = monster->getStats();
 			if ( item->beatitude >= 0 && monsterStats )
 			{
-                forceFollower(*players[player]->entity, *monster);
+				if ( forceFollower(*players[player]->entity, *monster) )
+				{
+					monster->monsterAllyIndex = player;
+					if ( multiplayer == SERVER )
+					{
+						serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+					}
+
+					// change the color of the hit entity.
+					monster->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(monster, USERFLAG2);
+					if ( monsterChangesColorWhenAlly(monsterStats) )
+					{
+						int bodypart = 0;
+						for ( node_t* node = monster->children.first; node != nullptr; node = node->next )
+						{
+							if ( bodypart >= LIMB_HUMANOID_TORSO )
+							{
+								Entity* tmp = (Entity*)node->element;
+								if ( tmp )
+								{
+									tmp->flags[USERFLAG2] = true;
+									//serverUpdateEntityFlag(tmp, USERFLAG2);
+								}
+							}
+							++bodypart;
+						}
+					}
+				}
 			}
 		}
 	}
