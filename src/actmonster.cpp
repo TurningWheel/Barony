@@ -8714,6 +8714,42 @@ bool forceFollower(Entity& leader, Entity& follower)
 	}
 
 	int player = leader.isEntityPlayer();
+    
+    if (player >= 0 && player < MAXPLAYERS && !followerStats->name[0] && followerStats->type == HUMAN)
+    {
+        // give us a random name
+        auto& names = followerStats->sex == FEMALE ?
+            randomNPCNamesFemale : randomNPCNamesMale;
+        const int choice = local_rng.uniform(0, (int)names.size() - 1);
+        auto name = names[choice].c_str();
+        size_t len = names[choice].size();
+        stringCopy(followerStats->name, name, sizeof(Stat::name), len);
+        
+        // ... and a nametag
+        if (player == clientnum || splitscreen) {
+            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+            nametag->x = follower.x;
+            nametag->y = follower.y;
+            nametag->z = follower.z - 6;
+            nametag->sizex = 1;
+            nametag->sizey = 1;
+            nametag->flags[NOUPDATE] = true;
+            nametag->flags[PASSABLE] = true;
+            nametag->flags[SPRITE] = true;
+            nametag->flags[BRIGHT] = true;
+            nametag->flags[UNCLICKABLE] = true;
+            nametag->behavior = &actSpriteNametag;
+            nametag->parent = follower.getUID();
+            nametag->scalex = 0.2;
+            nametag->scaley = 0.2;
+            nametag->scalez = 0.2;
+            nametag->skill[0] = player;
+            nametag->skill[1] = playerColor(player, colorblind, true);
+            nametag->setUID(-3);
+            entity_uids--;
+        }
+    }
+    
 	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
 		//Tell the client he suckered somebody into his cult.

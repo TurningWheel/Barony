@@ -9894,6 +9894,31 @@ void doNewGame(bool makeHighscore) {
 
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
+                                    else if (multiplayer != CLIENT && players[c]->isLocalPlayer())
+                                    {
+                                        if (monsterStats->type == HUMAN && monsterStats->name[0]) {
+                                            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+                                            nametag->x = monster->x;
+                                            nametag->y = monster->y;
+                                            nametag->z = monster->z - 6;
+                                            nametag->sizex = 1;
+                                            nametag->sizey = 1;
+                                            nametag->flags[NOUPDATE] = true;
+                                            nametag->flags[PASSABLE] = true;
+                                            nametag->flags[SPRITE] = true;
+                                            nametag->flags[BRIGHT] = true;
+                                            nametag->flags[UNCLICKABLE] = true;
+                                            nametag->behavior = &actSpriteNametag;
+                                            nametag->parent = monster->getUID();
+                                            nametag->scalex = 0.2;
+                                            nametag->scaley = 0.2;
+                                            nametag->scalez = 0.2;
+                                            nametag->skill[0] = c;
+                                            nametag->skill[1] = playerColor(c, colorblind, true);
+                                            nametag->setUID(-3);
+                                            entity_uids--;
+                                        }
+                                    }
 
 									if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )
 									{
