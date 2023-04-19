@@ -515,26 +515,13 @@ void* framebuffer::lock() {
         return nullptr;
     }
     
-    const auto previndex = pboindex;
-    pboindex = (pboindex + 1) % NUM_PBOS;
-    const auto nextindex = pboindex;
-    
-    // start filling a new pixel buffer
-    if (pbos[previndex] == 0) {
-        glGenBuffers(1, &pbos[previndex]);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[previndex]);
+    // map data from the current pixel buffer
+    if (pbos[pboindex] == 0) {
+        glGenBuffers(1, &pbos[pboindex]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
         glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
     }
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[previndex]);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, 0);
-    
-    // map data from the last pixel buffer
-    if (pbos[nextindex] == 0) {
-        glGenBuffers(1, &pbos[nextindex]);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[nextindex]);
-        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
-    }
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[nextindex]);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
     return glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 }
 
@@ -543,7 +530,20 @@ void framebuffer::unlock() {
         return;
     }
     
+    // unmap pixel pack buffer
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    
+    // select next pbo
+    pboindex = (pboindex + 1) % NUM_PBOS;
+    
+    // start filling a new pixel buffer
+    if (pbos[pboindex] == 0) {
+        glGenBuffers(1, &pbos[pboindex]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+    }
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, 0);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
@@ -592,24 +592,6 @@ void framebuffer::blit(float gamma) {
 }
 
 void framebuffer::hdrBlit(float gamma, float exposure) {
-    vec4_t v(0.f);
-    float luminance;
-    auto pixels = (float*)lock();
-    if (pixels) {
-        const int size = xsize * ysize * 4;
-        const auto end = pixels + size;
-        const int step = xsize / 10;
-        for (; pixels < end; pixels += step) {
-            (void)add_vec4(&v, &v, (vec4_t*)pixels);
-        }
-        luminance = std::max({v.x, v.y, v.z});
-        luminance = luminance / (size / step);
-        unlock();
-    } else {
-        luminance = 0.5f;
-    }
-    exposure = (0.5 / luminance) * exposure;
-    
     hdrShader.bind();
     glUniform1f(hdrShader.uniform("uGamma"), gamma);
     glUniform1f(hdrShader.uniform("uExposure"), exposure);

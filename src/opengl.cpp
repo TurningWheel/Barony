@@ -554,12 +554,18 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.unbind();
 }
 
-constexpr float defaultGamma = 0.5f;
-constexpr float defaultExposure = 1.5f;
+constexpr float defaultGamma = 1.f;
+constexpr float defaultExposure = 0.5f;
+constexpr float defaultAdjustmentRate = 2.f;
+constexpr float defaultLimitHigh = 4.f;
+constexpr float defaultLimitLow = 0.1f;
 #ifndef EDITOR
 static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
+static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
+static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
+static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
 #endif
 
 static int oldViewport[4];
@@ -649,20 +655,51 @@ void glEndCamera(view_t* camera)
     
 #ifdef EDITOR
     const bool hdr = false;
-    const float exposure = defaultExposure;
-    const float gamma = defaultGamma;
+    const float hdr_exposure = defaultExposure;
+    const float hdr_gamma = defaultGamma;
+    const float hdr_adjustment_rate = defaultAdjustmentRate;
+    const float hdr_limit_high = defaultLimitHigh;
+    const float hdr_limit_low = defaultLimitLow;
 #else
     const bool hdr = *cvar_hdrEnabled;
-    const float exposure = *cvar_hdrExposure;
-    const float gamma = *cvar_hdrGamma;
+    const float hdr_exposure = *cvar_hdrExposure;
+    const float hdr_gamma = *cvar_hdrGamma;
+    const float hdr_adjustment_rate = *cvar_hdrAdjustment;
+    const float hdr_limit_high = *cvar_hdrLimitHigh;
+    const float hdr_limit_low = *cvar_hdrLimitLow;
 #endif
     if (hdr) {
+        // update viewport
         camera->fb.unbindForWriting();
         glGetIntegerv(GL_VIEWPORT, oldViewport);
         glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+
+        // prepare to read framebuffer
         camera->fb.bindForReading();
+        
+        // calculate luminance
+        auto pixels = (float*)camera->fb.lock();
+        if (pixels) {
+            vec4_t v(0.f);
+            const int size = camera->winw * camera->winh * 4;
+            const auto end = pixels + size;
+            const int step = camera->winw / 10;
+            for (; pixels < end; pixels += step) {
+                (void)add_vec4(&v, &v, (vec4_t*)pixels);
+            }
+            camera->fb.unlock();
+            float luminance = std::max({v.x, v.y, v.z});
+            luminance = luminance / (size / step);
+            camera->luminance += (luminance - camera->luminance) / (fpsLimit * hdr_adjustment_rate);
+        }
+        const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
+        const float gamma = hdr_gamma;
+        
+        // blit framebuffer
         camera->fb.hdrBlit(gamma, exposure);
         camera->fb.unbindForReading();
+        
+        // revert viewport
         glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
     } else {
         glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);

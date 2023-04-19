@@ -114,7 +114,7 @@ struct framebuffer {
     unsigned int xsize = 1280;
     unsigned int ysize = 720;
     
-    static constexpr int NUM_PBOS = 1;
+    static constexpr int NUM_PBOS = 2;
     unsigned int pbos[NUM_PBOS];
     unsigned int pboindex = 0;
 
@@ -149,6 +149,7 @@ typedef struct view_t
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
     framebuffer fb;
     bool* vismap = nullptr;
+    float luminance = 0.0;
 } view_t;
 
 #define FLIP_VERTICAL 1
