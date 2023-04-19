@@ -554,10 +554,12 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.unbind();
 }
 
+constexpr float defaultGamma = 0.5f;
+constexpr float defaultExposure = 1.5f;
 #ifndef EDITOR
-static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", false);
-static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", 1.f);
-static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", 2.2f);
+static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
+static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
+static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 #endif
 
 static int oldViewport[4];
@@ -647,8 +649,8 @@ void glEndCamera(view_t* camera)
     
 #ifdef EDITOR
     const bool hdr = false;
-    const float exposure = 1.f;
-    const float gamma = 1.f;
+    const float exposure = defaultExposure;
+    const float gamma = defaultGamma;
 #else
     const bool hdr = *cvar_hdrEnabled;
     const float exposure = *cvar_hdrExposure;
@@ -2067,13 +2069,6 @@ void glDrawWorld(view_t* camera, int mode)
     // upload uniforms
     const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
     glUniform4fv(shader.uniform("uLightColor"), 1, light);
-    
-    // bind texture
-    //auto image = Image::get("*images/tiles/Wood.png"); assert(image);
-    //glActiveTexture(GL_TEXTURE2);
-    //image->bind();
-    //glActiveTexture(GL_TEXTURE0);
-    glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
     
     // draw tile chunks
     int index = 0;

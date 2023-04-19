@@ -318,18 +318,22 @@ void Frame::postdraw() {
     if (*ui_downscale) {
         gui_fb_downscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	    framebuffer::blit();
+        gui_fb.blit();
         gui_fb_downscaled.unbindForWriting();
         gui_fb_downscaled.bindForReading();
+        gui_fb_downscaled.blit();
     }
     else if (*ui_upscale) {
         gui_fb_upscaled.bindForWriting();
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	    framebuffer::blit();
+        gui_fb.blit();
         gui_fb_upscaled.unbindForWriting();
         gui_fb_upscaled.bindForReading();
+        gui_fb_upscaled.blit();
     }
-    framebuffer::blit();
+    else {
+        gui_fb.blit();
+    }
     framebuffer::unbindForReading();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_BLEND);
@@ -371,7 +375,7 @@ void Frame::postdraw() {
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
     gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
-	framebuffer::blit();
+    gui_fb.blit();
 	framebuffer::unbindForReading();
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_BLEND);

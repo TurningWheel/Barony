@@ -87,7 +87,7 @@ static void buildVoxelShader(
 }
 
 static void buildWorldShader(
-    Shader& shader, const char* name,
+    Shader& shader, const char* name, bool textures,
     const char* v, size_t size_v,
     const char* f, size_t size_f)
 {
@@ -98,10 +98,18 @@ static void buildWorldShader(
     shader.bindAttribLocation("iTexCoord", 1);
     shader.bindAttribLocation("iColor", 2);
     shader.link();
+    if (textures) {
+        // tile textures are in texture unit 2
+        shader.bind();
+        glUniform1i(shader.uniform("uTextures"), 2);
+        shader.unbind();
+    }
 }
 
 void createCommonDrawResources() {
     // framebuffer shader:
+    
+    framebuffer::mesh.init();
     
 	static const char fb_vertex_glsl[] =
         "#version 120\n"
@@ -122,6 +130,16 @@ void createCommonDrawResources() {
 		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
 		"}";
     
+    framebuffer::shader.init("framebuffer");
+    framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+    framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
+    framebuffer::shader.bindAttribLocation("iPosition", 0);
+    framebuffer::shader.bindAttribLocation("iTexCoord", 1);
+    framebuffer::shader.link();
+    framebuffer::shader.bind();
+    glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    framebuffer::shader.unbind();
+    
     static const char fb_hdr_fragment_glsl[] =
         "#version 120\n"
         "varying vec2 TexCoord;"
@@ -129,34 +147,28 @@ void createCommonDrawResources() {
         "uniform float uGamma;"
         "uniform float uExposure;"
         "void main() {"
-        "vec3 color = texture2D(uTexture, TexCoord).rgb;"
+        "vec4 color = texture2D(uTexture, TexCoord);"
+        "vec3 mapped = color.rgb;"
     
-        // tone-mapping examples
+        // reinhard tone-mapping
+        "mapped = vec3(1.0) - exp(-mapped * uExposure);"
+    
+        // another kind of reinhard tone mapping (pick one)
+        //"mapped = mapped * (uExposure / (1.0 + mapped / uExposure));"
+
+        // luma-based reinhard tone mapping (does not use exposure)
+        //"float luma = dot(mapped, vec3(0.2126, 0.7152, 0.0722));"
+        //"float toneMappedLuma = luma / (1.0 + luma);"
+        //"mapped = mapped * (toneMappedLuma / luma);"
+    
+        // additional tone-mapping examples
         //https://www.shadertoy.com/view/lslGzl
     
-        // luma-based reinhard tone mapping
-        "float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));"
-        "float toneMappedLuma = luma / (1.0 + luma);"
-        "color *= toneMappedLuma / luma;"
+        // gamma correction
+        "mapped = pow(mapped, vec3(1.0 / uGamma));"
     
-        // two different kinds of reinhard tone mapping
-        //"color = color * (uExposure / (1.0 + color / uExposure));"
-        //"color = vec3(1.0) - exp(-color * uExposure);"
-    
-        "color = pow(color, vec3(1.0 / uGamma));"
-    
-        "gl_FragColor = vec4(color, 1.0);"
+        "gl_FragColor = vec4(mapped, color.a);"
         "}";
-
-	framebuffer::mesh.init();
-    
-	framebuffer::shader.init("framebuffer");
-	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
-	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
-    framebuffer::shader.bindAttribLocation("iPosition", 0);
-    framebuffer::shader.bindAttribLocation("iTexCoord", 1);
-    framebuffer::shader.link();
-	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
     
     framebuffer::hdrShader.init("hdr framebuffer");
     framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
@@ -164,7 +176,9 @@ void createCommonDrawResources() {
     framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
     framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
     framebuffer::hdrShader.link();
+    framebuffer::hdrShader.bind();
     glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0);
+    framebuffer::hdrShader.unbind();
     
     // create lightmap texture
     lightmapTexture = new TempTexture();
@@ -329,7 +343,7 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
-    buildWorldShader(worldShader, "worldShader",
+    buildWorldShader(worldShader, "worldShader", true,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_fragment_glsl, sizeof(world_fragment_glsl));
     
@@ -347,7 +361,7 @@ void createCommonDrawResources() {
         "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
-    buildWorldShader(worldBrightShader, "worldBrightShader",
+    buildWorldShader(worldBrightShader, "worldBrightShader", true,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_bright_fragment_glsl, sizeof(world_bright_fragment_glsl));
     
@@ -361,7 +375,7 @@ void createCommonDrawResources() {
         "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "}";
     
-    buildWorldShader(worldDarkShader, "worldDarkShader",
+    buildWorldShader(worldDarkShader, "worldDarkShader", false,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
 }
@@ -466,18 +480,14 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
     }
 	xsize = _xsize;
 	ysize = _ysize;
-
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
+    
 	glGenTextures(1, &fbo_color);
 	glBindTexture(GL_TEXTURE_2D, fbo_color);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glGenTextures(1, &fbo_depth);
@@ -487,39 +497,87 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
-	glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
-	glReadBuffer(GL_NONE);
+    
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+    static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
+    glReadBuffer(GL_NONE);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void* framebuffer::lock() {
+    if (!fbo) {
+        return nullptr;
+    }
+    
+    const auto previndex = pboindex;
+    pboindex = (pboindex + 1) % NUM_PBOS;
+    const auto nextindex = pboindex;
+    
+    // start filling a new pixel buffer
+    if (pbos[previndex] == 0) {
+        glGenBuffers(1, &pbos[previndex]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[previndex]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+    }
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[previndex]);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, 0);
+    
+    // map data from the last pixel buffer
+    if (pbos[nextindex] == 0) {
+        glGenBuffers(1, &pbos[nextindex]);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[nextindex]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+    }
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[nextindex]);
+    return glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+}
+
+void framebuffer::unlock() {
+    if (!fbo) {
+        return;
+    }
+    
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+}
+
 void framebuffer::destroy() {
-	if (fbo) {
-		glDeleteFramebuffers(1, &fbo);
-		fbo = 0;
-	}
-	if (fbo_color) {
-		glDeleteTextures(1, &fbo_color);
-		fbo_color = 0;
-	}
-	if (fbo_depth) {
-		glDeleteTextures(1, &fbo_depth);
-		fbo_depth = 0;
-	}
+    if (fbo) {
+        glDeleteFramebuffers(1, &fbo);
+        fbo = 0;
+    }
+    if (fbo_color) {
+        glDeleteTextures(1, &fbo_color);
+        fbo_color = 0;
+    }
+    if (fbo_depth) {
+        glDeleteTextures(1, &fbo_depth);
+        fbo_depth = 0;
+    }
+    for (int c = 0; c < NUM_PBOS; ++c) {
+        if (pbos[c]) {
+            glDeleteBuffers(1, &pbos[c]);
+            pbos[c] = 0;
+        }
+    }
 }
 
 static std::vector<framebuffer*> fbStack;
 
 void framebuffer::bindForWriting() {
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
-	glViewport(0, 0, xsize, ysize);
-    fbStack.push_back(this);
+    if (fbo) {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
+        glViewport(0, 0, xsize, ysize);
+        fbStack.push_back(this);
+    }
 }
 
 void framebuffer::bindForReading() const {
@@ -534,6 +592,24 @@ void framebuffer::blit(float gamma) {
 }
 
 void framebuffer::hdrBlit(float gamma, float exposure) {
+    vec4_t v(0.f);
+    float luminance;
+    auto pixels = (float*)lock();
+    if (pixels) {
+        const int size = xsize * ysize * 4;
+        const auto end = pixels + size;
+        const int step = xsize / 10;
+        for (; pixels < end; pixels += step) {
+            (void)add_vec4(&v, &v, (vec4_t*)pixels);
+        }
+        luminance = std::max({v.x, v.y, v.z});
+        luminance = luminance / (size / step);
+        unlock();
+    } else {
+        luminance = 0.5f;
+    }
+    exposure = (0.5 / luminance) * exposure;
+    
     hdrShader.bind();
     glUniform1f(hdrShader.uniform("uGamma"), gamma);
     glUniform1f(hdrShader.uniform("uExposure"), exposure);

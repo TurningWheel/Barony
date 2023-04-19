@@ -11,6 +11,12 @@
 
 #pragma once
 
+vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* sub_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* mul_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* div_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* pow_vec4(vec4_t* result, const vec4_t* v, float f);
+
 class TempTexture {
 private:
     GLuint _texid = 0;
@@ -107,14 +113,21 @@ struct framebuffer {
     unsigned int fbo_depth = 0;
     unsigned int xsize = 1280;
     unsigned int ysize = 720;
+    
+    static constexpr int NUM_PBOS = 1;
+    unsigned int pbos[NUM_PBOS];
+    unsigned int pboindex = 0;
 
     void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
     void destroy();
     void bindForWriting();
     void bindForReading() const;
-
-    static void blit(float gamma = 1.f);
-    static void hdrBlit(float gamma, float exposure);
+    
+    void* lock();
+    void unlock();
+    
+    void blit(float gamma = 1.f);
+    void hdrBlit(float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
