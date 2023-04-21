@@ -54,6 +54,12 @@ void cleanupMinimapTextures() {
 	}
 }
 
+
+inline real_t getMinimapZoom()
+{
+	return minimapObjectZoom + 50;
+}
+
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
 	if ( gameplayCustomManager.inUse() ) {
@@ -280,8 +286,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 		glBegin(GL_TRIANGLE_FAN);
 		for ( auto& pair : circle_mesh ) {
-			const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0) * size;
-			const real_t sy = pair.second * unitY * (minimapObjectZoom / 100.0) * size;
+			const real_t sx = pair.first * unitX * (getMinimapZoom() / 100.0) * size;
+			const real_t sy = pair.second * unitY * (getMinimapZoom() / 100.0) * size;
 			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
 		}
 		glEnd();
@@ -310,8 +316,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 		glBegin(GL_QUADS);
 
-		const real_t sx = unitX * (minimapObjectZoom / 100.0) * size;
-		const real_t sy = unitY * (minimapObjectZoom / 100.0) * size;
+		const real_t sx = unitX * (getMinimapZoom() / 100.0) * size;
+		const real_t sy = unitY * (getMinimapZoom() / 100.0) * size;
 
 
 		SDL_Rect secondsrc;
@@ -800,7 +806,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					const int ymin = ((int)map.height - mapGCD) / 2;
 					const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
 					const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-           			const real_t zoom = minimapObjectZoom / 100.0 * size;
+           			const real_t zoom = getMinimapZoom() / 100.0 * size;
 					x = (x - xmin) * unitX + rect.x;
 					y = (y - ymin) * unitY + rect.y;
 

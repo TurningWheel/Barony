@@ -2115,7 +2115,7 @@ namespace MainMenu {
 		minimapTransparencyForeground = 100 - foreground_opacity;
 		minimapTransparencyBackground = 100 - background_opacity;
 		minimapScale = map_scale;
-		minimapObjectZoom = icon_scale;
+		minimapObjectZoom = std::max(100, icon_scale);
 	}
 
 	inline Minimap Minimap::load() {
@@ -2123,7 +2123,7 @@ namespace MainMenu {
 		minimap.foreground_opacity = 100 - minimapTransparencyForeground;
 		minimap.background_opacity = 100 - minimapTransparencyBackground;
 		minimap.map_scale = minimapScale;
-		minimap.icon_scale = minimapObjectZoom;
+		minimap.icon_scale = std::max(100, minimapObjectZoom);
 		return minimap;
 	}
 
@@ -4715,7 +4715,7 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			allSettings.minimap.icon_scale, 25, 200, sliderPercent,
+			allSettings.minimap.icon_scale, 100, 200, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
