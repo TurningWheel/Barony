@@ -1305,6 +1305,19 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			node->element = subRoomMap;
 			node->deconstructor = &mapDeconstructor;
 
+			/*if ( subRoomMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
+			{
+				printlog("%s: no traps", subRoomMap->filename);
+			}
+			if ( subRoomMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
+			{
+				printlog("%s: no monsters", subRoomMap->filename);
+			}
+			if ( subRoomMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
+			{
+				printlog("%s: no loot", subRoomMap->filename);
+			}*/
+
 			// more nodes are created to record the exit points on the sublevel
 			for ( int y = 0; y < subRoomMap->height; y++ )
 			{
@@ -1940,6 +1953,24 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
+
+							if ( z == 0 )
+							{
+								// apply submap disable flags
+								if ( subRoomMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
+								{
+									trapexcludelocations[x0 + y0 * map.width] = true;
+									//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
+								}
+								if ( subRoomMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
+								{
+									monsterexcludelocations[x0 + y0 * map.width] = true;
+								}
+								if ( subRoomMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
+								{
+									lootexcludelocations[x0 + y0 * map.width] = true;
+								}
+							}
 
 							++subRoom_tilex;
 							if ( subRoom_tilex >= subRoomMap->width )
