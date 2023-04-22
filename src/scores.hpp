@@ -338,6 +338,10 @@ struct SaveGameInfo {
 		int gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 };
 
 		Uint32 hotbar[NUM_HOTBAR_SLOTS];
+		Uint32 hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
+		Uint32 selected_spell;
+		Uint32 selected_spell_alternate[NUM_HOTBAR_ALTERNATES];
+		int selected_spell_last_appearance;
 		std::vector<Uint32> spells;
 
 		typedef std::pair<int, std::pair<int, int>> recipe_t;
@@ -531,6 +535,10 @@ struct SaveGameInfo {
 			fp->property("conduct_illiterate", conductIlliterate);
 			fp->property("additional_conducts", additionalConducts);
 			fp->property("hotbar", hotbar);
+			fp->property("hotbar_alternate", hotbar_alternate);
+			fp->property("selected_spell", selected_spell);
+			fp->property("selected_spell_alternate", selected_spell_alternate);
+			fp->property("selected_spell_last_appearance", selected_spell_last_appearance);
 			fp->property("spells", spells);
 			fp->property("recipes", known_recipes);
 			fp->property("scrolls", known_scrolls);
