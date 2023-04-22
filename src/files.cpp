@@ -523,7 +523,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "labyrinth30b.lmp", 76890 },
 	{ "labyrinth30c.lmp", 42344 },
 	{ "labyrinth30d.lmp", 122312 },
-	{ "labyrinth30e.lmp", 30839 },
+	{ "labyrinth30e.lmp", 32283 },
 	{ "labyrinth31.lmp", 65567 },
 	{ "labyrinth31a.lmp", 18532 },
 	{ "labyrinth31b.lmp", 26136 },
