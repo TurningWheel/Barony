@@ -2706,7 +2706,7 @@ void gameLogic(void)
 						}
 					}
 
-					if ( itemCategory(item) == WEAPON )
+					if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
 						if ( item->beatitude >= 10 )
 						{
