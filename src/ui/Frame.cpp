@@ -375,7 +375,7 @@ void Frame::postdraw() {
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
     gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
-    gui_fb.blit(hdrEnabled ? vidgamma : 1.f);
+    gui_fb.draw(hdrEnabled ? vidgamma : 1.f);
 	framebuffer::unbindForReading();
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_BLEND);
