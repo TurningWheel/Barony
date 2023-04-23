@@ -904,12 +904,16 @@ void actBoulder(Entity* my)
 				{
 					if (inrange[i])
 					{
-						int playerSTR = 0;
-						if ( players[i] )
-						{
-							playerSTR = statGetSTR(stats[i], players[i]->entity);
+                        bool hasRingOfStr = false;
+						if ( players[i] && players[i]->entity ) {
+                            auto ring = stats[i]->ring;
+                            if (ring && ring->type == ItemType::RING_STRENGTH) {
+                                if (ring->beatitude >= 0) {
+                                    hasRingOfStr = true;
+                                }
+                            }
 						}
-						if ( playerSTR < 5 )
+						if ( !hasRingOfStr )
 						{
 							messagePlayer(i, MESSAGE_INTERACTION, language[456]);
 						}
