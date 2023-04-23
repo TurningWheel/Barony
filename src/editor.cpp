@@ -9227,7 +9227,9 @@ int main(int argc, char** argv)
 	}
 	list_FreeAll(&undolist);
 	saveTilePalettes();
-    camera.fb.destroy();
+    for (int c = 0; c < sizeof(view_t::fb) / sizeof(view_t::fb[0]); ++c) {
+        camera.fb[c].destroy();
+    }
 	return deinitApp();
 }
 

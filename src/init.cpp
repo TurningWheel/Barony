@@ -2847,7 +2847,9 @@ bool initVideo()
         SDL_SetWindowSize(screen, screen_width / factorX, screen_height / factorY);
         SDL_GL_GetDrawableSize(screen, &xres, &yres);
         printlog("set window size to %dx%d", xres, yres);
-
+        
+        // setup opengl
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	    glEnable(GL_TEXTURE_2D);
 	    glEnable(GL_CULL_FACE);

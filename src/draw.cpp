@@ -487,7 +487,7 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glGenTextures(1, &fbo_depth);
@@ -505,7 +505,7 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
     static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
-    glReadBuffer(GL_NONE);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -519,7 +519,7 @@ void* framebuffer::lock() {
     if (pbos[pboindex] == 0) {
         glGenBuffers(1, &pbos[pboindex]);
         glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
-        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), nullptr, GL_STREAM_READ);
     }
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
     return glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
@@ -540,10 +540,10 @@ void framebuffer::unlock() {
     if (pbos[pboindex] == 0) {
         glGenBuffers(1, &pbos[pboindex]);
         glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
-        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+        glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), nullptr, GL_STREAM_READ);
     }
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, 0);
+    glReadPixels(0, 0, xsize, ysize, GL_RGBA, GL_FLOAT, nullptr);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
@@ -581,6 +581,7 @@ void framebuffer::bindForWriting() {
 }
 
 void framebuffer::bindForReading() const {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindTexture(GL_TEXTURE_2D, fbo_color);
 }
 
@@ -614,6 +615,7 @@ void framebuffer::unbindForWriting() {
 }
 
 void framebuffer::unbindForReading() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 

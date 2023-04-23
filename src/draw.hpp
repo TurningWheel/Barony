@@ -147,9 +147,10 @@ typedef struct view_t
     real_t globalLightModifier = 0.0;
     real_t globalLightModifierEntities = 0.0;
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-    framebuffer fb;
+    framebuffer fb[1];
     bool* vismap = nullptr;
-    float luminance = 0.0;
+    float luminance = 10.0;
+    unsigned int drawnFrames = 0;
 } view_t;
 
 #define FLIP_VERTICAL 1
