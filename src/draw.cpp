@@ -793,41 +793,7 @@ void drawCircle( int x, int y, real_t radius, Uint32 color, Uint8 alpha )
 
 void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha )
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// draw arc
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINE_STRIP);
-	for (real_t c = angle1; c <= angle2; c += (real_t)1)
-	{
-		real_t degInRad = c * (real_t)PI / (real_t)180;
-		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y + ceil(sin(degInRad)*radius)));
-	}
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-    glDisable(GL_BLEND);
-	glLineWidth(lineWidth);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -886,46 +852,7 @@ draws an arc in either an opengl or SDL context
 
 void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha)
 {
-	int c;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set line width
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-
-	// draw line
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINE_STRIP);
-	for ( c = angle1; c <= angle2; c++ )
-	{
-		float degInRad = c * PI / 180.f;
-		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y - ceil(sin(degInRad)*radius)));
-	}
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-
-	// reset line width
-	glLineWidth(lineWidth);
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1189,48 +1116,7 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 
 void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1297,118 +1183,7 @@ blits an image in either an opengl or SDL context into a 2d ring.
 
 void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness, int segments, real_t angStart, real_t angEnd, Uint8 alpha)
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.f);
-
-	double s;
-	real_t arcAngle = angStart;
-	int first = segments / 2;
-	real_t distance = std::round((angEnd - angStart) * segments / (2 * PI));
-	for ( int i = 0; i < first; ++i ) 
-	{
-		glBegin(GL_QUAD_STRIP);
-		for ( int j = 0; j <= static_cast<int>(distance); ++j )
-		{
-			s = i % first + 0.01;
-			arcAngle = ((j % segments) * 2 * PI / segments) + angStart; // angle of the line.
-
-			real_t arcx1 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			real_t arcy1 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			s = (i + 1) % first + 0.01;
-			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-			//glTexCoord2f(1.f, 0.f);
-			glVertex2f(src->x + arcx1, yres - src->y + arcy1);
-			//glTexCoord2f(0.f, 1.f);
-			glVertex2f(src->x + arcx2, yres - src->y + arcy2);
-			//s = i % first + 0.01;
-			//arcAngle = (((j + 1) % segments) * 2 * PI / segments) + angStart; // angle of the line.
-			//real_t arcx3 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			//real_t arcy3 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			//s = (i + 1) % first + 0.01;
-			//real_t arcx4 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			//real_t arcy4 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			//std::vector<std::pair<real_t, real_t>> xycoords;
-			//xycoords.push_back(std::make_pair(arcx1, arcy1));
-			//xycoords.push_back(std::make_pair(arcx2, arcy2));
-			//xycoords.push_back(std::make_pair(arcx3, arcy3));
-			//xycoords.push_back(std::make_pair(arcx4, arcy4));
-			//std::sort(xycoords.begin(), xycoords.end());
-			//if ( xycoords.at(2).second < xycoords.at(3).second )
-			//{
-			//	glTexCoord2f(1.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // lower right.
-			//	glTexCoord2f(1.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // upper right.
-			//}
-			//else
-			//{
-			//	glTexCoord2f(1.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // lower right.
-			//	glTexCoord2f(1.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // upper right.
-			//}
-			//if ( xycoords.at(0).second < xycoords.at(1).second )
-			//{
-			//	glTexCoord2f(0.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // lower left.
-			//	glTexCoord2f(0.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // upper left.
-			//}
-			//else
-			//{
-			//	glTexCoord2f(0.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // lower left.
-			//	glTexCoord2f(0.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // upper left.
-			//}
-			
-
-			//glVertex2f(xres / 2 + arcx3, yres / 2 + arcy3);
-			//glVertex2f(xres / 2 + arcx4, yres / 2 + arcy4);
-		}
-		glEnd();
-	}
-
-	// debug lines
-	/*real_t x1 = xres / 2 + 300 * cos(angStart);
-	real_t y1 = yres / 2 - 300 * sin(angStart);
-	real_t x2 = xres / 2 + 300 * cos(angEnd);
-	real_t y2 = yres / 2 - 300 * sin(angEnd);
-	drawLine(xres / 2, yres / 2, x1, y1, 0xFFFFFFFF, 255);
-	drawLine(xres / 2, yres / 2, x2, y2, 0xFFFFFFFF, 255);*/
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1492,66 +1267,7 @@ blits an image in either an opengl or SDL context, scaling it
 
 void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, float percentY)
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 1.f - 1.f * percentY); // top left. 
-	glVertex2f(pos->x, yres - pos->y - pos->h + pos->h * percentY);
-
-	glTexCoord2f(0.f, 1.f); // bottom left
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-
-	glTexCoord2f(1.f, 1.f); // bottom right
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-
-	glTexCoord2f(1.f, 1.f - 1.f * percentY); // top right
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h + pos->h * percentY);
-	glEnd();
-
-	// debug corners
-	//Uint32 color = uint32ColorPlayer1; // green
-	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-	//color = uint32ColorPlayer2; // pink
-	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
-	//color = uint32ColorPlayer3; // sky blue
-	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
-	//color = uint32ColorPlayer4; // yellow
-	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1564,50 +1280,7 @@ blits an image in either an opengl or SDL context while colorizing and scaling i
 
 void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color)
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 0.f);
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(0.f, 1.f);
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 1.f);
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 0.f);
-	glVertex2f(pos->x + pos->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1655,57 +1328,7 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height)
 
 void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glTranslatef(pos->x, yres - pos->y, 0);
-	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
-	glVertex2f(0, 0);
-	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
-	glVertex2f(0, -pos->h);
-	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
-	glVertex2f(pos->w, -pos->h);
-	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
-	glVertex2f(pos->w, 0);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -3373,44 +2996,7 @@ void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char const * const
 
 void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char const * const fmt, ...)
 {
-	int c;
-	int numbytes;
-	char str[1024] = { 0 };
-	va_list argptr;
-	SDL_Rect src, dest, odest;
-
-	// format the string
-	va_start( argptr, fmt );
-	numbytes = vsnprintf( str, 1023, fmt, argptr );
-	va_end( argptr );
-
-	// define font dimensions
-	dest.x = x;
-	dest.y = y;
-	dest.w = font_bmp->w / 16;
-	src.w = font_bmp->w / 16;
-	dest.h = font_bmp->h / 16;
-	src.h = font_bmp->h / 16;
-
-	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ )
-	{
-		src.x = (str[c] * src.w) % font_bmp->w;
-		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
-		{
-			odest.x = dest.x;
-			odest.y = dest.y;
-			drawImageAlpha( font_bmp, &src, &dest, alpha );
-			dest.x = odest.x + src.w;
-			dest.y = odest.y;
-		}
-		else if ( str[c] == 10 )
-		{
-			dest.x = x;
-			dest.y += src.h;
-		}
-	}
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -3475,46 +3061,7 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...)
 {
-	int c;
-	int numbytes;
-	char str[1024] = { 0 };
-	va_list argptr;
-	SDL_Rect src, dest;
-
-	// format the string
-	va_start( argptr, fmt );
-	numbytes = vsnprintf( str, 1023, fmt, argptr );
-	va_end( argptr );
-
-	// define font dimensions
-	real_t newX = x;
-	real_t newY = y;
-	dest.w = ((real_t)font_bmp->w / 16.f) * scale;
-	src.w = font_bmp->w / 16;
-	dest.h = ((real_t)font_bmp->h / 16.f) * scale;
-	src.h = font_bmp->h / 16;
-
-	// print the characters in the string
-	int line = 0;
-	for ( c = 0; c < numbytes; c++ )
-	{
-		src.x = (str[c] * src.w) % font_bmp->w;
-		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
-		{
-			dest.x = newX;
-			dest.y = newY;
-			drawImageFancy( font_bmp, color, angle, &src, &dest );
-			newX += (real_t)dest.w * cos(angle);
-			newY += (real_t)dest.h * sin(angle);
-		}
-		else if ( str[c] == 10 )
-		{
-			line++;
-			dest.x = x + dest.h * cos(angle + PI / 2) * line;
-			dest.y = y + dest.h * sin(angle + PI / 2) * line;
-		}
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------

@@ -11,11 +11,38 @@
 
 #pragma once
 
+vec4_t vec4_copy(const vec4_t* v);
+vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v);
 vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
 vec4_t* sub_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
 vec4_t* mul_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
 vec4_t* div_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
 vec4_t* pow_vec4(vec4_t* result, const vec4_t* v, float f);
+float dot_vec4(const vec4_t* a, const vec4_t* b);
+vec4_t* cross_vec3(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* cross_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+float length_vec4(const vec4_t* v);
+vec4_t* normal_vec4(vec4_t* result, const vec4_t* v);
+mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2);
+mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
+mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v);
+mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
+mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far);
+#define perspective fast_perspective
+mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
+mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
+mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16]);
+bool invertMatrix4x4(const mat4x4_t* m, float invOut[16]);
+vec4_t project(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+vec4_t unproject(
+    const vec4_t* screenCoords,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
 
 class TempTexture {
 private:

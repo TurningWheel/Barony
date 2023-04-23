@@ -217,8 +217,6 @@ mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float to
     return result;
 }
 
-#define perspective fast_perspective
-
 mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
     const float h = tanf((fov / 180.f * (float)PI) / 2.f);
     const float w = h * aspect;
@@ -2073,7 +2071,7 @@ void glDrawWorld(view_t* camera, int mode)
         glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
 
         // first (higher) sky layer
-        glBegin( GL_QUADS );
+        glBegin(GL_QUADS);
         glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
         glTexCoord2f(high_scroll, high_scroll);
         glVertex3f(-size, 65.f, -size);
