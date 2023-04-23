@@ -7138,9 +7138,13 @@ int main(int argc, char** argv)
 			if (Input::inputs[clientnum].consumeBinaryToggle("Screenshot") ||
 			    (inputs.hasController(clientnum) && Input::inputs[clientnum].consumeBinaryToggle("GamepadScreenshot")))
 			{
-                main_framebuffer.unbindForWriting();
+                if (!hdrEnabled) {
+                    main_framebuffer.unbindForWriting();
+                }
 				takeScreenshot();
-				main_framebuffer.bindForWriting();
+                if (!hdrEnabled) {
+                    main_framebuffer.bindForWriting();
+                }
 			}
 
 			// frame rate limiter

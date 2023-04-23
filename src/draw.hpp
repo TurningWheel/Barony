@@ -69,8 +69,7 @@ struct Mesh {
     enum class BufferType : unsigned int {
         Position,    // vec3 float
         TexCoord,    // vec2 float
-        Color,        // vec4 float
-        Index,        // uint
+        Color,       // vec4 float
         Max
     };
     static const std::unordered_map<BufferType, int> ElementsPerVBO;
@@ -78,22 +77,18 @@ struct Mesh {
     Mesh(
         std::initializer_list<float>&& positions,
         std::initializer_list<float>&& texcoords,
-        std::initializer_list<float>&& colors,
-        std::initializer_list<unsigned int>&& indices) :
-        data{{positions}, {texcoords}, {colors}},
-        index(indices)
+        std::initializer_list<float>&& colors) :
+        data{{positions}, {texcoords}, {colors}}
         {}
 
     Mesh(
         const std::initializer_list<float>& positions,
         const std::initializer_list<float>& texcoords,
-        const std::initializer_list<float>& colors,
-        const std::initializer_list<unsigned int>& indices) :
-        data{{positions}, {texcoords}, {colors}},
-        index(indices)
+        const std::initializer_list<float>& colors) :
+        data{{positions}, {texcoords}, {colors}}
         {}
 
-    const std::vector<float> data[(int)BufferType::Index];
+    const std::vector<float> data[(int)BufferType::Max];
     const std::vector<unsigned int> index;
 
     void init();
@@ -126,8 +121,8 @@ struct framebuffer {
     void* lock();
     void unlock();
     
-    void blit(float gamma = 1.f);
-    void hdrBlit(float gamma, float exposure);
+    void draw(float brightness = 1.f);
+    void hdrDraw(float brightness, float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
@@ -320,3 +315,5 @@ void glDrawWorld(view_t* camera, int mode);
 void glEndCamera(view_t* camera);
 void glEndCamera(view_t* camera);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
+
+extern bool hdrEnabled;

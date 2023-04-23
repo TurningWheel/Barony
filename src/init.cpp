@@ -373,7 +373,9 @@ int initApp(char const * const title, int fullscreen)
 
 	createCommonDrawResources();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
-	main_framebuffer.bindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//SDL_EnableUNICODE(1);
@@ -2928,9 +2930,13 @@ bool changeVideoMode(int new_xres, int new_yres)
 
     // create new framebuffers
 	Frame::fboInit();
-    main_framebuffer.unbindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
-	main_framebuffer.bindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// success
@@ -2962,9 +2968,13 @@ bool resizeWindow(int new_xres, int new_yres)
 
 	// create new framebuffers
 	Frame::fboInit();
-    main_framebuffer.unbindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
-	main_framebuffer.bindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// success

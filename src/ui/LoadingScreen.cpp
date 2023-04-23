@@ -215,7 +215,7 @@ void doLoadingScreen() {
 		drawClearBuffers();
 		if (loading_fb.fbo) {
 		    loading_fb.bindForReading();
-            loading_fb.blit();
+            loading_fb.draw(hdrEnabled ? vidgamma : 1.f);
 		}
 		if (fadealpha > 0) {
 			drawRect(NULL, makeColor(0, 0, 0, 255), fadealpha);

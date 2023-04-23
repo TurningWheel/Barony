@@ -42,23 +42,25 @@ Mesh framebuffer::mesh{
 		-1.f, -1.f,  0.f,
 		 1.f, -1.f,  0.f,
 		 1.f,  1.f,  0.f,
+        -1.f, -1.f,  0.f,
+         1.f,  1.f,  0.f,
 		-1.f,  1.f,  0.f,
 	},
 	{ // texcoords
 		0.f,  0.f,
 		1.f,  0.f,
 		1.f,  1.f,
+        0.f,  0.f,
+        1.f,  1.f,
 		0.f,  1.f,
 	},
 	{ // colors
 		1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
-	},
-	{ // indices
-		0, 1, 2,
-		0, 2, 3,
 	}
 };
 
@@ -125,9 +127,10 @@ void createCommonDrawResources() {
 		"#version 120\n"
         "varying vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
-		"uniform float uGamma;"
+		"uniform float uBrightness;"
 		"void main() {"
-		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
+        "vec4 color = texture2D(uTexture, TexCoord);"
+		"gl_FragColor = vec4(color.rgb * uBrightness, color.a);"
 		"}";
     
     framebuffer::shader.init("framebuffer");
@@ -144,6 +147,7 @@ void createCommonDrawResources() {
         "#version 120\n"
         "varying vec2 TexCoord;"
         "uniform sampler2D uTexture;"
+        "uniform float uBrightness;"
         "uniform float uGamma;"
         "uniform float uExposure;"
         "void main() {"
@@ -167,7 +171,7 @@ void createCommonDrawResources() {
         // gamma correction
         "mapped = pow(mapped, vec3(1.0 / uGamma));"
     
-        "gl_FragColor = vec4(mapped, color.a);"
+        "gl_FragColor = vec4(mapped * uBrightness, color.a);"
         "}";
     
     framebuffer::hdrShader.init("hdr framebuffer");
@@ -409,7 +413,7 @@ void Mesh::init() {
 
 	// data buffers
 	glGenBuffers((GLsizei)BufferType::Max, vbo);
-	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+	for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
 		const auto& find = ElementsPerVBO.find((BufferType)c);
 		assert(find != ElementsPerVBO.end());
         glEnableVertexAttribArray(c);
@@ -419,15 +423,11 @@ void Mesh::init() {
         glDisableVertexAttribArray(c);
 	}
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index.size() * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
 	//glBindVertexArray(0);
 
-	printlog("initialized mesh with %llu vertices", index.size());
+    const int numVertices = (int)data[1].size() / 2; // texcoords / 2
+	printlog("initialized mesh with %llu vertices", numVertices);
 }
 
 void Mesh::destroy() {
@@ -449,7 +449,7 @@ void Mesh::draw() const {
 	//glBindVertexArray(vao);
     
     // bind buffers
-    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         const auto& find = ElementsPerVBO.find((BufferType)c);
         assert(find != ElementsPerVBO.end());
         glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
@@ -458,14 +458,13 @@ void Mesh::draw() const {
     }
     
     // draw elements
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
-	glDrawElements(GL_TRIANGLES, (int)index.size(), GL_UNSIGNED_INT, nullptr);
+    const int numVertices = (int)data[1].size() / 2; // texcoords / 2
+    glDrawArrays(GL_TRIANGLES, 0, numVertices);
     
     // disable buffers
-    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         glDisableVertexAttribArray(c);
     }
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 	//glBindVertexArray(0);
@@ -585,15 +584,16 @@ void framebuffer::bindForReading() const {
 	glBindTexture(GL_TEXTURE_2D, fbo_color);
 }
 
-void framebuffer::blit(float gamma) {
+void framebuffer::draw(float brightness) {
 	shader.bind();
-	glUniform1f(shader.uniform("uGamma"), gamma);
+	glUniform1f(shader.uniform("uBrightness"), brightness);
 	mesh.draw();
 	shader.unbind();
 }
 
-void framebuffer::hdrBlit(float gamma, float exposure) {
+void framebuffer::hdrDraw(float brightness, float gamma, float exposure) {
     hdrShader.bind();
+    glUniform1f(hdrShader.uniform("uBrightness"), brightness);
     glUniform1f(hdrShader.uniform("uGamma"), gamma);
     glUniform1f(hdrShader.uniform("uExposure"), exposure);
     mesh.draw();
