@@ -554,11 +554,11 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.unbind();
 }
 
-constexpr float defaultGamma = 0.5f;
-constexpr float defaultExposure = 0.5f;
-constexpr float defaultAdjustmentRate = 2.f;
-constexpr float defaultLimitHigh = 10.f;
-constexpr float defaultLimitLow = 2.f;
+constexpr float defaultGamma = 0.5f;            // default gamma level: 50%
+constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
+constexpr float defaultAdjustmentRate = 2.f;    // how fast your eyes adjust roughly, as a factor of seconds
+constexpr float defaultLimitHigh = 100.f;       // your aperture can increase to see something 100 times darker.
+constexpr float defaultLimitLow = 0.01f;        // your aperture can decrease to see something 100 times brighter.
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else

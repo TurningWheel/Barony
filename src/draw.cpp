@@ -226,7 +226,6 @@ void createCommonDrawResources() {
         "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
 	buildVoxelShader(voxelShader, "voxelShader",
@@ -247,7 +246,6 @@ void createCommonDrawResources() {
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
         "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
 
 	buildVoxelShader(voxelBrightShader, "voxelBrightShader",
@@ -276,7 +274,6 @@ void createCommonDrawResources() {
 		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
 		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
 		"gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
-		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
 		"}";
 
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
@@ -301,7 +298,6 @@ void createCommonDrawResources() {
 		"    (uColorRemap[1].rgb * Color.g)+"
 		"    (uColorRemap[2].rgb * Color.b);"
 		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
 		"}";
 
 	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader",
@@ -343,8 +339,6 @@ void createCommonDrawResources() {
         "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
         //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
         "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
-    
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
     buildWorldShader(worldShader, "worldShader", true,
@@ -362,7 +356,6 @@ void createCommonDrawResources() {
         "void main() {"
         "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
         //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
         "}";
     
     buildWorldShader(worldBrightShader, "worldBrightShader", true,
