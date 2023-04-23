@@ -665,6 +665,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->element_internal_name, spellElement_light.element_internal_name))
 		{
+            if (using_magicstaff) {
+                for (auto node = map.entities->first; node != nullptr; node = node->next) {
+                    auto entity = (Entity*)node->element;
+                    if (entity->behavior == &actMagiclightBall) {
+                        auto spell = (spell_t*)entity->children.first->element;
+                        spell->sustain = false; // remove other lightballs to prevent lightball insanity
+                    }
+                }
+            }
 			Entity* entity = newEntity(175, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
@@ -708,7 +717,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (using_magicstaff || trap)
 			{
 				entity->skill[12] = MAGICSTAFF_LIGHT_DURATION; //TODO: Grab the duration from the magicstaff or trap?
-				((spell_t*)spellnode->element)->sustain = false;
 			}
 			else
 			{

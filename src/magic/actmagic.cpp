@@ -177,27 +177,29 @@ void actMagiclightBall(Entity* my)
 	}
 
 	// if the spell has been unsustained, remove it
-	if ( !spell->magicstaff && !spell->sustain )
+	if ( !spell->sustain )
 	{
-		int i = 0;
-		int player = -1;
-		for (i = 0; i < MAXPLAYERS; ++i)
-		{
-			if (players[i]->entity == caster)
-			{
-				player = i;
-			}
-		}
-		if (player > 0 && multiplayer == SERVER)
-		{
-			strcpy( (char*)net_packet->data, "UNCH");
-			net_packet->data[4] = player;
-			SDLNet_Write32(spell->ID, &net_packet->data[5]);
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 9;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		}
+        if (!spell->magicstaff)
+        {
+            int player = -1;
+            for (int i = 0; i < MAXPLAYERS; ++i)
+            {
+                if (players[i]->entity == caster)
+                {
+                    player = i;
+                }
+            }
+            if (player > 0 && multiplayer == SERVER)
+            {
+                strcpy( (char*)net_packet->data, "UNCH");
+                net_packet->data[4] = player;
+                SDLNet_Write32(spell->ID, &net_packet->data[5]);
+                net_packet->address.host = net_clients[player - 1].host;
+                net_packet->address.port = net_clients[player - 1].port;
+                net_packet->len = 9;
+                sendPacketSafe(net_sock, -1, net_packet, player - 1);
+            }
+        }
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
