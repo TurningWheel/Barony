@@ -144,7 +144,7 @@ typedef struct view_t
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
     framebuffer fb[1];
     bool* vismap = nullptr;
-    float luminance = 10.0;
+    float luminance = 0.25f;
     unsigned int drawnFrames = 0;
 } view_t;
 
