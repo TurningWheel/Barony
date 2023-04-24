@@ -506,11 +506,17 @@ static void loadLightmapTexture() {
     pixels.clear();
     pixels.reserve(map.width * map.height * 4);
     
+#ifdef EDITOR
+    const bool fullbright = false;
+#else
+    const bool fullbright = *cvar_fullBright;
+#endif
+    
     // build lightmap texture data
     const float div = 1.f / 255.f;
     const int xoff = MAPLAYERS * map.height;
     const int yoff = MAPLAYERS;
-    if (*cvar_fullBright) {
+    if (fullbright) {
         for (int y = 0; y < map.height; ++y) {
             for (int x = 0; x < map.width; ++x) {
                 pixels.insert(pixels.end(), {1.f, 1.f, 1.f, 1.f});
