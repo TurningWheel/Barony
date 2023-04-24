@@ -1342,42 +1342,7 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 
 void drawSky3D( view_t* camera, SDL_Surface* tex )
 {
-	real_t screenfactor;
-	int skyx, skyy;
-	SDL_Rect dest;
-	SDL_Rect src;
-
-	// move the images differently depending upon the screen size
-	screenfactor = xres / 320.0;
-
-	// bitmap offsets
-	skyx = -camera->ang * ((320 * screenfactor) / (PI / 2.0));
-	skyy = (-114 * screenfactor - camera->vang);
-
-	src.x = -skyx;
-	src.y = -skyy;
-	src.w = (-skyx) + xres; // clip to the screen width
-	src.h = (-skyy) + yres; // clip to the screen height
-	dest.x = 0;
-	dest.y = 0;
-	dest.w = xres;
-	dest.h = yres;
-
-	drawImage(tex, &src, &dest);
-
-	// draw the part of the last part of the sky (only appears when angle > 270 deg.)
-	if ( skyx < -960 * screenfactor )
-	{
-		dest.x = 1280 * screenfactor + skyx;
-		dest.y = 0;
-		dest.w = xres;
-		dest.h = yres;
-		src.x = 0;
-		src.y = -skyy;
-		src.w = xres - (-skyx - 1280 * screenfactor);
-		src.h = src.y + yres;
-		drawImage(tex, &src, &dest);
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------

@@ -4096,12 +4096,6 @@ bool handleEvents(void)
                 }
 				mousex = event.motion.x * factorX;
 				mousey = event.motion.y * factorY;
-#ifdef PANDORA
-				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
-					mousex = (mousex*xres) / 800;
-					mousey = (mousey*yres) / 480;
-				}
-#endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 

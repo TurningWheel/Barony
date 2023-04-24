@@ -829,12 +829,6 @@ GLuint create_shader(const char* filename, GLenum type);
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
 
-#ifdef PANDORA
- // Pandora: FBO variables
- extern GLuint fbo_fbo;
- extern GLuint fbo_tex;
- extern GLuint fbo_ren;
-#endif // PANDORA
 void GO_SwapBuffers(SDL_Window* screen);
 
 static const int NUM_STEAM_STATISTICS = 49;

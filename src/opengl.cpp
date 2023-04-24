@@ -2115,21 +2115,15 @@ static unsigned int oldpix = 0;
 
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
-	if(!dirty && (oldx==x) && (oldy==y))
-		return oldpix;
+    if (!dirty && (oldx==x) && (oldy==y)) {
+        return oldpix;
+    }
     
     if (!hdrEnabled) {
         main_framebuffer.unbindForWriting();
     }
     
-	if(dirty) {
-#ifdef PANDORA
-		// Pandora fbo
-		if((xres==800) && (yres==480)) {
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		}
-#endif
-		// generate object buffer
+	if (dirty) {
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glBeginCamera(&camera);
 		glDrawWorld(&camera, ENTITYUIDS);
@@ -2140,15 +2134,9 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	GLubyte pixel[4];
 	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
 	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
-#ifdef PANDORA
-	if((dirty) && (xres==800) && (yres==480)) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-#else
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
-#endif
 	dirty = 0;
 	return oldpix;
 }
@@ -2156,40 +2144,6 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 void GO_SwapBuffers(SDL_Window* screen)
 {
 	dirty = 1;
-
-#ifdef PANDORA
-	bool bBlit = !(xres==800 && yres==480);
-	int vp_old[4];
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glGetIntegerv(GL_VIEWPORT, vp_old);
-		glViewport(0, 0, 800, 480);
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glOrtho(0, 800, 480, 0, 1, -1);
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-
-		glBindTexture(GL_TEXTURE_2D, fbo_tex);
-		glColor4f(1,1,1,1);
-
-		glBegin(GL_QUADS);
-		 glTexCoord2f(0,yres/1024.0f); glVertex2f(0,0);
-		 glTexCoord2f(0, 0); glVertex2f(0,480);
-		 glTexCoord2f(xres/1024.0f, 0); glVertex2f(800,480);
-		 glTexCoord2f(xres/1024.0f, yres/1024.0f); glVertex2f(800,0);
-		glEnd();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);
-	}
-
-	return;
-#endif
     
     if (!hdrEnabled) {
         main_framebuffer.unbindForWriting();

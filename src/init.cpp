@@ -66,14 +66,6 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 void generateTileTextures();
 void destroyTileTextures();
 
-#ifdef PANDORA
-// Pandora FBO
-GLuint fbo_fbo = 0;
-GLuint fbo_tex = 0;
-GLuint fbo_trn = 0;
-GLuint fbo_ren = 0;
-#endif
-
 FILE* logfile = nullptr;
 bool steam_init = false;
 
@@ -220,6 +212,13 @@ int initApp(char const * const title, int fullscreen)
         xres = 1280;
         yres = 800;
     }
+#ifdef PANDORA
+    if (xres == 1280 && yres == 720) {
+        // Pandora native resolution
+        xres = 800;
+        yres = 480;
+    }
+#endif
 	// Preloads mod content from a workshop fileID
 	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
 #endif
@@ -2623,54 +2622,6 @@ int deinitApp()
 	return 0;
 }
 
-#ifdef PANDORA
-void GO_InitFBO()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if(fbo_fbo) {
-		glDeleteFramebuffers(1, &fbo_fbo); fbo_fbo = 0;
-		glDeleteRenderbuffers(1, &fbo_ren); fbo_ren = 0;
-		if(fbo_trn) {
-			glDeleteRenderbuffers(1, &fbo_trn); fbo_trn = 0;
-		}
-		if(fbo_tex) {
-			glDeleteTextures(1, &fbo_tex); fbo_tex = 0;
-		}
-	}
-
-	// Pandora, create the FBO!
-	bool small_fbo=((xres==800) && (yres==480));
-	glGenFramebuffers(1, &fbo_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-	if(small_fbo) {
-		glGenRenderbuffers(1, &fbo_trn);
-		glBindRenderbuffer(GL_RENDERBUFFER, fbo_trn);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1024, 512);
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fbo_trn);
-	} else {
-		glGenTextures(1, &fbo_tex);
-		glBindTexture(GL_TEXTURE_2D, fbo_tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_tex, 0);
-	}
-	glGenRenderbuffers(1, &fbo_ren);
-	glBindRenderbuffer(GL_RENDERBUFFER, fbo_ren);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1024, (small_fbo)?512:1024);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_ren);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if(!small_fbo)
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-
-}
-#endif
-
 /*-------------------------------------------------------------------------------
 
 	initVideo
@@ -2735,10 +2686,6 @@ bool initVideo()
     int screen_y = 0;
 	int screen_width = xres;
 	int screen_height = yres;
-#ifdef PANDORA
-	screen_width = 800;
-	screen_height = 480;
-#endif
 
 	printlog("attempting to set display mode to %dx%d on device %d...", screen_width, screen_height, display_id);
 
@@ -2834,10 +2781,6 @@ bool initVideo()
 
 #ifdef NINTENDO
 		initNxGL();
-#endif
-
-#ifdef PANDORA
-	    GO_InitFBO();
 #endif
         
         // do this to fix the window size/position caused by high-dpi scaling
