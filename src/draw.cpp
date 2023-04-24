@@ -67,12 +67,11 @@ Mesh framebuffer::mesh{
 Shader framebuffer::shader;
 Shader framebuffer::hdrShader;
 Shader voxelShader;
-Shader voxelBrightShader;
 Shader voxelDitheredShader;
-Shader voxelBrightDitheredShader;
 Shader worldShader;
-Shader worldBrightShader;
 Shader worldDarkShader;
+Shader skyShader;
+Shader spriteShader;
 TempTexture* lightmapTexture;
 
 static void buildVoxelShader(
@@ -86,6 +85,9 @@ static void buildVoxelShader(
 	shader.bindAttribLocation("iPosition", 0);
 	shader.bindAttribLocation("iColor", 1);
 	shader.link();
+    shader.bind();
+    glUniform1i(shader.uniform("uLightmap"), 1);
+    shader.unbind();
 }
 
 static void buildWorldShader(
@@ -101,11 +103,29 @@ static void buildWorldShader(
     shader.bindAttribLocation("iColor", 2);
     shader.link();
     if (textures) {
-        // tile textures are in texture unit 2
         shader.bind();
         glUniform1i(shader.uniform("uTextures"), 2);
+        glUniform1i(shader.uniform("uLightmap"), 1);
         shader.unbind();
     }
+}
+
+static void buildSpriteShader(
+    Shader& shader, const char* name,
+    const char* v, size_t size_v,
+    const char* f, size_t size_f)
+{
+    shader.init(name);
+    shader.compile(v, size_v, Shader::Type::Vertex);
+    shader.compile(f, size_f, Shader::Type::Fragment);
+    shader.bindAttribLocation("iPosition", 0);
+    shader.bindAttribLocation("iTexCoord", 1);
+    shader.bindAttribLocation("iColor", 2);
+    shader.link();
+    shader.bind();
+    glUniform1i(shader.uniform("uTexture"), 0);
+    glUniform1i(shader.uniform("uLightmap"), 1);
+    shader.unbind();
 }
 
 void createCommonDrawResources() {
@@ -232,27 +252,6 @@ void createCommonDrawResources() {
 	buildVoxelShader(voxelShader, "voxelShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_fragment_glsl, sizeof(vox_fragment_glsl));
-    
-    static const char vox_bright_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
-        "uniform mat4 uColorRemap;"
-        "uniform vec4 uLightFactor;"
-        "uniform vec4 uLightColor;"
-        "uniform vec4 uColorAdd;"
-    
-        "void main() {"
-        "vec3 Remapped ="
-        "    (uColorRemap[0].rgb * Color.r)+"
-        "    (uColorRemap[1].rgb * Color.g)+"
-        "    (uColorRemap[2].rgb * Color.b);"
-        "gl_FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
-        "}";
-
-	buildVoxelShader(voxelBrightShader, "voxelBrightShader",
-		vox_vertex_glsl, sizeof(vox_vertex_glsl),
-		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
 
 	static const char vox_dithered_fragment_glsl[] =
 		"#version 120\n"
@@ -282,31 +281,6 @@ void createCommonDrawResources() {
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
-
-	static const char vox_bright_dithered_fragment_glsl[] =
-		"#version 120\n"
-		"#extension GL_EXT_gpu_shader4 : enable\n"
-		"varying vec3 Color;"
-		"varying vec4 WorldPos;"
-		"uniform mat4 uColorRemap;"
-		"uniform vec4 uLightFactor;"
-        "uniform vec4 uLightColor;"
-        "uniform vec4 uColorAdd;"
-
-		"void main() {"
-		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
-		"discard;"
-		"}"
-		"vec3 Remapped ="
-		"    (uColorRemap[0].rgb * Color.r)+"
-		"    (uColorRemap[1].rgb * Color.g)+"
-		"    (uColorRemap[2].rgb * Color.b);"
-        "gl_FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
-		"}";
-
-	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader",
-		vox_vertex_glsl, sizeof(vox_vertex_glsl),
-		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
     // world shader:
     
@@ -348,22 +322,6 @@ void createCommonDrawResources() {
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_fragment_glsl, sizeof(world_fragment_glsl));
     
-    static const char world_bright_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec2 TexCoord;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
-        "uniform vec4 uLightFactor;"
-        "uniform sampler2D uTextures;"
-
-        "void main() {"
-        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor;"
-        "}";
-    
-    buildWorldShader(worldBrightShader, "worldBrightShader", true,
-        world_vertex_glsl, sizeof(world_vertex_glsl),
-        world_bright_fragment_glsl, sizeof(world_bright_fragment_glsl));
-    
     static const char world_dark_fragment_glsl[] =
         "#version 120\n"
         "varying vec2 TexCoord;"
@@ -376,6 +334,99 @@ void createCommonDrawResources() {
     buildWorldShader(worldDarkShader, "worldDarkShader", false,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
+    
+    // sky shader:
+    
+    static const char sky_vertex_glsl[] =
+        "#version 120\n"
+        "attribute vec3 iPosition;"
+        "attribute vec2 iTexCoord;"
+        "attribute vec4 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform vec2 uScroll;"
+        "varying vec2 TexCoord;"
+        "varying vec2 Scroll;"
+        "varying vec4 Color;"
+    
+        "void main() {"
+        "mat4 View = uView;"
+        "View[3] = vec4(0.f, 0.f, 0.f, 1.f);"
+        "gl_Position = uProj * View * vec4(iPosition, 1.0);"
+        "TexCoord = iTexCoord;"
+        "Scroll = (Color.a > 0.75) ? uScroll.xx : uScroll.yy;"
+        "Color = iColor;"
+        "}";
+    
+    static const char sky_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec2 TexCoord;"
+        "varying vec2 Scroll;"
+        "varying vec4 Color;"
+        "uniform vec4 uLightFactor;"
+        "uniform sampler2D uTexture;"
+    
+        "void main() {"
+        "gl_FragColor = texture2D(uTexture, TexCoord + Scroll) * Color * uLightFactor;"
+        "}";
+    
+    skyShader.init("skyShader");
+    skyShader.compile(sky_vertex_glsl, sizeof(sky_vertex_glsl), Shader::Type::Vertex);
+    skyShader.compile(sky_fragment_glsl, sizeof(sky_fragment_glsl), Shader::Type::Fragment);
+    skyShader.bindAttribLocation("iPosition", 0);
+    skyShader.bindAttribLocation("iTexCoord", 1);
+    skyShader.bindAttribLocation("iColor", 2);
+    skyShader.link();
+    skyShader.bind();
+    glUniform1i(skyShader.uniform("uTexture"), 0);
+    skyShader.unbind();
+    
+    skyMesh.init();
+    
+    // sprite shader:
+    
+    static const char sprite_vertex_glsl[] =
+        "#version 120\n"
+        "attribute vec3 iPosition;"
+        "attribute vec2 iTexCoord;"
+        "attribute vec4 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform mat4 uModel;"
+        "varying vec4 WorldPos;"
+        "varying vec2 TexCoord;"
+        "varying vec4 Color;"
+    
+        "void main() {"
+        "WorldPos = uModel * vec4(iPosition, 1.0);"
+        "TexCoord = iTexCoord;"
+        "Color = iColor;"
+        "gl_Position = uProj * uView * WorldPos;"
+        "}";
+
+    static const char sprite_fragment_glsl[] =
+        "#version 120\n"
+        "varying vec4 WorldPos;"
+        "varying vec2 TexCoord;"
+        "varying vec4 Color;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uTexture;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+    
+        "void main() {"
+        "vec4 Texture = texture2D(uTexture, TexCoord) * Color;"
+        "if (Texture.a <= 0) discard;"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture2D(uLightmap, LightCoord);"
+        "gl_FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "}";
+
+    buildSpriteShader(spriteShader, "spriteShader",
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
+        sprite_fragment_glsl, sizeof(sprite_fragment_glsl));
 }
 
 void destroyCommonDrawResources() {
@@ -383,12 +434,12 @@ void destroyCommonDrawResources() {
 	framebuffer::shader.destroy();
     framebuffer::hdrShader.destroy();
     voxelShader.destroy();
-    voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
-	voxelBrightDitheredShader.destroy();
     worldShader.destroy();
-    worldBrightShader.destroy();
     worldDarkShader.destroy();
+    skyShader.destroy();
+    skyMesh.destroy();
+    spriteShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif

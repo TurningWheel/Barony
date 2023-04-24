@@ -239,12 +239,12 @@ constexpr Uint32 makeColorRGB(uint8_t r, uint8_t g, uint8_t b) {
 
 extern framebuffer main_framebuffer;
 extern Shader voxelShader;
-extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
-extern Shader voxelBrightDitheredShader;
 extern Shader worldShader;
-extern Shader worldBrightShader;
 extern Shader worldDarkShader;
+extern Shader skyShader;
+extern Mesh skyMesh;
+extern Shader spriteShader;
 extern TempTexture* lightmapTexture;
 
 #define TRANSPARENT_TILE 246

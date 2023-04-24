@@ -510,22 +510,30 @@ static void loadLightmapTexture() {
     const float div = 1.f / 255.f;
     const int xoff = MAPLAYERS * map.height;
     const int yoff = MAPLAYERS;
-    for (int y = 0; y < map.height; ++y) {
-        for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
-            if (!testTileOccludes(map, index)) {
-                float count = 1.f;
-                vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
-                if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
-                total.x = (total.x / count) * div;
-                total.y = (total.y / count) * div;
-                total.z = (total.z / count) * div;
-                total.w = 1.f;
-                pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
-            } else {
-                pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+    if (*cvar_fullBright) {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0; x < map.width; ++x) {
+                pixels.insert(pixels.end(), {1.f, 1.f, 1.f, 1.f});
+            }
+        }
+    } else {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
+                if (!testTileOccludes(map, index)) {
+                    float count = 1.f;
+                    vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+                    if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
+                    total.x = (total.x / count) * div;
+                    total.y = (total.y / count) * div;
+                    total.z = (total.z / count) * div;
+                    total.w = 1.f;
+                    pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
+                } else {
+                    pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+                }
             }
         }
     }
@@ -548,7 +556,6 @@ void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
     if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
     if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
-    if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
     shader.unbind();
 }
 
@@ -642,12 +649,11 @@ void glBeginCamera(view_t* camera)
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(worldBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
 }
 
 void glEndCamera(view_t* camera)
@@ -866,16 +872,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #else
     const bool fullbright = false;
 #endif
-    const bool useLightmap = mode == REALCOLORS && !fullbright;
     
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
     auto& shader = *cvar_testDithering ?
-        (useLightmap ? voxelDitheredShader : voxelBrightDitheredShader):
-        (useLightmap ? voxelShader : voxelBrightShader);
+        voxelDitheredShader : voxelShader;
 #else
-    auto& shader = useLightmap ?
-        voxelShader : voxelBrightShader;
+    auto& shader = voxelShader;
 #endif
     shader.bind();
     
@@ -1964,6 +1967,54 @@ static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
 
 std::vector<Chunk> chunks;
 
+constexpr float sky_size = CLIPFAR * 16.f;
+constexpr float sky_htex_size = sky_size / 64.f;
+constexpr float sky_ltex_size = sky_size / 32.f;
+Mesh skyMesh = {
+    {
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f,  sky_size,
+    }, // positions
+    {
+        0.f, 0.f,
+        sky_htex_size, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, sky_htex_size,
+        0.f, 0.f,
+        sky_ltex_size, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, sky_ltex_size,
+    }, // texcoords
+    {
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+    }, // colors
+};
+
 void glDrawWorld(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -1984,9 +2035,8 @@ void glDrawWorld(view_t* camera, int mode)
 #endif
     
     // bind shader
-    auto& shader = fullbright ?
-        (mode == REALCOLORS ? worldBrightShader : worldDarkShader):
-        (mode == REALCOLORS ? worldShader : worldDarkShader);
+    auto& shader = mode == REALCOLORS ?
+        worldShader : worldDarkShader;
     shader.bind();
     
     // upload uniforms
@@ -2042,68 +2092,35 @@ void glDrawWorld(view_t* camera, int mode)
     // do this after drawing walls/floors/etc because that way most of it can
     // fail the depth test, improving fill rate.
     if (clouds && mode == REALCOLORS) {
-        // setup projection
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-        GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-        GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-        GLfloat rotz = 0; // get z rotation
-        glRotatef(rotx, 1, 0, 0); // rotate pitch
-        glRotatef(roty, 0, 1, 0); // rotate yaw
-        glRotatef(rotz, 0, 0, 1); // rotate roll
-        
-        // setup model matrix
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
+        auto& shader = skyShader;
+        shader.bind();
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
         
-        const float size = CLIPFAR * 16.f;
-        const float htex_size = size / 64.f;
-        const float ltex_size = size / 32.f;
-        const float high_scroll = (float)(ticks % 60) / 60.f;
-        const float low_scroll = (float)(ticks % 120) / 120.f;
+        // upload texture scroll value
+        const float scroll[2] = {
+            (float)(ticks % 60) / 60.f,
+            (float)(ticks % 120) / 120.f,
+        };
+        glUniform2fv(shader.uniform("uScroll"), 1, scroll);
+        
+        // upload light value
+        const float light[4] = {
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            1.f,
+        };
+        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
         
         // bind cloud texture
         glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
-
-        // first (higher) sky layer
-        glBegin(GL_QUADS);
-        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
-        glTexCoord2f(high_scroll, high_scroll);
-        glVertex3f(-size, 65.f, -size);
-
-        glTexCoord2f(htex_size + high_scroll, high_scroll);
-        glVertex3f(size, 65.f, -size);
-
-        glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
-        glVertex3f(size, 65.f, size);
-
-        glTexCoord2f(high_scroll, htex_size + high_scroll);
-        glVertex3f(-size, 65.f, size);
-
-        // second (closer) sky layer
-        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
-        glTexCoord2f(low_scroll, low_scroll);
-        glVertex3f(-size, 64.f, -size);
-
-        glTexCoord2f(ltex_size + low_scroll, low_scroll);
-        glVertex3f(size, 64.f, -size);
-
-        glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
-        glVertex3f(size, 64.f, size);
-
-        glTexCoord2f(low_scroll, ltex_size + low_scroll);
-        glVertex3f(-size, 64.f, size);
-        glEnd();
-
-        // pop matrices
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
+        
+        // draw sky
+        skyMesh.draw();
+        
+        // reset GL
+        shader.unbind();
         glDisable(GL_BLEND);
         glDepthMask(GL_TRUE);
     }
