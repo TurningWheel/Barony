@@ -448,7 +448,7 @@ void destroyCommonDrawResources() {
 }
 
 void Mesh::init() {
-	if (vao) {
+	if (isInitialized()) {
 		return;
 	}
     

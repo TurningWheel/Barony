@@ -23,7 +23,8 @@ public:
 
     bool bind();                        // bind the shader program
     static void unbind();               // unbind the shader program
-    int uniform(const char* name);    // return a handle to a shader variable within the compiled program
+    int uniform(const char* name);      // return a handle to a shader variable within the compiled program
+    bool isInitialized() const { return program != 0; }
 
     enum class Type {
         Vertex,

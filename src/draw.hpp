@@ -121,6 +121,7 @@ struct Mesh {
     void init();
     void destroy();
     void draw() const;
+    bool isInitialized() const { return vbo[0] != 0; }
 
 private:
     unsigned int vao = 0; // vertex array object (mesh handle)

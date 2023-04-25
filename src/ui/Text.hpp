@@ -3,6 +3,8 @@
 #pragma once
 
 #include "../main.hpp"
+#include "../draw.hpp"
+#include "../shader.hpp"
 
 //! Contains some text that was rendered to a texture with a ttf font.
 class Text {
@@ -88,19 +90,9 @@ private:
 	std::string name;
 	GLuint texid = 0;
 	SDL_Surface* surf = nullptr;
-
-	//! static geometry data for rendering the image to a quad
-	static const GLuint indices[6];
-	static const GLfloat positions[8];
-	static const GLfloat texcoords[8];
-	enum buffer_t {
-		VERTEX_BUFFER,
-		TEXCOORD_BUFFER,
-		INDEX_BUFFER,
-		BUFFER_TYPE_LENGTH
-	};
-	static GLuint vbo[BUFFER_TYPE_LENGTH];
-	static GLuint vao;
+    
+    static Mesh mesh;
+    static Shader shader;
 
 	int width = 0;
 	int height = 0;

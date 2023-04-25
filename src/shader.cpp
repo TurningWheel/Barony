@@ -2,6 +2,9 @@
 #include "main.hpp"
 
 void Shader::init(const char* name) {
+    if (isInitialized()) {
+        return;
+    }
     this->name = name;
     program = glCreateProgram();
     if (program) {
@@ -20,6 +23,9 @@ void Shader::destroy() {
             }
         }
         glDeleteProgram(program);
+        uniforms.clear();
+        shaders.clear();
+        program = 0;
     }
 }
 
