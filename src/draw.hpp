@@ -27,6 +27,7 @@ mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2);
 mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
 mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v);
 mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
+mat4x4_t* ortho(mat4x4_t* result, float left, float right, float bot, float top, float near, float far);
 mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far);
 #define perspective fast_perspective
 mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
@@ -47,8 +48,12 @@ vec4_t unproject(
 class TempTexture {
 private:
     GLuint _texid = 0;
+    int _w = 0;
+    int _h = 0;
 public:
     const GLuint& texid = _texid;
+    int& w = _w;
+    int& h = _h;
 
     TempTexture() {
         glGenTextures(1, &_texid);
@@ -75,6 +80,8 @@ public:
         glBindTexture(GL_TEXTURE_2D, _texid);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
         setParameters(clamp, point);
+        _w = surf->w;
+        _h = surf->h;
         SDL_UnlockSurface(surf);
     }
     
@@ -82,6 +89,8 @@ public:
         glBindTexture(GL_TEXTURE_2D, _texid);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data);
         setParameters(clamp, point);
+        _w = width;
+        _h = height;
     }
 
     void bind() {

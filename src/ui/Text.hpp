@@ -3,8 +3,6 @@
 #pragma once
 
 #include "../main.hpp"
-#include "../draw.hpp"
-#include "../shader.hpp"
 
 //! Contains some text that was rendered to a texture with a ttf font.
 class Text {
@@ -90,9 +88,6 @@ private:
 	std::string name;
 	GLuint texid = 0;
 	SDL_Surface* surf = nullptr;
-    
-    static Mesh mesh;
-    static Shader shader;
 
 	int width = 0;
 	int height = 0;

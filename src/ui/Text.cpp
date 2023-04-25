@@ -7,37 +7,9 @@
 #include "Text.hpp"
 #include "Font.hpp"
 #include "Frame.hpp"
+#include "Image.hpp"
 
 constexpr int resolution_factor = 1;
-
-Mesh Text::mesh = {
-    {
-        0.f, -1.f, 0.f,
-        1.f, -1.f, 0.f,
-        1.f,  0.f, 0.f,
-        0.f, -1.f, 0.f,
-        1.f,  0.f, 0.f,
-        0.f,  0.f, 0.f,
-    }, // positions
-    {
-        0.f, 1.f,
-        1.f, 1.f,
-        1.f, 0.f,
-        0.f, 1.f,
-        1.f, 0.f,
-        0.f, 0.f,
-    }, // texcoords
-    {
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-    }, // colors
-};
-
-Shader Text::shader;
 
 Text::Text(const char* _name) {
 	name = _name;
@@ -68,31 +40,6 @@ static ConsoleVariable<bool> cvar_text_render_addspace("/text_render_addspace", 
 static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", false);
 #endif
 
-static const char v_glsl[] =
-    "#version 120\n"
-    "attribute vec3 iPosition;"
-    "attribute vec2 iTexCoord;"
-    "attribute vec4 iColor;"
-    "varying vec2 TexCoord;"
-    "varying vec4 Color;"
-    "uniform vec4 uColor;"
-    "uniform mat4 uRect;"
-    "uniform mat4 uSection;"
-    "void main() {"
-    "gl_Position = uRect * vec4(iPosition, 1.0);"
-    "TexCoord = (uSection * vec4(iTexCoord, 0.0, 1.0)).xy;"
-    "Color = iColor * uColor;"
-    "}";
-
-static const char f_glsl[] =
-    "#version 120\n"
-    "varying vec2 TexCoord;"
-    "varying vec4 Color;"
-    "uniform sampler2D uTexture;"
-    "void main() {"
-    "gl_FragColor = texture2D(uTexture, TexCoord) * Color;"
-    "}";
-
 void Text::render() {
 	if (surf) {
 		SDL_FreeSurface(surf);
@@ -102,21 +49,6 @@ void Text::render() {
 		glDeleteTextures(1, &texid);
 		texid = 0;
 	}
-    if (!mesh.isInitialized()) {
-        mesh.init();
-    }
-    if (!shader.isInitialized()) {
-        shader.init("TextShader");
-        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
-        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
-        shader.bindAttribLocation("iPosition", 0);
-        shader.bindAttribLocation("iTexCoord", 1);
-        shader.bindAttribLocation("iColor", 2);
-        shader.link();
-        shader.bind();
-        glUniform1i(shader.uniform("uTexture"), 0);
-        shader.unbind();
-    }
 
 	std::string strToRender;
 	std::string fontName = Font::defaultFont;
@@ -345,66 +277,24 @@ void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport
 }
 
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-	if (!surf) {
+	if (!surf || !texid) {
 	    return;
 	}
 
 	auto src = _src;
 	auto dest = _dest;
-
 	if (resolution_factor != 1) {
 		src.x *= resolution_factor;
 		src.y *= resolution_factor;
 		src.w *= resolution_factor;
 		src.h *= resolution_factor;
 	}
-
 	src.w = src.w <= 0 ? surf->w : src.w;
 	src.h = src.h <= 0 ? surf->h : src.h;
 	dest.w = dest.w <= 0 ? surf->w : dest.w;
 	dest.h = dest.h <= 0 ? surf->h : dest.h;
-
-	if (!drawingGui) {
-        glEnable(GL_BLEND);
-	}
-
-	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
     
-    // bind shader
-    shader.bind();
-
-	// consume color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-    glUniform4fv(shader.uniform("uColor"), 1, cv);
-    
-    mat4x4 rect(1.f); mat4x4 r1;
-    mat4x4 sect(1.f); mat4x4 s1;
-    vec4_t v;
-    
-    // setup rectangle matrix
-    v = {2.f * (float)dest.x / viewport.w - 1.f, 2.f * (float)(viewport.h - dest.y) / viewport.h - 1.f, 0.f, 0.f};
-    (void)translate_mat(&r1, &rect, &v); rect = r1;
-    v = {2.f * (float)dest.w / viewport.w, 2.f * (float)dest.h / viewport.h, 0.f, 0.f};
-    (void)scale_mat(&r1, &rect, &v); rect = r1;
-    glUniformMatrix4fv(shader.uniform("uRect"), 1, GL_FALSE, (float*)&rect);
-    
-    // setup section matrix
-    v = {(float)src.x / surf->w, (float)src.y / surf->h, 0.f, 0.f};
-    (void)translate_mat(&s1, &sect, &v); sect = s1;
-    v = {(float)src.w / surf->w, (float)src.h / surf->h, 0.f, 0.f};
-    (void)scale_mat(&s1, &sect, &v); sect = s1;
-    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
-
-    // draw text
-    mesh.draw();
-    shader.unbind();
-
-	if (!drawingGui) {
-        glDisable(GL_BLEND);
-	}
+    Image::draw(texid, surf->w, surf->h, &src, dest, viewport, color);
 }
 
 int Text::countNumTextLines() const {
@@ -536,8 +426,6 @@ void Text::dumpCache() {
 		delete text.second;
 	}
 	hashed_text.clear();
-    shader.destroy();
-    mesh.destroy();
 	TEXT_VOLUME = 0;
 	bRequireTextDump = false;
 }

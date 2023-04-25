@@ -460,6 +460,10 @@ static bool isMouseActive(int owner) {
 void frameDrawBlitSurface(const Frame* frame, SDL_Rect _size, SDL_Surface* surf, TempTexture* tex)
 {
 #ifndef EDITOR
+    if (!surf || !tex || !frame) {
+        return;
+    }
+    
 	int owner = frame->getOwner();
 	SDL_Rect pos = SDL_Rect{ _size.x, _size.y, surf->w, surf->h };
 	SDL_Rect dest;
@@ -481,8 +485,7 @@ void frameDrawBlitSurface(const Frame* frame, SDL_Rect _size, SDL_Surface* surf,
 	}
 	if ( !(src.w <= 0 || src.h <= 0 || dest.w <= 0 || dest.h <= 0) )
 	{
-		Image::drawSurface(tex->texid, surf,
-			&src, dest,
+		Image::draw(tex->texid, surf->w, surf->h, &src, dest,
 			SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
 			makeColor(255, 255, 255, 255 * frame->getOpacity() / 100.0));
 	}
@@ -2416,235 +2419,6 @@ void createTestUI() {
 	}
 }
 
-// sample function - would need to cache the blitted images somewhere for real-time use.
-void drawImageOutline(Image* actualImage, SDL_Rect src, SDL_Rect scaledDest, const SDL_Rect viewport, const Uint32 baseOutlineColor)
-{
-	return; // do not use
-	if ( !actualImage )
-	{
-		return;
-	}
-	if ( !actualImage->getOutlineSurf() )
-	{
-		SDL_Surface* scaledImg = SDL_CreateRGBSurface(0, scaledDest.w, scaledDest.h, 32,
-			0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-		SDL_Surface* srcSurf = const_cast<SDL_Surface*>(actualImage->getSurf());
-		SDL_Rect destScaledRect{ 0, 0, scaledDest.w, scaledDest.h };
-		SDL_SetSurfaceAlphaMod(srcSurf, 255);
-		// blit a scaled version of the image to draw an outline around
-		SDL_BlitScaled(srcSurf, nullptr, scaledImg, &destScaledRect);
-
-		// outline has 1px border around original image.
-		SDL_Surface* outlineSurface = SDL_CreateRGBSurface(0, scaledDest.w + 2, scaledDest.h + 2, 32,
-			0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-
-		Uint32 outlineColor = makeColor(255, 255, 255, 255);
-
-		SDL_LockSurface(outlineSurface);
-
-		std::map<int, std::pair<int, int>> visitedPixels; // if we blitted an outline onto this pixel
-		for ( int loopx = 0; loopx < outlineSurface->w; loopx++ )
-		{
-			for ( int loopy = 0; loopy < outlineSurface->h; loopy++ )
-			{
-				// loopx/loopy is looking at the larger outline surface
-
-				int x = loopx - 1; // x is looking at the original image surface, offset by the outline border 1px
-				int y = loopy - 1; // y is looking at the original image surface, offset by the outline border 1px
-
-				//Uint32 color = outlineColor;
-				Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
-				Uint32 pixCurrent = 0;
-				int neighbours = 0;
-
-				if ( x >= 0 && x < scaledImg->w
-					&& y >= 0 && y < scaledImg->h )
-				{
-					pixCurrent = getPixel(scaledImg, x, y);
-				}
-
-				if ( y >= 0 && y < scaledImg->h )
-				{
-					if ( x - 1 >= 0 && x - 1 < scaledImg->w )
-					{
-						pixLeft = getPixel(scaledImg, x - 1, y);
-						if ( pixLeft != 0 )
-						{
-							Uint8 r, g, b, a;
-							getColor(pixLeft, &r, &g, &b, &a);
-							if ( a > 0 )
-							{
-								++neighbours;
-							}
-						}
-					}
-					if ( x + 1 < scaledImg->w )
-					{
-						pixRight = getPixel(scaledImg, x + 1, y);
-						if ( pixRight != 0 )
-						{
-							Uint8 r, g, b, a;
-							getColor(pixRight, &r, &g, &b, &a);
-							if ( a > 0 )
-							{
-								++neighbours;
-							}
-						}
-					}
-				}
-
-				if ( x >= 0 && x < scaledImg->w )
-				{
-					if ( y - 1 >= 0 && y - 1 < scaledImg->h )
-					{
-						pixUp = getPixel(scaledImg, x, y - 1);
-						if ( pixUp != 0 )
-						{
-							Uint8 r, g, b, a;
-							getColor(pixUp, &r, &g, &b, &a);
-							if ( a > 0 )
-							{
-								++neighbours;
-							}
-						}
-					}
-					if ( y + 1 < scaledImg->h )
-					{
-						pixDown = getPixel(scaledImg, x, y + 1);
-						if ( pixDown != 0 )
-						{
-							Uint8 r, g, b, a;
-							getColor(pixDown, &r, &g, &b, &a);
-							if ( a > 0 )
-							{
-								++neighbours;
-							}
-						}
-					}
-				}
-				if ( neighbours > 0 && neighbours < 4 && pixCurrent == 0 )
-				{
-					// outline is drawn on current pixel if non-empty neighbouring pixel(s) found in source image.
-					putPixel(outlineSurface, loopx, loopy, outlineColor);
-					int key = loopx + loopy * outlineSurface->h;
-					visitedPixels[key] = std::make_pair(loopx, loopy); // mark as visited for thickening the outline later.
-				}
-				//if ( loopx == 0 || loopy == 0 || loopx == outlineSurface->w - 1 || loopy == outlineSurface->h - 1 )
-				//{
-				//		draw a border around the outline surface
-				//		putPixel(sprite, loopx, loopy, makeColor(0, 255, 255, 255));
-				//}
-			}
-		}
-
-		bool thickenBorder = true;
-		Uint32 borderColor = makeColor(255, 255, 255, 192);
-		for ( auto& pixel : visitedPixels )
-		{
-			if ( !thickenBorder ) { break; }
-
-			// now trace the new outline pixels, and add 1px to neighbouring empty pixels
-			int x = pixel.second.first;
-			int y = pixel.second.second;
-			Uint32 color = borderColor;
-			Uint32 pixLeft = 0, pixRight = 0, pixUp = 0, pixDown = 0;
-			Uint32 pixCurrent = 0;
-
-			if ( x >= 0 && x < outlineSurface->w
-				&& y >= 0 && y < outlineSurface->h )
-			{
-				pixCurrent = getPixel(outlineSurface, x, y);
-			}
-
-			if ( y >= 0 && y < outlineSurface->h )
-			{
-				if ( x - 1 >= 0 && x - 1 < outlineSurface->w )
-				{
-					int key = (x - 1) + y * outlineSurface->h;
-					bool visited = visitedPixels.find(key) != visitedPixels.end();
-					if ( !visited )
-					{
-						pixLeft = getPixel(outlineSurface, x - 1, y);
-						if ( pixLeft == 0 )
-						{
-							putPixel(outlineSurface, x - 1, y, color);
-						}
-					}
-				}
-				if ( x + 1 < outlineSurface->w )
-				{
-					int key = (x + 1) + y * outlineSurface->h;
-					bool visited = visitedPixels.find(key) != visitedPixels.end();
-					if ( !visited )
-					{
-						pixRight = getPixel(outlineSurface, x + 1, y);
-						if ( pixRight == 0 )
-						{
-							putPixel(outlineSurface, x + 1, y, color);
-						}
-					}
-				}
-			}
-
-			if ( x >= 0 && x < outlineSurface->w )
-			{
-				if ( y - 1 >= 0 && y - 1 < outlineSurface->h )
-				{
-					int key = x + (y - 1) * outlineSurface->h;
-					bool visited = visitedPixels.find(key) != visitedPixels.end();
-					if ( !visited )
-					{
-						pixUp = getPixel(outlineSurface, x, y - 1);
-						if ( pixUp == 0 )
-						{
-							putPixel(outlineSurface, x, y - 1, color);
-						}
-					}
-				}
-				if ( y + 1 < outlineSurface->h )
-				{
-					int key = x + (y + 1) * outlineSurface->h;
-					bool visited = visitedPixels.find(key) != visitedPixels.end();
-					if ( !visited )
-					{
-						pixDown = getPixel(outlineSurface, x, y + 1);
-						if ( pixDown == 0 )
-						{
-							putPixel(outlineSurface, x, y + 1, color);
-						}
-					}
-				}
-			}
-		}
-		SDL_UnlockSurface(outlineSurface);
-		actualImage->setOutlineSurf(outlineSurface);
-		if ( scaledImg )
-		{
-			SDL_FreeSurface(scaledImg);
-			scaledImg = nullptr;
-		}
-	}
-	TempTexture* outlineTexture = new TempTexture();
-	outlineTexture->load(const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), true, true);
-	outlineTexture->bind();
-
-	SDL_Rect newDest = scaledDest;
-	newDest.x -= 1; // offset by 1px due to 2px border addition
-	newDest.y -= 1; // offset by 1px due to 2px border addition
-	newDest.w = actualImage->getOutlineSurf()->w;
-	newDest.h = actualImage->getOutlineSurf()->h;
-	SDL_Rect newSrc = src;
-	newSrc.w = actualImage->getOutlineSurf()->w;
-	newSrc.h = actualImage->getOutlineSurf()->h;
-
-	//Image::drawSurface(outlineTexture->texid, const_cast<SDL_Surface*>(actualImage->getOutlineSurf()), &newSrc, newDest, viewport, baseOutlineColor);
-
-	if ( outlineTexture ) {
-		delete outlineTexture;
-		outlineTexture = nullptr;
-	}
-}
-
 const Uint32 imageGlowInterval = TICKS_PER_SECOND;
 
 void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rect& scroll) const {
@@ -2722,8 +2496,9 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 					Uint32 alpha = static_cast<Uint8>(255.0 * ((static_cast<real_t>(a) / 255.0) * static_cast<real_t>(a2 / 255.0) * outlineGlowEffect));
 					if ( alpha > 0 )
 					{
-						drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-							makeColor( r2, g2, b2, alpha));
+						/*drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest,
+                            SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+							makeColor( r2, g2, b2, alpha));*/
 					}
 				}
 				else
@@ -2780,8 +2555,9 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 				Uint32 alpha = static_cast<Uint8>(static_cast<real_t>(a2) * outlineGlowEffect);
 				if ( alpha > 0 )
 				{
-					drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-						makeColor( r2, g2, b2, alpha));
+					/*drawImageOutline(const_cast<Image*>(actualImage), src, scaledDest,
+                        SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+						makeColor( r2, g2, b2, alpha));*/
 				}
 			}
 			else

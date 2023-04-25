@@ -17052,12 +17052,12 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
 		const real_t unitY = (real_t)rect.h;
-		Uint8 r, g, b, a;
 
 		// bind a texture to circle mesh
 		auto testImage = Image::get("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png");
 		testImage->bind();
-
+        
+        Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 		glFrontFace(GL_CW); // we draw clockwise so need to set this.
@@ -17097,27 +17097,11 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 	}
 
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		Uint8 r, g, b, a;
-
-		// bind a texture to mesh
-		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
-		testImage->bind();
-
+		auto image = Image::get("images/ui/Inventory/Appraisal_Icon.png");
 		const real_t sx = rect.w * size;
 		const real_t sy = rect.h * size;
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(x, Frame::virtualScreenY - y);
-		glTexCoord2f(0, 1);
-		glVertex2f(x, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 1);
-		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 0);
-		glVertex2f(x + sx, Frame::virtualScreenY - y);
-		glEnd();
+        image->drawColor(nullptr, SDL_Rect{(int)x, (int)y, (int)sx, (int)sy},
+            SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
 	};
 	{
 		const int imgSize = 26;
@@ -17137,8 +17121,7 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety,
-			(real_t)1.0, drawRect,
-			makeColor(255, 255, 255, opacity));
+			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -17247,12 +17230,12 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
 		const real_t unitX = (real_t)rect.w;
 		const real_t unitY = (real_t)rect.h;
-		Uint8 r, g, b, a;
 
 		// bind a texture to circle mesh
 		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon_Outline.png");
 		testImage->bind();
-
+        
+        Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 		glFrontFace(GL_CW); // we draw clockwise so need to set this.
@@ -17290,29 +17273,13 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		}
 		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
-	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		Uint8 r, g, b, a;
-
-		// bind a texture to mesh
-		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
-		testImage->bind();
-
-		const real_t sx = rect.w * size;
-		const real_t sy = rect.h * size;
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(x, Frame::virtualScreenY - y);
-		glTexCoord2f(0, 1);
-		glVertex2f(x, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 1);
-		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 0);
-		glVertex2f(x + sx, Frame::virtualScreenY - y);
-		glEnd();
-	};
+    auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+        auto image = Image::get("images/ui/Inventory/Appraisal_Icon.png");
+        const real_t sx = rect.w * size;
+        const real_t sy = rect.h * size;
+        image->drawColor(nullptr, SDL_Rect{(int)x, (int)y, (int)sx, (int)sy},
+            SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
+    };
 	{
 		const int imgSize = 26;
 		SDL_Rect drawRect = rect;
@@ -17331,8 +17298,7 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 			opacity *= parent->getOpacity() / 100.0;
 		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety, 
-			(real_t)1.0, drawRect, 
-			makeColor(255, 255, 255, opacity));
+			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -34001,7 +33967,7 @@ void DamageIndicatorHandler_t::DamageIndicator_t::process()
 		if ( stats[player]->HP > 0 )
 		{
 			const SDL_Rect viewport{ 0, 0, xres, yres };
-			imgGet->drawSurfaceRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
+			imgGet->drawRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
 		}
 	}
 

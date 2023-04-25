@@ -5,28 +5,6 @@
 #include "Image.hpp"
 #include "Frame.hpp"
 
-GLuint Image::vao = 0;
-GLuint Image::vbo[BUFFER_TYPE_LENGTH] = { 0 };
-
-const GLfloat Image::positions[8]{
-	0.f, 0.f,
-	0.f, 1.f,
-	1.f, 1.f,
-	1.f, 0.f
-};
-
-const GLfloat Image::texcoords[8]{
-	0.f, 0.f,
-	0.f, 1.f,
-	1.f, 1.f,
-	1.f, 0.f
-};
-
-const GLuint Image::indices[6]{
-	0, 1, 2,
-	0, 2, 3
-};
-
 Image::Image(const char* _name) {
 	name = _name;
 
@@ -119,199 +97,247 @@ void Image::bind() const {
 }
 
 void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport) const {
-	drawColor(src, dest, viewport, 0xffffffff);
+    if (!surf || !texid) {
+        return;
+    }
+	draw(texid, surf->w, surf->h, src, dest, viewport, 0xffffffff);
 }
 
 void Image::drawColor(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) const {
-	if (!surf) {
-		return;
-	}
+    if (!surf || !texid) {
+        return;
+    }
+    draw(texid, surf->w, surf->h, src, dest, viewport, color);
+}
 
+void Image::drawRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle) const {
+    if (!surf || !texid) {
+        return;
+    }
+    draw(texid, surf->w, surf->h, src, dest, viewport, color, angle);
+}
+
+Mesh Image::mesh = {
+    {
+        0.f, -1.f, 0.f,
+        1.f, -1.f, 0.f,
+        1.f,  0.f, 0.f,
+        0.f, -1.f, 0.f,
+        1.f,  0.f, 0.f,
+        0.f,  0.f, 0.f,
+    }, // positions
+    {
+        0.f, 1.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        0.f, 1.f,
+        1.f, 0.f,
+        0.f, 0.f,
+    }, // texcoords
+    {
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+    }, // colors
+};
+
+Shader Image::shader;
+
+static const char v_glsl[] =
+    "#version 120\n"
+    "attribute vec3 iPosition;"
+    "attribute vec2 iTexCoord;"
+    "attribute vec4 iColor;"
+    "varying vec2 TexCoord;"
+    "varying vec4 Color;"
+    "uniform vec4 uColor;"
+    "uniform mat4 uProj;"
+    "uniform mat4 uView;"
+    "uniform mat4 uSection;"
+    "void main() {"
+    "gl_Position = uProj * uView * vec4(iPosition, 1.0);"
+    "TexCoord = (uSection * vec4(iTexCoord, 0.0, 1.0)).xy;"
+    "Color = iColor * uColor;"
+    "}";
+
+static const char f_glsl[] =
+    "#version 120\n"
+    "varying vec2 TexCoord;"
+    "varying vec4 Color;"
+    "uniform sampler2D uTexture;"
+    "void main() {"
+    "gl_FragColor = texture2D(uTexture, TexCoord) * Color;"
+    "}";
+
+void Image::draw(GLuint texid, int textureWidth, int textureHeight,
+    const SDL_Rect* src, const SDL_Rect dest,
+    const SDL_Rect viewport, const Uint32& color)
+{
+    // read color
+    Uint8 r, g, b, a;
+    getColor(color, &r, &g, &b, &a);
+    if (!a) {
+        return;
+    }
+    
+    // default src
+    SDL_Rect _src;
+    if (!src) {
+        _src = {0, 0, textureWidth, textureHeight};
+        src = &_src;
+    }
+    
+    // initialize mesh if needed
+    if (!mesh.isInitialized()) {
+        mesh.init();
+    }
+    
+    // initialize shader if needed, then bind
+    if (!shader.isInitialized()) {
+        shader.init("2D image shader");
+        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        shader.bindAttribLocation("iPosition", 0);
+        shader.bindAttribLocation("iTexCoord", 1);
+        shader.bindAttribLocation("iColor", 2);
+        shader.link();
+        shader.bind();
+        glUniform1i(shader.uniform("uTexture"), 0);
+    } else {
+        shader.bind();
+    }
+    
+    // bind texture
+    glBindTexture(GL_TEXTURE_2D, texid);
+    if (!drawingGui) {
+        glEnable(GL_BLEND);
+    }
+    
+    // upload color
+    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    glUniform4fv(shader.uniform("uColor"), 1, cv);
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
+    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    
+    // view matrix
+    mat4x4 view(1.f);
+    v = {(float)dest.x, (float)(viewport.h - dest.y), 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
+    (void)scale_mat(&m, &view, &v); view = m;
+    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    
+    // section matrix
+    mat4x4 sect(1.f);
+    v = {(float)src->x / textureWidth, (float)src->y / textureHeight, 0.f, 0.f};
+    (void)translate_mat(&m, &sect, &v); sect = m;
+    v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
+    (void)scale_mat(&m, &sect, &v); sect = m;
+    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
+
+    // draw image
+    mesh.draw();
+    
+    // reset GL state
+    shader.unbind();
+    if (!drawingGui) {
+        glDisable(GL_BLEND);
+    }
+}
+                       
+void Image::draw(GLuint texid, int textureWidth, int textureHeight,
+    const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport,
+    const Uint32& color, real_t angle)
+{
 	// read color
 	Uint8 r, g, b, a;
 	getColor(color, &r, &g, &b, &a);
 	if (!a) {
 		return;
 	}
-
-	// for the use of a whole image
-	SDL_Rect secondsrc;
-	if (src == nullptr) {
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = surf->w;
-		secondsrc.h = surf->h;
-		src = &secondsrc;
-	}
-
-	if (!drawingGui) {
+    
+    // default src
+    SDL_Rect _src;
+    if (!src) {
+        _src = {0, 0, textureWidth, textureHeight};
+        src = &_src;
+    }
+    
+    // initialize mesh if needed
+    if (!mesh.isInitialized()) {
+        mesh.init();
+    }
+    
+    // initialize shader if needed, then bind
+    if (!shader.isInitialized()) {
+        shader.init("2D image shader");
+        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        shader.bindAttribLocation("iPosition", 0);
+        shader.bindAttribLocation("iTexCoord", 1);
+        shader.bindAttribLocation("iColor", 2);
+        shader.link();
+        shader.bind();
+        glUniform1i(shader.uniform("uTexture"), 0);
+    } else {
+        shader.bind();
+    }
+    
+    // bind texture
+    glBindTexture(GL_TEXTURE_2D, texid);
+    if (!drawingGui) {
         glEnable(GL_BLEND);
-        
-		// setup projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
+    }
+    
+    // upload color
+    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    glUniform4fv(shader.uniform("uColor"), 1, cv);
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
+    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    
+    // view matrix
+    mat4x4 view(1.f);
+    v = {(float)dest.x, (float)(viewport.h - dest.y), 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    v = {0.f, 0.f, -1.f, 0.f};
+    (void)rotate_mat(&m, &view, angle / PI * 180.f, &v); view = m;
+    v = {(float)dest.w / 2.f, (float)dest.h / 2.f, 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
+    (void)scale_mat(&m, &view, &v); view = m;
+    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    
+    // section matrix
+    mat4x4 sect(1.f);
+    v = {(float)src->x / textureWidth, (float)src->y / textureHeight, 0.f, 0.f};
+    (void)translate_mat(&m, &sect, &v); sect = m;
+    v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
+    (void)scale_mat(&m, &sect, &v); sect = m;
+    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
 
-		// push model matrix
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-	}
-
-	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
-	glEnd();
-
-	if (!drawingGui) {
+    // draw image
+    mesh.draw();
+    
+    // reset GL state
+    shader.unbind();
+    if (!drawingGui) {
         glDisable(GL_BLEND);
-        
-		// pop matrices
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-	}
-}
-
-void Image::drawSurface(GLuint texid, SDL_Surface* surf, const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color) {
-	if ( !surf ) {
-		return;
-	}
-
-	// read color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	if ( !a ) {
-		return;
-	}
-
-	// for the use of a whole image
-	SDL_Rect secondsrc;
-	if ( src == nullptr ) {
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = surf->w;
-		secondsrc.h = surf->h;
-		src = &secondsrc;
-	}
-
-	if ( !drawingGui ) {
-		glEnable(GL_BLEND);
-
-		// setup projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-
-		// push model matrix
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-	}
-
-	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
-	glEnd();
-
-	if ( !drawingGui ) {
-		glDisable(GL_BLEND);
-
-		// pop matrices
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-	}
-}
-
-void Image::drawSurfaceRotated(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport, const Uint32& color, real_t angle)
-{
-	if ( !surf ) {
-		return;
-	}
-
-	// read color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	if ( !a ) {
-		return;
-	}
-
-	if (!drawingGui) {
-        glEnable(GL_BLEND);
-        
-		// setup projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-        glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
-	}
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(dest.x, viewport.h - dest.y, 0);
-	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
-
-	// for the use of a whole image
-	SDL_Rect secondsrc;
-	if ( src == nullptr ) {
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = surf->w;
-		secondsrc.h = surf->h;
-		src = &secondsrc;
-	}
-
-	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(-dest.w / 2, dest.h / 2);
-	glTexCoord2f(1.0 * ((real_t)src->x / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(-dest.w / 2, -dest.h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * (((real_t)src->y + src->h) / surf->h));
-	glVertex2f(dest.w / 2, -dest.h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / surf->w), 1.0 * ((real_t)src->y / surf->h));
-	glVertex2f(dest.w / 2, dest.h / 2);
-	glEnd();
-
-	// pop matrices
-	glPopMatrix();
-	if (!drawingGui) {
-        glDisable(GL_BLEND);
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-	}
+    }
 }
 
 static std::unordered_map<std::string, Image*> hashed_images;
@@ -334,7 +360,6 @@ Image* Image::get(size_t hash, const char* name) {
 	auto& map = hashed_images;
 	auto bc = map.bucket_count();
 	if (bc) {
-		const auto& key_eq = map.key_eq();
 		const auto& hash_fn = map.hash_function();
 		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
 			(hash < bc ? hash : hash % bc);
@@ -368,6 +393,8 @@ void Image::dumpCache() {
 	}
 	hashed_images.clear();
 	IMAGE_VOLUME = 0;
+    mesh.destroy();
+    shader.destroy();
 }
 
 #ifndef EDITOR

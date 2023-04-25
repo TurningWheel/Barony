@@ -205,6 +205,16 @@ mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     return result;
 }
 
+mat4x4_t* ortho(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(1.f);
+    result->x.x = 2.f / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->z.z = 2.f / (far - near);
+    result->w.x = -1.f;
+    result->w.y = -1.f;
+    return result;
+}
+
 mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
     *result = mat4x4(0.f);
     result->x.x = 2.f / (right - left);

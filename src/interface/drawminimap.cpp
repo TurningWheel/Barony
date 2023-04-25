@@ -71,9 +71,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	}
 
 	Input& input = Input::inputs[player];
-	const int windowLCD = std::min(rect.w, rect.h);
-	const int windowGCD = std::max(rect.w, rect.h);
-	const int mapLCD = std::min(map.width, map.height);
 	const int mapGCD = std::max(map.width, map.height);
 	const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
 	const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
@@ -235,19 +232,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		SDL_FreeSurface(minimapSurface);
 		minimapSurface = nullptr;
 	}
-	minimapTextures[player]->bind();
-
-	glColor4f(1, 1, 1, 1);
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
-	glTexCoord2f(0, 1);
-	glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
-	glTexCoord2f(1, 1);
-	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
-	glTexCoord2f(1, 0);
-	glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
-	glEnd();
+    
+    auto tex = minimapTextures[player];
+	Image::draw(tex->texid, tex->w, tex->h, nullptr, rect,
+        SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
 
 	// bind a solid white texture
 	auto white = Image::get("images/system/white.png");
@@ -265,9 +253,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	}
 
 	auto drawCircleMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		const int windowLCD = std::min(rect.w, rect.h);
-		const int windowGCD = std::max(rect.w, rect.h);
-		const int mapLCD = std::min(map.width, map.height);
 		const int mapGCD = std::max(map.width, map.height);
 		const int xmin = ((int)map.width - mapGCD) / 2;
 		const int ymin = ((int)map.height - mapGCD) / 2;
@@ -290,9 +275,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
 
 	auto drawSkull = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		const int windowLCD = std::min(rect.w, rect.h);
-		const int windowGCD = std::max(rect.w, rect.h);
-		const int mapLCD = std::min(map.width, map.height);
 		const int mapGCD = std::max(map.width, map.height);
 		const int xmin = ((int)map.width - mapGCD) / 2;
 		const int ymin = ((int)map.height - mapGCD) / 2;
@@ -302,42 +284,28 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		y = (y - ymin) * unitY + rect.y;
 
 		auto imgGet = Image::get("*images/ui/HUD/death_skull.png");
-		imgGet->bind();
 
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 
-		glBegin(GL_QUADS);
-
 		const real_t sx = unitX * (minimapObjectZoom / 100.0) * size;
 		const real_t sy = unitY * (minimapObjectZoom / 100.0) * size;
 
-
-		SDL_Rect secondsrc;
-		SDL_Rect src;
-		src.x = 0;
-		src.y = 0;
-		src.w = imgGet->getSurf()->w;
-		src.h = imgGet->getSurf()->h;
-
-		SDL_Rect dest;
-		dest.x = x - sx / 2;
-		dest.y = y - sy / 2;
-		dest.w = sx;
-		dest.h = sy;
-
-		SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
-
-		glTexCoord2f(1.0 * ((real_t)src.x / imgGet->getSurf()->w), 1.0 * ((real_t)src.y / imgGet->getSurf()->h));
-		glVertex2f(dest.x, viewport.h - dest.y);
-		glTexCoord2f(1.0 * ((real_t)src.x / imgGet->getSurf()->w), 1.0 * (((real_t)src.y + src.h) / imgGet->getSurf()->h));
-		glVertex2f(dest.x, viewport.h - dest.y - dest.h);
-		glTexCoord2f(1.0 * (((real_t)src.x + src.w) / imgGet->getSurf()->w), 1.0 * (((real_t)src.y + src.h) / imgGet->getSurf()->h));
-		glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
-		glTexCoord2f(1.0 * (((real_t)src.x + src.w) / imgGet->getSurf()->w), 1.0 * ((real_t)src.y / imgGet->getSurf()->h));
-		glVertex2f(dest.x + dest.w, viewport.h - dest.y);
-		glEnd();
+        const SDL_Rect src{
+            0,
+            0,
+            imgGet->getSurf()->w,
+            imgGet->getSurf()->h,
+        };
+        const SDL_Rect dest{
+            (int)(x - sx / 2.0),
+            (int)(y - sy / 2.0),
+            (int)(sx),
+            (int)(sy),
+        };
+		const SDL_Rect viewport{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY };
+        imgGet->drawColor(&src, dest, viewport, color);
 	};
 
 	// draw special points of interest (exits, items, revealed monsters, etc)
@@ -792,9 +760,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				static ConsoleVariable<bool> cvar_outlineTriangles("/minimap_outline_triangles", false);
 
 				auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
-					const int windowLCD = std::min(rect.w, rect.h);
-					const int windowGCD = std::max(rect.w, rect.h);
-					const int mapLCD = std::min(map.width, map.height);
 					const int mapGCD = std::max(map.width, map.height);
 					const int xmin = ((int)map.width - mapGCD) / 2;
 					const int ymin = ((int)map.height - mapGCD) / 2;

@@ -2720,19 +2720,8 @@ namespace MainMenu {
 		    });
 		backdrop->setDrawCallback([](const Widget& widget, const SDL_Rect rect){
 		    if (fireTexture) {
-                fireTexture->bind();
-                glColor4f(1, 1, 1, 1);
-	            glBegin(GL_QUADS);
-	            glTexCoord2f(0, 0);
-	            glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
-	            glTexCoord2f(0, 1);
-	            glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
-	            glTexCoord2f(1, 1);
-	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
-	            glTexCoord2f(1, 0);
-	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
-	            glEnd();
-	            glBindTexture(GL_TEXTURE_2D, 0);
+                Image::draw(fireTexture->texid, fireTexture->w, fireTexture->h,
+                    nullptr, rect, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
 	        }
 		    });
 		backdrop->setBorder(0);

@@ -1056,49 +1056,12 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 
 void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glTranslatef(pos->x, yres - pos->y, 0);
-	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.1);
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(-src->w / 2, src->h / 2);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(-src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(src->w / 2, src->h / 2);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Uint32 color = makeColor(255, 255, 255, alpha);
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, color, angle);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1111,50 +1074,11 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, re
 
 void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a/ 255.f);
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, color);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1180,48 +1104,11 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 
 void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, 0xffffffff);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1247,65 +1134,11 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 
 void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-	glBegin(GL_QUADS);
-
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-	//glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	//glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	//glVertex2f(pos->x + src->w, yres - pos->y);
-	glVertex2f(pos->x + pos->w, yres - pos->y);
-
-	//glTexCoord2f(0.f, 0.f);
-	//glVertex2f(pos->x, yres - pos->y);
-	//glTexCoord2f(0.f, 1.f);
-	//glVertex2f(pos->x, yres - pos->y - pos->h);
-	//glTexCoord2f(1.f, 1.f);
-	//glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	//glTexCoord2f(1.f, 0.f);
-	//glVertex2f(pos->x + pos->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, 0xffffffff);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2729,51 +2562,17 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// draw quads
-	glColor3f(.25, .25, .25);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(x1, yres - y1);
-	glVertex2f(x1, yres - y2);
-	glVertex2f(x2, yres - y2);
-	glVertex2f(x2, yres - y1);
-	glEnd();
-	glColor3f(.5, .5, .5);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(x1 + 1, yres - y1 - 1);
-	glVertex2f(x1 + 1, yres - y2 + 1);
-	glVertex2f(x2 - 1, yres - y2 + 1);
-	glVertex2f(x2 - 1, yres - y1 - 1);
-	glEnd();
-	glColor3f(.75, .75, .75);
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)fancyWindow_bmp->userdata]); // wood texture
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex2f(x1 + 2, yres - y1 - 2);
-	glTexCoord2f(0, (y2 - y1 - 4) / (real_t)tiles[30]->h);
-	glVertex2f(x1 + 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, (y2 - y1 - 4) / (real_t)tiles[30]->h);
-	glVertex2f(x2 - 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, 0);
-	glVertex2f(x2 - 2, yres - y1 - 2);
-	glEnd();
+    auto white = Image::get("images/system/white.png");
+    auto backdrop = Image::get("images/system/fancyWindow.png");
     
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    white->drawColor(nullptr, SDL_Rect{x1, y1, x2 - x1, y2 - y1},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(63, 63, 63));
+    
+    white->drawColor(nullptr, SDL_Rect{x1 + 1, y1 + 1, x2 - x1 - 2, y2 - y1 - 2},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(127, 127, 127));
+    
+    backdrop->drawColor(nullptr, SDL_Rect{x1 + 2, y1 + 2, x2 - x1 - 4, y2 - y1 - 4},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(191, 191, 191));
 }
 
 /*-------------------------------------------------------------------------------

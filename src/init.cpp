@@ -414,11 +414,6 @@ int initApp(char const * const title, int fullscreen)
 
 	// load resources
 	printlog("loading engine resources...\n");
-	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL)
-	{
-		printlog("failed to load fancyWindow.png\n");
-		return 5;
-	}
 	if ((font8x8_bmp = loadImage("images/system/font8x8.png")) == NULL)
 	{
 		printlog("failed to load font8x8.png\n");
@@ -432,10 +427,6 @@ int initApp(char const * const title, int fullscreen)
 	if ((font16x16_bmp = loadImage("images/system/font16x16.png")) == NULL)
 	{
 		printlog("failed to load font16x16.png\n");
-		return 5;
-	}
-	if ((backdrop_loading_bmp = loadImage("images/system/backdrop_loading.png")) == NULL)
-	{
 		return 5;
 	}
 
@@ -2241,10 +2232,6 @@ int deinitApp()
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
-	if ( fancyWindow_bmp )
-	{
-		SDL_FreeSurface(fancyWindow_bmp);
-	}
 	if ( font8x8_bmp )
 	{
 		SDL_FreeSurface(font8x8_bmp);
@@ -2256,10 +2243,6 @@ int deinitApp()
 	if ( font16x16_bmp )
 	{
 		SDL_FreeSurface(font16x16_bmp);
-	}
-	if ( backdrop_loading_bmp )
-	{
-		SDL_FreeSurface(backdrop_loading_bmp);
 	}
 	if ( ttf8 )
 	{

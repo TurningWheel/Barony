@@ -724,8 +724,6 @@ extern TTF_Font* ttf16;
 extern SDL_Surface* font8x8_bmp;
 extern SDL_Surface* font12x12_bmp;
 extern SDL_Surface* font16x16_bmp;
-extern SDL_Surface* fancyWindow_bmp;
-extern SDL_Surface* backdrop_loading_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
