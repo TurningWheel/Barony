@@ -17124,7 +17124,6 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -17301,7 +17300,6 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);

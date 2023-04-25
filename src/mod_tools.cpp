@@ -5031,91 +5031,16 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 }
 
 #ifdef USE_THEORA_VIDEO
-#include "draw.hpp"
-Mesh video_mesh{
-    { // positions
-         0.f, -1.f,  0.f,
-         1.f, -1.f,  0.f,
-         1.f,  0.f,  0.f,
-         0.f, -1.f,  0.f,
-         1.f,  0.f,  0.f,
-         0.f,  0.f,  0.f,
-    },
-    { // texcoords
-        0.f,  0.f,
-        1.f,  0.f,
-        1.f,  1.f,
-        0.f,  0.f,
-        1.f,  1.f,
-        0.f,  1.f,
-    },
-    { // colors
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-    }
-};
-
-static const char video_vertex_glsl[] =
-    "#version 120\n"
-    "attribute vec3 iPosition;"
-    "attribute vec2 iTexCoord;"
-    "attribute vec4 iColor;"
-    "varying vec2 TexCoord;"
-    "varying vec4 Color;"
-    "uniform mat4 uRect;"
-    "uniform mat4 uSection;"
-    "void main() {"
-    "gl_Position = uRect * vec4(iPosition, 1.0);"
-    "TexCoord = (uSection * vec4(iTexCoord, 0.0, 0.0)).xy;"
-    "Color = iColor;"
-    "}";
-
-static const char video_fragment_glsl[] =
-    "#version 120\n"
-    "varying vec2 TexCoord;"
-    "varying vec4 Color;"
-    "uniform sampler2D uTexture;"
-    "uniform float uAlpha;"
-    "void main() {"
-    "vec4 color = texture2D(uTexture, TexCoord) * Color;"
-    "gl_FragColor = vec4(color.rgb, color.a * uAlpha);"
-    "}";
-
+#include "ui/Image.hpp"
 bool VideoManager_t::isInit = false;
 void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha)
 {
-	glBindTexture(GL_TEXTURE_2D, texID);
-    video_shader.bind();
-    
-    mat4x4 rect(1.f); mat4x4 r1;
-    mat4x4 sect(1.f); mat4x4 s1;
-    vec4_t v;
-    
-    // setup rectangle matrix
-    v = {w / Frame::virtualScreenX, h / Frame::virtualScreenY, 0.f, 0.f};
-    (void)scale_mat(&r1, &rect, &v); rect = r1;
-    v = {x / Frame::virtualScreenX - .5f, .5f - y / Frame::virtualScreenY, 0.f, 0.f};
-    (void)translate_mat(&r1, &rect, &v); rect = r1;
-    glUniformMatrix4fv(video_shader.uniform("uRect"), 1, GL_FALSE, (float*)&rect);
-    
-    // setup section matrix
-    v = {sw, sh, 0.f, 0.f};
-    (void)scale_mat(&s1, &sect, &v); sect = s1;
-    v = {sx + sw, sy + sh, 0.f, 0.f};
-    (void)translate_mat(&s1, &sect, &v); sect = s1;
-    glUniformMatrix4fv(video_shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
-    
-    // alpha
-    glUniform1f(video_shader.uniform("uAlpha"), alpha);
-                    
-    video_mesh.draw();
-    video_shader.unbind();
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
+    Uint32 color = makeColor(255, 255, 255, (uint8_t)(alpha * 255.f));
+    const SDL_Rect src{(int)sx, (int)sy, (int)sw, (int)sh};
+    const SDL_Rect dest{(int)x, (int)y, (int)w, (int)h};
+    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	Image::drawColor(texID, (int)sw, (int)sh,
+        &src, dest, viewport, color);
 }
 
 void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha)
@@ -5244,22 +5169,12 @@ void VideoManager_t::init()
 		return;
 	}
 	theoraplayer::init(1);
-    video_mesh.init();
-    video_shader.init("video shader");
-    video_shader.compile(video_vertex_glsl, sizeof(video_vertex_glsl));
-    video_shader.compile(video_fragment_glsl, sizeof(video_fragment_glsl));
-    video_shader.bindAttribLocation("iPosition", 0);
-    video_shader.bindAttribLocation("iTexCoord", 1);
-    video_shader.bindAttribLocation("iColor", 2);
-    video_shader.link();
 	isInit = true;
 }
 
 void VideoManager_t::destroy()
 {
 	theoraplayer::destroy();
-    video_mesh.destroy();
-    video_shader.destroy();
 	isInit = false;
 }
 

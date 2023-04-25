@@ -5565,7 +5565,7 @@ bind_failed:
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
+			"Change controller bindings.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();

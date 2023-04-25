@@ -819,12 +819,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		}
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-
 }
 
 void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing)
