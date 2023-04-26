@@ -217,7 +217,7 @@ void drawVoxel(view_t* camera, Entity* entity);
 void drawEntities3D(view_t* camera, int mode);
 void drawPalette(voxel_t* model);
 void drawEntities2D(long camx, long camy);
-void drawGrid(long camx, long camy);
+void drawGrid(int camx, int camy);
 void drawEditormap(long camx, long camy);
 void drawWindow(int x1, int y1, int x2, int y2);
 void drawDepressed(int x1, int y1, int x2, int y2);

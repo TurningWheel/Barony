@@ -3247,16 +3247,19 @@ namespace MainMenu {
 	};
 
 	void settingsApply() {
-        video_refresh = allSettings.save();
+        auto save_result = allSettings.save();
         
 		// change video mode
-		if (initialized && (video_refresh & VideoRefresh::Video)) {
-		    int x = std::max(allSettings.video.resolution_x, 1024);
-		    int y = std::max(allSettings.video.resolution_y, 720);
-			if (!changeVideoMode(x, y)) {
-				printlog("critical error! Attempting to abort safely...\n");
-				mainloop = 0;
-			}
+        if (initialized) {
+            video_refresh = save_result;
+            if (video_refresh & VideoRefresh::Video) {
+                int x = std::max(allSettings.video.resolution_x, 1024);
+                int y = std::max(allSettings.video.resolution_y, 720);
+                if (!changeVideoMode(x, y)) {
+                    printlog("critical error! Attempting to abort safely...\n");
+                    mainloop = 0;
+                }
+            }
 		}
 
 		// apply splitscreen setting

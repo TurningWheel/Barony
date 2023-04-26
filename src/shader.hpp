@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include "main.hpp"
 
 // A shader is composed of multiple sources, compiled and linked into a single program.
 // Each source can be a particular type: vertex, geometry, or fragment.
@@ -32,6 +33,7 @@ public:
         Fragment,
     };
 
+    void setParameter(GLenum param, int value);
     void bindAttribLocation(const char* attribute, int location);
     bool compile(const char* source, size_t len, Type type);
     bool link();

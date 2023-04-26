@@ -74,6 +74,7 @@ Shader skyShader;
 Shader spriteShader;
 TempTexture* lightmapTexture;
 
+static Shader gearShader;
 static Shader lineShader;
 static float lineMesh[] = {
     1.f, 1.f, 0.f, 1.f,
@@ -434,6 +435,11 @@ void createCommonDrawResources() {
     buildSpriteShader(spriteShader, "spriteShader",
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_fragment_glsl, sizeof(sprite_fragment_glsl));
+    
+    // 2d lines
+    glGenBuffers(1, &lineVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lineMesh), lineMesh, GL_STATIC_DRAW);
 }
 
 void destroyCommonDrawResources() {
@@ -448,6 +454,7 @@ void destroyCommonDrawResources() {
     skyMesh.destroy();
     spriteShader.destroy();
     lineShader.destroy();
+    gearShader.destroy();
     if (lineVBO) {
         glDeleteBuffers(1, &lineVBO);
         lineVBO = 0;
@@ -867,42 +874,114 @@ draws an arc with a changing radius
 
 -------------------------------------------------------------------------------*/
 
-static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 outer_color, Uint32 inner_color )
+static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 inner_color, Uint32 outer_color)
 {
-	// set state
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	Uint8 r, g, b, a;
-
-	// draw arc
-	glBegin(GL_TRIANGLE_FAN);
-	getColor(inner_color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	glVertex2f(x, yres - y);
-	getColor(outer_color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	for (real_t c = angle2; c >= angle1; c -= (real_t)1)
-	{
-		real_t degInRad = c * (real_t)PI / (real_t)180;
-		real_t factor = (c - angle1) / (angle2 - angle1);
-		real_t radius = radius2 * factor + radius1 * (1 - factor);
-		glVertex2f(x + cos(degInRad) * radius, yres - (y + sin(degInRad) * radius));
-	}
-	glEnd();
+    // bind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
     
+    // initialize shader if needed, then bind
+    if (!gearShader.isInitialized()) {
+        static const char v_glsl[] =
+            "#version 120\n"
+            "attribute vec4 iPosition;"
+            "void main() {"
+            "gl_Position = iPosition;"
+            "}";
+        
+        static const char g_glsl[] =
+            "#version 120\n"
+            "uniform mat4 uProj;"
+            "uniform mat4 uView;"
+            "uniform vec4 uInnerColor;"
+            "uniform vec4 uOuterColor;"
+            "uniform float uRadius1;"
+            "uniform float uRadius2;"
+            "uniform float uAngle1;"
+            "uniform float uAngle2;"
+        
+            "void Emit(vec2 position, vec4 color) {"
+            "gl_Position = uProj * uView * vec4(position.x, -position.y, 0.0, 1.0);"
+            "gl_FrontColor = color;"
+            "EmitVertex();"
+            "}"
+        
+            "void main() {"
+            "for (float c = uAngle2; c > uAngle1; c -= 1.0) {"
+            "Emit(gl_PositionIn[0].xy, uInnerColor);"
+        
+            "float factor1 = (c - uAngle1) / (uAngle2 - uAngle1);"
+            "float radius1 = uRadius2 * factor1 + uRadius1 * (1.0 - factor1);"
+            "Emit(gl_PositionIn[0].xy + vec2(cos(radians(c)) * radius1, sin(radians(c)) * radius1), uOuterColor);"
+        
+            "float factor2 = (c - uAngle1 - 1.0) / (uAngle2 - uAngle1);"
+            "float radius2 = uRadius2 * factor2 + uRadius1 * (1.0 - factor2);"
+            "Emit(gl_PositionIn[0].xy + vec2(cos(radians(c - 1.0)) * radius2, sin(radians(c - 1.0)) * radius2), uOuterColor);"
+        
+            "EndPrimitive();"
+            "}"
+            "}";
+        
+        static const char f_glsl[] =
+            "#version 120\n"
+            "void main() {"
+            "gl_FragColor = gl_Color;"
+            "}";
+        
+        gearShader.init("gear shader");
+        gearShader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        gearShader.compile(g_glsl, sizeof(g_glsl), Shader::Type::Geometry);
+        gearShader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        gearShader.bindAttribLocation("iPosition", 0);
+        
+        // 1024 is the highest we can go, but that leaves no components for color.
+        gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT_EXT, 256);
+        gearShader.setParameter(GL_GEOMETRY_INPUT_TYPE_EXT, GL_POINTS);
+        gearShader.setParameter(GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLES);
+        gearShader.link();
+    }
+    gearShader.bind();
+    glEnable(GL_BLEND);
+    
+    // upload radii and angles
+    glUniform1f(gearShader.uniform("uRadius1"), (float)radius1);
+    glUniform1f(gearShader.uniform("uRadius2"), (float)radius2);
+    glUniform1f(gearShader.uniform("uAngle1"), (float)(angle1));
+    glUniform1f(gearShader.uniform("uAngle2"), (float)(angle2));
+    
+    Uint8 r, g, b, a;
+    
+    // upload color
+    getColor(inner_color, &r, &g, &b, &a);
+    float icv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    glUniform4fv(gearShader.uniform("uInnerColor"), 1, icv);
+    getColor(outer_color, &r, &g, &b, &a);
+    float ocv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    glUniform4fv(gearShader.uniform("uOuterColor"), 1, ocv);
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, 0, xres, 0, yres, -1.f, 1.f);
+    glUniformMatrix4fv(gearShader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    
+    // point matrix
+    mat4x4 view(1.f);
+    v = {(float)x, (float)(yres - y), 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    glUniformMatrix4fv(gearShader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    
+    // draw line
+    glDrawArrays(GL_POINTS, 0, 1);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    // reset GL state
+    gearShader.unbind();
     glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------
@@ -935,14 +1014,8 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
         return;
     }
     
-    // initialize mesh if needed
-    if (!lineVBO) {
-        glGenBuffers(1, &lineVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(lineMesh), lineMesh, GL_STATIC_DRAW);
-    } else {
-        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-    }
+    // bind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
     
@@ -1076,30 +1149,30 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 		drawScalingFilledArc(x, y, size, size,
 			r,
 			r + p,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, size, teeth_size,
 			r + p,
 			r + p + t,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, teeth_size, teeth_size,
 			r + p + t,
 			r + p * 2 - t,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, teeth_size, size,
 			r + p * 2 - t,
 			r + p * 2,
-			color, color_bright);
+            color_bright, color);
+        drawScalingFilledArc(x, y,
+            size * 1 / 3,
+            size * 1 / 3,
+            r, r + p * 2,
+            color_dark, color);
+        drawScalingFilledArc(x, y,
+            size * 1 / 6,
+            size * 1 / 6,
+            r, r + p * 2,
+            black, black);
 	}
-	drawScalingFilledArc(x, y,
-		size * 1 / 3,
-		size * 1 / 3,
-		0, 360,
-		color, color_dark);
-	drawScalingFilledArc(x, y,
-		size * 1 / 6,
-		size * 1 / 6,
-		0, 360,
-		black, black);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2491,15 +2564,14 @@ void drawEntities2D(long camx, long camy)
 
 -------------------------------------------------------------------------------*/
 
-void drawGrid(long camx, long camy)
+void drawGrid(int camx, int camy)
 {
-	long x, y;
 	Uint32 color = makeColorRGB(127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
-	for ( y = 0; y < map.height; y++ )
+	for ( int y = 0; y < map.height; y++ )
 	{
-		for ( x = 0; x < map.width; x++ )
+		for ( int x = 0; x < map.width; x++ )
 		{
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, ((x + 1) << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, color, 255);
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, (x << TEXTUREPOWER) - camx, ((y + 1) << TEXTUREPOWER) - camy, color, 255);
