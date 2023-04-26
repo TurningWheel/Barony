@@ -397,7 +397,6 @@ void createCommonDrawResources() {
         "#version 120\n"
         "attribute vec3 iPosition;"
         "attribute vec2 iTexCoord;"
-        "attribute vec4 iColor;"
         "uniform mat4 uProj;"
         "uniform mat4 uView;"
         "uniform mat4 uModel;"
@@ -408,7 +407,6 @@ void createCommonDrawResources() {
         "void main() {"
         "WorldPos = uModel * vec4(iPosition, 1.0);"
         "TexCoord = iTexCoord;"
-        "Color = iColor;"
         "gl_Position = uProj * uView * WorldPos;"
         "}";
 
@@ -416,7 +414,6 @@ void createCommonDrawResources() {
         "#version 120\n"
         "varying vec4 WorldPos;"
         "varying vec2 TexCoord;"
-        "varying vec4 Color;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
@@ -425,7 +422,7 @@ void createCommonDrawResources() {
         "uniform vec2 uMapDims;"
     
         "void main() {"
-        "vec4 Texture = texture2D(uTexture, TexCoord) * Color;"
+        "vec4 Texture = texture2D(uTexture, TexCoord);"
         "if (Texture.a <= 0) discard;"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture2D(uLightmap, LightCoord);"
@@ -435,6 +432,8 @@ void createCommonDrawResources() {
     buildSpriteShader(spriteShader, "spriteShader",
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_fragment_glsl, sizeof(sprite_fragment_glsl));
+    
+    spriteMesh.init();
     
     // 2d lines
     glGenBuffers(1, &lineVBO);
@@ -453,6 +452,7 @@ void destroyCommonDrawResources() {
     skyShader.destroy();
     skyMesh.destroy();
     spriteShader.destroy();
+    spriteMesh.destroy();
     lineShader.destroy();
     gearShader.destroy();
     if (lineVBO) {

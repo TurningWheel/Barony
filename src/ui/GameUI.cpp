@@ -32755,7 +32755,6 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	}
 
 	GLuint itemTexid = 0;
-	//SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
 	SDL_Rect pos;
 	if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(buf, font->getName(),
 		makeColor(67, 195, 157, 255), 0)->getSurf()) )

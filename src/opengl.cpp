@@ -567,12 +567,185 @@ void beginGraphics() {
     updateChunks();
 }
 
-void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.bind();
     if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
     if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
     if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
     shader.unbind();
+}
+
+// hsv values:
+// x = [0-360]
+// y = [0-100]
+// z = [0-100]
+// w = [0-1]
+static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
+    float h = fmodf(hsv->x, 360.f);
+    if (h < 0.f) {
+        h += 360.f;
+    }
+    const float s = hsv->y / 100.f;
+    const float v = hsv->z / 100.f;
+    const float C = s * v;
+    const float X = C * (1.f - fabsf(fmodf(h/60.f, 2.f) - 1.f));
+    const float m = v - C;
+    float r, g, b;
+    if (h >= 0 && h < 60) {
+        r = C; g = X; b = 0;
+    }
+    else if(h >= 60 && h < 120) {
+        r = X; g = C; b = 0;
+    }
+    else if(h >= 120 && h < 180) {
+        r = 0; g = C; b = X;
+    }
+    else if(h >= 180 && h < 240) {
+        r = 0; g = X; b = C;
+    }
+    else if(h >= 240 && h < 300) {
+        r = X; g = 0; b = C;
+    }
+    else {
+        r = C; g = 0; b = X;
+    }
+    result->x = r + m;
+    result->y = g + m;
+    result->z = b + m;
+    result->w = hsv->w;
+    return result;
+}
+
+static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
+    if (mode == REALCOLORS) {
+        if (remap) {
+            bool doGrayScale = false;
+            real_t grayScaleFactor = 0.0;
+            if (entity->grayscaleGLRender > 0.001) {
+                doGrayScale = true;
+                grayScaleFactor = entity->grayscaleGLRender;
+            }
+            
+            mat4x4_t remap(1.f);
+            if (doGrayScale) {
+                remap.x.x = 1.f / 3.f;
+                remap.x.y = 1.f / 3.f;
+                remap.x.z = 1.f / 3.f;
+                remap.y.x = 1.f / 3.f;
+                remap.y.y = 1.f / 3.f;
+                remap.y.z = 1.f / 3.f;
+                remap.z.x = 1.f / 3.f;
+                remap.z.y = 1.f / 3.f;
+                remap.z.z = 1.f / 3.f;
+            }
+            else if (entity->flags[USERFLAG2]) {
+                if (entity->behavior != &actMonster || monsterChangesColorWhenAlly(nullptr, entity)) {
+                    // certain allies use G/B/R color map
+                    remap = mat4x4_t(0.f);
+                    remap.x.y = 1.f;
+                    remap.y.z = 1.f;
+                    remap.z.x = 1.f;
+                }
+            }
+#ifndef EDITOR
+            static ConsoleVariable<bool> cvar_rainbowTest("/rainbowtest", false);
+            if (*cvar_rainbowTest) {
+                remap = mat4x4_t(0.f);
+                
+                const auto period = TICKS_PER_SECOND * 3; // 3 seconds
+                const auto time = (ticks % period) / (real_t)period; // [0-1]
+                const auto amp = 360.0;
+                
+                vec4_t hsv;
+                hsv.y = 100.f; // saturation
+                hsv.z = 100.f; // value
+                hsv.w = 0.f;   // unused
+                
+                hsv.x = time * amp;
+                HSVtoRGB(&remap.x, &hsv); // red
+                
+                hsv.x = time * amp + 120;
+                HSVtoRGB(&remap.y, &hsv); // green
+                
+                hsv.x = time * amp + 240;
+                HSVtoRGB(&remap.z, &hsv); // blue
+            }
+#endif
+            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap);
+        }
+        
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
+        
+        bool highlightEntity = false;
+        bool highlightEntityFromParent = false;
+        int player = -1;
+        for (player = 0; player < MAXPLAYERS; ++player) {
+            if (&cameras[player] == camera) {
+                break;
+            }
+        }
+        highlightEntity = entity->bEntityHighlightedForPlayer(player);
+        if (!highlightEntity) {
+            Entity* parent = uidToEntity(entity->parent);
+            if (parent && parent->bEntityHighlightedForPlayer(player)) {
+                entity->highlightForUIGlow = parent->highlightForUIGlow;
+                highlightEntityFromParent = true;
+                highlightEntity = highlightEntityFromParent;
+            }
+        }
+        
+        if (highlightEntity) {
+            if (!highlightEntityFromParent) {
+                entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+            }
+            real_t highlight = entity->highlightForUIGlow;
+            if (highlight > 1.0) {
+                highlight = 1.0 - (highlight - 1.0);
+            }
+            if (entity->flags[BRIGHT]) {
+                GLfloat light[4] = {
+                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
+                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
+                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
+                    0.f };
+                glUniform4fv(shader.uniform("uLightColor"), 1, light);
+            } else {
+                GLfloat light[4] = {
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    static_cast<GLfloat>((highlight - 0.5) * .1),
+                    0.f };
+                glUniform4fv(shader.uniform("uLightColor"), 1, light);
+            }
+        } else {
+            if (entity->flags[BRIGHT]) {
+                constexpr GLfloat light[4] = { 1.f, 1.f, 1.f, 0.f };
+                glUniform4fv(shader.uniform("uLightColor"), 1, light);
+            } else {
+                constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+                glUniform4fv(shader.uniform("uLightColor"), 1, light);
+            }
+        }
+        
+        constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+        glUniform4fv(shader.uniform("uColorAdd"), 1, add);
+    } else {
+        mat4x4_t empty(0.f);
+        glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
+        
+        constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
+        glUniform4fv(shader.uniform("uLightColor"), 1, light);
+        
+        GLfloat uidcolors[4];
+        Uint32 uid = entity->getUID();
+        uidcolors[0] = ((Uint8)(uid)) / 255.f;
+        uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+        uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+        uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
+        glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors);
+    }
 }
 
 constexpr float defaultGamma = 0.5f;            // default gamma level: 50%
@@ -746,53 +919,12 @@ void glEndCamera(view_t* camera)
     ++camera->drawnFrames;
 }
 
-// hsv values:
-// x = [0-360]
-// y = [0-100]
-// z = [0-100]
-// w = [0-1]
-static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
-    float h = fmodf(hsv->x, 360.f);
-    if (h < 0.f) {
-        h += 360.f;
-    }
-    const float s = hsv->y / 100.f;
-    const float v = hsv->z / 100.f;
-    const float C = s * v;
-    const float X = C * (1.f - fabsf(fmodf(h/60.f, 2.f) - 1.f));
-    const float m = v - C;
-    float r, g, b;
-    if (h >= 0 && h < 60) {
-        r = C; g = X; b = 0;
-    }
-    else if(h >= 60 && h < 120) {
-        r = X; g = C; b = 0;
-    }
-    else if(h >= 120 && h < 180) {
-        r = 0; g = C; b = X;
-    }
-    else if(h >= 180 && h < 240) {
-        r = 0; g = X; b = C;
-    }
-    else if(h >= 240 && h < 300) {
-        r = X; g = 0; b = C;
-    }
-    else {
-        r = C; g = 0; b = X;
-    }
-    result->x = r + m;
-    result->y = g + m;
-    result->z = b + m;
-    result->w = hsv->w;
-    return result;
-}
-
 void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
-	if (!entity) {
+	if (!camera || !entity) {
 		return;
 	}
 
-	// assign model
+	// select model
     voxel_t* model = nullptr;
     int modelindex = -1;
 #ifndef EDITOR
@@ -812,49 +944,32 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 		model = models[0];
 		modelindex = 0;
 	}
-
 	if (!model || model == models[0]) {
 		return; // don't draw green balls
 	}
     
+    // set GL state
 	if (mode == REALCOLORS) {
 		glEnable(GL_BLEND);
-	} else {
-		glDisable(GL_BLEND);
 	}
-
+    bool changedDepthRange = false;
 	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
 		|| modelindex == FOLLOWER_SELECTED_PARTICLE
 		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
+        changedDepthRange = true;
 		glDepthRange(0, 0.1);
 	}
-
-	bool highlightEntity = false;
-	bool highlightEntityFromParent = false;
-	int player = -1;
-	for (player = 0; player < MAXPLAYERS; ++player) {
-		if (&cameras[player] == camera) {
-			break;
-		}
-	}
-	highlightEntity = entity->bEntityHighlightedForPlayer(player);
-    if (!highlightEntity && (modelindex == 184 || modelindex == 585 || modelindex == 216)) { // lever base/chest lid
-		Entity* parent = uidToEntity(entity->parent);
-		if (parent && parent->bEntityHighlightedForPlayer(player)) {
-			entity->highlightForUIGlow = parent->highlightForUIGlow;
-			highlightEntityFromParent = true;
-			highlightEntity = highlightEntityFromParent;
-		}
-	}
-
-	bool doGrayScale = false;
-	real_t grayScaleFactor = 0.0;
-	if (entity->grayscaleGLRender > 0.001) {
-		doGrayScale = true;
-		grayScaleFactor = entity->grayscaleGLRender;
-	}
     
-    // new rendering (shader)
+    // bind shader
+#ifndef EDITOR
+    static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
+    auto& shader = *cvar_testDithering ?
+        voxelDitheredShader : voxelShader;
+#else
+    auto& shader = voxelShader;
+#endif
+    shader.bind();
+    
     mat4x4_t m, t, i;
     vec4_t v;
     
@@ -882,125 +997,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    
-#ifndef EDITOR
-    static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
-    auto& shader = *cvar_testDithering ?
-        voxelDitheredShader : voxelShader;
-#else
-    auto& shader = voxelShader;
-#endif
-    shader.bind();
-    
-    // upload shader variables
     glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
-    if (mode == REALCOLORS) {
-        mat4x4_t remap(1.f);
-        if (doGrayScale) {
-            remap.x.x = 1.f / 3.f;
-            remap.x.y = 1.f / 3.f;
-            remap.x.z = 1.f / 3.f;
-            remap.y.x = 1.f / 3.f;
-            remap.y.y = 1.f / 3.f;
-            remap.y.z = 1.f / 3.f;
-            remap.z.x = 1.f / 3.f;
-            remap.z.y = 1.f / 3.f;
-            remap.z.z = 1.f / 3.f;
-        }
-        else if (entity->flags[USERFLAG2]) {
-            if (entity->behavior != &actMonster || (!entity->isPlayerHeadSprite() &&
-                modelindex != 467 && monsterChangesColorWhenAlly(nullptr, entity))) {
-                // certain allies use G/B/R color map
-                remap = mat4x4_t(0.f);
-                remap.x.y = 1.f;
-                remap.y.z = 1.f;
-                remap.z.x = 1.f;
-            }
-        }
-#ifndef EDITOR
-        static ConsoleVariable<bool> cvar_rainbowTest("/rainbowtest", false);
-        if (*cvar_rainbowTest) {
-            remap = mat4x4_t(0.f);
-            
-            const auto period = TICKS_PER_SECOND * 3; // 3 seconds
-            const auto time = (ticks % period) / (real_t)period; // [0-1]
-            const auto amp = 360.0;
-            
-            vec4_t hsv;
-            hsv.y = 100.f; // saturation
-            hsv.z = 100.f; // value
-            hsv.w = 0.f;   // unused
-            
-            hsv.x = time * amp;
-            HSVtoRGB(&remap.x, &hsv); // red
-            
-            hsv.x = time * amp + 120;
-            HSVtoRGB(&remap.y, &hsv); // green
-            
-            hsv.x = time * amp + 240;
-            HSVtoRGB(&remap.z, &hsv); // blue
-        }
-#endif
-        glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap);
-        
-        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
-        
-        if (highlightEntity) {
-            if (!highlightEntityFromParent) {
-                entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
-            }
-            real_t highlight = entity->highlightForUIGlow;
-            if (highlight > 1.0) {
-                highlight = 1.0 - (highlight - 1.0);
-            }
-            if (entity->flags[BRIGHT]) {
-                GLfloat light[4] = {
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            } else {
-                GLfloat light[4] = {
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            }
-        } else {
-            if (entity->flags[BRIGHT]) {
-                constexpr GLfloat light[4] = { 1.f, 1.f, 1.f, 0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            } else {
-                constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            }
-        }
-        
-        constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-        glUniform4fv(shader.uniform("uColorAdd"), 1, add);
-    } else {
-        mat4x4_t empty(0.f);
-        glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
-        
-        constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
-        glUniform4fv(shader.uniform("uLightColor"), 1, light);
-        
-        GLfloat uidcolors[4];
-        Uint32 uid = entity->getUID();
-        uidcolors[0] = ((Uint8)(uid)) / 255.f;
-        uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
-        uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
-        uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-        glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors);
-    }
     
-    // draw
-    //glDisable(GL_DEPTH_TEST);
+    // upload light variables
+    uploadLightUniforms(camera, shader, entity, mode, true);
     
+    // draw mesh
     glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
@@ -1014,11 +1016,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     
-    //glEnable(GL_DEPTH_TEST);
-    //shader.unbind();
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDepthRange(0, 1);
+    // reset GL state
+    if (changedDepthRange) {
+        glDepthRange(0, 1);
+    }
+    if (mode == REALCOLORS) {
+        glDisable(GL_BLEND);
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -1028,57 +1032,26 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	Draws a 2D sprite to represent an object in 3D
 
 -------------------------------------------------------------------------------*/
-SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
-{
-	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[(long int)sprites[0]->userdata];
-	char textToRetrieve[128];
-	strncpy(textToRetrieve, text.c_str(), 127);
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 127)] = '\0';
 
-	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
-	{
-		textureId = texid[(long int)image->userdata];
-	}
-	else
-	{
-		// create the text outline surface
-		TTF_SetFontOutline(ttf12, 2);
-		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
-
-		// create the text surface
-		TTF_SetFontOutline(ttf12, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
-
-		// combine the surfaces
-		SDL_Rect pos;
-		pos.x = 2;
-		pos.y = 2;
-		pos.h = 0;
-		pos.w = 0;
-
-		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf);
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->userdata = (void *)((long int)imgref);
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
-		}
-		textureId = texid[(long int)image->userdata];
-	}
-	if ( outTextId )
-	{
-		*outTextId = textureId;
-	}
-	return image;
-}
+Mesh spriteMesh = {
+    {
+        -.5f, -.5f, 0.f,
+         .5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f,  .5f, 0.f,
+    }, // positions
+    {
+        0.f, 1.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        0.f, 1.f,
+        1.f, 0.f,
+        0.f, 0.f,
+    }, // texcoords
+    {} // colors
+};
 
 #ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
@@ -1638,128 +1611,71 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 
 void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
-	SDL_Surface* sprite;
-	//int x, y;
-	real_t s = 1;
-    
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if (entity->flags[OVERDRAW])
-	{
-		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-		float rotx = 0; // get x rotation
-		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate pitch
-		glRotatef(rotx, 1, 0, 0); // rotate roll
-	}
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// assign texture
-	if ( entity->sprite >= 0 && entity->sprite < numsprites )
-	{
-		if ( sprites[entity->sprite] != NULL )
-		{
-			sprite = sprites[entity->sprite];
-		}
-		else
-		{
-			sprite = sprites[0];
-		}
-	}
-	else
-	{
-		sprite = sprites[0];
-	}
-
-	if ( mode == REALCOLORS )
-	{
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if (!entity->flags[OVERDRAW])
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0, 0.1);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-        if (!entity->flags[OVERDRAW])
-        {
-            s = getLightForEntity(entity->x / 16, entity->y / 16);
+    // bind texture
+    SDL_Surface* sprite;
+    if (entity->sprite >= 0 && entity->sprite < numsprites) {
+        if (sprites[entity->sprite] != nullptr) {
+            sprite = sprites[entity->sprite];
+        } else {
+            sprite = sprites[0];
         }
-        else
-        {
-            s = getLightForEntity(camera->x, camera->y);
-        }
-        
-        if (entity->flags[BRIGHT])
-        {
-            s += 1.f;
-        }
-
-        if ( camera->globalLightModifierActive )
-        {
-            s *= camera->globalLightModifier;
-        }
-
-        glColor4f(s, s, s, 1);
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
-    
-    if ( mode == REALCOLORS )
-    {
-        glDisable(GL_BLEND);
+    } else {
+        sprite = sprites[0];
+    }
+    if (mode == REALCOLORS) {
+        glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
+        glEnable(GL_BLEND);
     }
     
-    glDisable(GL_ALPHA_TEST);
+    // set GL state
+    if (mode == REALCOLORS) {
+        glEnable(GL_BLEND);
+    }
+    if (entity->flags[OVERDRAW]) {
+        glDepthRange(0, 0.1);
+    }
+    
+    // bind shader
+    auto& shader = spriteShader;
+    shader.bind();
+    
+    mat4x4_t m, t, i;
+    vec4_t v;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * sprite->w, entity->scaley * sprite->h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    
+    // upload light variables
+    uploadLightUniforms(camera, shader, entity, mode, false);
+
+	// draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    if (mode == REALCOLORS) {
+        glDisable(GL_BLEND);
+    }
+    if (entity->flags[OVERDRAW]) {
+        glDepthRange(0, 1);
+    }
 }
 
 #ifndef EDITOR

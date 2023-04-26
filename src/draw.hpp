@@ -255,6 +255,7 @@ extern Shader worldDarkShader;
 extern Shader skyShader;
 extern Mesh skyMesh;
 extern Shader spriteShader;
+extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture;
 
 #define TRANSPARENT_TILE 246
