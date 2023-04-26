@@ -74,6 +74,13 @@ Shader skyShader;
 Shader spriteShader;
 TempTexture* lightmapTexture;
 
+static Shader lineShader;
+static float lineMesh[] = {
+    1.f, 1.f, 0.f, 1.f,
+    1.f, 1.f, 0.f, 1.f,
+};
+static unsigned int lineVBO = 0;
+
 static void buildVoxelShader(
     Shader& shader, const char* name,
 	const char* v, size_t size_v,
@@ -440,6 +447,11 @@ void destroyCommonDrawResources() {
     skyShader.destroy();
     skyMesh.destroy();
     spriteShader.destroy();
+    lineShader.destroy();
+    if (lineVBO) {
+        glDeleteBuffers(1, &lineVBO);
+        lineVBO = 0;
+    }
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
@@ -916,41 +928,86 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 
 void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set line width
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-
-	// draw line
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINES);
-	glVertex2f(x1 + 1, yres - y1);
-	glVertex2f(x2 + 1, yres - y2);
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-
-	// reset line width
-	glLineWidth(lineWidth);
+    // read color
+    Uint8 r, g, b, a;
+    getColor(color, &r, &g, &b, &a);
+    if (!alpha) {
+        return;
+    }
     
+    // initialize mesh if needed
+    if (!lineVBO) {
+        glGenBuffers(1, &lineVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(lineMesh), lineMesh, GL_STATIC_DRAW);
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    }
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
+    
+    // initialize shader if needed, then bind
+    if (!lineShader.isInitialized()) {
+        static const char v_glsl[] =
+            "#version 120\n"
+            "#extension GL_EXT_gpu_shader4 : enable\n"
+            "attribute vec4 iPosition;"
+            "uniform mat4 uProj;"
+            "uniform mat4 uMatrix0;"
+            "uniform mat4 uMatrix1;"
+            "void main() {"
+            "if (gl_VertexID == 0) { gl_Position = uProj * uMatrix0 * iPosition; }"
+            "else { gl_Position = uProj * uMatrix1 * iPosition; }"
+            "}";
+        
+        static const char f_glsl[] =
+            "#version 120\n"
+            "uniform vec4 uColor;"
+            "void main() {"
+            "gl_FragColor = uColor;"
+            "}";
+        
+        lineShader.init("line shader");
+        lineShader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        lineShader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        lineShader.bindAttribLocation("iPosition", 0);
+        lineShader.link();
+    }
+    lineShader.bind();
+    glEnable(GL_BLEND);
+    
+    // upload color
+    float cv[] = {r / 255.f, g / 255.f, b / 255.f, alpha / 255.f};
+    glUniform4fv(lineShader.uniform("uColor"), 1, cv);
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, 0, xres, 0, yres, -1.f, 1.f);
+    glUniformMatrix4fv(lineShader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    
+    // point 1 matrix
+    mat4x4 view0(1.f);
+    v = {(float)x1, (float)(yres - y1), 0.f, 0.f};
+    (void)translate_mat(&m, &view0, &v); view0 = m;
+    glUniformMatrix4fv(lineShader.uniform("uMatrix0"), 1, GL_FALSE, (float*)&view0);
+    
+    // point 2 matrix
+    mat4x4 view1(1.f);
+    v = {(float)x2, (float)(yres - y2), 0.f, 0.f};
+    (void)translate_mat(&m, &view1, &v); view1 = m;
+    glUniformMatrix4fv(lineShader.uniform("uMatrix1"), 1, GL_FALSE, (float*)&view1);
+    
+    // draw line
+    glDrawArrays(GL_LINES, 0, 2);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    // reset GL state
+    lineShader.unbind();
     glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 /*-------------------------------------------------------------------------------

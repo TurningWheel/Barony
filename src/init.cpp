@@ -2779,6 +2779,7 @@ bool initVideo()
         // setup opengl
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glEnable(GL_LINE_SMOOTH);
 	    glEnable(GL_TEXTURE_2D);
 	    glEnable(GL_CULL_FACE);
 	    glCullFace(GL_BACK);
