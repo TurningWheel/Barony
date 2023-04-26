@@ -2786,11 +2786,7 @@ bool initVideo()
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_LIGHTING);
 	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	    glMatrixMode( GL_MODELVIEW );
-	    glLoadIdentity();
-	    glMatrixMode( GL_PROJECTION );
-	    glLoadIdentity();
-	    glClearColor( 0.f, 0.f, 0.f, 0.f );
+	    glClearColor(0.f, 0.f, 0.f, 0.f);
 	}
 
 	if ( verticalSync )

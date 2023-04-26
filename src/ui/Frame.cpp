@@ -267,20 +267,8 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 #if !defined(EDITOR)
 void Frame::predraw() {
 	drawingGui = true;
-	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
-
-	// setup projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
+    
 	if ( !*ui_scale_native ) {
 		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
 			return;
@@ -293,15 +281,10 @@ void Frame::predraw() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Frame::postdraw() {
 	drawingGui = false;
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 	if ( !*ui_scale_native ) {
 		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
 			glDisable(GL_BLEND);
@@ -342,32 +325,16 @@ void Frame::postdraw() {
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = false;
-	//glViewport(0, 0, virtualScreenX, virtualScreenY);
 	glEnable(GL_BLEND);
-
-	// setup projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, virtualScreenX, 0, virtualScreenY, -1, 1);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
 
 	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
 		return;
 	}
 	gui_fb.bindForWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
 
 void Frame::postdraw() {
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
 		glDisable(GL_BLEND);
 		return;

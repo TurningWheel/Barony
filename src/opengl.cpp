@@ -882,12 +882,6 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-
-#ifndef EDITOR
-    const bool fullbright = *cvar_fullBright;
-#else
-    const bool fullbright = false;
-#endif
     
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
@@ -1653,7 +1647,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     glAlphaFunc(GL_GREATER, 0.0f);
 
 	// setup model matrix
-	glMatrixMode( GL_MODELVIEW );
+	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
 	if (entity->flags[OVERDRAW])
@@ -1921,41 +1915,6 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 
 /*-------------------------------------------------------------------------------
 
-	getLightAt
-
-	returns the light shade factor for the vertex at the given x/y point
-
--------------------------------------------------------------------------------*/
-
-static vec4_t getLightAt(const int x, const int y)
-{
-#if !defined(EDITOR) && !defined(NDEBUG)
-    static ConsoleVariable<bool> cvar("/fullbright", false);
-    if (*cvar)
-    {
-        return 1.0;
-    }
-#endif
-	const int index = (y + 1) + (x + 1) * (map.height + 2);
-
-	vec4_t l(0.f), r(0.f);
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1 - (map.height + 2)]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - (map.height + 2)]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index]); l = r;
-    (void)pow_vec4(&r, &l, getLightAtModifier); l = r;
-    static const vec4_t added(getLightAtAdder);
-    (void)add_vec4(&r, &l, &added); l = r;
-	float div = 1.f / (255.f * 4.f);
-	l.x = std::min(std::max(0.f, l.x * div), 1.f);
-    l.y = std::min(std::max(0.f, l.y * div), 1.f);
-    l.z = std::min(std::max(0.f, l.z * div), 1.f);
-    l.w = std::min(std::max(0.f, l.w * div), 1.f);
-	return l;
-}
-
-/*-------------------------------------------------------------------------------
-
 	glDrawWorld
 
 	Draws the current map from the given camera point
@@ -2043,12 +2002,6 @@ void glDrawWorld(view_t* camera, int mode)
     // determine whether we should draw clouds, and their texture
     int cloudtile;
     const bool clouds = shouldDrawClouds(map, &cloudtile);
-    
-#ifndef EDITOR
-    const bool fullbright = *cvar_fullBright;
-#else
-    const bool fullbright = false;
-#endif
     
     // bind shader
     auto& shader = mode == REALCOLORS ?
