@@ -103,13 +103,14 @@ public:
 
 struct Mesh {
     enum class BufferType : unsigned int {
-        Position,    // vec3 float
-        TexCoord,    // vec2 float
-        Color,       // vec4 float
+        Position, // vec3 float
+        TexCoord, // vec2 float
+        Color,    // vec4 float
         Max
     };
     static const std::unordered_map<BufferType, int> ElementsPerVBO;
 
+    Mesh() = default;
     Mesh(
         std::initializer_list<float>&& positions,
         std::initializer_list<float>&& texcoords,
@@ -124,12 +125,11 @@ struct Mesh {
         data{{positions}, {texcoords}, {colors}}
         {}
 
-    const std::vector<float> data[(int)BufferType::Max];
-    const std::vector<unsigned int> index;
+    std::vector<float> data[(int)BufferType::Max];
 
     void init();
     void destroy();
-    void draw() const;
+    void draw(GLenum type = GL_TRIANGLES, int numVertices = 0) const;
     bool isInitialized() const { return vbo[0] != 0; }
 
 private:

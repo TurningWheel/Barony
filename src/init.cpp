@@ -2116,23 +2116,11 @@ void generateVBOs(int start, int end)
 	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
 	glGenBuffers(count, color_buffers.get());
 
-	//std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
-	//glGenBuffers(count, color_shifted_buffers.get());
-
-	//std::unique_ptr<GLuint[]> grayscale_color_buffers(new GLuint[count]);
-	//glGenBuffers(count, grayscale_color_buffers.get());
-
-	//std::unique_ptr<GLuint[]> grayscale_color_shifted_buffers(new GLuint[count]);
-	//glGenBuffers(count, grayscale_color_shifted_buffers.get());
-
 	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
 	{
 		polymodel_t *model = &polymodels[c];
 		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
 		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
-		//std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
-		//std::unique_ptr<GLfloat[]> grayscale_colors(new GLfloat[9 * model->numfaces]);
-		//std::unique_ptr<GLfloat[]> grayscale_colors_shifted(new GLfloat[9 * model->numfaces]);
 		for (uint64_t i = 0; i < (uint64_t)model->numfaces; i++ )
 		{
 			const polytriangle_t *face = &model->faces[i];
@@ -2148,64 +2136,28 @@ void generateVBOs(int start, int end)
 				colors[data_index] = face->r / 255.f;
 				colors[data_index + 1] = face->g / 255.f;
 				colors[data_index + 2] = face->b / 255.f;
-
-				/*colors_shifted[data_index] = face->b / 255.f;
-				colors_shifted[data_index + 1] = face->r / 255.f;
-				colors_shifted[data_index + 2] = face->g / 255.f;
-
-				real_t grayscaleFactor = (face->r + face->g + face->b) / 3.0;
-				grayscale_colors[data_index] = grayscaleFactor / 255.f;
-				grayscale_colors[data_index + 1] = grayscaleFactor / 255.f;
-				grayscale_colors[data_index + 2] = grayscaleFactor / 255.f;
-
-				grayscale_colors_shifted[data_index] = grayscaleFactor / 255.f;
-				grayscale_colors_shifted[data_index + 1] = grayscaleFactor / 255.f;
-				grayscale_colors_shifted[data_index + 2] = grayscaleFactor / 255.f;*/
 			}
 		}
 		model->va = vas[c - start];
 		model->vbo = vbos[c - start];
 		model->colors = color_buffers[c - start];
-		//model->colors_shifted = color_shifted_buffers[c - start];
-		//model->grayscale_colors = grayscale_color_buffers[c - start];
-		//model->grayscale_colors_shifted = grayscale_color_shifted_buffers[c - start];
         
         // NOTE: OpenGL 2.1 does not support vertex array objects!!!
-        
 		//glBindVertexArray(model->va);
 
 		// vertex data
-		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 2.1 hardware)
-        glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDisableVertexAttribArray(0);
 
 		// color data
-        glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, model->colors);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDisableVertexAttribArray(1);
-
-		// shifted color data
-		//glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-
-		// grayscale color data
-		//glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-
-		// grayscale shifted color data
-		//glBindBuffer(GL_ARRAY_BUFFER, model->grayscale_colors_shifted);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, grayscale_colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW);
         
         //glBindVertexArray(0);
         
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
-        const int current = c - start;
+        const int current = (int)c - start;
 	    updateLoadingScreen(80 + (10 * current) / count);
 	    doLoadingScreen();
 	}

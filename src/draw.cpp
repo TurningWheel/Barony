@@ -476,21 +476,21 @@ void Mesh::init() {
 	//glBindVertexArray(vao);
 
 	// data buffers
+    int numVertices = 0;
 	glGenBuffers((GLsizei)BufferType::Max, vbo);
 	for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
-		const auto& find = ElementsPerVBO.find((BufferType)c);
-		assert(find != ElementsPerVBO.end());
-        glEnableVertexAttribArray(c);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
-		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDisableVertexAttribArray(c);
+        if (data[c].size()) {
+            const auto& find = ElementsPerVBO.find((BufferType)c);
+            assert(find != ElementsPerVBO.end());
+            numVertices = std::max(numVertices, (int)data[c].size() / find->second);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
+            glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
+        }
 	}
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 	//glBindVertexArray(0);
 
-    const int numVertices = (int)data[1].size() / 2; // texcoords / 2
 	printlog("initialized mesh with %llu vertices", numVertices);
 }
 
@@ -507,27 +507,38 @@ void Mesh::destroy() {
 	}
 }
 
-void Mesh::draw() const {
+void Mesh::draw(GLenum type, int numVertices) const {
     // NOTE: OpenGL 2.1 does not support vertex arrays!
     // if it did, all the bind/unbind buffer crap could be omitted.
 	//glBindVertexArray(vao);
     
+    const bool findNumVertices = numVertices == 0;
+    
     // bind buffers
     for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
-        const auto& find = ElementsPerVBO.find((BufferType)c);
-        assert(find != ElementsPerVBO.end());
-        glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
-        glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(c);
+        if (data[c].size()) {
+            const auto& find = ElementsPerVBO.find((BufferType)c);
+            assert(find != ElementsPerVBO.end());
+            glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
+            glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(c);
+            if (findNumVertices) {
+                numVertices = std::max(numVertices,
+                    (int)data[c].size() / find->second);
+            }
+        }
     }
     
     // draw elements
-    const int numVertices = (int)data[1].size() / 2; // texcoords / 2
-    glDrawArrays(GL_TRIANGLES, 0, numVertices);
+    if (numVertices) {
+        glDrawArrays(type, 0, numVertices);
+    }
     
     // disable buffers
     for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
-        glDisableVertexAttribArray(c);
+        if (data[c].size()) {
+            glDisableVertexAttribArray(c);
+        }
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     

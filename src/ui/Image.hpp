@@ -69,6 +69,30 @@ public:
         GLuint texid, int textureWidth, int textureHeight,
         const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport,
         const Uint32& color, real_t angle);
+    
+    //! draw image with given color, in a clockwise-fan fashion
+    //! @param lerp how much of the image to draw (1.0 is complete, 0.0 is none at all)
+    //! @param src the section of the image to be used for drawing, or nullptr for the whole image
+    //! @param dest the position and size in screen-coordinates by which the image should be drawn
+    //! @param viewport the dimensions of the viewport
+    //! @param color a 32-bit color to mix with the image
+    void drawClockwise(float lerp,
+        const SDL_Rect* src, const SDL_Rect dest,
+        const SDL_Rect viewport, const Uint32& color);
+    
+    //! draws arbitrary GL texture on-screen with given color, in a clockwise-fan fashion
+    //! @param texid GL texture id
+    //! @param textureWidth GL texture width
+    //! @param textureHeight GL texture height
+    //! @param lerp how much of the image to draw (1.0 is complete, 0.0 is none at all)
+    //! @param src the section of the image to be used for drawing, or nullptr for the whole image
+    //! @param dest the position and size in screen-coordinates by which the image should be drawn
+    //! @param viewport the dimensions of the viewport
+    //! @param color a 32-bit color to mix with the image
+    static void drawClockwise(
+        GLuint texid, int textureWidth, int textureHeight, float lerp,
+        const SDL_Rect* src, const SDL_Rect dest,
+        const SDL_Rect viewport, const Uint32& color);
 
 	//! bind this image as the active GL texture
 	void bind() const;
@@ -108,5 +132,8 @@ private:
     bool clamp = false;
     bool point = false;
     static Mesh mesh;
+    static Mesh clockwiseMesh;
     static Shader shader;
+    
+    static void setupGL(GLuint texid, const Uint32& color);
 };

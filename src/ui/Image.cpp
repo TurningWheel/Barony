@@ -134,15 +134,9 @@ Mesh Image::mesh = {
         1.f, 0.f,
         0.f, 0.f,
     }, // texcoords
-    {
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-        1.f, 1.f, 1.f, 1.f,
-    }, // colors
+    {}, // colors
 };
+Mesh Image::clockwiseMesh;
 
 Shader Image::shader;
 
@@ -150,27 +144,120 @@ static const char v_glsl[] =
     "#version 120\n"
     "attribute vec3 iPosition;"
     "attribute vec2 iTexCoord;"
-    "attribute vec4 iColor;"
     "varying vec2 TexCoord;"
-    "varying vec4 Color;"
-    "uniform vec4 uColor;"
     "uniform mat4 uProj;"
     "uniform mat4 uView;"
     "uniform mat4 uSection;"
     "void main() {"
     "gl_Position = uProj * uView * vec4(iPosition, 1.0);"
     "TexCoord = (uSection * vec4(iTexCoord, 0.0, 1.0)).xy;"
-    "Color = iColor * uColor;"
     "}";
 
 static const char f_glsl[] =
     "#version 120\n"
     "varying vec2 TexCoord;"
-    "varying vec4 Color;"
     "uniform sampler2D uTexture;"
+    "uniform vec4 uColor;"
     "void main() {"
-    "gl_FragColor = texture2D(uTexture, TexCoord) * Color;"
+    "gl_FragColor = texture2D(uTexture, TexCoord) * uColor;"
     "}";
+
+void Image::setupGL(GLuint texid, const Uint32& color) {
+    // initialize mesh if needed
+    if (!mesh.isInitialized()) {
+        mesh.init();
+    }
+    
+    // initialize clockwise mesh if needed
+    if (!clockwiseMesh.isInitialized()) {
+        auto& positions = clockwiseMesh.data[0];
+        auto& texcoords = clockwiseMesh.data[1];
+        positions.clear();
+        texcoords.clear();
+        if (!clockwiseMesh.data[0].size()) {
+            positions.insert(positions.end(), {0.f, 0.f, 0.f});
+            texcoords.insert(texcoords.end(), {.5f, .5f});
+            float x = 0.f;
+            float y = -.5f;
+            constexpr int increment = 25;
+            constexpr int num_square_vertices = 200;
+            for (int dir = 0, c = 0; c <= num_square_vertices; ++c) {
+                positions.insert(positions.end(), {x, -y, 0.f});
+                texcoords.insert(texcoords.end(), {x + 0.5f, y + 0.5f});
+
+                if (dir == 0) {
+                    y = -.5f;
+                    x += 1.01f / increment;
+                    if (x >= .5f) {
+                        x = .5f;
+                        dir = 1;
+                    }
+                }
+                else if (dir == 1) {
+                    x = 0.5f;
+                    y += 1.01f / increment;
+                    if (y >= .5f) {
+                        y = .5f;
+                        dir = 2;
+                    }
+                }
+                else if (dir == 2) {
+                    y = 0.5f;
+                    x -= 1.01f / increment;
+                    if (x <= -.5f) {
+                        x = -.5f;
+                        dir = 3;
+                    }
+                }
+                else if (dir == 3) {
+                    x = -0.5f;
+                    y -= 1.01f / increment;
+                    if (y <= -.5f) {
+                        y = -.5f;
+                        dir = 4;
+                    }
+                }
+                else if (dir == 4) {
+                    y = -.5f;
+                    x += 1.01 / increment;
+                    if (x >= 0.f) {
+                        x = 0.f;
+                        positions.insert(positions.end(), {x, -y, 0.f});
+                        texcoords.insert(texcoords.end(), {x + 0.5f, y + 0.5f});
+                        break;
+                    }
+                }
+            }
+        }
+        clockwiseMesh.init();
+    }
+    
+    // initialize shader if needed, then bind
+    if (!shader.isInitialized()) {
+        shader.init("2D image shader");
+        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        shader.bindAttribLocation("iPosition", 0);
+        shader.bindAttribLocation("iTexCoord", 1);
+        shader.link();
+        shader.bind();
+        glUniform1i(shader.uniform("uTexture"), 0);
+    } else {
+        shader.bind();
+    }
+    
+    // bind texture
+    glBindTexture(GL_TEXTURE_2D, texid);
+    if (!drawingGui) {
+        glEnable(GL_BLEND);
+    }
+    
+    // upload color
+    Uint8 r, g, b, a;
+    getColor(color, &r, &g, &b, &a);
+    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    glUniform4fv(shader.uniform("uColor"), 1, cv);
+}
 
 void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     const SDL_Rect* src, const SDL_Rect dest,
@@ -190,36 +277,8 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
         src = &_src;
     }
     
-    // initialize mesh if needed
-    if (!mesh.isInitialized()) {
-        mesh.init();
-    }
-    
-    // initialize shader if needed, then bind
-    if (!shader.isInitialized()) {
-        shader.init("2D image shader");
-        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
-        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
-        shader.bindAttribLocation("iPosition", 0);
-        shader.bindAttribLocation("iTexCoord", 1);
-        shader.bindAttribLocation("iColor", 2);
-        shader.link();
-        shader.bind();
-        glUniform1i(shader.uniform("uTexture"), 0);
-    } else {
-        shader.bind();
-    }
-    
-    // bind texture
-    glBindTexture(GL_TEXTURE_2D, texid);
-    if (!drawingGui) {
-        glEnable(GL_BLEND);
-    }
-    
-    // upload color
-    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-    glUniform4fv(shader.uniform("uColor"), 1, cv);
-    
+    // bind shader, etc.
+    setupGL(texid, color);
     vec4_t v;
     mat4x4 m;
     
@@ -272,36 +331,8 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
         src = &_src;
     }
     
-    // initialize mesh if needed
-    if (!mesh.isInitialized()) {
-        mesh.init();
-    }
-    
-    // initialize shader if needed, then bind
-    if (!shader.isInitialized()) {
-        shader.init("2D image shader");
-        shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
-        shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
-        shader.bindAttribLocation("iPosition", 0);
-        shader.bindAttribLocation("iTexCoord", 1);
-        shader.bindAttribLocation("iColor", 2);
-        shader.link();
-        shader.bind();
-        glUniform1i(shader.uniform("uTexture"), 0);
-    } else {
-        shader.bind();
-    }
-    
-    // bind texture
-    glBindTexture(GL_TEXTURE_2D, texid);
-    if (!drawingGui) {
-        glEnable(GL_BLEND);
-    }
-    
-    // upload color
-    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-    glUniform4fv(shader.uniform("uColor"), 1, cv);
-    
+    // bind shader, etc.
+    setupGL(texid, color);
     vec4_t v;
     mat4x4 m;
     
@@ -332,6 +363,76 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
 
     // draw image
     mesh.draw();
+    
+    // reset GL state
+    shader.unbind();
+    if (!drawingGui) {
+        glDisable(GL_BLEND);
+    }
+}
+
+void Image::drawClockwise(float lerp,
+    const SDL_Rect* src, const SDL_Rect dest,
+    const SDL_Rect viewport, const Uint32& color)
+{
+    if (!surf || !texid) {
+        return;
+    }
+    drawClockwise(texid, surf->w, surf->h, lerp, src, dest, viewport, color);
+}
+
+void Image::drawClockwise(
+    GLuint texid, int textureWidth, int textureHeight, float lerp,
+    const SDL_Rect* src, const SDL_Rect dest,
+    const SDL_Rect viewport, const Uint32& color)
+{
+    // read color
+    Uint8 r, g, b, a;
+    getColor(color, &r, &g, &b, &a);
+    if (!a) {
+        return;
+    }
+    
+    // default src
+    SDL_Rect _src;
+    if (!src) {
+        _src = {0, 0, textureWidth, textureHeight};
+        src = &_src;
+    }
+    
+    // bind shader, etc.
+    setupGL(texid, color);
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
+    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    
+    // view matrix
+    mat4x4 view(1.f);
+    v = {(float)dest.x, (float)(viewport.h - dest.y), 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
+    (void)scale_mat(&m, &view, &v); view = m;
+    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    
+    // section matrix
+    mat4x4 sect(1.f);
+    v = {(float)src->x / textureWidth, (float)src->y / textureHeight, 0.f, 0.f};
+    (void)translate_mat(&m, &sect, &v); sect = m;
+    v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
+    (void)scale_mat(&m, &sect, &v); sect = m;
+    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
+
+    // draw image
+    glFrontFace(GL_CW); // we draw clockwise so need to set this.
+    const int numVertices = std::min(
+        (int)(lerp * clockwiseMesh.data[1].size() / 2 + 1),
+        (int)(clockwiseMesh.data[1].size() / 2));
+    clockwiseMesh.draw(GL_TRIANGLE_FAN, numVertices);
+    glFrontFace(GL_CCW);
     
     // reset GL state
     shader.unbind();
@@ -394,6 +495,7 @@ void Image::dumpCache() {
 	hashed_images.clear();
 	IMAGE_VOLUME = 0;
     mesh.destroy();
+    clockwiseMesh.destroy();
     shader.destroy();
 }
 

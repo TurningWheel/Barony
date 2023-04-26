@@ -41,6 +41,46 @@ SDL_Rect minimaps[MAXPLAYERS];
 static TempTexture* minimapTextures[MAXPLAYERS] = { nullptr };
 static SDL_Surface* minimapSurfaces[MAXPLAYERS] = { nullptr };
 
+static Mesh circle_mesh;
+static Mesh triangle_mesh = {
+    {
+         1.f,  .0f,  0.f,
+        -.5f,  .5f,  0.f,
+         0.f,  .0f,  0.f,
+         1.f,  .0f,  0.f,
+         0.f,  0.f,  0.f,
+        -.5f, -.5f,  0.f,
+         0.f,  0.f,  0.f,
+        -.5f,  .5f,  0.f,
+        -.5f, -.5f,  0.f,
+    }, // positions
+    {
+        
+    }, // texcoords
+    {
+        
+    }, // colors
+};
+
+// used for drawing icons on the minimap
+static Shader minimap_shader;
+
+static const char v_glsl[] =
+    "#version 120\n"
+    "attribute vec3 iPosition;"
+    "uniform mat4 uProj;"
+    "uniform mat4 uView;"
+    "void main() {"
+    "gl_Position = uProj * uView * vec4(iPosition, 1.0);"
+    "}";
+
+static const char f_glsl[] =
+    "#version 120\n"
+    "uniform vec4 uColor;"
+    "void main() {"
+    "gl_FragColor = uColor;"
+    "}";
+
 void cleanupMinimapTextures() {
 	for (int c = 0; c < MAXPLAYERS; ++c) {
 		if (minimapTextures[c]) {
@@ -52,6 +92,9 @@ void cleanupMinimapTextures() {
 			minimapSurfaces[c] = nullptr;
 		}
 	}
+    circle_mesh.destroy();
+    triangle_mesh.destroy();
+    minimap_shader.destroy();
 }
 
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
@@ -74,14 +117,15 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	const int mapGCD = std::max(map.width, map.height);
 	const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
 	const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
+    
+    // build shader if we haven't
+    if (!minimap_shader.isInitialized()) {
+        minimap_shader.init("minimap shader");
+        minimap_shader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        minimap_shader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        minimap_shader.bindAttribLocation("iPosition", 0);
+        minimap_shader.link();
+    }
 
 	// create a new minimap image
 	SDL_Surface* minimapSurface = SDL_CreateRGBSurface(0, mapGCD, mapGCD, 32,
@@ -237,19 +281,16 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	Image::draw(tex->texid, tex->w, tex->h, nullptr, rect,
         SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
 
-	// bind a solid white texture
-	auto white = Image::get("images/system/white.png");
-	white->bind();
-
 	// build a circle mesh
-	static std::vector<std::pair<real_t, real_t>> circle_mesh;
-	if ( !circle_mesh.size() ) {
-		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
+	auto& circle_positions = circle_mesh.data[(int)Mesh::BufferType::Position];
+	if (!circle_positions.size()) {
+        circle_positions.insert(circle_positions.end(), {0.f, 0.f, 0.f});
 		static const int num_circle_vertices = 32;
-		for ( int c = 0; c <= num_circle_vertices; ++c ) {
-			real_t ang = ((PI * 2.0) / num_circle_vertices) * c;
-			circle_mesh.emplace_back((real_t)(sin(ang) / 2.0), (real_t)(cos(ang) / 2.0));
+		for (int c = num_circle_vertices; c >= 0; --c) {
+			float ang = ((PI * 2.f) / num_circle_vertices) * c;
+            circle_positions.insert(circle_positions.end(), {sinf(ang) / 2.f, cosf(ang) / 2.f, 0.f});
 		}
+        circle_mesh.init();
 	}
 
 	auto drawCircleMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -260,16 +301,37 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
 		x = (x - xmin) * unitX + rect.x;
 		y = (y - ymin) * unitY + rect.y;
+        
+        // bind shader
+        auto& shader = minimap_shader;
+        shader.bind();
+        
+        // upload color
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glBegin(GL_TRIANGLE_FAN);
-		for ( auto& pair : circle_mesh ) {
-			const real_t sx = pair.first * unitX * (minimapObjectZoom / 100.0) * size;
-			const real_t sy = pair.second * unitY * (minimapObjectZoom / 100.0) * size;
-			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-		}
-		glEnd();
+        float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+        glUniform4fv(shader.uniform("uColor"), 1, cv);
+        
+        vec4_t v;
+        mat4x4 m;
+        
+        // projection matrix
+        mat4x4 proj(1.f);
+        (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
+        glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+        
+        // view matrix
+        mat4x4 view(1.f);
+        v = {(float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f};
+        (void)translate_mat(&m, &view, &v); view = m;
+        v = {(float)(unitX * (minimapObjectZoom / 100.0) * size),
+             (float)(unitY * (minimapObjectZoom / 100.0) * size), 0.f, 0.f};
+        (void)scale_mat(&m, &view, &v); view = m;
+        glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+        
+        // draw
+        circle_mesh.draw(GL_TRIANGLE_FAN);
+        shader.unbind();
 	};
 
 	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
@@ -556,7 +618,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		color = makeColor(r, g, b, a);
 
 		drawSkull(skullInfo.second.first, skullInfo.second.second, *cvar_skullscale, rect, color);
-		white->bind();
 	}
 
 	lastMapTick = ticks;
@@ -613,7 +674,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					else if ( ping.pingType == MinimapPing::PING_DEATH_MARKER )
 					{
 						drawSkull((real_t)ping.x + 0.5, (real_t)ping.y + 0.5, *cvar_skullscale, rect, color);
-						white->bind();
 					}
 					else
 					{
@@ -758,6 +818,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 				static ConsoleVariable<bool> cvar_brightTriangles("/minimap_bright_triangles", false);
 				static ConsoleVariable<bool> cvar_outlineTriangles("/minimap_outline_triangles", false);
+                
+                if (!triangle_mesh.isInitialized()) {
+                    triangle_mesh.init();
+                }
 
 				auto drawTriangle = [](real_t x, real_t y, real_t ang, real_t size, SDL_Rect rect, Uint32 color){
 					const int mapGCD = std::max(map.width, map.height);
@@ -768,41 +832,38 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
            			const real_t zoom = minimapObjectZoom / 100.0 * size;
 					x = (x - xmin) * unitX + rect.x;
 					y = (y - ymin) * unitY + rect.y;
-
-					const real_t v[][2] = {
-						{  1.0,  0.0 },
-						{  0.0,  0.0 },
-						{ -0.5,  0.5 },
-
-						{  1.0,  0.0 },
-						{ -0.5, -0.5 },
-						{  0.0,  0.0 },
-
-						{  0.0,  0.0 },
-						{ -0.5, -0.5 },
-						{ -0.5,  0.5 },
-					};
-					const int num_vertices = sizeof(v) / sizeof(v[0]);
-
-					Uint8 r, g, b, a;
-					getColor(color, &r, &g, &b, &a);
-					glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-					glBegin(GL_TRIANGLES);
-					for (int c = 0; c < num_vertices; ++c) {
-						const real_t vx = v[c][0] * cos(ang) - v[c][1] * sin(ang);
-						const real_t vy = v[c][0] * sin(ang) + v[c][1] * cos(ang);
-						const real_t sx = vx * unitX * zoom;
-						const real_t sy = vy * unitY * zoom;
-						if (*cvar_brightTriangles) {
-							if (c == 0 || c == 3) {
-								glColor4f(1.f, 1.f, 1.f, 1.f);
-							} else {
-								glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-							}
-						}
-						glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-					}
-					glEnd();
+                    
+                    // bind shader
+                    auto& shader = minimap_shader;
+                    shader.bind();
+                    
+                    // upload color
+                    Uint8 r, g, b, a;
+                    getColor(color, &r, &g, &b, &a);
+                    float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+                    glUniform4fv(shader.uniform("uColor"), 1, cv);
+                    
+                    vec4_t v;
+                    mat4x4 m;
+                    
+                    // projection matrix
+                    mat4x4 proj(1.f);
+                    (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
+                    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+                    
+                    // view matrix
+                    mat4x4 view(1.f);
+                    v = {(float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f};
+                    (void)translate_mat(&m, &view, &v); view = m;
+                    v = {(float)(unitX * zoom), (float)(unitY * zoom), 0.f, 0.f};
+                    (void)scale_mat(&m, &view, &v); view = m;
+                    v = {0.f, 0.f, -1.f, 0.f};
+                    (void)rotate_mat(&m, &view, ang * 180.f / PI, &v); view = m;
+                    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+                    
+                    // draw
+                    triangle_mesh.draw();
+                    shader.unbind();
 				};
 
 				const real_t size = entity->sprite == 239 ? 2.0 : 1.0;
@@ -818,11 +879,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			}
 		}
 	}
-
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 }
 
 void minimapPingAdd(const int srcPlayer, const int destPlayer, MinimapPing newPing)

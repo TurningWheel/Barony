@@ -1001,14 +1001,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // draw
     //glDisable(GL_DEPTH_TEST);
     
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    
     glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
     
     glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(1);
     
     glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
     
@@ -2638,25 +2637,16 @@ void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<
     }
     
     // upload positions
-    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
     glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(0);
     
     // upload texcoords
-    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
     glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(1);
     
     // upload colors
-    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(2);
 }
 
 void Chunk::destroyBuffers() {
@@ -2684,17 +2674,17 @@ void Chunk::draw() {
         return;
     }
     
-    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
     
-    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(1);
     
-    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(2);
     
     glDrawArrays(GL_TRIANGLES, 0, indices);
     
