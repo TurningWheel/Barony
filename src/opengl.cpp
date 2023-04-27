@@ -731,8 +731,10 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
         constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
         glUniform4fv(shader.uniform("uColorAdd"), 1, add);
     } else {
-        mat4x4_t empty(0.f);
-        glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
+        if (remap) {
+            mat4x4_t empty(0.f);
+            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
+        }
         
         constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
         glUniform4fv(shader.uniform("uLightFactor"), 1, light);
@@ -1089,6 +1091,7 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
     
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f);
+    Shader::unbind();
 
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
@@ -1256,356 +1259,205 @@ bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, boo
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 {
 #ifndef EDITOR
-	if ( !worldDialogue )
-	{
+	if (!camera || !worldDialogue || mode != REALCOLORS) {
 		return;
 	}
 	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)worldDialogue;
-	if ( dialogue->alpha <= 0.0 )
-	{
+	if (dialogue->alpha <= 0.0) {
 		return;
 	}
 	SDL_Surface* sprite = nullptr;
-	if ( !dialogue->dialogueTooltipSurface )
-	{
-		sprite = dialogue->blitDialogueTooltip();
+	if (dialogue->dialogueTooltipSurface) {
+        sprite = dialogue->dialogueTooltipSurface;
+	} else {
+        sprite = dialogue->blitDialogueTooltip();
 	}
-	else
-	{
-		sprite = dialogue->dialogueTooltipSurface;
-	}
-	if ( !sprite )
-	{
+	if (!sprite) {
 		return;
 	}
 
-	// assign texture
+	// bind texture
 	TempTexture* tex = nullptr;
 	tex = new TempTexture();
 	if (sprite) {
 		tex->load(sprite, false, true);
-		if (mode == REALCOLORS)
-		{
-			tex->bind();
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
+        tex->bind();
 	}
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
+    // depth range
+    glDepthRange(0.f, .6f);
+    
+    // bind shader
+    glEnable(GL_BLEND);
+    auto& shader = spriteShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = static_cast<float>(dialogue->drawScale);
+    if (splitscreen) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    
+    // upload light variables
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
+    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
+    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    glUniform4fv(shader.uniform("uLightColor"), 1, light);
+    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+    // draw
+    spriteMesh.draw();
 
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2);
-	real_t tangent = 180 - camera->ang * (180 / PI);
-	glRotatef(tangent, 0, 1, 0);
-
-	real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
-	glRotatef(tangent2, 0, 0, 1);
-
-	float scale = static_cast<float>(dialogue->drawScale);
-	if ( splitscreen )
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
-	}
-	else
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
-	}
-	glScalef(scale, scale, scale);
-
-	glDepthRange(0, .6);
-
-	// get shade factor
-	glColor4f(1.f, 1.f, 1.f, dialogue->alpha);
-
-
-	// draw quad
-	if ( sprite ) {
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex3f(0, sprite->h / 2, sprite->w / 2);
-		glTexCoord2f(0, 1);
-		glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-		glTexCoord2f(1, 1);
-		glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-		glTexCoord2f(1, 0);
-		glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-		glEnd();
-	}
-
-	glDepthRange(0, 1);
-
-	if ( tex ) {
+    // cleanup
+	if (tex) {
 		delete tex;
 		tex = nullptr;
 	}
-    if ( mode == REALCOLORS )
-    {
-        glDisable(GL_BLEND);
-    }
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
     
-    glDisable(GL_ALPHA_TEST);
+    // reset GL state
+    glDepthRange(0.f, 1.f);
+    glDisable(GL_BLEND);
 #endif
 }
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
 #ifndef EDITOR
-	real_t s = 1;
-
-	if ( !entity || intro )
-	{
+	if (!camera || !entity || intro) {
 		return;
 	}
+    if (mode != REALCOLORS) {
+        return;
+    }
 
+    // find player that this UI sprite is drawing for
 	int player = -1;
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( entity->worldTooltipIgnoreDrawing != 0 )
-		{
+	if ( entity->behavior == &actSpriteWorldTooltip ) {
+		if ( entity->worldTooltipIgnoreDrawing != 0 ) {
 			return;
 		}
-		for ( player = 0; player < MAXPLAYERS; ++player )
-		{
-			if ( &cameras[player] == camera )
-			{
+		for (player = 0; player < MAXPLAYERS; ++player) {
+			if (&cameras[player] == camera) {
 				break;
 			}
 		}
-		if ( player >= 0 && player < MAXPLAYERS )
-		{
-			if ( entity->worldTooltipPlayer != player )
-			{
+		if (player >= 0 && player < MAXPLAYERS) {
+			if (entity->worldTooltipPlayer != player) {
 				return;
 			}
-			if ( entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0 )
-			{
+			if (entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0) {
 				return;
 			}
-		}
-		else
-		{
+		} else {
 			return;
 		}
-		if ( !uidToEntity(entity->parent) )
-		{
+		if (!uidToEntity(entity->parent)) {
 			return;
 		}
 	}
 
-	// assign texture
+	// bind texture
+    TempTexture* tex = nullptr;
 	SDL_Surface* sprite = nullptr;
-	TempTexture* tex = nullptr;
-	if ( entity->behavior == &actSpriteWorldTooltip )
+	if (entity->behavior == &actSpriteWorldTooltip)
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->behavior == &actItem 
-			&& (multiplayer != CLIENT 
-				|| (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))) )
+		if (parent && parent->behavior == &actItem && (multiplayer != CLIENT
+            || (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))))
 		{
 			Item* item = newItemFromEntity(uidToEntity(entity->parent), true);
-			if ( !item )
-			{
+			if (!item) {
 				return;
 			}
-
 			sprite = players[player]->worldUI.worldTooltipItem.blitItemWorldTooltip(item);
-
 			free(item);
-			item = nullptr;
 		}
 
 		tex = new TempTexture();
 		if (sprite) {
 		    tex->load(sprite, false, true);
-		    if ( mode == REALCOLORS )
-		    {
-			    tex->bind();
-		    }
-		    else
-		    {
-			    glBindTexture(GL_TEXTURE_2D, 0);
-		    }
+		    tex->bind();
 		}
-		//glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
 	}
-	else
-	{
-		if ( entity->sprite >= 0 && entity->sprite < numsprites )
-		{
-			if ( sprites[entity->sprite] != NULL )
-			{
+	else {
+		if (entity->sprite >= 0 && entity->sprite < numsprites) {
+			if (sprites[entity->sprite] != NULL) {
 				sprite = sprites[entity->sprite];
-			}
-			else
-			{
+			} else {
 				sprite = sprites[0];
 			}
-		}
-		else
-		{
+		} else {
 			sprite = sprites[0];
 		}
 	}
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if (mode == REALCOLORS)
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-
-		real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
-		glRotatef(tangent2, 0, 0, 1);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-
-	float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
-	if ( splitscreen )
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
-	}
-	else
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
-	}
-	glScalef(static_cast<GLfloat>(entity->scalex + scale), 
-		static_cast<GLfloat>(entity->scalez + scale), 
-		static_cast<GLfloat>(entity->scaley + scale));
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0.1, 0.2);
-	}
-	else
-	{
-		glDepthRange(0, .6);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-        if (!entity->flags[OVERDRAW])
-        {
-            s = getLightForEntity(entity->x / 16, entity->y / 16);
-        }
-        else
-        {
-            s = getLightForEntity(camera->x, camera->y);
-        }
-        
-        if (entity->flags[BRIGHT])
-        {
-            s += 1.f;
-        }
-
-        if ( camera->globalLightModifierActive )
-        {
-            s *= camera->globalLightModifier;
-        }
-
-        glColor4f(s, s, s, 1);
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	if (sprite) {
-	    glBegin(GL_QUADS);
-	    glTexCoord2f(0, 0);
-	    glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	    glTexCoord2f(0, 1);
-	    glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	    glTexCoord2f(1, 1);
-	    glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	    glTexCoord2f(1, 0);
-	    glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	    glEnd();
-	}
-
-	glDepthRange(0, 1);
-
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( tex ) {
-			delete tex;
-			tex = nullptr;
-		}
-	}
-    
-    if (mode == REALCOLORS)
-    {
-        glDisable(GL_BLEND);
+    // depth range
+    if (entity->flags[OVERDRAW]) {
+        glDepthRange(0.1f, 0.2f);
+    } else {
+        glDepthRange(0.f, 0.6f);
     }
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
     
-    glDisable(GL_ALPHA_TEST);
+    // bind shader
+    glEnable(GL_BLEND);
+    auto& shader = spriteShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
+    if ( splitscreen ) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(entity->x * 2, -entity->z * 2 - 1, entity->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    
+    // upload light variables
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
+    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    glUniform4fv(shader.uniform("uLightColor"), 1, light);
+    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
+    
+    // draw
+    spriteMesh.draw();
+    
+    // cleanup
+    if (tex) {
+        delete tex;
+        tex = nullptr;
+    }
+    
+    // reset GL state
+    glDepthRange(0.f, 1.f);
+    glDisable(GL_BLEND);
 #endif
 }
 
@@ -1622,10 +1474,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     } else {
         sprite = sprites[0];
     }
-    if (mode == REALCOLORS) {
-        glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
-        glEnable(GL_BLEND);
-    }
+    glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
     
     // set GL state
     if (mode == REALCOLORS) {
@@ -1639,8 +1488,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     auto& shader = spriteShader;
     shader.bind();
     
-    mat4x4_t m, t, i;
     vec4_t v;
+    mat4x4_t m, t, i;
     
     // model matrix
     if (entity->flags[OVERDRAW]) {
@@ -1684,148 +1533,89 @@ static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_rang
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
-	if ( text.empty() == true || !entity )
-	{
+	if (!camera || !entity || text.empty()) {
 		return;
 	}
 
+    // set color
 	Uint32 color = makeColor(255, 255, 255, 255);
-	if ( entity->behavior == &actDamageGib && text[0] == '+' )
-	{
+	if (entity->behavior == &actDamageGib && text[0] == '+') {
 #ifndef EDITOR
 		color = hudColors.characterSheetGreen;
 #endif // !EDITOR
 	}
-	else if ( entity->behavior == &actSpriteNametag )
-	{
+	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
+	auto rendered_text = Text::get(
+        text.c_str(), "fonts/pixel_maz.ttf#32#2",
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
-	// assign texture
-	if (mode == REALCOLORS)
-	{
-		glBindTexture(GL_TEXTURE_2D, textureId);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+	// bind texture
+	glBindTexture(GL_TEXTURE_2D, textureId);
+    const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
+    const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
+    if (mode == REALCOLORS) {
+        glEnable(GL_BLEND);
+    }
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if (entity->flags[OVERDRAW])
-	{
-		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-		float rotx = 0; // get x rotation
-		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate pitch
-		glRotatef(rotx, 1, 0, 0); // rotate roll
-	}
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
+    // set GL state
+	if (entity->flags[OVERDRAW]) {
 		glDepthRange(0, 0.1);
-	}
-	else
-	{
-		if ( entity->behavior == &actDamageGib )
-		{
+	} else {
+		if (entity->behavior == &actDamageGib) {
 #ifndef EDITOR
 			glDepthRange(0, *cvar_dmgSpriteDepthRange);
 #endif // !EDITOR
 		}
-		else if ( entity->behavior != &actSpriteNametag )
-		{
+		else if (entity->behavior != &actSpriteNametag) {
 			glDepthRange(0, 0.98);
 		}
-		else if ( entity->behavior == &actSpriteNametag )
-		{
+		else if (entity->behavior == &actSpriteNametag) {
 			glDepthRange(0, 0.52);
 		}
 	}
-
-	// get shade factor
-	real_t s;
-	if ( mode == REALCOLORS )
-	{
-        if (!entity->flags[OVERDRAW])
-        {
-            s = getLightForEntity(entity->x / 16, entity->y / 16);
-        }
-        else
-        {
-            s = getLightForEntity(camera->x, camera->y);
-        }
-        
-        if (entity->flags[BRIGHT])
-        {
-            s += 1.f;
-        }
-
-        if ( camera->globalLightModifierActive )
-        {
-            s *= camera->globalLightModifier;
-        }
-
-        glColor4f(s, s, s, 1);
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
-	GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, h / 2, w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -h / 2, w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -h / 2, -w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, h / 2, -w / 2);
-	glEnd();
-
-	glDepthRange(0, 1);
-	glPopMatrix();
     
-    if ( mode == REALCOLORS )
-    {
+    // bind shader
+    auto& shader = spriteShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    
+    // upload light variables
+    uploadLightUniforms(camera, shader, entity, mode, false);
+
+    // draw
+    spriteMesh.draw();
+    
+    // reset GL state
+	glDepthRange(0, 1);
+    if (mode == REALCOLORS) {
         glDisable(GL_BLEND);
     }
-    glDisable(GL_ALPHA_TEST);
 }
 
 /*-------------------------------------------------------------------------------
