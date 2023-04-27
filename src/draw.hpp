@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "shader.hpp"
+
 vec4_t vec4_copy(const vec4_t* v);
 vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v);
 vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);

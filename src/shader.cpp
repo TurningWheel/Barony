@@ -60,8 +60,8 @@ int Shader::uniform(const char* name) {
     }
 }
 
-void Shader::setParameter(GLenum param, int value) {
-    glProgramParameteriEXT(program, param, value);
+void Shader::setParameter(unsigned int param, int value) {
+    glProgramParameteriEXT(program, (GLenum)param, value);
 }
 
 void Shader::bindAttribLocation(const char* attribute, int location) {
