@@ -750,11 +750,11 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
     }
 }
 
-constexpr float defaultGamma = 0.5f;            // default gamma level: 50%
+constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
 constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
 constexpr float defaultAdjustmentRate = 2.f;    // how fast your eyes adjust roughly, as a factor of seconds
-constexpr float defaultLimitHigh = 100.f;       // your aperture can increase to see something 100 times darker.
-constexpr float defaultLimitLow = 0.01f;        // your aperture can decrease to see something 100 times brighter.
+constexpr float defaultLimitHigh = 3.f;         // your aperture can increase to see something 3 times darker.
+constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
 constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
@@ -802,19 +802,9 @@ void glBeginCamera(view_t* camera)
     glEnable(GL_DEPTH_TEST);
     
     const float aspect = (real_t)camera->winw / (real_t)camera->winh;
-
-	// setup projection + view matrix (legacy)
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, aspect, CLIPNEAR, CLIPFAR);
 	const float rotx = camera->vang * 180.f / PI; // get x rotation
 	const float roty = (camera->ang - 3.f * PI / 2.f) * 180.f / PI; // get y rotation
 	const float rotz = 0.f; // get z rotation
-	glRotatef(rotx, 1.f, 0.f, 0.f); // rotate pitch
-	glRotatef(roty, 0.f, 1.f, 0.f); // rotate yaw
-	glRotatef(rotz, 0.f, 0.f, 1.f); // rotate roll
-	glTranslatef(-camera->x * 32.f, camera->z, -camera->y * 32.f); // translates the scene based on camera position
     
     // setup projection + view matrix (shader)
     mat4x4_t proj, view, view2, identity;
@@ -824,6 +814,9 @@ void glBeginCamera(view_t* camera)
     (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
     (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
     (void)translate_mat(&view, &view2, &translate); view2 = view;
+    
+    // store proj * view
+    (void)mul_mat(&camera->projview, &proj, &view);
 
 	// lightmap dimensions
 	vec4_t mapDims;
@@ -853,8 +846,6 @@ void glEndCamera(view_t* camera)
         return;
     }
     
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_SCISSOR_TEST);
     
@@ -1059,201 +1050,127 @@ Mesh spriteMesh = {
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
 #endif
 
-bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
+void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
 {
-	if ( !enemyHPBarDetails ) 
-	{
-		return false;
+#ifndef EDITOR
+    if (!camera || mode != REALCOLORS || !enemyHPBarDetails) {
+		return;
 	}
 	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
 	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
-	if ( !sprite || !enemybar->worldTexture )
-	{
-		return false;
+	if (!sprite || !enemybar->worldTexture) {
+		return;
 	}
 
-	// assign texture
+	// bind texture
 	TempTexture* tex = enemybar->worldTexture;
-	if (!doVisibilityCheckOnly)
-	{
-		if (mode == REALCOLORS)
-		{
-			if (tex)
-			{
-				tex->bind();
-			}
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-	}
+	tex->bind();
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-    Shader::unbind();
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-
-	GLfloat projectionMatrix[16];
-	glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	real_t height = enemybar->worldZ - 6;
-	glTranslatef(enemybar->worldX * 2,
-		-height * 2 - 1, 
-		enemybar->worldY * 2);
-
-	real_t tangent = 180 - camera->ang * (180 / PI);
-	glRotatef(tangent, 0, 1, 0);
-
-	float scaleFactor = 0.08;
-	glScalef(scaleFactor, scaleFactor, scaleFactor);
-
-	/*if ( entity && entity->flags[OVERDRAW] )
-	{
-	}*/
-#ifndef EDITOR
-	glDepthRange(0, *cvar_enemybarDepthRange);
-#endif // !EDITOR
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		glColor4f(1.f, 1.f, 1.f, enemybar->animator.fadeOut / 100.f);
-	}
-	else
-	{
-		glColor4ub((Uint8)(enemybar->enemy_uid), (Uint8)(enemybar->enemy_uid >> 8), (Uint8)(enemybar->enemy_uid >> 16), (Uint8)(enemybar->enemy_uid >> 24));
-	}
-
-	GLfloat modelViewMatrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
-
-	vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
-	worldCoords[0].x = enemybar->screenDistance; // top left
-	worldCoords[0].y = sprite->h / 2;
-	worldCoords[0].z = sprite->w / 2;
-	worldCoords[0].w = 1.f;
-	worldCoords[1].x = enemybar->screenDistance; // top right
-	worldCoords[1].y = sprite->h / 2;
-	worldCoords[1].z = -sprite->w / 2;
-	worldCoords[1].w = 1.f;
-	worldCoords[2].x = enemybar->screenDistance; // bottom left
-	worldCoords[2].y = -sprite->h / 2;
-	worldCoords[2].z = sprite->w / 2;
-	worldCoords[2].w = 1.f;
-	worldCoords[3].x = enemybar->screenDistance; // bottom right
-	worldCoords[3].y = -sprite->h / 2;
-	worldCoords[3].z = -sprite->w / 2;
-	worldCoords[3].w = 1.f;
-
-	mat4x4_t projMat4;
-	mat_from_array(&projMat4, projectionMatrix);
-
-	mat4x4_t modelMat4;
-	mat_from_array(&modelMat4, modelViewMatrix);
-
-	vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
-	mat4x4_t projViewModel4;
-	mul_mat(&projViewModel4, &projMat4, &modelMat4);
-
-	mat4x4_t identityMatrix = mat4x4(1.f);
-	bool anyVertexVisible = false;
-	if ( enemybar->enemy_hp > 0 ) // don't update if dead target.
-	{
+    // bind shader
+    glEnable(GL_BLEND);
+    auto& shader = spriteShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    const float height = (float)enemybar->worldZ - 6.f;
+    int drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
+        enemybar->worldSurfaceSpriteStatusEffects->h / -2 : 0;
+    drawOffsetY += enemybar->glWorldOffsetY;
+    v = vec4((float)enemybar->worldX * 2.f, -height * 2.f - 1.f - drawOffsetY, (float)enemybar->worldY * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    
+    const float scale = 0.08;
+    v = vec4(scale * tex->w, scale * tex->h, scale * enemybar->screenDistance, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    
+    // don't update if dead target.
+    /*if (enemybar->enemy_hp > 0) {
 		enemybar->glWorldOffsetY = 0.f;
-		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window); // top-left coord
-		if ( screenCoordinates.y >= (window.w + window.y) && projViewModel4.w.z >= 0 ) // above camera limit
-		{
+        
+        // project model matrix
+        mat4x4_t modelMat4 = m;
+        mat4x4_t projMat4 = camera->projview;
+        vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        mat4x4_t projViewModel4;
+        mul_mat(&projViewModel4, &projMat4, &modelMat4);
+        
+        mat4x4_t identityMatrix = mat4x4(1.f);
+        vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
+        worldCoords[0].x = enemybar->screenDistance; // top left
+        worldCoords[0].y = sprite->h / 2;
+        worldCoords[0].z = sprite->w / 2;
+        worldCoords[0].w = 1.f;
+        worldCoords[1].x = enemybar->screenDistance; // top right
+        worldCoords[1].y = sprite->h / 2;
+        worldCoords[1].z = -sprite->w / 2;
+        worldCoords[1].w = 1.f;
+        worldCoords[2].x = enemybar->screenDistance; // bottom left
+        worldCoords[2].y = -sprite->h / 2;
+        worldCoords[2].z = sprite->w / 2;
+        worldCoords[2].w = 1.f;
+        worldCoords[3].x = enemybar->screenDistance; // bottom right
+        worldCoords[3].y = -sprite->h / 2;
+        worldCoords[3].z = -sprite->w / 2;
+        worldCoords[3].w = 1.f;
+    
+        // top-left coord
+		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window);
+        if (screenCoordinates.y >= (window.w + window.y) && projViewModel4.w.z >= 0) {
+            // above camera limit
 			float pixelOffset = abs(screenCoordinates.y - (window.w + window.y));
 			screenCoordinates.y -= pixelOffset;
-			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
+            
+            // convert back into worldCoords
+			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
 			enemybar->glWorldOffsetY = (worldCoords[0].y - worldCoords2.y);
 		}
-		else if ( false ) // code to check lower bounds of camera - in case needed.
-		{
-			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window); // bottom-left coord
-			if ( screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) // below camera limit
-			{
+        // code to check lower bounds of camera - in case needed.
+        else {
+            // bottom-left coord
+			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window);
+            if (screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) {
+                // below camera limit
 				float pixelOffset = abs(window.y - (screenCoordinates.y));
 				screenCoordinates.y -= pixelOffset;
-				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
+                
+                // convert back into worldCoords
+				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
 				enemybar->glWorldOffsetY = -(worldCoords[2].y - worldCoords2.y);
 			}
 		}
-	}
+	}*/
 
-	if ( abs(enemybar->glWorldOffsetY) <= 0.001 && abs(enemybar->screenDistance) <= 0.001 )
-	{
+    // finish and upload model matrix
+	if (abs(enemybar->glWorldOffsetY) <= 0.001 && abs(enemybar->screenDistance) <= 0.001) {
 		// rotate up/down pitch towards camera, requires offset to be 0
-		real_t tangent2 = camera->vang * 180 / PI; 
-		glRotatef(tangent2, 0, 0, 1);
+        (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
 	}
+    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m);
 
-	//	bool visibleX = res[i].x >= window.x && res[i].x < (window.z + window.x) && projViewModel4.w.z >= 0;
-	//	bool visibleY = res[i].y >= window.y && res[i].y < (window.w + window.y) && projViewModel4.w.z >= 0;
-	//	//printTextFormatted(font16x16_bmp, 8, 8 + i * 16, "%d: visibleX: %d | visibleY: %d", i, visibleX, visibleY);
-	//	if ( visibleX && visibleY )
-	//	{
-	//		anyVertexVisible = true;
-	//	}
-	//	//SDL_Rect resPos{ res.x, window.w - res.y, 4, 4 };
-	//	//drawRect(&resPos, 0xFFFFFF00, 255);
-	//}
-
-	int drawOffsetY = (enemybar->worldSurfaceSpriteStatusEffects ? -enemybar->worldSurfaceSpriteStatusEffects->h / 2 : 0);
-	drawOffsetY += enemybar->glWorldOffsetY;
-
-	if ( !doVisibilityCheckOnly )
-	{
-		// draw quad
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
-		glTexCoord2f(0, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
-		glTexCoord2f(1, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
-		glTexCoord2f(1, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
-		glEnd();
-	}
-
-	glDepthRange(0, 1);
+    // update GL state
+    glDepthRange(0, *cvar_enemybarDepthRange);
+    glEnable(GL_BLEND);
     
-    if (mode == REALCOLORS) {
-        glDisable(GL_BLEND);
-    }
+    // upload light variables
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
+    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
+    const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+    glUniform4fv(shader.uniform("uLightColor"), 1, light);
+    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
 
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // draw
+    spriteMesh.draw();
     
-    glDisable(GL_ALPHA_TEST);
-
-	//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
-	return anyVertexVisible;
+    // reset GL state
+    glDepthRange(0, 1);
+    glDisable(GL_BLEND);
+#endif // !EDITOR
 }
 
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
@@ -1434,14 +1351,14 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     (void)translate_mat(&m, &t, &v); t = m;
     (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
     (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
-    v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
+    v = vec4((entity->scalex + scale) * tex->w, (entity->scalez + scale) * tex->h, (entity->scalez + scale), 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
     glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
     
     // upload light variables
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
     glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
-    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
     glUniform4fv(shader.uniform("uLightColor"), 1, light);
     constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     glUniform4fv(shader.uniform("uColorAdd"), 1, empty);

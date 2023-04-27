@@ -183,6 +183,7 @@ typedef struct view_t
     bool* vismap = nullptr;
     float luminance = 0.25f;
     unsigned int drawnFrames = 0;
+    mat4x4 projview;
 } view_t;
 
 #define FLIP_VERTICAL 1
@@ -347,7 +348,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
-bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
+void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 void glDrawWorld(view_t* camera, int mode);
 void glEndCamera(view_t* camera);

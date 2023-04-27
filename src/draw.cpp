@@ -1960,7 +1960,7 @@ void drawEntities3D(view_t* camera, int mode)
 #ifndef EDITOR
 			if ( intro ) { continue; } // don't draw on main menu
 			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
-			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
+			glDrawEnemyBarSprite(camera, mode, &enemybar->second);
 #endif
 		}
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_DIALOGUE )
