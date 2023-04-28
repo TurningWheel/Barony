@@ -2347,7 +2347,7 @@ namespace MainMenu {
 		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
-		disablemouserotationlimit = !rotation_speed_limit_enabled;
+		disablemouserotationlimit = true; //!rotation_speed_limit_enabled;
 		gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
 		gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
 		gamepad_rightx_invert = gamepad_camera_invert_x;
@@ -2499,7 +2499,7 @@ namespace MainMenu {
 		settings.mouse_sensitivity = 32.f;
 		settings.reverse_mouse_enabled = false;
 		settings.smooth_mouse_enabled = false;
-		settings.rotation_speed_limit_enabled = true;
+		settings.rotation_speed_limit_enabled = false;
 		settings.turn_sensitivity_x = 75.f;
 		settings.turn_sensitivity_y = 50.f;
 		settings.gamepad_camera_invert_x = false;
@@ -2610,7 +2610,7 @@ namespace MainMenu {
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
 		file->property("smooth_mouse_enabled", smooth_mouse_enabled);
-		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
+		//file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
 		file->property("turn_sensitivity_x", turn_sensitivity_x);
 		file->property("turn_sensitivity_y", turn_sensitivity_y);
         if ( version >= 6 )
@@ -5565,9 +5565,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
 			"Smooth the movement of the mouse over a few frames of input.",
 			allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
+		/*y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
 			"Limit how fast the player can rotate by moving the mouse.",
-			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});
+			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});*/
 		y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
 			"Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
 			allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
@@ -5612,7 +5612,7 @@ bind_failed:
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},
-			{Setting::Type::Boolean, "rotation_speed_limit"},
+			//{Setting::Type::Boolean, "rotation_speed_limit"},
 			{Setting::Type::Boolean, "mkb_world_tooltips"},
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
