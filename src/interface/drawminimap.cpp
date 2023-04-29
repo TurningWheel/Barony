@@ -330,7 +330,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         
         // draw
         circle_mesh.draw(GL_TRIANGLE_FAN);
-        shader.unbind();
 	};
 
 	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
@@ -858,7 +857,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     
                     // draw
                     triangle_mesh.draw();
-                    shader.unbind();
 				};
 
 				const real_t size = entity->sprite == 239 ? 2.0 : 1.0;

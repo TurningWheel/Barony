@@ -18549,7 +18549,6 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
-			Shader::unbind(); // unbind voxel shader
 		}
 		players[player]->entity->flags[BRIGHT] = b;
 		int c = 0;
@@ -18568,7 +18567,6 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					bool b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
 					glDrawVoxel(&view, entity, REALCOLORS);
-					Shader::unbind(); // unbind voxel shader
 					entity->flags[BRIGHT] = b;
 				}
 				c++;
@@ -18578,7 +18576,10 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 				{
+                    bool b = entity->flags[BRIGHT];
+                    entity->flags[BRIGHT] = true;
 					glDrawSprite(&view, entity, REALCOLORS);
+                    entity->flags[BRIGHT] = b;
 				}
 			}
 		}
@@ -18591,7 +18592,10 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				{
 					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
+                        bool b = entity->flags[BRIGHT];
+                        entity->flags[BRIGHT] = true;
 						glDrawSprite(&view, entity, REALCOLORS);
+                        entity->flags[BRIGHT] = b;
 					}
 					else
 					{
@@ -18599,7 +18603,6 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
                         entity->flags[BRIGHT] = true;
 						glDrawVoxel(&view, entity, REALCOLORS);
                         entity->flags[BRIGHT] = b;
-						Shader::unbind(); // unbind voxel shader
 					}
 				}
 			}

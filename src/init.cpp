@@ -2145,9 +2145,7 @@ void generateVBOs(int start, int end)
         GL_CHECK_ERR(glEnableVertexAttribArray(1));
 #endif
         
-#ifdef VERTEX_ARRAYS_ENABLED
-        GL_CHECK_ERR(glBindVertexArray(0));
-#else
+#ifndef VERTEX_ARRAYS_ENABLED
         GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 #endif
         

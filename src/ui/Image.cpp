@@ -295,7 +295,6 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     mesh.draw();
     
     // reset GL state
-    shader.unbind();
     if (!drawingGui) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }
@@ -353,7 +352,6 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     mesh.draw();
     
     // reset GL state
-    shader.unbind();
     if (!drawingGui) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }
@@ -423,7 +421,6 @@ void Image::drawClockwise(
     GL_CHECK_ERR(glFrontFace(GL_CCW));
     
     // reset GL state
-    shader.unbind();
     if (!drawingGui) {
         GL_CHECK_ERR(glDisable(GL_BLEND));
     }

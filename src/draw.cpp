@@ -101,7 +101,6 @@ static void buildVoxelShader(
     if (lightmap) {
         shader.bind();
         GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
-        shader.unbind();
     }
 }
 
@@ -121,7 +120,6 @@ static void buildWorldShader(
         shader.bind();
         GL_CHECK_ERR(glUniform1i(shader.uniform("uTextures"), 2));
         GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
-        shader.unbind();
     }
 }
 
@@ -142,7 +140,6 @@ static void buildSpriteShader(
     if (lightmap) {
         GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
     }
-    shader.unbind();
 }
 
 void createCommonDrawResources() {
@@ -177,7 +174,6 @@ void createCommonDrawResources() {
     framebuffer::shader.link();
     framebuffer::shader.bind();
     GL_CHECK_ERR(glUniform1i(framebuffer::shader.uniform("uTexture"), 0));
-    framebuffer::shader.unbind();
     
     static const char fb_hdr_fragment_glsl[] =
         "in vec2 TexCoord;"
@@ -219,7 +215,6 @@ void createCommonDrawResources() {
     framebuffer::hdrShader.link();
     framebuffer::hdrShader.bind();
     GL_CHECK_ERR(glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0));
-    framebuffer::hdrShader.unbind();
     
     // create lightmap texture
     lightmapTexture = new TempTexture();
@@ -412,7 +407,6 @@ void createCommonDrawResources() {
     skyShader.link();
     skyShader.bind();
     GL_CHECK_ERR(glUniform1i(skyShader.uniform("uTexture"), 0));
-    skyShader.unbind();
     
     skyMesh.init();
     
@@ -544,10 +538,8 @@ void Mesh::init() {
 #endif
         }
 	}
+#ifndef VERTEX_ARRAYS_ENABLED
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    
-#ifdef VERTEX_ARRAYS_ENABLED
-    GL_CHECK_ERR(glBindVertexArray(0));
 #endif
 
 	printlog("initialized mesh with %llu vertices", numVertices);
@@ -595,9 +587,7 @@ void Mesh::draw(GLenum type, int numVertices) const {
     }
     
     // disable buffers
-#ifdef VERTEX_ARRAYS_ENABLED
-    GL_CHECK_ERR(glBindVertexArray(0));
-#else
+#ifndef VERTEX_ARRAYS_ENABLED
     for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         if (data[c].size()) {
             GL_CHECK_ERR(glDisableVertexAttribArray(c));
@@ -726,7 +716,6 @@ void framebuffer::draw(float brightness) {
 	shader.bind();
     GL_CHECK_ERR(glUniform1f(shader.uniform("uBrightness"), brightness));
 	mesh.draw();
-	shader.unbind();
 }
 
 void framebuffer::hdrDraw(float brightness, float gamma, float exposure) {
@@ -735,7 +724,6 @@ void framebuffer::hdrDraw(float brightness, float gamma, float exposure) {
     GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uGamma"), gamma));
     GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uExposure"), exposure));
     mesh.draw();
-    hdrShader.unbind();
 }
 
 void framebuffer::unbindForWriting() {
@@ -1051,7 +1039,6 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
     lineMesh.draw(GL_POINTS, 1);
     
     // reset GL state
-    gearShader.unbind();
     GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
@@ -1141,7 +1128,6 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
     lineMesh.draw(GL_LINES, 2);
     
     // reset GL state
-    lineShader.unbind();
     GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
@@ -1905,10 +1891,6 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 	}
-
-	// unbind the currently active voxel shader,
-	// as we're going to draw sprites from here on
-	Shader::unbind();
 
 #ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )

@@ -572,7 +572,6 @@ static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapD
     if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
     if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
     if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
-    shader.unbind();
 }
 
 // hsv values:
@@ -1709,9 +1708,6 @@ void glDrawWorld(view_t* camera, int mode)
         ++index;
     }
     
-    // unbind shader
-    shader.unbind();
-    
     // draw clouds
     // do this after drawing walls/floors/etc because that way most of it can
     // fail the depth test, improving fill rate.
@@ -1744,7 +1740,6 @@ void glDrawWorld(view_t* camera, int mode)
         skyMesh.draw();
         
         // reset GL
-        shader.unbind();
         GL_CHECK_ERR(glDisable(GL_BLEND));
         GL_CHECK_ERR(glDepthMask(GL_TRUE));
     }
@@ -1787,20 +1782,28 @@ const char* gl_error_string(GLenum err) {
     case GL_NO_ERROR:
         return "GL_NO_ERROR";
     case GL_INVALID_ENUM:
+        assert(0 && "GL_INVALID_ENUM");
         return "GL_INVALID_ENUM";
     case GL_INVALID_VALUE:
+        assert(0 && "GL_INVALID_VALUE");
         return "GL_INVALID_VALUE";
     case GL_INVALID_OPERATION:
+        assert(0 && "GL_INVALID_OPERATION");
         return "GL_INVALID_OPERATION";
     case GL_STACK_OVERFLOW:
+        assert(0 && "GL_STACK_OVERFLOW");
         return "GL_STACK_OVERFLOW";
     case GL_STACK_UNDERFLOW:
+        assert(0 && "GL_STACK_UNDERFLOW");
         return "GL_STACK_UNDERFLOW";
     case GL_OUT_OF_MEMORY:
+        assert(0 && "GL_OUT_OF_MEMORY");
         return "GL_OUT_OF_MEMORY";
     case GL_TABLE_TOO_LARGE:
+        assert(0 && "GL_TABLE_TOO_LARGE");
         return "GL_TABLE_TOO_LARGE";
     case GL_INVALID_FRAMEBUFFER_OPERATION:
+        assert(0 && "GL_INVALID_FRAMEBUFFER_OPERATION");
         return "GL_INVALID_FRAMEBUFFER_OPERATION";
     default:
         assert(0 && "unknown OpenGL error!");
@@ -2308,10 +2311,12 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
 
 void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
     // create buffers
+#ifdef VERTEX_ARRAYS_ENABLED
     if (!vao) {
         GL_CHECK_ERR(glGenVertexArrays(1, &vao));
     }
     GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
     if (!vbo_positions) {
         GL_CHECK_ERR(glGenBuffers(1, &vbo_positions));
     }
@@ -2325,20 +2330,30 @@ void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<
     // upload positions
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
     GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(0));
+#endif
     
     // upload texcoords
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
     GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
     
     // upload colors
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
     GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
+    
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 }
 
 void Chunk::destroyBuffers() {
@@ -2388,9 +2403,7 @@ void Chunk::draw() {
     
     GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, indices));
     
-#ifdef VERTEX_ARRAYS_ENABLED
-    GL_CHECK_ERR(glBindVertexArray(0));
-#else
+#ifndef VERTEX_ARRAYS_ENABLED
     GL_CHECK_ERR(glDisableVertexAttribArray(0));
     GL_CHECK_ERR(glDisableVertexAttribArray(1));
     GL_CHECK_ERR(glDisableVertexAttribArray(2));
