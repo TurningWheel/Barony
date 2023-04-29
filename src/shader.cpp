@@ -83,10 +83,11 @@ bool Shader::compile(const char* source, size_t len, Shader::Type type) {
     // for more details
     
     const char version[] = "#version 150 core\n";
+    const char* sources[2] = {version, source};
+    const int lens[2] = {(int)sizeof(version) - 1, (int)len};
+    
     auto shader = GL_CHECK_ERR_RET(glCreateShader(glType));
-    GL_CHECK_ERR(glShaderSource(shader, 2,
-        (const char*[2]){version, source},
-        (int[2]){(int)sizeof(version) - 1, (int)len}));
+    GL_CHECK_ERR(glShaderSource(shader, 2, sources, lens));
     GL_CHECK_ERR(glCompileShader(shader));
 
     GLint status;
