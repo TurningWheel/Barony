@@ -18581,7 +18581,6 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					glDrawSprite(&view, entity, REALCOLORS);
 				}
 			}
-            //GL_CHECK_ERR(glEnable(GL_BLEND)); // this gets disabled by the torch sprites
 		}
 		else
 		{
@@ -18604,9 +18603,12 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					entity->flags[BRIGHT] = b;
 				}
 			}
-            //GL_CHECK_ERR(glEnable(GL_BLEND)); // this gets disabled by the torch sprites
 		}
 		glEndCamera(&view);
+        if (drawingGui) {
+            // blending gets disabled after objects are drawn, so re-enable it.
+            GL_CHECK_ERR(glEnable(GL_BLEND));
+        }
 	}
 	::fov = ofov;
 }

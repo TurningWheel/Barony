@@ -61,7 +61,7 @@ int Shader::uniform(const char* name) {
 }
 
 void Shader::setParameter(unsigned int param, int value) {
-    GL_CHECK_ERR(glProgramParameteriEXT(program, (GLenum)param, value));
+    GL_CHECK_ERR(glProgramParameteri(program, (GLenum)param, value));
 }
 
 void Shader::bindAttribLocation(const char* attribute, int location) {
@@ -77,7 +77,12 @@ bool Shader::compile(const char* source, size_t len, Shader::Type type) {
     case Shader::Type::Fragment: glType = GL_FRAGMENT_SHADER; break;
     }
 
-    const char version[] = "#version 410 core\n";
+    // For all versions of OpenGL 3.3 and above, the corresponding
+    // GLSL version matches the OpenGL version. So GL 4.1 uses GLSL 4.10.
+    // see https://www.khronos.org/opengl/wiki/Core_Language_(GLSL)
+    // for more details
+    
+    const char version[] = "#version 150 core\n";
     auto shader = GL_CHECK_ERR_RET(glCreateShader(glType));
     GL_CHECK_ERR(glShaderSource(shader, 2,
         (const char*[2]){version, source},

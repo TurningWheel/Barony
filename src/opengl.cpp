@@ -988,6 +988,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     uploadLightUniforms(camera, shader, entity, mode, true);
     
     // draw mesh
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo));
     GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(0));
@@ -995,11 +998,16 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors));
     GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
     
     GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces)));
     
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
     GL_CHECK_ERR(glDisableVertexAttribArray(0));
     GL_CHECK_ERR(glDisableVertexAttribArray(1));
+#endif
     
     // reset GL state
     if (changedDepthRange) {
@@ -1765,33 +1773,24 @@ const char* gl_error_string(GLenum err) {
     switch (err) {
     case GL_NO_ERROR:
         return "GL_NO_ERROR";
-
     case GL_INVALID_ENUM:
         return "GL_INVALID_ENUM";
-
     case GL_INVALID_VALUE:
         return "GL_INVALID_VALUE";
-
     case GL_INVALID_OPERATION:
         return "GL_INVALID_OPERATION";
-
     case GL_STACK_OVERFLOW:
         return "GL_STACK_OVERFLOW";
-
     case GL_STACK_UNDERFLOW:
         return "GL_STACK_UNDERFLOW";
-
     case GL_OUT_OF_MEMORY:
         return "GL_OUT_OF_MEMORY";
-
     case GL_TABLE_TOO_LARGE:
         return "GL_TABLE_TOO_LARGE";
-
     case GL_INVALID_FRAMEBUFFER_OPERATION:
         return "GL_INVALID_FRAMEBUFFER_OPERATION";
-
     default:
-        assert(!"unknown GL error");
+        assert(0 && "unknown OpenGL error!");
         return nullptr;
     }
 }
@@ -2296,6 +2295,10 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
 
 void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
     // create buffers
+    if (!vao) {
+        GL_CHECK_ERR(glGenVertexArrays(1, &vao));
+    }
+    GL_CHECK_ERR(glBindVertexArray(vao));
     if (!vbo_positions) {
         GL_CHECK_ERR(glGenBuffers(1, &vbo_positions));
     }
@@ -2309,17 +2312,27 @@ void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<
     // upload positions
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
     
     // upload texcoords
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
     
     // upload colors
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
     GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW));
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
 }
 
 void Chunk::destroyBuffers() {
+    if (vao) {
+        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
+        vao = 0;
+    }
     if (vbo_positions) {
         GL_CHECK_ERR(glDeleteBuffers(1, &vbo_positions));
         vbo_positions = 0;
@@ -2344,6 +2357,9 @@ void Chunk::draw() {
         return;
     }
     
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#else
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
     GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(0));
@@ -2355,13 +2371,18 @@ void Chunk::draw() {
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
     GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
     GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
     
     GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, indices));
     
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(0));
+#else
     GL_CHECK_ERR(glDisableVertexAttribArray(0));
     GL_CHECK_ERR(glDisableVertexAttribArray(1));
     GL_CHECK_ERR(glDisableVertexAttribArray(2));
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 }
 
 bool Chunk::isDirty(const map_t& map) {

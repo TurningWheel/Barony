@@ -567,7 +567,7 @@ typedef struct polymodel_t
 {
 	polytriangle_t* faces;
 	uint64_t numfaces;
-    GLuint va;
+    GLuint vao;
 	GLuint vbo;
 	GLuint colors;
 	//GLuint colors_shifted;
@@ -913,3 +913,5 @@ char* getTimeAndDateFormatted(time_t t, char* buf, size_t size);
 #ifdef near
 #undef near
 #endif
+
+#define VERTEX_ARRAYS_ENABLED

@@ -77,11 +77,14 @@ TempTexture* lightmapTexture;
 
 static Shader gearShader;
 static Shader lineShader;
-static float lineMesh[] = {
-    1.f, 1.f, 0.f, 1.f,
-    1.f, 1.f, 0.f, 1.f,
+static Mesh lineMesh = {
+    {
+        1.f, 1.f, 0.f, 1.f,
+        1.f, 1.f, 0.f, 1.f,
+    }, // positions
+    {}, // texcoords
+    {} // colors
 };
-static unsigned int lineVBO = 0;
 
 static void buildVoxelShader(
     Shader& shader, const char* name,
@@ -463,9 +466,7 @@ void createCommonDrawResources() {
     spriteMesh.init();
     
     // 2d lines
-    GL_CHECK_ERR(glGenBuffers(1, &lineVBO));
-    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, lineVBO));
-    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(lineMesh), lineMesh, GL_STATIC_DRAW));
+    lineMesh.init();
 }
 
 void destroyCommonDrawResources() {
@@ -482,11 +483,8 @@ void destroyCommonDrawResources() {
     spriteBrightShader.destroy();
     spriteMesh.destroy();
     lineShader.destroy();
+    lineMesh.destroy();
     gearShader.destroy();
-    if (lineVBO) {
-        GL_CHECK_ERR(glDeleteBuffers(1, &lineVBO));
-        lineVBO = 0;
-    }
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
@@ -500,49 +498,61 @@ void Mesh::init() {
 	}
     
     // NOTE: OpenGL 2.1 does not support vertex array functions
-	//glGenVertexArrays(1, &vao);
-	//glBindVertexArray(vao);
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glGenVertexArrays(1, &vao));
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
 
 	// data buffers
-    int numVertices = 0;
+    numVertices = 0;
     GL_CHECK_ERR(glGenBuffers((GLsizei)BufferType::Max, vbo));
 	for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         if (data[c].size()) {
             const auto& find = ElementsPerVBO.find((BufferType)c);
             assert(find != ElementsPerVBO.end());
-            numVertices = std::max(numVertices, (int)data[c].size() / find->second);
+            numVertices = std::max(numVertices, (unsigned int)data[c].size() / find->second);
             GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo[c]));
             GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+            GL_CHECK_ERR(glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr));
+            GL_CHECK_ERR(glEnableVertexAttribArray(c));
+#endif
         }
 	}
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
     
-	//glBindVertexArray(0);
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(0));
+#endif
 
 	printlog("initialized mesh with %llu vertices", numVertices);
 }
 
 void Mesh::destroy() {
+    if (vao) {
+        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
+        vao = 0;
+    }
 	for (int c = 0; c < (int)BufferType::Max; ++c) {
 		if (vbo[c]) {
             GL_CHECK_ERR(glDeleteBuffers(1, &vbo[c]));
 			vbo[c] = 0;
 		}
 	}
-	if (vao) {
-        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
-		vao = 0;
-	}
 }
 
 void Mesh::draw(GLenum type, int numVertices) const {
     // NOTE: OpenGL 2.1 does not support vertex arrays!
-    // if it did, all the bind/unbind buffer crap could be omitted.
-	//GL_CHECK_ERR(glBindVertexArray(vao));
+#ifdef VERTEX_ARRAYS_ENABLED
+	GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
     
-    const bool findNumVertices = numVertices == 0;
+    if (numVertices == 0) {
+        numVertices = this->numVertices;
+    }
     
     // bind buffers
+#ifndef VERTEX_ARRAYS_ENABLED
     for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         if (data[c].size()) {
             const auto& find = ElementsPerVBO.find((BufferType)c);
@@ -550,12 +560,9 @@ void Mesh::draw(GLenum type, int numVertices) const {
             GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo[c]));
             GL_CHECK_ERR(glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr));
             GL_CHECK_ERR(glEnableVertexAttribArray(c));
-            if (findNumVertices) {
-                numVertices = std::max(numVertices,
-                    (int)data[c].size() / find->second);
-            }
         }
     }
+#endif
     
     // draw elements
     if (numVertices) {
@@ -563,14 +570,16 @@ void Mesh::draw(GLenum type, int numVertices) const {
     }
     
     // disable buffers
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(0));
+#else
     for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
         if (data[c].size()) {
             GL_CHECK_ERR(glDisableVertexAttribArray(c));
         }
     }
     GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    
-	//GL_CHECK_ERR(glBindVertexArray(0));
+#endif
 }
 
 void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
@@ -916,11 +925,6 @@ draws an arc with a changing radius
 
 static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 inner_color, Uint32 outer_color)
 {
-    // bind VBO
-    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, lineVBO));
-    GL_CHECK_ERR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr));
-    GL_CHECK_ERR(glEnableVertexAttribArray(0));
-    
     // initialize shader if needed, then bind
     if (!gearShader.isInitialized()) {
         static const char v_glsl[] =
@@ -930,6 +934,9 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
             "}";
         
         static const char g_glsl[] =
+            "layout (points) in;"
+            "layout (triangle_strip, max_vertices = 256) out;"
+        
             "uniform mat4 uProj;"
             "uniform mat4 uView;"
             "uniform vec4 uInnerColor;"
@@ -977,9 +984,9 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
         gearShader.bindAttribLocation("iPosition", 0);
         
         // 1024 is the highest we can go, but that leaves no components for color.
-        gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT_EXT, 256);
-        gearShader.setParameter(GL_GEOMETRY_INPUT_TYPE_EXT, GL_POINTS);
-        gearShader.setParameter(GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLES);
+        //gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT, 256);
+        //gearShader.setParameter(GL_GEOMETRY_INPUT_TYPE, GL_POINTS);
+        //gearShader.setParameter(GL_GEOMETRY_OUTPUT_TYPE, GL_TRIANGLES);
         gearShader.link();
     }
     gearShader.bind();
@@ -1016,9 +1023,7 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
     GL_CHECK_ERR(glUniformMatrix4fv(gearShader.uniform("uView"), 1, GL_FALSE, (float*)&view));
     
     // draw line
-    GL_CHECK_ERR(glDrawArrays(GL_POINTS, 0, 1));
-    GL_CHECK_ERR(glDisableVertexAttribArray(0));
-    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    lineMesh.draw(GL_POINTS, 1);
     
     // reset GL state
     gearShader.unbind();
@@ -1054,11 +1059,6 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
     if (!alpha) {
         return;
     }
-    
-    // bind VBO
-    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, lineVBO));
-    GL_CHECK_ERR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr));
-    GL_CHECK_ERR(glEnableVertexAttribArray(0));
     
     // initialize shader if needed, then bind
     if (!lineShader.isInitialized()) {
@@ -1113,9 +1113,7 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
     GL_CHECK_ERR(glUniformMatrix4fv(lineShader.uniform("uMatrix1"), 1, GL_FALSE, (float*)&view1));
     
     // draw line
-    GL_CHECK_ERR(glDrawArrays(GL_LINES, 0, 2));
-    GL_CHECK_ERR(glDisableVertexAttribArray(0));
-    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    lineMesh.draw(GL_LINES, 2);
     
     // reset GL state
     lineShader.unbind();

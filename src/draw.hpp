@@ -135,6 +135,7 @@ struct Mesh {
 private:
     unsigned int vao = 0; // vertex array object (mesh handle)
     unsigned int vbo[(int)BufferType::Max]; // vertex buffer objects
+    unsigned int numVertices = 0; // number of vertices
 };
 
 #include "shader.hpp"
@@ -263,6 +264,7 @@ extern TempTexture* lightmapTexture;
 #define TRANSPARENT_TILE 246
 
 struct Chunk {
+    GLuint vao = 0;
     GLuint vbo_positions = 0;
     GLuint vbo_texcoords = 0;
     GLuint vbo_colors = 0;
@@ -273,6 +275,7 @@ struct Chunk {
     Chunk& operator=(const Chunk&) = delete;
     
     Chunk(Chunk&& rhs) {
+        vao = rhs.vao;
         vbo_positions = rhs.vbo_positions;
         vbo_texcoords = rhs.vbo_texcoords;
         vbo_colors = rhs.vbo_colors;
@@ -283,6 +286,7 @@ struct Chunk {
         h = rhs.h;
         tiles = rhs.tiles;
         
+        rhs.vao = 0;
         rhs.vbo_positions = 0;
         rhs.vbo_texcoords = 0;
         rhs.vbo_colors = 0;
@@ -295,6 +299,7 @@ struct Chunk {
     }
     
     Chunk& operator=(Chunk&& rhs) {
+        vao = rhs.vao;
         vbo_positions = rhs.vbo_positions;
         vbo_texcoords = rhs.vbo_texcoords;
         vbo_colors = rhs.vbo_colors;
@@ -305,6 +310,7 @@ struct Chunk {
         h = rhs.h;
         tiles = rhs.tiles;
         
+        rhs.vao = 0;
         rhs.vbo_positions = 0;
         rhs.vbo_texcoords = 0;
         rhs.vbo_colors = 0;

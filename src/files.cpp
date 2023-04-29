@@ -3028,26 +3028,19 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	end = endnum;
 
 	// now free polymodels as we'll be loading them up later.
-	if ( freePreviousModels )
-	{
-		for ( int c = std::max(1, start); c < end && c < nummodels; ++c )
-		{
-			// cannot free index 0 - null object
-			if ( polymodels[c].faces )
-			{
+	if ( freePreviousModels ) {
+		for (int c = start; c < end && c < nummodels; ++c) {
+			if ( polymodels[c].faces ) {
 				free(polymodels[c].faces);
 			}
-			if ( polymodels[c].vbo )
-			{
+            if ( polymodels[c].vao ) {
+                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+            }
+			if ( polymodels[c].vbo ) {
                 GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 			}
-			if ( polymodels[c].colors )
-			{
+			if ( polymodels[c].colors ) {
                 GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-			}
-			if ( polymodels[c].va )
-			{
-                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 			}
 		}
 	}

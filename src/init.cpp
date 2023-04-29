@@ -71,9 +71,7 @@ bool steam_init = false;
 
 int initApp(char const * const title, int fullscreen)
 {
-	char name[128] = { '\0' };
 	File* fp;
-	Uint32 x, c;
 
 	Uint32 seed;
 	local_rng.seedTime();
@@ -102,7 +100,7 @@ int initApp(char const * const title, int fullscreen)
 	light_l.last = NULL;
 	entitiesdeleted.first = NULL;
 	entitiesdeleted.last = NULL;
-	for ( c = 0; c < HASH_SIZE; c++ )
+	for (int c = 0; c < HASH_SIZE; ++c)
 	{
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
@@ -386,7 +384,7 @@ int initApp(char const * const title, int fullscreen)
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	allsurfaces = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*MAXTEXTURES);
-	for ( c = 0; c < MAXTEXTURES; c++ )
+	for (int c = 0; c < MAXTEXTURES; ++c)
 	{
 		allsurfaces[c] = NULL;
 	}
@@ -1917,7 +1915,7 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		polymodels[c].faces = (polytriangle_t*) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( uint64_t i = 0; i < polymodels[c].numfaces; i++ )
 		{
-			node_t* node = list_Node(&quads, i / 2);
+			node_t* node = list_Node(&quads, (int)i / 2);
 			polyquad_t* quad = (polyquad_t*)node->element;
 			polymodels[c].faces[i].r = quad->r;
 			polymodels[c].faces[i].g = quad->g;
@@ -2031,19 +2029,15 @@ void reloadModels(int start, int end) {
     {
         char name[128];
 	    fp->gets2(name, sizeof(name));
-	    if ( c >= start && c < end )
-	    {
-		    if ( polymodels[c].vbo )
-		    {
+	    if ( c >= start && c < end ) {
+            if ( polymodels[c].vao ) {
+                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+            }
+		    if ( polymodels[c].vbo ) {
                 GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 		    }
-		    if ( polymodels[c].colors )
-		    {
+		    if ( polymodels[c].colors ) {
                 GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-		    }
-		    if ( polymodels[c].va )
-		    {
-                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 		    }
 	    }
     }
@@ -2093,8 +2087,8 @@ void generateVBOs(int start, int end)
 {
 	const int count = end - start;
 
-	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
-    GL_CHECK_ERR(glGenVertexArrays(count, vas.get()));
+	std::unique_ptr<GLuint[]> vaos(new GLuint[count]);
+    GL_CHECK_ERR(glGenVertexArrays(count, vaos.get()));
 
 	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
     GL_CHECK_ERR(glGenBuffers(count, vbos.get()));
@@ -2124,24 +2118,36 @@ void generateVBOs(int start, int end)
 				colors[data_index + 2] = face->b / 255.f;
 			}
 		}
-		model->va = vas[c - start];
+		model->vao = vaos[c - start];
 		model->vbo = vbos[c - start];
 		model->colors = color_buffers[c - start];
         
-        // NOTE: OpenGL 2.1 does not support vertex array objects!!!
-		//GL_CHECK_ERR(glBindVertexArray(model->va));
+        // NOTE: OpenGL 2.1 does not support vertex array objects!
+#ifdef VERTEX_ARRAYS_ENABLED
+		GL_CHECK_ERR(glBindVertexArray(model->vao));
+#endif
 
 		// vertex data
         GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->vbo));
         GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+        GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+        GL_CHECK_ERR(glEnableVertexAttribArray(0));
+#endif
 
 		// color data
         GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->colors));
         GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+        GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+        GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
         
-        //GL_CHECK_ERR(glBindVertexArray(0));
-        
+#ifdef VERTEX_ARRAYS_ENABLED
+        GL_CHECK_ERR(glBindVertexArray(0));
+#else
         GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
         
         const int current = (int)c - start;
 	    updateLoadingScreen(80 + (10 * current) / count);
@@ -2158,7 +2164,6 @@ void generateVBOs(int start, int end)
 -------------------------------------------------------------------------------*/
 int deinitApp()
 {
-	Uint32 c;
 #ifdef USE_OPENAL
 	closeOPENAL();
 #endif
@@ -2170,28 +2175,22 @@ int deinitApp()
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
-	if ( font8x8_bmp )
-	{
+	if (font8x8_bmp) {
 		SDL_FreeSurface(font8x8_bmp);
 	}
-	if ( font12x12_bmp )
-	{
+	if (font12x12_bmp) {
 		SDL_FreeSurface(font12x12_bmp);
 	}
-	if ( font16x16_bmp )
-	{
+	if (font16x16_bmp) {
 		SDL_FreeSurface(font16x16_bmp);
 	}
-	if ( ttf8 )
-	{
+	if (ttf8) {
 		TTF_CloseFont(ttf8);
 	}
-	if ( ttf12 )
-	{
+	if (ttf12) {
 		TTF_CloseFont(ttf12);
 	}
-	if ( ttf16 )
-	{
+	if (ttf16) {
 		TTF_CloseFont(ttf16);
 	}
 
@@ -2203,95 +2202,77 @@ int deinitApp()
     destroyTileTextures();
 
 	printlog("freeing map data...\n");
-	if ( map.entities != NULL )
-	{
+	if (map.entities != nullptr) {
 		list_FreeAll(map.entities);
 		free(map.entities);
 	}
-	if ( map.creatures != nullptr)
-	{
+	if (map.creatures != nullptr) {
 		list_FreeAll(map.creatures); //TODO: Need to call this? Entities are only pointed to by the thing, not owned.
 		delete map.creatures;
 	}
-	if ( map.worldUI != nullptr )
-	{
+	if (map.worldUI != nullptr) {
 		list_FreeAll(map.worldUI);
 		delete map.worldUI;
 	}
 	list_FreeAll(&light_l);
-	if ( map.tiles != nullptr )
-	{
+	if (map.tiles != nullptr) {
 		free(map.tiles);
 	}
 #ifdef EDITOR
-	if ( camera.vismap != nullptr )
-	{
+	if (camera.vismap != nullptr) {
 		free(camera.vismap);
 		camera.vismap = nullptr;
 	}
 #endif
-	if ( menucam.vismap != nullptr )
-	{
+	if (menucam.vismap != nullptr) {
 		free(menucam.vismap);
 		menucam.vismap = nullptr;
 	}
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		if ( cameras[i].vismap != nullptr )
-		{
+	for ( int i = 0; i < MAXPLAYERS; ++i ) {
+		if ( cameras[i].vismap != nullptr ) {
 			free(cameras[i].vismap);
 			cameras[i].vismap = nullptr;
 		}
 	}
-	if ( lightmap ) {
+	if (lightmap) {
 		free(lightmap);
 	}
-	if ( lightmapSmoothed ) {
+	if (lightmapSmoothed) {
 		free(lightmapSmoothed);
 	}
 
-	for ( c = 0; c < HASH_SIZE; c++ )
-	{
+	for (int c = 0; c < HASH_SIZE; ++c) {
 		list_FreeAll(&ttfTextHash[c]);
 	}
 
 	// free textures
 	printlog("freeing textures...\n");
-	if ( tiles != NULL )
-	{
-		for ( c = 0; c < numtiles; c++ )
-		{
-			if ( tiles[c] )
-			{
+	if (tiles != nullptr) {
+		for (int c = 0; c < numtiles; ++c) {
+			if (tiles[c]) {
 				SDL_FreeSurface(tiles[c]);
 			}
 		}
 		free(tiles);
 	}
-	if ( animatedtiles )
-	{
+	if (animatedtiles) {
 		free(animatedtiles);
 		animatedtiles = nullptr;
 	}
-	if ( lavatiles )
-	{
+	if (lavatiles) {
 		free(lavatiles);
 		lavatiles = nullptr;
 	}
-	if ( swimmingtiles )
-	{
+	if (swimmingtiles) {
 		free(swimmingtiles);
 		swimmingtiles = nullptr;
 	}
 
 	// free sprites
 	printlog("freeing sprites...\n");
-	if ( sprites != NULL )
-	{
-		for ( c = 0; c < numsprites; c++ )
-		{
-			if ( sprites[c] )
-			{
+	if (sprites != nullptr) {
+		for (int c = 0; c < numsprites; ++c) {
+			if ( sprites[c] ) {
 				SDL_FreeSurface(sprites[c]);
 			}
 		}
@@ -2299,22 +2280,17 @@ int deinitApp()
 	}
 
 	// free achievement images
-	for (auto& item : achievementImages) 
-	{
+	for (auto& item : achievementImages) {
 		SDL_FreeSurface(item.second);
 	}
 	achievementImages.clear();
 
 	// free models
 	printlog("freeing models...\n");
-	if ( models != NULL )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			if ( models[c] != NULL )
-			{
-				if ( models[c]->data )
-				{
+	if (models != nullptr) {
+        for (int c = 0; c < nummodels; ++c) {
+            if (models[c] != nullptr) {
+                if (models[c]->data) {
 					free(models[c]->data);
 				}
 				free(models[c]);
@@ -2322,30 +2298,22 @@ int deinitApp()
 		}
 		free(models);
 	}
-	if ( polymodels != NULL )
-	{
-		for ( c = 0; c < nummodels; c++ )
-		{
-			if ( polymodels[c].faces )
-			{
+	if (polymodels != nullptr) {
+		for (int c = 0; c < nummodels; ++c) {
+			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
 			}
 		}
-		if ( !disablevbos )
-		{
-			for ( c = 0; c < nummodels; c++ )
-			{
-				if ( polymodels[c].vbo )
-				{
+		if (!disablevbos) {
+            for (int c = 0; c < nummodels; ++c) {
+                if (polymodels[c].vao) {
+                    GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+                }
+				if (polymodels[c].vbo) {
                     GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 				}
-				if ( polymodels[c].colors )
-				{
+				if (polymodels[c].colors) {
                     GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-				}
-				if ( polymodels[c].va )
-				{
-                    GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 				}
 			}
 		}
@@ -2357,12 +2325,10 @@ int deinitApp()
 #endif
 
 	// delete opengl buffers
-	if ( allsurfaces != NULL )
-	{
+	if (allsurfaces != nullptr) {
 		free(allsurfaces);
 	}
-	if ( texid != NULL )
-	{
+    if (texid != nullptr) {
         GL_CHECK_ERR(glDeleteTextures(MAXTEXTURES, texid));
 		free(texid);
 	}
@@ -2383,13 +2349,11 @@ int deinitApp()
 #endif
 	destroyCommonDrawResources();
 	main_framebuffer.destroy();
-	if ( renderer )
-	{
+	if (renderer) {
 		SDL_GL_DeleteContext(renderer);
 		renderer = NULL;
 	}
-	if ( screen )
-	{
+	if (screen) {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}
@@ -2398,20 +2362,16 @@ int deinitApp()
 
 	// shutdown steamworks
 #ifdef STEAMWORKS
-	if ( steam_init )
-	{
+	if (steam_init) {
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
-		if ( g_SteamLeaderboards )
-		{
+		if (g_SteamLeaderboards) {
 			delete g_SteamLeaderboards;
 		}
-		if ( g_SteamWorkshop )
-		{
+		if (g_SteamWorkshop) {
 			delete g_SteamWorkshop;
 		}
-		if ( g_SteamStatistics )
-		{
+		if (g_SteamStatistics) {
 			delete g_SteamStatistics;
 		}
 		SteamAPI_Shutdown();
@@ -2574,9 +2534,12 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-        // the highest supported version on Apple Silicon is 4.1 (!)
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+        // On Apple:
+        // * the highest supported compatibility-profile version is 2.1
+        // * the highest supported core-profile version is 4.1
+        // * the lowest supported core-profile version is 3.2
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -2698,11 +2661,11 @@ bool initVideo()
         GL_CHECK_ERR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
         GL_CHECK_ERR(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
         GL_CHECK_ERR(glEnable(GL_LINE_SMOOTH));
-        GL_CHECK_ERR(glEnable(GL_TEXTURE_2D));
+        //GL_CHECK_ERR(glEnable(GL_TEXTURE_2D));
         GL_CHECK_ERR(glEnable(GL_CULL_FACE));
         GL_CHECK_ERR(glCullFace(GL_BACK));
         GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
-        GL_CHECK_ERR(glDisable(GL_LIGHTING));
+        //GL_CHECK_ERR(glDisable(GL_LIGHTING));
         GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
         GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
 	}
