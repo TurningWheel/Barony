@@ -307,7 +307,6 @@ ShopkeeperPlayerHostility_t::WantedLevel ShopkeeperPlayerHostility_t::getWantedL
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return NO_WANTED_LEVEL; }
 
-	Monster type = stats[player]->type;
 	//if ( !playerRaceCheckHostility(player, type) ) { return NO_WANTED_LEVEL; }
 	if ( auto h = getPlayerHostility(player) )
 	{
@@ -354,11 +353,6 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 
 	if ( shopkeeper )
 	{
-		int shopx = static_cast<int>(shopkeeper->x) >> 4;
-		int shopy = static_cast<int>(shopkeeper->y) >> 4;
-		int base_playerx = static_cast<int>(players[h.player]->entity->x) >> 4;
-		int base_playery = static_cast<int>(players[h.player]->entity->y) >> 4;
-
 		bool inshop = false;
 		//if ( shopx >= 0 && shopx < map.width && shopy >= 0 && shopy < map.height )
 		//{
@@ -904,7 +898,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
             poof->scalez = 0.5;
         }
         else {
-            auto poof = spawnPoof(entity->x, entity->y, 0);
+            (void)spawnPoof(entity->x, entity->y, 0);
         }
     }
 
@@ -1594,7 +1588,6 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
             nametag->flags[NOUPDATE] = true;
             nametag->flags[PASSABLE] = true;
             nametag->flags[SPRITE] = true;
-            nametag->flags[BRIGHT] = true;
             nametag->flags[UNCLICKABLE] = true;
             nametag->behavior = &actSpriteNametag;
             nametag->parent = my->getUID();
@@ -1645,7 +1638,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		net_packet->data[12 + strlen(name.c_str())] = 0;
 		net_packet->address.host = net_clients[monsterclicked - 1].host;
 		net_packet->address.port = net_clients[monsterclicked - 1].port;
-		net_packet->len = 12 + strlen(name.c_str()) + 1;
+		net_packet->len = 12 + (int)strlen(name.c_str()) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
@@ -2325,8 +2318,8 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( (myStats->type == LICH_FIRE && my->monsterState != MONSTER_STATE_LICHFIRE_DIE) 
-		|| (myStats->type == LICH_ICE && my->monsterState != MONSTER_STATE_LICHICE_DIE )
+	if ( ((myStats->type == LICH_FIRE && my->monsterState != MONSTER_STATE_LICHFIRE_DIE)
+		|| (myStats->type == LICH_ICE && my->monsterState != MONSTER_STATE_LICHICE_DIE))
 		&& myStats->HP > 0 )
 	{
 		//messagePlayer(0, "state: %d", my->monsterState);
@@ -2655,7 +2648,7 @@ void actMonster(Entity* my)
 					}
 					else if ( (lichDist < 32) || (enemiesInMelee > 1) )
 					{
-						if ( target && ticks % 10 == 0 && local_rng.rand() % 100 == 0 || (enemiesInMelee > 1 && local_rng.rand() % 8 == 0) )
+						if ( (target && ticks % 10 == 0 && local_rng.rand() % 100 == 0) || (enemiesInMelee > 1 && local_rng.rand() % 8 == 0) )
 						{
 							// chance to dodge away from target if distance is low enough.
 							playSoundEntity(my, 180, 128);
@@ -4642,8 +4635,6 @@ void actMonster(Entity* my)
 				if ( goodspots )
 				{
 					int chosenspot = local_rng.rand() % goodspots;
-					int currentspot = 0;
-					bool foundit = false;
 					x = possibleCoordinates.at(chosenspot).first;
 					y = possibleCoordinates.at(chosenspot).second;
 					//messagePlayer(0, "Chose distance: %.1fpercent", 100 * (sqrt(pow(my->x / 16 - (x), 2) + pow(my->y / 16 - (y), 2))) / sqrt(pow(map.height, 2) + pow(map.width, 2)));
@@ -5388,7 +5379,7 @@ timeToGoAgain:
 						real_t oldYaw = my->yaw;
 						tangent = atan2(entity->y - my->y, entity->x - my->x);
 						my->yaw = tangent;
-						Entity* fireball = castSpell(my->getUID(), &spell_fireball, true, false);
+						(void)castSpell(my->getUID(), &spell_fireball, true, false);
 						for ( c = 0; c < MAXPLAYERS; ++c )
 						{
 							if ( players[c] && players[c]->entity && entity != players[c]->entity )
@@ -5406,7 +5397,7 @@ timeToGoAgain:
 								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
 								{
 									my->yaw = tangent;
-									Entity* fireball = castSpell(my->getUID(), &spell_fireball, true, false);
+                                    (void)castSpell(my->getUID(), &spell_fireball, true, false);
 								}
 							}
 						}
@@ -5891,7 +5882,6 @@ timeToGoAgain:
 						// draw line from the leaders direction until we hit a wall or 48 dist
 						real_t previousx = startx;
 						real_t previousy = starty;
-						real_t leadDistance = HUNT_FOLLOWDIST;
 						std::unordered_set<int> checkedTiles;
 						for ( int iterations = 0; iterations < 20; ++iterations )
 						{
@@ -7149,7 +7139,6 @@ timeToGoAgain:
 			++my->monsterSpecialTimer;
 			if ( my->monsterSpecialTimer == 20 ) // start the spawn animations
 			{
-				Monster creature = NOTHING;
 				int numToSpawn = 3;
 				int numPlayers = 1;
 				std::vector<int> alivePlayers;
@@ -7604,7 +7593,7 @@ timeToGoAgain:
 			{
 				if ( my->monsterLichFireMeleeSeq == 0 )
 				{
-					if ( my->monsterHitTime >= 60 || my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45 )
+					if ( my->monsterHitTime >= 60 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45) )
 					{
 						Entity* target = uidToEntity(my->monsterTarget);
 						if ( target )
@@ -7991,8 +7980,6 @@ timeToGoAgain:
 
 void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 {
-	node_t* node = nullptr;
-	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
 	int charge = 1;
 
@@ -8736,7 +8723,6 @@ bool forceFollower(Entity& leader, Entity& follower)
             nametag->flags[NOUPDATE] = true;
             nametag->flags[PASSABLE] = true;
             nametag->flags[SPRITE] = true;
-            nametag->flags[BRIGHT] = true;
             nametag->flags[UNCLICKABLE] = true;
             nametag->behavior = &actSpriteNametag;
             nametag->parent = follower.getUID();
@@ -8766,7 +8752,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 		net_packet->data[12 + strlen(name.c_str())] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 12 + strlen(name.c_str()) + 1;
+		net_packet->len = 12 + (int)strlen(name.c_str()) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);

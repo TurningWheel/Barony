@@ -115,7 +115,6 @@ void actCampfire(Entity* my)
 	{
 		my->removeLightField();
 		my->light = NULL;
-		my->flags[BRIGHT] = false;
 	}
 
 	if ( multiplayer != CLIENT )

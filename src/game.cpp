@@ -2389,7 +2389,6 @@ void gameLogic(void)
                                         nametag->flags[NOUPDATE] = true;
                                         nametag->flags[PASSABLE] = true;
                                         nametag->flags[SPRITE] = true;
-                                        nametag->flags[BRIGHT] = true;
                                         nametag->flags[UNCLICKABLE] = true;
                                         nametag->behavior = &actSpriteNametag;
                                         nametag->parent = monster->getUID();
@@ -5803,7 +5802,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
-			glBeginCamera(&camera);
+			glBeginCamera(&camera, true);
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5911,7 +5910,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
-			glEndCamera(&camera);
+			glEndCamera(&camera, true);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
@@ -6738,10 +6737,10 @@ int main(int argc, char** argv)
 							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
 							occlusionCulling(map, menucam);
                             beginGraphics();
-							glBeginCamera(&menucam);
+							glBeginCamera(&menucam, true);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
-							glEndCamera(&menucam);
+							glEndCamera(&menucam, true);
 							list_RemoveNode(light->node);
 						}
 

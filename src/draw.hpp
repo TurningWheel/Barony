@@ -251,6 +251,7 @@ constexpr Uint32 makeColorRGB(uint8_t r, uint8_t g, uint8_t b) {
 
 extern framebuffer main_framebuffer;
 extern Shader voxelShader;
+extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
 extern Shader worldShader;
 extern Shader worldDarkShader;
@@ -350,7 +351,7 @@ extern view_t menucam;
 #define ENTITYUIDS 1
 real_t getLightForEntity(real_t x, real_t y);
 void beginGraphics();
-void glBeginCamera(view_t* camera);
+void glBeginCamera(view_t* camera, bool useHDR);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
@@ -358,8 +359,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
 void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 void glDrawWorld(view_t* camera, int mode);
-void glEndCamera(view_t* camera);
-void glEndCamera(view_t* camera);
+void glEndCamera(view_t* camera, bool useHDR);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
 
 extern bool hdrEnabled;

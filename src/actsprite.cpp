@@ -249,7 +249,6 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->z = z;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -294,7 +293,6 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	entity->z = z;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -317,7 +315,6 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
-		entity->flags[BRIGHT] = true;
 		entity->flags[PASSABLE] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
@@ -373,7 +370,6 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	entity->z = z;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
@@ -396,7 +392,6 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
-		entity->flags[BRIGHT] = true;
 		entity->flags[PASSABLE] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
@@ -423,7 +418,6 @@ Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
 	entity->z = z;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
-	//entity->flags[BRIGHT] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;

@@ -2446,11 +2446,11 @@ int main(int argc, char** argv)
 				}
 				occlusionCulling(map, camera);
                 beginGraphics();
-				glBeginCamera(&camera);
+				glBeginCamera(&camera, false);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);
-				glEndCamera(&camera);
+				glEndCamera(&camera, false);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next )

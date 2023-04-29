@@ -3071,7 +3071,6 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -3109,7 +3108,6 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -3160,7 +3158,6 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->sizey = 1;
 		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
@@ -3380,7 +3377,6 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	entity->behavior = &actParticleAestheticOrbit;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	if ( multiplayer != CLIENT )
 	{
@@ -5374,7 +5370,6 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-	entity->flags[BRIGHT] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5395,7 +5390,6 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 		entity->sizey = 1;
 		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;

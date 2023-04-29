@@ -743,7 +743,7 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
 
 constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
 constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
-constexpr float defaultAdjustmentRate = 2.f;    // how fast your eyes adjust roughly, as a factor of seconds
+constexpr float defaultAdjustmentRate = 0.03f;  // how fast your eyes adjust
 constexpr float defaultLimitHigh = 3.f;         // your aperture can increase to see something 3 times darker.
 constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
@@ -764,7 +764,7 @@ bool hdrEnabled = *cvar_hdrEnabled;
 
 static int oldViewport[4];
 
-void glBeginCamera(view_t* camera)
+void glBeginCamera(view_t* camera, bool useHDR)
 {
     if (!camera) {
         return;
@@ -772,9 +772,9 @@ void glBeginCamera(view_t* camera)
     
     // setup viewport
 #ifdef EDITOR
-    const bool hdr = false;
+    const bool hdr = useHDR;
 #else
-    const bool hdr = *cvar_hdrEnabled;
+    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
 #endif
     
     if (hdr) {
@@ -824,6 +824,7 @@ void glBeginCamera(view_t* camera)
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
@@ -832,7 +833,7 @@ void glBeginCamera(view_t* camera)
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
 }
 
-void glEndCamera(view_t* camera)
+void glEndCamera(view_t* camera, bool useHDR)
 {
     if (!camera) {
         return;
@@ -842,7 +843,7 @@ void glEndCamera(view_t* camera)
     GL_CHECK_ERR(glDisable(GL_SCISSOR_TEST));
     
 #ifdef EDITOR
-    const bool hdr = false;
+    const bool hdr = useHDR;
     const float hdr_exposure = defaultExposure;
     const float hdr_gamma = defaultGamma;
     const float hdr_adjustment_rate = defaultAdjustmentRate;
@@ -850,7 +851,7 @@ void glEndCamera(view_t* camera)
     const float hdr_limit_low = defaultLimitLow;
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
-    const bool hdr = *cvar_hdrEnabled;
+    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
     const float hdr_exposure = *cvar_hdrExposure;
     const float hdr_gamma = *cvar_hdrGamma;
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
@@ -886,7 +887,12 @@ void glEndCamera(view_t* camera)
             camera->fb[fbIndex].unlock();
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
             luminance = luminance / (size / step);
-            camera->luminance += (luminance - camera->luminance) / (fpsLimit * hdr_adjustment_rate);
+            const float rate = hdr_adjustment_rate / fpsLimit;
+            if (camera->luminance > luminance) {
+                camera->luminance -= std::min(rate, camera->luminance - luminance);
+            } else if (camera->luminance < luminance) {
+                camera->luminance += std::min(rate, luminance - camera->luminance);
+            }
         }
         const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
         const float brightness = vidgamma;
@@ -948,10 +954,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // bind shader
 #ifndef EDITOR
     static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
-    auto& shader = *cvar_testDithering ?
-        voxelDitheredShader : voxelShader;
+    auto& shader = !entity->flags[BRIGHT] ?
+        (*cvar_testDithering ? voxelDitheredShader : voxelShader):
+        voxelBrightShader;
 #else
-    auto& shader = voxelShader;
+    auto& shader = entity->flags[BRIGHT] ?
+        voxelBrightShader : voxelShader;
 #endif
     shader.bind();
     
@@ -1101,22 +1109,22 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
         
         mat4x4_t identityMatrix = mat4x4(1.f);
         vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
-        worldCoords[0].x = enemybar->screenDistance; // top left
-        worldCoords[0].y = sprite->h / 2;
-        worldCoords[0].z = sprite->w / 2;
-        worldCoords[0].w = 1.f;
-        worldCoords[1].x = enemybar->screenDistance; // top right
-        worldCoords[1].y = sprite->h / 2;
-        worldCoords[1].z = -sprite->w / 2;
-        worldCoords[1].w = 1.f;
-        worldCoords[2].x = enemybar->screenDistance; // bottom left
-        worldCoords[2].y = -sprite->h / 2;
-        worldCoords[2].z = sprite->w / 2;
-        worldCoords[2].w = 1.f;
-        worldCoords[3].x = enemybar->screenDistance; // bottom right
-        worldCoords[3].y = -sprite->h / 2;
-        worldCoords[3].z = -sprite->w / 2;
-        worldCoords[3].w = 1.f;
+        worldCoords[0].x = -.5f; // top left
+        worldCoords[0].y =  .5f;
+        worldCoords[0].z =  0.f;
+        worldCoords[0].w =  1.f;
+        worldCoords[1].x =  .5f; // top right
+        worldCoords[1].y =  .5f;
+        worldCoords[1].z =  0.f;
+        worldCoords[1].w =  1.f;
+        worldCoords[2].x = -.5f; // bottom left
+        worldCoords[2].y = -.5f;
+        worldCoords[2].z =  0.f;
+        worldCoords[2].w =  1.f;
+        worldCoords[3].x =  .5f; // bottom right
+        worldCoords[3].y = -.5f;
+        worldCoords[3].z =  0.f;
+        worldCoords[3].w =  1.f;
     
         // top-left coord
 		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window);
@@ -1127,10 +1135,10 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
             
             // convert back into worldCoords
 			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
-			enemybar->glWorldOffsetY = (worldCoords[0].y - worldCoords2.y);
+			enemybar->glWorldOffsetY = (worldCoords2.y - worldCoords[0].y);
 		}
         // code to check lower bounds of camera - in case needed.
-        else {
+        else if (0) {
             // bottom-left coord
 			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window);
             if (screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) {
@@ -1140,7 +1148,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
                 
                 // convert back into worldCoords
 				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
-				enemybar->glWorldOffsetY = -(worldCoords[2].y - worldCoords2.y);
+				enemybar->glWorldOffsetY = -(worldCoords2.y - worldCoords[2].y);
 			}
 		}
 	}*/
@@ -1157,9 +1165,10 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    const GLfloat light[4] = { b, b, b, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
@@ -1230,9 +1239,10 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    const GLfloat light[4] = { b, b, b, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
@@ -1356,9 +1366,10 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    const GLfloat light[4] = { b, b, b, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
     const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
@@ -1432,9 +1443,10 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     
     // upload light variables
     if (entity->flags[BRIGHT]) {
+        const float b = std::max(1.f, camera->luminance * 4.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-        const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+        const GLfloat light[4] = { b, b, b, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
@@ -1535,9 +1547,10 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     
     // upload light variables
     if (entity->flags[BRIGHT]) {
+        const float b = std::max(1.f, camera->luminance * 4.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-        const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+        const GLfloat light[4] = { b, b, b, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
@@ -1753,10 +1766,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
     
 	if (dirty) {
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-		glBeginCamera(&camera);
+		glBeginCamera(&camera, false);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
-		glEndCamera(&camera);
+		glEndCamera(&camera, false);
 	}
 
 	GLubyte pixel[4];

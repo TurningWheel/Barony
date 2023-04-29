@@ -822,10 +822,6 @@ Returns the illumination of the given entity
 
 int Entity::entityLight()
 {
-	if ( this->flags[BRIGHT] )
-	{
-		return 255;
-	}
 	if ( this->x < 0 || this->y < 0 || this->x >= map.width << 4 || this->y >= map.height << 4 )
 	{
 		return 255;
@@ -19745,7 +19741,6 @@ void Entity::createWorldUITooltip()
 		worldTooltip->flags[NOUPDATE] = true;
 		worldTooltip->flags[PASSABLE] = true;
 		worldTooltip->flags[SPRITE] = true;
-		worldTooltip->flags[BRIGHT] = true;
 		worldTooltip->flags[UNCLICKABLE] = true;
 		worldTooltip->behavior = &actSpriteWorldTooltip;
 		worldTooltip->parent = this->getUID();

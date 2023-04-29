@@ -9906,7 +9906,6 @@ void doNewGame(bool makeHighscore) {
                                             nametag->flags[NOUPDATE] = true;
                                             nametag->flags[PASSABLE] = true;
                                             nametag->flags[SPRITE] = true;
-                                            nametag->flags[BRIGHT] = true;
                                             nametag->flags[UNCLICKABLE] = true;
                                             nametag->behavior = &actSpriteNametag;
                                             nametag->parent = monster->getUID();

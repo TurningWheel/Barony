@@ -67,6 +67,7 @@ Mesh framebuffer::mesh{
 Shader framebuffer::shader;
 Shader framebuffer::hdrShader;
 Shader voxelShader;
+Shader voxelBrightShader;
 Shader voxelDitheredShader;
 Shader worldShader;
 Shader worldDarkShader;
@@ -87,7 +88,7 @@ static Mesh lineMesh = {
 };
 
 static void buildVoxelShader(
-    Shader& shader, const char* name,
+    Shader& shader, const char* name, bool lightmap,
 	const char* v, size_t size_v,
 	const char* f, size_t size_f)
 {
@@ -97,9 +98,11 @@ static void buildVoxelShader(
 	shader.bindAttribLocation("iPosition", 0);
 	shader.bindAttribLocation("iColor", 1);
 	shader.link();
-    shader.bind();
-    GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
-    shader.unbind();
+    if (lightmap) {
+        shader.bind();
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+        shader.unbind();
+    }
 }
 
 static void buildWorldShader(
@@ -262,9 +265,30 @@ void createCommonDrawResources() {
         "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
         "}";
 
-	buildVoxelShader(voxelShader, "voxelShader",
+	buildVoxelShader(voxelShader, "voxelShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_fragment_glsl, sizeof(vox_fragment_glsl));
+    
+    static const char vox_bright_fragment_glsl[] =
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
+        "uniform mat4 uColorRemap;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "out vec4 FragColor;"
+    
+        "void main() {"
+        "vec3 Remapped ="
+        "    (uColorRemap[0].rgb * Color.r)+"
+        "    (uColorRemap[1].rgb * Color.g)+"
+        "    (uColorRemap[2].rgb * Color.b);"
+        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (vec4(1.0) + uLightColor) + uColorAdd;"
+        "}";
+
+    buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,
+        vox_vertex_glsl, sizeof(vox_vertex_glsl),
+        vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
 
 	static const char vox_dithered_fragment_glsl[] =
 		"in vec3 Color;"
@@ -290,7 +314,7 @@ void createCommonDrawResources() {
         "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
 		"}";
 
-	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
+	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
     
@@ -474,6 +498,7 @@ void destroyCommonDrawResources() {
 	framebuffer::shader.destroy();
     framebuffer::hdrShader.destroy();
     voxelShader.destroy();
+    voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
     worldShader.destroy();
     worldDarkShader.destroy();

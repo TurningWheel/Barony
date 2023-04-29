@@ -18543,7 +18543,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
-		glBeginCamera(&view);
+		glBeginCamera(&view, false);
 		bool b = players[player]->entity->flags[BRIGHT];
 		players[player]->entity->flags[BRIGHT] = true;
 		if ( !players[player]->entity->flags[INVISIBLE] )
@@ -18565,7 +18565,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					b = entity->flags[BRIGHT];
+					bool b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
 					glDrawVoxel(&view, entity, REALCOLORS);
 					Shader::unbind(); // unbind voxel shader
@@ -18589,18 +18589,18 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
-					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = true;
 					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
 						glDrawSprite(&view, entity, REALCOLORS);
 					}
 					else
 					{
+                        bool b = entity->flags[BRIGHT];
+                        entity->flags[BRIGHT] = true;
 						glDrawVoxel(&view, entity, REALCOLORS);
+                        entity->flags[BRIGHT] = b;
 						Shader::unbind(); // unbind voxel shader
 					}
-					entity->flags[BRIGHT] = b;
 				}
 			}
 		}
@@ -18608,7 +18608,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
             // blending gets disabled after objects are drawn, so re-enable it.
             GL_CHECK_ERR(glEnable(GL_BLEND));
         }
-        glEndCamera(&view);
+        glEndCamera(&view, false);
 	}
 	::fov = ofov;
 }

@@ -328,7 +328,6 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[INVISIBLE] = !spawn_blood && !entity->flags[SPRITE] && entity->sprite == 5;
 	if ( multiplayer != CLIENT )
