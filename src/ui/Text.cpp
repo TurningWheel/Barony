@@ -22,7 +22,7 @@ Text::~Text() {
 		surf = nullptr;
 	}
 	if (texid) {
-		glDeleteTextures(1, &texid);
+        GL_CHECK_ERR(glDeleteTextures(1, &texid));
 		texid = 0;
 	}
 }
@@ -46,7 +46,7 @@ void Text::render() {
 		surf = nullptr;
 	}
 	if (texid) {
-		glDeleteTextures(1, &texid);
+        GL_CHECK_ERR(glDeleteTextures(1, &texid));
 		texid = 0;
 	}
 
@@ -259,13 +259,13 @@ void Text::render() {
 			}
 		}
 
-	    glGenTextures(1, &texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+        GL_CHECK_ERR(glGenTextures(1, &texid));
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
 		SDL_UnlockSurface(surf);
 	}
 

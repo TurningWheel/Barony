@@ -193,6 +193,26 @@ extern bool autoLimbReload;
 
 #define PI 3.14159265358979323846
 
+void printlog(const char* str, ...);
+const char* gl_error_string(GLenum err);
+#define GL_CHECK_ERR(expression) ({\
+    expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+    }\
+})
+#define GL_CHECK_ERR_RET(expression) ({\
+    auto retval = expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+    }\
+    retval;\
+})
+
 typedef struct vec4 {
     vec4(float f):
         x(f),
@@ -769,7 +789,6 @@ int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char const * const str);
 int concatedStringLength(char* str, ...);
-void printlog(const char* str, ...);
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);

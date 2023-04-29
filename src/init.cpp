@@ -375,7 +375,7 @@ int initApp(char const * const title, int fullscreen)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
@@ -390,9 +390,7 @@ int initApp(char const * const title, int fullscreen)
 	{
 		allsurfaces[c] = NULL;
 	}
-	glGenTextures(MAXTEXTURES, texid);
-	//glGenVertexArrays(MAXBUFFERS, vaoid);
-	//glGenBuffers(MAXBUFFERS, vboid);
+    GL_CHECK_ERR(glGenTextures(MAXTEXTURES, texid));
 
 	// load windows icon
 #ifndef _MSC_VER
@@ -1975,31 +1973,31 @@ void generateTileTextures() {
     constexpr int h = 32; // height of a tile texture
     constexpr int dim = 32; // how many tile textures to put in each row and column
     const int max = numtiles < dim * dim ? numtiles : dim * dim;
-    glActiveTexture(GL_TEXTURE2);
-    glGenTextures(1, &tileTextures);
-    glBindTexture(GL_TEXTURE_2D, tileTextures);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
+    GL_CHECK_ERR(glGenTextures(1, &tileTextures));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tileTextures));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w * dim, h * dim, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
     for (int c = 0; c < max; ++c) {
         if (!tiles[c]) {
             continue;
         }
         SDL_LockSurface(tiles[c]);
-        glTexSubImage2D(GL_TEXTURE_2D, 0,
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0,
             (c % dim) * w,
             (c / dim) * h,
-            w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels);
+            w, h, GL_RGBA, GL_UNSIGNED_BYTE, tiles[c]->pixels));
         SDL_UnlockSurface(tiles[c]);
     }
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glActiveTexture(GL_TEXTURE0);
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
 }
 
 void destroyTileTextures() {
     if (tileTextures) {
-        glDeleteTextures(1, &tileTextures);
+        GL_CHECK_ERR(glDeleteTextures(1, &tileTextures));
         tileTextures = 0;
     }
 }
@@ -2037,28 +2035,16 @@ void reloadModels(int start, int end) {
 	    {
 		    if ( polymodels[c].vbo )
 		    {
-			    glDeleteBuffers(1, &polymodels[c].vbo);
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 		    }
 		    if ( polymodels[c].colors )
 		    {
-			    glDeleteBuffers(1, &polymodels[c].colors);
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 		    }
 		    if ( polymodels[c].va )
 		    {
-			    glDeleteVertexArrays(1, &polymodels[c].va);
+                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 		    }
-		    /*if ( polymodels[c].colors_shifted )
-		    {
-			    glDeleteBuffers(1, &polymodels[c].colors_shifted);
-		    }
-		    if ( polymodels[c].grayscale_colors )
-		    {
-			    glDeleteBuffers(1, &polymodels[c].grayscale_colors);
-		    }
-		    if ( polymodels[c].grayscale_colors_shifted )
-		    {
-			    glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-		    }*/
 	    }
     }
 
@@ -2108,13 +2094,13 @@ void generateVBOs(int start, int end)
 	const int count = end - start;
 
 	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
-	glGenVertexArrays(count, vas.get());
+    GL_CHECK_ERR(glGenVertexArrays(count, vas.get()));
 
 	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
-	glGenBuffers(count, vbos.get());
+    GL_CHECK_ERR(glGenBuffers(count, vbos.get()));
 
 	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
-	glGenBuffers(count, color_buffers.get());
+    GL_CHECK_ERR(glGenBuffers(count, color_buffers.get()));
 
 	for ( uint64_t c = (uint64_t)start; c < (uint64_t)end; ++c )
 	{
@@ -2143,19 +2129,19 @@ void generateVBOs(int start, int end)
 		model->colors = color_buffers[c - start];
         
         // NOTE: OpenGL 2.1 does not support vertex array objects!!!
-		//glBindVertexArray(model->va);
+		//GL_CHECK_ERR(glBindVertexArray(model->va));
 
 		// vertex data
-		glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
+        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->vbo));
+        GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW));
 
 		// color data
-		glBindBuffer(GL_ARRAY_BUFFER, model->colors);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW);
+        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, model->colors));
+        GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW));
         
-        //glBindVertexArray(0);
+        //GL_CHECK_ERR(glBindVertexArray(0));
         
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
         
         const int current = (int)c - start;
 	    updateLoadingScreen(80 + (10 * current) / count);
@@ -2351,28 +2337,16 @@ int deinitApp()
 			{
 				if ( polymodels[c].vbo )
 				{
-					glDeleteBuffers(1, &polymodels[c].vbo);
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 				}
 				if ( polymodels[c].colors )
 				{
-					glDeleteBuffers(1, &polymodels[c].colors);
+                    GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 				}
 				if ( polymodels[c].va )
 				{
-					glDeleteVertexArrays(1, &polymodels[c].va);
+                    GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 				}
-				/*if ( polymodels[c].colors_shifted )
-				{
-					glDeleteBuffers(1, &polymodels[c].colors_shifted);
-				}
-				if ( polymodels[c].grayscale_colors )
-				{
-					glDeleteBuffers(1, &polymodels[c].grayscale_colors);
-				}
-				if ( polymodels[c].grayscale_colors_shifted )
-				{
-					glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-				}*/
 			}
 		}
 		free(polymodels);
@@ -2389,17 +2363,9 @@ int deinitApp()
 	}
 	if ( texid != NULL )
 	{
-		glDeleteTextures(MAXTEXTURES, texid);
+        GL_CHECK_ERR(glDeleteTextures(MAXTEXTURES, texid));
 		free(texid);
 	}
-
-	// delete opengl buffers
-	/*glDeleteBuffers(MAXBUFFERS,vboid);
-	if( vboid != NULL )
-		free(vboid);
-	glDeleteVertexArrays(MAXBUFFERS,vaoid);
-	if( vaoid != NULL )
-		free(vaoid);*/
 
 	// close network interfaces
 	closeNetworkInterfaces();
@@ -2608,10 +2574,10 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 bool initVideo()
 {
     if (!renderer) {
-        // the highest supported version on Apple Silicon is 2.1 (!)
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        // the highest supported version on Apple Silicon is 4.1 (!)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     }
@@ -2729,16 +2695,16 @@ bool initVideo()
         printlog("set window size to %dx%d", xres, yres);
         
         // setup opengl
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glEnable(GL_LINE_SMOOTH);
-	    glEnable(GL_TEXTURE_2D);
-	    glEnable(GL_CULL_FACE);
-	    glCullFace(GL_BACK);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_LIGHTING);
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	    glClearColor(0.f, 0.f, 0.f, 0.f);
+        GL_CHECK_ERR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
+        GL_CHECK_ERR(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+        GL_CHECK_ERR(glEnable(GL_LINE_SMOOTH));
+        GL_CHECK_ERR(glEnable(GL_TEXTURE_2D));
+        GL_CHECK_ERR(glEnable(GL_CULL_FACE));
+        GL_CHECK_ERR(glCullFace(GL_BACK));
+        GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
+        GL_CHECK_ERR(glDisable(GL_LIGHTING));
+        GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
 	}
 
 	if ( verticalSync )
@@ -2812,7 +2778,7 @@ bool changeVideoMode(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
 	return true;
@@ -2850,7 +2816,7 @@ bool resizeWindow(int new_xres, int new_yres)
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// success
 	return true;

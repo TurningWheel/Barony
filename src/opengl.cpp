@@ -36,7 +36,7 @@ static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdoub
 	fH = tan(fovY / 360 * PI) * zNear;
 	fW = fH * aspect;
 
-	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
+    GL_CHECK_ERR(glFrustum(-fW, fW, -fH, fH, zNear, zFar));
 }
 
 vec4_t vec4_copy(const vec4_t* v) {
@@ -569,9 +569,9 @@ void beginGraphics() {
 
 static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.bind();
-    if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
-    if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
-    if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
+    if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
+    if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
+    if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
     shader.unbind();
 }
 
@@ -671,11 +671,16 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 HSVtoRGB(&remap.z, &hsv); // blue
             }
 #endif
-            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap);
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         }
         
-        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
+        const GLfloat light[4] = {
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            1.f,
+        };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
         
         bool highlightEntity = false;
         bool highlightEntityFromParent = false;
@@ -699,46 +704,32 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
             if (!highlightEntityFromParent) {
                 entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
             }
-            real_t highlight = entity->highlightForUIGlow;
-            if (highlight > 1.0) {
-                highlight = 1.0 - (highlight - 1.0);
+            float highlight = entity->highlightForUIGlow;
+            if (highlight > 1.f) {
+                highlight = 1.f - (highlight - 1.f);
             }
-            if (entity->flags[BRIGHT]) {
-                GLfloat light[4] = {
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    static_cast<GLfloat>(1.0 + (highlight - 0.5) * .1),
-                    0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            } else {
-                GLfloat light[4] = {
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            }
+            const GLfloat light[4] = {
+                (highlight - .5f) * .1f,
+                (highlight - .5f) * .1f,
+                (highlight - .5f) * .1f,
+                0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         } else {
-            if (entity->flags[BRIGHT]) {
-                constexpr GLfloat light[4] = { 1.f, 1.f, 1.f, 0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            } else {
-                constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-                glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            }
+            const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         }
         
         constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-        glUniform4fv(shader.uniform("uColorAdd"), 1, add);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
     } else {
         if (remap) {
             mat4x4_t empty(0.f);
-            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty));
         }
         
         constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
-        glUniform4fv(shader.uniform("uLightColor"), 1, light);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         
         GLfloat uidcolors[4];
         Uint32 uid = entity->getUID();
@@ -746,7 +737,7 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
         uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
         uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
         uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-        glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors));
     }
 }
 
@@ -791,15 +782,15 @@ void glBeginCamera(view_t* camera)
         const int fbIndex = camera->drawnFrames % numFbs;
         camera->fb[fbIndex].init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
         camera->fb[fbIndex].bindForWriting();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glScissor(0, 0, camera->winw, camera->winh);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
     } else {
-        glGetIntegerv(GL_VIEWPORT, oldViewport);
-        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-        glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        GL_CHECK_ERR(glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
     }
-    glEnable(GL_SCISSOR_TEST);
-    glEnable(GL_DEPTH_TEST);
+    GL_CHECK_ERR(glEnable(GL_SCISSOR_TEST));
+    GL_CHECK_ERR(glEnable(GL_DEPTH_TEST));
     
     const float aspect = (real_t)camera->winw / (real_t)camera->winh;
 	const float rotx = camera->vang * 180.f / PI; // get x rotation
@@ -838,6 +829,7 @@ void glBeginCamera(view_t* camera)
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
 }
 
 void glEndCamera(view_t* camera)
@@ -846,8 +838,8 @@ void glEndCamera(view_t* camera)
         return;
     }
     
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
+    GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
+    GL_CHECK_ERR(glDisable(GL_SCISSOR_TEST));
     
 #ifdef EDITOR
     const bool hdr = false;
@@ -873,8 +865,8 @@ void glEndCamera(view_t* camera)
     if (hdr) {
         // update viewport
         camera->fb[fbIndex].unbindForWriting();
-        glGetIntegerv(GL_VIEWPORT, oldViewport);
-        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
         
         // calculate luminance
         typedef float f;
@@ -905,9 +897,9 @@ void glEndCamera(view_t* camera)
         camera->fb[fbIndex].unbindForReading();
         
         // revert viewport
-        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
     } else {
-        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
     }
     ++camera->drawnFrames;
 }
@@ -943,14 +935,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     
     // set GL state
 	if (mode == REALCOLORS) {
-		glEnable(GL_BLEND);
+        GL_CHECK_ERR(glEnable(GL_BLEND));
 	}
     bool changedDepthRange = false;
 	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
 		|| modelindex == FOLLOWER_SELECTED_PARTICLE
 		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
         changedDepthRange = true;
-		glDepthRange(0, 0.1);
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
 	}
     
     // bind shader
@@ -990,31 +982,31 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
     uploadLightUniforms(camera, shader, entity, mode, true);
     
     // draw mesh
-    glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(0);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
     
-    glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(1);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
     
-    glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces)));
     
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
     
     // reset GL state
     if (changedDepthRange) {
-        glDepthRange(0, 1);
+        GL_CHECK_ERR(glDepthRange(0, 1));
     }
     if (mode == REALCOLORS) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
 }
 
@@ -1067,8 +1059,8 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
 	tex->bind();
     
     // bind shader
-    glEnable(GL_BLEND);
-    auto& shader = spriteShader;
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
     shader.bind();
     
     vec4_t v;
@@ -1150,26 +1142,26 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
 		// rotate up/down pitch towards camera, requires offset to be 0
         (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
 	}
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m));
 
     // update GL state
-    glDepthRange(0, *cvar_enemybarDepthRange);
-    glEnable(GL_BLEND);
+    GL_CHECK_ERR(glDepthRange(0, *cvar_enemybarDepthRange));
+    GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
-    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
-    const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-    glUniform4fv(shader.uniform("uLightColor"), 1, light);
-    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
-    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
     // draw
     spriteMesh.draw();
     
     // reset GL state
-    glDepthRange(0, 1);
-    glDisable(GL_BLEND);
+    GL_CHECK_ERR(glDepthRange(0, 1));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 #endif // !EDITOR
 }
 
@@ -1202,11 +1194,11 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	}
     
     // depth range
-    glDepthRange(0.f, .6f);
+    GL_CHECK_ERR(glDepthRange(0.f, .6f));
     
     // bind shader
-    glEnable(GL_BLEND);
-    auto& shader = spriteShader;
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
     shader.bind();
     
     vec4_t v;
@@ -1227,15 +1219,15 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
     v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
-    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
-    glUniform4fv(shader.uniform("uLightColor"), 1, light);
-    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
-    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
     // draw
     spriteMesh.draw();
@@ -1247,8 +1239,8 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 	}
     
     // reset GL state
-    glDepthRange(0.f, 1.f);
-    glDisable(GL_BLEND);
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 #endif
 }
 
@@ -1325,14 +1317,14 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     
     // depth range
     if (entity->flags[OVERDRAW]) {
-        glDepthRange(0.1f, 0.2f);
+        GL_CHECK_ERR(glDepthRange(0.1f, 0.2f));
     } else {
-        glDepthRange(0.f, 0.6f);
+        GL_CHECK_ERR(glDepthRange(0.f, 0.6f));
     }
     
     // bind shader
-    glEnable(GL_BLEND);
-    auto& shader = spriteShader;
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
     shader.bind();
     
     vec4_t v;
@@ -1353,15 +1345,15 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
     v = vec4((entity->scalex + scale) * tex->w, (entity->scalez + scale) * tex->h, (entity->scalez + scale), 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
-    glUniform4fv(shader.uniform("uLightFactor"), 1, factor);
-    const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-    glUniform4fv(shader.uniform("uLightColor"), 1, light);
-    constexpr GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
-    glUniform4fv(shader.uniform("uColorAdd"), 1, empty);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
     
     // draw
     spriteMesh.draw();
@@ -1373,8 +1365,8 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     }
     
     // reset GL state
-    glDepthRange(0.f, 1.f);
-    glDisable(GL_BLEND);
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 #endif
 }
 
@@ -1391,18 +1383,19 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     } else {
         sprite = sprites[0];
     }
-    glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
     
     // set GL state
     if (mode == REALCOLORS) {
-        glEnable(GL_BLEND);
+        GL_CHECK_ERR(glEnable(GL_BLEND));
     }
     if (entity->flags[OVERDRAW]) {
-        glDepthRange(0, 0.1);
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
     }
     
     // bind shader
-    auto& shader = spriteShader;
+    auto& shader = entity->flags[BRIGHT] ?
+        spriteBrightShader : spriteShader;
     shader.bind();
     
     vec4_t v;
@@ -1427,20 +1420,29 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex * sprite->w, entity->scaley * sprite->h, entity->scalez, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    uploadLightUniforms(camera, shader, entity, mode, false);
+    if (entity->flags[BRIGHT]) {
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, false);
+    }
 
 	// draw
     spriteMesh.draw();
     
     // reset GL state
     if (mode == REALCOLORS) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
     if (entity->flags[OVERDRAW]) {
-        glDepthRange(0, 1);
+        GL_CHECK_ERR(glDepthRange(0.f, 1.f));
     }
 }
 
@@ -1470,32 +1472,33 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	auto textureId = rendered_text->getTexID();
 
 	// bind texture
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
     const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
     const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
     if (mode == REALCOLORS) {
-        glEnable(GL_BLEND);
+        GL_CHECK_ERR(glEnable(GL_BLEND));
     }
     
     // set GL state
 	if (entity->flags[OVERDRAW]) {
-		glDepthRange(0, 0.1);
+        GL_CHECK_ERR(glDepthRange(0.f, 0.1f));
 	} else {
 		if (entity->behavior == &actDamageGib) {
 #ifndef EDITOR
-			glDepthRange(0, *cvar_dmgSpriteDepthRange);
+            GL_CHECK_ERR(glDepthRange(0.f, *cvar_dmgSpriteDepthRange));
 #endif // !EDITOR
 		}
 		else if (entity->behavior != &actSpriteNametag) {
-			glDepthRange(0, 0.98);
+            GL_CHECK_ERR(glDepthRange(0.f, 0.98f));
 		}
 		else if (entity->behavior == &actSpriteNametag) {
-			glDepthRange(0, 0.52);
+            GL_CHECK_ERR(glDepthRange(0.f, 0.52f));
 		}
 	}
     
     // bind shader
-    auto& shader = spriteShader;
+    auto& shader = entity->flags[BRIGHT] ?
+        spriteBrightShader : spriteShader;
     shader.bind();
     
     vec4_t v;
@@ -1520,18 +1523,27 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
-    glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    uploadLightUniforms(camera, shader, entity, mode, false);
+    if (entity->flags[BRIGHT]) {
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, false);
+    }
 
     // draw
     spriteMesh.draw();
     
     // reset GL state
-	glDepthRange(0, 1);
+    GL_CHECK_ERR(glDepthRange(0, 1));
     if (mode == REALCOLORS) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
 }
 
@@ -1633,7 +1645,7 @@ void glDrawWorld(view_t* camera, int mode)
     // upload uniforms
     if (mode == REALCOLORS) {
         const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     }
     
     // draw tile chunks
@@ -1685,15 +1697,15 @@ void glDrawWorld(view_t* camera, int mode)
     if (clouds && mode == REALCOLORS) {
         auto& shader = skyShader;
         shader.bind();
-        glDepthMask(GL_FALSE);
-        glEnable(GL_BLEND);
+        GL_CHECK_ERR(glDepthMask(GL_FALSE));
+        GL_CHECK_ERR(glEnable(GL_BLEND));
         
         // upload texture scroll value
         const float scroll[2] = {
             (float)(ticks % 60) / 60.f,
             (float)(ticks % 120) / 120.f,
         };
-        glUniform2fv(shader.uniform("uScroll"), 1, scroll);
+        GL_CHECK_ERR(glUniform2fv(shader.uniform("uScroll"), 1, scroll));
         
         // upload light value
         const float light[4] = {
@@ -1702,18 +1714,18 @@ void glDrawWorld(view_t* camera, int mode)
             (float)getLightAtModifier,
             1.f,
         };
-        glUniform4fv(shader.uniform("uLightFactor"), 1, light);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
         
         // bind cloud texture
-        glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]));
         
         // draw sky
         skyMesh.draw();
         
         // reset GL
         shader.unbind();
-        glDisable(GL_BLEND);
-        glDepthMask(GL_TRUE);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+        GL_CHECK_ERR(glDepthMask(GL_TRUE));
     }
 }
 
@@ -1732,7 +1744,7 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
     }
     
 	if (dirty) {
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 		glBeginCamera(&camera);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
@@ -1740,13 +1752,48 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 	}
 
 	GLubyte pixel[4];
-	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+    GL_CHECK_ERR(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel));
 	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
     if (!hdrEnabled) {
         main_framebuffer.bindForWriting();
     }
 	dirty = 0;
 	return oldpix;
+}
+
+const char* gl_error_string(GLenum err) {
+    switch (err) {
+    case GL_NO_ERROR:
+        return "GL_NO_ERROR";
+
+    case GL_INVALID_ENUM:
+        return "GL_INVALID_ENUM";
+
+    case GL_INVALID_VALUE:
+        return "GL_INVALID_VALUE";
+
+    case GL_INVALID_OPERATION:
+        return "GL_INVALID_OPERATION";
+
+    case GL_STACK_OVERFLOW:
+        return "GL_STACK_OVERFLOW";
+
+    case GL_STACK_UNDERFLOW:
+        return "GL_STACK_UNDERFLOW";
+
+    case GL_OUT_OF_MEMORY:
+        return "GL_OUT_OF_MEMORY";
+
+    case GL_TABLE_TOO_LARGE:
+        return "GL_TABLE_TOO_LARGE";
+
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
+
+    default:
+        assert(!"unknown GL error");
+        return nullptr;
+    }
 }
 
 void GO_SwapBuffers(SDL_Window* screen)
@@ -1756,7 +1803,7 @@ void GO_SwapBuffers(SDL_Window* screen)
     if (!hdrEnabled) {
         main_framebuffer.unbindForWriting();
         main_framebuffer.bindForReading();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         main_framebuffer.draw(vidgamma);
     }
 	
@@ -2250,39 +2297,39 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
 void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
     // create buffers
     if (!vbo_positions) {
-        glGenBuffers(1, &vbo_positions);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_positions));
     }
     if (!vbo_texcoords) {
-        glGenBuffers(1, &vbo_texcoords);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_texcoords));
     }
     if (!vbo_colors) {
-        glGenBuffers(1, &vbo_colors);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_colors));
     }
     
     // upload positions
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW));
     
     // upload texcoords
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
-    glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW));
     
     // upload colors
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW));
 }
 
 void Chunk::destroyBuffers() {
     if (vbo_positions) {
-        glDeleteBuffers(1, &vbo_positions);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_positions));
         vbo_positions = 0;
     }
     if (vbo_texcoords) {
-        glDeleteBuffers(1, &vbo_texcoords);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_texcoords));
         vbo_texcoords = 0;
     }
     if (vbo_colors) {
-        glDeleteBuffers(1, &vbo_colors);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_colors));
         vbo_colors = 0;
     }
     if (tiles) {
@@ -2297,24 +2344,24 @@ void Chunk::draw() {
         return;
     }
     
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(0);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
     
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(1);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
     
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(2);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
     
-    glDrawArrays(GL_TRIANGLES, 0, indices);
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, indices));
     
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
+    GL_CHECK_ERR(glDisableVertexAttribArray(2));
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }
 
 bool Chunk::isDirty(const map_t& map) {

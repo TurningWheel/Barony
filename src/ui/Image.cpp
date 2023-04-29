@@ -51,25 +51,14 @@ Image::Image(const char* _name) {
 bool Image::finalize() {
 	if (surf) {
 		SDL_LockSurface(surf);
-		glGenTextures(1, &texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-		if (clamp) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		}
-		if (point) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		}
+        GL_CHECK_ERR(glGenTextures(1, &texid));
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR));
 		SDL_UnlockSurface(surf);
-
 		return true;
 	} else {
 		return false;
@@ -82,7 +71,7 @@ Image::~Image() {
 		surf = nullptr;
 	}
 	if (texid) {
-		glDeleteTextures(1, &texid);
+        GL_CHECK_ERR(glDeleteTextures(1, &texid));
 		texid = 0;
 	}
 	if ( outlineSurf )
@@ -93,7 +82,7 @@ Image::~Image() {
 }
 
 void Image::bind() const {
-    glBindTexture(GL_TEXTURE_2D, texid);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
 }
 
 void Image::draw(const SDL_Rect* src, const SDL_Rect dest, const SDL_Rect viewport) const {
@@ -141,10 +130,9 @@ Mesh Image::clockwiseMesh;
 Shader Image::shader;
 
 static const char v_glsl[] =
-    "#version 120\n"
-    "attribute vec3 iPosition;"
-    "attribute vec2 iTexCoord;"
-    "varying vec2 TexCoord;"
+    "in vec3 iPosition;"
+    "in vec2 iTexCoord;"
+    "out vec2 TexCoord;"
     "uniform mat4 uProj;"
     "uniform mat4 uView;"
     "uniform mat4 uSection;"
@@ -154,12 +142,12 @@ static const char v_glsl[] =
     "}";
 
 static const char f_glsl[] =
-    "#version 120\n"
-    "varying vec2 TexCoord;"
+    "in vec2 TexCoord;"
     "uniform sampler2D uTexture;"
     "uniform vec4 uColor;"
+    "out vec4 FragColor;"
     "void main() {"
-    "gl_FragColor = texture2D(uTexture, TexCoord) * uColor;"
+    "FragColor = texture(uTexture, TexCoord) * uColor;"
     "}";
 
 void Image::setupGL(GLuint texid, const Uint32& color) {
@@ -241,22 +229,22 @@ void Image::setupGL(GLuint texid, const Uint32& color) {
         shader.bindAttribLocation("iTexCoord", 1);
         shader.link();
         shader.bind();
-        glUniform1i(shader.uniform("uTexture"), 0);
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uTexture"), 0));
     } else {
         shader.bind();
     }
     
     // bind texture
-    glBindTexture(GL_TEXTURE_2D, texid);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
     if (!drawingGui) {
-        glEnable(GL_BLEND);
+        GL_CHECK_ERR(glEnable(GL_BLEND));
     }
     
     // upload color
     Uint8 r, g, b, a;
     getColor(color, &r, &g, &b, &a);
     float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-    glUniform4fv(shader.uniform("uColor"), 1, cv);
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
 }
 
 void Image::draw(GLuint texid, int textureWidth, int textureHeight,
@@ -285,7 +273,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     // projection matrix
     mat4x4 proj(1.f);
     (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
-    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
     
     // view matrix
     mat4x4 view(1.f);
@@ -293,7 +281,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     (void)translate_mat(&m, &view, &v); view = m;
     v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
     (void)scale_mat(&m, &view, &v); view = m;
-    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
     
     // section matrix
     mat4x4 sect(1.f);
@@ -301,7 +289,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     (void)translate_mat(&m, &sect, &v); sect = m;
     v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
     (void)scale_mat(&m, &sect, &v); sect = m;
-    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect));
 
     // draw image
     mesh.draw();
@@ -309,7 +297,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     // reset GL state
     shader.unbind();
     if (!drawingGui) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
 }
                        
@@ -339,7 +327,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     // projection matrix
     mat4x4 proj(1.f);
     (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
-    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
     
     // view matrix
     mat4x4 view(1.f);
@@ -351,7 +339,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     (void)translate_mat(&m, &view, &v); view = m;
     v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
     (void)scale_mat(&m, &view, &v); view = m;
-    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
     
     // section matrix
     mat4x4 sect(1.f);
@@ -359,7 +347,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     (void)translate_mat(&m, &sect, &v); sect = m;
     v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
     (void)scale_mat(&m, &sect, &v); sect = m;
-    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect));
 
     // draw image
     mesh.draw();
@@ -367,7 +355,7 @@ void Image::draw(GLuint texid, int textureWidth, int textureHeight,
     // reset GL state
     shader.unbind();
     if (!drawingGui) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
 }
 
@@ -408,7 +396,7 @@ void Image::drawClockwise(
     // projection matrix
     mat4x4 proj(1.f);
     (void)ortho(&proj, viewport.x, viewport.x + viewport.w, viewport.y, viewport.y + viewport.h, -1.f, 1.f);
-    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
     
     // view matrix
     mat4x4 view(1.f);
@@ -416,7 +404,7 @@ void Image::drawClockwise(
     (void)translate_mat(&m, &view, &v); view = m;
     v = {(float)dest.w, (float)dest.h, 0.f, 0.f};
     (void)scale_mat(&m, &view, &v); view = m;
-    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
     
     // section matrix
     mat4x4 sect(1.f);
@@ -424,20 +412,20 @@ void Image::drawClockwise(
     (void)translate_mat(&m, &sect, &v); sect = m;
     v = {(float)src->w / textureWidth, (float)src->h / textureHeight, 0.f, 0.f};
     (void)scale_mat(&m, &sect, &v); sect = m;
-    glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect);
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uSection"), 1, GL_FALSE, (float*)&sect));
 
     // draw image
-    glFrontFace(GL_CW); // we draw clockwise so need to set this.
+    GL_CHECK_ERR(glFrontFace(GL_CW)); // we draw clockwise so need to set this.
     const int numVertices = std::min(
         (int)(lerp * clockwiseMesh.data[1].size() / 2 + 1),
         (int)(clockwiseMesh.data[1].size() / 2));
     clockwiseMesh.draw(GL_TRIANGLE_FAN, numVertices);
-    glFrontFace(GL_CCW);
+    GL_CHECK_ERR(glFrontFace(GL_CCW));
     
     // reset GL state
     shader.unbind();
     if (!drawingGui) {
-        glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
 }
 

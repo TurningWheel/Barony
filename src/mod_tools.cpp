@@ -5050,11 +5050,13 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 		return;
 	}
 
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
 	if ( frame != nullptr )
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            clip->getWidth(), clip->getHeight(), textureFormat,
+            GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
 
@@ -5127,12 +5129,14 @@ void VideoManager_t::draw()
 		return;
 	}
     
-	glEnable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
 	if ( frame != NULL )
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            clip->getWidth(), clip->getHeight(), textureFormat,
+            GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
     
@@ -5145,19 +5149,19 @@ void VideoManager_t::draw()
 
 	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
     
-    glDisable(GL_BLEND);
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
 unsigned int VideoManager_t::createTexture(int w, int h, unsigned int format)
 {
 	unsigned int textureId = 0;
-	glGenTextures(1, &textureId);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glGenTextures(1, &textureId));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	unsigned char* data = new unsigned char[w * h * 4];
 	memset(data, 0, w * h * 4);
-	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	delete[] data;
 	return textureId;
 }
@@ -5197,7 +5201,7 @@ void VideoManager_t::destroyClip()
 	}
 	if ( textureId != 0 )
 	{
-		glDeleteTextures(1, &textureId);
+        GL_CHECK_ERR(glDeleteTextures(1, &textureId));
 		textureId = 0;
 	}
 }
@@ -5536,7 +5540,7 @@ void ImGui_t::render()
 
 	auto& io = ImGui_t::getIO();
 	ImGui::Render();
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    GL_CHECK_ERR(glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y));
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 

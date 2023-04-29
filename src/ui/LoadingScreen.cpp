@@ -105,7 +105,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	    // create framebuffer for background
 	    loading_fb.init(xres, yres, GL_LINEAR, GL_LINEAR);
 	    loading_fb.bindForWriting();
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	    drawAllPlayerCameras();
         loading_fb.unbindForWriting();
 #endif

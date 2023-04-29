@@ -58,29 +58,27 @@ public:
     int& h = _h;
 
     TempTexture() {
-        glGenTextures(1, &_texid);
+        GL_CHECK_ERR(glGenTextures(1, &_texid));
     }
 
     ~TempTexture() {
         if( _texid ) {
-            glDeleteTextures(1,&_texid);
+            GL_CHECK_ERR(glDeleteTextures(1,&_texid));
             _texid = 0;
         }
     }
     
     void setParameters(bool clamp, bool point) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR);
-        //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR));
     }
 
     void load(SDL_Surface* surf, bool clamp, bool point) {
         SDL_LockSurface(surf);
-        glBindTexture(GL_TEXTURE_2D, _texid);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
         setParameters(clamp, point);
         _w = surf->w;
         _h = surf->h;
@@ -88,15 +86,15 @@ public:
     }
     
     void loadFloat(float* data, int width, int height, bool clamp, bool point) {
-        glBindTexture(GL_TEXTURE_2D, _texid);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data));
         setParameters(clamp, point);
         _w = width;
         _h = height;
     }
 
     void bind() {
-        glBindTexture(GL_TEXTURE_2D, _texid);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
     }
 };
 
@@ -258,6 +256,7 @@ extern Shader worldDarkShader;
 extern Shader skyShader;
 extern Mesh skyMesh;
 extern Shader spriteShader;
+extern Shader spriteBrightShader;
 extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture;
 

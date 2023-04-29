@@ -6,7 +6,7 @@ void Shader::init(const char* name) {
         return;
     }
     this->name = name;
-    program = glCreateProgram();
+    program = GL_CHECK_ERR_RET(glCreateProgram());
     if (program) {
         printlog("initialized shader program '%s' successfully", name);
     } else {
@@ -18,11 +18,11 @@ void Shader::destroy() {
     if (program) {
         for (auto shader: shaders) {
             if (shader) {
-                glDetachShader(program, shader);
-                glDeleteShader(shader);
+                GL_CHECK_ERR(glDetachShader(program, shader));
+                GL_CHECK_ERR(glDeleteShader(shader));
             }
         }
-        glDeleteProgram(program);
+        GL_CHECK_ERR(glDeleteProgram(program));
         uniforms.clear();
         shaders.clear();
         program = 0;
@@ -33,7 +33,7 @@ static unsigned int currentActiveShader = 0;
 
 bool Shader::bind() {
     if (currentActiveShader != program) {
-        glUseProgram(program);
+        GL_CHECK_ERR(glUseProgram(program));
         currentActiveShader = program;
     }
     return program != 0;
@@ -41,7 +41,7 @@ bool Shader::bind() {
 
 void Shader::unbind() {
     if (currentActiveShader) {
-        glUseProgram(0);
+        GL_CHECK_ERR(glUseProgram(0));
         currentActiveShader = 0;
     }
 }
@@ -49,7 +49,7 @@ void Shader::unbind() {
 int Shader::uniform(const char* name) {
     auto find = uniforms.find(name);
     if (find == uniforms.end()) {
-        int handle = glGetUniformLocation(program, (GLchar*)name);
+        int handle = GL_CHECK_ERR_RET(glGetUniformLocation(program, (GLchar*)name));
         if (handle == -1) {
             printlog("uniform %s not found!", name);
         }
@@ -61,11 +61,11 @@ int Shader::uniform(const char* name) {
 }
 
 void Shader::setParameter(unsigned int param, int value) {
-    glProgramParameteriEXT(program, (GLenum)param, value);
+    GL_CHECK_ERR(glProgramParameteriEXT(program, (GLenum)param, value));
 }
 
 void Shader::bindAttribLocation(const char* attribute, int location) {
-    glBindAttribLocation(program, location, attribute);
+    GL_CHECK_ERR(glBindAttribLocation(program, location, attribute));
 }
 
 bool Shader::compile(const char* source, size_t len, Shader::Type type) {
@@ -77,39 +77,41 @@ bool Shader::compile(const char* source, size_t len, Shader::Type type) {
     case Shader::Type::Fragment: glType = GL_FRAGMENT_SHADER; break;
     }
 
-    const GLint glLen = (GLint)len;
-    auto shader = glCreateShader(glType);
-    glShaderSource(shader, 1, &source, &glLen);
-    glCompileShader(shader);
+    const char version[] = "#version 410 core\n";
+    auto shader = GL_CHECK_ERR_RET(glCreateShader(glType));
+    GL_CHECK_ERR(glShaderSource(shader, 2,
+        (const char*[2]){version, source},
+        (int[2]){(int)sizeof(version) - 1, (int)len}));
+    GL_CHECK_ERR(glCompileShader(shader));
 
     GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    GL_CHECK_ERR(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
     if (status) {
-        glAttachShader(program, shader);
+        GL_CHECK_ERR(glAttachShader(program, shader));
         shaders.push_back(shader);
         printlog("compiled shader %d successfully", (int)shaders.size());
         return true;
     } else {
         char log[1024];
-        glGetShaderInfoLog(shader, (GLint)sizeof(log), nullptr, (GLchar*)log);
+        GL_CHECK_ERR(glGetShaderInfoLog(shader, (GLint)sizeof(log), nullptr, (GLchar*)log));
         printlog("failed to compile shader: %s", log);
-        glDeleteShader(shader);
+        GL_CHECK_ERR(glDeleteShader(shader));
         return false;
     }
 }
 
 bool Shader::link() {
     uniforms.clear();
-    glLinkProgram(program);
+    GL_CHECK_ERR(glLinkProgram(program));
 
     GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    GL_CHECK_ERR(glGetProgramiv(program, GL_LINK_STATUS, &status));
     if (status) {
         printlog("linked shader program '%s' successfully", name);
         return true;
     } else {
         char log[1024];
-        glGetProgramInfoLog(program, sizeof(log), nullptr, (GLchar*)log);
+        GL_CHECK_ERR(glGetProgramInfoLog(program, sizeof(log), nullptr, (GLchar*)log));
         printlog("failed to link shaders for '%s': %s", name, log);
         return false;
     }

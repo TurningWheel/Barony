@@ -1346,19 +1346,12 @@ const std::vector<std::string> officialSecretlevelsTxtOrder =
 void glLoadTexture(SDL_Surface* image, int texnum)
 {
 	SDL_LockSurface(image);
-	glBindTexture(GL_TEXTURE_2D, texid[texnum]);
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	//glPixelStorei(GL_UNPACK_ROW_LENGTH, (image->pitch / 4));
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	//#ifdef APPLE
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image->w, image->h, 0, GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, image->pixels);
-	//#else
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
-	//#endif
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[texnum]));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels));
 	SDL_UnlockSurface(image);
 }
 
@@ -1473,7 +1466,7 @@ SDL_Surface* loadImage(char const * const filename)
 	// load the new surface as a GL texture
 	allsurfaces[imgref] = newSurface;
 	allsurfaces[imgref]->userdata = (void *)((long int)imgref);
-	glLoadTexture(allsurfaces[imgref], imgref);
+	GL_CHECK_ERR(glLoadTexture(allsurfaces[imgref], imgref));
 
 	// free the translated surface
 	SDL_FreeSurface(originalSurface);
@@ -3046,28 +3039,16 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			}
 			if ( polymodels[c].vbo )
 			{
-				glDeleteBuffers(1, &polymodels[c].vbo);
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 			}
 			if ( polymodels[c].colors )
 			{
-				glDeleteBuffers(1, &polymodels[c].colors);
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 			}
 			if ( polymodels[c].va )
 			{
-				glDeleteVertexArrays(1, &polymodels[c].va);
+                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].va));
 			}
-			/*if ( polymodels[c].colors_shifted )
-			{
-				glDeleteBuffers(1, &polymodels[c].colors_shifted);
-			}
-			if ( polymodels[c].grayscale_colors )
-			{
-				glDeleteVertexArrays(1, &polymodels[c].grayscale_colors);
-			}
-			if ( polymodels[c].grayscale_colors_shifted )
-			{
-				glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-			}*/
 		}
 	}
 

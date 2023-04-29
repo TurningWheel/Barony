@@ -66,8 +66,7 @@ static Mesh triangle_mesh = {
 static Shader minimap_shader;
 
 static const char v_glsl[] =
-    "#version 120\n"
-    "attribute vec3 iPosition;"
+    "in vec3 iPosition;"
     "uniform mat4 uProj;"
     "uniform mat4 uView;"
     "void main() {"
@@ -75,10 +74,10 @@ static const char v_glsl[] =
     "}";
 
 static const char f_glsl[] =
-    "#version 120\n"
     "uniform vec4 uColor;"
+    "out vec4 FragColor;"
     "void main() {"
-    "gl_FragColor = uColor;"
+    "FragColor = uColor;"
     "}";
 
 void cleanupMinimapTextures() {
@@ -310,7 +309,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
         float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-        glUniform4fv(shader.uniform("uColor"), 1, cv);
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
         
         vec4_t v;
         mat4x4 m;
@@ -318,7 +317,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         // projection matrix
         mat4x4 proj(1.f);
         (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
-        glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
         
         // view matrix
         mat4x4 view(1.f);
@@ -327,7 +326,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         v = {(float)(unitX * (minimapObjectZoom / 100.0) * size),
              (float)(unitY * (minimapObjectZoom / 100.0) * size), 0.f, 0.f};
         (void)scale_mat(&m, &view, &v); view = m;
-        glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
         
         // draw
         circle_mesh.draw(GL_TRIANGLE_FAN);
@@ -346,10 +345,6 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		y = (y - ymin) * unitY + rect.y;
 
 		auto imgGet = Image::get("*images/ui/HUD/death_skull.png");
-
-		Uint8 r, g, b, a;
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 
 		const real_t sx = unitX * (minimapObjectZoom / 100.0) * size;
 		const real_t sy = unitY * (minimapObjectZoom / 100.0) * size;
@@ -841,7 +836,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     Uint8 r, g, b, a;
                     getColor(color, &r, &g, &b, &a);
                     float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-                    glUniform4fv(shader.uniform("uColor"), 1, cv);
+                    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
                     
                     vec4_t v;
                     mat4x4 m;
@@ -849,7 +844,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     // projection matrix
                     mat4x4 proj(1.f);
                     (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
-                    glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj);
+                    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
                     
                     // view matrix
                     mat4x4 view(1.f);
@@ -859,7 +854,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
                     (void)scale_mat(&m, &view, &v); view = m;
                     v = {0.f, 0.f, -1.f, 0.f};
                     (void)rotate_mat(&m, &view, ang * 180.f / PI, &v); view = m;
-                    glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view);
+                    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
                     
                     // draw
                     triangle_mesh.draw();

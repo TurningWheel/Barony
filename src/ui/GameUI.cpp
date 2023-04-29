@@ -18523,7 +18523,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	if ( players[player] != nullptr && players[player]->entity != nullptr )
 	{
-		glClear(GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
@@ -18581,7 +18581,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					glDrawSprite(&view, entity, REALCOLORS);
 				}
 			}
-            glEnable(GL_BLEND); // this gets disabled by the torch sprites
+            //GL_CHECK_ERR(glEnable(GL_BLEND)); // this gets disabled by the torch sprites
 		}
 		else
 		{
@@ -18604,7 +18604,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					entity->flags[BRIGHT] = b;
 				}
 			}
-            glEnable(GL_BLEND); // this gets disabled by the torch sprites
+            //GL_CHECK_ERR(glEnable(GL_BLEND)); // this gets disabled by the torch sprites
 		}
 		glEndCamera(&view);
 	}

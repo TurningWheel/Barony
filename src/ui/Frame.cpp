@@ -267,7 +267,7 @@ static ConsoleVariable<bool> ui_scale("/ui_scale", true);                   // s
 #if !defined(EDITOR)
 void Frame::predraw() {
 	drawingGui = true;
-	glEnable(GL_BLEND);
+    GL_CHECK_ERR(glEnable(GL_BLEND));
     
 	if ( !*ui_scale_native ) {
 		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
@@ -279,28 +279,28 @@ void Frame::predraw() {
 	}
 	gui_fb.bindForWriting();
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+    GL_CHECK_ERR(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
 }
 
 void Frame::postdraw() {
 	drawingGui = false;
 	if ( !*ui_scale_native ) {
 		if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
-			glDisable(GL_BLEND);
+            GL_CHECK_ERR(glDisable(GL_BLEND));
 			return;
 		}
 	}
 	if ( !*ui_scale ) {
-		glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
 		return;
 	}
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    GL_CHECK_ERR(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
     gui_fb.unbindForWriting();
     gui_fb.bindForReading();
     if (*ui_downscale) {
         gui_fb_downscaled.bindForWriting();
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         gui_fb.draw();
         gui_fb_downscaled.unbindForWriting();
         gui_fb_downscaled.bindForReading();
@@ -308,7 +308,7 @@ void Frame::postdraw() {
     }
     else if (*ui_upscale) {
         gui_fb_upscaled.bindForWriting();
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         gui_fb.draw();
         gui_fb_upscaled.unbindForWriting();
         gui_fb_upscaled.bindForReading();
@@ -318,34 +318,34 @@ void Frame::postdraw() {
         gui_fb.draw(hdrEnabled ? vidgamma : 1.f);
     }
     framebuffer::unbindForReading();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_BLEND);
+    GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 #else
 // EDITOR ONLY DEFINITIONS:
 void Frame::predraw() {
 	drawingGui = false;
-	glEnable(GL_BLEND);
+    GL_CHECK_ERR(glEnable(GL_BLEND));
 
 	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
 		return;
 	}
 	gui_fb.bindForWriting();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
 void Frame::postdraw() {
 	if ( xres == Frame::virtualScreenX && yres == Frame::virtualScreenY ) {
-		glDisable(GL_BLEND);
+        GL_CHECK_ERR(glDisable(GL_BLEND));
 		return;
 	}
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE);
+    GL_CHECK_ERR(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE));
     gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
     gui_fb.draw(hdrEnabled ? vidgamma : 1.f);
 	framebuffer::unbindForReading();
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_BLEND);
+    GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 #endif
 
