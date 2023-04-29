@@ -18604,11 +18604,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
-		glEndCamera(&view);
         if (drawingGui) {
             // blending gets disabled after objects are drawn, so re-enable it.
             GL_CHECK_ERR(glEnable(GL_BLEND));
         }
+        glEndCamera(&view);
 	}
 	::fov = ofov;
 }

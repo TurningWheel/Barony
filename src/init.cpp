@@ -366,7 +366,9 @@ int initApp(char const * const title, int fullscreen)
 	}
 
 	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
-		glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
+		GL_CHECK_ERR_RET(glGetString(GL_VENDOR)),
+        GL_CHECK_ERR_RET(glGetString(GL_RENDERER)),
+        GL_CHECK_ERR_RET(glGetString(GL_VERSION)));
 
 	createCommonDrawResources();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);
