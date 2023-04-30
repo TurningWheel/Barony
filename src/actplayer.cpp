@@ -3542,7 +3542,7 @@ void actPlayer(Entity* my)
 						{
 							if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 							{
-								// dont try to move our equipped item - it's an edge case to crash
+								// don't try to move our equipped item - it's an edge case to crash
 								if ( tempItem->appearance == item2->appearance )
 								{
 									// items are the same (incl. appearance!)
@@ -3746,7 +3746,7 @@ void actPlayer(Entity* my)
 									}
 									if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 									{
-										// dont try to move our equipped item - it's an edge case to crash
+										// don't try to move our equipped item - it's an edge case to crash
 										if ( tempItem->appearance == item2->appearance )
 										{
 											// items are the same (incl. appearance!)
@@ -3817,7 +3817,7 @@ void actPlayer(Entity* my)
 								{
 									if ( itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 									{
-										// dont try to move our equipped item - it's an edge case to crash
+										// don't try to move our equipped item - it's an edge case to crash
 										if ( tempItem->appearance == item2->appearance )
 										{
 											// items are the same (incl. appearance!)

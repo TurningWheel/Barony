@@ -2784,7 +2784,7 @@ void actMonster(Entity* my)
 				my->monsterLichFireMeleeSeq = 0;
 				// acquire a new target.
 				lichDist = 1024;
-				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures need to be targetted.
+				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures need to be targeted.
 				{
 					Entity* tempEntity = (Entity*)node->element;
 					if ( tempEntity->behavior == &actPlayer 
@@ -2812,7 +2812,7 @@ void actMonster(Entity* my)
 				my->monsterLichFireMeleeSeq = 0;
 				// acquire a new target.
 				lichDist = 1024;
-				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures need to be targetted.
+				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures need to be targeted.
 				{
 					Entity* tempEntity = (Entity*)node->element;
 					if ( tempEntity && tempEntity->behavior == &actPlayer

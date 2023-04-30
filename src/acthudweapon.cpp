@@ -385,7 +385,7 @@ void actHudWeapon(Entity* my)
 		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
-		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much
+		my->parent = entity->getUID(); // just an easy way to refer to each other, doesn't mean much
 		playerHud.arm = entity;
 		parent = playerHud.arm;
 		entity->behavior = &actHudArm;
@@ -398,7 +398,7 @@ void actHudWeapon(Entity* my)
 	if ( players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr
 		|| (players[HUDWEAPON_PLAYERNUM]->entity && players[HUDWEAPON_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		playerHud.weapon = nullptr; //PLAYER DED. NULLIFY THIS.
+		playerHud.weapon = nullptr; //PLAYER DEAD. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
 	}
