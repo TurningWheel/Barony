@@ -126,7 +126,6 @@ public:
 		bool displayOnHUD = false;
 		bool expired = false;
 		real_t depletionAnimationPercent = 100.0;
-		float glWorldOffsetY = 0.0;
 		EnemyHPDetails() {};
 		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, const char* name, bool isLowPriority)
 		{

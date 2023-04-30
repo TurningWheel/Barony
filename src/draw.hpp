@@ -35,7 +35,7 @@ mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float to
 mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
 mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
 mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16]);
-bool invertMatrix4x4(const mat4x4_t* m, float invOut[16]);
+bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m);
 vec4_t project(
     const vec4_t* world,
     const mat4x4_t* model,

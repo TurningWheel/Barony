@@ -252,10 +252,9 @@ mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 	return result;
 }
 
-bool invertMatrix4x4(const mat4x4_t* m, float invOut[16])
+bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m)
 {
-	double inv[16], det;
-	int i;
+	float inv[16];
 
 	inv[0] = m->y.y * m->z.z * m->w.w -
 		m->y.y * m->z.w * m->w.z -
@@ -369,15 +368,18 @@ bool invertMatrix4x4(const mat4x4_t* m, float invOut[16])
 		m->z.x * m->x.y * m->y.z -
 		m->z.x * m->x.z * m->y.y;
 
-	det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
+	float det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
 
-	if ( det == 0 )
-		return false;
+    if (det == 0.f) {
+        return false;
+    }
 
-	det = 1.0 / det;
+	det = 1.f / det;
 
-	for ( i = 0; i < 16; i++ )
-		invOut[i] = inv[i] * det;
+    float* out = (float*)result;
+    for (int i = 0; i < 16; ++i) {
+        out[i] = inv[i] * det;
+    }
 
 	return true;
 }
@@ -392,12 +394,6 @@ vec4_t project(
 	vec4_t result = *world; result.w = 1.f;
 	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
 	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
-
-	//float invertedProjview[16];
-	//invertMatrix4x4(projview, invertedProjview);
-	//mat4x4_t invertedProjviewMat;
-	//mat_from_array(&invertedProjviewMat, invertedProjview);
-	//mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
 
 	vec4 half(0.5f);
 	vec4 w(result.w);
@@ -416,24 +412,20 @@ vec4_t unproject(
 	const vec4_t* window
 ) {
 	vec4_t result = *screenCoords;
-	result.x -= window->x;
-	result.y -= window->y;
-	result.x /= window->z;
-	result.y /= window->w;
+	result.x = (result.x - window->x) / window->z;
+	result.y = (result.y - window->y) / window->w;
 
 	vec4 half(0.5f);
 	sub_vec4(&result, &result, &half);
 	div_vec4(&result, &result, &half);
 
-	float invertedProjview[16];
-	invertMatrix4x4(projview, invertedProjview);
-	mat4x4_t invertedProjviewMat;
-	mat_from_array(&invertedProjviewMat, invertedProjview);
-	vec4 copy = vec4_copy(&result);
-	mul_mat_vec4(&result, &invertedProjviewMat, &copy);
-
-	vec4 w(result.w);
-	div_vec4(&result, &result, &w);
+    vec4 copy;
+    mat4x4_t inv;
+    invertMatrix4x4(&inv, projview);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, &inv, &copy);
+    
+    vec4 w(result.w);
+    div_vec4(&result, &result, &w);
 
 	return result;
 }
@@ -1079,84 +1071,47 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     shader.bind();
     
     vec4_t v;
-    mat4x4_t m, t, i;
+    mat4x4_t m, t;
     
     // model matrix
     const float height = (float)enemybar->worldZ - 6.f;
-    int drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
-        enemybar->worldSurfaceSpriteStatusEffects->h / -2 : 0;
-    drawOffsetY += enemybar->glWorldOffsetY;
-    v = vec4((float)enemybar->worldX * 2.f, -height * 2.f - 1.f - drawOffsetY, (float)enemybar->worldY * 2.f, 0.f);
-    (void)translate_mat(&m, &t, &v); t = m;
-    
-    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
-    
+    const float drawOffsetY = 0.f;
+    /*const float drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
+        enemybar->worldSurfaceSpriteStatusEffects->h / -2.f : 0.f;*/
+    v = vec4((float)enemybar->worldX * 2.f, drawOffsetY - height * 2.f, (float)enemybar->worldY * 2.f, 0.f);
+    (void)translate_mat(&t, &m, &v); m = t;
+    mat4x4_t i;
+    (void)rotate_mat(&t, &m, -90.f - camera->ang * (180.f / PI), &i.y); m = t;
+    (void)rotate_mat(&t, &m, -camera->vang * (180.f / PI), &i.x); m = t;
     const float scale = 0.08;
     v = vec4(scale * tex->w, scale * tex->h, scale * enemybar->screenDistance, 0.f);
-    (void)scale_mat(&m, &t, &v); t = m;
+    (void)scale_mat(&t, &m, &v); m = t;
     
     // don't update if dead target.
-    /*if (enemybar->enemy_hp > 0) {
-		enemybar->glWorldOffsetY = 0.f;
+    if (enemybar->enemy_hp > 0) {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
         
-        // project model matrix
-        mat4x4_t modelMat4 = m;
-        mat4x4_t projMat4 = camera->projview;
-        vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
-        mat4x4_t projViewModel4;
-        mul_mat(&projViewModel4, &projMat4, &modelMat4);
-        
-        mat4x4_t identityMatrix = mat4x4(1.f);
-        vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
-        worldCoords[0].x = -.5f; // top left
-        worldCoords[0].y =  .5f;
-        worldCoords[0].z =  0.f;
-        worldCoords[0].w =  1.f;
-        worldCoords[1].x =  .5f; // top right
-        worldCoords[1].y =  .5f;
-        worldCoords[1].z =  0.f;
-        worldCoords[1].w =  1.f;
-        worldCoords[2].x = -.5f; // bottom left
-        worldCoords[2].y = -.5f;
-        worldCoords[2].z =  0.f;
-        worldCoords[2].w =  1.f;
-        worldCoords[3].x =  .5f; // bottom right
-        worldCoords[3].y = -.5f;
-        worldCoords[3].z =  0.f;
-        worldCoords[3].w =  1.f;
-    
-        // top-left coord
-		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window);
-        if (screenCoordinates.y >= (window.w + window.y) && projViewModel4.w.z >= 0) {
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        const float topOfWindow = window.w + window.y;
+		vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
             // above camera limit
-			float pixelOffset = abs(screenCoordinates.y - (window.w + window.y));
-			screenCoordinates.y -= pixelOffset;
+			const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
+			screenCoordinates.y -= pixelOffset + (tex->h + 4.f) * 2.f;
             
             // convert back into worldCoords
-			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
-			enemybar->glWorldOffsetY = (worldCoords2.y - worldCoords[0].y);
+			const vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            m.w = worldCoords2;
 		}
-        // code to check lower bounds of camera - in case needed.
-        else if (0) {
-            // bottom-left coord
-			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window);
-            if (screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) {
-                // below camera limit
-				float pixelOffset = abs(window.y - (screenCoordinates.y));
-				screenCoordinates.y -= pixelOffset;
-                
-                // convert back into worldCoords
-				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window);
-				enemybar->glWorldOffsetY = -(worldCoords2.y - worldCoords[2].y);
-			}
-		}
-	}*/
-
-    // finish and upload model matrix
-	if (abs(enemybar->glWorldOffsetY) <= 0.001 && abs(enemybar->screenDistance) <= 0.001) {
-		// rotate up/down pitch towards camera, requires offset to be 0
-        (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
 	}
+
+    // upload model matrix
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m));
 
     // update GL state
@@ -1235,6 +1190,31 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
     v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
     (void)scale_mat(&m, &t, &v); t = m;
+    
+    // limit to top of screen:
+    {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
+        
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        const float topOfWindow = window.w + window.y;
+        vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
+            // above camera limit
+            const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
+            screenCoordinates.y -= pixelOffset + (tex->h + 24.f) * 2.f;
+            
+            // convert back into worldCoords
+            const vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            m.w = worldCoords2;
+        }
+    }
+    
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
