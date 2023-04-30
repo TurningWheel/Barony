@@ -254,6 +254,7 @@ extern Shader voxelShader;
 extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
 extern Shader worldShader;
+extern Shader worldDitheredShader;
 extern Shader worldDarkShader;
 extern Shader skyShader;
 extern Mesh skyMesh;

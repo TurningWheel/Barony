@@ -818,6 +818,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
@@ -944,15 +945,19 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     
     // bind shader
 #ifndef EDITOR
-    static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
+    static ConsoleVariable<float> cvar_testDithering("/test_dithering", 0.f);
     auto& shader = !entity->flags[BRIGHT] ?
         (*cvar_testDithering ? voxelDitheredShader : voxelShader):
         voxelBrightShader;
+    shader.bind();
+    if (*cvar_testDithering != 0.f) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"), *cvar_testDithering));
+    }
 #else
     auto& shader = entity->flags[BRIGHT] ?
         voxelBrightShader : voxelShader;
-#endif
     shader.bind();
+#endif
     
     mat4x4_t m, t, i;
     vec4_t v;

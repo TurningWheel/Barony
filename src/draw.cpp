@@ -70,6 +70,7 @@ Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
 Shader worldShader;
+Shader worldDitheredShader;
 Shader worldDarkShader;
 Shader skyShader;
 Shader spriteShader;
@@ -288,6 +289,7 @@ void createCommonDrawResources() {
 	static const char vox_dithered_fragment_glsl[] =
 		"in vec3 Color;"
 		"in vec4 WorldPos;"
+        "uniform float uDitherAmount;"
 		"uniform mat4 uColorRemap;"
         "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
@@ -295,11 +297,21 @@ void createCommonDrawResources() {
         "uniform sampler2D uLightmap;"
 		"uniform vec2 uMapDims;"
         "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
 
 		"void main() {"
-		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
-		"discard;"
-		"}"
+		"dither(ivec2(gl_FragCoord), uDitherAmount);"
 		"vec3 Remapped ="
 		"    (uColorRemap[0].rgb * Color.r)+"
 		"    (uColorRemap[1].rgb * Color.g)+"
@@ -351,6 +363,40 @@ void createCommonDrawResources() {
     buildWorldShader(worldShader, "worldShader", true,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_fragment_glsl, sizeof(world_fragment_glsl));
+    
+    static const char world_dithered_fragment_glsl[] =
+        "in vec2 TexCoord;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
+        "uniform float uDitherAmount;"
+        "uniform vec4 uLightFactor;"
+        "uniform sampler2D uTextures;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
+    
+        "void main() {"
+        "dither(ivec2(gl_FragCoord), uDitherAmount);"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
+        "}";
+    
+    buildWorldShader(worldDitheredShader, "worldDitheredShader", true,
+        world_vertex_glsl, sizeof(world_vertex_glsl),
+        world_dithered_fragment_glsl, sizeof(world_dithered_fragment_glsl));
     
     static const char world_dark_fragment_glsl[] =
         "in vec2 TexCoord;"
@@ -495,6 +541,7 @@ void destroyCommonDrawResources() {
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
     worldShader.destroy();
+    worldDitheredShader.destroy();
     worldDarkShader.destroy();
     skyShader.destroy();
     skyMesh.destroy();
