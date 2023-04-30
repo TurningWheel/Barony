@@ -886,8 +886,8 @@ void glEndCamera(view_t* camera, bool useHDR)
             }
         }
         const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
-        const float brightness = vidgamma;
-        const float gamma = hdr_gamma;
+        const float brightness = 1.f;
+        const float gamma = hdr_gamma * vidgamma;
         
         // blit framebuffer
         camera->fb[fbIndex].hdrDraw(brightness, gamma, exposure);

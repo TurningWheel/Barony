@@ -304,7 +304,7 @@ void Frame::postdraw() {
         gui_fb.draw();
         gui_fb_downscaled.unbindForWriting();
         gui_fb_downscaled.bindForReading();
-        gui_fb_downscaled.draw(hdrEnabled ? vidgamma : 1.f);
+        gui_fb_downscaled.draw();
     }
     else if (*ui_upscale) {
         gui_fb_upscaled.bindForWriting();
@@ -312,10 +312,10 @@ void Frame::postdraw() {
         gui_fb.draw();
         gui_fb_upscaled.unbindForWriting();
         gui_fb_upscaled.bindForReading();
-        gui_fb_upscaled.draw(hdrEnabled ? vidgamma : 1.f);
+        gui_fb_upscaled.draw();
     }
     else {
-        gui_fb.draw(hdrEnabled ? vidgamma : 1.f);
+        gui_fb.draw();
     }
     framebuffer::unbindForReading();
     GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -342,7 +342,7 @@ void Frame::postdraw() {
     GL_CHECK_ERR(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE));
     gui_fb.unbindForWriting();
 	gui_fb.bindForReading();
-    gui_fb.draw(hdrEnabled ? vidgamma : 1.f);
+    gui_fb.draw();
 	framebuffer::unbindForReading();
     GL_CHECK_ERR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     GL_CHECK_ERR(glDisable(GL_BLEND));
