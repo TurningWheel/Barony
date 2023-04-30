@@ -50,7 +50,7 @@ jobs:
         mv ../build/ ../build-editor/
         
     - name: Upload Game Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         # Artifact name
         name: Game_fmod_steam_eos # optional
@@ -58,7 +58,7 @@ jobs:
         path: build-barony/release/barony
         
     - name: Upload Editor Build Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         # Artifact name
         name: Editor_fmod_steam # optional
