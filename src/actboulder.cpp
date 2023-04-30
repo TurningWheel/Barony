@@ -908,9 +908,7 @@ void actBoulder(Entity* my)
 						if ( players[i] && players[i]->entity ) {
                             auto ring = stats[i]->ring;
                             if (ring && ring->type == ItemType::RING_STRENGTH) {
-                                if (ring->beatitude >= 0) {
-                                    hasRingOfStr = true;
-                                }
+                                hasRingOfStr = true;
                             }
 						}
 						if ( !hasRingOfStr )

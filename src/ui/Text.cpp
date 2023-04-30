@@ -258,14 +258,28 @@ void Text::render() {
 				}
 			}
 		}
-
+        
+        // create GL texture object
         GL_CHECK_ERR(glGenTextures(1, &texid));
         GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
         GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
         GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
         GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
         GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
+        
+        // check whether we can fit the surf data into the texture
+        GLint maxSize;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+        if (surf->w <= GL_MAX_TEXTURE_SIZE && surf->h <= GL_MAX_TEXTURE_SIZE) {
+            // we can fit the texture
+            GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h,
+                0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
+        } else {
+            // we cannot fit the texture
+            GL_CHECK_ERR(glDeleteTextures(1, &texid));
+            texid = 0;
+        }
+        
 		SDL_UnlockSurface(surf);
 	}
 

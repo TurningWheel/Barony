@@ -2184,6 +2184,7 @@ void actPlayer(Entity* my)
 		nametag->flags[PASSABLE] = true;
 		nametag->flags[SPRITE] = true;
 		nametag->flags[UNCLICKABLE] = true;
+        nametag->flags[BRIGHT] = true;
 		nametag->behavior = &actSpriteNametag;
 		nametag->parent = my->getUID();
 		nametag->scalex = 0.2;

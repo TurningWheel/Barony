@@ -1589,6 +1589,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
             nametag->flags[PASSABLE] = true;
             nametag->flags[SPRITE] = true;
             nametag->flags[UNCLICKABLE] = true;
+            nametag->flags[BRIGHT] = true;
             nametag->behavior = &actSpriteNametag;
             nametag->parent = my->getUID();
             nametag->scalex = 0.2;
@@ -8724,6 +8725,7 @@ bool forceFollower(Entity& leader, Entity& follower)
             nametag->flags[PASSABLE] = true;
             nametag->flags[SPRITE] = true;
             nametag->flags[UNCLICKABLE] = true;
+            nametag->flags[BRIGHT] = true;
             nametag->behavior = &actSpriteNametag;
             nametag->parent = follower.getUID();
             nametag->scalex = 0.2;

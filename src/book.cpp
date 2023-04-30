@@ -608,7 +608,7 @@ void BookParser_t::createBook(std::string filename)
 	tmpField->setSize(SDL_Rect{ 0, 0, Player::BookGUI_t::BOOK_PAGE_WIDTH, Player::BookGUI_t::BOOK_PAGE_HEIGHT });
 	tmpField->setFont("fonts/pixel_maz.ttf#32");
 	tmpField->setText(pageText.c_str());
-	tmpField->reflowTextToFit(0);
+	tmpField->reflowTextToFit(0, false);
 
 	int len = strlen(tmpField->getText());
 	char* reflowedText = (char*)malloc(len + 1);

@@ -3895,6 +3895,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
                     nametag->flags[PASSABLE] = true;
                     nametag->flags[SPRITE] = true;
                     nametag->flags[UNCLICKABLE] = true;
+                    nametag->flags[BRIGHT] = true;
                     nametag->behavior = &actSpriteNametag;
                     nametag->parent = monster->getUID();
                     nametag->scalex = 0.2;
