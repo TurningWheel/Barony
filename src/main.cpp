@@ -521,7 +521,7 @@ Uint32 imgref = 1, vboref = 1;
 const Uint32 ttfTextCacheLimit = 9000;
 GLuint* texid = nullptr;
 bool disablevbos = false;
-Uint32 fov = 65;
+Uint32 fov = 60;
 Uint32 fpsLimit = 60;
 //GLuint *vboid=nullptr, *vaoid=nullptr;
 SDL_Surface** allsurfaces;

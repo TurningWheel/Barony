@@ -325,6 +325,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount)
 	entity->skill[0] = dmgAmount;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actDamageGib;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;

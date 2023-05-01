@@ -247,6 +247,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
@@ -291,6 +292,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
@@ -312,6 +314,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->x = explosion->x;
 		entity->y = explosion->y;
 		entity->z = explosion->z;
+        entity->ditheringDisabled = true;
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
@@ -368,6 +371,7 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
@@ -389,6 +393,7 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 		entity->x = explosion->x;
 		entity->y = explosion->y;
 		entity->z = explosion->z;
+        entity->ditheringDisabled = true;
 		entity->flags[SPRITE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
@@ -416,6 +421,7 @@ Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
@@ -486,6 +492,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -534,6 +541,7 @@ Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+    entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = false;

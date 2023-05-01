@@ -1435,6 +1435,7 @@ void gameLogic(void)
 													entity->x = x * 16 + local_rng.rand() % 16;
 													entity->y = y * 16 + local_rng.rand() % 16;
 													entity->z = 7.5;
+                                                    entity->ditheringDisabled = true;
 													entity->flags[PASSABLE] = true;
 													entity->flags[SPRITE] = true;
 													entity->flags[NOUPDATE] = true;
@@ -2886,6 +2887,7 @@ void gameLogic(void)
 													entity->x = x * 16 + local_rng.rand() % 16;
 													entity->y = y * 16 + local_rng.rand() % 16;
 													entity->z = 7.5;
+                                                    entity->ditheringDisabled = true;
 													entity->flags[PASSABLE] = true;
 													entity->flags[SPRITE] = true;
 													entity->flags[NOUPDATE] = true;

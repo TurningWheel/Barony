@@ -74,6 +74,7 @@ Shader worldDitheredShader;
 Shader worldDarkShader;
 Shader skyShader;
 Shader spriteShader;
+Shader spriteDitheredShader;
 Shader spriteBrightShader;
 TempTexture* lightmapTexture;
 
@@ -496,6 +497,43 @@ void createCommonDrawResources() {
         sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
         sprite_fragment_glsl, sizeof(sprite_fragment_glsl));
     
+    static const char sprite_dithered_fragment_glsl[] =
+        "in vec4 WorldPos;"
+        "in vec2 TexCoord;"
+        "uniform float uDitherAmount;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uTexture;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
+
+        "void main() {"
+        "dither(ivec2(gl_FragCoord), uDitherAmount);"
+        "vec4 Texture = texture(uTexture, TexCoord);"
+        "if (Texture.a <= 0) discard;"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "}";
+
+    buildSpriteShader(spriteDitheredShader, "spriteDitheredShader", true,
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
+        sprite_dithered_fragment_glsl, sizeof(sprite_dithered_fragment_glsl));
+    
     static const char sprite_bright_vertex_glsl[] =
         "in vec3 iPosition;"
         "in vec2 iTexCoord;"
@@ -546,6 +584,7 @@ void destroyCommonDrawResources() {
     skyShader.destroy();
     skyMesh.destroy();
     spriteShader.destroy();
+    spriteDitheredShader.destroy();
     spriteBrightShader.destroy();
     spriteMesh.destroy();
     lineShader.destroy();
@@ -1817,83 +1856,102 @@ void drawEntities3D(view_t* camera, int mode)
 
 	node_t* nextnode = nullptr;
 	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
-	{
-		Entity* entity = (Entity*)node->element;
-		nextnode = node->next;
-		if ( node->next == nullptr && node->list == map.entities )
-		{
-			if ( map.worldUI && map.worldUI->first )
-			{
-				// quick way to attach worldUI to the end of map.entities.
-				nextnode = map.worldUI->first;
-			}
-		}
-
-		if ( entity->flags[INVISIBLE] )
-		{
-			continue;
-		}
-		if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS )
-		{
-			continue;
-		}
-		if ( entity->flags[GENIUS] )
-		{
-			// genius entities are not drawn when the camera is inside their bounding box
-			if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
-				if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
-				{
-					continue;
-				}
-		}
-		if ( entity->flags[OVERDRAW] && splitscreen )
-		{
-			// need to skip some HUD models in splitscreen.
-			if ( currentPlayerViewport >= 0 )
-			{
-				if ( entity->behavior == &actHudWeapon 
-					|| entity->behavior == &actHudArm 
-					|| entity->behavior == &actGib
-					|| entity->behavior == &actFlame )
-				{
-					// the gibs are from casting magic in the HUD
-					if ( entity->skill[11] != currentPlayerViewport )
-					{
-						continue;
-					}
-				}
-				else if ( entity->behavior == &actHudAdditional
-					|| entity->behavior == &actHudArrowModel
-					|| entity->behavior == &actHudShield
-					|| entity->behavior == &actLeftHandMagic
-					|| entity->behavior == &actRightHandMagic )
-				{
-					if ( entity->skill[2] != currentPlayerViewport )
-					{
-						continue;
-					}
-				}
-			}
-		}
-
-		int x = entity->x / 16;
-		int y = entity->y / 16;
-		if ( !entity->flags[OVERDRAW] )
-		{
-			if (x >= 0 && y >= 0 && x < map.width && y < map.height)
-			{
-				if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
-				{
-					continue;
-				}
-			}
-			const real_t rx = entity->x / 16.0;
-			const real_t ry = entity->y / 16.0;
-			if ( behindCamera(*camera, rx, ry) )
-			{
-				continue;
-			}
-		}
+    {
+        Entity* entity = (Entity*)node->element;
+        nextnode = node->next;
+        if ( node->next == nullptr && node->list == map.entities )
+        {
+            if ( map.worldUI && map.worldUI->first )
+            {
+                // quick way to attach worldUI to the end of map.entities.
+                nextnode = map.worldUI->first;
+            }
+        }
+        
+        if ( entity->flags[INVISIBLE] )
+        {
+            continue;
+        }
+        if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS )
+        {
+            continue;
+        }
+        if ( entity->flags[GENIUS] )
+        {
+            // genius entities are not drawn when the camera is inside their bounding box
+            if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
+                if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
+                {
+                    continue;
+                }
+        }
+        if ( entity->flags[OVERDRAW] && splitscreen )
+        {
+            // need to skip some HUD models in splitscreen.
+            if ( currentPlayerViewport >= 0 )
+            {
+                if ( entity->behavior == &actHudWeapon
+                    || entity->behavior == &actHudArm
+                    || entity->behavior == &actGib
+                    || entity->behavior == &actFlame )
+                {
+                    // the gibs are from casting magic in the HUD
+                    if ( entity->skill[11] != currentPlayerViewport )
+                    {
+                        continue;
+                    }
+                }
+                else if ( entity->behavior == &actHudAdditional
+                         || entity->behavior == &actHudArrowModel
+                         || entity->behavior == &actHudShield
+                         || entity->behavior == &actLeftHandMagic
+                         || entity->behavior == &actRightHandMagic )
+                {
+                    if ( entity->skill[2] != currentPlayerViewport )
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        // update dithering
+        auto& dither = entity->dithering[camera];
+        if (ticks != dither.lastUpdateTick) {
+            dither.lastUpdateTick = ticks;
+            bool decrease = false;
+            if ( !entity->flags[OVERDRAW] )
+            {
+                const int x = entity->x / 16;
+                const int y = entity->y / 16;
+                if (x >= 0 && y >= 0 && x < map.width && y < map.height)
+                {
+                    if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
+                    {
+                        decrease = true;
+                        goto end;
+                    }
+                }
+                const real_t rx = entity->x / 16.0;
+                const real_t ry = entity->y / 16.0;
+                if ( behindCamera(*camera, rx, ry) )
+                {
+                    decrease = true;
+                    goto end;
+                }
+            }
+            end:
+            if (entity->ditheringDisabled) {
+                dither.value = decrease ? 0 : Entity::Dither::MAX;
+            } else {
+                dither.value = decrease ? std::max(0, dither.value - 1) :
+                    std::min(Entity::Dither::MAX, dither.value + 1);
+            }
+        }
+        if (dither.value == 0) {
+            continue;
+        }
+        
 		if ( entity->flags[SPRITE] == false )
 		{
             GL_CHECK_ERR(glDrawVoxel(camera, entity, mode));

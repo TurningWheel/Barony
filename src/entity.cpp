@@ -3545,6 +3545,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( entity )
 		{
 			entity->sprite = 29;
+            entity->ditheringDisabled = true;
 			entity->flags[SPRITE] = true;
 			entity->flags[GENIUS] = true;
 			entity->flags[INVISIBLE] = false;
@@ -19738,6 +19739,7 @@ void Entity::createWorldUITooltip()
 		worldTooltip->z = this->z;
 		worldTooltip->sizex = 1;
 		worldTooltip->sizey = 1;
+        worldTooltip->ditheringDisabled = true;
 		worldTooltip->flags[NOUPDATE] = true;
 		worldTooltip->flags[PASSABLE] = true;
 		worldTooltip->flags[SPRITE] = true;

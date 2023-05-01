@@ -139,6 +139,7 @@ void actArrow(Entity* my)
 				if ( flame )
 				{
 					flame->flags[SPRITE] = true;
+                    flame->ditheringDisabled = true;
 				}
 			}
 		}
@@ -151,6 +152,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}
@@ -162,6 +164,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}
@@ -173,6 +176,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}
@@ -184,6 +188,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}
@@ -195,6 +200,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}
@@ -206,6 +212,7 @@ void actArrow(Entity* my)
 			if ( particle )
 			{
 				particle->flags[SPRITE] = true;
+                particle->ditheringDisabled = true;
 			}
 		}
 	}

@@ -433,7 +433,6 @@ typedef struct map_t
 	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32 flags[16];
 	Sint32* tiles;
-	//bool* vismap;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.

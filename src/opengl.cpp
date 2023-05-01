@@ -822,6 +822,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
     uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
 }
 
@@ -944,20 +945,17 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	}
     
     // bind shader
-#ifndef EDITOR
-    static ConsoleVariable<float> cvar_testDithering("/test_dithering", 0.f);
+    auto& dither = entity->dithering[camera];
     auto& shader = !entity->flags[BRIGHT] ?
-        (*cvar_testDithering ? voxelDitheredShader : voxelShader):
+        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
         voxelBrightShader;
     shader.bind();
-    if (*cvar_testDithering != 0.f) {
-        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"), *cvar_testDithering));
+    
+    // upload dither amount, if necessary
+    if (&shader == &voxelDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
     }
-#else
-    auto& shader = entity->flags[BRIGHT] ?
-        voxelBrightShader : voxelShader;
-    shader.bind();
-#endif
     
     mat4x4_t m, t, i;
     vec4_t v;
@@ -1397,9 +1395,17 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
     
     // bind shader
-    auto& shader = entity->flags[BRIGHT] ?
-        spriteBrightShader : spriteShader;
+    auto& dither = entity->dithering[camera];
+    auto& shader = !entity->flags[BRIGHT] ?
+        (dither.value < Entity::Dither::MAX ? spriteDitheredShader : spriteShader):
+        spriteBrightShader;
     shader.bind();
+    
+    // upload dither amount, if necessary
+    if (&shader == &spriteDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
+    }
     
     vec4_t v;
     mat4x4_t m, t, i;
@@ -1501,8 +1507,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 	}
     
     // bind shader
-    auto& shader = entity->flags[BRIGHT] ?
-        spriteBrightShader : spriteShader;
+    auto& shader = spriteBrightShader;
     shader.bind();
     
     vec4_t v;
@@ -1530,17 +1535,13 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    if (entity->flags[BRIGHT]) {
-        const float b = std::max(1.f, camera->luminance * 4.f);
-        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-        const GLfloat light[4] = { b, b, b, 1.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
-        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
-    } else {
-        uploadLightUniforms(camera, shader, entity, mode, false);
-    }
+    const float b = std::max(1.f, camera->luminance * 4.f);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
     // draw
     spriteMesh.draw();
@@ -1642,16 +1643,21 @@ void glDrawWorld(view_t* camera, int mode)
     int cloudtile;
     const bool clouds = shouldDrawClouds(map, &cloudtile);
     
-    // bind shader
+    // upload uniforms for dither shader
+    if (mode == REALCOLORS) {
+        worldDitheredShader.bind();
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        GL_CHECK_ERR(glUniform4fv(worldDitheredShader.uniform("uLightFactor"), 1, light));
+    }
+    
+    // bind core shader
     auto& shader = mode == REALCOLORS ?
         worldShader : worldDarkShader;
     shader.bind();
     
-    // upload uniforms
-    if (mode == REALCOLORS) {
-        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
-    }
+    // upload uniforms for core shader
+    const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     
     // draw tile chunks
     int index = 0;
@@ -1659,37 +1665,56 @@ void glDrawWorld(view_t* camera, int mode)
     const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
     const int yoff = 1;
     for (auto& chunk : chunks) {
-        for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
-            for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
-                if (camera->vismap[y + x * map.height]) {
-                    if (chunk.isDirty(map)) {
-                        const auto ceiling = !shouldDrawClouds(map);
-                        chunk.build(map, ceiling, chunk.x, chunk.y, chunk.w, chunk.h);
-                        
-                        // build neighbor chunks as well (in-case there are shared walls)
-                        if (chunk.x + chunk.w < map.width) { // build east chunk
-                            auto& nChunk = chunks[index + xoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.y + chunk.h < map.height) { // build south chunk
-                            auto& nChunk = chunks[index + yoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.x > 0) { // build west chunk
-                            auto& nChunk = chunks[index - xoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.y > 0) { // build north chunk
-                            auto& nChunk = chunks[index - yoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
+        auto& dither = chunk.dithering[camera];
+        if (ticks != dither.lastUpdateTick) {
+            dither.lastUpdateTick = ticks;
+            for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
+                for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
+                    if (camera->vismap[y + x * map.height]) {
+                        dither.value = std::min(10, dither.value + 1);
+                        goto end;
                     }
-                    chunk.draw();
-                    goto next;
                 }
             }
+            dither.value = std::max(0, dither.value - 1);
+            end:;
         }
-    next:
+        if (dither.value) {
+            if (chunk.isDirty(map)) {
+                chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+                
+                // build neighbor chunks as well (in-case there are shared walls)
+                if (chunk.x + chunk.w < map.width) { // build east chunk
+                    auto& nChunk = chunks[index + xoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.y + chunk.h < map.height) { // build south chunk
+                    auto& nChunk = chunks[index + yoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.x > 0) { // build west chunk
+                    auto& nChunk = chunks[index - xoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.y > 0) { // build north chunk
+                    auto& nChunk = chunks[index - yoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+            }
+            if (mode == REALCOLORS) {
+                if (dither.value == 10) {
+                    worldShader.bind();
+                    chunk.draw();
+                } else {
+                    worldDitheredShader.bind();
+                    GL_CHECK_ERR(glUniform1f(worldDitheredShader.uniform("uDitherAmount"),
+                        (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Chunk::Dither::MAX / 2 - 1))));
+                    chunk.draw();
+                }
+            } else {
+                chunk.draw();
+            }
+        }
         ++index;
     }
     
@@ -1847,16 +1872,13 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
     const int endY = std::min((int)map.height, startY + h);
     
     // copy tiles
-    if (this->tiles) {
-        delete[] this->tiles;
-    }
-    
     this->x = startX;
     this->y = startY;
     this->w = endX - startX;
     this->h = endY - startY;
     const int sizeOfTiles = this->w * this->h * MAPLAYERS;
-    this->tiles = new Sint32[sizeOfTiles];
+    this->tiles.clear();
+    this->tiles.resize(sizeOfTiles);
     
     for (int x = startX; x < endX; ++x) {
         for (int y = startY; y < endY; ++y) {
@@ -2358,10 +2380,6 @@ void Chunk::destroyBuffers() {
         GL_CHECK_ERR(glDeleteBuffers(1, &vbo_colors));
         vbo_colors = 0;
     }
-    if (tiles) {
-        delete[] tiles;
-        tiles = nullptr;
-    }
     indices = 0;
 }
 
@@ -2397,7 +2415,7 @@ void Chunk::draw() {
 }
 
 bool Chunk::isDirty(const map_t& map) {
-    if (!tiles) {
+    if (tiles.empty()) {
         return true;
     }
     for (int u = 0; u < w; ++u) {

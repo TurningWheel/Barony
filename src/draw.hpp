@@ -259,6 +259,7 @@ extern Shader worldDarkShader;
 extern Shader skyShader;
 extern Mesh skyMesh;
 extern Shader spriteShader;
+extern Shader spriteDitheredShader;
 extern Shader spriteBrightShader;
 extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture;
@@ -286,7 +287,6 @@ struct Chunk {
         y = rhs.y;
         w = rhs.w;
         h = rhs.h;
-        tiles = rhs.tiles;
         
         rhs.vao = 0;
         rhs.vbo_positions = 0;
@@ -297,7 +297,9 @@ struct Chunk {
         rhs.y = 0;
         rhs.w = 0;
         rhs.h = 0;
-        rhs.tiles = nullptr;
+        
+        tiles.swap(rhs.tiles);
+        dithering.swap(rhs.dithering);
     }
     
     Chunk& operator=(Chunk&& rhs) {
@@ -310,7 +312,6 @@ struct Chunk {
         y = rhs.y;
         w = rhs.w;
         h = rhs.h;
-        tiles = rhs.tiles;
         
         rhs.vao = 0;
         rhs.vbo_positions = 0;
@@ -321,7 +322,9 @@ struct Chunk {
         rhs.y = 0;
         rhs.w = 0;
         rhs.h = 0;
-        rhs.tiles = nullptr;
+        
+        tiles.swap(rhs.tiles);
+        dithering.swap(rhs.dithering);
         return *this;
     }
     
@@ -336,7 +339,14 @@ struct Chunk {
     bool isDirty(const map_t& map);
     
     int x = 0, y = 0, w = 0, h = 0;
-    Sint32* tiles = nullptr;
+    std::vector<Sint32> tiles;
+    
+    struct Dither {
+        int value = 0;
+        Uint32 lastUpdateTick = 0;
+        static constexpr int MAX = 10;
+    };
+    std::unordered_map<view_t*, Dither> dithering;
 };
 void clearChunks();
 void createChunks();
