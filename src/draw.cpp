@@ -1034,7 +1034,7 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
         
         static const char g_glsl[] =
             "layout (points) in;"
-            "layout (triangle_strip, max_vertices = 256) out;"
+            "layout (triangle_strip, max_vertices = 64) out;"
         
             "uniform mat4 uProj;"
             "uniform mat4 uView;"
@@ -1054,16 +1054,17 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
         
             "void main() {"
             "vec2 position = gl_in[0].gl_Position.xy;"
-            "for (float c = uAngle2; c > uAngle1; c -= 1.0) {"
+			"float step = 2.0;"
+            "for (float c = uAngle2; c > uAngle1; c -= step) {"
             "Emit(position, uInnerColor);"
         
             "float factor1 = (c - uAngle1) / (uAngle2 - uAngle1);"
             "float radius1 = uRadius2 * factor1 + uRadius1 * (1.0 - factor1);"
             "Emit(position + vec2(cos(radians(c)) * radius1, sin(radians(c)) * radius1), uOuterColor);"
         
-            "float factor2 = (c - uAngle1 - 1.0) / (uAngle2 - uAngle1);"
+            "float factor2 = (c - uAngle1 - step) / (uAngle2 - uAngle1);"
             "float radius2 = uRadius2 * factor2 + uRadius1 * (1.0 - factor2);"
-            "Emit(position + vec2(cos(radians(c - 1.0)) * radius2, sin(radians(c - 1.0)) * radius2), uOuterColor);"
+            "Emit(position + vec2(cos(radians(c - step)) * radius2, sin(radians(c - step)) * radius2), uOuterColor);"
         
             "EndPrimitive();"
             "}"
@@ -1082,8 +1083,7 @@ static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, r
         gearShader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
         gearShader.bindAttribLocation("iPosition", 0);
         
-        // 1024 is the highest we can go, but that leaves no components for color.
-        //gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT, 256);
+        //gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT, 64);
         //gearShader.setParameter(GL_GEOMETRY_INPUT_TYPE, GL_POINTS);
         //gearShader.setParameter(GL_GEOMETRY_OUTPUT_TYPE, GL_TRIANGLES);
         gearShader.link();
@@ -1296,16 +1296,18 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 			r + p * 2 - t,
 			r + p * 2,
             color_bright, color);
-        drawScalingFilledArc(x, y,
-            size * 1 / 3,
-            size * 1 / 3,
-            r, r + p * 2,
-            color_dark, color);
-        drawScalingFilledArc(x, y,
-            size * 1 / 6,
-            size * 1 / 6,
-            r, r + p * 2,
-            black, black);
+	}
+	for (int c = 0; c < 360; c += 10) {
+		drawScalingFilledArc(x, y,
+			size * 1 / 3,
+			size * 1 / 3,
+			c, c + 10,
+			color_dark, color);
+		drawScalingFilledArc(x, y,
+			size * 1 / 6,
+			size * 1 / 6,
+			c, c + 10,
+			black, black);
 	}
 }
 
