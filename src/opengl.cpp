@@ -1106,10 +1106,11 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
         if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
             // above camera limit
 			const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
-			screenCoordinates.y -= pixelOffset + (tex->h + 4.f) * 2.f;
+			screenCoordinates.y -= pixelOffset;
             
             // convert back into worldCoords
-			const vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+			vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
             m.w = worldCoords2;
 		}
 	}
@@ -1210,10 +1211,11 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
         if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
             // above camera limit
             const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
-            screenCoordinates.y -= pixelOffset + (tex->h + 24.f) * 2.f;
+            screenCoordinates.y -= pixelOffset;
             
             // convert back into worldCoords
-            const vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
             m.w = worldCoords2;
         }
     }
