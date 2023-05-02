@@ -195,7 +195,25 @@ extern bool autoLimbReload;
 
 void printlog(const char* str, ...);
 const char* gl_error_string(GLenum err);
-#define GL_CHECK_ERR(expression) ({\
+#ifdef _MSC_VER
+#define GL_CHECK_ERR(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+		}\
+	}
+#define GL_CHECK_ERR_RET(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+		}\
+	}
+#else
+#define GL_CHECK_ERR(expression) ({ \
     expression;\
     GLenum err;\
     while((err = glGetError()) != GL_NO_ERROR) {\
@@ -203,7 +221,7 @@ const char* gl_error_string(GLenum err);
             (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
     }\
 })
-#define GL_CHECK_ERR_RET(expression) ({\
+#define GL_CHECK_ERR_RET(expression) ({ \
     auto retval = expression;\
     GLenum err;\
     while((err = glGetError()) != GL_NO_ERROR) {\
@@ -212,6 +230,7 @@ const char* gl_error_string(GLenum err);
     }\
     retval;\
 })
+#endif
 
 typedef struct vec4 {
     vec4(float f):

@@ -365,10 +365,17 @@ int initApp(char const * const title, int fullscreen)
 		return 3;
 	}
 
+#ifdef WINDOWS
+	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
+		glGetString(GL_VENDOR),
+		glGetString(GL_RENDERER),
+		glGetString(GL_VERSION));
+#else
 	printlog("[OpenGL]: Graphics Vendor: %s | Renderer: %s | Version: %s",
 		GL_CHECK_ERR_RET(glGetString(GL_VENDOR)),
         GL_CHECK_ERR_RET(glGetString(GL_RENDERER)),
         GL_CHECK_ERR_RET(glGetString(GL_VERSION)));
+#endif
 
 	createCommonDrawResources();
 	main_framebuffer.init(xres, yres, GL_NEAREST, GL_NEAREST);

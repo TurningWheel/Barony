@@ -5039,7 +5039,7 @@ void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, floa
     const SDL_Rect src{(int)sx, (int)sy, (int)sw, (int)sh};
     const SDL_Rect dest{(int)x, (int)y, (int)w, (int)h};
     const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	Image::drawColor(texID, (int)sw, (int)sh,
+	Image::draw(texID, (int)sw, (int)sh,
         &src, dest, viewport, color);
 }
 
