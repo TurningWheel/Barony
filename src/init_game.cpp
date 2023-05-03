@@ -542,6 +542,9 @@ void deinitGame()
         menucam.fb[i].destroy();
     }
 
+	// destroy enemy hp bar textures
+	EnemyHPDamageBarHandler::dumpCache();
+
 	// send disconnect messages
 	if (multiplayer != SINGLE) {
 	    if ( multiplayer == CLIENT )
