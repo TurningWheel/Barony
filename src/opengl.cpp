@@ -863,19 +863,24 @@ void glEndCamera(view_t* camera, bool useHDR)
         GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
         
         // calculate luminance
-        typedef GLfloat f;
         camera->fb[fbIndex].bindForReading();
-        auto pixels = (f*)camera->fb[fbIndex].lock();
+        auto pixels = camera->fb[fbIndex].lock();
         if (pixels) {
-            f v[4] = { 0.f };
+            float v[4] = { 0.f };
             const int size = camera->winw * camera->winh * 4;
             const auto end = pixels + size;
             const int step = size / 64;
             for (; pixels < end; pixels += step) {
-                v[0] += *(pixels + 0);
-                v[1] += *(pixels + 1);
-                v[2] += *(pixels + 2);
-                v[3] += *(pixels + 3);
+                const float p[4] = {
+                    toFloat32(*(pixels + 0)),
+                    toFloat32(*(pixels + 1)),
+                    toFloat32(*(pixels + 2)),
+                    toFloat32(*(pixels + 3)),
+                };
+                v[0] += p[0];
+                v[1] += p[1];
+                v[2] += p[2];
+                v[3] += p[3];
             }
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
             luminance = luminance / (size / step);

@@ -47,6 +47,28 @@ vec4_t unproject(
     const mat4x4_t* projview,
     const vec4_t* window);
 
+// The following f16/f32 conversion functions courtesy of glm
+// https://github.com/g-truc/glm
+
+union uif32 {
+	uif32() :
+		i(0)
+	{}
+	uif32(float f_) :
+		f(f_)
+	{}
+	uif32(unsigned int i_) :
+		i(i_)
+	{}
+
+	float f;
+	unsigned int i;
+};
+
+float foverflow();
+float toFloat32(GLhalf value);
+GLhalf toFloat16(float f);
+
 class TempTexture {
 private:
     GLuint _texid = 0;
@@ -157,7 +179,7 @@ struct framebuffer {
     void bindForWriting();
     void bindForReading() const;
     
-    void* lock();
+    GLhalf* lock();
     void unlock();
     
     void draw(float brightness = 1.f);
