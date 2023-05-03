@@ -87,6 +87,7 @@ extern int startfloor;
 extern bool skipintro;
 extern Uint32 uniqueGameKey;
 extern bool arachnophobia_filter;
+extern bool colorblind_lobby;
 
 // definitions
 extern bool showfps;

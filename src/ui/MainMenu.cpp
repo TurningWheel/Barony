@@ -7506,7 +7506,7 @@ bind_failed:
 	                len = snprintf(buf, sizeof(buf), "%s: %s", players[clientnum]->getAccountName(), text);
 	            }
 	            if (len > 0) {
-					Uint32 color = playerColor(clientnum, colorblind, false);
+					Uint32 color = playerColor(clientnum, colorblind_lobby, false);
                     sendChatMessageOverNet(color, buf, len);
                 }
                 field.setText("");
@@ -12333,7 +12333,7 @@ failed:
 								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
 									int len = snprintf(buf, sizeof(buf), "%s: We need a %s.",
 										players[player]->getAccountName(), widget.getName());
-									Uint32 color = playerColor(player, colorblind, false);
+									Uint32 color = playerColor(player, colorblind_lobby, false);
 									sendChatMessageOverNet(color, buf, (size_t)len);
 									lastClassRequest = ticks;
 								} else {
@@ -13018,7 +13018,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto start = card->addField("start", 128);
 		start->setFont(smallfont_outline);
@@ -13284,7 +13290,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto invite = card->addButton("invite_button");
 		invite->setText("Click to Invite");
@@ -13337,7 +13349,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto text = card->addField("text", 128);
 		text->setText("Waiting for\nplayer to join");
@@ -13449,7 +13467,8 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
 
 		// character name needs to be updated constantly in case it gets updated over the net
 		banner->setTickCallback([](Widget& widget){
@@ -13469,6 +13488,10 @@ failed:
 
 			// set the name
 			field->setText(shortname);
+
+			// set color
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
 		    });
 
 		// account name
@@ -13477,7 +13500,8 @@ failed:
 		account->setSize(SDL_Rect{ (card->getSize().w - 260) / 2, 54, 260, 76 });
 		account->setVJustify(Field::justify_t::TOP);
 		account->setHJustify(Field::justify_t::CENTER);
-		account->setColor(playerColor(index, colorblind, false));
+		account->setColor(playerColor(index, colorblind_lobby, false));
+		account->setUserData((void*)index);
 
 		// account name needs to be updated constantly in case it gets updated over the net
 		account->setTickCallback([](Widget& widget) {
@@ -13501,6 +13525,9 @@ failed:
 					}
 				}
 			}
+
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
 			});
 
         if (local) {
@@ -14491,7 +14518,7 @@ failed:
                 	field->setText((std::string("P") + std::to_string(c + 1)).c_str());
 				}
                 field->setFont(bigfont_outline);
-				field->setColor(playerColor(c, colorblind, false));
+				field->setColor(playerColor(c, colorblind_lobby, false));
                 ++num;
 	        }
 	    }
@@ -19140,10 +19167,12 @@ failed:
 			if ( currentLobbyType != LobbyType::None )
 			{
 				int oldArachnophobiaFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
+				int oldColorblindFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND);
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
 					gameplayPreferences[i].process();
 				}
+				colorblind_lobby = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND);
 				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA) != oldArachnophobiaFilter )
 				{
 					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ARACHNOPHOBIA].value != 0 )
@@ -19153,6 +19182,17 @@ failed:
 					else
 					{
 						addLobbyChatMessage(uint32ColorWhite, language[4334]);
+					}
+				}
+				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND) != oldColorblindFilter )
+				{
+					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_COLORBLIND].value != 0 )
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4342]);
+					}
+					else
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4343]);
 					}
 				}
 			}
@@ -19503,7 +19543,7 @@ failed:
 				field->setJustify(Field::justify_t::CENTER);
 				field->setText((std::string("P") + std::to_string(player + 1)).c_str());
 				field->setFont(bigfont_outline);
-				field->setColor(playerColor(player, colorblind, false));
+				field->setColor(playerColor(player, colorblind_lobby, false));
 			}
 		}
 
@@ -20509,7 +20549,7 @@ failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-				field->setColor(playerColor(c, colorblind, false));
+				field->setColor(playerColor(c, colorblind_lobby, false));
                 ++num;
 	        }
 	    }

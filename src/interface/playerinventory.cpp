@@ -2296,9 +2296,42 @@ std::string getItemSpritePath(const int player, Item& item)
 	}
 	else
 	{
-	    node_t* imagePathsNode = nullptr;
-	    Uint32 index = item.appearance % items[item.type].variations;
-		imagePathsNode = list_Node(&items[item.type].images, index);
+		node_t* imagePathsNode = nullptr;
+		if ( item.type == TOOL_PLAYER_LOOT_BAG )
+		{
+			if ( colorblind_lobby )
+			{
+				int playerOwner = (item.appearance) % MAXPLAYERS;
+				Uint32 index = 4;
+				switch ( playerOwner )
+				{
+					case 0:
+						index = 2;
+						break;
+					case 1:
+						index = 3;
+						break;
+					case 2:
+						index = 1;
+						break;
+					case 3:
+						index = 4;
+						break;
+					default:
+						break;
+				}
+
+				imagePathsNode = list_Node(&items[item.type].images, index);
+			}
+			else
+			{
+				imagePathsNode = list_Node(&items[item.type].images, item.appearance % MAXPLAYERS);
+			}
+		}
+		else
+		{
+			imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
+		}
 		if ( imagePathsNode )
 		{
 			string_t* imagePath = static_cast<string_t*>(imagePathsNode->element);

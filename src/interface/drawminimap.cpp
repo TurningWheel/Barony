@@ -550,7 +550,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				real_t skullx = std::min<real_t>(std::max(0.0, entity->x / 16), map.width - 1);
 				real_t skully = std::min<real_t>(std::max(0.0, entity->y / 16), map.height - 1);
 				int playerOwner = entity->sprite - items[TOOL_PLAYER_LOOT_BAG].index;
-				Uint32 color = playerColor(playerOwner, colorblind, false);
+				Uint32 color = playerColor(playerOwner, colorblind_lobby, false);
 				deathboxSkulls.push_back(std::make_pair(color, std::make_pair(skullx, skully)));
 			}
 			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
@@ -634,7 +634,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					}
 
 					// set color
-		            Uint32 color = playerColor(ping.player, colorblind, false);
+		            Uint32 color = playerColor(ping.player, colorblind_lobby, false);
 			        uint8_t r, g, b, a;
 			        getColor(color, &r, &g, &b, &a);
 			        color = makeColor(r, g, b, alpha);
@@ -742,7 +742,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					if ( foundShadowTaggedEntity ) {
 						color = uint32ColorPlayerX; // grey
 					} else {
-						color = playerColor(foundplayer, colorblind, false);
+						color = playerColor(foundplayer, colorblind_lobby, false);
 					}
 				} else if ( entity->sprite == 239 ) { // minotaur
 					color_edge = uint32ColorBlack;
@@ -790,7 +790,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					if ( foundShadowTaggedEntity ) {
 						color = uint32ColorPlayerX_Ally; // grey
 					} else {
-						color = playerColor(drawMonsterAlly, colorblind, true);
+						color = playerColor(drawMonsterAlly, colorblind_lobby, true);
 					}
 				}
 

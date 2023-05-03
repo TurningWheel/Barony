@@ -2497,7 +2497,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			{
 				if ( item.type == RING_REGENERATION )
 				{
-					int healring = std::min(2, std::max(item.beatitude + 1, 1));
+					int healring = std::min(2, std::max((shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude) + 1, 1));
 					snprintf(buf, sizeof(buf), str.c_str(), healring,
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
@@ -7316,6 +7316,8 @@ void GameplayPreferences_t::process()
 				case GPREF_ARACHNOPHOBIA:
 					pref.set(MainMenu::arachnophobia_filter ? 1 : 0);
 					break;
+				case GPREF_COLORBLIND:
+					pref.set(colorblind ? 1 : 0);
 				default:
 					break;
 			}
@@ -7530,6 +7532,41 @@ void GameplayPreferences_t::serverProcessGameConfig()
 								else
 								{
 									messagePlayer(i, MESSAGE_HINT, language[4334]);
+								}
+							}
+						}
+					}
+				}
+				break;
+			}
+			case GOPT_COLORBLIND:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						if ( gameplayPreferences[i].preferences[GPREF_COLORBLIND].value != 0 )
+						{
+							value = 1;
+						}
+					}
+				}
+				if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, language[4342]);
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, language[4343]);
 								}
 							}
 						}

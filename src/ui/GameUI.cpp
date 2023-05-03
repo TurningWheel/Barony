@@ -1805,7 +1805,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			static ConsoleVariable<bool> cvar_playerbars_use_colors("/playerbars_use_colors", true);
 			if ( *cvar_playerbars_use_colors )
 			{
-				nameField->setColor(playerColor(uid, colorblind, false));
+				nameField->setColor(playerColor(uid, colorblind_lobby, false));
 			}
 			else
 			{
@@ -3367,6 +3367,13 @@ std::vector<std::vector<std::string>> playerXPCapPaths = {
 		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03b.png",
 		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03c.png",
 		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_03d.png",
+	},
+	{
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_04.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_04a.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_04b.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_04c.png",
+		"*#images/ui/HUD/xpbar/HUD_Exp_SandCap_04d.png",
 	}
 };
 
@@ -3397,21 +3404,52 @@ void createXPBar(const int player)
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
 
 	std::string bodyPath = "*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_";
-	switch ( player )
+	int xpPathNum = player;
+	if ( !colorblind_lobby )
 	{
-		case 0:
-		default:
-			bodyPath += "00.png";
-			break;
-		case 1:
-			bodyPath += "01.png";
-			break;
-		case 2:
-			bodyPath += "02.png";
-			break;
-		case 3:
-			bodyPath += "03.png";
-			break;
+		switch ( player )
+		{
+			case 0:
+			default:
+				bodyPath += "00.png";
+				break;
+			case 1:
+				bodyPath += "01.png";
+				break;
+			case 2:
+				bodyPath += "02.png";
+				break;
+			case 3:
+				bodyPath += "03.png";
+				break;
+		}
+	}
+	else
+	{
+		switch ( player )
+		{
+			case 0:
+			default:
+				bodyPath += "02.png";
+				xpPathNum = 2;
+				break;
+			case 1:
+				bodyPath += "03.png";
+				xpPathNum = 3;
+				break;
+			case 2:
+				bodyPath += "01.png";
+				xpPathNum = 1;
+				break;
+			case 3:
+				bodyPath += "04.png";
+				xpPathNum = 4;
+				break;
+		}
+	}
+	if ( player >= playerXPCapPaths.size() )
+	{
+		xpPathNum = 0;
 	}
 
 	auto progressClipImg = progressClipFrame->addImage(SDL_Rect{ 0, 0, 634, progressBarHeight }, 0xFFFFFFFF,
@@ -3424,11 +3462,6 @@ void createXPBar(const int player)
 	/*auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{0, 6, 8, progressBarHeight }, 0xFFFFFFFF,
 		"*#images/ui/HUD/xpbar/HUD_Bars_ExpEnd_00.png", "xp img progress endcap");*/
 
-	int xpPathNum = player;
-	if ( player >= playerXPCapPaths.size() )
-	{
-		xpPathNum = 0;
-	}
 	auto xpProgressEndCap = hud_t.xpFrame->addImage(SDL_Rect{ 0, 6, 38, progressBarHeight }, 0xFFFFFFFF,
 		playerXPCapPaths[xpPathNum][0].c_str(), "xp img progress endcap");
 
@@ -8234,7 +8267,7 @@ void Player::HUD_t::processHUD()
         field->setJustify(Field::justify_t::CENTER);
         field->setText((std::string("P") + std::to_string(player.playernum + 1)).c_str());
         field->setFont(bigfont_outline); 
-		field->setColor(playerColor(player.playernum, colorblind, false));
+		field->setColor(playerColor(player.playernum, colorblind_lobby, false));
     }
 
     controllerFrame->setSize(hudSize);
@@ -12979,11 +13012,22 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 
 	if ( isInsectoid )
 	{
-		real_t normalRegenTime = (1000.f * 30 * 1.5) / static_cast<float>(TICKS_PER_SECOND); // 30 base, insectoid does 1.5x in getHungerTickRate()
-		normalRegenTime /= (std::max(myStats.MAXMP, 1)); // time for 1 mana in seconds
-		normalRegenTime *= TICKS_PER_SECOND; // game ticks for 1 mana
+		if ( svFlags & SV_FLAG_HUNGER )
+		{
+			real_t normalRegenTime = (1000.f * 30 * 1.5) / static_cast<float>(TICKS_PER_SECOND); // 30 base, insectoid does 1.5x in getHungerTickRate()
+			normalRegenTime /= (std::max(myStats.MAXMP, 1)); // time for 1 mana in seconds
+			normalRegenTime *= TICKS_PER_SECOND; // game ticks for 1 mana
 
-		regen = normalRegenTime / (regen * TICKS_PER_SECOND);
+			regen = normalRegenTime / (regen * TICKS_PER_SECOND);
+		}
+		else
+		{
+			if ( buf )
+			{
+				snprintf(buf, 32, "-");
+			}
+			return regen * 100.0;
+		}
 	}
 	else
 	{
@@ -14169,7 +14213,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				else if ( isInsectoidENRegen )
 				{
 					titleText = getHoverTextString("attributes_rgn_en_title");
-					descText = getHoverTextString("attributes_rgn_en_desc");
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						descText = getHoverTextString("attributes_rgn_en_desc_no_hunger");
+					}
+					else
+					{
+						descText = getHoverTextString("attributes_rgn_en_desc");
+					}
 				}
 				else
 				{
@@ -14285,8 +14336,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					}
 					else if ( isInsectoidENRegen )
 					{
-						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_en_base").c_str());
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_en_nobonus_format").c_str(), mpbuf);
+						if ( !(svFlags & SV_FLAG_HUNGER) )
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_en_base").c_str());
+							snprintf(valueBuf, sizeof(valueBuf), "%s", mpbuf);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_en_base").c_str());
+							snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_en_nobonus_format").c_str(), mpbuf);
+						}
 					}
 					else
 					{
@@ -14688,7 +14747,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 		bool hasEntryInfoLines = false;
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 3, buf, valueBuf)
-			|| (element != SHEET_ATK && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
+			|| (element != SHEET_ATK 
+				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
+				))
 		{
 			// extra number display - line 3
 			hasEntryInfoLines = true;
@@ -15005,7 +15067,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( (element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 4, buf, valueBuf))
-			|| (element != SHEET_ATK && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
+			|| (element != SHEET_ATK 
+				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
+				)
+			)
 		{
 			// extra number display - line 4
 			hasEntryInfoLines = true;
@@ -15263,7 +15329,12 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf)
-			|| (element != SHEET_ATK && element != SHEET_RES && !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))) )
+			|| (element != SHEET_ATK 
+				&& element != SHEET_RES 
+				&& !(element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER))
+				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
+				) 
+			)
 		{
 			// extra number display - line 5
 			hasEntryInfoLines = true;
@@ -15863,6 +15934,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
 			if ( element == SHEET_RGN && !(svFlags & SV_FLAG_HUNGER) )
+			{
+				entry->setColor(hudColors.itemContextMenuHeadingText);
+			}
+			else if ( element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER) )
 			{
 				entry->setColor(hudColors.itemContextMenuHeadingText);
 			}
@@ -34065,7 +34140,10 @@ void LevelUpAnimation_t::addLevelUp(const int currentLvl, const int increaseLvl,
 			{
 				if ( currentInfo.whichStat == info.whichStat )
 				{
-					currentInfo.increaseStat += info.increaseStat;
+					if ( info.increaseStat > 0 ) // ignore negatives
+					{
+						currentInfo.increaseStat += info.increaseStat;
+					}
 				}
 			}
 		}
@@ -35048,6 +35126,11 @@ void SkillUpAnimation_t::addSpellLearned(const int _spellID)
 
 void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill, const int _increaseSkill)
 {
+	if ( _increaseSkill <= 0 )
+	{
+		return;
+	}
+
 	for ( auto& s : skillUps )
 	{
 		if ( s.whichSkill != _numSkill )

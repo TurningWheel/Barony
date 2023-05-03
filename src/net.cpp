@@ -3902,7 +3902,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
                     nametag->scaley = 0.2;
                     nametag->scalez = 0.2;
                     nametag->skill[0] = clientnum;
-                    nametag->skill[1] = playerColor(clientnum, colorblind, true);
+                    nametag->skill[1] = playerColor(clientnum, colorblind_lobby, true);
                     nametag->setUID(-3);
                 }
 			}

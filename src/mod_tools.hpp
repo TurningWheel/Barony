@@ -3130,6 +3130,7 @@ public:
 	enum GameplayerPrefIndexes : int
 	{
 		GPREF_ARACHNOPHOBIA = 0,
+		GPREF_COLORBLIND,
 		GPREF_ENUM_END
 	};
 	struct GameplayPreference_t
@@ -3159,6 +3160,7 @@ public:
 	enum GameConfigIndexes : int
 	{
 		GOPT_ARACHNOPHOBIA = 0,
+		GOPT_COLORBLIND,
 		GOPT_ENUM_END
 	};
 	static GameplayPreference_t gameConfig[GOPT_ENUM_END];

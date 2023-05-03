@@ -1602,7 +1602,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
             nametag->scaley = 0.2;
             nametag->scalez = 0.2;
             nametag->skill[0] = monsterclicked;
-            nametag->skill[1] = playerColor(monsterclicked, colorblind, true);
+            nametag->skill[1] = playerColor(monsterclicked, colorblind_lobby, true);
             nametag->setUID(-3);
             entity_uids--;
         }
@@ -8744,7 +8744,7 @@ bool forceFollower(Entity& leader, Entity& follower)
             nametag->scaley = 0.2;
             nametag->scalez = 0.2;
             nametag->skill[0] = player;
-            nametag->skill[1] = playerColor(player, colorblind, true);
+            nametag->skill[1] = playerColor(player, colorblind_lobby, true);
             nametag->setUID(-3);
             entity_uids--;
         }

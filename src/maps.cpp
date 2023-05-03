@@ -3920,6 +3920,7 @@ void assignActions(map_t* map)
 
 	// update arachnophobia filter
 	arachnophobia_filter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
+	colorblind_lobby = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND);
 
 	// add lava lights
 	for ( y = 0; y < map->height; ++y )
