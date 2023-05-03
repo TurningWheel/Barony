@@ -863,7 +863,7 @@ void glEndCamera(view_t* camera, bool useHDR)
         GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
         
         // calculate luminance
-        typedef float f;
+        typedef GLfloat f;
         camera->fb[fbIndex].bindForReading();
         auto pixels = (f*)camera->fb[fbIndex].lock();
         if (pixels) {

@@ -699,7 +699,11 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
     GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter));
     GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter));
-    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr));
+#ifdef APPLE
+	GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr));
+#else
+	GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr));
+#endif
     GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, 0));
 
     GL_CHECK_ERR(glGenTextures(1, &fbo_depth));
