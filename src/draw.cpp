@@ -728,18 +728,21 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
 }
 
 void* framebuffer::lock() {
-    if (!fbo) {
+    if (!fbo || mapped) {
         return nullptr;
     }
     
     // map data from the current pixel buffer
-    if (pbos[pboindex] == 0) {
-        GL_CHECK_ERR(glGenBuffers(1, &pbos[pboindex]));
-        GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
-        GL_CHECK_ERR(glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLfloat), nullptr, GL_STREAM_READ));
-    }
-    GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
-    return GL_CHECK_ERR_RET(glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY));
+    if (pbos[pboindex]) {
+		GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
+		auto result = GL_CHECK_ERR_RET(glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY));
+		if (result) {
+			mapped = true;
+		}
+		return result;
+	} else {
+		return nullptr;
+	}
 }
 
 void framebuffer::unlock() {
@@ -748,7 +751,10 @@ void framebuffer::unlock() {
     }
     
     // unmap pixel pack buffer
-    GL_CHECK_ERR(glUnmapBuffer(GL_PIXEL_PACK_BUFFER));
+	if (mapped) {
+		GL_CHECK_ERR(glUnmapBuffer(GL_PIXEL_PACK_BUFFER));
+		mapped = false;
+	}
     
     // select next pbo
     pboindex = (pboindex + 1) % NUM_PBOS;
@@ -765,6 +771,10 @@ void framebuffer::unlock() {
 }
 
 void framebuffer::destroy() {
+	if (mapped) {
+		GL_CHECK_ERR(glUnmapBuffer(GL_PIXEL_PACK_BUFFER));
+		mapped = false;
+	}
     if (fbo) {
         GL_CHECK_ERR(glDeleteFramebuffers(1, &fbo));
         fbo = 0;

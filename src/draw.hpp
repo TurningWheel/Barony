@@ -150,6 +150,7 @@ struct framebuffer {
     static constexpr int NUM_PBOS = 2;
     unsigned int pbos[NUM_PBOS];
     unsigned int pboindex = 0;
+    bool mapped = false;
 
     void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
     void destroy();

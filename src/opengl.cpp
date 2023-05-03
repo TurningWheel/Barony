@@ -877,7 +877,6 @@ void glEndCamera(view_t* camera, bool useHDR)
                 v[2] += *(pixels + 2);
                 v[3] += *(pixels + 3);
             }
-            camera->fb[fbIndex].unlock();
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
             luminance = luminance / (size / step);
             const float rate = hdr_adjustment_rate / fpsLimit;
@@ -887,6 +886,7 @@ void glEndCamera(view_t* camera, bool useHDR)
                 camera->luminance += std::min(rate, luminance - camera->luminance);
             }
         }
+        camera->fb[fbIndex].unlock();
         const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
         const float brightness = 1.f;
         const float gamma = hdr_gamma * vidgamma;
