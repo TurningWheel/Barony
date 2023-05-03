@@ -430,8 +430,8 @@ void createCommonDrawResources() {
         "View[3] = vec4(0.f, 0.f, 0.f, 1.f);"
         "gl_Position = uProj * View * vec4(iPosition, 1.0);"
         "TexCoord = iTexCoord;"
-        "Scroll = (Color.a > 0.75) ? uScroll.xx : uScroll.yy;"
         "Color = iColor;"
+        "Scroll = (Color.a > 0.75) ? uScroll.xx : uScroll.yy;"
         "}";
     
     static const char sky_fragment_glsl[] =
