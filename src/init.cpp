@@ -1988,6 +1988,10 @@ void generateTileTextures() {
         if (!tiles[c]) {
             continue;
         }
+		if (tiles[c]->w != 32 || tiles[c]->h != 32 || tiles[c]->format->BytesPerPixel != 4) {
+			// incorrect format
+			continue;
+		}
         SDL_LockSurface(tiles[c]);
         GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0,
             (c % dim) * w,
