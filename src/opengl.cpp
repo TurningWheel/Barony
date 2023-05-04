@@ -432,29 +432,6 @@ vec4_t unproject(
 
 /*-------------------------------------------------------------------------------
 
-	getLightForEntity
-
-	Returns a shade factor (0.0-1.0) to shade an entity with, based on
-	its surroundings
-
--------------------------------------------------------------------------------*/
-
-real_t getLightForEntity(real_t x, real_t y)
-{
-	if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
-	{
-		return 1.f;
-	}
-	int u = x;
-	int v = y;
-	constexpr float div = 1.f / 255.f;
-    const auto& l = lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)];
-    const auto light = (l.x + l.y + l.z) / 3.f;
-	return std::min(std::max(0.f, light), 255.f) * div;
-}
-
-/*-------------------------------------------------------------------------------
-
 	glDrawVoxel
 
 	Draws a voxel model at the given world coordinates
@@ -462,6 +439,16 @@ real_t getLightForEntity(real_t x, real_t y)
 -------------------------------------------------------------------------------*/
 
 static void fillSmoothLightmap() {
+    constexpr float epsilon = 1.f;
+    constexpr float defaultSmoothRate = 4.f;
+#ifndef EDITOR
+    static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", defaultSmoothRate);
+    const float smoothingRate = *cvar_smoothingRate;
+#else
+    const float smoothingRate = defaultSmoothRate;
+#endif
+    const float rate = smoothingRate * (1.f / fpsLimit);
+    
     int v = 0;
     int index = 0;
     int smoothindex = 2 + map.height + 1;
@@ -473,21 +460,13 @@ static void fillSmoothLightmap() {
             v = 0;
         }
         
-#ifndef EDITOR
-        static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", 1.f);
-        const float smoothingRate = *cvar_smoothingRate;
-#else
-        const float smoothingRate = 1.f;
-#endif
-        const float rate = smoothingRate * (1.f / fpsLimit) * 4.f;
-        
         auto& d = lightmapSmoothed[smoothindex];
         const auto& s = lightmap[index];
         for (int c = 0; c < 4; ++c) {
             auto& dc = *(&d.x + c);
             const auto& sc = *(&s.x + c);
             const auto diff = sc - dc;
-            if (fabsf(diff) < 1.f) { dc += diff; }
+            if (fabsf(diff) < epsilon) { dc += diff; }
             else { dc += diff * rate; }
         }
     }

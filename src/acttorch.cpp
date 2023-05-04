@@ -78,7 +78,7 @@ void actTorch(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(192, 192, 192));
+		my->light = addLight(my->x / 16, my->y / 16, "torch_wall");
 		TORCH_LIGHTING = 1;
 	}
 	if ( flickerLights )
@@ -93,12 +93,12 @@ void actTorch(Entity* my)
 		if (TORCH_LIGHTING == 1)
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(192, 192, 192));
+			my->light = addLight(my->x / 16, my->y / 16, "torch_wall");
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, makeColorRGB(184, 184, 184));
+			my->light = addLight(my->x / 16, my->y / 16, "torch_wall_flicker");
 		}
 		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
@@ -229,7 +229,7 @@ void actCrystalShard(Entity* my)
 	// lighting
 	if ( !TORCH_LIGHTING )
 	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(96, 128, 128));
+		my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall");
 		TORCH_LIGHTING = 1;
 	}
 
@@ -245,12 +245,12 @@ void actCrystalShard(Entity* my)
 		if ( TORCH_LIGHTING == 1 )
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(96, 128, 128));
+			my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall");
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, makeColorRGB(88, 120, 120));
+			my->light = addLight(my->x / 16, my->y / 16, "crystal_shard_wall_flicker");
 		}
 		TORCH_FLICKER = 2 + local_rng.rand() % 7;
 	}
@@ -352,8 +352,8 @@ void Entity::actLightSource()
 		// lighting
 		if ( !LIGHTSOURCE_LIGHT )
 		{
-            const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
-			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
+            const auto color = lightSourceBrightness / 255.f;
+			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			LIGHTSOURCE_LIGHT = 1;
 		}
 		if ( lightSourceFlicker && flickerLights )
@@ -365,8 +365,8 @@ void Entity::actLightSource()
 			LIGHTSOURCE_LIGHT = 1;
 			if ( !light )
 			{
-                const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 		}
 
@@ -377,22 +377,22 @@ void Entity::actLightSource()
 			if ( LIGHTSOURCE_LIGHT == 1 )
 			{
 				removeLightField();
-                const auto color = makeColorRGB(lightSourceBrightness, lightSourceBrightness, lightSourceBrightness);
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 			else
 			{
 				removeLightField();
                 const auto brightness = std::max(lightSourceBrightness - 16, 0);
-                const auto color = makeColorRGB(brightness, brightness, brightness);
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color);
+                const auto color = lightSourceBrightness / 255.f;
+                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 			LIGHTSOURCE_FLICKER = 2 + local_rng.rand() % 7;
 		}
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( !lightSourceAlwaysOn && (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower)
+			if ( (!lightSourceAlwaysOn && (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower))
 				|| (circuit_status == CIRCUIT_ON && lightSourceInvertPower == 1) )
 			{
 				if ( LIGHTSOURCE_ENABLED == 1 && lightSourceLatchOn < 2 + lightSourceInvertPower )

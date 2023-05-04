@@ -9524,7 +9524,9 @@ void doNewGame(bool makeHighscore) {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		minimapPings[i].clear(); // clear minimap pings
-	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        auto& camera = players[i]->camera();
+        camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        camera.luminance = defaultLuminance;
 	}
 	gameplayCustomManager.readFromFile();
 	textSourceScript.scriptVariables.clear();

@@ -40,7 +40,7 @@ void actSprite(Entity* my)
 	if ( !my->skill[6] && SPRITE_LIT )
 	{
 		my->skill[6] = 1;
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, makeColorRGB(255, 255, 255));
+		my->light = addLight(my->x / 16, my->y / 16, "explosion");
 	}
 	else if ( !SPRITE_LIT )
 	{
@@ -304,7 +304,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	Entity* my = entity;
 	SPRITE_FRAMES = 10;
 	SPRITE_ANIMSPEED = 2;
-	SPRITE_LIT = 4;
+	SPRITE_LIT = 1;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
 	for (i = 0; i < 10; ++i)
@@ -383,7 +383,7 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	Entity* my = entity;
 	SPRITE_FRAMES = 10;
 	SPRITE_ANIMSPEED = 2;
-	SPRITE_LIT = 4;
+	SPRITE_LIT = 1;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
 	for ( int i = 0; i < 10; ++i )

@@ -2117,7 +2117,9 @@ void gameLogic(void)
 	                int result = loading_task.get();
 
                     for (int c = 0; c < MAXPLAYERS; ++c) {
-					    players[c]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                        auto& camera = players[c]->camera();
+					    camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                        camera.luminance = defaultLuminance;
 					}
 
 					// clear follower menu entities.
@@ -6737,7 +6739,7 @@ int main(int argc, char** argv)
 							menucam.winy = 0;
 							menucam.winw = xres;
 							menucam.winh = yres;
-							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
+							light = addLight(menucam.x, menucam.y, "mainmenu");
 							occlusionCulling(map, menucam);
                             beginGraphics();
 							glBeginCamera(&menucam, true);

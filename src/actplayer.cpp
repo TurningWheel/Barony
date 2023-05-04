@@ -283,7 +283,7 @@ void actDeathCam(Entity* my)
 	}
 
 	my->removeLightField();
-	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(128, 128, 128));
+	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
 
 	real_t camx, camy, camz, camang, camvang;
 	camx = my->x / 16.f;
@@ -4503,7 +4503,8 @@ void actPlayer(Entity* my)
 	}
 
 	// torch light
-	if ( !intro )
+    static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
+	if ( !intro && *cvar_playerLight )
 	{
 		if ( multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer() )
 		{
@@ -4590,18 +4591,18 @@ void actPlayer(Entity* my)
 
 	my->removeLightField();
 
-	if ( my->flags[BURNING] )
-	{
-        const auto brightness = std::min(std::max(140, 50 + 15 * PLAYER_TORCH), 255);
-        const auto color = makeColorRGB(brightness, brightness * 0.9, brightness * 0.6);
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), color);
-	}
-	else if ( PLAYER_TORCH && my->light == NULL )
-	{
-        const auto brightness = std::min(50 + 15 * PLAYER_TORCH, 255);
-        const auto color = makeColorRGB(brightness, brightness, brightness);
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, color);
-	}
+    if (*cvar_playerLight) {
+        if ( my->flags[BURNING] )
+        {
+            const auto b = std::min(std::max(140, 50 + 15 * PLAYER_TORCH), 255) / 255.f;
+            my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), b, b * 0.9, b * 0.6, 0.5f);
+        }
+        else if ( PLAYER_TORCH && my->light == NULL )
+        {
+            const auto b = std::min(50 + 15 * PLAYER_TORCH, 255) / 255.f;
+            my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, b, b, b, 0.5f);
+        }
+    }
 
 	// server controls players primarily
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )

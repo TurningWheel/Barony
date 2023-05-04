@@ -3897,7 +3897,7 @@ void assignActions(map_t* map)
 		{
 			if ( lavatiles[map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height]] )
 			{
-				lightSphereShadow(x, y, 2, makeColorRGB(255, 128, 64));
+				addLight(x, y, "lava");
 			}
 		}
 	}

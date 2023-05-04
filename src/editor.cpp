@@ -2436,7 +2436,7 @@ int main(int argc, char** argv)
 				camera.winy = 16;
 				camera.winw = xres - 128;
 				camera.winh = yres - 32;
-				light = lightSphere(camera.x, camera.y, 16, 0xffffffff);
+				light = addLight(camera.x, camera.y, "editor");
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;

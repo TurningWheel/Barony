@@ -829,7 +829,9 @@ int Entity::entityLight()
 	int light_x = (int)this->x / 16;
 	int light_y = (int)this->y / 16;
     const auto& light = lightmap[light_y + light_x * map.height];
-	return (light.x + light.y + light.z) / 3.f;
+    //return (light.x + light.y + light.z) / 3.f;
+    return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f)), 255);
+	//return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f * 255.f)), 255);
 }
 
 /*-------------------------------------------------------------------------------

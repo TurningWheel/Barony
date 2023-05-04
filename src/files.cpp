@@ -1533,8 +1533,9 @@ voxel_t* loadVoxel(char* filename)
 	}
 }
 
+constexpr float hellAmbience = 0.1f;
 #ifndef EDITOR
-static ConsoleVariable<int> cvar_hell_ambience("/hell_ambience", 32);
+static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience);
 #endif
 
 /*-------------------------------------------------------------------------------
@@ -2203,9 +2204,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				lightmap[c].x = 32.f;
-                lightmap[c].y = 32.f;
-                lightmap[c].z = 32.f;
+				lightmap[c].x = hellAmbience;
+                lightmap[c].y = hellAmbience;
+                lightmap[c].z = hellAmbience;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
@@ -2217,9 +2218,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
-				lightmapSmoothed[c].x = 32.f;
-                lightmapSmoothed[c].y = 32.f;
-                lightmapSmoothed[c].z = 32.f;
+				lightmapSmoothed[c].x = hellAmbience;
+                lightmapSmoothed[c].y = hellAmbience;
+                lightmapSmoothed[c].z = hellAmbience;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{

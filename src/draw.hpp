@@ -194,6 +194,7 @@ struct framebuffer {
 };
 
 // view structure
+constexpr float defaultLuminance = 0.25f;
 typedef struct view_t
 {
     real_t x, y, z;
@@ -205,7 +206,7 @@ typedef struct view_t
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
     framebuffer fb[1];
     bool* vismap = nullptr;
-    float luminance = 0.25f;
+    float luminance = defaultLuminance;
     unsigned int drawnFrames = 0;
     mat4x4 projview;
 } view_t;
@@ -383,7 +384,6 @@ extern view_t menucam;
 // function prototypes for opengl.c:
 #define REALCOLORS 0
 #define ENTITYUIDS 1
-real_t getLightForEntity(real_t x, real_t y);
 void beginGraphics();
 void glBeginCamera(view_t* camera, bool useHDR);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
