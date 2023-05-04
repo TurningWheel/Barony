@@ -1678,7 +1678,8 @@ void glDrawWorld(view_t* camera, int mode)
             for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
                 for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
                     if (camera->vismap[y + x * map.height]) {
-                        dither.value = std::min(10, dither.value + 1);
+                        //dither.value = std::min(Chunk::Dither::MAX, dither.value + 1);
+                        dither.value = Chunk::Dither::MAX;
                         goto end;
                     }
                 }
