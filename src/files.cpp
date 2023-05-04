@@ -34,7 +34,7 @@ std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 std::unordered_map<std::string, int> mapHashes = {
 	{ "boss.lmp", 2376307 },
-	{ "bramscastle.lmp", 2954489 },
+	{ "bramscastle.lmp", 3370696 },
 	{ "caves.lmp", 1065461 },
 	{ "caves00.lmp", 70935 },
 	{ "caves01.lmp", 13350 },
@@ -523,7 +523,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "labyrinth30b.lmp", 76890 },
 	{ "labyrinth30c.lmp", 42344 },
 	{ "labyrinth30d.lmp", 122312 },
-	{ "labyrinth30e.lmp", 30839 },
+	{ "labyrinth30e.lmp", 32283 },
 	{ "labyrinth31.lmp", 65567 },
 	{ "labyrinth31a.lmp", 18532 },
 	{ "labyrinth31b.lmp", 26136 },
@@ -649,7 +649,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine15a.lmp", 14464 },
 	{ "mine15b.lmp", 19060 },
 	{ "mine15c.lmp", 12155 },
-	{ "mine15d.lmp", 11889 },
+	{ "mine15d.lmp", 9684 },
 	{ "mine15e.lmp", 6134 },
 	{ "mine16.lmp", 47683 },
 	{ "mine16a.lmp", 5567 },
