@@ -1956,9 +1956,9 @@ void drawEntities3D(view_t* camera, int mode)
             if (entity->ditheringDisabled) {
                 dither.value = decrease ? 0 : Entity::Dither::MAX;
             } else {
-                dither.value = decrease ? std::max(0, dither.value - 1) :
-					//std::min(Entity::Dither::MAX, dither.value - 1);
-					Entity::Dither::MAX;
+                dither.value = decrease ? std::max(0, dither.value - 2) :
+					std::min(Entity::Dither::MAX, dither.value + 2);
+					//Entity::Dither::MAX;
             }
         }
         if (dither.value == 0) {
