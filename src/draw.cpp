@@ -487,10 +487,10 @@ void createCommonDrawResources() {
     
         "void main() {"
         "vec4 Texture = texture(uTexture, TexCoord);"
-        "if (Texture.a <= 0) discard;"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
         "}";
 
     buildSpriteShader(spriteShader, "spriteShader", true,
@@ -524,10 +524,10 @@ void createCommonDrawResources() {
         "void main() {"
         "dither(ivec2(gl_FragCoord), uDitherAmount);"
         "vec4 Texture = texture(uTexture, TexCoord);"
-        "if (Texture.a <= 0) discard;"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
         "vec4 Lightmap = texture(uLightmap, LightCoord);"
         "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
         "}";
 
     buildSpriteShader(spriteDitheredShader, "spriteDitheredShader", true,
@@ -557,8 +557,8 @@ void createCommonDrawResources() {
     
         "void main() {"
         "vec4 Texture = texture(uTexture, TexCoord);"
-        "if (Texture.a <= 0) discard;"
         "FragColor = Texture * uLightFactor * uLightColor + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
         "}";
 
     buildSpriteShader(spriteBrightShader, "spriteBrightShader", false,
