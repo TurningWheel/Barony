@@ -1733,18 +1733,11 @@ void glDrawWorld(view_t* camera, int mode)
         shader.bind();
         GL_CHECK_ERR(glDepthMask(GL_FALSE));
         GL_CHECK_ERR(glEnable(GL_BLEND));
-
-#ifndef EDITOR
-        static ConsoleVariable<float> cvar_cloudSpeed("/cloudspeed", 1.f);
-        const float cloudspeed = *cvar_cloudSpeed;
-#else
-        constexpr float cloudspeed = 1.f;
-#endif
         
         // upload texture scroll value
         const float scroll[2] = {
-            ((float)(ticks % 60) / 60.f) * cloudspeed,
-            ((float)(ticks % 120) / 120.f) * cloudspeed,
+            ((float)(ticks % 60) / 60.f),
+            ((float)(ticks % 120) / 120.f),
         };
         GL_CHECK_ERR(glUniform2fv(shader.uniform("uScroll"), 1, scroll));
         
