@@ -24,6 +24,7 @@
 #include "prng.hpp"
 #include "hash.hpp"
 #include "init.hpp"
+#include "light.hpp"
 #include "net.hpp"
 #ifndef NINTENDO
  #include "editor.hpp"
