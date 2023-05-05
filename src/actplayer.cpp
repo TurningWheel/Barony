@@ -2280,10 +2280,6 @@ void actPlayer(Entity* my)
 			node->element = NULL;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
-			if ( multiplayer == CLIENT )
-			{
-				PLAYER_TORCH = 0;
-			}
 		}
 
 		// torso
@@ -4502,105 +4498,51 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	// torch light
+	// lights
+    my->removeLightField();
+    const char* light_type = nullptr;
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
-	if ( !intro && *cvar_playerLight )
-	{
-		if ( multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer() )
-		{
-			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) && !itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
-			{
-				if ( players[PLAYER_NUM]->isLocalPlayer() )
-				{
-					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
-					{
-						PLAYER_TORCH = 7 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
-					}
-					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
-					{
-						PLAYER_TORCH = 10 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
-					}
-					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
-					{
-						PLAYER_TORCH = 5 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 2;
-					}
-					else if ( !PLAYER_DEBUGCAM )
-					{
-						PLAYER_TORCH = 3 + my->getPER() / 3;
-					}
-					else
-					{
-						PLAYER_TORCH = 0;
-					}
-				}
-				else
-				{
-					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
-					{
-						PLAYER_TORCH = 7;
-					}
-					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
-					{
-						PLAYER_TORCH = 10;
-					}
-					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
-					{
-						PLAYER_TORCH = 5;
-					}
-					else
-					{
-						PLAYER_TORCH = 0;
-					}
-				}
+	if (!intro && *cvar_playerLight) {
+		if (multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer()) {
+			if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
+                if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
+                    light_type = "player_torch";
+                }
+                else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
+                    light_type = "player_lantern";
+                }
+                else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
+                    light_type = "player_shard";
+                }
+                else if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
+                    light_type = "player_ambient";
+                }
 			}
-			else
-			{
-				if ( (players[PLAYER_NUM]->isLocalPlayer()) && !PLAYER_DEBUGCAM )
-				{
-					PLAYER_TORCH = 3 + (my->getPER() / 3);
-					if ( playerRace == RAT )
-					{
-						PLAYER_TORCH += 3;
+			else {
+                // carrying no light source
+				if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
+					if (playerRace == RAT) {
+                        light_type = "player_ambient_rat";
 					}
-					else if ( playerRace == SPIDER )
-					{
-						PLAYER_TORCH += 2;
+					else if (playerRace == SPIDER) {
+                        light_type = "player_ambient_spider";
 					}
-					// more visible world if defending/sneaking with no shield
-					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * (2 + (stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 40)));
+                    else if (stats[PLAYER_NUM]->sneaking) {
+                        light_type = "player_sneaking";
+                    }
+                    else {
+                        light_type = "player_ambient";
+                    }
 				}
-				else
-				{
-					PLAYER_TORCH = 0;
-				}
-			}
-
-			static ConsoleVariable<int> cvar_playerlightmin("/playerlightmin", 0);
-			static ConsoleVariable<int> cvar_playerlightadd("/playerlightadd", 0);
-			if ( svFlags & SV_FLAG_CHEATS )
-			{
-				PLAYER_TORCH += *cvar_playerlightadd;
-				PLAYER_TORCH = std::max(*cvar_playerlightmin, PLAYER_TORCH);
 			}
 		}
 	}
-	else
-	{
-		PLAYER_TORCH = 0;
-	}
-
-	my->removeLightField();
-
     if (*cvar_playerLight) {
-        if ( my->flags[BURNING] )
-        {
-            const auto b = std::min(std::max(140, 50 + 15 * PLAYER_TORCH), 255) / 255.f;
-            my->light = lightSphereShadow(my->x / 16, my->y / 16, std::max(PLAYER_TORCH, 6), b, b * 0.9, b * 0.6, 0.5f);
+        if ( my->flags[BURNING] ) {
+            my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
-        else if ( PLAYER_TORCH && my->light == NULL )
-        {
-            const auto b = std::min(50 + 15 * PLAYER_TORCH, 255) / 255.f;
-            my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, b, b, b, 0.5f);
+        else if (!my->light) {
+            my->light = addLight(my->x / 16, my->y / 16, light_type);
         }
     }
 

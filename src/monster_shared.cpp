@@ -288,7 +288,7 @@ void Entity::actMonsterLimb(bool processLight)
 			}
 			else if ( sprite == 529 )	// crystal shard
 			{
-                lightName = "npc_crystal_shard";
+                lightName = "npc_shard";
 			}
 		}
 
