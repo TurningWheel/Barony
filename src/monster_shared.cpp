@@ -275,28 +275,26 @@ void Entity::actMonsterLimb(bool processLight)
 			light = nullptr;
 		}
 
-		int carryingLightSource = 0;
+        const char* lightName = nullptr;
 		if ( flags[INVISIBLE] == false )
 		{
 			if ( sprite == 93 )   // torch
 			{
-				carryingLightSource = 6;
+                lightName = "npc_torch";
 			}
 			else if ( sprite == 94 )     // lantern
 			{
-				carryingLightSource = 9;
+                lightName = "npc_lantern";
 			}
 			else if ( sprite == 529 )	// crystal shard
 			{
-				carryingLightSource = 4;
+                lightName = "npc_shard";
 			}
 		}
 
-		if ( carryingLightSource != 0 )
+		if ( lightName )
 		{
-            const auto brightness = 50 + 15 * carryingLightSource;
-            const auto color = makeColorRGB(brightness, brightness * 0.9, brightness * 0.8);
-			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, color);
+			light = addLight(x / 16, y / 16, lightName);
 		}
 	}
 

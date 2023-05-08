@@ -1436,6 +1436,7 @@ void gameLogic(void)
 													entity->x = x * 16 + local_rng.rand() % 16;
 													entity->y = y * 16 + local_rng.rand() % 16;
 													entity->z = 7.5;
+                                                    entity->ditheringDisabled = true;
 													entity->flags[PASSABLE] = true;
 													entity->flags[SPRITE] = true;
 													entity->flags[NOUPDATE] = true;
@@ -2117,7 +2118,9 @@ void gameLogic(void)
 	                int result = loading_task.get();
 
                     for (int c = 0; c < MAXPLAYERS; ++c) {
-					    players[c]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                        auto& camera = players[c]->camera();
+					    camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+                        camera.luminance = defaultLuminance;
 					}
 
 					// clear follower menu entities.
@@ -2390,8 +2393,8 @@ void gameLogic(void)
                                         nametag->flags[NOUPDATE] = true;
                                         nametag->flags[PASSABLE] = true;
                                         nametag->flags[SPRITE] = true;
-                                        nametag->flags[BRIGHT] = true;
                                         nametag->flags[UNCLICKABLE] = true;
+                                        nametag->flags[BRIGHT] = true;
                                         nametag->behavior = &actSpriteNametag;
                                         nametag->parent = monster->getUID();
                                         nametag->scalex = 0.2;
@@ -2887,6 +2890,7 @@ void gameLogic(void)
 													entity->x = x * 16 + local_rng.rand() % 16;
 													entity->y = y * 16 + local_rng.rand() % 16;
 													entity->z = 7.5;
+                                                    entity->ditheringDisabled = true;
 													entity->flags[PASSABLE] = true;
 													entity->flags[SPRITE] = true;
 													entity->flags[NOUPDATE] = true;
@@ -4097,12 +4101,6 @@ bool handleEvents(void)
                 }
 				mousex = event.motion.x * factorX;
 				mousey = event.motion.y * factorY;
-#ifdef PANDORA
-				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
-					mousex = (mousex*xres) / 800;
-					mousey = (mousey*yres) / 480;
-				}
-#endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
@@ -5810,7 +5808,7 @@ void drawAllPlayerCameras() {
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
 			occlusionCulling(map, camera);
-			glBeginCamera(&camera);
+			glBeginCamera(&camera, true);
 
 			if ( players[c] && players[c]->entity )
 			{
@@ -5918,7 +5916,7 @@ void drawAllPlayerCameras() {
 
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
-			glEndCamera(&camera);
+			glEndCamera(&camera, true);
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
 			{
@@ -6742,13 +6740,13 @@ int main(int argc, char** argv)
 							menucam.winy = 0;
 							menucam.winw = xres;
 							menucam.winh = yres;
-							light = lightSphere(menucam.x, menucam.y, 16, makeColorRGB(64, 64, 64));
+							light = addLight(menucam.x, menucam.y, "mainmenu");
 							occlusionCulling(map, menucam);
                             beginGraphics();
-							glBeginCamera(&menucam);
+							glBeginCamera(&menucam, true);
 							glDrawWorld(&menucam, REALCOLORS);
 							drawEntities3D(&menucam, REALCOLORS);
-							glEndCamera(&menucam);
+							glEndCamera(&menucam, true);
 							list_RemoveNode(light->node);
 						}
 
@@ -7139,9 +7137,13 @@ int main(int argc, char** argv)
 			if (Input::inputs[clientnum].consumeBinaryToggle("Screenshot") ||
 			    (inputs.hasController(clientnum) && Input::inputs[clientnum].consumeBinaryToggle("GamepadScreenshot")))
 			{
-                main_framebuffer.unbindForWriting();
+                if (!hdrEnabled) {
+                    main_framebuffer.unbindForWriting();
+                }
 				takeScreenshot();
-				main_framebuffer.bindForWriting();
+                if (!hdrEnabled) {
+                    main_framebuffer.bindForWriting();
+                }
 			}
 
 			// frame rate limiter

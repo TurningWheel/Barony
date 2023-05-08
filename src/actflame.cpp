@@ -153,8 +153,10 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[SPRITE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
+	static ConsoleVariable<float> cvar_flameLightBonus("/flame_light_bonus", 0.25f);
+	entity->lightBonus = vec4(*cvar_flameLightBonus, *cvar_flameLightBonus, *cvar_flameLightBonus, 0.f);
+    entity->ditheringDisabled = true;
 	entity->behavior = &actFlame;
 	if ( multiplayer != CLIENT )
 	{

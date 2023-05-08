@@ -826,7 +826,6 @@ void actMinotaurCeilingBuster(Entity* my)
 			entity->sizey = 1;
 			entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 			entity->flags[PASSABLE] = true;
-			entity->flags[BRIGHT] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
 			entity->behavior = &actMagicParticle;

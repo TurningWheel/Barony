@@ -328,7 +328,6 @@ enum CrossbowHudweaponChop : int
 void actHudWeapon(Entity* my)
 {
 	double result = 0;
-	ItemType type;
 	bool wearingring = false;
 
 	Player::HUD_t& playerHud = players[HUDWEAPON_PLAYERNUM]->hud;
@@ -385,7 +384,7 @@ void actHudWeapon(Entity* my)
 		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
-		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much
+		my->parent = entity->getUID(); // just an easy way to refer to each other, doesn't mean much
 		playerHud.arm = entity;
 		parent = playerHud.arm;
 		entity->behavior = &actHudArm;
@@ -398,7 +397,7 @@ void actHudWeapon(Entity* my)
 	if ( players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr
 		|| (players[HUDWEAPON_PLAYERNUM]->entity && players[HUDWEAPON_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
-		playerHud.weapon = nullptr; //PLAYER DED. NULLIFY THIS.
+		playerHud.weapon = nullptr; //PLAYER DEAD. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -421,9 +420,6 @@ void actHudWeapon(Entity* my)
 	{
 		--bowGimpTimer;
 	}
-
-	// check levitating value
-	bool levitating = isLevitating(stats[HUDWEAPON_PLAYERNUM]);
 
 	// swimming
 	if (players[HUDWEAPON_PLAYERNUM] && players[HUDWEAPON_PLAYERNUM]->entity)
@@ -1926,8 +1922,6 @@ void actHudWeapon(Entity* my)
 			}
 		}
 
-		bool crossbow = stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW);
-
 		if ( stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon )
 		{
 			if ( rangedweapon )
@@ -3031,7 +3025,6 @@ void actHudWeapon(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UPDATENEEDED] = false;
 			entity->flags[OVERDRAW] = true;
-			entity->flags[BRIGHT] = true;
 			entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 			entity->scaley = 0.25f;
 			entity->scalez = 0.25f;
@@ -3221,8 +3214,6 @@ void actHudShield(Entity* my)
 
 	Input& input = Input::inputs[HUDSHIELD_PLAYERNUM];
 
-	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
-	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 
@@ -3248,9 +3239,6 @@ void actHudShield(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-
-	// check levitating value
-	bool levitating = isLevitating(stats[HUDSHIELD_PLAYERNUM]);
 
 	// select model
 	bool wearingring = false;
@@ -3909,7 +3897,6 @@ void actHudShield(Entity* my)
 	}
 
 	// torch/lantern flames
-	my->flags[BRIGHT] = false;
 	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
 	{
 		// don't process flames as these don't hold torches.
@@ -3936,7 +3923,6 @@ void actHudShield(Entity* my)
 						entity->skill[11] = HUDSHIELD_PLAYERNUM;
 					}
 			    }
-			    my->flags[BRIGHT] = true;
 		    }
 		    else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
 		    {
@@ -3948,7 +3934,6 @@ void actHudShield(Entity* my)
 			        entity->y += 2.5 * sin(HUDSHIELD_ROLL);
 			        entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
 			    }
-			    my->flags[BRIGHT] = true;
 		    }
 		    else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
 		    {
@@ -3961,7 +3946,6 @@ void actHudShield(Entity* my)
 						entity->z += 1;
 					}
 			    }
-			    my->flags[BRIGHT] = true;
 		    }
 		}
 	}
@@ -3977,8 +3961,6 @@ void actHudAdditional(Entity* my)
 
 	my->flags[UNCLICKABLE] = true;
 
-	auto& camera_shakex = cameravars[HUDSHIELD_PLAYERNUM].shakex;
-	auto& camera_shakey = cameravars[HUDSHIELD_PLAYERNUM].shakey;
 	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
 	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
 

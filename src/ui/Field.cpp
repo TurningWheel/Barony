@@ -788,19 +788,19 @@ int Field::getLastLineThatFitsWithinHeight()
 	return -1;
 }
 
-void Field::reflowTextToFit(const int characterOffset) {
+void Field::reflowTextToFit(const int characterOffset, bool check) {
 	if ( text == nullptr || textlen <= 1 ) {
 		return;
 	}
 
-	if ( auto getText = Text::get(text, font.c_str(), textColor, outlineColor) )
-	{
-		if ( getText->getWidth() <= (getSize().w) )
-		{
-			// no work to do
-			return;
-		}
-	}
+    if (check) {
+        if (auto getText = Text::get(text, font.c_str(), textColor, outlineColor)) {
+            if (getText->getWidth() <= (getSize().w)) {
+                // no work to do
+                return;
+            }
+        }
+    }
 	std::string reflowText = "";
 
 #ifndef EDITOR

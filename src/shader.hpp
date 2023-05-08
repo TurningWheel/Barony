@@ -23,7 +23,8 @@ public:
 
     bool bind();                        // bind the shader program
     static void unbind();               // unbind the shader program
-    int uniform(const char* name);    // return a handle to a shader variable within the compiled program
+    int uniform(const char* name);      // return a handle to a shader variable within the compiled program
+    bool isInitialized() const { return program != 0; }
 
     enum class Type {
         Vertex,
@@ -31,6 +32,7 @@ public:
         Fragment,
     };
 
+    void setParameter(unsigned int param, int value);
     void bindAttribLocation(const char* attribute, int location);
     bool compile(const char* source, size_t len, Type type);
     bool link();

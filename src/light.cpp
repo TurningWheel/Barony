@@ -22,12 +22,12 @@
 
 -------------------------------------------------------------------------------*/
 
-light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
+light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
 {
-	if ( color == 0 ) {
-		return nullptr;
-	}
-	light_t* light = newLight(x, y, radius, color);
+	light_t* light = newLight(x, y, radius);
+    r = r * 255.f;
+    g = g * 255.f;
+    b = b * 255.f;
 
 	for (int v = y - radius; v <= y + radius; ++v) {
 		for (int u = x - radius; u <= x + radius; ++u) {
@@ -36,8 +36,8 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 				const int dy = v - y;
 				const int dxabs = abs(dx);
 				const int dyabs = abs(dy);
-				real_t a = dyabs * .5;
-				real_t b = dxabs * .5;
+				real_t a0 = dyabs * .5;
+				real_t b0 = dxabs * .5;
 				int u2 = u;
 				int v2 = v;
                 
@@ -58,9 +58,9 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
                 if (dxabs >= dyabs) { // the line is more horizontal than vertical
 					for (int i = 0; i < dxabs; ++i) {
 						u2 -= sgn(dx);
-						b += dyabs;
-						if (b >= dxabs) {
-							b -= dxabs;
+						b0 += dyabs;
+						if (b0 >= dxabs) {
+							b0 -= dxabs;
 							v2 -= sgn(dy);
 						}
 						if (u2 >= 0 && u2 < map.width && v2 >= 0 && v2 < map.height) {
@@ -74,9 +74,9 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
                 else { // the line is more vertical than horizontal
 					for (int i = 0; i < dyabs; ++i) {
 						v2 -= sgn(dy);
-						a += dxabs;
-						if (a >= dyabs) {
-							a -= dyabs;
+						a0 += dxabs;
+						if (a0 >= dyabs) {
+							a0 -= dyabs;
 							u2 -= sgn(dx);
 						}
 						if (u2 >= 0 && u2 < map.width && v2 >= 0 && v2 < map.height) {
@@ -92,10 +92,10 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 				if (wallhit == false || (wallhit == true && u2 == u && v2 == v)) {
                     auto& d = lightmap[v + u * map.height];
                     auto& s = light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
+                    const float dist = exp != 1.f ? powf(dx * dx + dy * dy, exp) : dx * dx + dy * dy;
+                    constexpr float a = 255.f;
                     
-                    const auto falloff = std::min<float>(sqrtf(dx * dx + dy * dy) / radius, 1.0f);
-                    uint8_t r, g, b, a;
-                    getColor(color, &r, &g, &b, &a);
+                    const auto falloff = std::min<float>(dist / radius, 1.0f);
 					s.x += r - r * falloff;
                     s.y += g - g * falloff;
                     s.z += b - b * falloff;
@@ -121,12 +121,12 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 
 -------------------------------------------------------------------------------*/
 
-light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
+light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
 {
-	if ( color == 0 ) {
-		return nullptr;
-	}
-	light_t* light = newLight(x, y, radius, color);
+	light_t* light = newLight(x, y, radius);
+    r = r * 255.f;
+    g = g * 255.f;
+    b = b * 255.f;
 
 	for (int v = y - radius; v <= y + radius; ++v) {
 		for (int u = x - radius; u <= x + radius; ++u) {
@@ -136,10 +136,10 @@ light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
                 
                 auto& d = lightmap[v + u * map.height];
                 auto& s = light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
+                const float dist = exp != 1.f ? powf(dx * dx + dy * dy, exp) : dx * dx + dy * dy;
                 
-                const auto falloff = std::min<float>(sqrtf(dx * dx + dy * dy) / radius, 1.0f);
-                uint8_t r, g, b, a;
-                getColor(color, &r, &g, &b, &a);
+                constexpr float a = 255.f;
+                const auto falloff = std::min<float>(dist / radius, 1.0f);
                 s.x += r - r * falloff;
                 s.y += g - g * falloff;
                 s.z += b - b * falloff;
@@ -153,4 +153,75 @@ light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 		}
 	}
 	return light;
+}
+
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "files.hpp"
+
+std::unordered_map<std::string, LightDef> lightDefs;
+bool loadLights() {
+    lightDefs.clear();
+    
+    File* fp = nullptr;
+    const char* path = "/data/lights.json";
+    if (PHYSFS_getRealDir(path)) {
+        std::string fullpath = PHYSFS_getRealDir(path);
+        fullpath.append(path);
+        fp = FileIO::open(fullpath.c_str(), "rb");
+    }
+    if (!fp) {
+        printlog("[JSON]: Error: Could not locate json file %s", path);
+        return false;
+    }
+    
+    char buf[65536];
+    int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
+    buf[count] = '\0';
+    rapidjson::StringStream is(buf);
+    FileIO::close(fp);
+
+    rapidjson::Document d;
+    d.ParseStream(is);
+    
+    const auto& lights = d["lights"];
+    if (lights.IsObject()) {
+        for (const auto& it : lights.GetObject()) {
+            LightDef def;
+            const auto& name = it.name.GetString();
+            const auto& radius = it.value["radius"]; def.radius = radius.GetInt();
+            const auto& r = it.value["r"]; def.r = r.GetFloat();
+            const auto& g = it.value["g"]; def.g = g.GetFloat();
+            const auto& b = it.value["b"]; def.b = b.GetFloat();
+            const auto& exp = it.value["falloff_exp"]; def.falloff_exp = exp.GetFloat();
+            const auto& shadows = it.value["shadows"]; def.shadows = shadows.GetBool();
+            lightDefs.emplace(name, def);
+        }
+    }
+    
+    return true;
+}
+
+#ifndef EDITOR
+#include "interface/consolecommand.hpp"
+static ConsoleCommand ccmd_reloadLights("/reloadlights", "reload light json",
+    [](int argc, const char* argv[]){
+    loadLights();
+    });
+#endif
+
+light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus) {
+    if (!name || !name[0]) {
+        return nullptr;
+    }
+    auto find = lightDefs.find(name);
+    if (find == lightDefs.end()) {
+        return nullptr;
+    }
+    const auto& def = find->second;
+    if (def.shadows) {
+        return lightSphereShadow(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+    } else {
+        return lightSphere(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+    }
 }

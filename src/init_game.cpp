@@ -534,11 +534,19 @@ int initGame()
 void deinitGame()
 {
     // destroy camera framebuffers
+    constexpr int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
     for (int c = 0; c < MAXPLAYERS; ++c) {
-        cameras[c].fb.destroy();
-        playerPortraitView[c].fb.destroy();
+        for (int i = 0; i < numFbs; ++i) {
+            cameras[c].fb[i].destroy();
+            playerPortraitView[c].fb[i].destroy();
+        }
     }
-    menucam.fb.destroy();
+    for (int i = 0; i < numFbs; ++i) {
+        menucam.fb[i].destroy();
+    }
+
+	// destroy enemy hp bar textures
+	EnemyHPDamageBarHandler::dumpCache();
 
 	// send disconnect messages
 	if (multiplayer != SINGLE) {

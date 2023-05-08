@@ -431,7 +431,6 @@ void actLeftHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
-					entity->flags[BRIGHT] = true;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
@@ -787,7 +786,6 @@ void actRightHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
-					entity->flags[BRIGHT] = true;
 					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
 					//entity->sizey = 1;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!

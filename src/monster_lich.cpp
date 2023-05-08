@@ -337,7 +337,7 @@ void lichAnimate(Entity* my, double dist)
 		}
 		if ( myStats->HP > myStats->MAXHP / 2 )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, makeColorRGB(128, 64, 192));
+			my->light = addLight(my->x / 16, my->y / 16, "herx_glow");
 		}
 		else if ( !my->skill[27] )
 		{
@@ -349,7 +349,7 @@ void lichAnimate(Entity* my, double dist)
 	{
 		if ( !my->skill[27] )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, makeColorRGB(128, 64, 192));
+			my->light = addLight(my->x / 16, my->y / 16, "herx_glow");
 		}
 	}
 

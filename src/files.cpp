@@ -34,7 +34,7 @@ std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 std::unordered_map<std::string, int> mapHashes = {
 	{ "boss.lmp", 2376307 },
-	{ "bramscastle.lmp", 2954489 },
+	{ "bramscastle.lmp", 3370696 },
 	{ "caves.lmp", 1065461 },
 	{ "caves00.lmp", 70935 },
 	{ "caves01.lmp", 13350 },
@@ -649,7 +649,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "mine15a.lmp", 14464 },
 	{ "mine15b.lmp", 19060 },
 	{ "mine15c.lmp", 12155 },
-	{ "mine15d.lmp", 11889 },
+	{ "mine15d.lmp", 9684 },
 	{ "mine15e.lmp", 6134 },
 	{ "mine16.lmp", 47683 },
 	{ "mine16a.lmp", 5567 },
@@ -1346,19 +1346,12 @@ const std::vector<std::string> officialSecretlevelsTxtOrder =
 void glLoadTexture(SDL_Surface* image, int texnum)
 {
 	SDL_LockSurface(image);
-	glBindTexture(GL_TEXTURE_2D, texid[texnum]);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	//glPixelStorei(GL_UNPACK_ROW_LENGTH, (image->pitch / 4));
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	//#ifdef APPLE
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image->w, image->h, 0, GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, image->pixels);
-	//#else
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
-	//#endif
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[texnum]));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels));
 	SDL_UnlockSurface(image);
 }
 
@@ -1473,7 +1466,7 @@ SDL_Surface* loadImage(char const * const filename)
 	// load the new surface as a GL texture
 	allsurfaces[imgref] = newSurface;
 	allsurfaces[imgref]->userdata = (void *)((long int)imgref);
-	glLoadTexture(allsurfaces[imgref], imgref);
+	GL_CHECK_ERR(glLoadTexture(allsurfaces[imgref], imgref));
 
 	// free the translated surface
 	SDL_FreeSurface(originalSurface);
@@ -1540,8 +1533,9 @@ voxel_t* loadVoxel(char* filename)
 	}
 }
 
+constexpr float hellAmbience = 0.1f;
 #ifndef EDITOR
-static ConsoleVariable<int> cvar_hell_ambience("/hell_ambience", 32);
+static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience);
 #endif
 
 /*-------------------------------------------------------------------------------
@@ -2210,9 +2204,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				lightmap[c].x = 32.f;
-                lightmap[c].y = 32.f;
-                lightmap[c].z = 32.f;
+				lightmap[c].x = hellAmbience;
+                lightmap[c].y = hellAmbience;
+                lightmap[c].z = hellAmbience;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
@@ -2224,9 +2218,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
 			{
-				lightmapSmoothed[c].x = 32.f;
-                lightmapSmoothed[c].y = 32.f;
-                lightmapSmoothed[c].z = 32.f;
+				lightmapSmoothed[c].x = hellAmbience;
+                lightmapSmoothed[c].y = hellAmbience;
+                lightmapSmoothed[c].z = hellAmbience;
 #ifndef EDITOR
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
@@ -3035,39 +3029,20 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 	end = endnum;
 
 	// now free polymodels as we'll be loading them up later.
-	if ( freePreviousModels )
-	{
-		for ( int c = std::max(1, start); c < end && c < nummodels; ++c )
-		{
-			// cannot free index 0 - null object
-			if ( polymodels[c].faces )
-			{
+	if ( freePreviousModels ) {
+		for (int c = start; c < end && c < nummodels; ++c) {
+			if ( polymodels[c].faces ) {
 				free(polymodels[c].faces);
 			}
-			if ( polymodels[c].vbo )
-			{
-				glDeleteBuffers(1, &polymodels[c].vbo);
+            if ( polymodels[c].vao ) {
+                GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+            }
+			if ( polymodels[c].vbo ) {
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
 			}
-			if ( polymodels[c].colors )
-			{
-				glDeleteBuffers(1, &polymodels[c].colors);
+			if ( polymodels[c].colors ) {
+                GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
 			}
-			if ( polymodels[c].va )
-			{
-				glDeleteVertexArrays(1, &polymodels[c].va);
-			}
-			/*if ( polymodels[c].colors_shifted )
-			{
-				glDeleteBuffers(1, &polymodels[c].colors_shifted);
-			}
-			if ( polymodels[c].grayscale_colors )
-			{
-				glDeleteVertexArrays(1, &polymodels[c].grayscale_colors);
-			}
-			if ( polymodels[c].grayscale_colors_shifted )
-			{
-				glDeleteBuffers(1, &polymodels[c].grayscale_colors_shifted);
-			}*/
 		}
 	}
 

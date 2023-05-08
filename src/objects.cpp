@@ -300,7 +300,7 @@ button_t* newButton(void)
 
 -------------------------------------------------------------------------------*/
 
-light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
+light_t* newLight(Sint32 x, Sint32 y, Sint32 radius)
 {
 	light_t* light;
 
@@ -321,7 +321,6 @@ light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Uint32 color)
 	light->x = x;
 	light->y = y;
 	light->radius = radius;
-	light->color = color;
 	if ( light->radius > 0 )
 	{
 		light->tiles = (vec4_t*) malloc(sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1));

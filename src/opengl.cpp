@@ -36,7 +36,7 @@ static void perspectiveGL(GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdoub
 	fH = tan(fovY / 360 * PI) * zNear;
 	fW = fH * aspect;
 
-	glFrustum(-fW, fW, -fH, fH, zNear, zFar);
+    GL_CHECK_ERR(glFrustum(-fW, fW, -fH, fH, zNear, zFar));
 }
 
 vec4_t vec4_copy(const vec4_t* v) {
@@ -205,6 +205,16 @@ mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v) {
     return result;
 }
 
+mat4x4_t* ortho(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
+    *result = mat4x4(1.f);
+    result->x.x = 2.f / (right - left);
+    result->y.y = 2.f / (top - bot);
+    result->z.z = 2.f / (far - near);
+    result->w.x = -1.f;
+    result->w.y = -1.f;
+    return result;
+}
+
 mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far) {
     *result = mat4x4(0.f);
     result->x.x = 2.f / (right - left);
@@ -216,8 +226,6 @@ mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float to
     result->w.z = -(2.f * far * near) / (far - near);
     return result;
 }
-
-#define perspective fast_perspective
 
 mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far) {
     const float h = tanf((fov / 180.f * (float)PI) / 2.f);
@@ -244,10 +252,9 @@ mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16])
 	return result;
 }
 
-bool invertMatrix4x4(const mat4x4_t* m, float invOut[16])
+bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m)
 {
-	double inv[16], det;
-	int i;
+	float inv[16];
 
 	inv[0] = m->y.y * m->z.z * m->w.w -
 		m->y.y * m->z.w * m->w.z -
@@ -361,15 +368,18 @@ bool invertMatrix4x4(const mat4x4_t* m, float invOut[16])
 		m->z.x * m->x.y * m->y.z -
 		m->z.x * m->x.z * m->y.y;
 
-	det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
+	float det = m->x.x * inv[0] + m->x.y * inv[4] + m->x.z * inv[8] + m->x.w * inv[12];
 
-	if ( det == 0 )
-		return false;
+    if (det == 0.f) {
+        return false;
+    }
 
-	det = 1.0 / det;
+	det = 1.f / det;
 
-	for ( i = 0; i < 16; i++ )
-		invOut[i] = inv[i] * det;
+    float* out = (float*)result;
+    for (int i = 0; i < 16; ++i) {
+        out[i] = inv[i] * det;
+    }
 
 	return true;
 }
@@ -384,12 +394,6 @@ vec4_t project(
 	vec4_t result = *world; result.w = 1.f;
 	copy = vec4_copy(&result); mul_mat_vec4(&result, model, &copy);
 	copy = vec4_copy(&result); mul_mat_vec4(&result, projview, &copy);
-
-	//float invertedProjview[16];
-	//invertMatrix4x4(projview, invertedProjview);
-	//mat4x4_t invertedProjviewMat;
-	//mat_from_array(&invertedProjviewMat, invertedProjview);
-	//mul_mat_vec4(&result, &invertedProjviewMat, &vec4_copy(result));
 
 	vec4 half(0.5f);
 	vec4 w(result.w);
@@ -408,49 +412,22 @@ vec4_t unproject(
 	const vec4_t* window
 ) {
 	vec4_t result = *screenCoords;
-	result.x -= window->x;
-	result.y -= window->y;
-	result.x /= window->z;
-	result.y /= window->w;
+	result.x = (result.x - window->x) / window->z;
+	result.y = (result.y - window->y) / window->w;
 
 	vec4 half(0.5f);
 	sub_vec4(&result, &result, &half);
 	div_vec4(&result, &result, &half);
 
-	float invertedProjview[16];
-	invertMatrix4x4(projview, invertedProjview);
-	mat4x4_t invertedProjviewMat;
-	mat_from_array(&invertedProjviewMat, invertedProjview);
-	vec4 copy = vec4_copy(&result);
-	mul_mat_vec4(&result, &invertedProjviewMat, &copy);
-
-	vec4 w(result.w);
-	div_vec4(&result, &result, &w);
+    vec4 copy;
+    mat4x4_t inv;
+    invertMatrix4x4(&inv, projview);
+	copy = vec4_copy(&result); mul_mat_vec4(&result, &inv, &copy);
+    
+    vec4 w(result.w);
+    div_vec4(&result, &result, &w);
 
 	return result;
-}
-
-/*-------------------------------------------------------------------------------
-
-	getLightForEntity
-
-	Returns a shade factor (0.0-1.0) to shade an entity with, based on
-	its surroundings
-
--------------------------------------------------------------------------------*/
-
-real_t getLightForEntity(real_t x, real_t y)
-{
-	if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
-	{
-		return 1.f;
-	}
-	int u = x;
-	int v = y;
-	constexpr float div = 1.f / 255.f;
-    const auto& l = lightmapSmoothed[(v + 1) + (u + 1) * (map.height + 2)];
-    const auto light = (l.x + l.y + l.z) / 3.f;
-	return std::min(std::max(0.f, light), 255.f) * div;
 }
 
 /*-------------------------------------------------------------------------------
@@ -462,6 +439,16 @@ real_t getLightForEntity(real_t x, real_t y)
 -------------------------------------------------------------------------------*/
 
 static void fillSmoothLightmap() {
+    constexpr float epsilon = 1.f;
+    constexpr float defaultSmoothRate = 4.f;
+#ifndef EDITOR
+    static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", defaultSmoothRate);
+    const float smoothingRate = *cvar_smoothingRate;
+#else
+    const float smoothingRate = defaultSmoothRate;
+#endif
+    const float rate = smoothingRate * (1.f / fpsLimit);
+    
     int v = 0;
     int index = 0;
     int smoothindex = 2 + map.height + 1;
@@ -473,21 +460,13 @@ static void fillSmoothLightmap() {
             v = 0;
         }
         
-#ifndef EDITOR
-        static ConsoleVariable<float> cvar_smoothingRate("/lightupdate", 1.f);
-        const float smoothingRate = *cvar_smoothingRate;
-#else
-        const float smoothingRate = 1.f;
-#endif
-        const float rate = smoothingRate * (1.f / fpsLimit) * 4.f;
-        
         auto& d = lightmapSmoothed[smoothindex];
         const auto& s = lightmap[index];
         for (int c = 0; c < 4; ++c) {
             auto& dc = *(&d.x + c);
             const auto& sc = *(&s.x + c);
             const auto diff = sc - dc;
-            if (fabsf(diff) < 1.f) { dc += diff; }
+            if (fabsf(diff) < epsilon) { dc += diff; }
             else { dc += diff * rate; }
         }
     }
@@ -508,26 +487,40 @@ static void loadLightmapTexture() {
     pixels.clear();
     pixels.reserve(map.width * map.height * 4);
     
+#ifdef EDITOR
+    const bool fullbright = false;
+#else
+    const bool fullbright = *cvar_fullBright;
+#endif
+    
     // build lightmap texture data
     const float div = 1.f / 255.f;
     const int xoff = MAPLAYERS * map.height;
     const int yoff = MAPLAYERS;
-    for (int y = 0; y < map.height; ++y) {
-        for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
-            if (!testTileOccludes(map, index)) {
-                float count = 1.f;
-                vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
-                if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
-                if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
-                total.x = (total.x / count) * div;
-                total.y = (total.y / count) * div;
-                total.z = (total.z / count) * div;
-                total.w = 1.f;
-                pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
-            } else {
-                pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+    if (fullbright) {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0; x < map.width; ++x) {
+                pixels.insert(pixels.end(), {1.f, 1.f, 1.f, 1.f});
+            }
+        }
+    } else {
+        for (int y = 0; y < map.height; ++y) {
+            for (int x = 0, index = y * yoff; x < map.width; ++x, index += xoff) {
+                if (!testTileOccludes(map, index)) {
+                    float count = 1.f;
+                    vec4_t t, total = lightmapSmoothed[(y + 1) + (x + 1) * (map.height + 2)];
+                    if (!testTileOccludes(map, index + yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 2) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index + xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 2) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - yoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 0) + (x + 1) * (map.height + 2)]); total = t; ++count; }
+                    if (!testTileOccludes(map, index - xoff)) { (void)add_vec4(&t, &total, &lightmapSmoothed[(y + 1) + (x + 0) * (map.height + 2)]); total = t; ++count; }
+                    total.x = (total.x / count) * div;
+                    total.y = (total.y / count) * div;
+                    total.z = (total.z / count) * div;
+                    total.w = 1.f;
+                    pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
+                } else {
+                    pixels.insert(pixels.end(), {0.f, 0.f, 0.f, 1.f});
+                }
             }
         }
     }
@@ -545,126 +538,11 @@ void beginGraphics() {
     updateChunks();
 }
 
-void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
+static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapDims) {
     shader.bind();
-    if (proj) glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj);
-    if (view) glUniformMatrix4fv(shader.uniform("uView"), 1, false, view);
-    if (mapDims) glUniform2fv(shader.uniform("uMapDims"), 1, mapDims);
-    if (mapDims) glUniform1i(shader.uniform("uLightmap"), 1); // lightmap uses texture unit 1
-    shader.unbind();
-}
-
-#ifndef EDITOR
-static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", false);
-static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", 1.f);
-static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", 2.2f);
-#endif
-
-static int oldViewport[4];
-
-void glBeginCamera(view_t* camera)
-{
-    if (!camera) {
-        return;
-    }
-    
-    // setup viewport
-#ifdef EDITOR
-    const bool hdr = false;
-#else
-    const bool hdr = *cvar_hdrEnabled;
-#endif
-    if (hdr) {
-        camera->fb.init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
-        camera->fb.bindForWriting();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glScissor(0, 0, camera->winw, camera->winh);
-    } else {
-        glGetIntegerv(GL_VIEWPORT, oldViewport);
-        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-        glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-    }
-    glEnable(GL_SCISSOR_TEST);
-    glEnable(GL_DEPTH_TEST);
-    
-    const float aspect = (real_t)camera->winw / (real_t)camera->winh;
-
-	// setup projection + view matrix (legacy)
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, aspect, CLIPNEAR, CLIPFAR);
-	const float rotx = camera->vang * 180.f / PI; // get x rotation
-	const float roty = (camera->ang - 3.f * PI / 2.f) * 180.f / PI; // get y rotation
-	const float rotz = 0.f; // get z rotation
-	glRotatef(rotx, 1.f, 0.f, 0.f); // rotate pitch
-	glRotatef(roty, 0.f, 1.f, 0.f); // rotate yaw
-	glRotatef(rotz, 0.f, 0.f, 1.f); // rotate roll
-	glTranslatef(-camera->x * 32.f, camera->z, -camera->y * 32.f); // translates the scene based on camera position
-    
-    // setup projection + view matrix (shader)
-    mat4x4_t proj, view, view2, identity;
-    vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
-    (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
-    (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
-    (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
-    (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
-    (void)translate_mat(&view, &view2, &translate); view2 = view;
-
-	// lightmap dimensions
-	vec4_t mapDims;
-	mapDims.x = map.width;
-	mapDims.y = map.height;
-    
-    // set ambient lighting
-    if ( camera->globalLightModifierActive ) {
-        getLightAtModifier = camera->globalLightModifier;
-    }
-    else {
-        getLightAtModifier = 1.0;
-    }
-    
-	// upload uniforms
-    uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
-    uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(voxelBrightDitheredShader, (float*)&proj, (float*)&view, nullptr);
-    uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
-    uploadUniforms(worldBrightShader, (float*)&proj, (float*)&view, nullptr);
-    uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
-}
-
-void glEndCamera(view_t* camera)
-{
-    if (!camera) {
-        return;
-    }
-    
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
-    
-#ifdef EDITOR
-    const bool hdr = false;
-    const float exposure = 1.f;
-    const float gamma = 1.f;
-#else
-    const bool hdr = *cvar_hdrEnabled;
-    const float exposure = *cvar_hdrExposure;
-    const float gamma = *cvar_hdrGamma;
-#endif
-    if (hdr) {
-        camera->fb.unbindForWriting();
-        glGetIntegerv(GL_VIEWPORT, oldViewport);
-        glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-        camera->fb.bindForReading();
-        camera->fb.hdrBlit(gamma, exposure);
-        camera->fb.unbindForReading();
-        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
-    } else {
-        glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
-    }
+    if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
+    if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
+    if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
 }
 
 // hsv values:
@@ -708,254 +586,16 @@ static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
     return result;
 }
 
-void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
-	if (!entity) {
-		return;
-	}
-
-	// assign model
-    voxel_t* model = nullptr;
-    int modelindex = -1;
-#ifndef EDITOR
-	static ConsoleVariable<int> cvar_forceModel("/forcemodel", -1, "force all voxel models to use a specific index");
-	modelindex = *cvar_forceModel;
-#endif
-	if (modelindex < 0) {
-		modelindex = entity->sprite;
-	}
-	if (modelindex >= 0 && modelindex < nummodels) {
-		if (models[modelindex] != NULL) {
-			model = models[modelindex];
-		} else {
-			model = models[0];
-		}
-	} else {
-		model = models[0];
-		modelindex = 0;
-	}
-
-	if (!model || model == models[0]) {
-		return; // don't draw green balls
-	}
-    
-	if (mode == REALCOLORS) {
-		glEnable(GL_BLEND);
-	} else {
-		glDisable(GL_BLEND);
-	}
-
-	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
-		|| modelindex == FOLLOWER_SELECTED_PARTICLE
-		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
-		glDepthRange(0, 0.1);
-	}
-
-	bool highlightEntity = false;
-	bool highlightEntityFromParent = false;
-	int player = -1;
-	for (player = 0; player < MAXPLAYERS; ++player) {
-		if (&cameras[player] == camera) {
-			break;
-		}
-	}
-	highlightEntity = entity->bEntityHighlightedForPlayer(player);
-    if (!highlightEntity && (modelindex == 184 || modelindex == 585 || modelindex == 216)) { // lever base/chest lid
-		Entity* parent = uidToEntity(entity->parent);
-		if (parent && parent->bEntityHighlightedForPlayer(player)) {
-			entity->highlightForUIGlow = parent->highlightForUIGlow;
-			highlightEntityFromParent = true;
-			highlightEntity = highlightEntityFromParent;
-		}
-	}
-
-	bool doGrayScale = false;
-	real_t grayScaleFactor = 0.0;
-	if (entity->grayscaleGLRender > 0.001) {
-		doGrayScale = true;
-		grayScaleFactor = entity->grayscaleGLRender;
-	}
-
-	// get shade factor
-    real_t s = 1.0;
-	if (!entity->flags[BRIGHT]) {
-		if (!entity->flags[OVERDRAW]) {
-			if (entity->monsterEntityRenderAsTelepath == 1 && !intro) {
-				if (camera->globalLightModifierActive) {
-					s = camera->globalLightModifierEntities;
-				}
-			} else {
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-		} else {
-			s = getLightForEntity(camera->x, camera->y);
-		}
-	}
-
-	if ( camera->globalLightModifierActive && entity->monsterEntityRenderAsTelepath == 0 ) {
-		s *= camera->globalLightModifier;
-	}
-    
-#ifndef EDITOR
-    static ConsoleVariable<bool> cvar_legacyVoxelDraw("/legacyvoxel", false);
-	const bool legacyVoxels = *cvar_legacyVoxelDraw;
-#else
-	const bool legacyVoxels = false;
-#endif
-    
-    if (legacyVoxels) {
-        // old rendering (fixed function)
-        // setup model matrix
-        glMatrixMode( GL_MODELVIEW );
-        glPushMatrix();
-        glLoadIdentity();
-        GLfloat rotx, roty, rotz;
-        if (entity->flags[OVERDRAW]) {
-            glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-            rotx = 0; // get x rotation
-            roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-            rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-            glRotatef(roty, 0, 1, 0); // rotate yaw
-            glRotatef(rotz, 0, 0, 1); // rotate pitch
-            glRotatef(rotx, 1, 0, 0); // rotate roll
-        }
-        rotx = entity->roll * 180.0 / PI; // get x rotation
-        roty = 360.0 - entity->yaw * 180.0 / PI; // get y rotation
-        rotz = 360.0 - entity->pitch * 180.0 / PI; // get z rotation
-        glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-        glRotatef(roty, 0, 1, 0); // rotate yaw
-        glRotatef(rotz, 0, 0, 1); // rotate pitch
-        glRotatef(rotx, 1, 0, 0); // rotate roll
-        glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
-        glScalef(entity->scalex, entity->scalez, entity->scaley);
-        
-        // OpenGL 2.1 does not support vertex array objects
-        //glBindVertexArray(polymodels[modelindex].va);
-        
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-        glVertexPointer(3, GL_FLOAT, 0, nullptr);
-        if (mode == REALCOLORS) {
-            glEnableClientState(GL_COLOR_ARRAY);
-            /*if (entity->flags[USERFLAG2]) {
-                if (entity->behavior == &actMonster && (entity->isPlayerHeadSprite() ||
-                    modelindex == 467 || !monsterChangesColorWhenAlly(nullptr, entity))) {
-                    if ( doGrayScale ) {
-                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
-                    } else {
-                        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-                    }
-                } else {
-                    if ( doGrayScale ) {
-                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors_shifted);
-                    } else {
-                        //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
-                    }
-                }
-            } else {
-                if (doGrayScale) {
-                    //glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].grayscale_colors);
-                } else {
-                    glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-                }
-            }*/
-            glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-            glColorPointer(3, GL_FLOAT, 0, nullptr);
-            GLfloat params_col[4] = { static_cast<GLfloat>(s), static_cast<GLfloat>(s), static_cast<GLfloat>(s), 1.f };
-            if (highlightEntity) {
-                glEnable(GL_LIGHTING);
-                glEnable(GL_LIGHT1);
-                if (!highlightEntityFromParent) {
-                    entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
-                }
-                real_t highlight = entity->highlightForUIGlow;
-                if (highlight > 1.0) {
-                    highlight = 1.0 - (highlight - 1.0);
-                }
-                GLfloat ambient[4] = {
-                    static_cast<GLfloat>(.15 + highlight * .15),
-                    static_cast<GLfloat>(.15 + highlight * .15),
-                    static_cast<GLfloat>(.15 + highlight * .15),
-                    1.f };
-                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
-                glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-                glEnable(GL_COLOR_MATERIAL);
-            } else {
-                glEnable(GL_LIGHTING);
-                glEnable(GL_COLOR_MATERIAL);
-                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, params_col);
+static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
+    if (mode == REALCOLORS) {
+        if (remap) {
+            bool doGrayScale = false;
+            real_t grayScaleFactor = 0.0;
+            if (entity->grayscaleGLRender > 0.001) {
+                doGrayScale = true;
+                grayScaleFactor = entity->grayscaleGLRender;
             }
-        } else {
-            GLfloat uidcolors[4];
-            Uint32 uid = entity->getUID();
-            uidcolors[0] = ((Uint8)(uid)) / 255.f;
-            uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
-            uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
-            uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-            glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
-        }
-        glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
-        if (mode == REALCOLORS) {
-            glDisable(GL_COLOR_MATERIAL);
-            glDisable(GL_LIGHTING);
-            if (highlightEntity) {
-                glDisable(GL_LIGHT1);
-            }
-            glDisableClientState(GL_COLOR_ARRAY);
-        }
-        glDisableClientState(GL_VERTEX_ARRAY);
-        //glBindVertexArray(0);
-        glPopMatrix();
-    } else {
-        // new rendering (shader)
-        mat4x4_t m, t, i;
-        vec4_t v;
-        
-        // model matrix
-        float rotx, roty, rotz;
-        if (entity->flags[OVERDRAW]) {
-            v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
-            (void)translate_mat(&m, &t, &v); t = m;
-            rotx = 0; // roll
-            roty = 360.0 - camera->ang * 180.0 / PI; // yaw
-            rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
-            (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
-            (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
-            (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
-        }
-        rotx = entity->roll * 180.0 / PI; // roll
-        roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
-        rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
-        v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
-        (void)translate_mat(&m, &t, &v); t = m;
-        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
-        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
-        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
-        v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
-        (void)translate_mat(&m, &t, &v); t = m;
-        v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
-        (void)scale_mat(&m, &t, &v); t = m;
-
-#ifndef EDITOR
-        const bool fullbright = *cvar_fullBright;
-#else
-        const bool fullbright = false;
-#endif
-        const bool useLightmap = mode == REALCOLORS && !entity->flags[BRIGHT] && !fullbright;
-        
-#ifndef EDITOR
-		static ConsoleVariable<bool> cvar_testDithering("/test_dithering", false);
-		auto& shader = *cvar_testDithering ?
-			(useLightmap ? voxelDitheredShader : voxelBrightDitheredShader):
-			(useLightmap ? voxelShader : voxelBrightShader);
-#else
-		auto& shader = useLightmap ?
-			voxelShader : voxelBrightShader;
-#endif
-		shader.bind();
-        
-        // upload shader variables
-        glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m); // model matrix
-        if (mode == REALCOLORS) {
+            
             mat4x4_t remap(1.f);
             if (doGrayScale) {
                 remap.x.x = 1.f / 3.f;
@@ -969,8 +609,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
                 remap.z.z = 1.f / 3.f;
             }
             else if (entity->flags[USERFLAG2]) {
-                if (entity->behavior != &actMonster || (!entity->isPlayerHeadSprite() &&
-                    modelindex != 467 && monsterChangesColorWhenAlly(nullptr, entity))) {
+                if (entity->behavior != &actMonster || monsterChangesColorWhenAlly(nullptr, entity)) {
                     // certain allies use G/B/R color map
                     remap = mat4x4_t(0.f);
                     remap.x.y = 1.f;
@@ -1002,68 +641,366 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
                 HSVtoRGB(&remap.z, &hsv); // blue
             }
 #endif
-            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap);
-            
-            const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-            glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            
-            if (highlightEntity) {
-                if (!highlightEntityFromParent) {
-                    entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
-                }
-                real_t highlight = entity->highlightForUIGlow;
-                if (highlight > 1.0) {
-                    highlight = 1.0 - (highlight - 1.0);
-                }
-                GLfloat ambient[4] = {
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    static_cast<GLfloat>((highlight - 0.5) * .1),
-                    0.f };
-                glUniform4fv(shader.uniform("uColorAdd"), 1, ambient);
-            } else {
-                constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-                glUniform4fv(shader.uniform("uColorAdd"), 1, add);
-            }
-        } else {
-            mat4x4_t empty(0.f);
-            glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty);
-            
-            constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-            glUniform4fv(shader.uniform("uLightColor"), 1, light);
-            
-            GLfloat uidcolors[4];
-            Uint32 uid = entity->getUID();
-            uidcolors[0] = ((Uint8)(uid)) / 255.f;
-            uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
-            uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
-            uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
-            glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors);
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         }
         
-        // draw
-        //glDisable(GL_DEPTH_TEST);
+        const GLfloat light[4] = {
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            1.f,
+        };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
         
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
+        bool highlightEntity = false;
+        bool highlightEntityFromParent = false;
+        int player = -1;
+        for (player = 0; player < MAXPLAYERS; ++player) {
+            if (&cameras[player] == camera) {
+                break;
+            }
+        }
+        highlightEntity = entity->bEntityHighlightedForPlayer(player);
+        if (!highlightEntity) {
+            Entity* parent = uidToEntity(entity->parent);
+            if (parent && parent->bEntityHighlightedForPlayer(player)) {
+                entity->highlightForUIGlow = parent->highlightForUIGlow;
+                highlightEntityFromParent = true;
+                highlightEntity = highlightEntityFromParent;
+            }
+        }
         
-        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        if (highlightEntity) {
+            if (!highlightEntityFromParent) {
+                entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
+            }
+            float highlight = entity->highlightForUIGlow;
+            if (highlight > 1.f) {
+                highlight = 1.f - (highlight - 1.f);
+            }
+            const GLfloat light[4] = {
+                (highlight - .5f) * .1f + entity->lightBonus.x,
+                (highlight - .5f) * .1f + entity->lightBonus.y,
+                (highlight - .5f) * .1f + entity->lightBonus.z,
+                entity->lightBonus.w };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        } else {
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&entity->lightBonus));
+        }
         
-        glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
+    } else {
+        if (remap) {
+            mat4x4_t empty(0.f);
+            GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&empty));
+        }
         
-        glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces));
+        constexpr GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        
-        //glEnable(GL_DEPTH_TEST);
-        //shader.unbind();
+        GLfloat uidcolors[4];
+        Uint32 uid = entity->getUID();
+        uidcolors[0] = ((Uint8)(uid)) / 255.f;
+        uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+        uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+        uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, uidcolors));
+    }
+}
+
+constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
+constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
+constexpr float defaultAdjustmentRate = 0.03f;  // how fast your eyes adjust
+constexpr float defaultLimitHigh = 3.f;         // your aperture can increase to see something 3 times darker.
+constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
+constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
+constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
+constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
+#ifdef EDITOR
+bool hdrEnabled = true;
+#else
+static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
+static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
+static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
+static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
+static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
+static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
+static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
+bool hdrEnabled = *cvar_hdrEnabled;
+#endif
+
+static int oldViewport[4];
+
+void glBeginCamera(view_t* camera, bool useHDR)
+{
+    if (!camera) {
+        return;
     }
     
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDepthRange(0, 1);
+    // setup viewport
+#ifdef EDITOR
+    const bool hdr = useHDR;
+#else
+    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+#endif
+    
+    if (hdr) {
+        const int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
+        const int fbIndex = camera->drawnFrames % numFbs;
+        camera->fb[fbIndex].init(camera->winw, camera->winh, GL_LINEAR, GL_LINEAR);
+        camera->fb[fbIndex].bindForWriting();
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
+    } else {
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        GL_CHECK_ERR(glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+    }
+    GL_CHECK_ERR(glEnable(GL_SCISSOR_TEST));
+    GL_CHECK_ERR(glEnable(GL_DEPTH_TEST));
+    
+    const float aspect = (real_t)camera->winw / (real_t)camera->winh;
+	const float rotx = camera->vang * 180.f / PI; // get x rotation
+	const float roty = (camera->ang - 3.f * PI / 2.f) * 180.f / PI; // get y rotation
+	const float rotz = 0.f; // get z rotation
+    
+    // setup projection + view matrix (shader)
+    mat4x4_t proj, view, view2, identity;
+    vec4_t translate(-camera->x * 32.f, camera->z, -camera->y * 32.f, 0.f);
+    (void)perspective(&proj, fov, aspect, CLIPNEAR, CLIPFAR);
+    (void)rotate_mat(&view, &view2, rotx, &identity.x); view2 = view;
+    (void)rotate_mat(&view, &view2, roty, &identity.y); view2 = view;
+    (void)rotate_mat(&view, &view2, rotz, &identity.z); view2 = view;
+    (void)translate_mat(&view, &view2, &translate); view2 = view;
+    
+    // store proj * view
+    (void)mul_mat(&camera->projview, &proj, &view);
+
+	// lightmap dimensions
+	vec4_t mapDims;
+	mapDims.x = map.width;
+	mapDims.y = map.height;
+    
+    // set ambient lighting
+    if ( camera->globalLightModifierActive ) {
+        getLightAtModifier = camera->globalLightModifier;
+    }
+    else {
+        getLightAtModifier = 1.0;
+    }
+    
+	// upload uniforms
+    uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(voxelDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(worldDarkShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(skyShader, (float*)&proj, (float*)&view, nullptr);
+    uploadUniforms(spriteShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
+    uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
+}
+
+void glEndCamera(view_t* camera, bool useHDR)
+{
+    if (!camera) {
+        return;
+    }
+    
+    GL_CHECK_ERR(glDisable(GL_DEPTH_TEST));
+    GL_CHECK_ERR(glDisable(GL_SCISSOR_TEST));
+    
+#ifdef EDITOR
+    const bool hdr = useHDR;
+    const float hdr_exposure = defaultExposure;
+    const float hdr_gamma = defaultGamma;
+    const float hdr_adjustment_rate = defaultAdjustmentRate;
+    const float hdr_limit_high = defaultLimitHigh;
+    const float hdr_limit_low = defaultLimitLow;
+    const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
+#else
+    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+    const float hdr_exposure = *cvar_hdrExposure;
+    const float hdr_gamma = *cvar_hdrGamma;
+    const float hdr_adjustment_rate = *cvar_hdrAdjustment;
+    const float hdr_limit_high = *cvar_hdrLimitHigh;
+    const float hdr_limit_low = *cvar_hdrLimitLow;
+    const Vector4 hdr_luma = *cvar_hdrLuma;
+#endif
+    
+    const int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
+    const int fbIndex = camera->drawnFrames % numFbs;
+    
+    if (hdr) {
+        // update viewport
+        camera->fb[fbIndex].unbindForWriting();
+        GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
+        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        
+        // calculate luminance
+        camera->fb[fbIndex].bindForReading();
+        auto pixels = camera->fb[fbIndex].lock();
+        if (pixels) {
+            float v[4] = { 0.f };
+            const int size = camera->winw * camera->winh * 4;
+            const auto end = pixels + size;
+            const int step = size / 64;
+            for (; pixels < end; pixels += step) {
+                const float p[4] = {
+                    toFloat32(*(pixels + 0)),
+                    toFloat32(*(pixels + 1)),
+                    toFloat32(*(pixels + 2)),
+                    toFloat32(*(pixels + 3)),
+                };
+                v[0] += p[0];
+                v[1] += p[1];
+                v[2] += p[2];
+                v[3] += p[3];
+            }
+            float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
+            luminance = luminance / (size / step);
+            const float rate = hdr_adjustment_rate / fpsLimit;
+            if (camera->luminance > luminance) {
+                camera->luminance -= std::min(rate, camera->luminance - luminance);
+            } else if (camera->luminance < luminance) {
+                camera->luminance += std::min(rate, luminance - camera->luminance);
+            }
+        }
+        camera->fb[fbIndex].unlock();
+        const float exposure = std::min(std::max(hdr_limit_low, hdr_exposure / camera->luminance), hdr_limit_high);
+        const float brightness = 1.f;
+        const float gamma = hdr_gamma * vidgamma;
+        
+        // blit framebuffer
+        camera->fb[fbIndex].hdrDraw(brightness, gamma, exposure);
+        camera->fb[fbIndex].unbindForReading();
+        
+        // revert viewport
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
+    } else {
+        GL_CHECK_ERR(glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]));
+    }
+    ++camera->drawnFrames;
+}
+
+void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
+	if (!camera || !entity) {
+		return;
+	}
+
+	// select model
+    voxel_t* model = nullptr;
+    int modelindex = -1;
+#ifndef EDITOR
+	static ConsoleVariable<int> cvar_forceModel("/forcemodel", -1, "force all voxel models to use a specific index");
+	modelindex = *cvar_forceModel;
+#endif
+	if (modelindex < 0) {
+		modelindex = entity->sprite;
+	}
+	if (modelindex >= 0 && modelindex < nummodels) {
+		if (models[modelindex] != NULL) {
+			model = models[modelindex];
+		} else {
+			model = models[0];
+		}
+	} else {
+		model = models[0];
+		modelindex = 0;
+	}
+	if (!model || model == models[0]) {
+		return; // don't draw green balls
+	}
+    
+    // set GL state
+	if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+	}
+    bool changedDepthRange = false;
+	if (entity->flags[OVERDRAW] || (entity->monsterEntityRenderAsTelepath == 1 && !intro) 
+		|| modelindex == FOLLOWER_SELECTED_PARTICLE
+		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
+        changedDepthRange = true;
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
+	}
+    
+    // bind shader
+    auto& dither = entity->dithering[camera];
+    auto& shader = !entity->flags[BRIGHT] ?
+        (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
+        voxelBrightShader;
+    shader.bind();
+    
+    // upload dither amount, if necessary
+    if (&shader == &voxelDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
+    }
+    
+    mat4x4_t m, t, i;
+    vec4_t v;
+    
+    // model matrix
+    float rotx, roty, rotz;
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        rotx = 0; // roll
+        roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    rotx = entity->roll * 180.0 / PI; // roll
+    roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+    rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+    (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+    (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    uploadLightUniforms(camera, shader, entity, mode, true);
+    
+    // draw mesh
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
+    
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
+    
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, (int)(3 * polymodels[modelindex].numfaces)));
+    
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(polymodels[modelindex].vao));
+#else
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
+#endif
+    
+    // reset GL state
+    if (changedDepthRange) {
+        GL_CHECK_ERR(glDepthRange(0, 1));
+    }
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+    }
 }
 
 /*-------------------------------------------------------------------------------
@@ -1073,760 +1010,435 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	Draws a 2D sprite to represent an object in 3D
 
 -------------------------------------------------------------------------------*/
-SDL_Surface* glTextSurface(std::string text, GLuint* outTextId)
-{
-	SDL_Surface* image = sprites[0];
-	GLuint textureId = texid[(long int)sprites[0]->userdata];
-	char textToRetrieve[128];
-	strncpy(textToRetrieve, text.c_str(), 127);
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 127)] = '\0';
 
-	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
-	{
-		textureId = texid[(long int)image->userdata];
-	}
-	else
-	{
-		// create the text outline surface
-		TTF_SetFontOutline(ttf12, 2);
-		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
-		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
-
-		// create the text surface
-		TTF_SetFontOutline(ttf12, 0);
-		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
-
-		// combine the surfaces
-		SDL_Rect pos;
-		pos.x = 2;
-		pos.y = 2;
-		pos.h = 0;
-		pos.w = 0;
-
-		SDL_BlitSurface(textSurf, NULL, image, &pos);
-		SDL_FreeSurface(textSurf);
-		// load the text outline surface as a GL texture
-		allsurfaces[imgref] = image;
-		allsurfaces[imgref]->userdata = (void *)((long int)imgref);
-		glLoadTexture(allsurfaces[imgref], imgref);
-		imgref++;
-		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
-		{
-			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
-		}
-		textureId = texid[(long int)image->userdata];
-	}
-	if ( outTextId )
-	{
-		*outTextId = textureId;
-	}
-	return image;
-}
+Mesh spriteMesh = {
+    {
+        -.5f, -.5f, 0.f,
+         .5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f, -.5f, 0.f,
+         .5f,  .5f, 0.f,
+        -.5f,  .5f, 0.f,
+    }, // positions
+    {
+        0.f, 1.f,
+        1.f, 1.f,
+        1.f, 0.f,
+        0.f, 1.f,
+        1.f, 0.f,
+        0.f, 0.f,
+    }, // texcoords
+    {} // colors
+};
 
 #ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
 #endif
 
-bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly)
+void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
 {
-	if ( !enemyHPBarDetails ) 
-	{
-		return false;
+#ifndef EDITOR
+    if (!camera || mode != REALCOLORS || !enemyHPBarDetails) {
+		return;
 	}
 	auto enemybar = (EnemyHPDamageBarHandler::EnemyHPDetails*)enemyHPBarDetails;
 	SDL_Surface* sprite = enemybar->worldSurfaceSprite;
-	if ( !sprite || !enemybar->worldTexture )
-	{
-		return false;
+	if (!sprite || !enemybar->worldTexture) {
+		return;
 	}
 
-	// assign texture
+	// bind texture
 	TempTexture* tex = enemybar->worldTexture;
-	if (!doVisibilityCheckOnly)
-	{
-		if (mode == REALCOLORS)
-		{
-			if (tex)
-			{
-				tex->bind();
-			}
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-	}
+	tex->bind();
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-
-	GLfloat projectionMatrix[16];
-	glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	real_t height = enemybar->worldZ - 6;
-	glTranslatef(enemybar->worldX * 2,
-		-height * 2 - 1, 
-		enemybar->worldY * 2);
-
-	real_t tangent = 180 - camera->ang * (180 / PI);
-	glRotatef(tangent, 0, 1, 0);
-
-	float scaleFactor = 0.08;
-	glScalef(scaleFactor, scaleFactor, scaleFactor);
-
-	/*if ( entity && entity->flags[OVERDRAW] )
-	{
-	}*/
-#ifndef EDITOR
-	glDepthRange(0, *cvar_enemybarDepthRange);
-#endif // !EDITOR
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		glColor4f(1.f, 1.f, 1.f, enemybar->animator.fadeOut / 100.f);
-	}
-	else
-	{
-		glColor4ub((Uint8)(enemybar->enemy_uid), (Uint8)(enemybar->enemy_uid >> 8), (Uint8)(enemybar->enemy_uid >> 16), (Uint8)(enemybar->enemy_uid >> 24));
-	}
-
-	GLfloat modelViewMatrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
-
-	vec4_t worldCoords[4]; // 0, 0, 0, 1.f is centre of rendered quad
-	worldCoords[0].x = enemybar->screenDistance; // top left
-	worldCoords[0].y = sprite->h / 2;
-	worldCoords[0].z = sprite->w / 2;
-	worldCoords[0].w = 1.f;
-	worldCoords[1].x = enemybar->screenDistance; // top right
-	worldCoords[1].y = sprite->h / 2;
-	worldCoords[1].z = -sprite->w / 2;
-	worldCoords[1].w = 1.f;
-	worldCoords[2].x = enemybar->screenDistance; // bottom left
-	worldCoords[2].y = -sprite->h / 2;
-	worldCoords[2].z = sprite->w / 2;
-	worldCoords[2].w = 1.f;
-	worldCoords[3].x = enemybar->screenDistance; // bottom right
-	worldCoords[3].y = -sprite->h / 2;
-	worldCoords[3].z = -sprite->w / 2;
-	worldCoords[3].w = 1.f;
-
-	mat4x4_t projMat4;
-	mat_from_array(&projMat4, projectionMatrix);
-
-	mat4x4_t modelMat4;
-	mat_from_array(&modelMat4, modelViewMatrix);
-
-	vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
-	mat4x4_t projViewModel4;
-	mul_mat(&projViewModel4, &projMat4, &modelMat4);
-
-	mat4x4_t identityMatrix = mat4x4(1.f);
-	bool anyVertexVisible = false;
-	if ( enemybar->enemy_hp > 0 ) // don't update if dead target.
-	{
-		enemybar->glWorldOffsetY = 0.f;
-		vec4_t screenCoordinates = project(&worldCoords[0], &identityMatrix, &projViewModel4, &window); // top-left coord
-		if ( screenCoordinates.y >= (window.w + window.y) && projViewModel4.w.z >= 0 ) // above camera limit
-		{
-			float pixelOffset = abs(screenCoordinates.y - (window.w + window.y));
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t;
+    
+    // model matrix
+    const float height = (float)enemybar->worldZ - 6.f;
+    const float drawOffsetY = 0.f;
+    /*const float drawOffsetY = enemybar->worldSurfaceSpriteStatusEffects ?
+        enemybar->worldSurfaceSpriteStatusEffects->h / -2.f : 0.f;*/
+    v = vec4((float)enemybar->worldX * 2.f, drawOffsetY - height * 2.f, (float)enemybar->worldY * 2.f, 0.f);
+    (void)translate_mat(&t, &m, &v); m = t;
+    mat4x4_t i;
+    (void)rotate_mat(&t, &m, -90.f - camera->ang * (180.f / PI), &i.y); m = t;
+    (void)rotate_mat(&t, &m, -camera->vang * (180.f / PI), &i.x); m = t;
+    const float scale = 0.08;
+    v = vec4(scale * tex->w, scale * tex->h, scale * enemybar->screenDistance, 0.f);
+    (void)scale_mat(&t, &m, &v); m = t;
+    
+    // don't update if dead target.
+    if (enemybar->enemy_hp > 0) {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
+        
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        const float topOfWindow = window.w + window.y;
+		vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
+            // above camera limit
+			const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
 			screenCoordinates.y -= pixelOffset;
-			vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
-			enemybar->glWorldOffsetY = (worldCoords[0].y - worldCoords2.y);
-		}
-		else if ( false ) // code to check lower bounds of camera - in case needed.
-		{
-			screenCoordinates = project(&worldCoords[2], &identityMatrix, &projViewModel4, &window); // bottom-left coord
-			if ( screenCoordinates.y < (window.y) && projViewModel4.w.z >= 0 ) // below camera limit
-			{
-				float pixelOffset = abs(window.y - (screenCoordinates.y));
-				screenCoordinates.y -= pixelOffset;
-				vec4_t worldCoords2 = unproject(&screenCoordinates, &identityMatrix, &projViewModel4, &window); // convert back into worldCoords
-				enemybar->glWorldOffsetY = -(worldCoords[2].y - worldCoords2.y);
-			}
+            
+            // convert back into worldCoords
+			vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
+            m.w = worldCoords2;
 		}
 	}
 
-	if ( abs(enemybar->glWorldOffsetY) <= 0.001 && abs(enemybar->screenDistance) <= 0.001 )
-	{
-		// rotate up/down pitch towards camera, requires offset to be 0
-		real_t tangent2 = camera->vang * 180 / PI; 
-		glRotatef(tangent2, 0, 0, 1);
-	}
+    // upload model matrix
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m));
 
-	//	bool visibleX = res[i].x >= window.x && res[i].x < (window.z + window.x) && projViewModel4.w.z >= 0;
-	//	bool visibleY = res[i].y >= window.y && res[i].y < (window.w + window.y) && projViewModel4.w.z >= 0;
-	//	//printTextFormatted(font16x16_bmp, 8, 8 + i * 16, "%d: visibleX: %d | visibleY: %d", i, visibleX, visibleY);
-	//	if ( visibleX && visibleY )
-	//	{
-	//		anyVertexVisible = true;
-	//	}
-	//	//SDL_Rect resPos{ res.x, window.w - res.y, 4, 4 };
-	//	//drawRect(&resPos, 0xFFFFFF00, 255);
-	//}
-
-	int drawOffsetY = (enemybar->worldSurfaceSpriteStatusEffects ? -enemybar->worldSurfaceSpriteStatusEffects->h / 2 : 0);
-	drawOffsetY += enemybar->glWorldOffsetY;
-
-	if ( !doVisibilityCheckOnly )
-	{
-		// draw quad
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
-		glTexCoord2f(0, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(sprite->w / 2));
-		glTexCoord2f(1, 1);
-		glVertex3f(enemybar->screenDistance, GLfloat(-sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
-		glTexCoord2f(1, 0);
-		glVertex3f(enemybar->screenDistance, GLfloat(sprite->h / 2) - drawOffsetY, GLfloat(-sprite->w / 2));
-		glEnd();
-	}
-
-	glDepthRange(0, 1);
+    // update GL state
+    GL_CHECK_ERR(glDepthRange(0, *cvar_enemybarDepthRange));
+    GL_CHECK_ERR(glEnable(GL_BLEND));
     
-    if (mode == REALCOLORS) {
-        glDisable(GL_BLEND);
-    }
+    // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // draw
+    spriteMesh.draw();
     
-    glDisable(GL_ALPHA_TEST);
-
-	//printTextFormatted(font16x16_bmp, 8, 8 + 4 * 16, "Any vertex visible: %d", anyVertexVisible);
-	return anyVertexVisible;
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0, 1));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
+#endif // !EDITOR
 }
 
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
 {
 #ifndef EDITOR
-	if ( !worldDialogue )
-	{
+	if (!camera || !worldDialogue || mode != REALCOLORS) {
 		return;
 	}
 	auto dialogue = (Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t*)worldDialogue;
-	if ( dialogue->alpha <= 0.0 )
-	{
+	if (dialogue->alpha <= 0.0) {
 		return;
 	}
 	SDL_Surface* sprite = nullptr;
-	if ( !dialogue->dialogueTooltipSurface )
-	{
-		sprite = dialogue->blitDialogueTooltip();
+	if (dialogue->dialogueTooltipSurface) {
+        sprite = dialogue->dialogueTooltipSurface;
+	} else {
+        sprite = dialogue->blitDialogueTooltip();
 	}
-	else
-	{
-		sprite = dialogue->dialogueTooltipSurface;
-	}
-	if ( !sprite )
-	{
+	if (!sprite) {
 		return;
 	}
 
-	// assign texture
+	// bind texture
 	TempTexture* tex = nullptr;
 	tex = new TempTexture();
 	if (sprite) {
 		tex->load(sprite, false, true);
-		if (mode == REALCOLORS)
-		{
-			tex->bind();
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
+        tex->bind();
 	}
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
+    // depth range
+    GL_CHECK_ERR(glDepthRange(0.f, .6f));
+    
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = static_cast<float>(dialogue->drawScale);
+    if (splitscreen) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4(scale * tex->w, scale * tex->h, scale, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    
+    // limit to top of screen:
+    {
+        // 0, 0, 0, 1.f is centre of rendered quad
+        // therefore, the following represents the top
+        vec4_t worldCoords;
+        worldCoords.x = 0.f;
+        worldCoords.y = .5f;
+        worldCoords.z = 0.f;
+        worldCoords.w = 1.f;
+        
+        const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
+        const float topOfWindow = window.w + window.y;
+        vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
+        if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
+            // above camera limit
+            const float pixelOffset = fabs(screenCoordinates.y - topOfWindow);
+            screenCoordinates.y -= pixelOffset;
+            
+            // convert back into worldCoords
+            vec4_t worldCoords2 = unproject(&screenCoordinates, &m, &camera->projview, &window);
+            worldCoords2.y -= scale * tex->h * 0.5f;
+            m.w = worldCoords2;
+        }
+    }
+    
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+    // draw
+    spriteMesh.draw();
 
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(dialogue->x * 2, -(dialogue->z + dialogue->animZ) * 2 - 1, dialogue->y * 2);
-	real_t tangent = 180 - camera->ang * (180 / PI);
-	glRotatef(tangent, 0, 1, 0);
-
-	real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
-	glRotatef(tangent2, 0, 0, 1);
-
-	float scale = static_cast<float>(dialogue->drawScale);
-	if ( splitscreen )
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
-	}
-	else
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
-	}
-	glScalef(scale, scale, scale);
-
-	glDepthRange(0, .6);
-
-	// get shade factor
-	glColor4f(1.f, 1.f, 1.f, dialogue->alpha);
-
-
-	// draw quad
-	if ( sprite ) {
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex3f(0, sprite->h / 2, sprite->w / 2);
-		glTexCoord2f(0, 1);
-		glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-		glTexCoord2f(1, 1);
-		glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-		glTexCoord2f(1, 0);
-		glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-		glEnd();
-	}
-
-	glDepthRange(0, 1);
-
-	if ( tex ) {
+    // cleanup
+	if (tex) {
 		delete tex;
 		tex = nullptr;
 	}
-    if ( mode == REALCOLORS )
-    {
-        glDisable(GL_BLEND);
-    }
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
     
-    glDisable(GL_ALPHA_TEST);
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 #endif
 }
 
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
 {
 #ifndef EDITOR
-	real_t s = 1;
-
-	if ( !entity || intro )
-	{
+	if (!camera || !entity || intro) {
 		return;
 	}
+    if (mode != REALCOLORS) {
+        return;
+    }
 
+    // find player that this UI sprite is drawing for
 	int player = -1;
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( entity->worldTooltipIgnoreDrawing != 0 )
-		{
+	if ( entity->behavior == &actSpriteWorldTooltip ) {
+		if ( entity->worldTooltipIgnoreDrawing != 0 ) {
 			return;
 		}
-		for ( player = 0; player < MAXPLAYERS; ++player )
-		{
-			if ( &cameras[player] == camera )
-			{
+		for (player = 0; player < MAXPLAYERS; ++player) {
+			if (&cameras[player] == camera) {
 				break;
 			}
 		}
-		if ( player >= 0 && player < MAXPLAYERS )
-		{
-			if ( entity->worldTooltipPlayer != player )
-			{
+		if (player >= 0 && player < MAXPLAYERS) {
+			if (entity->worldTooltipPlayer != player) {
 				return;
 			}
-			if ( entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0 )
-			{
+			if (entity->worldTooltipActive == 0 && entity->worldTooltipFadeDelay == 0) {
 				return;
 			}
-		}
-		else
-		{
+		} else {
 			return;
 		}
-		if ( !uidToEntity(entity->parent) )
-		{
+		if (!uidToEntity(entity->parent)) {
 			return;
 		}
 	}
 
-	// assign texture
+	// bind texture
+    TempTexture* tex = nullptr;
 	SDL_Surface* sprite = nullptr;
-	TempTexture* tex = nullptr;
-	if ( entity->behavior == &actSpriteWorldTooltip )
+	if (entity->behavior == &actSpriteWorldTooltip)
 	{
 		Entity* parent = uidToEntity(entity->parent);
-		if ( parent && parent->behavior == &actItem 
-			&& (multiplayer != CLIENT 
-				|| (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))) )
+		if (parent && parent->behavior == &actItem && (multiplayer != CLIENT
+            || (multiplayer == CLIENT && (parent->itemReceivedDetailsFromServer != 0 || parent->skill[10] != 0))))
 		{
 			Item* item = newItemFromEntity(uidToEntity(entity->parent), true);
-			if ( !item )
-			{
+			if (!item) {
 				return;
 			}
-
 			sprite = players[player]->worldUI.worldTooltipItem.blitItemWorldTooltip(item);
-
 			free(item);
-			item = nullptr;
 		}
 
 		tex = new TempTexture();
 		if (sprite) {
 		    tex->load(sprite, false, true);
-		    if ( mode == REALCOLORS )
-		    {
-			    tex->bind();
-		    }
-		    else
-		    {
-			    glBindTexture(GL_TEXTURE_2D, 0);
-		    }
+		    tex->bind();
 		}
-		//glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
 	}
-	else
-	{
-		if ( entity->sprite >= 0 && entity->sprite < numsprites )
-		{
-			if ( sprites[entity->sprite] != NULL )
-			{
+	else {
+		if (entity->sprite >= 0 && entity->sprite < numsprites) {
+			if (sprites[entity->sprite] != NULL) {
 				sprite = sprites[entity->sprite];
-			}
-			else
-			{
+			} else {
 				sprite = sprites[0];
 			}
-		}
-		else
-		{
+		} else {
 			sprite = sprites[0];
 		}
 	}
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-	GLfloat rotz = 0; // get z rotation
-	glRotatef(rotx, 1, 0, 0); // rotate pitch
-	glRotatef(roty, 0, 1, 0); // rotate yaw
-	glRotatef(rotz, 0, 0, 1); // rotate roll
-	glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if (mode == REALCOLORS)
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] || entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-
-		real_t tangent2 = camera->vang * 180 / PI; // face camera pitch
-		glRotatef(tangent2, 0, 0, 1);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-
-	float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
-	if ( splitscreen )
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
-	}
-	else
-	{
-		scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
-	}
-	glScalef(static_cast<GLfloat>(entity->scalex + scale), 
-		static_cast<GLfloat>(entity->scalez + scale), 
-		static_cast<GLfloat>(entity->scaley + scale));
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0.1, 0.2);
-	}
-	else
-	{
-		glDepthRange(0, .6);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		if ( !entity->flags[BRIGHT] )
-		{
-			if ( !entity->flags[OVERDRAW] )
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-
-			if ( camera->globalLightModifierActive )
-			{
-				s *= camera->globalLightModifier;
-			}
-
-			glColor4f(s, s, s, 1);
-		}
-		else
-		{
-			if ( entity->behavior == &actSpriteWorldTooltip )
-			{
-				glColor4f(1.f, 1.f, 1.f, entity->worldTooltipAlpha * Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::opacity);
-			}
-			else if ( camera->globalLightModifierActive )
-			{
-				glColor4f(camera->globalLightModifier, camera->globalLightModifier, camera->globalLightModifier, 1.f);
-			}
-			else
-			{
-				glColor4f(1.f, 1.f, 1.f, 1.f);
-			}
-		}
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	if (sprite) {
-	    glBegin(GL_QUADS);
-	    glTexCoord2f(0, 0);
-	    glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	    glTexCoord2f(0, 1);
-	    glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	    glTexCoord2f(1, 1);
-	    glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	    glTexCoord2f(1, 0);
-	    glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	    glEnd();
-	}
-
-	glDepthRange(0, 1);
-
-	if ( entity->behavior == &actSpriteWorldTooltip )
-	{
-		if ( tex ) {
-			delete tex;
-			tex = nullptr;
-		}
-	}
-    
-    if (mode == REALCOLORS)
-    {
-        glDisable(GL_BLEND);
+    // depth range
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.1f, 0.2f));
+    } else {
+        GL_CHECK_ERR(glDepthRange(0.f, 0.6f));
     }
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
     
-    glDisable(GL_ALPHA_TEST);
+    // bind shader
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // scale
+    float scale = Player::WorldUI_t::WorldTooltipItem_t::WorldItemSettings_t::scaleMod;
+    if ( splitscreen ) {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale_splitscreen / 100.f) - 1.f));
+    } else {
+        scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
+    }
+    
+    // model matrix
+    v = vec4(entity->x * 2, -entity->z * 2 - 1, entity->y * 2, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;
+    v = vec4((entity->scalex + scale) * tex->w, (entity->scalez + scale) * tex->h, (entity->scalez + scale), 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    
+    // draw
+    spriteMesh.draw();
+    
+    // cleanup
+    if (tex) {
+        delete tex;
+        tex = nullptr;
+    }
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 #endif
 }
 
 void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
-	SDL_Surface* sprite;
-	//int x, y;
-	real_t s = 1;
+    // bind texture
+    SDL_Surface* sprite;
+    if (entity->sprite >= 0 && entity->sprite < numsprites) {
+        if (sprites[entity->sprite] != nullptr) {
+            sprite = sprites[entity->sprite];
+        } else {
+            sprite = sprites[0];
+        }
+    } else {
+        sprite = sprites[0];
+    }
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup model matrix
-	glMatrixMode( GL_MODELVIEW );
-	glPushMatrix();
-	glLoadIdentity();
-	if (entity->flags[OVERDRAW])
-	{
-		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-		float rotx = 0; // get x rotation
-		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate pitch
-		glRotatef(rotx, 1, 0, 0); // rotate roll
-	}
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// assign texture
-	if ( entity->sprite >= 0 && entity->sprite < numsprites )
-	{
-		if ( sprites[entity->sprite] != NULL )
-		{
-			sprite = sprites[entity->sprite];
-		}
-		else
-		{
-			sprite = sprites[0];
-		}
-	}
-	else
-	{
-		sprite = sprites[0];
-	}
-
-	if ( mode == REALCOLORS )
-	{
-		glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if (!entity->flags[OVERDRAW])
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0, 0.1);
-	}
-
-	// get shade factor
-	if ( mode == REALCOLORS )
-	{
-		if (!entity->flags[BRIGHT])
-		{
-			if (!entity->flags[OVERDRAW])
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-
-			if ( camera->globalLightModifierActive )
-			{
-				s *= camera->globalLightModifier;
-			}
-
-			glColor4f(s, s, s, 1);
-		}
-		else
-		{
-			if ( camera->globalLightModifierActive )
-			{
-				glColor4f(camera->globalLightModifier, camera->globalLightModifier, camera->globalLightModifier, 1.f);
-			}
-			else
-			{
-				glColor4f(1.f, 1.f, 1.f, 1.f);
-			}
-		}
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -sprite->h / 2, sprite->w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
-	glEnd();
-	glDepthRange(0, 1);
-	glPopMatrix();
-    
-    if ( mode == REALCOLORS )
-    {
-        glDisable(GL_BLEND);
+    // set GL state
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+    }
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0, 0.1));
     }
     
-    glDisable(GL_ALPHA_TEST);
+    // bind shader
+    auto& dither = entity->dithering[camera];
+    auto& shader = !entity->flags[BRIGHT] ?
+        (dither.value < Entity::Dither::MAX ? spriteDitheredShader : spriteShader):
+        spriteBrightShader;
+    shader.bind();
+    
+    // upload dither amount, if necessary
+    if (&shader == &spriteDitheredShader) {
+        GL_CHECK_ERR(glUniform1f(shader.uniform("uDitherAmount"),
+            (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Entity::Dither::MAX / 2 - 1))));
+    }
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * sprite->w, entity->scaley * sprite->h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    if (entity->flags[BRIGHT]) {
+        const float b = std::max(1.f, camera->luminance * 4.f);
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { b, b, b, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, false);
+    }
+
+	// draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+    }
+    if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    }
 }
 
 #ifndef EDITOR
@@ -1835,179 +1447,95 @@ static ConsoleVariable<GLfloat> cvar_dmgSpriteDepthRange("/dmg_sprite_depth_rang
 
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
 {
-	if ( text.empty() == true || !entity )
-	{
+	if (!camera || !entity || text.empty()) {
 		return;
 	}
 
+    // set color
 	Uint32 color = makeColor(255, 255, 255, 255);
-	if ( entity->behavior == &actDamageGib && text[0] == '+' )
-	{
+	if (entity->behavior == &actDamageGib && text[0] == '+') {
 #ifndef EDITOR
 		color = hudColors.characterSheetGreen;
 #endif // !EDITOR
 	}
-	else if ( entity->behavior == &actSpriteNametag )
-	{
+	else if (entity->behavior == &actSpriteNametag) {
 		color = entity->skill[1];
 	}
-	auto rendered_text = Text::get(text.c_str(), "fonts/pixel_maz.ttf#32#2",
+	auto rendered_text = Text::get(
+        text.c_str(), "fonts/pixel_maz.ttf#32#2",
 		color, makeColor(0, 0, 0, 255));
 	auto textureId = rendered_text->getTexID();
 
-	// assign texture
-	if (mode == REALCOLORS)
-	{
-		glBindTexture(GL_TEXTURE_2D, textureId);
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+	// bind texture
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
+    const GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
+    const GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glEnable(GL_BLEND));
+    }
     
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0f);
-
-	// setup model matrix
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	if (entity->flags[OVERDRAW])
-	{
-		glTranslatef(camera->x * 32, -camera->z, camera->y * 32); // translates the scene based on camera position
-		float rotx = 0; // get x rotation
-		float roty = 360.0 - camera->ang * 180.0 / PI; // get y rotation
-		float rotz = 360.0 - camera->vang * 180.0 / PI; // get z rotation
-		glRotatef(roty, 0, 1, 0); // rotate yaw
-		glRotatef(rotz, 0, 0, 1); // rotate pitch
-		glRotatef(rotx, 1, 0, 0); // rotate roll
-	}
-	if ( mode == REALCOLORS )
-	{
-		glEnable(GL_BLEND);
-	}
-
-	// translate sprite and rotate towards camera
-	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
-	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if ( !entity->flags[OVERDRAW] )
-	{
-		real_t tangent = 180 - camera->ang * (180 / PI);
-		glRotatef(tangent, 0, 1, 0);
-	}
-	else
-	{
-		real_t tangent = 180;
-		glRotatef(tangent, 0, 1, 0);
-	}
-	glScalef(entity->scalex, entity->scalez, entity->scaley);
-
-	if ( entity->flags[OVERDRAW] )
-	{
-		glDepthRange(0, 0.1);
-	}
-	else
-	{
-		if ( entity->behavior == &actDamageGib )
-		{
+    // set GL state
+	if (entity->flags[OVERDRAW]) {
+        GL_CHECK_ERR(glDepthRange(0.f, 0.1f));
+	} else {
+		if (entity->behavior == &actDamageGib) {
 #ifndef EDITOR
-			glDepthRange(0, *cvar_dmgSpriteDepthRange);
+            GL_CHECK_ERR(glDepthRange(0.f, *cvar_dmgSpriteDepthRange));
 #endif // !EDITOR
 		}
-		else if ( entity->behavior != &actSpriteNametag )
-		{
-			glDepthRange(0, 0.98);
+		else if (entity->behavior != &actSpriteNametag) {
+            GL_CHECK_ERR(glDepthRange(0.f, 0.98f));
 		}
-		else if ( entity->behavior == &actSpriteNametag )
-		{
-			glDepthRange(0, 0.52);
+		else if (entity->behavior == &actSpriteNametag) {
+            GL_CHECK_ERR(glDepthRange(0.f, 0.52f));
 		}
 	}
-
-	// get shade factor
-	real_t s;
-	if ( mode == REALCOLORS )
-	{
-		if ( !entity->flags[BRIGHT] )
-		{
-			if ( !entity->flags[OVERDRAW] )
-			{
-				s = getLightForEntity(entity->x / 16, entity->y / 16);
-			}
-			else
-			{
-				s = getLightForEntity(camera->x, camera->y);
-			}
-			glColor4f(s, s, s, 1);
-		}
-		else
-		{
-			glColor4f(1.f, 1.f, 1.f, 1);
-		}
-	}
-	else
-	{
-		Uint32 uid = entity->getUID();
-		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
-	}
-
-	// draw quad
-	GLfloat w = static_cast<GLfloat>(rendered_text->getWidth());
-	GLfloat h = static_cast<GLfloat>(rendered_text->getHeight());
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(0, h / 2, w / 2);
-	glTexCoord2f(0, 1);
-	glVertex3f(0, -h / 2, w / 2);
-	glTexCoord2f(1, 1);
-	glVertex3f(0, -h / 2, -w / 2);
-	glTexCoord2f(1, 0);
-	glVertex3f(0, h / 2, -w / 2);
-	glEnd();
-
-	glDepthRange(0, 1);
-	glPopMatrix();
     
-    if ( mode == REALCOLORS )
-    {
-        glDisable(GL_BLEND);
+    // bind shader
+    auto& shader = spriteBrightShader;
+    shader.bind();
+    
+    vec4_t v;
+    mat4x4_t m, t, i;
+    
+    // model matrix
+    if (entity->flags[OVERDRAW]) {
+        v = vec4(camera->x * 32, -camera->z, camera->y * 32, 0);
+        (void)translate_mat(&m, &t, &v); t = m;
+        const float rotx = 0; // roll
+        const float roty = 360.0 - camera->ang * 180.0 / PI; // yaw
+        const float rotz = 360.0 - camera->vang * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
     }
-    glDisable(GL_ALPHA_TEST);
-}
+    v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
+    (void)translate_mat(&m, &t, &v); t = m;
+    v = vec4(entity->scalex * w, entity->scaley * h, entity->scalez, 0.f);
+    (void)scale_mat(&m, &t, &v); t = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
+    
+    // upload light variables
+    const float b = std::max(1.f, camera->luminance * 4.f);
+    const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+    const GLfloat light[4] = { b, b, b, 1.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+    const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
 
-/*-------------------------------------------------------------------------------
-
-	getLightAt
-
-	returns the light shade factor for the vertex at the given x/y point
-
--------------------------------------------------------------------------------*/
-
-static vec4_t getLightAt(const int x, const int y)
-{
-#if !defined(EDITOR) && !defined(NDEBUG)
-    static ConsoleVariable<bool> cvar("/fullbright", false);
-    if (*cvar)
-    {
-        return 1.0;
+    // draw
+    spriteMesh.draw();
+    
+    // reset GL state
+    GL_CHECK_ERR(glDepthRange(0, 1));
+    if (mode == REALCOLORS) {
+        GL_CHECK_ERR(glDisable(GL_BLEND));
     }
-#endif
-	const int index = (y + 1) + (x + 1) * (map.height + 2);
-
-	vec4_t l(0.f), r(0.f);
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1 - (map.height + 2)]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - (map.height + 2)]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index - 1]); l = r;
-    (void)add_vec4(&r, &l, &lightmapSmoothed[index]); l = r;
-    (void)pow_vec4(&r, &l, getLightAtModifier); l = r;
-    static const vec4_t added(getLightAtAdder);
-    (void)add_vec4(&r, &l, &added); l = r;
-	float div = 1.f / (255.f * 4.f);
-	l.x = std::min(std::max(0.f, l.x * div), 1.f);
-    l.y = std::min(std::max(0.f, l.y * div), 1.f);
-    l.z = std::min(std::max(0.f, l.z * div), 1.f);
-    l.w = std::min(std::max(0.f, l.w * div), 1.f);
-	return l;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2039,6 +1567,54 @@ static bool shouldDrawClouds(const map_t& map, int* cloudtile = nullptr) {
 
 std::vector<Chunk> chunks;
 
+constexpr float sky_size = CLIPFAR * 16.f;
+constexpr float sky_htex_size = sky_size / 64.f;
+constexpr float sky_ltex_size = sky_size / 32.f;
+Mesh skyMesh = {
+    {
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f, -sky_size,
+         sky_size, 65.f,  sky_size,
+        -sky_size, 65.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f, -sky_size,
+         sky_size, 64.f,  sky_size,
+        -sky_size, 64.f,  sky_size,
+    }, // positions
+    {
+        0.f, 0.f,
+        sky_htex_size, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, 0.f,
+        sky_htex_size, sky_htex_size,
+        0.f, sky_htex_size,
+        0.f, 0.f,
+        sky_ltex_size, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, 0.f,
+        sky_ltex_size, sky_ltex_size,
+        0.f, sky_ltex_size,
+    }, // texcoords
+    {
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+        1.f, 1.f, 1.f, .5f,
+    }, // colors
+};
+
 void glDrawWorld(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -2052,28 +1628,21 @@ void glDrawWorld(view_t* camera, int mode)
     int cloudtile;
     const bool clouds = shouldDrawClouds(map, &cloudtile);
     
-#ifndef EDITOR
-    const bool fullbright = *cvar_fullBright;
-#else
-    const bool fullbright = false;
-#endif
+    // upload uniforms for dither shader
+    if (mode == REALCOLORS) {
+        worldDitheredShader.bind();
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        GL_CHECK_ERR(glUniform4fv(worldDitheredShader.uniform("uLightFactor"), 1, light));
+    }
     
-    // bind shader
-    auto& shader = fullbright ?
-        (mode == REALCOLORS ? worldBrightShader : worldDarkShader):
-        (mode == REALCOLORS ? worldShader : worldDarkShader);
+    // bind core shader
+    auto& shader = mode == REALCOLORS ?
+        worldShader : worldDarkShader;
     shader.bind();
     
-    // upload uniforms
+    // upload uniforms for core shader
     const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-    glUniform4fv(shader.uniform("uLightColor"), 1, light);
-    
-    // bind texture
-    //auto image = Image::get("*images/tiles/Wood.png"); assert(image);
-    //glActiveTexture(GL_TEXTURE2);
-    //image->bind();
-    //glActiveTexture(GL_TEXTURE0);
-    glUniform1i(shader.uniform("uTextures"), 2); // tile textures are in texture unit 2
+    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     
     // draw tile chunks
     int index = 0;
@@ -2081,111 +1650,94 @@ void glDrawWorld(view_t* camera, int mode)
     const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
     const int yoff = 1;
     for (auto& chunk : chunks) {
-        for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
-            for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
-                if (camera->vismap[y + x * map.height]) {
-                    if (chunk.isDirty(map)) {
-                        const auto ceiling = !shouldDrawClouds(map);
-                        chunk.build(map, ceiling, chunk.x, chunk.y, chunk.w, chunk.h);
-                        
-                        // build neighbor chunks as well (in-case there are shared walls)
-                        if (chunk.x + chunk.w < map.width) { // build east chunk
-                            auto& nChunk = chunks[index + xoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.y + chunk.h < map.height) { // build south chunk
-                            auto& nChunk = chunks[index + yoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.x > 0) { // build west chunk
-                            auto& nChunk = chunks[index - xoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
-                        if (chunk.y > 0) { // build north chunk
-                            auto& nChunk = chunks[index - yoff];
-                            nChunk.build(map, ceiling, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                        }
+        auto& dither = chunk.dithering[camera];
+        if (ticks != dither.lastUpdateTick) {
+            dither.lastUpdateTick = ticks;
+            for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
+                for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
+                    if (camera->vismap[y + x * map.height]) {
+                        dither.value = std::min(Chunk::Dither::MAX, dither.value + 2);
+                        //dither.value = Chunk::Dither::MAX;
+                        goto end;
                     }
-                    chunk.draw();
-                    goto next;
                 }
             }
+            dither.value = std::max(0, dither.value - 2);
+            end:;
         }
-    next:
+        if (dither.value) {
+            if (chunk.isDirty(map)) {
+                chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+                
+                // build neighbor chunks as well (in-case there are shared walls)
+                if (chunk.x + chunk.w < map.width) { // build east chunk
+                    auto& nChunk = chunks[index + xoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.y + chunk.h < map.height) { // build south chunk
+                    auto& nChunk = chunks[index + yoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.x > 0) { // build west chunk
+                    auto& nChunk = chunks[index - xoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+                if (chunk.y > 0) { // build north chunk
+                    auto& nChunk = chunks[index - yoff];
+                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                }
+            }
+            if (mode == REALCOLORS) {
+                if (dither.value == 10) {
+                    worldShader.bind();
+                    chunk.draw();
+                } else {
+                    worldDitheredShader.bind();
+                    GL_CHECK_ERR(glUniform1f(worldDitheredShader.uniform("uDitherAmount"),
+                        (float)((uint32_t)1 << (dither.value - 1)) / (1 << (Chunk::Dither::MAX / 2 - 1))));
+                    chunk.draw();
+                }
+            } else {
+                chunk.draw();
+            }
+        }
         ++index;
     }
-    
-    // unbind shader
-    shader.unbind();
     
     // draw clouds
     // do this after drawing walls/floors/etc because that way most of it can
     // fail the depth test, improving fill rate.
     if (clouds && mode == REALCOLORS) {
-        // setup projection
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        perspectiveGL(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR);
-        GLfloat rotx = camera->vang * 180 / PI; // get x rotation
-        GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
-        GLfloat rotz = 0; // get z rotation
-        glRotatef(rotx, 1, 0, 0); // rotate pitch
-        glRotatef(roty, 0, 1, 0); // rotate yaw
-        glRotatef(rotz, 0, 0, 1); // rotate roll
+        auto& shader = skyShader;
+        shader.bind();
+        GL_CHECK_ERR(glDepthMask(GL_FALSE));
+        GL_CHECK_ERR(glEnable(GL_BLEND));
         
-        // setup model matrix
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        glDepthMask(GL_FALSE);
-        glEnable(GL_BLEND);
+        // upload texture scroll value
+        const float scroll[2] = {
+            ((float)(ticks % 60) / 60.f),
+            ((float)(ticks % 120) / 120.f),
+        };
+        GL_CHECK_ERR(glUniform2fv(shader.uniform("uScroll"), 1, scroll));
         
-        const float size = CLIPFAR * 16.f;
-        const float htex_size = size / 64.f;
-        const float ltex_size = size / 32.f;
-        const float high_scroll = (float)(ticks % 60) / 60.f;
-        const float low_scroll = (float)(ticks % 120) / 120.f;
+        // upload light value
+        const float light[4] = {
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            (float)getLightAtModifier,
+            1.f,
+        };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
         
         // bind cloud texture
-        glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]);
-
-        // first (higher) sky layer
-        glBegin( GL_QUADS );
-        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier);
-        glTexCoord2f(high_scroll, high_scroll);
-        glVertex3f(-size, 65.f, -size);
-
-        glTexCoord2f(htex_size + high_scroll, high_scroll);
-        glVertex3f(size, 65.f, -size);
-
-        glTexCoord2f(htex_size + high_scroll, htex_size + high_scroll);
-        glVertex3f(size, 65.f, size);
-
-        glTexCoord2f(high_scroll, htex_size + high_scroll);
-        glVertex3f(-size, 65.f, size);
-
-        // second (closer) sky layer
-        glColor4f(1.f, 1.f, 1.f, (float)getLightAtModifier * .5f);
-        glTexCoord2f(low_scroll, low_scroll);
-        glVertex3f(-size, 64.f, -size);
-
-        glTexCoord2f(ltex_size + low_scroll, low_scroll);
-        glVertex3f(size, 64.f, -size);
-
-        glTexCoord2f(ltex_size + low_scroll, ltex_size + low_scroll);
-        glVertex3f(size, 64.f, size);
-
-        glTexCoord2f(low_scroll, ltex_size + low_scroll);
-        glVertex3f(-size, 64.f, size);
-        glEnd();
-
-        // pop matrices
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glDisable(GL_BLEND);
-        glDepthMask(GL_TRUE);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)tiles[cloudtile]->userdata]));
+        
+        // draw sky
+        skyMesh.draw();
+        
+        // reset GL
+        GL_CHECK_ERR(glDisable(GL_BLEND));
+        GL_CHECK_ERR(glDepthMask(GL_TRUE));
     }
 }
 
@@ -2195,84 +1747,87 @@ static unsigned int oldpix = 0;
 
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 {
-	if(!dirty && (oldx==x) && (oldy==y))
-		return oldpix;
+    if (!dirty && (oldx==x) && (oldy==y)) {
+        return oldpix;
+    }
     
-    main_framebuffer.unbindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+    }
     
-	if(dirty) {
-#ifdef PANDORA
-		// Pandora fbo
-		if((xres==800) && (yres==480)) {
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		}
-#endif
-		// generate object buffer
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glBeginCamera(&camera);
+	if (dirty) {
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+		glBeginCamera(&camera, false);
 		glDrawWorld(&camera, ENTITYUIDS);
 		drawEntities3D(&camera, ENTITYUIDS);
-		glEndCamera(&camera);
+		glEndCamera(&camera, false);
 	}
 
 	GLubyte pixel[4];
-	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+    GL_CHECK_ERR(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel));
 	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
-#ifdef PANDORA
-	if((dirty) && (xres==800) && (yres==480)) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-#else
-	main_framebuffer.bindForWriting();
-#endif
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 	dirty = 0;
 	return oldpix;
+}
+
+const char* gl_error_string(GLenum err) {
+    switch (err) {
+    case GL_NO_ERROR:
+        return "GL_NO_ERROR";
+    case GL_INVALID_ENUM:
+        assert(0 && "GL_INVALID_ENUM");
+        return "GL_INVALID_ENUM";
+    case GL_INVALID_VALUE:
+        assert(0 && "GL_INVALID_VALUE");
+        return "GL_INVALID_VALUE";
+    case GL_INVALID_OPERATION:
+        assert(0 && "GL_INVALID_OPERATION");
+        return "GL_INVALID_OPERATION";
+    case GL_STACK_OVERFLOW:
+        assert(0 && "GL_STACK_OVERFLOW");
+        return "GL_STACK_OVERFLOW";
+    case GL_STACK_UNDERFLOW:
+        assert(0 && "GL_STACK_UNDERFLOW");
+        return "GL_STACK_UNDERFLOW";
+    case GL_OUT_OF_MEMORY:
+        assert(0 && "GL_OUT_OF_MEMORY");
+        return "GL_OUT_OF_MEMORY";
+    case GL_TABLE_TOO_LARGE:
+        assert(0 && "GL_TABLE_TOO_LARGE");
+        return "GL_TABLE_TOO_LARGE";
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        assert(0 && "GL_INVALID_FRAMEBUFFER_OPERATION");
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
+    default:
+        assert(0 && "unknown OpenGL error!");
+        return nullptr;
+    }
 }
 
 void GO_SwapBuffers(SDL_Window* screen)
 {
 	dirty = 1;
-
-#ifdef PANDORA
-	bool bBlit = !(xres==800 && yres==480);
-	int vp_old[4];
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glGetIntegerv(GL_VIEWPORT, vp_old);
-		glViewport(0, 0, 800, 480);
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		glOrtho(0, 800, 480, 0, 1, -1);
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-
-		glBindTexture(GL_TEXTURE_2D, fbo_tex);
-		glColor4f(1,1,1,1);
-
-		glBegin(GL_QUADS);
-		 glTexCoord2f(0,yres/1024.0f); glVertex2f(0,0);
-		 glTexCoord2f(0, 0); glVertex2f(0,480);
-		 glTexCoord2f(xres/1024.0f, 0); glVertex2f(800,480);
-		 glTexCoord2f(xres/1024.0f, yres/1024.0f); glVertex2f(800,0);
-		glEnd();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	if(bBlit) {
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
-		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);
-	}
-
-	return;
+    
+    if (!hdrEnabled) {
+        main_framebuffer.unbindForWriting();
+        main_framebuffer.bindForReading();
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        main_framebuffer.draw(vidgamma);
+    }
+	
+    SDL_GL_SwapWindow(screen);
+    
+#ifndef EDITOR
+    // enable HDR if desired
+    hdrEnabled = *cvar_hdrEnabled;
 #endif
     
-    main_framebuffer.unbindForWriting();
-	main_framebuffer.bindForReading();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	main_framebuffer.blit(vidgamma);
-	SDL_GL_SwapWindow(screen);
-	main_framebuffer.bindForWriting();
+    if (!hdrEnabled) {
+        main_framebuffer.bindForWriting();
+    }
 }
 
 static float chunkTexCoords[3];
@@ -2303,16 +1858,13 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
     const int endY = std::min((int)map.height, startY + h);
     
     // copy tiles
-    if (this->tiles) {
-        delete[] this->tiles;
-    }
-    
     this->x = startX;
     this->y = startY;
     this->w = endX - startX;
     this->h = endY - startY;
     const int sizeOfTiles = this->w * this->h * MAPLAYERS;
-    this->tiles = new Sint32[sizeOfTiles];
+    this->tiles.clear();
+    this->tiles.resize(sizeOfTiles);
     
     for (int x = startX; x < endX; ++x) {
         for (int y = startY; y < endY; ++y) {
@@ -2752,54 +2304,67 @@ void Chunk::build(const map_t& map, bool ceiling, int startX, int startY, int w,
 
 void Chunk::buildBuffers(const std::vector<float>& positions, const std::vector<float>& texcoords, const std::vector<float>& colors) {
     // create buffers
+#ifdef VERTEX_ARRAYS_ENABLED
+    if (!vao) {
+        GL_CHECK_ERR(glGenVertexArrays(1, &vao));
+    }
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
     if (!vbo_positions) {
-        glGenBuffers(1, &vbo_positions);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_positions));
     }
     if (!vbo_texcoords) {
-        glGenBuffers(1, &vbo_texcoords);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_texcoords));
     }
     if (!vbo_colors) {
-        glGenBuffers(1, &vbo_colors);
+        GL_CHECK_ERR(glGenBuffers(1, &vbo_colors));
     }
     
     // upload positions
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(0);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
+#endif
     
     // upload texcoords
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
-    glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(1);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
+#endif
     
     // upload colors
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glDisableVertexAttribArray(2);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
+    
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 }
 
 void Chunk::destroyBuffers() {
+    if (vao) {
+        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
+        vao = 0;
+    }
     if (vbo_positions) {
-        glDeleteBuffers(1, &vbo_positions);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_positions));
         vbo_positions = 0;
     }
     if (vbo_texcoords) {
-        glDeleteBuffers(1, &vbo_texcoords);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_texcoords));
         vbo_texcoords = 0;
     }
     if (vbo_colors) {
-        glDeleteBuffers(1, &vbo_colors);
+        GL_CHECK_ERR(glDeleteBuffers(1, &vbo_colors));
         vbo_colors = 0;
-    }
-    if (tiles) {
-        delete[] tiles;
-        tiles = nullptr;
     }
     indices = 0;
 }
@@ -2809,28 +2374,34 @@ void Chunk::draw() {
         return;
     }
     
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#else
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_positions));
+    GL_CHECK_ERR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(0));
     
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_texcoords));
+    GL_CHECK_ERR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(1));
     
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_colors);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo_colors));
+    GL_CHECK_ERR(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr));
+    GL_CHECK_ERR(glEnableVertexAttribArray(2));
+#endif
     
-    glDrawArrays(GL_TRIANGLES, 0, indices);
+    GL_CHECK_ERR(glDrawArrays(GL_TRIANGLES, 0, indices));
     
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glDisableVertexAttribArray(0));
+    GL_CHECK_ERR(glDisableVertexAttribArray(1));
+    GL_CHECK_ERR(glDisableVertexAttribArray(2));
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 }
 
 bool Chunk::isDirty(const map_t& map) {
-    if (!tiles) {
+    if (tiles.empty()) {
         return true;
     }
     for (int u = 0; u < w; ++u) {
