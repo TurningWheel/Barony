@@ -314,28 +314,28 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         // upload color
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
-        float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
-        
-        vec4_t v;
-        mat4x4 m;
-        
-        // projection matrix
-        mat4x4 proj(1.f);
-        (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
-        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
-        
-        // view matrix
-        mat4x4 view(1.f);
-        v = {(float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f};
-        (void)translate_mat(&m, &view, &v); view = m;
-        v = {(float)(unitX * (minimapObjectZoom / 100.0) * size),
-             (float)(unitY * (minimapObjectZoom / 100.0) * size), 0.f, 0.f};
-        (void)scale_mat(&m, &view, &v); view = m;
-        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
-        
-        // draw
-        circle_mesh.draw(GL_TRIANGLE_FAN);
+		float cv[] = { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
+
+		vec4_t v;
+		mat4x4 m;
+
+		// projection matrix
+		mat4x4 proj(1.f);
+		(void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
+
+		// view matrix
+		mat4x4 view(1.f);
+		v = { (float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f };
+		(void)translate_mat(&m, &view, &v); view = m;
+		v = { (float)(unitX * (getMinimapZoom() / 100.0) * size),
+			 (float)(unitY * (getMinimapZoom() / 100.0) * size), 0.f, 0.f };
+		(void)scale_mat(&m, &view, &v); view = m;
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
+
+		// draw
+		circle_mesh.draw(GL_TRIANGLE_FAN);
 	};
 
 	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
