@@ -105,7 +105,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	    // create framebuffer for background
 	    loading_fb.init(xres, yres, GL_LINEAR, GL_LINEAR);
 	    loading_fb.bindForWriting();
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	    drawAllPlayerCameras();
         loading_fb.unbindForWriting();
 #endif
@@ -121,8 +121,8 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 
 	// Loading... text
 	auto label = loading_frame->addField("loading_label", 128);
-	label->setSize(fullscreen);
-	label->setJustify(Field::justify_t::CENTER);
+    label->setSize(fullscreen);
+    label->setJustify(Field::justify_t::CENTER);
 	label->setFont("fonts/pixel_maz.ttf#64#2");
 	label->setText(language[709]);
 }
@@ -215,7 +215,7 @@ void doLoadingScreen() {
 		drawClearBuffers();
 		if (loading_fb.fbo) {
 		    loading_fb.bindForReading();
-		    framebuffer::blit();
+            loading_fb.draw();
 		}
 		if (fadealpha > 0) {
 			drawRect(NULL, makeColor(0, 0, 0, 255), fadealpha);

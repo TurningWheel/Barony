@@ -16953,6 +16953,12 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 	}
 }
 
+void drawClockwiseSquareMesh(const char* texture, float lerp, SDL_Rect rect, Uint32 color) {
+    auto image = Image::get(texture);
+    image->drawClockwise(lerp, nullptr, rect,
+        SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
+}
+
 void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rect)
 {
 	const int player = widget.getOwner();
@@ -16961,163 +16967,33 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 	{
 		return;
 	}
-
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
-	// build a circle mesh
-	static std::vector<std::pair<real_t, real_t>> circle_mesh;
-	if ( !circle_mesh.size() ) {
-		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
-		static const int num_circle_vertices = 32;
-		for ( int c = 0; c <= num_circle_vertices; ++c ) {
-			real_t ang = (PI / 2) - ((PI * 2.0) / num_circle_vertices) * c;
-			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
-		}
-	}
-	static std::vector<std::pair<real_t, real_t>> square_mesh;
-	if ( !square_mesh.size() ) {
-		square_mesh.emplace_back((real_t)0.0, (real_t)0.0);
-		static const int num_square_vertices = 200;
-		int increment = 25;
-		real_t x = 0.0;
-		real_t y = -0.5;
-		int dir = 0;
-		int iterations = 0;
-		for ( int c = 0; c <= num_square_vertices; ++c ) {
-			square_mesh.emplace_back(x, y);
-
-			if ( dir == 0 )
-			{
-				y = -0.5;
-				x += 1.01 / increment;
-				if ( x >= 0.5 )
-				{
-					dir = 1;
-				}
-				x = std::min(x, 0.5);
-			}
-			else if ( dir == 1 )
-			{
-				x = 0.5;
-				y += 1.01 / increment;
-				if ( y >= 0.5 )
-				{
-					dir = 2;
-				}
-				y = std::min(y, 0.5);
-			}
-			else if ( dir == 2 )
-			{
-				y = 0.5;
-				x -= 1.01 / increment;
-				if ( x <= -0.5 )
-				{
-					dir = 3;
-				}
-				x = std::max(x, -0.5);
-			}
-			else if ( dir == 3 )
-			{
-				x = -0.5;
-				y -= 1.01 / increment;
-				if ( y <= -0.5 )
-				{
-					dir = 4;
-				}
-				y = std::max(y, -0.5);
-			}
-			else if ( dir == 4 )
-			{
-				y = -0.5;
-				x += 1.01 / increment;
-				if ( x >= 0.0 )
-				{
-					square_mesh.emplace_back(0.0, y);
-					++iterations;
-					break;
-				}
-				x = std::min(x, 0.0);
-			}
-		}
-	}
-
+    
 	const Frame* parent = static_cast<const Frame*>(widget.getParent());
-
-	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		const real_t unitX = (real_t)rect.w;
-		const real_t unitY = (real_t)rect.h;
-		Uint8 r, g, b, a;
-
-		// bind a texture to circle mesh
-		auto testImage = Image::get("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png");
-		testImage->bind();
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glFrontFace(GL_CW); // we draw clockwise so need to set this.
-		glBegin(GL_TRIANGLE_FAN);
-		auto& appraisal = players[player]->inventoryUI.appraisal;
-		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * square_mesh.size() + 1;
-		int index = 0;
-		for ( auto pair = square_mesh.begin(); pair != square_mesh.end(); ++pair ) {
-			const real_t sx = (*pair).first * unitX * size;
-			const real_t sy = (*pair).second * unitY * size;
-
-			float const tx = ((*pair).first / 1.0) + 0.5;
-			float const ty = ((*pair).second / 1.0) + 0.5;
-			glTexCoord2f(tx, ty);
-			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-			if ( index >= numVertices )
-			{
-				break;
-			}
-			++index;
-		}
-		glEnd();
-		glFrontFace(GL_CCW);
-	};
 	{
 		SDL_Rect drawRect = rect;
 		drawRect.x += 4;
 		drawRect.y += 4;
 		drawRect.w -= 6;
 		drawRect.h -= 6;
+        drawRect.x += drawRect.w / 2;
+        drawRect.y += drawRect.h / 2;
 		real_t opacity = 192;
 		if ( parent && parent->getOpacity() < 100.0 )
 		{
 			opacity *= parent->getOpacity() / 100.0;
 		}
-		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
+        const auto& appraisal = players[player]->inventoryUI.appraisal;
+        drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_OutlineHotbar.png",
+            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+            drawRect, makeColor(255, 255, 255, opacity));
 	}
 
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		Uint8 r, g, b, a;
-
-		// bind a texture to mesh
-		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
-		testImage->bind();
-
+		auto image = Image::get("images/ui/Inventory/Appraisal_Icon.png");
 		const real_t sx = rect.w * size;
 		const real_t sy = rect.h * size;
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(x, Frame::virtualScreenY - y);
-		glTexCoord2f(0, 1);
-		glVertex2f(x, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 1);
-		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 0);
-		glVertex2f(x + sx, Frame::virtualScreenY - y);
-		glEnd();
+        image->drawColor(nullptr, SDL_Rect{(int)x, (int)y, (int)sx, (int)sy},
+            SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
 	};
 	{
 		const int imgSize = 26;
@@ -17137,15 +17013,8 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety,
-			(real_t)1.0, drawRect,
-			makeColor(255, 255, 255, opacity));
+			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 }
 
 void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
@@ -17157,162 +17026,32 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		return;
 	}
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
-	// build a circle mesh
-	static std::vector<std::pair<real_t, real_t>> circle_mesh;
-	if ( !circle_mesh.size() ) {
-		circle_mesh.emplace_back((real_t)0.0, (real_t)0.0);
-		static const int num_circle_vertices = 32;
-		for ( int c = 0; c <= num_circle_vertices; ++c ) {
-			real_t ang = (PI / 2) - ((PI * 2.0) / num_circle_vertices) * c;
-			circle_mesh.emplace_back((real_t)(cos(ang) / 2.0), -(real_t)(sin(ang) / 2.0));
-		}
-	}
-	static std::vector<std::pair<real_t, real_t>> square_mesh;
-	if ( !square_mesh.size() ) {
-		square_mesh.emplace_back((real_t)0.0, (real_t)0.0);
-		static const int num_square_vertices = 200;
-		int increment = 25;
-		real_t x = 0.0;
-		real_t y = -0.5;
-		int dir = 0;
-		int iterations = 0;
-		for ( int c = 0; c <= num_square_vertices; ++c ) {
-			square_mesh.emplace_back(x, y);
-			
-			if ( dir == 0 )
-			{
-				y = -0.5;
-				x += 1.01 / increment;
-				if ( x >= 0.5 )
-				{
-					dir = 1;
-				}
-				x = std::min(x, 0.5);
-			}
-			else if ( dir == 1 )
-			{
-				x = 0.5;
-				y += 1.01 / increment;
-				if ( y >= 0.5 )
-				{
-					dir = 2;
-				}
-				y = std::min(y, 0.5);
-			}
-			else if ( dir == 2 )
-			{
-				y = 0.5;
-				x -= 1.01 / increment;
-				if ( x <= -0.5 )
-				{
-					dir = 3;
-				}
-				x = std::max(x, -0.5);
-			}
-			else if ( dir == 3 )
-			{
-				x = -0.5;
-				y -= 1.01 / increment;
-				if ( y <= -0.5 )
-				{
-					dir = 4;
-				}
-				y = std::max(y, -0.5);
-			}
-			else if ( dir == 4 )
-			{
-				y = -0.5;
-				x += 1.01 / increment;
-				if ( x >= 0.0 )
-				{
-					square_mesh.emplace_back(0.0, y);
-					++iterations;
-					break;
-				}
-				x = std::min(x, 0.0);
-			}
-		}
-	}
-
 	const Frame* parent = static_cast<const Frame*>(widget.getParent());
-
-	auto drawSquareMesh = [](const int player, real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		const real_t unitX = (real_t)rect.w;
-		const real_t unitY = (real_t)rect.h;
-		Uint8 r, g, b, a;
-
-		// bind a texture to circle mesh
-		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon_Outline.png");
-		testImage->bind();
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glFrontFace(GL_CW); // we draw clockwise so need to set this.
-		glBegin(GL_TRIANGLE_FAN);
-		auto& appraisal = players[player]->inventoryUI.appraisal;
-		int numVertices = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * square_mesh.size() + 1;
-		int index = 0;
-		for ( auto pair = square_mesh.begin(); pair != square_mesh.end(); ++pair ) {
-			const real_t sx = (*pair).first * unitX * size;
-			const real_t sy = (*pair).second * unitY * size;
-
-			float const tx = ((*pair).first / 1.0) + 0.5;
-			float const ty = ((*pair).second / 1.0) + 0.5;
-			glTexCoord2f(tx, ty);
-			glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-			if ( index >= numVertices )
-			{
-				break;
-			}
-			++index;
-		}
-		glEnd();
-		glFrontFace(GL_CCW);
-	};
 	{
 		SDL_Rect drawRect = rect;
 		drawRect.x += 2;
 		drawRect.y += 2;
 		drawRect.w -= 2;
 		drawRect.h -= 2;
+        drawRect.x += drawRect.w / 2;
+        drawRect.y += drawRect.h / 2;
 		real_t opacity = 192;
 		if ( parent && parent->getOpacity() < 100.0 )
 		{
 			opacity *= parent->getOpacity() / 100.0;
 		}
-		drawSquareMesh(player, drawRect.x + drawRect.w / 2, drawRect.y + drawRect.h / 2, 1.0, drawRect, makeColor(255, 255, 255, opacity));
+		drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline.png",
+            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+            drawRect, makeColor(255, 255, 255, opacity));
 	}
-	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
-		Uint8 r, g, b, a;
-
-		// bind a texture to mesh
-		auto testImage = Image::get("images/ui/Inventory/Appraisal_Icon.png");
-		testImage->bind();
-
-		const real_t sx = rect.w * size;
-		const real_t sy = rect.h * size;
-
-		getColor(color, &r, &g, &b, &a);
-		glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(x, Frame::virtualScreenY - y);
-		glTexCoord2f(0, 1);
-		glVertex2f(x, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 1);
-		glVertex2f(x + sx, Frame::virtualScreenY - (y + sy));
-		glTexCoord2f(1, 0);
-		glVertex2f(x + sx, Frame::virtualScreenY - y);
-		glEnd();
-	};
+    
+    auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
+        auto image = Image::get("images/ui/Inventory/Appraisal_Icon.png");
+        const real_t sx = rect.w * size;
+        const real_t sy = rect.h * size;
+        image->drawColor(nullptr, SDL_Rect{(int)x, (int)y, (int)sx, (int)sy},
+            SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, color);
+    };
 	{
 		const int imgSize = 26;
 		SDL_Rect drawRect = rect;
@@ -17331,15 +17070,8 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 			opacity *= parent->getOpacity() / 100.0;
 		}
 		drawMesh(drawRect.x + offsetx, drawRect.y + offsety, 
-			(real_t)1.0, drawRect, 
-			makeColor(255, 255, 255, opacity));
+			(real_t)1.0, drawRect, makeColor(255, 255, 255, opacity));
 	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 }
 
 void createPlayerInventorySlotFrameElements(Frame* slotFrame)
@@ -18791,7 +18523,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	if ( players[player] != nullptr && players[player]->entity != nullptr )
 	{
-		glClear(GL_DEPTH_BUFFER_BIT);
+        GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
@@ -18811,13 +18543,12 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 		view.winw = pos.w;
 		view.winh = pos.h;
-		glBeginCamera(&view);
+		glBeginCamera(&view, false);
 		bool b = players[player]->entity->flags[BRIGHT];
 		players[player]->entity->flags[BRIGHT] = true;
 		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
-			Shader::unbind(); // unbind voxel shader
 		}
 		players[player]->entity->flags[BRIGHT] = b;
 		int c = 0;
@@ -18833,10 +18564,9 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					b = entity->flags[BRIGHT];
+					bool b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
 					glDrawVoxel(&view, entity, REALCOLORS);
-					Shader::unbind(); // unbind voxel shader
 					entity->flags[BRIGHT] = b;
 				}
 				c++;
@@ -18846,10 +18576,12 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 				{
+                    bool b = entity->flags[BRIGHT];
+                    entity->flags[BRIGHT] = true;
 					glDrawSprite(&view, entity, REALCOLORS);
+                    entity->flags[BRIGHT] = b;
 				}
 			}
-            glEnable(GL_BLEND); // this gets disabled by the torch sprites
 		}
 		else
 		{
@@ -18858,23 +18590,28 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				Entity* entity = (Entity*)node->element;
 				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
-					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = true;
 					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
+                        bool b = entity->flags[BRIGHT];
+                        entity->flags[BRIGHT] = true;
 						glDrawSprite(&view, entity, REALCOLORS);
+                        entity->flags[BRIGHT] = b;
 					}
 					else
 					{
+                        bool b = entity->flags[BRIGHT];
+                        entity->flags[BRIGHT] = true;
 						glDrawVoxel(&view, entity, REALCOLORS);
-						Shader::unbind(); // unbind voxel shader
+                        entity->flags[BRIGHT] = b;
 					}
-					entity->flags[BRIGHT] = b;
 				}
 			}
-            glEnable(GL_BLEND); // this gets disabled by the torch sprites
 		}
-		glEndCamera(&view);
+        if (drawingGui) {
+            // blending gets disabled after objects are drawn, so re-enable it.
+            GL_CHECK_ERR(glEnable(GL_BLEND));
+        }
+        glEndCamera(&view, false);
 	}
 	::fov = ofov;
 }
@@ -33023,7 +32760,6 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	}
 
 	GLuint itemTexid = 0;
-	//SDL_Surface* textSurf = glTextSurface(item->description(), &itemTexid);
 	SDL_Rect pos;
 	if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(buf, font->getName(),
 		makeColor(67, 195, 157, 255), 0)->getSurf()) )
@@ -34001,7 +33737,7 @@ void DamageIndicatorHandler_t::DamageIndicator_t::process()
 		if ( stats[player]->HP > 0 )
 		{
 			const SDL_Rect viewport{ 0, 0, xres, yres };
-			imgGet->drawSurfaceRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
+			imgGet->drawRotated(nullptr, pos, viewport, makeColor(255, 255, 255, (Uint8)alpha), angle);
 		}
 	}
 

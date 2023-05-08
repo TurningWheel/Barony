@@ -2212,7 +2212,6 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
 		{
 			Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
-			Sint32 oldHunger = stats->HUNGER;
 			stats->HUNGER += amount * hungerPointPerMana;
 			stats->HUNGER = std::min(999, stats->HUNGER);
 			updateHungerMessages(entity, stats, item);
@@ -2487,10 +2486,12 @@ void item_ScrollLight(Item* item, int player)
     const auto color = makeColorRGB(150, 150, 150);
 
 	messagePlayer(player, MESSAGE_HINT, language[851]);
-	lightSphereShadow(
+    
+    const char name[] = "scroll_light";
+	addLight(
         players[player]->entity->x / 16,
-        players[player]->entity->y / 16, 8,
-        color);
+        players[player]->entity->y / 16,
+        name);
 
 	// send new light info to clients
 	if (multiplayer == SERVER)
@@ -2501,14 +2502,14 @@ void item_ScrollLight(Item* item, int player)
 			{
 				continue;
 			}
-			strcpy((char*)net_packet->data, "LITS");
+			strcpy((char*)net_packet->data, "ALIT");
 			SDLNet_Write16(players[player]->entity->x / 16, &net_packet->data[4]);
 			SDLNet_Write16(players[player]->entity->y / 16, &net_packet->data[6]);
-			SDLNet_Write16(8, &net_packet->data[8]);
-			SDLNet_Write32(color, &net_packet->data[10]);
+			SDLNet_Write16(sizeof(name), &net_packet->data[8]);
+            stringCopyUnsafe((char*)&net_packet->data[10], name, sizeof(name));
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 14;
+			net_packet->len = 10 + sizeof(name);
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}

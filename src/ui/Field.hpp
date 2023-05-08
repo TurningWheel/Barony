@@ -153,7 +153,7 @@ public:
 	void	setFont(const char* _font) { if (font != _font) { font = _font; dirty = true; } }
 	void	setGuide(const char* _guide) { guide = _guide; }
 	void	setTooltip(const char* _tooltip) { tooltip = _tooltip; }
-	void    reflowTextToFit(const int characterOffset);
+	void    reflowTextToFit(const int characterOffset, bool check = true);
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
 	void	setPaddingPerLine(const int _padding) {	paddingPerLine = _padding; }

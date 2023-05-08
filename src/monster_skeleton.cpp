@@ -65,7 +65,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 				}
 				my->skeletonSummonSetEquipment(myStats, rank);
 				myStats->GOLD = 0;
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(32, 8, 8));
+				my->light = addLight(my->x / 16, my->y / 16, "summoned_skeleton_glow");
 
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )

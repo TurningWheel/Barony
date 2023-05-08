@@ -2436,7 +2436,7 @@ int main(int argc, char** argv)
 				camera.winy = 16;
 				camera.winw = xres - 128;
 				camera.winh = yres - 32;
-				light = lightSphere(camera.x, camera.y, 16, 0xffffffff);
+				light = addLight(camera.x, camera.y, "editor");
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
@@ -2446,11 +2446,11 @@ int main(int argc, char** argv)
 				}
 				occlusionCulling(map, camera);
                 beginGraphics();
-				glBeginCamera(&camera);
+				glBeginCamera(&camera, false);
 				glDrawWorld(&camera, REALCOLORS);
 				//drawFloors(&camera);
 				drawEntities3D(&camera, REALCOLORS);
-				glEndCamera(&camera);
+				glEndCamera(&camera, false);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next )
@@ -9227,7 +9227,9 @@ int main(int argc, char** argv)
 	}
 	list_FreeAll(&undolist);
 	saveTilePalettes();
-    camera.fb.destroy();
+    for (int c = 0; c < sizeof(view_t::fb) / sizeof(view_t::fb[0]); ++c) {
+        camera.fb[c].destroy();
+    }
 	return deinitApp();
 }
 

@@ -4519,10 +4519,10 @@ namespace ConsoleCommands {
 	});
 
     static ConsoleCommand ccmd_test_light("/test_light", "spawn a test light (r, g, b)", []CCMD{
-        const Uint8 r = argc >= 2 ? (Uint8)strtol(argv[1], nullptr, 10) : 255;
-        const Uint8 g = argc >= 3 ? (Uint8)strtol(argv[2], nullptr, 10) : 255;
-        const Uint8 b = argc >= 4 ? (Uint8)strtol(argv[3], nullptr, 10) : 255;
-        (void)lightSphereShadow(cameras[0].x, cameras[0].y, 4, makeColorRGB(r, g, b));
+        const auto r = argc >= 2 ? strtof(argv[1], nullptr) : 1.f;
+        const auto g = argc >= 3 ? strtof(argv[2], nullptr) : 1.f;
+        const auto b = argc >= 4 ? strtof(argv[3], nullptr) : 1.f;
+        (void)lightSphereShadow(cameras[0].x, cameras[0].y, 4, r, g, b, 0.5f);
     });
 
     static ConsoleCommand ccmd_test_model("/test_model", "spawn an entity using a specific model", []CCMD{

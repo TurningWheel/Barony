@@ -37,24 +37,16 @@ void statsHoverText(const int player, Stat* tmpStat);
 
 void updateCharacterSheet(const int player)
 {
-	int i = 0;
-	int x = 0;
 	SDL_Rect pos;
-	bool b = false;
 	node_t* node = NULL;
 	Entity* entity = NULL;
 	Item* item = NULL;
-	int c;
 
 	const int x1 = players[player]->camera_x1();
-	const int x2 = players[player]->camera_x2();
 	const int y1 = players[player]->camera_y1();
-	const int y2 = players[player]->camera_y2();
 
 	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
 	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	// mostly a copy of the code below.
 	// sets values into players[player]->characterSheet.partySheetBox for elsewhere
@@ -66,158 +58,8 @@ void updateCharacterSheet(const int player)
 	pos.w = 208;
 	pos.h = 180;
 
-	/*int statWindowY = y1 + 196;
-	int statWindowY2 = y1 + 404;
-	if ( uiscale_charactersheet )
-	{
-		pos.h = 236;
-		pos.w = 276;
-		statWindowY = y1 + pos.h + 16;
-		statWindowY2 = y1 + 554;
-	}*/
-
-	//drawWindowFancy(x1, y1, x1 + pos.w + 16, y1 + pos.h + 16);
-
-	SDL_Rect bgBox{ 
-		players[player]->characterSheet.characterSheetBox.x + 8,
-		players[player]->characterSheet.characterSheetBox.y + 8,
-		players[player]->characterSheet.characterSheetBox.w - 16,
-		players[player]->characterSheet.characterSheetBox.h - 16,
-	};
-	//drawRect(&bgBox, 0, 255);
-
 	SDL_Rect& statWindowBox = players[player]->characterSheet.statsSheetBox;
 	drawWindowFancy(statWindowBox.x, statWindowBox.y, statWindowBox.x + statWindowBox.w, statWindowBox.y + statWindowBox.h);
-
-	// character sheet
-	//double ofov = fov;
-	//fov = 50;
-	//if (false && players[player] != nullptr && players[player]->entity != nullptr)
-	//{
-	//	if (!softwaremode)
-	//	{
-	//		glClear(GL_DEPTH_BUFFER_BIT);
-	//	}
-	//	//TODO: These two NOT PLAYERSWAP
-	//	//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
-	//	//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
-	//	camera_charsheet.x = players[player]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
-	//	camera_charsheet.y = players[player]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
-	//	camera_charsheet.z = players[player]->entity->z * 2;
-	//	//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
-	//	camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
-	//	camera_charsheet.vang = PI / 20;
-	//	
-	//	camera_charsheet.winx = pos.x;
-	//	camera_charsheet.winy = pos.y;
-	//	//camera_charsheet.winx = x1 + 8;
-	//	//camera_charsheet.winy = y1 + 8;
-	//	
-	//	camera_charsheet.winw = pos.w;
-	//	camera_charsheet.winh = pos.h;
-	//	b = players[player]->entity->flags[BRIGHT];
-	//	players[player]->entity->flags[BRIGHT] = true;
-	//	if ( !players[player]->entity->flags[INVISIBLE] )
-	//	{
-	//		glDrawVoxel(&camera_charsheet, players[player]->entity, REALCOLORS);
-	//	}
-	//	players[player]->entity->flags[BRIGHT] = b;
-	//	c = 0;
-	//	if (multiplayer != CLIENT)
-	//	{
-	//		for (node = players[player]->entity->children.first; node != nullptr; node = node->next)
-	//		{
-	//			if (c == 0)
-	//			{
-	//				c++;
-	//				continue;
-	//			}
-	//			entity = (Entity*) node->element;
-	//			if ( !entity->flags[INVISIBLE] )
-	//			{
-	//				b = entity->flags[BRIGHT];
-	//				entity->flags[BRIGHT] = true;
-	//				glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
-	//				entity->flags[BRIGHT] = b;
-	//			}
-	//			c++;
-	//		}
-	//		for ( node = map.entities->first; node != NULL; node = node->next )
-	//		{
-	//			entity = (Entity*) node->element;
-	//			if ( (Sint32)entity->getUID() == -4 )
-	//			{
-	//				glDrawSprite(&camera_charsheet, entity, REALCOLORS);
-	//			}
-	//		}
-	//	}
-	//	else
-	//	{
-	//		for ( node = map.entities->first; node != NULL; node = node->next )
-	//		{
-	//			entity = (Entity*) node->element;
-	//			if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
-	//			{
-	//				b = entity->flags[BRIGHT];
-	//				entity->flags[BRIGHT] = true;
-	//				if ( (Sint32)entity->getUID() == -4 )
-	//				{
-	//					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
-	//				}
-	//				else
-	//				{
-	//					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
-	//				}
-	//				entity->flags[BRIGHT] = b;
-	//			}
-	//		}
-	//	}
-
-	//	SDL_Rect rotateBtn;
-	//	rotateBtn.w = 16;
-	//	rotateBtn.h = 16;
-	//	rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
-	//	rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
-
-	//	if ( players[player]->paperDoll.enabled )
-	//	{
-	//		rotateBtn.x -= players[player]->paperDoll.getSlotSize() + 4;
-	//		rotateBtn.y -= 2;
-	//	}
-
-	//	drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-	//	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
-	//	{
-	//		if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
-	//		{
-	//			camera_charsheet_offsetyaw += 0.05;
-	//			if ( camera_charsheet_offsetyaw > 2 * PI )
-	//			{
-	//				camera_charsheet_offsetyaw -= 2 * PI;
-	//			}
-	//			drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-	//		}
-	//	}
-	//	ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
-
-	//	// second button
-	//	rotateBtn.x -= rotateBtn.w + 4;
-	//	drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-	//	if ( (inputs.bMouseLeft(player) || inputs.bControllerInputPressed(player, INJOY_GAME_USE)) && !players[player]->shootmode )
-	//	{
-	//		if ( mouseInBounds(player, rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
-	//		{
-	//			camera_charsheet_offsetyaw -= 0.05;
-	//			if ( camera_charsheet_offsetyaw < 0.f )
-	//			{
-	//				camera_charsheet_offsetyaw += 2 * PI;
-	//			}
-	//			drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-	//		}
-	//	}
-	//	ttfPrintText(ttf12, rotateBtn.x, rotateBtn.y + 2, "<");
-	//}
-	//fov = ofov;
 
 	TTF_Font* fontStat = ttf12;
 	int text_x = statWindowBox.x + 8;
@@ -246,7 +88,6 @@ void updateCharacterSheet(const int player)
 	}
 
 	// attributes
-	Sint32 statModifier = 0;
 	char statText[64] = "";
 	//Uint32 statColor = uint32ColorWhite;
 	text_y += pad_y * 2;
@@ -310,7 +151,7 @@ void updateCharacterSheet(const int player)
 	src.x = mousex + 16;
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 8;
-	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
+	src.w = ( longestline(language[2968]) + (int)strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
 	bool dropGold = false;
 	if ( mouseInBounds(player, statWindowBox.x + 8, statWindowBox.x + statWindowBox.w, text_y - pad_y, text_y) )
 	{
@@ -502,10 +343,7 @@ void Player::CharacterSheet_t::setDefaultSkillsSheetBox()
 
 void drawSkillsSheet(const int player)
 {
-	int x1 = players[player]->camera_x1();
-	int x2 = players[player]->camera_x2();
-	int y1 = players[player]->camera_y1();
-	int y2 = players[player]->camera_y2();
+	const int x2 = players[player]->camera_x2();
 
 	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
 	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
@@ -677,7 +515,7 @@ void drawSkillsSheet(const int player)
 			skillTooltip = language[3255 + i];
 
 			size_t n = std::count(skillTooltip.begin(), skillTooltip.end(), '\n'); // count newlines
-			skillTooltipRect.h = fontHeight * (n + 2) + 8;
+			skillTooltipRect.h = fontHeight * ((int)n + 2) + 8;
 			skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
 			skillTooltipRect.y = mousey + 16;
 
@@ -1228,11 +1066,7 @@ void drawPartySheet(const int player)
 {
 	const int x1 = players[player]->camera_x1();
 	const int x2 = players[player]->camera_x2();
-	const int y1 = players[player]->camera_y1();
-	const int y2 = players[player]->camera_y2();
 
-	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
-	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
 	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
 	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
@@ -1361,9 +1195,7 @@ void drawPartySheet(const int player)
 
 	pos.y += fontHeight * 2 + 4;
 
-	SDL_Rect initialSkillPos = pos;
 	SDL_Rect playerBar;
-
 	
 	if ( playerCnt == 0 && numFollowers == 0 ) // 1 player.
 	{
@@ -1681,8 +1513,6 @@ void statsHoverText(const int player, Stat* tmpStat)
 
 	const Sint32 mousex = inputs.getMouse(player, Inputs::X);
 	const Sint32 mousey = inputs.getMouse(player, Inputs::Y);
-	const Sint32 omousex = inputs.getMouse(player, Inputs::OX);
-	const Sint32 omousey = inputs.getMouse(player, Inputs::OY);
 
 	int pad_y = players[player]->characterSheet.statsSheetBox.y + 66; // was 262px
 	int pad_x = players[player]->characterSheet.statsSheetBox.x + 8; // 8 px. offset
@@ -1993,7 +1823,6 @@ void statsHoverText(const int player, Stat* tmpStat)
 					{
 						if ( i == 3 )
 						{
-							real_t resistance = 0.f;
 							if ( players[player] && players[player]->entity )
 							{
 								real_t resistance = 100 - 100 / (Entity::getMagicResistance(stats[player]) + 1);
@@ -2061,7 +1890,6 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 			else
 			{
 				int weaponskill = getWeaponSkill(stats[player]->weapon);
-				real_t variance = 0;
 				if ( weaponskill == PRO_RANGED )
 				{
 					if ( isRangedWeapon(*stats[player]->weapon) )
@@ -2102,8 +1930,6 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						Sint32 STR = statGetSTR(stats[player], entity);
 						Sint32 DEX = statGetDEX(stats[player], entity);
 						Sint32 totalAttributeBonus = (STR + DEX);
-						Sint32 STRComponent = (std::min(STR / 2, STR));
-						Sint32 DEXComponent = (std::min(DEX / 2, DEX));
 						totalAttributeBonus = std::min(totalAttributeBonus / 2, totalAttributeBonus);
 						//output.mainAttributeBonus = totalAttributeBonus - STRComponent; // bonus from main attribute (DEX)
 						//output.secondaryAttributeBonus = totalAttributeBonus - DEXComponent; // secondary (STR)

@@ -651,7 +651,7 @@ void actBomb(Entity* my)
 		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 		{
 			my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 92, 0));
+			my->light = addLight(my->x / 16, my->y / 16, "trap_teleport");
 		}
 		return;
 	}
@@ -727,7 +727,7 @@ void actBomb(Entity* my)
 	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB && BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 	{
 		my->spawnAmbientParticles(25, 576, 10 + local_rng.rand() % 40, 1.0, false);
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 92, 0));
+		my->light = addLight(my->x / 16, my->y / 16, "trap_teleport");
 		my->sprite = 899;
 		return;
 	}

@@ -171,7 +171,6 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&cross_bmp, "images/system/cross.png"),
 	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
 
-	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
 	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
 	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
@@ -2692,7 +2691,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 		if ( *cvar_showoldwheel )
 		{
-			drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
+			//drawImageRing(fancyWindow_bmp, &src, radius, thickness, 40, 0, PI * 2, 156);
 
 			for ( i = 0; i < numoptions; ++i )
 			{
@@ -2738,7 +2737,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						highlight = i;
 						if ( *cvar_showoldwheel )
 						{
-							drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
+							//drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
 
 							// draw borders around highlighted item.
 							Uint32 borderColor = uint32ColorBaronyBlue;

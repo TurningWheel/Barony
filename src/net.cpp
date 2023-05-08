@@ -2085,7 +2085,9 @@ static void changeLevel() {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		minimapPings[i].clear(); // clear minimap pings
-	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        auto& camera = players[i]->camera();
+        camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        camera.luminance = defaultLuminance;
 		players[i]->hud.followerBars.clear();
 	}
 	EnemyHPDamageBarHandler::dumpCache();
@@ -3143,22 +3145,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
-	// new light, shadowed
-	{'LITS', [](){
-		lightSphereShadow(
+	// add light
+	{'ALIT', [](){
+        std::vector<char> data;
+        const auto len = SDLNet_Read16(&net_packet->data[8]);
+        data.resize(len);
+        stringCopy(data.data(), (const char*)&net_packet->data[10], data.size(), len);
+		addLight(
 		    SDLNet_Read16(&net_packet->data[4]),
 		    SDLNet_Read16(&net_packet->data[6]),
-		    SDLNet_Read16(&net_packet->data[8]),
-		    SDLNet_Read32(&net_packet->data[10]));
-	}},
-
-	// new light, unshadowed
-	{'LITU', [](){
-		lightSphere(
-		    SDLNet_Read16(&net_packet->data[4]),
-		    SDLNet_Read16(&net_packet->data[6]),
-		    SDLNet_Read16(&net_packet->data[8]),
-		    SDLNet_Read32(&net_packet->data[10]));
+		    data.data());
 	}},
 
 	// create wall
@@ -3894,8 +3890,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
                     nametag->flags[NOUPDATE] = true;
                     nametag->flags[PASSABLE] = true;
                     nametag->flags[SPRITE] = true;
-                    nametag->flags[BRIGHT] = true;
                     nametag->flags[UNCLICKABLE] = true;
+                    nametag->flags[BRIGHT] = true;
                     nametag->behavior = &actSpriteNametag;
                     nametag->parent = monster->getUID();
                     nametag->scalex = 0.2;

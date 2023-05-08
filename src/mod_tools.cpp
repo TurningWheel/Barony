@@ -5031,17 +5031,16 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 }
 
 #ifdef USE_THEORA_VIDEO
+#include "ui/Image.hpp"
 bool VideoManager_t::isInit = false;
 void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha)
 {
-	glBindTexture(GL_TEXTURE_2D, texID);
-	glBegin(GL_QUADS);
-	glColor4f(1.f, 1.f, 1.f, alpha);
-	glTexCoord2f(sx, sy);    glVertex2f(x, Frame::virtualScreenY - y);
-	glTexCoord2f(sx, (sy + sh)); glVertex2f(x, Frame::virtualScreenY - (y + h));
-	glTexCoord2f(sx + sw, (sy + sh)); glVertex2f(x + w, Frame::virtualScreenY - (y + h));
-	glTexCoord2f(sx + sw, sy);    glVertex2f(x + w, Frame::virtualScreenY - y);
-	glEnd();
+    Uint32 color = makeColor(255, 255, 255, (uint8_t)(alpha * 255.f));
+    const SDL_Rect src{(int)sx, (int)sy, (int)sw, (int)sh};
+    const SDL_Rect dest{(int)x, (int)y, (int)w, (int)h};
+    const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
+	Image::draw(texID, (int)sw, (int)sh,
+        &src, dest, viewport, color);
 }
 
 void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha)
@@ -5051,20 +5050,13 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 		return;
 	}
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glViewport(0, 0, Frame::virtualScreenX, Frame::virtualScreenY);
-	glOrtho(0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
-	if ( frame != NULL )
+	if ( frame != nullptr )
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            clip->getWidth(), clip->getHeight(), textureFormat,
+            GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
 
@@ -5128,12 +5120,6 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 	}
 
 	drawTexturedQuad(textureId, rect.x + offset.x, rect.y + offset.y, rect.w, rect.h, w / tw, h / th, sx / tw, sy / th, alpha);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 }
 
 void VideoManager_t::draw()
@@ -5142,48 +5128,40 @@ void VideoManager_t::draw()
 	{
 		return;
 	}
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
 	if ( frame != NULL )
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, clip->getWidth(), clip->getHeight(), textureFormat, GL_UNSIGNED_BYTE, frame->getBuffer());
+        GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            clip->getWidth(), clip->getHeight(), textureFormat,
+            GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
-	float w = clip->getSubFrameWidth();
-	float h = clip->getSubFrameHeight();
-	float sx = clip->getSubFrameX();
-	float sy = clip->getSubFrameY();
-	float tw = potCeil(w);
-	float th = potCeil(h);
+    
+	const float w = clip->getSubFrameWidth();
+    const float h = clip->getSubFrameHeight();
+    const float sx = clip->getSubFrameX();
+    const float sy = clip->getSubFrameY();
+    const float tw = potCeil(w);
+    const float th = potCeil(h);
 
 	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
     
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
 unsigned int VideoManager_t::createTexture(int w, int h, unsigned int format)
 {
 	unsigned int textureId = 0;
-	glGenTextures(1, &textureId);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    GL_CHECK_ERR(glGenTextures(1, &textureId));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	unsigned char* data = new unsigned char[w * h * 4];
 	memset(data, 0, w * h * 4);
-	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	delete[] data;
 	return textureId;
 }
@@ -5223,7 +5201,7 @@ void VideoManager_t::destroyClip()
 	}
 	if ( textureId != 0 )
 	{
-		glDeleteTextures(1, &textureId);
+        GL_CHECK_ERR(glDeleteTextures(1, &textureId));
 		textureId = 0;
 	}
 }
@@ -5562,7 +5540,7 @@ void ImGui_t::render()
 
 	auto& io = ImGui_t::getIO();
 	ImGui::Render();
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    GL_CHECK_ERR(glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y));
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 

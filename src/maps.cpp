@@ -3897,7 +3897,7 @@ void assignActions(map_t* map)
 		{
 			if ( lavatiles[map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height]] )
 			{
-				lightSphereShadow(x, y, 2, makeColorRGB(255, 128, 64));
+				addLight(x, y, "lava");
 			}
 		}
 	}
@@ -4187,7 +4187,6 @@ void assignActions(map_t* map)
 				entity->z -= 1;
 				entity->sprite = 3;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 				// south torch:
 			}
@@ -4206,7 +4205,6 @@ void assignActions(map_t* map)
 				entity->yaw += PI / 2.0;
 				entity->sprite = 3;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// west torch:
@@ -4225,7 +4223,6 @@ void assignActions(map_t* map)
 				entity->yaw += PI;
 				entity->sprite = 3;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// north torch:
@@ -4244,7 +4241,6 @@ void assignActions(map_t* map)
 				entity->yaw += 3 * PI / 2.0;
 				entity->sprite = 3;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// item:
@@ -4790,7 +4786,6 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6;
-				entity->flags[BRIGHT] = true;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actCampfire;
 				entity->sprite = 162; // firepit
@@ -5325,7 +5320,6 @@ void assignActions(map_t* map)
 					entity->skill[3] = 1; // not secret portal, just aesthetic.
 				}
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			// secret ladder:
 			case 46:
@@ -5494,7 +5488,6 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actWinningPortal;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				if ( strstr(map->name, "Boss") )
 				{
 					entity->flags[INVISIBLE] = true;
@@ -5600,7 +5593,6 @@ void assignActions(map_t* map)
 				entity->z -= 1;
 				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// south crystal shard:
@@ -5619,7 +5611,6 @@ void assignActions(map_t* map)
 				entity->yaw += PI / 2.0;
 				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// west crystal shard:
@@ -5638,7 +5629,6 @@ void assignActions(map_t* map)
 				entity->yaw += PI;
 				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// north crystal shard:
@@ -5657,7 +5647,6 @@ void assignActions(map_t* map)
 				entity->yaw += 3 * PI / 2.0;
 				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				break;
 			}
 
@@ -6156,7 +6145,6 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actMidGamePortal;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				if ( strstr(map->name, "Boss") )
 				{
 					entity->flags[INVISIBLE] = true;
@@ -6211,7 +6199,6 @@ void assignActions(map_t* map)
 					entity->yaw = PI / 2;
 					entity->behavior = &actTeleporter;
 					entity->flags[PASSABLE] = true;
-					entity->flags[BRIGHT] = true;
 				}
 				break;
 			// ceiling tile:
@@ -6233,7 +6220,6 @@ void assignActions(map_t* map)
 				entity->behavior = &actCeilingTile;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BLOCKSIGHT] = false;
-				//entity->flags[BRIGHT] = true;
 				break;
 			// spell trap ceiling
 			case 120:
@@ -6506,7 +6492,6 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actExpansionEndGamePortal;
 				entity->flags[PASSABLE] = true;
-				entity->flags[BRIGHT] = true;
 				//entity->flags[INVISIBLE] = true;
 				int victoryType;
 				switch (stats[clientnum]->playerRace) {
@@ -6591,10 +6576,6 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actCustomPortal;
 				entity->flags[PASSABLE] = true;
-				if ( entity->portalCustomSpriteAnimationFrames > 0 )
-				{
-					entity->flags[BRIGHT] = true;
-				}
 				if ( entity->portalCustomRequiresPower )
 				{
 					entity->flags[INVISIBLE] = true;
@@ -6711,7 +6692,6 @@ void assignActions(map_t* map)
 				entity->behavior = &actStatueAnimator;
 				entity->sprite = 995;
 				entity->skill[0] = 0;
-				entity->flags[BRIGHT] = true;
 				break;
 			case 169:
 				//Statue

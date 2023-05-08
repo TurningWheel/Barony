@@ -665,6 +665,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->element_internal_name, spellElement_light.element_internal_name))
 		{
+            if (using_magicstaff) {
+                for (auto node = map.entities->first; node != nullptr; node = node->next) {
+                    auto entity = (Entity*)node->element;
+                    if (entity->behavior == &actMagiclightBall) {
+                        auto spell = (spell_t*)entity->children.first->element;
+                        spell->sustain = false; // remove other lightballs to prevent lightball insanity
+                    }
+                }
+            }
 			Entity* entity = newEntity(175, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
@@ -676,7 +685,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->yaw = caster->yaw;
 			entity->flags[UPDATENEEDED] = true;
 			entity->flags[PASSABLE] = true;
-			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagiclightBall;
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
@@ -708,7 +716,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (using_magicstaff || trap)
 			{
 				entity->skill[12] = MAGICSTAFF_LIGHT_DURATION; //TODO: Grab the duration from the magicstaff or trap?
-				((spell_t*)spellnode->element)->sustain = false;
 			}
 			else
 			{
@@ -1913,7 +1920,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			missileEntity->yaw = caster->yaw;
 			missileEntity->flags[UPDATENEEDED] = true;
 			missileEntity->flags[PASSABLE] = true;
-			missileEntity->flags[BRIGHT] = true;
 			missileEntity->behavior = &actMagicMissile;
 			double missile_speed = 4 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			missileEntity->vel_x = cos(missileEntity->yaw) * (missile_speed);
@@ -2035,7 +2041,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			missileEntity->yaw = caster->yaw;
 			missileEntity->flags[UPDATENEEDED] = true;
 			missileEntity->flags[PASSABLE] = true;
-			missileEntity->flags[BRIGHT] = true;
 			missileEntity->behavior = &actMagicMissile;
 			missileEntity->sprite = sprite;
 
@@ -2073,7 +2078,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity1->yaw = caster->yaw - angle;
 			entity1->flags[UPDATENEEDED] = true;
 			entity1->flags[PASSABLE] = true;
-			entity1->flags[BRIGHT] = true;
 			entity1->behavior = &actMagicMissile;
 			entity1->sprite = sprite;
 
@@ -2107,7 +2111,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity2->yaw = caster->yaw + angle;
 			entity2->flags[UPDATENEEDED] = true;
 			entity2->flags[PASSABLE] = true;
-			entity2->flags[BRIGHT] = true;
 			entity2->behavior = &actMagicMissile;
 			entity2->sprite = sprite;
 
