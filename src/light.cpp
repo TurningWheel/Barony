@@ -210,7 +210,7 @@ static ConsoleCommand ccmd_reloadLights("/reloadlights", "reload light json",
     });
 #endif
 
-light_t* addLight(Sint32 x, Sint32 y, const char* name) {
+light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus) {
     if (!name || !name[0]) {
         return nullptr;
     }
@@ -220,8 +220,8 @@ light_t* addLight(Sint32 x, Sint32 y, const char* name) {
     }
     const auto& def = find->second;
     if (def.shadows) {
-        return lightSphereShadow(x, y, def.radius, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphereShadow(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
     } else {
-        return lightSphere(x, y, def.radius, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphere(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
     }
 }

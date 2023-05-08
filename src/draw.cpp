@@ -77,6 +77,7 @@ Shader spriteShader;
 Shader spriteDitheredShader;
 Shader spriteBrightShader;
 TempTexture* lightmapTexture;
+TempTexture* lightmapTextureBlocky;
 
 static Shader gearShader;
 static Shader lineShader;
@@ -140,7 +141,7 @@ static void buildSpriteShader(
     shader.bind();
     GL_CHECK_ERR(glUniform1i(shader.uniform("uTexture"), 0));
     if (lightmap) {
-        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 3));
     }
 }
 
@@ -222,6 +223,9 @@ void createCommonDrawResources() {
     lightmapTexture = new TempTexture();
     GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
     lightmapTexture->bind();
+	lightmapTextureBlocky = new TempTexture();
+	GL_CHECK_ERR(glActiveTexture(GL_TEXTURE3));
+	lightmapTextureBlocky->bind();
     GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
     
     // voxel shader:
@@ -595,6 +599,7 @@ void destroyCommonDrawResources() {
 #endif
     clearChunks();
     delete lightmapTexture;
+	delete lightmapTextureBlocky;
 }
 
 void Mesh::init() {

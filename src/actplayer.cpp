@@ -4538,11 +4538,12 @@ void actPlayer(Entity* my)
 		}
 	}
     if (*cvar_playerLight) {
+		const int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
         if ( my->flags[BURNING] ) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
         else if (!my->light) {
-            my->light = addLight(my->x / 16, my->y / 16, light_type);
+            my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus);
         }
     }
 

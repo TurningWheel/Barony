@@ -13745,9 +13745,9 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_PER:
 				{
-					Sint32 PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
-					int lightBonus = PER / 3;
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), lightBonus);
+					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+					const int range_bonus = std::min(std::max(0, PER / 5), 2);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), range_bonus);
 				}
 					break;
 				case SHEET_CHR:
@@ -13859,7 +13859,9 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_PER:
 				{
-					int sneakingBonus = (2 + (stats[player.playernum]->PROFICIENCIES[PRO_STEALTH] / 40));
+					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
+					const int range_bonus = std::min(std::max(0, PER / 5), 2);
+					const int sneakingBonus = range_bonus + 2;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), sneakingBonus);
 				}
 				break;

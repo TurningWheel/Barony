@@ -23,7 +23,7 @@ typedef struct light_t
 light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp);
 light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp);
 light_t* newLight(Sint32 x, Sint32 y, Sint32 radius);
-light_t* addLight(Sint32 x, Sint32 y, const char* name);
+light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus = 0);
 bool loadLights();
 
 struct LightDef {

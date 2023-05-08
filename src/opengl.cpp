@@ -527,6 +527,7 @@ static void loadLightmapTexture() {
     
     // load lightmap texture data
     lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
+    lightmapTextureBlocky->loadFloat(pixels.data(), map.width, map.height, true, true);
 }
 
 static void updateChunks();
