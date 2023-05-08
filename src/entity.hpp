@@ -124,6 +124,7 @@ public:
         static constexpr int MAX = 10;
     };
     std::unordered_map<view_t*, Dither> dithering;
+	vec4_t lightBonus;
 
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);

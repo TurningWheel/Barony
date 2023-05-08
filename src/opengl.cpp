@@ -527,7 +527,6 @@ static void loadLightmapTexture() {
     
     // load lightmap texture data
     lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
-    lightmapTextureBlocky->loadFloat(pixels.data(), map.width, map.height, true, true);
 }
 
 static void updateChunks();
@@ -680,14 +679,13 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 highlight = 1.f - (highlight - 1.f);
             }
             const GLfloat light[4] = {
-                (highlight - .5f) * .1f,
-                (highlight - .5f) * .1f,
-                (highlight - .5f) * .1f,
-                0.f };
+                (highlight - .5f) * .1f + entity->lightBonus.x,
+                (highlight - .5f) * .1f + entity->lightBonus.y,
+                (highlight - .5f) * .1f + entity->lightBonus.z,
+                entity->lightBonus.w };
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         } else {
-            const GLfloat light[4] = { 0.f, 0.f, 0.f, 0.f };
-            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&entity->lightBonus));
         }
         
         constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
