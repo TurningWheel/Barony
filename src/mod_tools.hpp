@@ -2947,7 +2947,7 @@ class VideoManager_t
 	bool started = false;
 	GLuint textureId = 0;
 	unsigned int textureFormat = GL_RGB;
-	void drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha);
+	void drawTexturedQuad(unsigned int texID, int tw, int th, const SDL_Rect& src, const SDL_Rect& dest, float alpha);
 	GLuint createTexture(int w, int h, unsigned int format);
 	int potCeil(int value)
 	{
