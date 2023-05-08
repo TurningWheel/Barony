@@ -11,48 +11,112 @@
 
 #pragma once
 
+#include "shader.hpp"
+
+vec4_t vec4_copy(const vec4_t* v);
+vec4_t* mul_mat_vec4(vec4_t* result, const mat4x4_t* m, const vec4_t* v);
+vec4_t* add_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* sub_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* mul_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* div_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* pow_vec4(vec4_t* result, const vec4_t* v, float f);
+float dot_vec4(const vec4_t* a, const vec4_t* b);
+vec4_t* cross_vec3(vec4_t* result, const vec4_t* a, const vec4_t* b);
+vec4_t* cross_vec4(vec4_t* result, const vec4_t* a, const vec4_t* b);
+float length_vec4(const vec4_t* v);
+vec4_t* normal_vec4(vec4_t* result, const vec4_t* v);
+mat4x4_t* mul_mat(mat4x4_t* result, const mat4x4_t* m1, const mat4x4_t* m2);
+mat4x4_t* translate_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
+mat4x4_t* rotate_mat(mat4x4_t* result, const mat4x4_t* m, float angle, const vec4_t* v);
+mat4x4_t* scale_mat(mat4x4_t* result, const mat4x4_t* m, const vec4_t* v);
+mat4x4_t* ortho(mat4x4_t* result, float left, float right, float bot, float top, float near, float far);
+mat4x4_t* frustum(mat4x4_t* result, float left, float right, float bot, float top, float near, float far);
+#define perspective fast_perspective
+mat4x4_t* slow_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
+mat4x4_t* fast_perspective(mat4x4_t* result, float fov, float aspect, float near, float far);
+mat4x4_t* mat_from_array(mat4x4_t* result, float matArray[16]);
+bool invertMatrix4x4(mat4x4_t* result, const mat4x4_t* m);
+vec4_t project(
+    const vec4_t* world,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+vec4_t unproject(
+    const vec4_t* screenCoords,
+    const mat4x4_t* model,
+    const mat4x4_t* projview,
+    const vec4_t* window);
+
+// The following f16/f32 conversion functions courtesy of glm
+// https://github.com/g-truc/glm
+
+union uif32 {
+	uif32() :
+		i(0)
+	{}
+	uif32(float f_) :
+		f(f_)
+	{}
+	uif32(unsigned int i_) :
+		i(i_)
+	{}
+
+	float f;
+	unsigned int i;
+};
+
+float foverflow();
+float toFloat32(GLhalf value);
+GLhalf toFloat16(float f);
+
 class TempTexture {
 private:
     GLuint _texid = 0;
+    int _w = 0;
+    int _h = 0;
 public:
     const GLuint& texid = _texid;
+    int& w = _w;
+    int& h = _h;
 
     TempTexture() {
-        glGenTextures(1, &_texid);
+        GL_CHECK_ERR(glGenTextures(1, &_texid));
     }
 
     ~TempTexture() {
         if( _texid ) {
-            glDeleteTextures(1,&_texid);
+            GL_CHECK_ERR(glDeleteTextures(1,&_texid));
             _texid = 0;
         }
     }
     
     void setParameters(bool clamp, bool point) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR);
-        //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, point ? GL_NEAREST : GL_LINEAR));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, point ? GL_NEAREST : GL_LINEAR));
     }
 
     void load(SDL_Surface* surf, bool clamp, bool point) {
         SDL_LockSurface(surf);
-        glBindTexture(GL_TEXTURE_2D, _texid);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
         setParameters(clamp, point);
+        _w = surf->w;
+        _h = surf->h;
         SDL_UnlockSurface(surf);
     }
     
     void loadFloat(float* data, int width, int height, bool clamp, bool point) {
-        glBindTexture(GL_TEXTURE_2D, _texid);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
+        GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_FLOAT, data));
         setParameters(clamp, point);
+        _w = width;
+        _h = height;
     }
 
     void bind() {
-        glBindTexture(GL_TEXTURE_2D, _texid);
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, _texid));
     }
 };
 
@@ -61,42 +125,39 @@ public:
 
 struct Mesh {
     enum class BufferType : unsigned int {
-        Position,    // vec3 float
-        TexCoord,    // vec2 float
-        Color,        // vec4 float
-        Index,        // uint
+        Position, // vec3 float
+        TexCoord, // vec2 float
+        Color,    // vec4 float
         Max
     };
     static const std::unordered_map<BufferType, int> ElementsPerVBO;
 
+    Mesh() = default;
     Mesh(
         std::initializer_list<float>&& positions,
         std::initializer_list<float>&& texcoords,
-        std::initializer_list<float>&& colors,
-        std::initializer_list<unsigned int>&& indices) :
-        data{{positions}, {texcoords}, {colors}},
-        index(indices)
+        std::initializer_list<float>&& colors) :
+        data{{positions}, {texcoords}, {colors}}
         {}
 
     Mesh(
         const std::initializer_list<float>& positions,
         const std::initializer_list<float>& texcoords,
-        const std::initializer_list<float>& colors,
-        const std::initializer_list<unsigned int>& indices) :
-        data{{positions}, {texcoords}, {colors}},
-        index(indices)
+        const std::initializer_list<float>& colors) :
+        data{{positions}, {texcoords}, {colors}}
         {}
 
-    const std::vector<float> data[(int)BufferType::Index];
-    const std::vector<unsigned int> index;
+    std::vector<float> data[(int)BufferType::Max];
 
     void init();
     void destroy();
-    void draw() const;
+    void draw(GLenum type = GL_TRIANGLES, int numVertices = 0) const;
+    bool isInitialized() const { return vbo[0] != 0; }
 
 private:
     unsigned int vao = 0; // vertex array object (mesh handle)
     unsigned int vbo[(int)BufferType::Max]; // vertex buffer objects
+    unsigned int numVertices = 0; // number of vertices
 };
 
 #include "shader.hpp"
@@ -107,14 +168,22 @@ struct framebuffer {
     unsigned int fbo_depth = 0;
     unsigned int xsize = 1280;
     unsigned int ysize = 720;
+    
+    static constexpr int NUM_PBOS = 2;
+    unsigned int pbos[NUM_PBOS];
+    unsigned int pboindex = 0;
+    bool mapped = false;
 
     void init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter);
     void destroy();
     void bindForWriting();
     void bindForReading() const;
-
-    static void blit(float gamma = 1.f);
-    static void hdrBlit(float gamma, float exposure);
+    
+    GLhalf* lock();
+    void unlock();
+    
+    void draw(float brightness = 1.f);
+    void hdrDraw(float brightness, float gamma, float exposure);
     static void unbindForWriting();
     static void unbindForReading();
     static void unbindAll();
@@ -125,6 +194,7 @@ struct framebuffer {
 };
 
 // view structure
+constexpr float defaultLuminance = 0.25f;
 typedef struct view_t
 {
     real_t x, y, z;
@@ -134,8 +204,11 @@ typedef struct view_t
     real_t globalLightModifier = 0.0;
     real_t globalLightModifierEntities = 0.0;
     int globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
-    framebuffer fb;
+    framebuffer fb[1];
     bool* vismap = nullptr;
+    float luminance = defaultLuminance;
+    unsigned int drawnFrames = 0;
+    mat4x4 projview;
 } view_t;
 
 #define FLIP_VERTICAL 1
@@ -170,7 +243,7 @@ void drawVoxel(view_t* camera, Entity* entity);
 void drawEntities3D(view_t* camera, int mode);
 void drawPalette(voxel_t* model);
 void drawEntities2D(long camx, long camy);
-void drawGrid(long camx, long camy);
+void drawGrid(int camx, int camy);
 void drawEditormap(long camx, long camy);
 void drawWindow(int x1, int y1, int x2, int y2);
 void drawDepressed(int x1, int y1, int x2, int y2);
@@ -204,15 +277,21 @@ extern framebuffer main_framebuffer;
 extern Shader voxelShader;
 extern Shader voxelBrightShader;
 extern Shader voxelDitheredShader;
-extern Shader voxelBrightDitheredShader;
 extern Shader worldShader;
-extern Shader worldBrightShader;
+extern Shader worldDitheredShader;
 extern Shader worldDarkShader;
+extern Shader skyShader;
+extern Mesh skyMesh;
+extern Shader spriteShader;
+extern Shader spriteDitheredShader;
+extern Shader spriteBrightShader;
+extern Mesh spriteMesh;
 extern TempTexture* lightmapTexture;
 
 #define TRANSPARENT_TILE 246
 
 struct Chunk {
+    GLuint vao = 0;
     GLuint vbo_positions = 0;
     GLuint vbo_texcoords = 0;
     GLuint vbo_colors = 0;
@@ -223,6 +302,7 @@ struct Chunk {
     Chunk& operator=(const Chunk&) = delete;
     
     Chunk(Chunk&& rhs) {
+        vao = rhs.vao;
         vbo_positions = rhs.vbo_positions;
         vbo_texcoords = rhs.vbo_texcoords;
         vbo_colors = rhs.vbo_colors;
@@ -231,8 +311,8 @@ struct Chunk {
         y = rhs.y;
         w = rhs.w;
         h = rhs.h;
-        tiles = rhs.tiles;
         
+        rhs.vao = 0;
         rhs.vbo_positions = 0;
         rhs.vbo_texcoords = 0;
         rhs.vbo_colors = 0;
@@ -241,10 +321,13 @@ struct Chunk {
         rhs.y = 0;
         rhs.w = 0;
         rhs.h = 0;
-        rhs.tiles = nullptr;
+        
+        tiles.swap(rhs.tiles);
+        dithering.swap(rhs.dithering);
     }
     
     Chunk& operator=(Chunk&& rhs) {
+        vao = rhs.vao;
         vbo_positions = rhs.vbo_positions;
         vbo_texcoords = rhs.vbo_texcoords;
         vbo_colors = rhs.vbo_colors;
@@ -253,8 +336,8 @@ struct Chunk {
         y = rhs.y;
         w = rhs.w;
         h = rhs.h;
-        tiles = rhs.tiles;
         
+        rhs.vao = 0;
         rhs.vbo_positions = 0;
         rhs.vbo_texcoords = 0;
         rhs.vbo_colors = 0;
@@ -263,7 +346,9 @@ struct Chunk {
         rhs.y = 0;
         rhs.w = 0;
         rhs.h = 0;
-        rhs.tiles = nullptr;
+        
+        tiles.swap(rhs.tiles);
+        dithering.swap(rhs.dithering);
         return *this;
     }
     
@@ -278,7 +363,14 @@ struct Chunk {
     bool isDirty(const map_t& map);
     
     int x = 0, y = 0, w = 0, h = 0;
-    Sint32* tiles = nullptr;
+    std::vector<Sint32> tiles;
+    
+    struct Dither {
+        int value = 0;
+        Uint32 lastUpdateTick = 0;
+        static constexpr int MAX = 10;
+    };
+    std::unordered_map<view_t*, Dither> dithering;
 };
 void clearChunks();
 void createChunks();
@@ -292,16 +384,16 @@ extern view_t menucam;
 // function prototypes for opengl.c:
 #define REALCOLORS 0
 #define ENTITYUIDS 1
-real_t getLightForEntity(real_t x, real_t y);
 void beginGraphics();
-void glBeginCamera(view_t* camera);
+void glBeginCamera(view_t* camera, bool useHDR);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
-bool glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails, bool doVisibilityCheckOnly);
+void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 void glDrawWorld(view_t* camera, int mode);
-void glEndCamera(view_t* camera);
-void glEndCamera(view_t* camera);
+void glEndCamera(view_t* camera, bool useHDR);
 unsigned int GO_GetPixelU32(int x, int y, view_t& camera);
+
+extern bool hdrEnabled;

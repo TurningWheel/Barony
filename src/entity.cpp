@@ -822,10 +822,6 @@ Returns the illumination of the given entity
 
 int Entity::entityLight()
 {
-	if ( this->flags[BRIGHT] )
-	{
-		return 255;
-	}
 	if ( this->x < 0 || this->y < 0 || this->x >= map.width << 4 || this->y >= map.height << 4 )
 	{
 		return 255;
@@ -833,7 +829,9 @@ int Entity::entityLight()
 	int light_x = (int)this->x / 16;
 	int light_y = (int)this->y / 16;
     const auto& light = lightmap[light_y + light_x * map.height];
-	return (light.x + light.y + light.z) / 3.f;
+    //return (light.x + light.y + light.z) / 3.f;
+    return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f)), 255);
+	//return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f * 255.f)), 255);
 }
 
 /*-------------------------------------------------------------------------------
@@ -3549,6 +3547,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( entity )
 		{
 			entity->sprite = 29;
+            entity->ditheringDisabled = true;
 			entity->flags[SPRITE] = true;
 			entity->flags[GENIUS] = true;
 			entity->flags[INVISIBLE] = false;
@@ -19743,10 +19742,10 @@ void Entity::createWorldUITooltip()
 		worldTooltip->z = this->z;
 		worldTooltip->sizex = 1;
 		worldTooltip->sizey = 1;
+        worldTooltip->ditheringDisabled = true;
 		worldTooltip->flags[NOUPDATE] = true;
 		worldTooltip->flags[PASSABLE] = true;
 		worldTooltip->flags[SPRITE] = true;
-		worldTooltip->flags[BRIGHT] = true;
 		worldTooltip->flags[UNCLICKABLE] = true;
 		worldTooltip->behavior = &actSpriteWorldTooltip;
 		worldTooltip->parent = this->getUID();

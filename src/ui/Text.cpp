@@ -7,29 +7,9 @@
 #include "Text.hpp"
 #include "Font.hpp"
 #include "Frame.hpp"
+#include "Image.hpp"
 
-GLuint Text::vao = 0;
-GLuint Text::vbo[BUFFER_TYPE_LENGTH] = { 0 };
 constexpr int resolution_factor = 1;
-
-const GLfloat Text::positions[8]{
-	0.f, 0.f,
-	0.f, 1.f,
-	1.f, 1.f,
-	1.f, 0.f
-};
-
-const GLfloat Text::texcoords[8]{
-	0.f, 0.f,
-	0.f, 1.f,
-	1.f, 1.f,
-	1.f, 0.f
-};
-
-const GLuint Text::indices[6]{
-	0, 1, 2,
-	0, 2, 3
-};
 
 Text::Text(const char* _name) {
 	name = _name;
@@ -42,7 +22,7 @@ Text::~Text() {
 		surf = nullptr;
 	}
 	if (texid) {
-		glDeleteTextures(1, &texid);
+        GL_CHECK_ERR(glDeleteTextures(1, &texid));
 		texid = 0;
 	}
 }
@@ -61,12 +41,12 @@ static ConsoleVariable<bool> cvar_text_delay_dumpcache("/text_delay_dumpcache", 
 #endif
 
 void Text::render() {
-	if ( surf ) {
+	if (surf) {
 		SDL_FreeSurface(surf);
 		surf = nullptr;
 	}
-	if ( texid ) {
-		glDeleteTextures(1, &texid);
+	if (texid) {
+        GL_CHECK_ERR(glDeleteTextures(1, &texid));
 		texid = 0;
 	}
 
@@ -84,15 +64,15 @@ void Text::render() {
 			fontName = rest.substr(0, index);
 			rest = rest.substr(index + 1);
 			if ((index = rest.find(fontBreak)) != std::string::npos) {
-				textColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+				textColor = (uint32_t)strtoul(rest.substr(0, index).c_str(), nullptr, 16);
 				rest = rest.substr(index + 1);
 				if ((index = rest.find(fontBreak)) != std::string::npos) {
-					outlineColor = strtoul(rest.substr(0, index).c_str(), nullptr, 16);
+					outlineColor = (uint32_t)strtoul(rest.substr(0, index).c_str(), nullptr, 16);
 				} else {
-					outlineColor = strtoul(rest.c_str(), nullptr, 16);
+					outlineColor = (uint32_t)strtoul(rest.c_str(), nullptr, 16);
 				}
 			} else {
-				textColor = strtoul(rest.c_str(), nullptr, 16);
+				textColor = (uint32_t)strtoul(rest.c_str(), nullptr, 16);
 			}
 		} else {
 			fontName = rest;
@@ -242,7 +222,6 @@ void Text::render() {
 			for ( int x = 0; x < surf->w; x++ )
 			{
 				bool isEmptyRow = true && checkForEmptyRow;
-				bool foundTextColorThisRow = false;
 				bool doFillRow = false;
 				for ( int y = 0; y < surf->h; y++ )
 				{
@@ -279,14 +258,28 @@ void Text::render() {
 				}
 			}
 		}
-
-	    glGenTextures(1, &texid);
-		glBindTexture(GL_TEXTURE_2D, texid);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+        
+        // create GL texture object
+        GL_CHECK_ERR(glGenTextures(1, &texid));
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        
+        // check whether we can fit the surf data into the texture
+        GLint maxSize;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+        if (surf->w <= GL_MAX_TEXTURE_SIZE && surf->h <= GL_MAX_TEXTURE_SIZE) {
+            // we can fit the texture
+            GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h,
+                0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels));
+        } else {
+            // we cannot fit the texture
+            GL_CHECK_ERR(glDeleteTextures(1, &texid));
+            texid = 0;
+        }
+        
 		SDL_UnlockSurface(surf);
 	}
 
@@ -297,127 +290,25 @@ void Text::draw(const SDL_Rect src, const SDL_Rect dest, const SDL_Rect viewport
 	drawColor(src, dest, viewport, 0xffffffff);
 }
 
-
-//#include "Image.hpp"
-// testing function debugging text blitting
-//void Text::drawColorToTexture(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-//	if ( !surf ) {
-//		return;
-//	}
-//{
-//	auto src = _src;
-//	auto dest = _dest;
-
-//	if ( resolution_factor != 1 ) {
-//		src.x *= resolution_factor;
-//		src.y *= resolution_factor;
-//		src.w *= resolution_factor;
-//		src.h *= resolution_factor;
-//	}
-
-//	src.w = src.w <= 0 ? surf->w : src.w;
-//	src.h = src.h <= 0 ? surf->h : src.h;
-//	dest.w = dest.w <= 0 ? surf->w : dest.w;
-//	dest.h = dest.h <= 0 ? surf->h : dest.h;
-
-//	Uint8 r, g, b, a;
-//	getColor(color, &r, &g, &b, &a);
-//	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-
-//	SDL_Rect pos{ 0, 0, 0, 0 };
-//	pos = SDL_Rect{ -src.x, -src.y, 0, 0 };
-//	SDL_Surface* sprite = SDL_CreateRGBSurface(0, dest.w, dest.h, 32,
-//		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-//	TempTexture* texture = nullptr;
-//	SDL_SetSurfaceBlendMode(surf, SDL_BLENDMODE_BLEND);
-//	SDL_BlitSurface(surf, nullptr, sprite, &pos);
-//	if ( sprite )
-//	{
-//		texture = new TempTexture();
-//		texture->load(sprite, false, true);
-//		src.x = 0;
-//		src.y = 0;
-//		SDL_Rect pos = dest;
-//		//Image::drawSurface(texture->texid, sprite, &src, pos, viewport, color);
-//		Image::drawSurface(texture->texid, sprite, nullptr, pos, viewport, color);
-//		if ( texture )
-//		{
-//			delete texture;
-//			texture = nullptr;
-//		}
-//		if ( sprite )
-//		{
-//			SDL_FreeSurface(sprite);
-//			sprite = nullptr;
-//		}
-//	}
-//	return;
-//}
-
 void Text::drawColor(const SDL_Rect _src, const SDL_Rect _dest, const SDL_Rect viewport, const Uint32& color) const {
-	if (!surf) {
+	if (!surf || !texid) {
 	    return;
 	}
 
 	auto src = _src;
 	auto dest = _dest;
-
 	if (resolution_factor != 1) {
 		src.x *= resolution_factor;
 		src.y *= resolution_factor;
 		src.w *= resolution_factor;
 		src.h *= resolution_factor;
 	}
-
 	src.w = src.w <= 0 ? surf->w : src.w;
 	src.h = src.h <= 0 ? surf->h : src.h;
 	dest.w = dest.w <= 0 ? surf->w : dest.w;
 	dest.h = dest.h <= 0 ? surf->h : dest.h;
-
-	if (!drawingGui) {
-        glEnable(GL_BLEND);
-        
-		// setup projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(viewport.x, viewport.w, viewport.y, viewport.h, -1, 1);
-
-		// push model matrix
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-	}
-
-	// bind texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	// consume color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	// draw quad
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y);
-	glTexCoord2f(1.0 * ((real_t)src.x / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * (((real_t)src.y + src.h) / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y - dest.h);
-	glTexCoord2f(1.0 * (((real_t)src.x + src.w) / surf->w), 1.0 * ((real_t)src.y / surf->h));
-	glVertex2f(dest.x + dest.w, viewport.h - dest.y);
-	glEnd();
-
-	if (!drawingGui) {
-        glDisable(GL_BLEND);
-        
-		// pop matrices
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-	}
+    
+    Image::draw(texid, surf->w, surf->h, &src, dest, viewport, color);
 }
 
 int Text::countNumTextLines() const {
@@ -500,7 +391,6 @@ Text* Text::get(size_t hash, const char* key) {
 	auto& map = hashed_text;
 	auto bc = map.bucket_count();
 	if (bc) {
-		const auto& key_eq = map.key_eq();
 		const auto& hash_fn = map.hash_function();
 		auto chash = !(bc & (bc - 1)) ? hash & (bc - 1) :
 			(hash < bc ? hash : hash % bc);

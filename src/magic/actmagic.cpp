@@ -26,48 +26,48 @@
 #include "magic.hpp"
 #include "../mod_tools.hpp"
 
-static Uint32 colorForSprite(int sprite, bool darker) {
+static const char* colorForSprite(int sprite, bool darker) {
     if (darker) {
         switch (sprite) {
-        default: return makeColorRGB(176, 176, 176);
         case 672:
-        case 168: return makeColorRGB(176, 0, 0); // red
-        case 169: return makeColorRGB(176, 83, 0); // orange
+        case 168: return "magic_red_flicker";
+        case 169: return "magic_orange_flicker";
         case 670:
-        case 170: return makeColorRGB(176, 176, 0); // yellow
+        case 170: return "magic_yellow_flicker";
         case 983:
-        case 171: return makeColorRGB(0, 176, 0); // green
+        case 171: return "magic_green_flicker";
         case 592:
-        case 172: return makeColorRGB(0, 48, 176); // blue
+        case 172: return "magic_blue_flicker";
         case 625:
-        case 173: return makeColorRGB(176, 0, 176); // purple
+        case 173: return "magic_purple_flicker";
+        default:
         case 669:
         case 680:
-        case 174: return makeColorRGB(176, 176, 176); // white
+        case 174: return "magic_white_flicker";
         case 593:
-        case 175: return makeColorRGB(24, 24, 24); // black
-        case 678: return makeColorRGB(176, 144, 144); // pink
+        case 175: return "magic_black_flicker";
+        case 678: return "magic_pink_flicker";
         }
     } else {
         switch (sprite) {
-        default: return makeColorRGB(192, 192, 192);
         case 672:
-        case 168: return makeColorRGB(192, 0, 0); // red
-        case 169: return makeColorRGB(192, 92, 0); // orange
+        case 168: return "magic_red";
+        case 169: return "magic_orange";
         case 670:
-        case 170: return makeColorRGB(192, 192, 0); // yellow
+        case 170: return "magic_yellow";
         case 983:
-        case 171: return makeColorRGB(0, 192, 0); // green
+        case 171: return "magic_green";
         case 592:
-        case 172: return makeColorRGB(0, 64, 192); // blue
+        case 172: return "magic_blue";
         case 625:
-        case 173: return makeColorRGB(192, 0, 192); // purple
+        case 173: return "magic_purple";
+        default:
         case 669:
         case 680:
-        case 174: return makeColorRGB(192, 192, 192); // white
+        case 174: return "magic_white";
         case 593:
-        case 175: return makeColorRGB(32, 32, 32); // black
-        case 678: return makeColorRGB(192, 160, 160); // pink
+        case 175: return "magic_black";
+        case 678: return "magic_pink";
         }
     }
 }
@@ -87,7 +87,7 @@ void actMagiclightBall(Entity* my)
 		my->removeLightField();
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(192, 192, 192));
+		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 
 
 		if ( flickerLights )
@@ -103,12 +103,12 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(192, 192, 192));
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(174, 174, 174));
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
 			}
 			lightball_flicker = 0;
 		}
@@ -177,27 +177,29 @@ void actMagiclightBall(Entity* my)
 	}
 
 	// if the spell has been unsustained, remove it
-	if ( !spell->magicstaff && !spell->sustain )
+	if ( !spell->sustain )
 	{
-		int i = 0;
-		int player = -1;
-		for (i = 0; i < MAXPLAYERS; ++i)
-		{
-			if (players[i]->entity == caster)
-			{
-				player = i;
-			}
-		}
-		if (player > 0 && multiplayer == SERVER)
-		{
-			strcpy( (char*)net_packet->data, "UNCH");
-			net_packet->data[4] = player;
-			SDLNet_Write32(spell->ID, &net_packet->data[5]);
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 9;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		}
+        if (!spell->magicstaff)
+        {
+            int player = -1;
+            for (int i = 0; i < MAXPLAYERS; ++i)
+            {
+                if (players[i]->entity == caster)
+                {
+                    player = i;
+                }
+            }
+            if (player > 0 && multiplayer == SERVER)
+            {
+                strcpy( (char*)net_packet->data, "UNCH");
+                net_packet->data[4] = player;
+                SDLNet_Write32(spell->ID, &net_packet->data[5]);
+                net_packet->address.host = net_clients[player - 1].host;
+                net_packet->address.port = net_clients[player - 1].port;
+                net_packet->len = 9;
+                sendPacketSafe(net_sock, -1, net_packet, player - 1);
+            }
+        }
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
@@ -436,7 +438,7 @@ void actMagiclightBall(Entity* my)
 		}
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(192, 192, 192));
+		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 
 		if ( flickerLights )
 		{
@@ -451,12 +453,12 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(192, 192, 192));
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, makeColorRGB(174, 174, 174));
+				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
 			}
 			lightball_flicker = 0;
 		}
@@ -2876,7 +2878,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
         if (1)
 		{
 			//Make the ball light up stuff as it travels.
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, false));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 
 			if ( flickerLights )
 			{
@@ -2892,12 +2894,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if (lightball_lighting == 1)
 				{
 					my->removeLightField();
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, false));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 				}
 				else
 				{
 					my->removeLightField();
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 				}
 				lightball_flicker = 0;
 			}
@@ -2948,7 +2950,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 void actMagicClient(Entity* my)
 {
 	my->removeLightField();
-	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, false));
+	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 
 	if ( flickerLights )
 	{
@@ -2964,12 +2966,12 @@ void actMagicClient(Entity* my)
 		if (lightball_lighting == 1)
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, false));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, false));
 		}
 		else
 		{
 			my->removeLightField();
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, colorForSprite(my->sprite, true));
+			my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 		}
 		lightball_flicker = 0;
 	}
@@ -3069,7 +3071,6 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -3107,7 +3108,6 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity->roll = parentent->roll;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
@@ -3158,7 +3158,6 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->sizey = 1;
 		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
@@ -3378,7 +3377,6 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	entity->behavior = &actParticleAestheticOrbit;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	if ( multiplayer != CLIENT )
 	{
@@ -4325,7 +4323,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -4337,7 +4335,7 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, colorForSprite(my->sprite, true));
+					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 593, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -5372,7 +5370,6 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-	entity->flags[BRIGHT] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5393,7 +5390,6 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 		entity->sizey = 1;
 		entity->yaw = (local_rng.rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = true;
-		entity->flags[BRIGHT] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
@@ -5506,7 +5502,7 @@ void actParticleShadowTag(Entity* my)
 	{
 		--PARTICLE_LIFE;
 		my->removeLightField();
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, colorForSprite(my->sprite, true));
+		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my->sprite, true));
 
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )

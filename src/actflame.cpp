@@ -153,8 +153,8 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	entity->flags[NOUPDATE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[SPRITE] = true;
-	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
+    entity->ditheringDisabled = true;
 	entity->behavior = &actFlame;
 	if ( multiplayer != CLIENT )
 	{

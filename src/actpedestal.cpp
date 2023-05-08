@@ -73,7 +73,7 @@ void Entity::actPedestalBase()
 
 	if ( !light )
 	{
-		light = lightSphereShadow(x / 16, y / 16, 3, makeColorRGB(128, 128, 128));
+		light = addLight(x / 16, y / 16, "pedestal");
 	}
 
 	if ( ticks == 1 )
@@ -434,7 +434,13 @@ void Entity::actPedestalOrb()
 			flags[PASSABLE] = false;
 			if ( !light )
 			{
-				light = lightSphereShadow(x / 16, y / 16, 5, makeColorRGB(96, 96, 96));
+                switch (parent->pedestalOrbType) {
+                default:
+                case 1: light = addLight(x / 16, y / 16, "orb_blue"); break;
+                case 2: light = addLight(x / 16, y / 16, "orb_red"); break;
+                case 3: light = addLight(x / 16, y / 16, "orb_purple"); break;
+                case 4: light = addLight(x / 16, y / 16, "orb_green"); break;
+                }
 			}
 		}
 	}

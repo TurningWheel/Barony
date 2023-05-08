@@ -92,6 +92,19 @@ void initClass(const int player)
 			// don't do anything crazy with items on players we don't own
 			return;
 		}
+        
+        // ring of strength
+        item = newItem(RING_STRENGTH, WORN, 0, 1, 0, true, nullptr);
+        if ( isLocalPlayer )
+        {
+            item2 = itemPickup(player, item);
+            useItem(item2, player);
+            free(item);
+        }
+        else
+        {
+            useItem(item, player);
+        }
 
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, nullptr);

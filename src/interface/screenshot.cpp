@@ -48,7 +48,7 @@ void takeScreenshot(const char* output_path)
 
 	temp = SDL_CreateRGBSurface(0, xres, yres, 32, 0, 0, 0, 0);
 	SDL_LockSurface(temp);
-	glReadPixels(0, 0, xres, yres, GL_BGRA, GL_UNSIGNED_BYTE, temp->pixels);
+    GL_CHECK_ERR(glReadPixels(0, 0, xres, yres, GL_BGRA, GL_UNSIGNED_BYTE, temp->pixels));
 	SDL_UnlockSurface(temp);
 	temp2 = flipSurface( temp, FLIP_VERTICAL );
 	SDL_FreeSurface( temp );

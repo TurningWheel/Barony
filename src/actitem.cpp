@@ -373,58 +373,58 @@ void actItem(Entity* my)
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 0, 192));
+                    my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
                 }
                 break;
 			case 611: // red
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 0));
+                    my->light = addLight(my->x / 16, my->y / 16, "orb_red");
                 }
                 break;
 			case 612: // purple
                 my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 192));
+                    my->light = addLight(my->x / 16, my->y / 16, "orb_purple");
                 }
                 break;
 			case 613: // green
 				my->spawnAmbientParticles(80, my->sprite - 4, 10 + local_rng.rand() % 40, 1.0, false);
 				if ( !my->light )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 192, 0));
+					my->light = addLight(my->x / 16, my->y / 16, "orb_green");
 				}
 				break;
 			case 1206: // loot bags (yellow)
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 0));
+                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_yellow");
                 }
                 break;
 			case 1207: // green
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(0, 192, 0));
+                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_green");
                 }
                 break;
 			case 1208: // red
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 0, 0));
+                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_red");
                 }
                 break;
 			case 1209: // pink
 				if ( !my->light )
 				{
-					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 128, 192));
+					my->light = addLight(my->x / 16, my->y / 16, "lootbag_pink");
 				}
 				break;
             case 1210: // white
                 if ( !my->light )
                 {
-                    my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, makeColorRGB(192, 192, 192));
+                    my->light = addLight(my->x / 16, my->y / 16, "lootbag_white");
                 }
                 break;
 			default:

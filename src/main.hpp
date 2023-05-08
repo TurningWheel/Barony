@@ -193,6 +193,45 @@ extern bool autoLimbReload;
 
 #define PI 3.14159265358979323846
 
+void printlog(const char* str, ...);
+const char* gl_error_string(GLenum err);
+#ifdef _MSC_VER
+#define GL_CHECK_ERR(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+		}\
+	}
+#define GL_CHECK_ERR_RET(expression) expression;\
+    {\
+		GLenum err;\
+		while((err = glGetError()) != GL_NO_ERROR) {\
+			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+		}\
+	}
+#else
+#define GL_CHECK_ERR(expression) ({ \
+    expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+    }\
+})
+#define GL_CHECK_ERR_RET(expression) ({ \
+    auto retval = expression;\
+    GLenum err;\
+    while((err = glGetError()) != GL_NO_ERROR) {\
+        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
+            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+    }\
+    retval;\
+})
+#endif
+
 typedef struct vec4 {
     vec4(float f):
         x(f),
@@ -413,7 +452,6 @@ typedef struct map_t
 	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32 flags[16];
 	Sint32* tiles;
-	//bool* vismap;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
@@ -547,7 +585,7 @@ typedef struct polymodel_t
 {
 	polytriangle_t* faces;
 	uint64_t numfaces;
-    GLuint va;
+    GLuint vao;
 	GLuint vbo;
 	GLuint colors;
 	//GLuint colors_shifted;
@@ -724,8 +762,6 @@ extern TTF_Font* ttf16;
 extern SDL_Surface* font8x8_bmp;
 extern SDL_Surface* font12x12_bmp;
 extern SDL_Surface* font16x16_bmp;
-extern SDL_Surface* fancyWindow_bmp;
-extern SDL_Surface* backdrop_loading_bmp;
 extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern std::unordered_map<std::string, SDL_Surface*> achievementImages;
@@ -771,7 +807,6 @@ int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char const * const str);
 int concatedStringLength(char* str, ...);
-void printlog(const char* str, ...);
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
@@ -829,12 +864,6 @@ GLuint create_shader(const char* filename, GLenum type);
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
 
-#ifdef PANDORA
- // Pandora: FBO variables
- extern GLuint fbo_fbo;
- extern GLuint fbo_tex;
- extern GLuint fbo_ren;
-#endif // PANDORA
 void GO_SwapBuffers(SDL_Window* screen);
 
 static const int NUM_STEAM_STATISTICS = 49;
@@ -902,3 +931,5 @@ char* getTimeAndDateFormatted(time_t t, char* buf, size_t size);
 #ifdef near
 #undef near
 #endif
+
+#define VERTEX_ARRAYS_ENABLED

@@ -86,7 +86,7 @@ void actCampfire(Entity* my)
 		// light environment
 		if ( !CAMPFIRE_LIGHTING )
 		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, makeColorRGB(160, 152, 128));
+			my->light = addLight(my->x / 16, my->y / 16, "campfire");
 			CAMPFIRE_LIGHTING = 1;
 		}
 		if ( flickerLights )
@@ -101,12 +101,12 @@ void actCampfire(Entity* my)
 			if (CAMPFIRE_LIGHTING == 1)
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, makeColorRGB(160, 152, 128));
+				my->light = addLight(my->x / 16, my->y / 16, "campfire");
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, makeColorRGB(152, 144, 120));
+				my->light = addLight(my->x / 16, my->y / 16, "campfire_flicker");
 			}
 			CAMPFIRE_FLICKER = 2 + local_rng.rand() % 7;
 		}
@@ -115,7 +115,6 @@ void actCampfire(Entity* my)
 	{
 		my->removeLightField();
 		my->light = NULL;
-		my->flags[BRIGHT] = false;
 	}
 
 	if ( multiplayer != CLIENT )

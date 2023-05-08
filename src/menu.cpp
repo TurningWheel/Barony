@@ -9524,7 +9524,9 @@ void doNewGame(bool makeHighscore) {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		minimapPings[i].clear(); // clear minimap pings
-	    players[i]->camera().globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        auto& camera = players[i]->camera();
+        camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+        camera.luminance = defaultLuminance;
 	}
 	gameplayCustomManager.readFromFile();
 	textSourceScript.scriptVariables.clear();
@@ -9921,8 +9923,8 @@ void doNewGame(bool makeHighscore) {
                                             nametag->flags[NOUPDATE] = true;
                                             nametag->flags[PASSABLE] = true;
                                             nametag->flags[SPRITE] = true;
-                                            nametag->flags[BRIGHT] = true;
                                             nametag->flags[UNCLICKABLE] = true;
+                                            nametag->flags[BRIGHT] = true;
                                             nametag->behavior = &actSpriteNametag;
                                             nametag->parent = monster->getUID();
                                             nametag->scalex = 0.2;
@@ -11841,96 +11843,8 @@ void buttonOpenSteamLeaderboards(button_t* my)
 
 void buttonOpenScoresWindow(button_t* my)
 {
-	// create statistics window
-	clientnum = 0;
-	subwindow = 1;
-	score_window = 1;
-	camera_charsheet_offsetyaw = (330) * PI / 180;
-	loadScore(0);
-	subx1 = xres / 2 - 400;
-	subx2 = xres / 2 + 400;
-#ifdef PANDORA
-	suby1 = yres / 2 - ((yres == 480) ? 200 : 240);
-	suby2 = yres / 2 + ((yres == 480) ? 200 : 240);
-#else
-	suby1 = yres / 2 - 260;
-	suby2 = yres / 2 + 260;
-#endif
-	strcpy(subtext, "");
-
-	// close button
-	button_t* button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1 + 4;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDLK_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	// next button
-	button = newButton();
-	strcpy(button->label, ">");
-	button->sizex = strlen(">") * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - button->sizex - 4;
-	button->y = suby2 - 24;
-	button->action = &buttonScoreNext;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDLK_RIGHT;
-	button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
-
-	// previous button
-	button = newButton();
-	strcpy(button->label, "<");
-	button->sizex = strlen("<") * 12 + 8;
-	button->sizey = 20;
-	button->x = subx1 + 4;
-	button->y = suby2 - 24;
-	button->action = &buttonScorePrev;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDLK_LEFT;
-	button->joykey = joyimpulses[INJOY_DPAD_LEFT];
-
-	// multiplayer scores toggle button
-	button = newButton();
-	strcpy(button->label, "");
-	button->sizex = strlen("show multiplayer") * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - 44 - strlen("show multiplayer") * 12;
-	button->y = suby1 + 4;
-	button->action = &buttonScoreToggle;
-	button->visible = 1;
-	button->focused = 1;
-
-	// delete single score button
-	button = newButton();
-	strcpy(button->label, "delete score");
-	button->sizex = strlen("delete score") * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
-	button->y = suby1 + 4;
-	button->action = &buttonDeleteScoreWindow;
-	button->visible = 1;
-	button->focused = 1;
-
-	// open steam leaderboards button
-#ifdef STEAMWORKS
-	button = newButton();
-	strcpy(button->label, language[3095]);
-	button->sizex = strlen(language[3095]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - 44 - strlen(language[3095]) * 12;
-	button->y = suby2 - 8 - TTF12_HEIGHT;
-	button->action = &buttonOpenSteamLeaderboards;
-	button->visible = 1;
-	button->focused = 1;
-#endif // STEAMWORKS
+    // deprecated
+    return;
 }
 
 void buttonDeleteCurrentScore(button_t* my)

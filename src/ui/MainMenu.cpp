@@ -609,11 +609,12 @@ namespace MainMenu {
 	        Frame::virtualScreenX / firePixelSize,
 	        Frame::virtualScreenY / firePixelSize,
 	        32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	    const Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
+		assert(fireSurface);
 	    SDL_LockSurface(fireSurface);
         const int fireSize = (Frame::virtualScreenX * Frame::virtualScreenY) / (firePixelSize * firePixelSize);
 	    Uint32* const sp = (Uint32*)fireSurface->pixels;
 	    Uint32* const ep = (Uint32*)fireSurface->pixels + fireSize;
+		constexpr Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
 	    for (Uint32* p = sp; p < ep; ++p) {
             *p = defaultColor;
         }
@@ -633,14 +634,12 @@ namespace MainMenu {
     }
 
     static inline void fireUpdate(Uint32* p) {
-        SDL_LockSurface(fireSurface);
-        int w = Frame::virtualScreenX / firePixelSize;
-	    const int diff = std::max(0, RNG.getI32() % 5 - 3);
+        const int w = Frame::virtualScreenX / firePixelSize;
+	    const int diff = std::max(0, RNG.uniform(-3, 1));
 	    const int below = (p[w] & 0xff000000) >> 24;
 	    const int intensity = std::max(below - diff, 0);
 	    Uint32* const newPixel = std::max(p - diff, (Uint32*)fireSurface->pixels);
 	    *newPixel = makeColor(0, 0, 0, intensity);
-        SDL_UnlockSurface(fireSurface);
     }
 
     static void fire() {
@@ -654,11 +653,11 @@ namespace MainMenu {
         const int size = fireSize - w;
 	    Uint32* const sp = (Uint32*)fireSurface->pixels;
 	    Uint32* const mp = (Uint32*)fireSurface->pixels + size;
-	    Uint32* const ep = (Uint32*)fireSurface->pixels + fireSize;
 	    for (Uint32* p = sp; p < mp; ++p) {
             fireUpdate(p);
 	    }
-	    const Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
+	    constexpr Uint32 defaultColor = makeColor(0, 0, 0, fireDefault);
+		Uint32* const ep = (Uint32*)fireSurface->pixels + fireSize;
 	    for (Uint32* p = mp; p < ep; ++p) {
             *p = defaultColor;
 	    }
@@ -2720,19 +2719,8 @@ namespace MainMenu {
 		    });
 		backdrop->setDrawCallback([](const Widget& widget, const SDL_Rect rect){
 		    if (fireTexture) {
-                fireTexture->bind();
-                glColor4f(1, 1, 1, 1);
-	            glBegin(GL_QUADS);
-	            glTexCoord2f(0, 0);
-	            glVertex2f(rect.x, Frame::virtualScreenY - rect.y);
-	            glTexCoord2f(0, 1);
-	            glVertex2f(rect.x, Frame::virtualScreenY - (rect.y + rect.h));
-	            glTexCoord2f(1, 1);
-	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - (rect.y + rect.h));
-	            glTexCoord2f(1, 0);
-	            glVertex2f(rect.x + rect.w, Frame::virtualScreenY - rect.y);
-	            glEnd();
-	            glBindTexture(GL_TEXTURE_2D, 0);
+                Image::draw(fireTexture->texid, fireTexture->w, fireTexture->h,
+                    nullptr, rect, SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY}, 0xffffffff);
 	        }
 		    });
 		backdrop->setBorder(0);
@@ -3258,16 +3246,19 @@ namespace MainMenu {
 	};
 
 	void settingsApply() {
-        video_refresh = allSettings.save();
+        auto save_result = allSettings.save();
         
 		// change video mode
-		if (initialized && (video_refresh & VideoRefresh::Video)) {
-		    int x = std::max(allSettings.video.resolution_x, 1024);
-		    int y = std::max(allSettings.video.resolution_y, 720);
-			if (!changeVideoMode(x, y)) {
-				printlog("critical error! Attempting to abort safely...\n");
-				mainloop = 0;
-			}
+        if (initialized) {
+            video_refresh = save_result;
+            if (video_refresh & VideoRefresh::Video) {
+                int x = std::max(allSettings.video.resolution_x, 1024);
+                int y = std::max(allSettings.video.resolution_y, 720);
+                if (!changeVideoMode(x, y)) {
+                    printlog("critical error! Attempting to abort safely...\n");
+                    mainloop = 0;
+                }
+            }
 		}
 
 		// apply splitscreen setting
@@ -5576,7 +5567,7 @@ bind_failed:
 #ifdef NINTENDO
 		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
 		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
+			"Change controller bindings.",
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();

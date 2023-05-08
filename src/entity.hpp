@@ -116,7 +116,14 @@ class Entity
 public:
 	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 	~Entity();
-
+    
+    bool ditheringDisabled = false;
+    struct Dither {
+        int value = 0;
+        Uint32 lastUpdateTick = 0;
+        static constexpr int MAX = 10;
+    };
+    std::unordered_map<view_t*, Dither> dithering;
 
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);

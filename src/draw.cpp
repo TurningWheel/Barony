@@ -42,23 +42,25 @@ Mesh framebuffer::mesh{
 		-1.f, -1.f,  0.f,
 		 1.f, -1.f,  0.f,
 		 1.f,  1.f,  0.f,
+        -1.f, -1.f,  0.f,
+         1.f,  1.f,  0.f,
 		-1.f,  1.f,  0.f,
 	},
 	{ // texcoords
 		0.f,  0.f,
 		1.f,  0.f,
 		1.f,  1.f,
+        0.f,  0.f,
+        1.f,  1.f,
 		0.f,  1.f,
 	},
 	{ // colors
 		1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f, 1.f,
 		1.f, 1.f, 1.f, 1.f,
-	},
-	{ // indices
-		0, 1, 2,
-		0, 2, 3,
 	}
 };
 
@@ -67,14 +69,28 @@ Shader framebuffer::hdrShader;
 Shader voxelShader;
 Shader voxelBrightShader;
 Shader voxelDitheredShader;
-Shader voxelBrightDitheredShader;
 Shader worldShader;
-Shader worldBrightShader;
+Shader worldDitheredShader;
 Shader worldDarkShader;
+Shader skyShader;
+Shader spriteShader;
+Shader spriteDitheredShader;
+Shader spriteBrightShader;
 TempTexture* lightmapTexture;
 
+static Shader gearShader;
+static Shader lineShader;
+static Mesh lineMesh = {
+    {
+        1.f, 1.f, 0.f, 1.f,
+        1.f, 1.f, 0.f, 1.f,
+    }, // positions
+    {}, // texcoords
+    {} // colors
+};
+
 static void buildVoxelShader(
-    Shader& shader, const char* name,
+    Shader& shader, const char* name, bool lightmap,
 	const char* v, size_t size_v,
 	const char* f, size_t size_f)
 {
@@ -84,10 +100,14 @@ static void buildVoxelShader(
 	shader.bindAttribLocation("iPosition", 0);
 	shader.bindAttribLocation("iColor", 1);
 	shader.link();
+    if (lightmap) {
+        shader.bind();
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+    }
 }
 
 static void buildWorldShader(
-    Shader& shader, const char* name,
+    Shader& shader, const char* name, bool textures,
     const char* v, size_t size_v,
     const char* f, size_t size_f)
 {
@@ -98,65 +118,96 @@ static void buildWorldShader(
     shader.bindAttribLocation("iTexCoord", 1);
     shader.bindAttribLocation("iColor", 2);
     shader.link();
+    if (textures) {
+        shader.bind();
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uTextures"), 2));
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+    }
+}
+
+static void buildSpriteShader(
+    Shader& shader, const char* name, bool lightmap,
+    const char* v, size_t size_v,
+    const char* f, size_t size_f)
+{
+    shader.init(name);
+    shader.compile(v, size_v, Shader::Type::Vertex);
+    shader.compile(f, size_f, Shader::Type::Fragment);
+    shader.bindAttribLocation("iPosition", 0);
+    shader.bindAttribLocation("iTexCoord", 1);
+    shader.bindAttribLocation("iColor", 2);
+    shader.link();
+    shader.bind();
+    GL_CHECK_ERR(glUniform1i(shader.uniform("uTexture"), 0));
+    if (lightmap) {
+        GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+    }
 }
 
 void createCommonDrawResources() {
     // framebuffer shader:
     
+    framebuffer::mesh.init();
+    
 	static const char fb_vertex_glsl[] =
-        "#version 120\n"
-		"attribute vec3 iPosition;"
-		"attribute vec2 iTexCoord;"
-        "varying vec2 TexCoord;"
+		"in vec3 iPosition;"
+		"in vec2 iTexCoord;"
+        "out vec2 TexCoord;"
 		"void main() {"
 		"gl_Position = vec4(iPosition, 1.0);"
         "TexCoord = iTexCoord;"
 		"}";
 
 	static const char fb_fragment_glsl[] =
-		"#version 120\n"
-        "varying vec2 TexCoord;"
+        "in vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
-		"uniform float uGamma;"
+		"uniform float uBrightness;"
+        "out vec4 FragColor;"
 		"void main() {"
-		"gl_FragColor = texture2D(uTexture, TexCoord) * uGamma;"
+        "vec4 color = texture(uTexture, TexCoord);"
+		"FragColor = vec4(color.rgb * uBrightness, color.a);"
 		"}";
     
-    static const char fb_hdr_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec2 TexCoord;"
-        "uniform sampler2D uTexture;"
-        "uniform float uGamma;"
-        "uniform float uExposure;"
-        "void main() {"
-        "vec3 color = texture2D(uTexture, TexCoord).rgb;"
-    
-        // tone-mapping examples
-        //https://www.shadertoy.com/view/lslGzl
-    
-        // luma-based reinhard tone mapping
-        "float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));"
-        "float toneMappedLuma = luma / (1.0 + luma);"
-        "color *= toneMappedLuma / luma;"
-    
-        // two different kinds of reinhard tone mapping
-        //"color = color * (uExposure / (1.0 + color / uExposure));"
-        //"color = vec3(1.0) - exp(-color * uExposure);"
-    
-        "color = pow(color, vec3(1.0 / uGamma));"
-    
-        "gl_FragColor = vec4(color, 1.0);"
-        "}";
-
-	framebuffer::mesh.init();
-    
-	framebuffer::shader.init("framebuffer");
-	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
-	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
+    framebuffer::shader.init("framebuffer");
+    framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+    framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
     framebuffer::shader.bindAttribLocation("iPosition", 0);
     framebuffer::shader.bindAttribLocation("iTexCoord", 1);
     framebuffer::shader.link();
-	glUniform1i(framebuffer::shader.uniform("uTexture"), 0);
+    framebuffer::shader.bind();
+    GL_CHECK_ERR(glUniform1i(framebuffer::shader.uniform("uTexture"), 0));
+    
+    static const char fb_hdr_fragment_glsl[] =
+        "in vec2 TexCoord;"
+        "uniform sampler2D uTexture;"
+        "uniform float uBrightness;"
+        "uniform float uGamma;"
+        "uniform float uExposure;"
+        "out vec4 FragColor;"
+    
+        "void main() {"
+        "vec4 color = texture(uTexture, TexCoord);"
+        "vec3 mapped = color.rgb;"
+    
+        // reinhard tone-mapping
+        "mapped = vec3(1.0) - exp(-mapped * uExposure);"
+    
+        // another kind of reinhard tone mapping (pick one)
+        //"mapped = mapped * (uExposure / (1.0 + mapped / uExposure));"
+
+        // luma-based reinhard tone mapping (does not use exposure)
+        //"float luma = dot(mapped, vec3(0.2126, 0.7152, 0.0722));"
+        //"float toneMappedLuma = luma / (1.0 + luma);"
+        //"mapped = mapped * (toneMappedLuma / luma);"
+    
+        // additional tone-mapping examples
+        //https://www.shadertoy.com/view/lslGzl
+    
+        // gamma correction
+        "mapped = pow(mapped, vec3(1.0 / uGamma));"
+    
+        "FragColor = vec4(mapped * uBrightness, color.a);"
+        "}";
     
     framebuffer::hdrShader.init("hdr framebuffer");
     framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
@@ -164,25 +215,25 @@ void createCommonDrawResources() {
     framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
     framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
     framebuffer::hdrShader.link();
-    glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0);
+    framebuffer::hdrShader.bind();
+    GL_CHECK_ERR(glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0));
     
     // create lightmap texture
     lightmapTexture = new TempTexture();
-    glActiveTexture(GL_TEXTURE1);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
     lightmapTexture->bind();
-    glActiveTexture(GL_TEXTURE0);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
     
     // voxel shader:
     
     static const char vox_vertex_glsl[] =
-        "#version 120\n"
-        "attribute vec3 iPosition;"
-        "attribute vec3 iColor;"
+        "in vec3 iPosition;"
+        "in vec3 iColor;"
         "uniform mat4 uProj;"
         "uniform mat4 uView;"
         "uniform mat4 uModel;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
+        "out vec3 Color;"
+        "out vec4 WorldPos;"
     
         "void main() {"
         "WorldPos = uModel * vec4(iPosition, 1.0);"
@@ -191,14 +242,15 @@ void createCommonDrawResources() {
         "}";
 
     static const char vox_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
         "uniform mat4 uColorRemap;"
+        "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
     
         "void main() {"
         "vec3 Remapped ="
@@ -206,102 +258,85 @@ void createCommonDrawResources() {
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
         "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-        "gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "vec4 Lightmap = texture(uLightmap, TexCoord);"
+        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
         "}";
 
-	buildVoxelShader(voxelShader, "voxelShader",
+	buildVoxelShader(voxelShader, "voxelShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_fragment_glsl, sizeof(vox_fragment_glsl));
     
     static const char vox_bright_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
         "uniform mat4 uColorRemap;"
+        "uniform vec4 uLightFactor;"
         "uniform vec4 uLightColor;"
         "uniform vec4 uColorAdd;"
+        "out vec4 FragColor;"
     
         "void main() {"
         "vec3 Remapped ="
         "    (uColorRemap[0].rgb * Color.r)+"
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
-        "gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (vec4(1.0) + uLightColor) + uColorAdd;"
         "}";
 
-	buildVoxelShader(voxelBrightShader, "voxelBrightShader",
-		vox_vertex_glsl, sizeof(vox_vertex_glsl),
-		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
+    buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,
+        vox_vertex_glsl, sizeof(vox_vertex_glsl),
+        vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
 
 	static const char vox_dithered_fragment_glsl[] =
-		"#version 120\n"
-		"#extension GL_EXT_gpu_shader4 : enable\n"
-		"varying vec3 Color;"
-		"varying vec4 WorldPos;"
+		"in vec3 Color;"
+		"in vec4 WorldPos;"
+        "uniform float uDitherAmount;"
 		"uniform mat4 uColorRemap;"
-		"uniform vec4 uLightColor;"
-		"uniform vec4 uColorAdd;"
-		"uniform sampler2D uLightmap;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uLightmap;"
 		"uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
 
 		"void main() {"
-		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
-		"discard;"
-		"}"
+		"dither(ivec2(gl_FragCoord), uDitherAmount);"
 		"vec3 Remapped ="
 		"    (uColorRemap[0].rgb * Color.r)+"
 		"    (uColorRemap[1].rgb * Color.g)+"
 		"    (uColorRemap[2].rgb * Color.b);"
 		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-		"gl_FragColor = gl_FragColor * texture2D(uLightmap, TexCoord);"
-		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "vec4 Lightmap = texture(uLightmap, TexCoord);"
+        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
 		"}";
 
-	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader",
+	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_dithered_fragment_glsl, sizeof(vox_dithered_fragment_glsl));
-
-	static const char vox_bright_dithered_fragment_glsl[] =
-		"#version 120\n"
-		"#extension GL_EXT_gpu_shader4 : enable\n"
-		"varying vec3 Color;"
-		"varying vec4 WorldPos;"
-		"uniform mat4 uColorRemap;"
-		"uniform vec4 uLightColor;"
-		"uniform vec4 uColorAdd;"
-
-		"void main() {"
-		"if ((int(gl_FragCoord.x + gl_FragCoord.y) & 1) == 1) {"
-		"discard;"
-		"}"
-		"vec3 Remapped ="
-		"    (uColorRemap[0].rgb * Color.r)+"
-		"    (uColorRemap[1].rgb * Color.g)+"
-		"    (uColorRemap[2].rgb * Color.b);"
-		"gl_FragColor = vec4(Remapped, 1.0) * uLightColor + uColorAdd;"
-		"gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
-		"}";
-
-	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader",
-		vox_vertex_glsl, sizeof(vox_vertex_glsl),
-		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
     
     // world shader:
     
     static const char world_vertex_glsl[] =
-        "#version 120\n"
-        "attribute vec3 iPosition;"
-        "attribute vec2 iTexCoord;"
-        "attribute vec3 iColor;"
+        "in vec3 iPosition;"
+        "in vec2 iTexCoord;"
+        "in vec3 iColor;"
         "uniform mat4 uProj;"
         "uniform mat4 uView;"
-        "varying vec2 TexCoord;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
+        "out vec2 TexCoord;"
+        "out vec3 Color;"
+        "out vec4 WorldPos;"
     
         "void main() {"
         "WorldPos = vec4(iPosition, 1.0);"
@@ -311,59 +346,229 @@ void createCommonDrawResources() {
         "}";
     
     static const char world_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec2 TexCoord;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
-        "uniform vec4 uLightColor;"
+        "in vec2 TexCoord;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
+        "uniform vec4 uLightFactor;"
         "uniform sampler2D uTextures;"
         "uniform sampler2D uLightmap;"
         "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
     
         "void main() {"
         "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
-        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
-        "gl_FragColor = gl_FragColor * texture2D(uLightmap, LightCoord);"
-    
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
         "}";
     
-    buildWorldShader(worldShader, "worldShader",
+    buildWorldShader(worldShader, "worldShader", true,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_fragment_glsl, sizeof(world_fragment_glsl));
     
-    static const char world_bright_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec2 TexCoord;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
-        "uniform vec4 uLightColor;"
+    static const char world_dithered_fragment_glsl[] =
+        "in vec2 TexCoord;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
+        "uniform float uDitherAmount;"
+        "uniform vec4 uLightFactor;"
         "uniform sampler2D uTextures;"
-
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
+    
         "void main() {"
-        "gl_FragColor = texture2D(uTextures, TexCoord) * vec4(Color, 1.f) * uLightColor;"
-        //"gl_FragColor = vec4(0.0, 1.0, 0.5, 1.0) * vec4(Color, 1.f) * uLightColor;"
-        "gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);"
+        "dither(ivec2(gl_FragCoord), uDitherAmount);"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
         "}";
     
-    buildWorldShader(worldBrightShader, "worldBrightShader",
+    buildWorldShader(worldDitheredShader, "worldDitheredShader", true,
         world_vertex_glsl, sizeof(world_vertex_glsl),
-        world_bright_fragment_glsl, sizeof(world_bright_fragment_glsl));
+        world_dithered_fragment_glsl, sizeof(world_dithered_fragment_glsl));
     
     static const char world_dark_fragment_glsl[] =
-        "#version 120\n"
-        "varying vec2 TexCoord;"
-        "varying vec3 Color;"
-        "varying vec4 WorldPos;"
-        "uniform vec4 uLightColor;"
+        "in vec2 TexCoord;"
+        "in vec3 Color;"
+        "in vec4 WorldPos;"
+        "out vec4 FragColor;"
         "void main() {"
-        "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) * vec4(Color, 1.f) * uLightColor;"
+        "FragColor = vec4(0.0, 0.0, 0.0, 1.0);"
         "}";
     
-    buildWorldShader(worldDarkShader, "worldDarkShader",
+    buildWorldShader(worldDarkShader, "worldDarkShader", false,
         world_vertex_glsl, sizeof(world_vertex_glsl),
         world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
+    
+    // sky shader:
+    
+    static const char sky_vertex_glsl[] =
+        "in vec3 iPosition;"
+        "in vec2 iTexCoord;"
+        "in vec4 iColor;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform vec2 uScroll;"
+        "out vec2 TexCoord;"
+        "out vec2 Scroll;"
+        "out vec4 Color;"
+    
+        "void main() {"
+        "mat4 View = uView;"
+        "View[3] = vec4(0.f, 0.f, 0.f, 1.f);"
+        "gl_Position = uProj * View * vec4(iPosition, 1.0);"
+        "TexCoord = iTexCoord;"
+        "Color = iColor;"
+        "Scroll = (Color.a > 0.75) ? uScroll.xx : uScroll.yy;"
+        "}";
+    
+    static const char sky_fragment_glsl[] =
+        "in vec2 TexCoord;"
+        "in vec2 Scroll;"
+        "in vec4 Color;"
+        "uniform vec4 uLightFactor;"
+        "uniform sampler2D uTexture;"
+        "out vec4 FragColor;"
+        "void main() {"
+        "FragColor = texture(uTexture, TexCoord + Scroll) * Color * uLightFactor;"
+        "}";
+    
+    skyShader.init("skyShader");
+    skyShader.compile(sky_vertex_glsl, sizeof(sky_vertex_glsl), Shader::Type::Vertex);
+    skyShader.compile(sky_fragment_glsl, sizeof(sky_fragment_glsl), Shader::Type::Fragment);
+    skyShader.bindAttribLocation("iPosition", 0);
+    skyShader.bindAttribLocation("iTexCoord", 1);
+    skyShader.bindAttribLocation("iColor", 2);
+    skyShader.link();
+    skyShader.bind();
+    GL_CHECK_ERR(glUniform1i(skyShader.uniform("uTexture"), 0));
+    
+    skyMesh.init();
+    
+    // sprite shader:
+    
+    static const char sprite_vertex_glsl[] =
+        "in vec3 iPosition;"
+        "in vec2 iTexCoord;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform mat4 uModel;"
+        "out vec4 WorldPos;"
+        "out vec2 TexCoord;"
+    
+        "void main() {"
+        "WorldPos = uModel * vec4(iPosition, 1.0);"
+        "TexCoord = iTexCoord;"
+        "gl_Position = uProj * uView * WorldPos;"
+        "}";
+
+    static const char sprite_fragment_glsl[] =
+        "in vec4 WorldPos;"
+        "in vec2 TexCoord;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uTexture;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void main() {"
+        "vec4 Texture = texture(uTexture, TexCoord);"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
+        "}";
+
+    buildSpriteShader(spriteShader, "spriteShader", true,
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
+        sprite_fragment_glsl, sizeof(sprite_fragment_glsl));
+    
+    static const char sprite_dithered_fragment_glsl[] =
+        "in vec4 WorldPos;"
+        "in vec2 TexCoord;"
+        "uniform float uDitherAmount;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uTexture;"
+        "uniform sampler2D uLightmap;"
+        "uniform vec2 uMapDims;"
+        "out vec4 FragColor;"
+    
+        "void dither(ivec2 pos, float amount) {"
+        "if (amount > 1.0) {"
+        "int d = int(amount) - 1;"
+        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+        "} else if (amount == 1.0) {"
+        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
+        "} else if (amount < 1.0) {"
+        "int d = int(1.0 / amount) - 1;"
+        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+        "}"
+        "}"
+
+        "void main() {"
+        "dither(ivec2(gl_FragCoord), uDitherAmount);"
+        "vec4 Texture = texture(uTexture, TexCoord);"
+        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+        "vec4 Lightmap = texture(uLightmap, LightCoord);"
+        "FragColor = Texture * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
+        "}";
+
+    buildSpriteShader(spriteDitheredShader, "spriteDitheredShader", true,
+        sprite_vertex_glsl, sizeof(sprite_vertex_glsl),
+        sprite_dithered_fragment_glsl, sizeof(sprite_dithered_fragment_glsl));
+    
+    static const char sprite_bright_vertex_glsl[] =
+        "in vec3 iPosition;"
+        "in vec2 iTexCoord;"
+        "uniform mat4 uProj;"
+        "uniform mat4 uView;"
+        "uniform mat4 uModel;"
+        "out vec2 TexCoord;"
+    
+        "void main() {"
+        "gl_Position = uProj * uView * uModel * vec4(iPosition, 1.0);"
+        "TexCoord = iTexCoord;"
+        "}";
+
+    static const char sprite_bright_fragment_glsl[] =
+        "in vec2 TexCoord;"
+        "uniform vec4 uLightFactor;"
+        "uniform vec4 uLightColor;"
+        "uniform vec4 uColorAdd;"
+        "uniform sampler2D uTexture;"
+        "out vec4 FragColor;"
+    
+        "void main() {"
+        "vec4 Texture = texture(uTexture, TexCoord);"
+        "FragColor = Texture * uLightFactor * uLightColor + uColorAdd;"
+        "if (FragColor.a <= 0) discard;"
+        "}";
+
+    buildSpriteShader(spriteBrightShader, "spriteBrightShader", false,
+        sprite_bright_vertex_glsl, sizeof(sprite_bright_vertex_glsl),
+        sprite_bright_fragment_glsl, sizeof(sprite_bright_fragment_glsl));
+    
+    spriteMesh.init();
+    
+    // 2d lines
+    lineMesh.init();
 }
 
 void destroyCommonDrawResources() {
@@ -373,10 +578,18 @@ void destroyCommonDrawResources() {
     voxelShader.destroy();
     voxelBrightShader.destroy();
 	voxelDitheredShader.destroy();
-	voxelBrightDitheredShader.destroy();
     worldShader.destroy();
-    worldBrightShader.destroy();
+    worldDitheredShader.destroy();
     worldDarkShader.destroy();
+    skyShader.destroy();
+    skyMesh.destroy();
+    spriteShader.destroy();
+    spriteDitheredShader.destroy();
+    spriteBrightShader.destroy();
+    spriteMesh.destroy();
+    lineShader.destroy();
+    lineMesh.destroy();
+    gearShader.destroy();
 #ifndef EDITOR
 	cleanupMinimapTextures();
 #endif
@@ -385,76 +598,89 @@ void destroyCommonDrawResources() {
 }
 
 void Mesh::init() {
-	if (vao) {
+	if (isInitialized()) {
 		return;
 	}
     
     // NOTE: OpenGL 2.1 does not support vertex array functions
-	//glGenVertexArrays(1, &vao);
-	//glBindVertexArray(vao);
+#ifdef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glGenVertexArrays(1, &vao));
+    GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
 
 	// data buffers
-	glGenBuffers((GLsizei)BufferType::Max, vbo);
-	for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
-		const auto& find = ElementsPerVBO.find((BufferType)c);
-		assert(find != ElementsPerVBO.end());
-        glEnableVertexAttribArray(c);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
-		glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDisableVertexAttribArray(c);
+    numVertices = 0;
+    GL_CHECK_ERR(glGenBuffers((GLsizei)BufferType::Max, vbo));
+	for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
+        if (data[c].size()) {
+            const auto& find = ElementsPerVBO.find((BufferType)c);
+            assert(find != ElementsPerVBO.end());
+            numVertices = std::max(numVertices, (unsigned int)data[c].size() / find->second);
+            GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo[c]));
+            GL_CHECK_ERR(glBufferData(GL_ARRAY_BUFFER, data[c].size() * sizeof(float), data[c].data(), GL_STATIC_DRAW));
+#ifdef VERTEX_ARRAYS_ENABLED
+            GL_CHECK_ERR(glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr));
+            GL_CHECK_ERR(glEnableVertexAttribArray(c));
+#endif
+        }
 	}
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+#ifndef VERTEX_ARRAYS_ENABLED
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 
-	// index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index.size() * sizeof(unsigned int), index.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
-	//glBindVertexArray(0);
-
-	printlog("initialized mesh with %llu vertices", index.size());
+	printlog("initialized mesh with %llu vertices", numVertices);
 }
 
 void Mesh::destroy() {
+    if (vao) {
+        GL_CHECK_ERR(glDeleteVertexArrays(1, &vao));
+        vao = 0;
+    }
 	for (int c = 0; c < (int)BufferType::Max; ++c) {
 		if (vbo[c]) {
-			glDeleteBuffers(1, &vbo[c]);
+            GL_CHECK_ERR(glDeleteBuffers(1, &vbo[c]));
 			vbo[c] = 0;
 		}
 	}
-	if (vao) {
-		glDeleteVertexArrays(1, &vao);
-		vao = 0;
-	}
 }
 
-void Mesh::draw() const {
+void Mesh::draw(GLenum type, int numVertices) const {
     // NOTE: OpenGL 2.1 does not support vertex arrays!
-    // if it did, all the bind/unbind buffer crap could be omitted.
-	//glBindVertexArray(vao);
+#ifdef VERTEX_ARRAYS_ENABLED
+	GL_CHECK_ERR(glBindVertexArray(vao));
+#endif
+    
+    if (numVertices == 0) {
+        numVertices = this->numVertices;
+    }
     
     // bind buffers
-    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
-        const auto& find = ElementsPerVBO.find((BufferType)c);
-        assert(find != ElementsPerVBO.end());
-        glBindBuffer(GL_ARRAY_BUFFER, vbo[c]);
-        glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(c);
+#ifndef VERTEX_ARRAYS_ENABLED
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
+        if (data[c].size()) {
+            const auto& find = ElementsPerVBO.find((BufferType)c);
+            assert(find != ElementsPerVBO.end());
+            GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, vbo[c]));
+            GL_CHECK_ERR(glVertexAttribPointer(c, find->second, GL_FLOAT, GL_FALSE, 0, nullptr));
+            GL_CHECK_ERR(glEnableVertexAttribArray(c));
+        }
     }
+#endif
     
     // draw elements
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(int)BufferType::Index]);
-	glDrawElements(GL_TRIANGLES, (int)index.size(), GL_UNSIGNED_INT, nullptr);
+    if (numVertices) {
+        GL_CHECK_ERR(glDrawArrays(type, 0, numVertices));
+    }
     
     // disable buffers
-    for (unsigned int c = 0; c < (unsigned int)BufferType::Index; ++c) {
-        glDisableVertexAttribArray(c);
+#ifndef VERTEX_ARRAYS_ENABLED
+    for (unsigned int c = 0; c < (unsigned int)BufferType::Max; ++c) {
+        if (data[c].size()) {
+            GL_CHECK_ERR(glDisableVertexAttribArray(c));
+        }
     }
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
-	//glBindVertexArray(0);
+    GL_CHECK_ERR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+#endif
 }
 
 void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter, GLint magFilter) {
@@ -466,79 +692,134 @@ void framebuffer::init(unsigned int _xsize, unsigned int _ysize, GLint minFilter
     }
 	xsize = _xsize;
 	ysize = _ysize;
+    
+    GL_CHECK_ERR(glGenTextures(1, &fbo_color));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, fbo_color));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter));
+	GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, xsize, ysize, 0, GL_RGBA, GL_HALF_FLOAT, nullptr));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, 0));
 
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    GL_CHECK_ERR(glGenTextures(1, &fbo_depth));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, fbo_depth));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter));
+    GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8,
+        xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, 0));
+    
+    GL_CHECK_ERR(glGenFramebuffers(1, &fbo));
+    GL_CHECK_ERR(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
+    GL_CHECK_ERR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0));
+    GL_CHECK_ERR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0));
+    static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
+    GL_CHECK_ERR(glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments));
+    GL_CHECK_ERR(glReadBuffer(GL_COLOR_ATTACHMENT0));
 
-	glGenTextures(1, &fbo_color);
-	glBindTexture(GL_TEXTURE_2D, fbo_color);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, xsize, ysize, 0, GL_RGBA, GL_FLOAT, nullptr);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CHECK_ERR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
 
-	glGenTextures(1, &fbo_depth);
-	glBindTexture(GL_TEXTURE_2D, fbo_depth);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, xsize, ysize, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+GLhalf* framebuffer::lock() {
+    if (!fbo || mapped) {
+        return nullptr;
+    }
+    
+    // map data from the current pixel buffer
+    if (pbos[pboindex]) {
+		GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
+		auto result = GL_CHECK_ERR_RET(glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY));
+		if (result) {
+			mapped = true;
+		}
+		return (GLhalf*)result;
+	} else {
+		return nullptr;
+	}
+}
 
-	static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
-	glDrawBuffers(sizeof(attachments) / sizeof(GLenum), attachments);
-	glReadBuffer(GL_NONE);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void framebuffer::unlock() {
+    if (!fbo) {
+        return;
+    }
+    
+    // unmap pixel pack buffer
+	if (mapped) {
+		GL_CHECK_ERR(glUnmapBuffer(GL_PIXEL_PACK_BUFFER));
+		mapped = false;
+	}
+    
+    // select next pbo
+    pboindex = (pboindex + 1) % NUM_PBOS;
+    
+    // start filling a new pixel buffer
+    if (pbos[pboindex] == 0) {
+        GL_CHECK_ERR(glGenBuffers(1, &pbos[pboindex]));
+        GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
+        GL_CHECK_ERR(glBufferData(GL_PIXEL_PACK_BUFFER, xsize * ysize * 4 * sizeof(GLhalf), nullptr, GL_STREAM_READ));
+    }
+    GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[pboindex]));
+    GL_CHECK_ERR(glReadPixels(0, 0, xsize, ysize, GL_RGBA, GL_HALF_FLOAT, nullptr));
+    GL_CHECK_ERR(glBindBuffer(GL_PIXEL_PACK_BUFFER, 0));
 }
 
 void framebuffer::destroy() {
-	if (fbo) {
-		glDeleteFramebuffers(1, &fbo);
-		fbo = 0;
+	if (mapped) {
+		GL_CHECK_ERR(glUnmapBuffer(GL_PIXEL_PACK_BUFFER));
+		mapped = false;
 	}
-	if (fbo_color) {
-		glDeleteTextures(1, &fbo_color);
-		fbo_color = 0;
-	}
-	if (fbo_depth) {
-		glDeleteTextures(1, &fbo_depth);
-		fbo_depth = 0;
-	}
+    if (fbo) {
+        GL_CHECK_ERR(glDeleteFramebuffers(1, &fbo));
+        fbo = 0;
+    }
+    if (fbo_color) {
+        GL_CHECK_ERR(glDeleteTextures(1, &fbo_color));
+        fbo_color = 0;
+    }
+    if (fbo_depth) {
+        GL_CHECK_ERR(glDeleteTextures(1, &fbo_depth));
+        fbo_depth = 0;
+    }
+    for (int c = 0; c < NUM_PBOS; ++c) {
+        if (pbos[c]) {
+            GL_CHECK_ERR(glDeleteBuffers(1, &pbos[c]));
+            pbos[c] = 0;
+        }
+    }
 }
 
 static std::vector<framebuffer*> fbStack;
 
 void framebuffer::bindForWriting() {
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0);
-	glViewport(0, 0, xsize, ysize);
-    fbStack.push_back(this);
+    if (fbo) {
+        GL_CHECK_ERR(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
+        GL_CHECK_ERR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_color, 0));
+        GL_CHECK_ERR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth, 0));
+        GL_CHECK_ERR(glViewport(0, 0, xsize, ysize));
+        fbStack.push_back(this);
+    }
 }
 
 void framebuffer::bindForReading() const {
-	glBindTexture(GL_TEXTURE_2D, fbo_color);
+    GL_CHECK_ERR(glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, fbo_color));
 }
 
-void framebuffer::blit(float gamma) {
+void framebuffer::draw(float brightness) {
 	shader.bind();
-	glUniform1f(shader.uniform("uGamma"), gamma);
+    GL_CHECK_ERR(glUniform1f(shader.uniform("uBrightness"), brightness));
 	mesh.draw();
-	shader.unbind();
 }
 
-void framebuffer::hdrBlit(float gamma, float exposure) {
+void framebuffer::hdrDraw(float brightness, float gamma, float exposure) {
     hdrShader.bind();
-    glUniform1f(hdrShader.uniform("uGamma"), gamma);
-    glUniform1f(hdrShader.uniform("uExposure"), exposure);
+    GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uBrightness"), brightness));
+    GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uGamma"), gamma));
+    GL_CHECK_ERR(glUniform1f(hdrShader.uniform("uExposure"), exposure));
     mesh.draw();
-    hdrShader.unbind();
 }
 
 void framebuffer::unbindForWriting() {
@@ -546,8 +827,8 @@ void framebuffer::unbindForWriting() {
         fbStack.pop_back();
     }
     if (fbStack.empty()) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, xres, yres);
+        GL_CHECK_ERR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        GL_CHECK_ERR(glViewport(0, 0, xres, yres));
     } else {
         auto fb = fbStack.back();
         fbStack.pop_back();
@@ -556,7 +837,8 @@ void framebuffer::unbindForWriting() {
 }
 
 void framebuffer::unbindForReading() {
-	glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CHECK_ERR(glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, 0));
 }
 
 void framebuffer::unbindAll() {
@@ -739,41 +1021,7 @@ void drawCircle( int x, int y, real_t radius, Uint32 color, Uint8 alpha )
 
 void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha )
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set color
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// draw arc
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINE_STRIP);
-	for (real_t c = angle1; c <= angle2; c += (real_t)1)
-	{
-		real_t degInRad = c * (real_t)PI / (real_t)180;
-		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y + ceil(sin(degInRad)*radius)));
-	}
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-    glDisable(GL_BLEND);
-	glLineWidth(lineWidth);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -784,42 +1032,110 @@ draws an arc with a changing radius
 
 -------------------------------------------------------------------------------*/
 
-static void drawScalingFilledArc( int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 outer_color, Uint32 inner_color )
+static void drawScalingFilledArc(int x, int y, real_t radius1, real_t radius2, real_t angle1, real_t angle2, Uint32 inner_color, Uint32 outer_color)
 {
-	// set state
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	Uint8 r, g, b, a;
-
-	// draw arc
-	glBegin(GL_TRIANGLE_FAN);
-	getColor(inner_color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	glVertex2f(x, yres - y);
-	getColor(outer_color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-	for (real_t c = angle2; c >= angle1; c -= (real_t)1)
-	{
-		real_t degInRad = c * (real_t)PI / (real_t)180;
-		real_t factor = (c - angle1) / (angle2 - angle1);
-		real_t radius = radius2 * factor + radius1 * (1 - factor);
-		glVertex2f(x + cos(degInRad) * radius, yres - (y + sin(degInRad) * radius));
-	}
-	glEnd();
+    // initialize shader if needed, then bind
+    if (!gearShader.isInitialized()) {
+        static const char v_glsl[] =
+            "in vec4 iPosition;"
+            "void main() {"
+            "gl_Position = iPosition;"
+            "}";
+        
+        static const char g_glsl[] =
+            "layout (points) in;"
+            "layout (triangle_strip, max_vertices = 64) out;"
+        
+            "uniform mat4 uProj;"
+            "uniform mat4 uView;"
+            "uniform vec4 uInnerColor;"
+            "uniform vec4 uOuterColor;"
+            "uniform float uRadius1;"
+            "uniform float uRadius2;"
+            "uniform float uAngle1;"
+            "uniform float uAngle2;"
+            "out vec4 Color;"
+        
+            "void Emit(vec2 position, vec4 color) {"
+            "gl_Position = uProj * uView * vec4(position.x, -position.y, 0.0, 1.0);"
+            "Color = color;"
+            "EmitVertex();"
+            "}"
+        
+            "void main() {"
+            "vec2 position = gl_in[0].gl_Position.xy;"
+			"float step = 2.0;"
+            "for (float c = uAngle2; c > uAngle1; c -= step) {"
+            "Emit(position, uInnerColor);"
+        
+            "float factor1 = (c - uAngle1) / (uAngle2 - uAngle1);"
+            "float radius1 = uRadius2 * factor1 + uRadius1 * (1.0 - factor1);"
+            "Emit(position + vec2(cos(radians(c)) * radius1, sin(radians(c)) * radius1), uOuterColor);"
+        
+            "float factor2 = (c - uAngle1 - step) / (uAngle2 - uAngle1);"
+            "float radius2 = uRadius2 * factor2 + uRadius1 * (1.0 - factor2);"
+            "Emit(position + vec2(cos(radians(c - step)) * radius2, sin(radians(c - step)) * radius2), uOuterColor);"
+        
+            "EndPrimitive();"
+            "}"
+            "}";
+        
+        static const char f_glsl[] =
+            "in vec4 Color;"
+            "out vec4 FragColor;"
+            "void main() {"
+            "FragColor = Color;"
+            "}";
+        
+        gearShader.init("gear shader");
+        gearShader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        gearShader.compile(g_glsl, sizeof(g_glsl), Shader::Type::Geometry);
+        gearShader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        gearShader.bindAttribLocation("iPosition", 0);
+        
+        //gearShader.setParameter(GL_GEOMETRY_VERTICES_OUT, 64);
+        //gearShader.setParameter(GL_GEOMETRY_INPUT_TYPE, GL_POINTS);
+        //gearShader.setParameter(GL_GEOMETRY_OUTPUT_TYPE, GL_TRIANGLES);
+        gearShader.link();
+    }
+    gearShader.bind();
+    GL_CHECK_ERR(glEnable(GL_BLEND));
     
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // upload radii and angles
+    GL_CHECK_ERR(glUniform1f(gearShader.uniform("uRadius1"), (float)radius1));
+    GL_CHECK_ERR(glUniform1f(gearShader.uniform("uRadius2"), (float)radius2));
+    GL_CHECK_ERR(glUniform1f(gearShader.uniform("uAngle1"), (float)angle1));
+    GL_CHECK_ERR(glUniform1f(gearShader.uniform("uAngle2"), (float)angle2));
+    
+    Uint8 r, g, b, a;
+    
+    // upload color
+    getColor(inner_color, &r, &g, &b, &a);
+    float icv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    GL_CHECK_ERR(glUniform4fv(gearShader.uniform("uInnerColor"), 1, icv));
+    getColor(outer_color, &r, &g, &b, &a);
+    float ocv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+    GL_CHECK_ERR(glUniform4fv(gearShader.uniform("uOuterColor"), 1, ocv));
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, 0, xres, 0, yres, -1.f, 1.f);
+    GL_CHECK_ERR(glUniformMatrix4fv(gearShader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
+    
+    // point matrix
+    mat4x4 view(1.f);
+    v = {(float)x, (float)(yres - y), 0.f, 0.f};
+    (void)translate_mat(&m, &view, &v); view = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(gearShader.uniform("uView"), 1, GL_FALSE, (float*)&view));
+    
+    // draw line
+    lineMesh.draw(GL_POINTS, 1);
+    
+    // reset GL state
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
 /*-------------------------------------------------------------------------------
@@ -832,46 +1148,7 @@ draws an arc in either an opengl or SDL context
 
 void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha)
 {
-	int c;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set line width
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-
-	// draw line
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINE_STRIP);
-	for ( c = angle1; c <= angle2; c++ )
-	{
-		float degInRad = c * PI / 180.f;
-		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y - ceil(sin(degInRad)*radius)));
-	}
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-
-	// reset line width
-	glLineWidth(lineWidth);
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -884,41 +1161,70 @@ void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2,
 
 void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// set line width
-	GLint lineWidth;
-	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
-	glLineWidth(2);
-
-	// draw line
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, alpha / 255.f);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glEnable(GL_LINE_SMOOTH);
-	glBegin(GL_LINES);
-	glVertex2f(x1 + 1, yres - y1);
-	glVertex2f(x2 + 1, yres - y2);
-	glEnd();
-	glDisable(GL_LINE_SMOOTH);
-
-	// reset line width
-	glLineWidth(lineWidth);
+    // read color
+    Uint8 r, g, b, a;
+    getColor(color, &r, &g, &b, &a);
+    if (!alpha) {
+        return;
+    }
     
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // initialize shader if needed, then bind
+    if (!lineShader.isInitialized()) {
+        static const char v_glsl[] =
+            "in vec4 iPosition;"
+            "uniform mat4 uProj;"
+            "uniform mat4 uMatrix0;"
+            "uniform mat4 uMatrix1;"
+            "void main() {"
+            "if (gl_VertexID == 0) { gl_Position = uProj * uMatrix0 * iPosition; }"
+            "else { gl_Position = uProj * uMatrix1 * iPosition; }"
+            "}";
+        
+        static const char f_glsl[] =
+            "uniform vec4 uColor;"
+            "out vec4 FragColor;"
+            "void main() {"
+            "FragColor = uColor;"
+            "}";
+        
+        lineShader.init("line shader");
+        lineShader.compile(v_glsl, sizeof(v_glsl), Shader::Type::Vertex);
+        lineShader.compile(f_glsl, sizeof(f_glsl), Shader::Type::Fragment);
+        lineShader.bindAttribLocation("iPosition", 0);
+        lineShader.link();
+    }
+    lineShader.bind();
+    GL_CHECK_ERR(glEnable(GL_BLEND));
+    
+    // upload color
+    float cv[] = {r / 255.f, g / 255.f, b / 255.f, alpha / 255.f};
+    GL_CHECK_ERR(glUniform4fv(lineShader.uniform("uColor"), 1, cv));
+    
+    vec4_t v;
+    mat4x4 m;
+    
+    // projection matrix
+    mat4x4 proj(1.f);
+    (void)ortho(&proj, 0, xres, 0, yres, -1.f, 1.f);
+    GL_CHECK_ERR(glUniformMatrix4fv(lineShader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
+    
+    // point 1 matrix
+    mat4x4 view0(1.f);
+    v = {(float)x1, (float)(yres - y1), 0.f, 0.f};
+    (void)translate_mat(&m, &view0, &v); view0 = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(lineShader.uniform("uMatrix0"), 1, GL_FALSE, (float*)&view0));
+    
+    // point 2 matrix
+    mat4x4 view1(1.f);
+    v = {(float)x2, (float)(yres - y2), 0.f, 0.f};
+    (void)translate_mat(&m, &view1, &v); view1 = m;
+    GL_CHECK_ERR(glUniformMatrix4fv(lineShader.uniform("uMatrix1"), 1, GL_FALSE, (float*)&view1));
+    
+    // draw line
+    lineMesh.draw(GL_LINES, 2);
+    
+    // reset GL state
+    GL_CHECK_ERR(glDisable(GL_BLEND));
 }
 
 /*-------------------------------------------------------------------------------
@@ -987,30 +1293,32 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 		drawScalingFilledArc(x, y, size, size,
 			r,
 			r + p,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, size, teeth_size,
 			r + p,
 			r + p + t,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, teeth_size, teeth_size,
 			r + p + t,
 			r + p * 2 - t,
-			color, color_bright);
+            color_bright, color);
 		drawScalingFilledArc(x, y, teeth_size, size,
 			r + p * 2 - t,
 			r + p * 2,
-			color, color_bright);
+            color_bright, color);
 	}
-	drawScalingFilledArc(x, y,
-		size * 1 / 3,
-		size * 1 / 3,
-		0, 360,
-		color, color_dark);
-	drawScalingFilledArc(x, y,
-		size * 1 / 6,
-		size * 1 / 6,
-		0, 360,
-		black, black);
+	for (int c = 0; c < 360; c += 10) {
+		drawScalingFilledArc(x, y,
+			size * 1 / 3,
+			size * 1 / 3,
+			c, c + 10,
+			color_dark, color);
+		drawScalingFilledArc(x, y,
+			size * 1 / 6,
+			size * 1 / 6,
+			c, c + 10,
+			black, black);
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -1024,49 +1332,12 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 
 void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glTranslatef(pos->x, yres - pos->y, 0);
-	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.1);
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(-src->w / 2, src->h / 2);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(-src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(src->w / 2, src->h / 2);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Uint32 color = makeColor(255, 255, 255, alpha);
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, color, angle);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1079,50 +1350,11 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, re
 
 void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a/ 255.f);
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, color);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1135,48 +1367,7 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 
 void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1189,48 +1380,11 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 
 void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x + src->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, 0xffffffff);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1243,118 +1397,7 @@ blits an image in either an opengl or SDL context into a 2d ring.
 
 void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness, int segments, real_t angStart, real_t angEnd, Uint8 alpha)
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, alpha / 255.f);
-
-	double s;
-	real_t arcAngle = angStart;
-	int first = segments / 2;
-	real_t distance = std::round((angEnd - angStart) * segments / (2 * PI));
-	for ( int i = 0; i < first; ++i ) 
-	{
-		glBegin(GL_QUAD_STRIP);
-		for ( int j = 0; j <= static_cast<int>(distance); ++j )
-		{
-			s = i % first + 0.01;
-			arcAngle = ((j % segments) * 2 * PI / segments) + angStart; // angle of the line.
-
-			real_t arcx1 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			real_t arcy1 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			s = (i + 1) % first + 0.01;
-			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-			//glTexCoord2f(1.f, 0.f);
-			glVertex2f(src->x + arcx1, yres - src->y + arcy1);
-			//glTexCoord2f(0.f, 1.f);
-			glVertex2f(src->x + arcx2, yres - src->y + arcy2);
-			//s = i % first + 0.01;
-			//arcAngle = (((j + 1) % segments) * 2 * PI / segments) + angStart; // angle of the line.
-			//real_t arcx3 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			//real_t arcy3 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			//s = (i + 1) % first + 0.01;
-			//real_t arcx4 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
-			//real_t arcy4 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-
-			//std::vector<std::pair<real_t, real_t>> xycoords;
-			//xycoords.push_back(std::make_pair(arcx1, arcy1));
-			//xycoords.push_back(std::make_pair(arcx2, arcy2));
-			//xycoords.push_back(std::make_pair(arcx3, arcy3));
-			//xycoords.push_back(std::make_pair(arcx4, arcy4));
-			//std::sort(xycoords.begin(), xycoords.end());
-			//if ( xycoords.at(2).second < xycoords.at(3).second )
-			//{
-			//	glTexCoord2f(1.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // lower right.
-			//	glTexCoord2f(1.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // upper right.
-			//}
-			//else
-			//{
-			//	glTexCoord2f(1.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // lower right.
-			//	glTexCoord2f(1.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // upper right.
-			//}
-			//if ( xycoords.at(0).second < xycoords.at(1).second )
-			//{
-			//	glTexCoord2f(0.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // lower left.
-			//	glTexCoord2f(0.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // upper left.
-			//}
-			//else
-			//{
-			//	glTexCoord2f(0.f, 0.f);
-			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // lower left.
-			//	glTexCoord2f(0.f, 1.f);
-			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // upper left.
-			//}
-			
-
-			//glVertex2f(xres / 2 + arcx3, yres / 2 + arcy3);
-			//glVertex2f(xres / 2 + arcx4, yres / 2 + arcy4);
-		}
-		glEnd();
-	}
-
-	// debug lines
-	/*real_t x1 = xres / 2 + 300 * cos(angStart);
-	real_t y1 = yres / 2 - 300 * sin(angStart);
-	real_t x2 = xres / 2 + 300 * cos(angEnd);
-	real_t y2 = yres / 2 - 300 * sin(angEnd);
-	drawLine(xres / 2, yres / 2, x1, y1, 0xFFFFFFFF, 255);
-	drawLine(xres / 2, yres / 2, x2, y2, 0xFFFFFFFF, 255);*/
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1367,65 +1410,11 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 
 void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-	glBegin(GL_QUADS);
-
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-	//glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	//glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
-	//glVertex2f(pos->x + src->w, yres - pos->y);
-	glVertex2f(pos->x + pos->w, yres - pos->y);
-
-	//glTexCoord2f(0.f, 0.f);
-	//glVertex2f(pos->x, yres - pos->y);
-	//glTexCoord2f(0.f, 1.f);
-	//glVertex2f(pos->x, yres - pos->y - pos->h);
-	//glTexCoord2f(1.f, 1.f);
-	//glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	//glTexCoord2f(1.f, 0.f);
-	//glVertex2f(pos->x + pos->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    if (!image || !pos) {
+        return;
+    }
+    Image::draw(texid[(long int)image->userdata], image->w, image->h,
+        src, *pos, SDL_Rect{0, 0, xres, yres}, 0xffffffff);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1438,66 +1427,7 @@ blits an image in either an opengl or SDL context, scaling it
 
 void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, float percentY)
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	glColor4f(1, 1, 1, 1);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 1.f - 1.f * percentY); // top left. 
-	glVertex2f(pos->x, yres - pos->y - pos->h + pos->h * percentY);
-
-	glTexCoord2f(0.f, 1.f); // bottom left
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-
-	glTexCoord2f(1.f, 1.f); // bottom right
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-
-	glTexCoord2f(1.f, 1.f - 1.f * percentY); // top right
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h + pos->h * percentY);
-	glEnd();
-
-	// debug corners
-	//Uint32 color = uint32ColorPlayer1; // green
-	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-	//color = uint32ColorPlayer2; // pink
-	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
-	//color = uint32ColorPlayer3; // sky blue
-	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
-	//color = uint32ColorPlayer4; // yellow
-	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1510,50 +1440,7 @@ blits an image in either an opengl or SDL context while colorizing and scaling i
 
 void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color)
 {
-	SDL_Rect secondsrc;
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 0.f);
-	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(0.f, 1.f);
-	glVertex2f(pos->x, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 1.f);
-	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
-	glTexCoord2f(1.f, 0.f);
-	glVertex2f(pos->x + pos->w, yres - pos->y);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1601,57 +1488,7 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height)
 
 void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos )
 {
-	SDL_Rect secondsrc;
-
-	if ( !image )
-	{
-		return;
-	}
-
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glTranslatef(pos->x, yres - pos->y, 0);
-	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
-
-	// for the use of a whole image
-	if ( src == NULL )
-	{
-		secondsrc.x = 0;
-		secondsrc.y = 0;
-		secondsrc.w = image->w;
-		secondsrc.h = image->h;
-		src = &secondsrc;
-	}
-
-	// draw a textured quad
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)image->userdata]);
-	Uint8 r, g, b, a;
-	getColor(color, &r, &g, &b, &a);
-	glColor4f(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
-	glVertex2f(0, 0);
-	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
-	glVertex2f(0, -pos->h);
-	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
-	glVertex2f(pos->w, -pos->h);
-	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
-	glVertex2f(pos->w, 0);
-	glEnd();
-    
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1665,42 +1502,7 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* s
 
 void drawSky3D( view_t* camera, SDL_Surface* tex )
 {
-	real_t screenfactor;
-	int skyx, skyy;
-	SDL_Rect dest;
-	SDL_Rect src;
-
-	// move the images differently depending upon the screen size
-	screenfactor = xres / 320.0;
-
-	// bitmap offsets
-	skyx = -camera->ang * ((320 * screenfactor) / (PI / 2.0));
-	skyy = (-114 * screenfactor - camera->vang);
-
-	src.x = -skyx;
-	src.y = -skyy;
-	src.w = (-skyx) + xres; // clip to the screen width
-	src.h = (-skyy) + yres; // clip to the screen height
-	dest.x = 0;
-	dest.y = 0;
-	dest.w = xres;
-	dest.h = yres;
-
-	drawImage(tex, &src, &dest);
-
-	// draw the part of the last part of the sky (only appears when angle > 270 deg.)
-	if ( skyx < -960 * screenfactor )
-	{
-		dest.x = 1280 * screenfactor + skyx;
-		dest.y = 0;
-		dest.w = xres;
-		dest.h = yres;
-		src.x = 0;
-		src.y = -skyy;
-		src.w = xres - (-skyx - 1280 * screenfactor);
-		src.h = src.y + yres;
-		drawImage(tex, &src, &dest);
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -1779,7 +1581,7 @@ void drawForeground(long camx, long camy)
 
 void drawClearBuffers()
 {
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	drawRect(NULL, 0, 255);
 }
 
@@ -2066,86 +1868,106 @@ void drawEntities3D(view_t* camera, int mode)
 
 	node_t* nextnode = nullptr;
 	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
-	{
-		Entity* entity = (Entity*)node->element;
-		nextnode = node->next;
-		if ( node->next == nullptr && node->list == map.entities )
-		{
-			if ( map.worldUI && map.worldUI->first )
-			{
-				// quick way to attach worldUI to the end of map.entities.
-				nextnode = map.worldUI->first;
-			}
-		}
-
-		if ( entity->flags[INVISIBLE] )
-		{
-			continue;
-		}
-		if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS )
-		{
-			continue;
-		}
-		if ( entity->flags[GENIUS] )
-		{
-			// genius entities are not drawn when the camera is inside their bounding box
-			if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
-				if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
-				{
-					continue;
-				}
-		}
-		if ( entity->flags[OVERDRAW] && splitscreen )
-		{
-			// need to skip some HUD models in splitscreen.
-			if ( currentPlayerViewport >= 0 )
-			{
-				if ( entity->behavior == &actHudWeapon 
-					|| entity->behavior == &actHudArm 
-					|| entity->behavior == &actGib
-					|| entity->behavior == &actFlame )
-				{
-					// the gibs are from casting magic in the HUD
-					if ( entity->skill[11] != currentPlayerViewport )
-					{
-						continue;
-					}
-				}
-				else if ( entity->behavior == &actHudAdditional
-					|| entity->behavior == &actHudArrowModel
-					|| entity->behavior == &actHudShield
-					|| entity->behavior == &actLeftHandMagic
-					|| entity->behavior == &actRightHandMagic )
-				{
-					if ( entity->skill[2] != currentPlayerViewport )
-					{
-						continue;
-					}
-				}
-			}
-		}
-
-		int x = entity->x / 16;
-		int y = entity->y / 16;
-		if ( !entity->flags[OVERDRAW] )
-		{
-			if (x >= 0 && y >= 0 && x < map.width && y < map.height)
-			{
-				if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
-				{
-					continue;
-				}
-			}
-			const real_t rx = entity->x / 16.0;
-			const real_t ry = entity->y / 16.0;
-			if ( behindCamera(*camera, rx, ry) )
-			{
-				continue;
-			}
-		}
+    {
+        Entity* entity = (Entity*)node->element;
+        nextnode = node->next;
+        if ( node->next == nullptr && node->list == map.entities )
+        {
+            if ( map.worldUI && map.worldUI->first )
+            {
+                // quick way to attach worldUI to the end of map.entities.
+                nextnode = map.worldUI->first;
+            }
+        }
+        
+        if ( entity->flags[INVISIBLE] )
+        {
+            continue;
+        }
+        if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS )
+        {
+            continue;
+        }
+        if ( entity->flags[GENIUS] )
+        {
+            // genius entities are not drawn when the camera is inside their bounding box
+            if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
+                if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
+                {
+                    continue;
+                }
+        }
+        if ( entity->flags[OVERDRAW] && splitscreen )
+        {
+            // need to skip some HUD models in splitscreen.
+            if ( currentPlayerViewport >= 0 )
+            {
+                if ( entity->behavior == &actHudWeapon
+                    || entity->behavior == &actHudArm
+                    || entity->behavior == &actGib
+                    || entity->behavior == &actFlame )
+                {
+                    // the gibs are from casting magic in the HUD
+                    if ( entity->skill[11] != currentPlayerViewport )
+                    {
+                        continue;
+                    }
+                }
+                else if ( entity->behavior == &actHudAdditional
+                         || entity->behavior == &actHudArrowModel
+                         || entity->behavior == &actHudShield
+                         || entity->behavior == &actLeftHandMagic
+                         || entity->behavior == &actRightHandMagic )
+                {
+                    if ( entity->skill[2] != currentPlayerViewport )
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        // update dithering
+        auto& dither = entity->dithering[camera];
+        if (ticks != dither.lastUpdateTick) {
+            dither.lastUpdateTick = ticks;
+            bool decrease = false;
+            if ( !entity->flags[OVERDRAW] )
+            {
+                const int x = entity->x / 16;
+                const int y = entity->y / 16;
+                if (x >= 0 && y >= 0 && x < map.width && y < map.height)
+                {
+                    if ( !camera->vismap[y + x * map.height] && entity->monsterEntityRenderAsTelepath != 1 )
+                    {
+                        decrease = true;
+                        goto end;
+                    }
+                }
+                const real_t rx = entity->x / 16.0;
+                const real_t ry = entity->y / 16.0;
+                if ( behindCamera(*camera, rx, ry) )
+                {
+                    decrease = true;
+                    goto end;
+                }
+            }
+            end:
+            if (entity->ditheringDisabled) {
+                dither.value = decrease ? 0 : Entity::Dither::MAX;
+            } else {
+                dither.value = decrease ? std::max(0, dither.value - 2) :
+					std::min(Entity::Dither::MAX, dither.value + 2);
+					//Entity::Dither::MAX;
+            }
+        }
+        if (dither.value == 0) {
+            continue;
+        }
+        
 		if ( entity->flags[SPRITE] == false )
 		{
-			glDrawVoxel(camera, entity, mode);
+            GL_CHECK_ERR(glDrawVoxel(camera, entity, mode));
 		}
 		else
 		{
@@ -2187,10 +2009,6 @@ void drawEntities3D(view_t* camera, int mode)
 			}
 		}
 	}
-
-	// unbind the currently active voxel shader,
-	// as we're going to draw sprites from here on
-	Shader::unbind();
 
 #ifndef EDITOR
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -2293,7 +2111,7 @@ void drawEntities3D(view_t* camera, int mode)
 #ifndef EDITOR
 			if ( intro ) { continue; } // don't draw on main menu
 			auto enemybar = (std::pair<Uint32, EnemyHPDamageBarHandler::EnemyHPDetails>*)std::get<1>(distSpriteType);
-			glDrawEnemyBarSprite(camera, mode, &enemybar->second, false);
+			glDrawEnemyBarSprite(camera, mode, &enemybar->second);
 #endif
 		}
 		else if ( std::get<2>(distSpriteType) == SpriteTypes::SPRITE_DIALOGUE )
@@ -2908,15 +2726,14 @@ void drawEntities2D(long camx, long camy)
 
 -------------------------------------------------------------------------------*/
 
-void drawGrid(long camx, long camy)
+void drawGrid(int camx, int camy)
 {
-	long x, y;
 	Uint32 color = makeColorRGB(127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
-	for ( y = 0; y < map.height; y++ )
+	for ( int y = 0; y < map.height; y++ )
 	{
-		for ( x = 0; x < map.width; x++ )
+		for ( int x = 0; x < map.width; x++ )
 		{
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, ((x + 1) << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, color, 255);
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, (x << TEXTUREPOWER) - camx, ((y + 1) << TEXTUREPOWER) - camy, color, 255);
@@ -3036,51 +2853,17 @@ void drawDepressed(int x1, int y1, int x2, int y2)
 
 void drawWindowFancy(int x1, int y1, int x2, int y2)
 {
-	// update projection
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glViewport(0, 0, xres, yres);
-	glLoadIdentity();
-	glOrtho(0, xres, 0, yres, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glEnable(GL_BLEND);
-
-	// draw quads
-	glColor3f(.25, .25, .25);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(x1, yres - y1);
-	glVertex2f(x1, yres - y2);
-	glVertex2f(x2, yres - y2);
-	glVertex2f(x2, yres - y1);
-	glEnd();
-	glColor3f(.5, .5, .5);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBegin(GL_QUADS);
-	glVertex2f(x1 + 1, yres - y1 - 1);
-	glVertex2f(x1 + 1, yres - y2 + 1);
-	glVertex2f(x2 - 1, yres - y2 + 1);
-	glVertex2f(x2 - 1, yres - y1 - 1);
-	glEnd();
-	glColor3f(.75, .75, .75);
-	glBindTexture(GL_TEXTURE_2D, texid[(long int)fancyWindow_bmp->userdata]); // wood texture
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex2f(x1 + 2, yres - y1 - 2);
-	glTexCoord2f(0, (y2 - y1 - 4) / (real_t)tiles[30]->h);
-	glVertex2f(x1 + 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, (y2 - y1 - 4) / (real_t)tiles[30]->h);
-	glVertex2f(x2 - 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, 0);
-	glVertex2f(x2 - 2, yres - y1 - 2);
-	glEnd();
+    auto white = Image::get("images/system/white.png");
+    auto backdrop = Image::get("images/system/fancyWindow.png");
     
-    glDisable(GL_BLEND);
-
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    white->drawColor(nullptr, SDL_Rect{x1, y1, x2 - x1, y2 - y1},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(63, 63, 63));
+    
+    white->drawColor(nullptr, SDL_Rect{x1 + 1, y1 + 1, x2 - x1 - 2, y2 - y1 - 2},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(127, 127, 127));
+    
+    backdrop->drawColor(nullptr, SDL_Rect{x1 + 2, y1 + 2, x2 - x1 - 4, y2 - y1 - 4},
+         SDL_Rect{0, 0, xres, yres}, makeColorRGB(191, 191, 191));
 }
 
 /*-------------------------------------------------------------------------------
@@ -3319,44 +3102,7 @@ void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char const * const
 
 void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char const * const fmt, ...)
 {
-	int c;
-	int numbytes;
-	char str[1024] = { 0 };
-	va_list argptr;
-	SDL_Rect src, dest, odest;
-
-	// format the string
-	va_start( argptr, fmt );
-	numbytes = vsnprintf( str, 1023, fmt, argptr );
-	va_end( argptr );
-
-	// define font dimensions
-	dest.x = x;
-	dest.y = y;
-	dest.w = font_bmp->w / 16;
-	src.w = font_bmp->w / 16;
-	dest.h = font_bmp->h / 16;
-	src.h = font_bmp->h / 16;
-
-	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ )
-	{
-		src.x = (str[c] * src.w) % font_bmp->w;
-		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
-		{
-			odest.x = dest.x;
-			odest.y = dest.y;
-			drawImageAlpha( font_bmp, &src, &dest, alpha );
-			dest.x = odest.x + src.w;
-			dest.y = odest.y;
-		}
-		else if ( str[c] == 10 )
-		{
-			dest.x = x;
-			dest.y += src.h;
-		}
-	}
+    // deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -3421,46 +3167,7 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...)
 {
-	int c;
-	int numbytes;
-	char str[1024] = { 0 };
-	va_list argptr;
-	SDL_Rect src, dest;
-
-	// format the string
-	va_start( argptr, fmt );
-	numbytes = vsnprintf( str, 1023, fmt, argptr );
-	va_end( argptr );
-
-	// define font dimensions
-	real_t newX = x;
-	real_t newY = y;
-	dest.w = ((real_t)font_bmp->w / 16.f) * scale;
-	src.w = font_bmp->w / 16;
-	dest.h = ((real_t)font_bmp->h / 16.f) * scale;
-	src.h = font_bmp->h / 16;
-
-	// print the characters in the string
-	int line = 0;
-	for ( c = 0; c < numbytes; c++ )
-	{
-		src.x = (str[c] * src.w) % font_bmp->w;
-		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
-		{
-			dest.x = newX;
-			dest.y = newY;
-			drawImageFancy( font_bmp, color, angle, &src, &dest );
-			newX += (real_t)dest.w * cos(angle);
-			newY += (real_t)dest.h * sin(angle);
-		}
-		else if ( str[c] == 10 )
-		{
-			line++;
-			dest.x = x + dest.h * cos(angle + PI / 2) * line;
-			dest.y = y + dest.h * sin(angle + PI / 2) * line;
-		}
-	}
+	// deprecated
 }
 
 /*-------------------------------------------------------------------------------
@@ -3739,4 +3446,145 @@ void occlusionCulling(map_t& map, view_t& camera)
 		}
 	}
 	memcpy(camera.vismap, vmap, size);
+}
+
+float foverflow() {
+	float f = 1e10;
+	for (int i = 0; i < 10; ++i) {
+		f = f * f; // this will overflow before the for loop terminates
+	}
+	return f;
+}
+
+float toFloat32(GLhalf value) {
+	int s = (value >> 15) & 0x00000001;
+	int e = (value >> 10) & 0x0000001f;
+	int m = value & 0x000003ff;
+
+	if (e == 0) {
+		if (m == 0) {
+			// Plus or minus zero
+			uif32 result;
+			result.i = static_cast<unsigned int>(s << 31);
+			return result.f;
+		}
+		else {
+			// Denormalized number -- renormalize it
+			while (!(m & 0x00000400)) {
+				m <<= 1;
+				e -= 1;
+			}
+			e += 1;
+			m &= ~0x00000400;
+		}
+	}
+	else if (e == 31) {
+		if (m == 0) {
+			// Positive or negative infinity
+			uif32 result;
+			result.i = static_cast<unsigned int>((s << 31) | 0x7f800000);
+			return result.f;
+		}
+		else {
+			// Nan -- preserve sign and significand bits
+			uif32 result;
+			result.i = static_cast<unsigned int>((s << 31) | 0x7f800000 | (m << 13));
+			return result.f;
+		}
+	}
+
+	// Normalized number
+	e = e + (127 - 15);
+	m = m << 13;
+
+	// Assemble s, e and m.
+	uif32 result;
+	result.i = static_cast<unsigned int>((s << 31) | (e << 23) | m);
+	return result.f;
+}
+
+GLhalf toFloat16(float f) {
+	uif32 entry;
+	entry.f = f;
+	int i = static_cast<int>(entry.i);
+
+	// Our floating point number, f, is represented by the bit
+	// pattern in integer i.  Disassemble that bit pattern into
+	// the sign, s, the exponent, e, and the significand, m.
+	// Shift s into the position where it will go in the
+	// resulting half number.
+	// Adjust e, accounting for the different exponent bias
+	// of float and half (127 versus 15).
+	int s = (i >> 16) & 0x00008000;
+	int e = ((i >> 23) & 0x000000ff) - (127 - 15);
+	int m = i & 0x007fffff;
+
+	// Now reassemble s, e and m into a half:
+	if (e <= 0) {
+		if (e < -10) {
+			// E is less than -10.  The absolute value of f is
+			// less than half_MIN (f may be a small normalized
+			// float, a denormalized float or a zero).
+			// We convert f to a half zero.
+			return GLhalf(s);
+		}
+
+		// E is between -10 and 0.  F is a normalized float,
+		// whose magnitude is less than __half_NRM_MIN.
+		// We convert f to a denormalized half.
+		m = (m | 0x00800000) >> (1 - e);
+
+		// Round to nearest, round "0.5" up.
+		// Rounding may cause the significand to overflow and make
+		// our number normalized.  Because of the way a half's bits
+		// are laid out, we don't have to treat this case separately;
+		// the code below will handle it correctly.
+		if (m & 0x00001000) {
+			m += 0x00002000;
+		}
+
+		// Assemble the half from s, e (zero) and m.
+		return GLhalf(s | (m >> 13));
+	}
+	else if (e == 0xff - (127 - 15)) {
+		if (m == 0) {
+			// F is an infinity; convert f to a half
+			// infinity with the same sign as f.
+			return GLhalf(s | 0x7c00);
+		}
+		else {
+			// F is a NAN; we produce a half NAN that preserves
+			// the sign bit and the 10 leftmost bits of the
+			// significand of f, with one exception: If the 10
+			// leftmost bits are all zero, the NAN would turn
+			// into an infinity, so we have to set at least one
+			// bit in the significand.
+			m >>= 13;
+			return GLhalf(s | 0x7c00 | m | (m == 0));
+		}
+	}
+	else {
+		// E is greater than zero.  F is a normalized float.
+		// We try to convert f to a normalized half.
+		// Round to nearest, round "0.5" up
+		if (m & 0x00001000) {
+			m += 0x00002000;
+			if (m & 0x00800000) {
+				m = 0;      // overflow in significand,
+				e += 1;     // adjust exponent
+			}
+		}
+
+		// Handle exponent overflow
+		if (e > 30) {
+			foverflow();        // Cause a hardware floating point overflow;
+
+			// if this returns, the half becomes an
+			// infinity with the same sign as f.
+			return GLhalf(s | 0x7c00);
+		}
+
+		// Assemble the half from s, e and m.
+		return GLhalf(s | (e << 10) | (m >> 13));
+	}
 }
