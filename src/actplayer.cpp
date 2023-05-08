@@ -4502,17 +4502,27 @@ void actPlayer(Entity* my)
     my->removeLightField();
     const char* light_type = nullptr;
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
+	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
 	if (!intro && *cvar_playerLight) {
 		if (multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer()) {
 			if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
                 if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
                     light_type = "player_torch";
+					if (stats[PLAYER_NUM]->defending) {
+						++range_bonus;
+					}
                 }
                 else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
                     light_type = "player_lantern";
+					if (stats[PLAYER_NUM]->defending) {
+						++range_bonus;
+					}
                 }
                 else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
                     light_type = "player_shard";
+					if (stats[PLAYER_NUM]->defending) {
+						++range_bonus;
+					}
                 }
                 else if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
                     light_type = "player_ambient";
@@ -4538,7 +4548,6 @@ void actPlayer(Entity* my)
 		}
 	}
     if (*cvar_playerLight) {
-		const int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
         if ( my->flags[BURNING] ) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
