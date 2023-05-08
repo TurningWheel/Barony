@@ -34,7 +34,7 @@
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
 bool usecamerasmoothing = false;
-bool disablemouserotationlimit = false;
+bool disablemouserotationlimit = true;
 bool settings_disablemouserotationlimit = false;
 bool swimDebuffMessageHasPlayed = false;
 bool partymode = false;
@@ -2191,7 +2191,7 @@ void actPlayer(Entity* my)
 		nametag->scaley = 0.2;
 		nametag->scalez = 0.2;
 		nametag->skill[0] = PLAYER_NUM;
-		nametag->skill[1] = playerColor(PLAYER_NUM, colorblind, false);
+		nametag->skill[1] = playerColor(PLAYER_NUM, colorblind_lobby, false);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;

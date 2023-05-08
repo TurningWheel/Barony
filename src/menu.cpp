@@ -9577,7 +9577,6 @@ void doNewGame(bool makeHighscore) {
 		kills[c] = 0;
 	}
 
-	// close chests
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
 		if ( players[c]->isLocalPlayer() )
@@ -9593,6 +9592,22 @@ void doNewGame(bool makeHighscore) {
 			{
 				openedChest[c]->closeChestServer();
 			}
+		}
+
+		if ( players[c]->isLocalPlayer() )
+		{
+#ifndef NINTENDO
+			if ( inputs.hasController(c) )
+			{
+				players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+			}
+			else if ( inputs.bPlayerUsingKeyboardControl(c) )
+			{
+				players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_mkb_facehotbar;
+			}
+#else
+			players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+#endif // NINTENDO
 		}
 	}
 
@@ -9916,7 +9931,7 @@ void doNewGame(bool makeHighscore) {
                                             nametag->scaley = 0.2;
                                             nametag->scalez = 0.2;
                                             nametag->skill[0] = c;
-                                            nametag->skill[1] = playerColor(c, colorblind, true);
+                                            nametag->skill[1] = playerColor(c, colorblind_lobby, true);
                                             nametag->setUID(-3);
                                             entity_uids--;
                                         }

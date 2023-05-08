@@ -240,6 +240,7 @@ Uint32 serverSchedulePlayerHealthUpdate = 0;
 Uint32 serverLastPlayerHealthUpdate = 0;
 Frame* cursorFrame = nullptr;
 bool arachnophobia_filter = false;
+bool colorblind_lobby = false; // if true, colorblind settings enforced by lobby for shared assets (player colors)
 
 Frame::result_t framesProcResult{
     false,
@@ -2400,7 +2401,7 @@ void gameLogic(void)
                                         nametag->scaley = 0.2;
                                         nametag->scalez = 0.2;
                                         nametag->skill[0] = c;
-                                        nametag->skill[1] = playerColor(c, colorblind, true);
+                                        nametag->skill[1] = playerColor(c, colorblind_lobby, true);
                                         nametag->setUID(-3);
                                         entity_uids--;
                                     }
@@ -2709,7 +2710,7 @@ void gameLogic(void)
 						}
 					}
 
-					if ( itemCategory(item) == WEAPON )
+					if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
 						if ( item->beatitude >= 10 )
 						{
@@ -6087,7 +6088,7 @@ static void doConsoleCommands() {
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = playerColor(commandPlayer, colorblind, false);
+						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 							playSound(238, 64);
 						}
@@ -6114,7 +6115,7 @@ static void doConsoleCommands() {
 						char chatstring[256];
 						strcpy(chatstring, language[739]);
 						strcat(chatstring, command_str);
-						Uint32 color = playerColor(commandPlayer, colorblind, false);
+						Uint32 color = playerColor(commandPlayer, colorblind_lobby, false);
 						if (messagePlayerColor(commandPlayer, MESSAGE_CHAT, color, chatstring)) {
 							playSound(238, 64);
 						}

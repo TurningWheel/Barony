@@ -1224,7 +1224,7 @@ bool EOSFuncs::initPlatform(bool enableLogging)
 	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 #ifdef WINDOWS
 #ifndef STEAMWORKS
-	PlatformOptions.Flags = EOS_PF_WINDOWS_ENABLE_OVERLAY_OPENGL;
+	PlatformOptions.Flags = EOS_PF_DISABLE_OVERLAY;
 #endif
 #endif
 	static std::string EncryptionKey(64, '1');

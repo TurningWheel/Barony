@@ -96,6 +96,12 @@ void cleanupMinimapTextures() {
     minimap_shader.destroy();
 }
 
+
+inline real_t getMinimapZoom()
+{
+	return minimapObjectZoom + 50;
+}
+
 void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 {
 	if ( gameplayCustomManager.inUse() ) {
@@ -308,28 +314,28 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
         // upload color
 		Uint8 r, g, b, a;
 		getColor(color, &r, &g, &b, &a);
-        float cv[] = {r / 255.f, g / 255.f, b / 255.f, a / 255.f};
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
-        
-        vec4_t v;
-        mat4x4 m;
-        
-        // projection matrix
-        mat4x4 proj(1.f);
-        (void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
-        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
-        
-        // view matrix
-        mat4x4 view(1.f);
-        v = {(float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f};
-        (void)translate_mat(&m, &view, &v); view = m;
-        v = {(float)(unitX * (minimapObjectZoom / 100.0) * size),
-             (float)(unitY * (minimapObjectZoom / 100.0) * size), 0.f, 0.f};
-        (void)scale_mat(&m, &view, &v); view = m;
-        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
-        
-        // draw
-        circle_mesh.draw(GL_TRIANGLE_FAN);
+		float cv[] = { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
+		GL_CHECK_ERR(glUniform4fv(shader.uniform("uColor"), 1, cv));
+
+		vec4_t v;
+		mat4x4 m;
+
+		// projection matrix
+		mat4x4 proj(1.f);
+		(void)ortho(&proj, 0, Frame::virtualScreenX, 0, Frame::virtualScreenY, -1.f, 1.f);
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, GL_FALSE, (float*)&proj));
+
+		// view matrix
+		mat4x4 view(1.f);
+		v = { (float)x, (float)(Frame::virtualScreenY - y), 0.f, 0.f };
+		(void)translate_mat(&m, &view, &v); view = m;
+		v = { (float)(unitX * (getMinimapZoom() / 100.0) * size),
+			 (float)(unitY * (getMinimapZoom() / 100.0) * size), 0.f, 0.f };
+		(void)scale_mat(&m, &view, &v); view = m;
+		GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, GL_FALSE, (float*)&view));
+
+		// draw
+		circle_mesh.draw(GL_TRIANGLE_FAN);
 	};
 
 	std::vector<std::pair<Uint32, std::pair<real_t, real_t>>> deathboxSkulls;
@@ -345,8 +351,8 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 		auto imgGet = Image::get("*images/ui/HUD/death_skull.png");
 
-		const real_t sx = unitX * (minimapObjectZoom / 100.0) * size;
-		const real_t sy = unitY * (minimapObjectZoom / 100.0) * size;
+		const real_t sx = unitX * (getMinimapZoom() / 100.0) * size;
+		const real_t sy = unitY * (getMinimapZoom() / 100.0) * size;
 
         const SDL_Rect src{
             0,
@@ -568,7 +574,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				real_t skullx = std::min<real_t>(std::max(0.0, entity->x / 16), map.width - 1);
 				real_t skully = std::min<real_t>(std::max(0.0, entity->y / 16), map.height - 1);
 				int playerOwner = entity->sprite - items[TOOL_PLAYER_LOOT_BAG].index;
-				Uint32 color = playerColor(playerOwner, colorblind, false);
+				Uint32 color = playerColor(playerOwner, colorblind_lobby, false);
 				deathboxSkulls.push_back(std::make_pair(color, std::make_pair(skullx, skully)));
 			}
 			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
@@ -651,7 +657,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					}
 
 					// set color
-		            Uint32 color = playerColor(ping.player, colorblind, false);
+		            Uint32 color = playerColor(ping.player, colorblind_lobby, false);
 			        uint8_t r, g, b, a;
 			        getColor(color, &r, &g, &b, &a);
 			        color = makeColor(r, g, b, alpha);
@@ -758,7 +764,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					if ( foundShadowTaggedEntity ) {
 						color = uint32ColorPlayerX; // grey
 					} else {
-						color = playerColor(foundplayer, colorblind, false);
+						color = playerColor(foundplayer, colorblind_lobby, false);
 					}
 				} else if ( entity->sprite == 239 ) { // minotaur
 					color_edge = uint32ColorBlack;
@@ -806,7 +812,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					if ( foundShadowTaggedEntity ) {
 						color = uint32ColorPlayerX_Ally; // grey
 					} else {
-						color = playerColor(drawMonsterAlly, colorblind, true);
+						color = playerColor(drawMonsterAlly, colorblind_lobby, true);
 					}
 				}
 
@@ -823,7 +829,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					const int ymin = ((int)map.height - mapGCD) / 2;
 					const real_t unitX = (real_t)rect.w / (real_t)mapGCD;
 					const real_t unitY = (real_t)rect.h / (real_t)mapGCD;
-           			const real_t zoom = minimapObjectZoom / 100.0 * size;
+           			const real_t zoom = getMinimapZoom() / 100.0 * size;
 					x = (x - xmin) * unitX + rect.x;
 					y = (y - ymin) * unitY + rect.y;
                     

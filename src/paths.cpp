@@ -36,17 +36,22 @@ public:
 	static const int GATE_GRAPH_GROUNDED = 0;
 	static const int GATE_GRAPH_FLYING = 1;
 	static const int GATE_GRAPH_NUM_PATHMAPS = 2;
+	static const int DIR_EASTWEST = 0;
+	static const int DIR_NORTHSOUTH = 1;
 	int parentMapType = 0;
 	bool bIsInit = false;
 	struct GateNode_t
 	{
 		int x, y, zone1, zone2;
 		Uint32 uid = 0;
-		GateNode_t(int x, int y, int zone1, int zone2, Uint32 uid) :
+		int direction = 0;
+		GateNode_t(int x, int y, int zone1, int zone2, Uint32 uid, int direction) :
 			x(x),
 			y(y),
 			zone1(zone1),
-			zone2(zone2)
+			zone2(zone2),
+			uid(uid),
+			direction(direction)
 		{};
 		GateNode_t()
 		{
@@ -75,7 +80,7 @@ public:
 	std::unordered_map<int, std::unordered_set<int>> connectedZones;
 	void buildGraph(const int parentMapType);
 	void fillPathMap(int x, int y);
-	bool generatePath(int x1, int y1, int x2, int y2);
+	bool generatePath(Entity* my, int x1, int y1, int x2, int y2);
 	void reset()
 	{
 		if ( mapSubzones )
@@ -109,10 +114,10 @@ public:
 		}
 		return (*find).second;
 	}
-	void addGate(int x, int y, int zone1, int zone2, Uint32 uid)
+	void addGate(int x, int y, int zone1, int zone2, Uint32 uid, int direction)
 	{
 		Uint32 key = x + 10000 * y;
-		gateNodes[key] = GateNode_t(x, y, zone1, zone2, uid);
+		gateNodes[key] = GateNode_t(x, y, zone1, zone2, uid, direction);
 	}
 	bool isConnected(int start, int end)
 	{
@@ -255,7 +260,7 @@ public:
 	void debugPaths();
 };
 GateGraph gateGraph[GateGraph::GATE_GRAPH_NUM_PATHMAPS];
-GateGraph::GateNode_t GateGraph::defaultGate(-1, -1, -1, -1, 0);
+GateGraph::GateNode_t GateGraph::defaultGate(-1, -1, -1, -1, 0, GateGraph::DIR_EASTWEST);
 void updateGatePath(Entity& entity)
 {
 	return;
@@ -566,7 +571,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			if ( gateGraph[pathMapType].bIsInit )
 			{
-				bool bGatePath = gateGraph[pathMapType].generatePath(x1, y1, x2, y2);
+				bool bGatePath = gateGraph[pathMapType].generatePath(my, x1, y1, x2, y2);
 				if ( !bGatePath )
 				{
 					//messagePlayer(0, MESSAGE_DEBUG, "GATE GRAPH: %.4f", out1);
@@ -1383,7 +1388,7 @@ void GateGraph::buildGraph(const int parentMapType)
 				int zone2 = mapSubzones[(iy + 1) + ix * map.height];
 				int& middleZone = mapSubzones[iy + ix * map.height];
 				middleZone = zone1 + (zone2 * 10000);
-				addGate(ix, iy, zone1, zone2, entity->getUID());
+				addGate(ix, iy, zone1, zone2, entity->getUID(), DIR_NORTHSOUTH);
 				/*printlog("N/S Gate: %d, %d: subzones: %d | %d (i am %d)", 
 					ix, iy, zone1, zone2, middleZone);*/
 			}
@@ -1393,7 +1398,7 @@ void GateGraph::buildGraph(const int parentMapType)
 				int zone2 = mapSubzones[iy + (ix + 1) * map.height];
 				int& middleZone = mapSubzones[iy + ix * map.height];
 				middleZone = zone1 + (zone2 * 10000);
-				addGate(ix, iy,	zone1, zone2, entity->getUID());
+				addGate(ix, iy,	zone1, zone2, entity->getUID(), DIR_EASTWEST);
 				/*printlog("E/W Gate: %d, %d: subzones: %d | %d (i am %d)", 
 					ix, iy, zone1, zone2, middleZone);*/
 			}
@@ -1654,7 +1659,7 @@ void GateGraph::debugPaths()
 	}
 }
 
-bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
+bool GateGraph::generatePath(Entity* my, int x1, int y1, int x2, int y2)
 {
 	int srcZone = mapSubzones[y1 + x1 * map.height];
 	int destZone = mapSubzones[y2 + x2 * map.height];
@@ -1670,10 +1675,16 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 		auto path = getPath(srcZone, destZone);
 		if ( path.find(destZone) != path.end() )
 		{
-			//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+			if ( *cvar_pathing_debug )
+			{
+				messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+			}
 			return true;
 		}
-		//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+		if ( *cvar_pathing_debug )
+		{
+			messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+		}
 		return false;
 	}
 	else
@@ -1710,11 +1721,94 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 
 		std::unordered_set<int> visited;
 		std::unordered_set<int> uniqueZones;
+
+		enum OnGateDir
+		{
+			NONE = -1,
+			EAST,
+			SOUTH,
+			WEST,
+			NORTH
+		};
+		OnGateDir standingOnGateDirection = NONE;
+		Entity* standingOnGateEntity = nullptr;
+		auto& gate = getGate(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16));
+		if ( gate.zone1 != -1 && gate.x == x1 && gate.y == y1 )
+		{
+			// we're standing on a gate, matching the start coordinates of path
+			if ( standingOnGateEntity = uidToEntity(gate.uid) ) 
+			{
+				if ( !standingOnGateEntity->flags[PASSABLE] && !entityInsideEntity(my, standingOnGateEntity) )
+				{
+					if ( gate.direction == DIR_NORTHSOUTH )
+					{
+						if ( my->y > standingOnGateEntity->y )
+						{
+							standingOnGateDirection = SOUTH;
+							//messagePlayer(0, MESSAGE_DEBUG, "SOUTH");
+						}
+						else if ( my->y < standingOnGateEntity->y )
+						{
+							standingOnGateDirection = NORTH;
+							//messagePlayer(0, MESSAGE_DEBUG, "NORTH");
+						}
+					}
+					else if ( gate.direction == DIR_EASTWEST )
+					{
+						if ( my->x > standingOnGateEntity->x )
+						{
+							standingOnGateDirection = EAST;
+							//messagePlayer(0, MESSAGE_DEBUG, "EAST");
+						}
+						else if ( my->x < standingOnGateEntity->x )
+						{
+							standingOnGateDirection = WEST;
+							//messagePlayer(0, MESSAGE_DEBUG, "WEST");
+						}
+					}
+				}
+				else
+				{
+					standingOnGateEntity = nullptr;
+				}
+			}
+		}
+
 		for ( auto x : srcZonesToTest )
 		{
 			for ( auto y : destZonesToTest )
 			{
-				if ( x == y ) { continue; } // check the gate is open, same zone won't check gate
+				// check the gate
+				if ( x == y ) 
+				{ 
+					if ( standingOnGateEntity )
+					{
+						if ( standingOnGateDirection == SOUTH || standingOnGateDirection == EAST )
+						{
+							if ( x == gate.zone2 )
+							{
+								if ( *cvar_pathing_debug )
+								{
+									messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d) (standing on gate in direction: %d", x1, y1, x2, y2, standingOnGateDirection);
+								}
+								return true;
+							}
+						}
+						else if ( standingOnGateDirection == NORTH || standingOnGateDirection == WEST )
+						{
+							if ( x == gate.zone1 )
+							{
+								if ( *cvar_pathing_debug )
+								{
+									messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d) (standing on gate in direction: %d", x1, y1, x2, y2, standingOnGateDirection);
+								}
+								return true;
+							}
+						}
+					}
+					uniqueZones.insert(x);
+					continue; 
+				} 
 				int x3 = std::min(x, y);
 				int y3 = std::max(x, y);
 				if ( visited.find(x3 + y3 * 10000) == visited.end() )
@@ -1724,7 +1818,10 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 						auto path = getPath(x3, y3);
 						if ( path.find(y3) != path.end() )
 						{
-							//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+							if ( *cvar_pathing_debug )
+							{
+								messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+							}
 							return true;
 						}
 					}
@@ -1737,11 +1834,17 @@ bool GateGraph::generatePath(int x1, int y1, int x2, int y2)
 
 		if ( uniqueZones.size() == 1 )
 		{
-			//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d), no unique zones", x1, y1, x2, y2);
+			if ( *cvar_pathing_debug )
+			{
+				messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: Path exists from (%d, %d) to (%d, %d), no unique zones", x1, y1, x2, y2);
+			}
 			return true;
 		}
 	}
 
-	//messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path found (%d-%d) from (%d, %d) to (%d, %d)", srcZone, destZone, x1, y1, x2, y2);
+	if ( *cvar_pathing_debug )
+	{
+		messagePlayer(0, MESSAGE_DEBUG, "[Gate Graph]: No path found (%d-%d) from (%d, %d) to (%d, %d)", srcZone, destZone, x1, y1, x2, y2);
+	}
 	return false;
 }

@@ -2866,6 +2866,12 @@ void initShapeshiftHotbar(int player)
 			spell_t* spell = getSpellFromItem(player, item);
 			if ( spell )
 			{
+				if ( newSpell && newSpell == spell )
+				{
+					players[player]->magic.equipSpell(newSpell);
+					players[player]->magic.selected_spell_last_appearance = item->appearance;
+				}
+
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
 					spellRevertUid = item->uid;
@@ -2875,11 +2881,6 @@ void initShapeshiftHotbar(int player)
 						players[player]->magic.equipSpell(spell); // revert form add to spell equipped.
 						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 
-					}
-					else
-					{
-						players[player]->magic.equipSpell(newSpell);
-						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 					}
 				}
 				else if ( item->appearance >= 1000 )
@@ -2993,28 +2994,28 @@ void deinitShapeshiftHotbar(int player)
 	auto& hotbar_alternate = hotbar_t.slotsAlternate();
 
 	auto* newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]; // the monster's special hotbar.
-	spell_t* newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
+	spell_t** newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT];
 	if ( hotbar_t.swapHotbarOnShapeshift > 0 )
 	{
 		if ( hotbar_t.swapHotbarOnShapeshift == RAT )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_RAT];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_RAT];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == SPIDER )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_SPIDER];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == TROLL )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_TROLL];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_TROLL];
 		}
 		else if ( hotbar_t.swapHotbarOnShapeshift == CREATURE_IMP )
 		{
 			newHotbar = &hotbar_alternate[Player::Hotbar_t::HOTBAR_IMP];
-			newSpell = players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
+			newSpell = &players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_IMP];
 		}
 	}
 	for ( Uint32 slotIndex = 0; slotIndex < NUM_HOTBAR_SLOTS; ++slotIndex )
@@ -3036,7 +3037,7 @@ void deinitShapeshiftHotbar(int player)
 		}
 	}
 	hotbar_t.swapHotbarOnShapeshift = 0;
-	newSpell = players[player]->magic.selectedSpell();
+	*newSpell = players[player]->magic.selectedSpell();
 	players[player]->magic.equipSpell(players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT]);
 	if ( players[player]->magic.selectedSpell() )
 	{

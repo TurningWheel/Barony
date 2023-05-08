@@ -110,6 +110,9 @@ public:
 	//! reset the line color map
 	void clearLinesToColor() { linesToColor.clear(); }
 
+	//! reset the individual line padding
+	void clearIndividualLinePadding() { individualLinePadding.clear(); }
+
 	static const int TEXT_HIGHLIGHT_WORDS_PER_LINE = 10000;
 
 	virtual type_t              getType() const override { return WIDGET_FIELD; }
@@ -157,6 +160,7 @@ public:
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
 	static char* tokenize(char* str, const char* const delimiters);
 	void	setPaddingPerLine(const int _padding) {	paddingPerLine = _padding; }
+	void	setIndividualLinePadding(const int _line, const int _padding) { individualLinePadding[_line] = _padding; }
 
 private:
 	std::string font = Font::defaultFont;				//!< font to use for rendering the field
@@ -183,6 +187,7 @@ private:
 	std::map<int, Uint32> wordsToHighlight;				//!< word indexes in the field matching the keys in the map will be colored with the mapped value
 	std::map<int, Uint32> linesToColor;                 //!< lines that have a particular color
 	int paddingPerLine = 0;								//!< +/- pixel padding for multiple lines
+	std::map<int, int> individualLinePadding;			//!< lines that have a particular padding
 
 	void buildCache();
 	std::vector<std::pair<std::string,Text*>> cache;	//!< cached lines of text

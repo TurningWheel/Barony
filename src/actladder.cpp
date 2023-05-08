@@ -87,7 +87,7 @@ void actLadder(Entity* my)
 								for (int j = 0; j < MAXPLAYERS; ++j) {
 									if (!client_disconnected[j] && j != i) {
 										// "so-and-so wants to leave the level"
-										messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+										messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 											language[509], stats[i]->name);
 									}
 								}
@@ -305,7 +305,7 @@ void actPortal(Entity* my)
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
-									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 										language[509], stats[i]->name);
 								}
 							}
@@ -518,7 +518,7 @@ void actWinningPortal(Entity* my)
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
-									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 										language[509], stats[i]->name);
 								}
 							}
@@ -739,7 +739,7 @@ void Entity::actExpansionEndGamePortal()
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
-									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 										language[509], stats[i]->name);
 								}
 							}
@@ -939,7 +939,7 @@ void Entity::actMidGamePortal()
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
-									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 										language[509], stats[i]->name);
 								}
 							}
@@ -1325,7 +1325,7 @@ void actCustomPortal(Entity* my)
 							for (int j = 0; j < MAXPLAYERS; ++j) {
 								if (!client_disconnected[j] && j != i) {
 									// "so-and-so wants to leave the level"
-									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind, false),
+									messagePlayerColor(j, MESSAGE_INTERACTION, playerColor(i, colorblind_lobby, false),
 										language[509], stats[i]->name);
 								}
 							}

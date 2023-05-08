@@ -5353,21 +5353,90 @@ int saveGame(int saveIndex) {
 			}
 
 			// hotbar
-			for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
-				auto item = uidToItem(players[c]->hotbar.slots()[i].item);
-				if (item) {
-					player.hotbar[i] = list_Index(item->node);
-				} else {
+			if ( players[c]->isLocalPlayer() )
+			{
+				spell_t* oldSelectedSpell = players[c]->magic.selectedSpell();
+				auto lastSelectedSpellAppearance = players[c]->magic.selected_spell_last_appearance;
+
+				bool reinitShapeshiftHotbar = false;
+				if ( players[c]->hotbar.swapHotbarOnShapeshift > 0 )
+				{
+					reinitShapeshiftHotbar = true;
+					deinitShapeshiftHotbar(c);
+				}
+				for (int i = 0; i < NUM_HOTBAR_SLOTS; ++i) {
+					auto item = uidToItem(players[c]->hotbar.slots()[i].item);
+					if (item) {
+						player.hotbar[i] = list_Index(item->node);
+					} else {
+						player.hotbar[i] = UINT32_MAX;
+					}
+
+					for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j ) {
+						auto item = uidToItem(players[c]->hotbar.slotsAlternate()[j][i].item);
+						if ( item )
+						{
+							player.hotbar_alternate[j][i] = list_Index(item->node);
+						}
+						else
+						{
+							player.hotbar_alternate[j][i] = UINT32_MAX;
+						}
+					}
+				}
+
+
+				// spells
+				player.selected_spell_last_appearance = lastSelectedSpellAppearance;
+				player.selected_spell = UINT32_MAX;
+				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+				{
+					player.selected_spell_alternate[i] = UINT32_MAX;
+				}
+
+				for ( node_t* node = players[c]->magic.spellList.first;
+					node != nullptr; node = node->next ) {
+					auto spell = (spell_t*)node->element;
+					player.spells.push_back(spell->ID);
+
+					if ( players[c]->magic.selectedSpell() == spell )
+					{
+						player.selected_spell = list_Index(node);
+					}
+					for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+					{
+						if ( players[c]->magic.selected_spell_alternate[i] == spell )
+						{
+							player.selected_spell_alternate[i] = list_Index(node);
+						}
+					}
+				}
+
+				if ( reinitShapeshiftHotbar )
+				{
+					initShapeshiftHotbar(c);
+				}
+
+				players[c]->magic.equipSpell(oldSelectedSpell);
+				players[c]->magic.selected_spell_last_appearance = lastSelectedSpellAppearance;
+			}
+			else
+			{
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i ) {
 					player.hotbar[i] = UINT32_MAX;
+					for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j ) {
+						player.hotbar_alternate[j][i] = UINT32_MAX;
+					}
+				}
+
+				// spells
+				player.selected_spell = UINT32_MAX;
+				player.selected_spell_last_appearance = -1;
+				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+				{
+					player.selected_spell_alternate[i] = UINT32_MAX;
 				}
 			}
-
-			// spells
-	        for (node_t* node = players[c]->magic.spellList.first;
-				node != nullptr; node = node->next) {
-		        auto spell = (spell_t*)node->element;
-				player.spells.push_back(spell->ID);
-	        }
 
 			// known alchemy recipes and known scrolls
 			player.known_recipes = clientLearnedAlchemyRecipes[c];
@@ -5690,13 +5759,29 @@ int loadGame(int player, const SaveGameInfo& info) {
 
 	// read spells
 	list_FreeAll(&players[player]->magic.spellList);
+	Uint32 spellIndex = 0;
 	for (auto& s : info.players[player].spells) {
 		spell_t* spell = copySpell(getSpellFromID(s));
 		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
 		node->element = spell;
 		node->deconstructor = &spellDeconstructor;
 		node->size = sizeof(spell);
+
+		if ( info.players[player].selected_spell == spellIndex )
+		{
+			players[player]->magic.equipSpell(spell);
+		}
+		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+		{
+			if ( info.players[player].selected_spell_alternate[i] == spellIndex )
+			{
+				players[player]->magic.selected_spell_alternate[i] = spell;
+			}
+		}
+
+		++spellIndex;
 	}
+	players[player]->magic.selected_spell_last_appearance = info.players[player].selected_spell_last_appearance;
 
 	// read alchemy recipes
 	clientLearnedAlchemyRecipes[player].clear();
@@ -5840,7 +5925,19 @@ int loadGame(int player, const SaveGameInfo& info) {
 		} else {
 			hotbar[c].item = 0;
 			hotbar[c].resetLastItem();
-			for (int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d) {
+		}
+
+		for ( int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d )
+		{
+			node_t* node = list_Node(&stats[player]->inventory,
+				info.players[player].hotbar_alternate[d][c]);
+			if ( node ) {
+				Item* item = (Item*)node->element;
+				hotbar_alternate[d][c].item = item->uid;
+				hotbar_alternate[d][c].storeLastItem(item);
+			}
+			else
+			{
 				hotbar_alternate[d][c].item = 0;
 				hotbar_alternate[d][c].resetLastItem();
 			}
