@@ -1533,7 +1533,7 @@ voxel_t* loadVoxel(char* filename)
 	}
 }
 
-constexpr float hellAmbience = 0.1f;
+constexpr float hellAmbience = 32.f;
 #ifndef EDITOR
 static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience);
 #endif
