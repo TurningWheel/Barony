@@ -361,6 +361,11 @@ void Field::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 		pos.h = textSizeH;
 
 		yoff += actualFont->height(true) + paddingPerLine;
+		auto findIndividualLinePadding = individualLinePadding.find(currentLine);
+		if ( findIndividualLinePadding != individualLinePadding.end() )
+		{
+			yoff += findIndividualLinePadding->second;
+		}
 
 		SDL_Rect dest;
 		dest.x = std::max(rect.x, pos.x);

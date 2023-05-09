@@ -115,4 +115,63 @@ namespace MainMenu {
 	void setupSplitscreen();                                        // used to resize player game views, for example if a player drops or we change the aspect ratio
 	void crossplayPrompt();                                         // user chose to activate crossplay
 	void timedOut();												// special disconnection event that may display a system error message
+
+	struct ClassDescriptions
+	{
+		struct DescData_t
+		{
+			std::string text;
+			std::string internal_name;
+			std::vector<std::tuple<int, std::string, Uint32>> survivalComplexity;
+			std::vector<Uint32> statRatings;
+			std::vector<std::string> statRatingsStrings;
+		};
+		static std::unordered_map<int, DescData_t> data;
+		static void readFromFile();
+		static bool init;
+	};
+
+	struct RaceDescriptions
+	{
+		struct DescData_t
+		{
+			std::string textLeft;
+			std::string textRight;
+			std::set<int> traitLines;
+			std::set<int> proLines;
+			std::vector<int> linePaddings;
+			std::string title;
+		};
+		static std::unordered_map<std::string, DescData_t> data;
+		static void readFromFile();
+		static std::string getRaceKey(int race)
+		{
+			switch ( race )
+			{
+			case RACE_HUMAN:
+				return "human";
+			case RACE_SKELETON:
+				return "skeleton";
+			case RACE_VAMPIRE:
+				return "vampire";
+			case RACE_SUCCUBUS:
+				return "succubus";
+			case RACE_GOATMAN:
+				return "goatman";
+			case RACE_AUTOMATON:
+				return "automaton";
+			case RACE_INCUBUS:
+				return "incubus";
+			case RACE_GOBLIN:
+				return "goblin";
+			case RACE_INSECTOID:
+				return "insectoid";
+			default:
+				break;
+			}
+			return "";
+		}
+		static DescData_t& getRaceDescriptionData(int race) { return data[getRaceKey(race)]; }
+		static bool init;
+	};
 }

@@ -6417,5 +6417,7 @@ for accessory to violence!#
 4339 foliage#
 4340 webbing#
 4341 barricade#
+4342 Colorblind assist has been enabled for the lobby.#
+4343 Colorblind assist has been disabled for the lobby.#
 
 4399 end#

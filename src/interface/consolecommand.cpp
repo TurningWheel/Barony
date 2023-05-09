@@ -34,6 +34,7 @@
 #include "../ui/GameUI.hpp"
 #include "../ui/LoadingScreen.hpp"
 #include "../classdescriptions.hpp"
+#include "../ui/MainMenu.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -4645,6 +4646,14 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_load_entity_data("/loadentitydata", "reloads entity_data.json", []CCMD{
 		EditorEntityData_t::readFromFile();
+	});
+
+	static ConsoleCommand ccmd_load_race_descriptions("/loadracedescriptions", "reloads race_descriptions.json", []CCMD{
+		MainMenu::RaceDescriptions::readFromFile();
+	});
+
+	static ConsoleCommand ccmd_load_class_descriptions("/loadclassdescriptions", "reloads class_descriptions.json", []CCMD{
+		MainMenu::ClassDescriptions::readFromFile();
 	});
 }
 

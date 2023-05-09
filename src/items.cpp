@@ -958,6 +958,36 @@ Sint32 itemModel(const Item* const item)
 	{
 		return 0;
 	}
+	if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		if ( colorblind_lobby )
+		{
+			int playerOwner = (item->appearance) % MAXPLAYERS;
+			Uint32 index = 4;
+			switch ( playerOwner )
+			{
+			case 0:
+				index = 2;
+				break;
+			case 1:
+				index = 3;
+				break;
+			case 2:
+				index = 1;
+				break;
+			case 3:
+				index = 4;
+				break;
+			default:
+				break;
+			}
+			return items[item->type].index + index;
+		}
+		else
+		{
+			return items[item->type].index + item->appearance % MAXPLAYERS;
+		}
+	}
 	return items[item->type].index + item->appearance % items[item->type].variations;
 }
 
@@ -1016,7 +1046,41 @@ SDL_Surface* itemSprite(Item* const item)
 	}
 	else
 	{
-		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+		node_t* node = nullptr;
+		if ( item->type == TOOL_PLAYER_LOOT_BAG )
+		{
+			if ( colorblind_lobby )
+			{
+				int playerOwner = (item->appearance) % MAXPLAYERS;
+				Uint32 index = 4;
+				switch ( playerOwner )
+				{
+					case 0:
+						index = 2;
+						break;
+					case 1:
+						index = 3;
+						break;
+					case 2:
+						index = 1;
+						break;
+					case 3:
+						index = 4;
+						break;
+					default:
+						break;
+				}
+				node = list_Node(&items[item->type].surfaces, index);
+			}
+			else
+			{
+				node = list_Node(&items[item->type].surfaces, (item->appearance) % MAXPLAYERS);
+			}
+		}
+		else
+		{
+			node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+		}
 		if ( !node )
 		{
 			return nullptr;

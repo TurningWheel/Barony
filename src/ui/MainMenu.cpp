@@ -2114,7 +2114,7 @@ namespace MainMenu {
 		minimapTransparencyForeground = 100 - foreground_opacity;
 		minimapTransparencyBackground = 100 - background_opacity;
 		minimapScale = map_scale;
-		minimapObjectZoom = icon_scale;
+		minimapObjectZoom = std::max(100, icon_scale);
 	}
 
 	inline Minimap Minimap::load() {
@@ -2122,7 +2122,7 @@ namespace MainMenu {
 		minimap.foreground_opacity = 100 - minimapTransparencyForeground;
 		minimap.background_opacity = 100 - minimapTransparencyBackground;
 		minimap.map_scale = minimapScale;
-		minimap.icon_scale = minimapObjectZoom;
+		minimap.icon_scale = std::max(100, minimapObjectZoom);
 		return minimap;
 	}
 
@@ -2346,7 +2346,7 @@ namespace MainMenu {
 		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
 		reversemouse = reverse_mouse_enabled;
 		smoothmouse = smooth_mouse_enabled;
-		disablemouserotationlimit = !rotation_speed_limit_enabled;
+		disablemouserotationlimit = true; //!rotation_speed_limit_enabled;
 		gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
 		gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
 		gamepad_rightx_invert = gamepad_camera_invert_x;
@@ -2498,7 +2498,7 @@ namespace MainMenu {
 		settings.mouse_sensitivity = 32.f;
 		settings.reverse_mouse_enabled = false;
 		settings.smooth_mouse_enabled = false;
-		settings.rotation_speed_limit_enabled = true;
+		settings.rotation_speed_limit_enabled = false;
 		settings.turn_sensitivity_x = 75.f;
 		settings.turn_sensitivity_y = 50.f;
 		settings.gamepad_camera_invert_x = false;
@@ -2609,7 +2609,7 @@ namespace MainMenu {
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
 		file->property("smooth_mouse_enabled", smooth_mouse_enabled);
-		file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
+		//file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
 		file->property("turn_sensitivity_x", turn_sensitivity_x);
 		file->property("turn_sensitivity_y", turn_sensitivity_y);
         if ( version >= 6 )
@@ -4706,7 +4706,7 @@ namespace MainMenu {
 
 		y += settingsAddSlider(*subwindow, y, "icon_scale", "Icon scale",
 			"Scale the size of icons on the map (such as players and allies)",
-			allSettings.minimap.icon_scale, 25, 200, sliderPercent,
+			allSettings.minimap.icon_scale, 100, 200, sliderPercent,
 			[](Slider& slider){ allSettings.minimap.icon_scale = slider.getValue(); }, true);
 
 		y += settingsAddSubHeader(*subwindow, y, "transparency_header", "Transparency", true);
@@ -5556,9 +5556,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
 			"Smooth the movement of the mouse over a few frames of input.",
 			allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
+		/*y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
 			"Limit how fast the player can rotate by moving the mouse.",
-			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});
+			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});*/
 		y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
 			"Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
 			allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
@@ -5603,7 +5603,7 @@ bind_failed:
 			{Setting::Type::Boolean, "numkeys_in_inventory"},
 			{Setting::Type::Boolean, "reverse_mouse"},
 			{Setting::Type::Boolean, "smooth_mouse"},
-			{Setting::Type::Boolean, "rotation_speed_limit"},
+			//{Setting::Type::Boolean, "rotation_speed_limit"},
 			{Setting::Type::Boolean, "mkb_world_tooltips"},
 			{Setting::Type::Dropdown, "gamepad_facehotbar"},
 			{Setting::Type::Slider, "turn_sensitivity_x"},
@@ -7497,7 +7497,7 @@ bind_failed:
 	                len = snprintf(buf, sizeof(buf), "%s: %s", players[clientnum]->getAccountName(), text);
 	            }
 	            if (len > 0) {
-					Uint32 color = playerColor(clientnum, colorblind, false);
+					Uint32 color = playerColor(clientnum, colorblind_lobby, false);
                     sendChatMessageOverNet(color, buf, len);
                 }
                 field.setText("");
@@ -9537,316 +9537,234 @@ failed:
 	};
 	static constexpr int num_races = sizeof(races) / sizeof(races[0]);
 
-	static const char* race_descs[] = {
-	    // Human
-	    "\n"
-        "Traits\n"
-        "None\n"
-        "\n"
-        "Resistances\n"
-        "None\n"
-        "\n"
-        "Friendly With\n"
-        "Humans, Automatons",
+	bool ClassDescriptions::init = false;
+	std::unordered_map<int, ClassDescriptions::DescData_t> ClassDescriptions::data;
 
-        // Skeleton
-	    "\n"
-        "Traits\n"
-        "\x1E Does not Hunger or Starve\n"
-        "\x1E HP and MP Regeneration\n"
-        "    reduced by 75%\n"
-        "\x1E Self-Resurrects for 75MP\n"
-        "\x1E Immune to Burning\n"
-        "\x1E Swim speed reduced by 50%\n"
-        "\n"
-        "Resistances\n"
-        "\x1E Swords\n"
-        "\x1E Ranged\n"
-        "\x1E Axes\n"
-        "\x1E Magic\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Ghouls, Automatons",
+	bool RaceDescriptions::init = false;
+	std::unordered_map<std::string, RaceDescriptions::DescData_t> RaceDescriptions::data;
 
-        // Vampire
-	    "\n"
-        "Racial Spells\n"
-        "\x1E Bloodletting, Levitation\n"
-        "Traits\n"
-        "\x1E Uses HP when out of MP to\n"
-        "    cast and sustain spells\n"
-        "\x1E Can only sustain hunger\n"
-        "    with Blood Vials\n"
-        "\x1E Kills may drop Blood Vials\n"
-        "\x1E Bloodletting / Assassinate\n"
-        "    kills drop Blood Vials\n"
-        "Resistances\n"
-        "\x1E Swords\n"
-        "\x1E Ranged\n"
-        "\x1E Axes\n"
-        "\x1E Magic\n"
-        "Friendly With\n"
-        "\x1E Vampires, Automatons",
+	void ClassDescriptions::readFromFile()
+	{
+		const std::string filename = "data/class_descriptions.json";
+		if ( !PHYSFS_getRealDir(filename.c_str()) )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+			return;
+		}
 
-        // Succubus
-        "\n"
-        "Racial Spells\n"
-        "\x1E Teleport, Polymorph\n"
-        "Traits\n"
-        "\x1E Cursed equipment can be\n"
-        "    removed; gives bonuses\n"
-        "\x1E Blessed equipment is not\n"
-        "    removable; gives bonuses\n"
-        "\x1E +MP from Strangulation\n"
-        "\n"
-        "Resistances\n"
-        "\x1E Swords\n"
-        "\n"
-        "\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Succubi, Incubi,\n"
-        "    Automatons",
+		std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+		inputPath.append(PHYSFS_getDirSeparator());
+		inputPath.append(filename.c_str());
 
-        // Goatman
-        "\n"
-        "Traits\n"
-        "\x1E Afflicted with Alcoholism,\n"
-        "    causing Hangovers\n"
-        "\x1E Immune to Drunk dizziness\n"
-        "\x1E +STR +CHR while Drunk\n"
-        "\x1E Can recruit fellow Drunks\n"
-        "\x1E Eats Tins without an Opener\n"
-        "\x1E Immune to Greasy effect\n"
-        "\n"
-        "Resistances\n"
-        "\x1E Swords\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Goatmen, Automatons",
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
 
-        // Automaton
-        "\n"
-        "Racial Spells\n"
-        "\x1E Salvage\n"
-        "Traits\n"
-        "\x1E Requires Heat (HT) to\n"
-        "    survive and cast spells\n"
-        "\x1E Regen HT with a hot boiler\n"
+		char buf[32000];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
 
-        "    fueled by gems and paper\n"
-        "\x1E Can remove cursed items\n"
-        "\x1E Immune to Burning\n"
-        "\x1E +20 to Tinkering Repairs\n"
-        "\x1E Welcomed by Shopkeepers\n"
-        "Resistances\n"
-        "\x1E Ranged\n"
-        "\x1E Unarmed\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Automatons, Humans",
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("descriptions") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
 
-        // Incubus
-        "\n"
-        "Racial Spells\n"
-        "\x1E Teleport, Arcane Mark\n"
-        "Traits\n"
-        "\x1E Cursed equipment can be\n"
-        "    removed; gives bonuses\n"
-        "\x1E Blessed equipment is not\n"
-        "    removable; gives bonuses\n"
-        "\x1E +MP from Strangulation\n"
-        "\n"
-        "Resistances\n"
-        "\x1E Magic\n"
-        "\x1E Polearms\n"
-        "\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Succubi, Incubi,\n"
-        "    Automatons",
+		data.clear();
 
-        // Goblin
-        "\n"
-        "Traits\n"
-        "\x1E Worn Equipment has lower\n"
-        "    chance to degrade\n"
-        "\x1E Raising any Melee Weapon\n"
-        "    Skill raises all of them\n"
-        "\x1E Weapon Skills raise slower\n"
-        "\x1E Cannot Memorize new spells\n"
-        "\n"
-        "Resistances\n"
-        "\x1E Swords\n"
-        "\x1E Unarmed\n"
-        "\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Goblins, Automatons",
+		static constexpr Uint32 good = makeColorRGB(0, 191, 255);
+		static constexpr Uint32 decent = makeColorRGB(0, 191, 255);
+		static constexpr Uint32 average = makeColorRGB(191, 191, 191);
+		static constexpr Uint32 poor = makeColorRGB(255, 64, 0);
+		static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
 
-        // Insectoid
-        "\n"
-        "Racial Spells\n"
-        "\x1E Flutter, Dash, Spray Acid\n"
-        "Traits\n"
-        "\x1E Requires Energy (EN) to\n"
-        "    survive and cast spells\n"
-        "\x1E Regain EN by consuming\n"
-        "    food and sweet liquids\n"
-        "\x1E Immune to Poison\n"
-        "\x1E Immune to rotten food\n"
-        "Resistances\n"
-        "\x1E Maces\n"
-        "\x1E Unarmed\n"
-        "\n"
-        "Friendly With\n"
-        "\x1E Insectoids, Scarabs\n"
-        "    Scorpions, Automatons\n",
-	};
+		auto& classes = d["descriptions"];
+		for ( auto it = classes.MemberBegin(); it != classes.MemberEnd(); ++it )
+		{
+			std::string classname = it->name.GetString();
+			int key = it->value["id"].GetInt();
+			auto& classEntry = data[key];
+			classEntry.internal_name = classname;
+			for ( auto it2 = it->value["desc"].Begin(); it2 != it->value["desc"].End(); )
+			{
+				std::string line = (it2->GetString());
+				if ( line.size() > 0 && line[0] == '-' )
+				{
+					line[0] = '\x1E';
+				}
+				classEntry.text += line;
 
-	static const char* race_descs_right[] = {
-	    // Human
-	    "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "None",
+				++it2;
+				if ( it2 != it->value["desc"].End() )
+				{
+					classEntry.text += '\n';
+				}
+			}
 
-        // Skeleton
-	    "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Maces\n"
-        "\x1E Polearms\n"
-        "\x1E Smite",
+			int c = 0;
+			for ( auto it2 = it->value["survival_complexity"].Begin(); it2 != it->value["survival_complexity"].End(); ++it2 )
+			{
+				int value = it2->GetInt();
+				classEntry.survivalComplexity.push_back(std::make_tuple(value, "", 0));
+				auto& survivalComplexity = classEntry.survivalComplexity.back();
+				switch ( value )
+				{
+					case 1: 
+						std::get<1>(survivalComplexity) = "*"; 
+						std::get<2>(survivalComplexity) = (c == 0 ? bad : good);
+						break;
+					case 2: 
+						std::get<1>(survivalComplexity) = "**"; 
+						std::get<2>(survivalComplexity) = (c == 0 ? poor : decent);
+						break;
+					case 3: 
+						std::get<1>(survivalComplexity) = "***"; 
+						std::get<2>(survivalComplexity) = (c == 0 ? average : average);
+						break;
+					case 4: 
+						std::get<1>(survivalComplexity) = "****"; 
+						std::get<2>(survivalComplexity) = (c == 0 ? decent : poor);
+						break;
+					case 5: 
+						std::get<1>(survivalComplexity) = "*****"; 
+						std::get<2>(survivalComplexity) = (c == 0 ? good : bad); 
+						break;
+					default:
+						break;
+				}
+				++c;
+			}
+			for ( auto it2 = it->value["stats"].Begin(); it2 != it->value["stats"].End(); ++it2 )
+			{
+				std::string value = it2->GetString();
+				classEntry.statRatingsStrings.push_back(value);
+				if ( value == "bad" )
+				{
+					classEntry.statRatings.push_back(bad);
+				}
+				else if ( value == "poor" )
+				{
+					classEntry.statRatings.push_back(poor);
+				}
+				else if ( value == "average" )
+				{
+					classEntry.statRatings.push_back(average);
+				}
+				else if ( value == "decent" )
+				{
+					classEntry.statRatings.push_back(decent);
+				}
+				else if ( value == "good" )
+				{
+					classEntry.statRatings.push_back(good);
+				}
+				else
+				{
+					classEntry.statRatings.push_back(0);
+				}
+			}
+		}
+		init = true;
+		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+	}
 
-        // Vampire
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Maces\n"
-        "\x1E Polearms\n"
-        "\x1E Water\n"
-        "\x1E Smite",
+	void RaceDescriptions::readFromFile()
+	{
+		const std::string filename = "data/race_descriptions.json";
+		if ( !PHYSFS_getRealDir(filename.c_str()) )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+			return;
+		}
 
-        // Succubus
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Magic\n"
-        "\x1E Polearms\n"
-        "\x1E Smite",
+		std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+		inputPath.append(PHYSFS_getDirSeparator());
+		inputPath.append(filename.c_str());
 
-        // Goatman
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Polearms\n"
-        "\x1E Axes\n"
-        "\x1E Ranged\n"
-        "\x1E Magic",
+		File* fp = FileIO::open(inputPath.c_str(), "rb");
+		if ( !fp )
+		{
+			printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+			return;
+		}
 
-        // Automaton
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Axes\n"
-        "\x1E Maces\n"
-        "\x1E Magic",
+		char buf[10000];
+		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+		buf[count] = '\0';
+		rapidjson::StringStream is(buf);
+		FileIO::close(fp);
 
-        // Incubus
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Ranged\n"
-        "\x1E Swords\n"
-        "\x1E Smite",
+		rapidjson::Document d;
+		d.ParseStream(is);
+		if ( !d.HasMember("version") || !d.HasMember("descriptions") )
+		{
+			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+			return;
+		}
 
-        // Goblin
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Axes\n"
-        "\x1E Polearms\n"
-        "\x1E Ranged",
+		data.clear();
 
-        // Insectoid
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "Weaknesses\n"
-        "\x1E Axes\n"
-        "\x1E Polearms\n"
-        "\x1E Ranged",
-	};
+		auto& races = d["descriptions"];
+		for ( auto it = races.MemberBegin(); it != races.MemberEnd(); ++it )
+		{
+			std::string key = it->name.GetString();
+			auto& raceEntry = data[key];
+			raceEntry.title = it->value["title"].GetString();
+			for ( auto it2 = it->value["left_align"].Begin(); it2 != it->value["left_align"].End(); )
+			{
+				std::string line = (it2->GetString());
+				if ( line.size() > 0 && line[0] == '-' )
+				{
+					line[0] = '\x1E';
+				}
+				raceEntry.textLeft += line;
+
+				++it2;
+				if ( it2 != it->value["left_align"].End() )
+				{
+					raceEntry.textLeft += '\n';
+				}
+			}
+			for ( auto it2 = it->value["right_align"].Begin(); it2 != it->value["right_align"].End(); )
+			{
+				std::string line = (it2->GetString());
+				if ( line.size() > 0 && line[0] == '-' )
+				{
+					line[0] = '\x1E';
+				}
+				raceEntry.textRight += line;
+
+				++it2;
+				if ( it2 != it->value["right_align"].End() )
+				{
+					raceEntry.textRight += '\n';
+				}
+			}
+
+			auto& highlights = it->value["text_line_hightlights"];
+			for ( auto it2 = highlights["traits_lines"].Begin(); it2 != highlights["traits_lines"].End(); ++it2 )
+			{
+				raceEntry.traitLines.insert(it2->GetInt());
+			}
+			for ( auto it2 = highlights["benefit_lines"].Begin(); it2 != highlights["benefit_lines"].End(); ++it2 )
+			{
+				raceEntry.proLines.insert(it2->GetInt());
+			}
+			for ( auto it2 = it->value["line_spacing"].Begin(); it2 != it->value["line_spacing"].End(); ++it2 )
+			{
+				raceEntry.linePaddings.push_back(it2->GetInt());
+			}
+		}
+		init = true;
+		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
+	}
 
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
 
@@ -9887,80 +9805,47 @@ failed:
 	        color_race = color_dlc0;
 	    }
 
+		auto& raceDescriptionData = RaceDescriptions::getRaceDescriptionData(race);
+
 	    auto details_title = card.findField("details_title");
 	    if (details_title) {
 	        details_title->clearLinesToColor();
-	        details_title->setText(races[race]);
+	        details_title->setText(raceDescriptionData.title.c_str());
             details_title->setColor(color_race);
 	    }
+
 	    auto details_text = card.findField("details");
 	    if (details_text) {
 	        details_text->clearLinesToColor();
-	        details_text->setText(race_descs[race]);
-
-	    switch (race) {
-	    default: return;
-	    case RACE_HUMAN:
-            details_text->addColorToLine(1, color_traits);
-            details_text->addColorToLine(4, color_pro);
-            details_text->addColorToLine(7, color_pro);
-            break;
-	    case RACE_SKELETON:
-            details_text->addColorToLine(1, color_traits);
-            details_text->addColorToLine(9, color_pro);
-            details_text->addColorToLine(15, color_pro);
-            break;
-	    case RACE_VAMPIRE:
-            details_text->addColorToLine(1, color_pro);
-            details_text->addColorToLine(3, color_traits);
-            details_text->addColorToLine(11, color_pro);
-            details_text->addColorToLine(16, color_pro);
-	        break;
-	    case RACE_SUCCUBUS:
-            details_text->addColorToLine(1, color_pro);
-            details_text->addColorToLine(3, color_traits);
-            details_text->addColorToLine(10, color_pro);
-            details_text->addColorToLine(15, color_pro);
-	        break;
-	    case RACE_GOATMAN:
-            details_text->addColorToLine(1, color_traits);
-            details_text->addColorToLine(10, color_pro);
-            details_text->addColorToLine(16, color_pro);
-	        break;
-	    case RACE_AUTOMATON:
-            details_text->addColorToLine(1, color_pro);
-            details_text->addColorToLine(3, color_traits);
-            details_text->addColorToLine(12, color_pro);
-            details_text->addColorToLine(16, color_pro);
-	        break;
-	    case RACE_INCUBUS:
-            details_text->addColorToLine(1, color_pro);
-            details_text->addColorToLine(3, color_traits);
-            details_text->addColorToLine(10, color_pro);
-            details_text->addColorToLine(15, color_pro);
-	        break;
-	    case RACE_GOBLIN:
-            details_text->addColorToLine(1, color_traits);
-            details_text->addColorToLine(9, color_pro);
-            details_text->addColorToLine(14, color_pro);
-	        break;
-	    case RACE_INSECTOID:
-            details_text->addColorToLine(1, color_pro);
-            details_text->addColorToLine(3, color_traits);
-            details_text->addColorToLine(10, color_pro);
-            details_text->addColorToLine(14, color_pro);
-	        break;
-	    }
+			details_text->setText(raceDescriptionData.textLeft.c_str());
+			for ( auto line : raceDescriptionData.traitLines )
+			{
+				details_text->addColorToLine(line, color_traits);
+			}
+			for ( auto line : raceDescriptionData.proLines )
+			{
+				details_text->addColorToLine(line, color_pro);
+			}
+			details_text->clearIndividualLinePadding();
+			for ( auto line = 0; line < raceDescriptionData.linePaddings.size(); ++line )
+			{
+				details_text->setIndividualLinePadding(line, raceDescriptionData.linePaddings[line]);
+			}
 	    }
 	    auto details_text_right = card.findField("details_right");
 	    if (details_text_right) {
 	        details_text_right->clearLinesToColor();
-	        details_text_right->setText(race_descs_right[race]);
+			details_text_right->setText(raceDescriptionData.textRight.c_str());
 
             // we expect first word in the right column to always be "Weaknesses"
             int c;
-            for (c = 0; race_descs_right[race][c] == '\n'; ++c);
+            for (c = 0; raceDescriptionData.textRight[c] == '\n'; ++c);
             details_text_right->addColorToLine(c, color_con);
+			details_text_right->clearIndividualLinePadding();
+			for ( auto line = 0; line < raceDescriptionData.linePaddings.size(); ++line )
+			{
+				details_text_right->setIndividualLinePadding(line, raceDescriptionData.linePaddings[line]);
+			}
 	    }
     }
 
@@ -11423,16 +11308,16 @@ failed:
 
 		    auto details_title = card->addField("details_title", 1024);
 		    details_title->setFont(font);
-		    details_title->setSize(SDL_Rect{40, 68, 242, 298});
+		    details_title->setSize(SDL_Rect{40, 68, 242, 300 });
 		    details_title->setHJustify(Field::justify_t::CENTER);
 
 		    auto details_text = card->addField("details", 1024);
 		    details_text->setFont(font);
-		    details_text->setSize(SDL_Rect{40, 68, 242, 298});
+		    details_text->setSize(SDL_Rect{40, 68, 242, 300});
 
 		    auto details_text_right = card->addField("details_right", 1024);
 		    details_text_right->setFont(font);
-		    details_text_right->setSize(SDL_Rect{161, 68, 121, 298});
+		    details_text_right->setSize(SDL_Rect{161, 68, 121, 300 });
 
 		    update_details_text(*card);
 		}
@@ -12021,325 +11906,9 @@ failed:
 		}
 
         if (details) {
-            static const char* class_descs[] = {
-                "Barbarian\n"
-                "A skilled combatant. What\n"
-                "they lack in armor they make\n"
-                "up for in strength and\n"
-                "fighting prowess.\n"
-                "Barbarians can quickly\n"
-                "dispatch lesser foes before\n"
-                "taking any hits by using the\n"
-                "right weapon for the job. A\n"
-                "surprise assault is the key\n"
-                "to a swift victory. Staying\n"
-                "light-footed will allow a\n"
-                "Barbarian to avoid damage.",
-
-
-                "Warrior\n"
-                "The trained soldier. They\n"
-                "are heavily armored and\n"
-                "make capable leaders.\n"
-                "Warriors are well equipped\n"
-                "for most fights, assuming\n"
-                "they know when to use each\n"
-                "of their weapons. But hubris\n"
-                "is the downfall of many\n"
-                "Warriors, whether they\n"
-                "waddle too slowly near\n"
-                "traps, or allowing magic to\n"
-                "strike through their armor.",
-
-
-                "Healer\n"
-                "A talented physician. Though\n"
-                "they are poor fighters, they\n"
-                "come stocked with medical\n"
-                "supplies and other healing\n"
-                "abilities.\n"
-                "Compared to other magic\n"
-                "users, the Healer is a more\n"
-                "durable and well-rounded\n"
-                "hero as they grow in\n"
-                "experience. With care, they\n"
-                "may become a very tough\n"
-                "spellcaster.",
-
-
-                "Rogue\n"
-                "The professional hooligan.\n"
-                "Dextrous and skilled thieves,\n"
-                "though lacking in power and\n"
-                "equipment.\n"
-                "Even skilled Rogues succumb\n"
-                "trying to live by the blade.\n"
-                "But their deft hand can pick\n"
-                "ammo from traps, and using\n"
-                "stealth, a patient Rogue\n"
-                "survives by picking off tough\n"
-                "foes from afar, practicing\n"
-                "ambushes against soft foes.",
-
-
-                "Wanderer\n"
-                "The hardened traveler. Low\n"
-                "in armor and combat ability,\n"
-                "but well-equipped for the\n"
-                "dungeon.\n"
-                "A Wanderer's ample food\n"
-                "supply provides a patient\n"
-                "start to their adventure,\n"
-                "allowing them to play it\n"
-                "safe. But their hardy\n"
-                "nature transforms them\n"
-                "into very durable fighters\n"
-                "as their quest labors on.",
-
-
-                "Cleric\n"
-                "Students of the church.\n"
-                "Fairly well equipped and\n"
-                "able in many ways, they are\n"
-                "well-rounded adventurers.\n"
-                "While Clerics start with no\n"
-                "spells, their training has\n"
-                "prepared them to learn\n"
-                "quickly. A wise Cleric will\n"
-                "make use of magic as it\n"
-                "becomes available without\n"
-                "forsaking their martial\n"
-                "training.",
-
-
-                "Merchant\n"
-                "A seasoned trader. They\n"
-                "are skilled in the market\n"
-                "and adept at identifying\n"
-                "foreign artifacts.\n"
-                "While decently equipped for\n"
-                "a fight, Merchant explorers\n"
-                "will survive longer if they\n"
-                "develop skills which keep foes\n"
-                "at a distance, especially\n"
-                "adopting followers and\n"
-                "crafting skills to which they\n"
-                "are naturally inclined.",
-
-
-                "Wizard\n"
-                "The wise magician. Though\n"
-                "frail, they are extremely\n"
-                "well-versed in magic.\n"
-                "Many young adventurers\n"
-                "find early success with\n"
-                "powerful spells. However,\n"
-                "most mighty magic users\n"
-                "cannot cast indefinitely. To\n"
-                "succeed as a Wizard, one\n"
-                "must learn when it is enough\n"
-                "to finish foes off with a stiff\n"
-                "whack from a polearm.",
-
-
-                "Arcanist\n"
-                "A cunning spellcaster. Less\n"
-                "magically adept than the\n"
-                "Wizard, but hardier and\n"
-                "better equipped.\n"
-                "Due to having mundane and\n"
-                "magical ranged attacks at\n"
-                "their disposal, successful\n"
-                "Arcanists rely on mobility to\n"
-                "defeat threats from a\n"
-                "distance. Adding special\n"
-                "ammo or spells will allow the\n"
-                "Arcanist to improve in power.",
-
-
-                "Joker\n"
-                "The wild card. Jokers come\n"
-                "with very little equipment,\n"
-                "but they have a few tricks\n"
-                "up their sleeves,\n"
-                "nonetheless.\n"
-                "Jokers tend to gravitate\n"
-                "toward magical trickery\n"
-                "and commanding followers,\n"
-                "but their chaotic nature\n"
-                "results in a lack of focus.\n"
-                "Best to improvise and stay\n"
-                "flexible.",
-
-
-                "Sexton\n"
-                "A temple officer who serves\n"
-                "unseen, using stealth and\n"
-                "magic to slip their way\n"
-                "through the dungeon with\n"
-                "the aid of a few rare tools.\n"
-                "Sextons are fastidious\n"
-                "planners, and their diverse\n"
-                "talents bring success when\n"
-                "they make time to approach\n"
-                "each problem thoughtfully.\n"
-                "Sextons who panic fail to use\n"
-                "the tools at their disposal.",
-
-
-                "Ninja\n"
-                "A highly specialized assassin.\n"
-                "They ambush foes with\n"
-                "swords or ranged weapons,\n"
-                "using a few other tricks to\n"
-                "get out of bad situations.\n"
-                "Ninjas do well to find backup\n"
-                "blades. Their fragile sword\n"
-                "is sharp, but a break at the\n"
-                "wrong time can be fatal.\n"
-                "To improve their chances, a\n"
-                "Ninja must remain in control\n"
-                "of how a fight begins.",
-
-
-                "Monk\n"
-                "Disciplined and hardy. They\n"
-                "have little in the way of\n"
-                "offensive training and\n"
-                "material goods, but can rely\n"
-                "on their excellent fortitude\n"
-                "and adaptability.\n"
-                "The Monk is exceptional at\n"
-                "blocking attacks, and is very\n"
-                "slow to hunger. Approaching\n"
-                "challenges patiently plays\n"
-                "to the Monk's strengths. Keep\n"
-                "a torch or shield at hand.",
-
-
-                "Conjurer\n"
-                "A frail but adept magic\n"
-                "user, able to conjure allies\n"
-                "with a reliable spell.\n"
-                "Unavailable to any other\n"
-                "class, the Conjure Skeleton\n"
-                "spell provides a persistent\n"
-                "companion, even if it is killed.\n"
-                "The Conjured allies grow in\n"
-                "power, so long as they are\n"
-                "permitted to kill foes and\n"
-                "grow in experience. Nurture\n"
-                "these allies to succeed.",
-
-
-                "Accursed\n"
-                "The Accursed suffer from\n"
-                "bestial hunger, but gain\n"
-                "supernatural magic power\n"
-                "and speed. An arcane\n"
-                "library found deep within\n"
-                "the dungeon may have a\n"
-                "cure.\n"
-                "While afflicted, the Accursed\n"
-                "must move quickly and reap\n"
-                "blood to evade starvation.\n"
-                "Very powerful, but those\n"
-                "lacking expertise will fail.",
-
-
-                "Mesmer\n"
-                "The Mesmer uses the Charm\n"
-                "spell and leadership ability\n"
-                "to enlist powerful allies.\n"
-                "Mesmers may only Charm one\n"
-                "at a time, so they should\n"
-                "be strategic with recruiting.\n"
-                "Charmed allies get stronger\n"
-                "with experience, so nurturing\n"
-                "them can be wise. The Charm\n"
-                "spell is difficult to learn;\n"
-                "Successful Mesmers must\n"
-                "practice other kinds of magic.",
-
-
-                "Brewer\n"
-                "A talented alchemist who is\n"
-                "also comfortable with the\n"
-                "relationships and bar-room\n"
-                "brawls that a good brew will\n"
-                "bring.\n"
-                "Successful Brewers make it\n"
-                "a priority to collect, brew,\n"
-                "and duplicate potions so\n"
-                "they are never short on\n"
-                "supplies. A backpack full of\n"
-                "bottles allows the Brewer to\n"
-                "adapt with short notice.",
-
-
-                "Mechanist\n"
-                "A skilled craftsman, the\n"
-                "Mechanist uses a toolkit to\n"
-                "make and maintain\n"
-                "mechanical weapons, letting\n"
-                "contraptions do the dirty\n"
-                "work.\n"
-                "Successful Mechanists use\n"
-                "foresight to plan ahead and\n"
-                "are prepared with the right\n"
-                "tool for any problem. Those\n"
-                "who try to rely on strength\n"
-                "and speed may struggle.",
-
-
-                "Punisher\n"
-                "The Punisher picks unfair\n"
-                "fights, toying with foes using\n"
-                "dark magic and a whip\n"
-                "before making the execution,\n"
-                "or releasing one's inner\n"
-                "demons to do the job.\n"
-                "Punishers are not durable\n"
-                "and must maintain control\n"
-                "in combat. Staying mobile is\n"
-                "the key to exploiting their\n"
-                "unique whip's longer attack\n"
-                "range.",
-
-
-                "Shaman\n"
-                "The Shaman is a mystic whose\n"
-                "connection to nature spirits\n"
-                "allows them to shapeshift\n"
-                "into bestial forms. Each\n"
-                "form's talents provide\n"
-                "diverse advantages in the\n"
-                "dungeon.\n"
-                "While transformed, Shamans\n"
-                "make different friends, and\n"
-                "can tolerate different food.\n"
-                "Being a beast will influence\n"
-                "how the Shaman grows.",
-
-
-                "Hunter\n"
-                "Equipped to track and bring\n"
-                "down foes from afar, the\n"
-                "Hunter uses special arrows\n"
-                "and a magic boomerang to\n"
-                "ensure they never have to\n"
-                "fight toe-to-toe.\n"
-                "Hunters are frail and\n"
-                "must avoid being backed into\n"
-                "a corner. Staying hidden\n"
-                "and using ammo wisely is the\n"
-                "key to their survival.",
-            };
-            static constexpr int num_class_descs = sizeof(class_descs) / sizeof(class_descs[0]);
-
-		    static auto class_desc_fn = [](Field& field, int index){
-			    const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
-			    field.setText(class_descs[i]);
+  		    static auto class_desc_fn = [](Field& field, int index){
+			    const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+				field.setText(ClassDescriptions::data[i].text.c_str());
 			    if (i < CLASS_CONJURER) {
 			        field.addColorToLine(0, color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
@@ -12360,69 +11929,68 @@ failed:
 		        "STR", "DEX", "CON", "INT", "PER", "CHR"
 		    };
 		    constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
-		    constexpr SDL_Rect bottom{44, 306, 236, 68};
+		    constexpr SDL_Rect bottom{44, 302, 236, 68};
 		    constexpr int column = bottom.w / num_class_stats;
-
-            // character attribute ratings
-		    static constexpr Uint32 good = makeColorRGB(0, 191, 255);
-		    static constexpr Uint32 decent = makeColorRGB(0, 191, 255);
-		    static constexpr Uint32 average = makeColorRGB(191, 191, 191);
-		    static constexpr Uint32 poor = makeColorRGB(255, 64, 0);
-		    static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
-		    static constexpr Uint32 class_stat_colors[][num_class_stats] = {
-		        {good, decent, bad, bad, decent, decent},               // barbarian
-		        {good, bad, good, bad, bad, good},                      // warrior
-		        {average, average, decent, good, decent, average},      // healer
-		        {bad, good, bad, bad, good, decent},                    // rogue
-		        {decent, average, decent, average, decent, bad},        // wanderer
-		        {average, bad, decent, decent, average, average},       // cleric
-		        {average, bad, decent, average, decent, good},          // merchant
-		        {bad, average, bad, good, good, decent},                // wizard
-		        {bad, decent, bad, decent, decent, bad},                // arcanist
-		        {average, average, average, average, average, average}, // joker
-		        {good, good, average, good, average, average},          // sexton
-		        {good, good, decent, average, average, bad},            // ninja
-		        {decent, bad, good, average, bad, bad},                 // monk
-		        {bad, bad, decent, good, decent, decent},               // conjurer
-		        {average, average, bad, good, good, average},           // accursed
-		        {average, average, bad, good, decent, good},            // mesmer
-		        {average, average, bad, decent, bad, decent},           // brewer
-		        {bad, decent, bad, average, good, average},             // mechanist
-		        {decent, average, bad, average, decent, decent},        // punisher
-		        {average, average, average, average, average, average}, // shaman
-		        {bad, good, bad, average, good, average},               // hunter
-		    };
-
-		    // difficulty star ratings
-		    static constexpr int difficulty[][2] = {
-		        {3, 1}, // barbarian
-		        {4, 2}, // warrior
-		        {4, 2}, // healer
-		        {2, 2}, // rogue
-		        {4, 1}, // wanderer
-		        {3, 2}, // cleric
-		        {3, 2}, // merchant
-		        {3, 2}, // wizard
-		        {2, 2}, // arcanist
-		        {1, 3}, // joker
-		        {3, 4}, // sexton
-		        {2, 2}, // ninja
-		        {5, 1}, // monk
-		        {3, 3}, // conjurer
-		        {1, 3}, // accursed
-		        {3, 3}, // mesmer
-		        {2, 5}, // brewer
-		        {2, 5}, // mechanist
-		        {2, 4}, // punisher
-		        {2, 4}, // shaman
-		        {2, 2}, // hunter
-		    };
 
 		    for (int c = 0; c < num_class_stats; ++c) {
 		        static auto class_stat_fn = [](Field& field, int index){
-			        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+			        const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
 			        const int s = (int)strtol(field.getName(), nullptr, 10);
-			        field.setColor(class_stat_colors[i][s]);
+			        field.setColor(ClassDescriptions::data[i].statRatings[s]);
+
+					if ( auto parent = static_cast<Frame*>(field.getParent()) )
+					{
+						char buf[32];
+						//snprintf(buf, sizeof(buf), "stat img top %d", s);
+						//auto class_stat_img_top = parent->findImage(buf);
+
+						snprintf(buf, sizeof(buf), "stat img bottom %d", s);
+						auto class_stat_img_bottom = parent->findImage(buf);
+						if ( /*!class_stat_img_top ||*/ !class_stat_img_bottom ) 
+						{
+							return;
+						}
+						if ( ClassDescriptions::data[i].statRatingsStrings[s] == "bad" )
+						{
+							//class_stat_img_top->disabled = true;
+							class_stat_img_bottom->disabled = false;
+
+							class_stat_img_bottom->path = 
+								"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png";
+						}
+						else if ( ClassDescriptions::data[i].statRatingsStrings[s] == "poor" )
+						{
+							//class_stat_img_top->disabled = true;
+							class_stat_img_bottom->disabled = false;
+
+							class_stat_img_bottom->path =
+								"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo1.png";
+						}
+						else if ( ClassDescriptions::data[i].statRatingsStrings[s] == "decent" )
+						{
+							//class_stat_img_top->disabled = false;
+							class_stat_img_bottom->disabled = false;
+
+							class_stat_img_bottom->path =
+								"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi1.png";
+						}
+						else if ( ClassDescriptions::data[i].statRatingsStrings[s] == "good" )
+						{
+							//class_stat_img_top->disabled = false;
+							class_stat_img_bottom->disabled = false;
+
+							class_stat_img_bottom->path =
+								"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi2.png";
+						}
+						else
+						{
+							//class_stat_img_top->disabled = true;
+							class_stat_img_bottom->disabled = false;
+
+							class_stat_img_bottom->path =
+								"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_neutral.png";
+						}
+					}
 		        };
 		        static char buf[16];
 		        snprintf(buf, sizeof(buf), "%d", c);
@@ -12434,44 +12002,61 @@ failed:
 		        class_stat->setFont(smallfont_outline);
 		        class_stat->setText(class_stats_text[c]);
 		        class_stat->setTickCallback([](Widget& widget){class_stat_fn(*static_cast<Field*>(&widget), widget.getOwner());});
-		        (*class_stat->getTickCallback())(*class_stat);
+
+				SDL_Rect imgPos = class_stat->getSize();
+				imgPos.x += imgPos.w / 2;
+				imgPos.w = 14;
+				imgPos.x -= imgPos.w / 2;
+				imgPos.h = 16;
+				imgPos.y -= imgPos.h - 4;
+
+				static char buf2[32];
+				/*snprintf(buf2, sizeof(buf2), "stat img top %d", c);
+				auto class_stat_img_top = card->addImage(imgPos, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi2.png", buf2);
+				class_stat_img_top->disabled = true;*/
+				snprintf(buf2, sizeof(buf2), "stat img bottom %d", c);
+				imgPos.y = class_stat->getSize().y + 17;
+				auto class_stat_img_bottom = card->addImage(imgPos, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png", buf2);
+				class_stat_img_bottom->disabled = true;
+
+				(*class_stat->getTickCallback())(*class_stat);
 		    }
 
 		    // difficulty header
-		    constexpr SDL_Rect difficulty_size{76, 306, 172, 64};
+		    constexpr SDL_Rect difficulty_size{82, 339, 160, 44};
 		    auto difficulty_header = card->addField("difficulty_header", 128);
 		    difficulty_header->setFont(smallfont_outline);
 		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
 		    difficulty_header->setText("Survival\nComplexity");
 		    difficulty_header->setHJustify(Field::justify_t::LEFT);
-		    difficulty_header->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_header->setVJustify(Field::justify_t::TOP);
 		    difficulty_header->setSize(difficulty_size);
+			difficulty_header->setPaddingPerLine(-4);
 
 		    // difficulty stars
 		    static constexpr int star_buf_size = 32;
 	        static auto stars_fn = [](Field& field, int index){
-		        const int i = std::min(std::max(0, client_classes[index]), num_class_descs - 1);
+		        const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
 		        const char* lines[2];
 		        for (int c = 0; c < 2; ++c) {
-		            switch (difficulty[i][c]) {
-		            default:
-		            case 1: lines[c] = "*"; field.addColorToLine(c, c == 0 ? bad : good); break;
-		            case 2: lines[c] = "**"; field.addColorToLine(c, c == 0 ? poor : decent); break;
-		            case 3: lines[c] = "***"; field.addColorToLine(c, c == 0 ? average : average); break;
-		            case 4: lines[c] = "****"; field.addColorToLine(c, c == 0 ? decent : poor); break;
-		            case 5: lines[c] = "*****"; field.addColorToLine(c, c == 0 ? good : bad); break;
-		            }
+					field.addColorToLine(c, std::get<2>(ClassDescriptions::data[i].survivalComplexity[c]));
 		        }
 		        char buf[star_buf_size];
-		        snprintf(buf, sizeof(buf), "%s\n%s", lines[0], lines[1]);
+		        snprintf(buf, sizeof(buf), "%s\n%s", 
+					std::get<1>(ClassDescriptions::data[i].survivalComplexity[0]).c_str(), 
+					std::get<1>(ClassDescriptions::data[i].survivalComplexity[1]).c_str());
 		        field.setText(buf);
 	        };
+
 		    auto difficulty_stars = card->addField("difficulty_stars", star_buf_size);
 		    difficulty_stars->setFont(smallfont_outline);
 		    difficulty_stars->setHJustify(Field::justify_t::RIGHT);
-		    difficulty_stars->setVJustify(Field::justify_t::BOTTOM);
+		    difficulty_stars->setVJustify(Field::justify_t::TOP);
 		    difficulty_stars->setSize(difficulty_size);
 	        difficulty_stars->setTickCallback([](Widget& widget){stars_fn(*static_cast<Field*>(&widget), widget.getOwner());});
+			difficulty_stars->setPaddingPerLine(-4);
 	        (*difficulty_stars->getTickCallback())(*difficulty_stars);
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
@@ -12739,7 +12324,7 @@ failed:
 								if (ticks - lastClassRequest >= TICKS_PER_SECOND * waitingPeriod) {
 									int len = snprintf(buf, sizeof(buf), "%s: We need a %s.",
 										players[player]->getAccountName(), widget.getName());
-									Uint32 color = playerColor(player, colorblind, false);
+									Uint32 color = playerColor(player, colorblind_lobby, false);
 									sendChatMessageOverNet(color, buf, (size_t)len);
 									lastClassRequest = ticks;
 								} else {
@@ -13424,7 +13009,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto start = card->addField("start", 128);
 		start->setFont(smallfont_outline);
@@ -13690,7 +13281,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto invite = card->addButton("invite_button");
 		invite->setText("Click to Invite");
@@ -13743,7 +13340,13 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 200) / 2, 30, 200, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
+		banner->setTickCallback([](Widget& widget) {
+			auto field = static_cast<Field*>(&widget);
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
+		});
 
 		auto text = card->addField("text", 128);
 		text->setText("Waiting for\nplayer to join");
@@ -13855,7 +13458,8 @@ failed:
 		banner->setSize(SDL_Rect{(card->getSize().w - 260) / 2, 30, 260, 100});
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
-		banner->setColor(playerColor(index, colorblind, false));
+		banner->setColor(playerColor(index, colorblind_lobby, false));
+		banner->setUserData((void*)index);
 
 		// character name needs to be updated constantly in case it gets updated over the net
 		banner->setTickCallback([](Widget& widget){
@@ -13875,6 +13479,10 @@ failed:
 
 			// set the name
 			field->setText(shortname);
+
+			// set color
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
 		    });
 
 		// account name
@@ -13883,7 +13491,8 @@ failed:
 		account->setSize(SDL_Rect{ (card->getSize().w - 260) / 2, 54, 260, 76 });
 		account->setVJustify(Field::justify_t::TOP);
 		account->setHJustify(Field::justify_t::CENTER);
-		account->setColor(playerColor(index, colorblind, false));
+		account->setColor(playerColor(index, colorblind_lobby, false));
+		account->setUserData((void*)index);
 
 		// account name needs to be updated constantly in case it gets updated over the net
 		account->setTickCallback([](Widget& widget) {
@@ -13907,6 +13516,9 @@ failed:
 					}
 				}
 			}
+
+			auto index = reinterpret_cast<intptr_t>(field->getUserData());
+			field->setColor(playerColor(index, colorblind_lobby, false));
 			});
 
         if (local) {
@@ -14897,7 +14509,7 @@ failed:
                 	field->setText((std::string("P") + std::to_string(c + 1)).c_str());
 				}
                 field->setFont(bigfont_outline);
-				field->setColor(playerColor(c, colorblind, false));
+				field->setColor(playerColor(c, colorblind_lobby, false));
                 ++num;
 	        }
 	    }
@@ -19546,10 +19158,12 @@ failed:
 			if ( currentLobbyType != LobbyType::None )
 			{
 				int oldArachnophobiaFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA);
+				int oldColorblindFilter = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND);
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
 					gameplayPreferences[i].process();
 				}
+				colorblind_lobby = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND);
 				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_ARACHNOPHOBIA) != oldArachnophobiaFilter )
 				{
 					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ARACHNOPHOBIA].value != 0 )
@@ -19559,6 +19173,17 @@ failed:
 					else
 					{
 						addLobbyChatMessage(uint32ColorWhite, language[4334]);
+					}
+				}
+				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND) != oldColorblindFilter )
+				{
+					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_COLORBLIND].value != 0 )
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4342]);
+					}
+					else
+					{
+						addLobbyChatMessage(uint32ColorWhite, language[4343]);
 					}
 				}
 			}
@@ -19909,7 +19534,7 @@ failed:
 				field->setJustify(Field::justify_t::CENTER);
 				field->setText((std::string("P") + std::to_string(player + 1)).c_str());
 				field->setFont(bigfont_outline);
-				field->setColor(playerColor(player, colorblind, false));
+				field->setColor(playerColor(player, colorblind_lobby, false));
 			}
 		}
 
@@ -20915,7 +20540,7 @@ failed:
                 field->setJustify(Field::justify_t::CENTER);
                 field->setText((std::string("P") + std::to_string(c + 1)).c_str());
                 field->setFont(bigfont_outline);
-				field->setColor(playerColor(c, colorblind, false));
+				field->setColor(playerColor(c, colorblind_lobby, false));
                 ++num;
 	        }
 	    }
