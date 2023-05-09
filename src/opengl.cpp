@@ -712,8 +712,8 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
 
 constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
 constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
-constexpr float defaultAdjustmentRate = 0.03f;  // how fast your eyes adjust
-constexpr float defaultLimitHigh = 3.f;         // your aperture can increase to see something 3 times darker.
+constexpr float defaultAdjustmentRate = 0.1f;   // how fast your eyes adjust
+constexpr float defaultLimitHigh = 4.f;         // your aperture can increase to see something 4 times darker.
 constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
@@ -1106,7 +1106,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1206,7 +1206,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1333,7 +1333,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1418,7 +1418,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     
     // upload light variables
     if (entity->flags[BRIGHT]) {
-        const float b = std::max(1.f, camera->luminance * 4.f);
+        const float b = std::max(0.5f, camera->luminance * 3.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
         const GLfloat light[4] = { b, b, b, 1.f };
@@ -1520,7 +1520,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
