@@ -2436,7 +2436,7 @@ void createChunks() {
 void updateChunks() {
     static int cachedW = -1;
     static int cachedH = -1;
-    if (cachedW != map.width || cachedH != map.height || ticks % (TICKS_PER_SECOND * 2) == 0) {
+    if (cachedW != map.width || cachedH != map.height || ticks % (TICKS_PER_SECOND * 5) == 0) {
         cachedW = map.width;
         cachedH = map.height;
         clearChunks();
