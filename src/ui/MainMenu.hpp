@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include "../main.hpp"
+#include "../game.hpp"
 #include "../json.hpp"
 #include "../ui/Frame.hpp"
 #include "../interface/consolecommand.hpp"
