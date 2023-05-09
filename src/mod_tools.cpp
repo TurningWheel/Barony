@@ -5033,13 +5033,11 @@ void ScriptTextParser_t::writeWorldSignsToFile()
 #ifdef USE_THEORA_VIDEO
 #include "ui/Image.hpp"
 bool VideoManager_t::isInit = false;
-void VideoManager_t::drawTexturedQuad(unsigned int texID, float x, float y, float w, float h, float sw, float sh, float sx, float sy, float alpha)
+void VideoManager_t::drawTexturedQuad(unsigned int texID, int tw, int th, const SDL_Rect& src, const SDL_Rect& dest, float alpha)
 {
     Uint32 color = makeColor(255, 255, 255, (uint8_t)(alpha * 255.f));
-    const SDL_Rect src{(int)sx, (int)sy, (int)sw, (int)sh};
-    const SDL_Rect dest{(int)x, (int)y, (int)w, (int)h};
     const SDL_Rect viewport{0, 0, Frame::virtualScreenX, Frame::virtualScreenY};
-	Image::draw(texID, (int)sw, (int)sh,
+	Image::draw(texID, tw, th,
         &src, dest, viewport, color);
 }
 
@@ -5119,7 +5117,9 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 		}
 	}
 
-	drawTexturedQuad(textureId, rect.x + offset.x, rect.y + offset.y, rect.w, rect.h, w / tw, h / th, sx / tw, sy / th, alpha);
+	const SDL_Rect dest{rect.x + offset.x, rect.y + offset.y, rect.w, rect.h};
+	const SDL_Rect src{ sx, sy, w, h };
+	drawTexturedQuad(textureId, tw, th, src, dest, alpha);
 }
 
 void VideoManager_t::draw()
@@ -5140,14 +5140,16 @@ void VideoManager_t::draw()
 		clip->popFrame();
 	}
     
-	const float w = clip->getSubFrameWidth();
-    const float h = clip->getSubFrameHeight();
-    const float sx = clip->getSubFrameX();
-    const float sy = clip->getSubFrameY();
-    const float tw = potCeil(w);
-    const float th = potCeil(h);
+	const int sw = clip->getSubFrameWidth();
+    const int sh = clip->getSubFrameHeight();
+    const int sx = clip->getSubFrameX();
+    const int sy = clip->getSubFrameY();
+    const int tw = potCeil(sw);
+    const int th = potCeil(sh);
 
-	drawTexturedQuad(textureId, 400, 200, 320.0f, 180.f, w / tw, h / th, sx / tw, sy / th, 1.f);
+	const SDL_Rect dest{400, 200, 320, 180};
+	const SDL_Rect src{sx, sy, sw, sh};
+	drawTexturedQuad(textureId, tw, th, src, dest, 1.f);
     
     GL_CHECK_ERR(glDisable(GL_BLEND));
 }
