@@ -2436,7 +2436,7 @@ void createChunks() {
 void updateChunks() {
     static int cachedW = -1;
     static int cachedH = -1;
-    if (cachedW != map.width || cachedH != map.height) {
+    if (cachedW != map.width || cachedH != map.height || ticks % (TICKS_PER_SECOND * 2) == 0) {
         cachedW = map.width;
         cachedH = map.height;
         clearChunks();
@@ -2450,5 +2450,11 @@ static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk
     chunks.emplace_back();
     auto& chunk = chunks.back();
     chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
+    });
+
+static ConsoleCommand ccmd_update_chunks("/updatechunks", "rebuilds all chunks",
+    [](int argc, const char* argv[]){
+    clearChunks();
+    createChunks();
     });
 #endif

@@ -366,9 +366,9 @@ struct Chunk {
     std::vector<Sint32> tiles;
     
     struct Dither {
-        int value = 0;
-        Uint32 lastUpdateTick = 0;
         static constexpr int MAX = 10;
+        int value = MAX;
+        Uint32 lastUpdateTick = 0;
     };
     std::unordered_map<view_t*, Dither> dithering;
 };
