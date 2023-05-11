@@ -1644,12 +1644,10 @@ void glDrawWorld(view_t* camera, int mode)
     const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     
-    // draw tile chunks
-    int index = 0;
-    const int dim = 4; // size of chunk in tiles
-    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
-    const int yoff = 1;
-    for (auto& chunk : chunks) {
+    // update chunk dithering & mark chunks for rebuilding
+    std::set<std::pair<int, Chunk*>> chunksToBuild;
+    for (int index = 0; index < chunks.size(); ++index) {
+        auto& chunk = chunks[index];
         auto& dither = chunk.dithering[camera];
         if (ticks != dither.lastUpdateTick) {
             dither.lastUpdateTick = ticks;
@@ -1663,30 +1661,59 @@ void glDrawWorld(view_t* camera, int mode)
                 }
             }
             dither.value = std::max(0, dither.value - 2);
-            end:;
+        end:;
         }
         if (dither.value) {
             if (chunk.isDirty(map)) {
-                chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
-                
-                // build neighbor chunks as well (in-case there are shared walls)
-                if (chunk.x + chunk.w < map.width) { // build east chunk
-                    auto& nChunk = chunks[index + xoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                chunksToBuild.emplace(0, &chunk);
+            }
+        }
+    }
+    
+    // mark chunk neighbors for building (in-case of shared walls)
+    const int dim = 4; // size of chunk in tiles
+    const int yoff = 1;
+    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
+    for (auto it = chunksToBuild.begin(); it != chunksToBuild.end();) {
+        auto& chunk = *it->second;
+        const int index = it->first;
+        bool foundDirtyNeighbor = false; // call the police
+        for (int x = -xoff; x <= xoff; x += xoff) {
+            for (int y = -yoff; y <= yoff; y += yoff) {
+                if ((x && y) || (!x && !y)) {
+                    continue;
                 }
-                if (chunk.y + chunk.h < map.height) { // build south chunk
-                    auto& nChunk = chunks[index + yoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                const int off = index + x + y;
+                if (off < 0 || off >= chunks.size()) {
+                    continue;
                 }
-                if (chunk.x > 0) { // build west chunk
-                    auto& nChunk = chunks[index - xoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                }
-                if (chunk.y > 0) { // build north chunk
-                    auto& nChunk = chunks[index - yoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                auto& neighbor = chunks[off];
+                if (chunksToBuild.emplace(off, &neighbor).second) {
+                    if (neighbor.isDirty(map)) {
+                        // if this neighbor chunk needs rebuilding,
+                        // it's possible _its_ neighbors need rebuilding too.
+                        // therefore, restart the search for adjacent chunks.
+                        it = chunksToBuild.begin();
+                        foundDirtyNeighbor = true;
+                    }
                 }
             }
+        }
+        if (!foundDirtyNeighbor) {
+            ++it;
+        }
+    }
+    
+    // build chunks
+    for (auto& pair : chunksToBuild) {
+        auto& chunk = *pair.second;
+        chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+    }
+    
+    // draw chunks
+    for (auto& chunk : chunks) {
+        auto& dither = chunk.dithering[camera];
+        if (dither.value) {
             if (mode == REALCOLORS) {
                 if (dither.value == 10) {
                     worldShader.bind();
@@ -1701,7 +1728,6 @@ void glDrawWorld(view_t* camera, int mode)
                 chunk.draw();
             }
         }
-        ++index;
     }
     
     // draw clouds
@@ -2436,7 +2462,7 @@ void createChunks() {
 void updateChunks() {
     static int cachedW = -1;
     static int cachedH = -1;
-    if (cachedW != map.width || cachedH != map.height || ticks % (TICKS_PER_SECOND * 5) == 0) {
+    if (cachedW != map.width || cachedH != map.height) {
         cachedW = map.width;
         cachedH = map.height;
         clearChunks();
