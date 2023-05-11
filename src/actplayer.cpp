@@ -4504,48 +4504,46 @@ void actPlayer(Entity* my)
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
 	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
 	if (!intro && *cvar_playerLight) {
-		if (multiplayer == SERVER || players[PLAYER_NUM]->isLocalPlayer()) {
-			if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
-                if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
-                    light_type = "player_torch";
-					if (stats[PLAYER_NUM]->defending) {
-						++range_bonus;
-					}
+        if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
+            if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
+                light_type = "player_torch";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
                 }
-                else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
-                    light_type = "player_lantern";
-					if (stats[PLAYER_NUM]->defending) {
-						++range_bonus;
-					}
+            }
+            else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
+                light_type = "player_lantern";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
                 }
-                else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
-                    light_type = "player_shard";
-					if (stats[PLAYER_NUM]->defending) {
-						++range_bonus;
-					}
+            }
+            else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
+                light_type = "player_shard";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
                 }
-                else if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
+            }
+            else if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
+                light_type = "player_ambient";
+            }
+        }
+        else {
+            // carrying no light source
+            if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
+                if (playerRace == RAT) {
+                    light_type = "player_ambient_rat";
+                }
+                else if (playerRace == SPIDER) {
+                    light_type = "player_ambient_spider";
+                }
+                else if (stats[PLAYER_NUM]->sneaking) {
+                    light_type = "player_sneaking";
+                }
+                else {
                     light_type = "player_ambient";
                 }
-			}
-			else {
-                // carrying no light source
-				if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
-					if (playerRace == RAT) {
-                        light_type = "player_ambient_rat";
-					}
-					else if (playerRace == SPIDER) {
-                        light_type = "player_ambient_spider";
-					}
-                    else if (stats[PLAYER_NUM]->sneaking) {
-                        light_type = "player_sneaking";
-                    }
-                    else {
-                        light_type = "player_ambient";
-                    }
-				}
-			}
-		}
+            }
+        }
 	}
     if (*cvar_playerLight) {
         if ( my->flags[BURNING] ) {

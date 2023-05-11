@@ -1675,7 +1675,6 @@ void glDrawWorld(view_t* camera, int mode)
     const int yoff = 1;
     const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
     for (auto it = chunksToBuild.begin(); it != chunksToBuild.end();) {
-        auto& chunk = *it->second;
         const int index = it->first;
         bool foundDirtyNeighbor = false; // call the police
         for (int x = -xoff; x <= xoff; x += xoff) {
