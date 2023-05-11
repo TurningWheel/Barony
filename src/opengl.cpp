@@ -712,7 +712,7 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
 
 constexpr float defaultGamma = 0.75f;           // default gamma level: 75%
 constexpr float defaultExposure = 0.5f;         // default exposure level: 50%
-constexpr float defaultAdjustmentRate = 0.03f;  // how fast your eyes adjust
+constexpr float defaultAdjustmentRate = 0.1f;   // how fast your eyes adjust
 constexpr float defaultLimitHigh = 4.f;         // your aperture can increase to see something 4 times darker.
 constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to see something 10 times brighter.
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
@@ -1106,7 +1106,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1206,7 +1206,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1333,7 +1333,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1418,7 +1418,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     
     // upload light variables
     if (entity->flags[BRIGHT]) {
-        const float b = std::max(1.f, camera->luminance * 4.f);
+        const float b = std::max(0.5f, camera->luminance * 3.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
         const GLfloat light[4] = { b, b, b, 1.f };
@@ -1520,7 +1520,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(1.f, camera->luminance * 4.f);
+    const float b = std::max(0.5f, camera->luminance * 3.f);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1644,12 +1644,10 @@ void glDrawWorld(view_t* camera, int mode)
     const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     
-    // draw tile chunks
-    int index = 0;
-    const int dim = 4; // size of chunk in tiles
-    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
-    const int yoff = 1;
-    for (auto& chunk : chunks) {
+    // update chunk dithering & mark chunks for rebuilding
+    std::set<std::pair<int, Chunk*>> chunksToBuild;
+    for (int index = 0; index < chunks.size(); ++index) {
+        auto& chunk = chunks[index];
         auto& dither = chunk.dithering[camera];
         if (ticks != dither.lastUpdateTick) {
             dither.lastUpdateTick = ticks;
@@ -1663,30 +1661,59 @@ void glDrawWorld(view_t* camera, int mode)
                 }
             }
             dither.value = std::max(0, dither.value - 2);
-            end:;
+        end:;
         }
         if (dither.value) {
             if (chunk.isDirty(map)) {
-                chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
-                
-                // build neighbor chunks as well (in-case there are shared walls)
-                if (chunk.x + chunk.w < map.width) { // build east chunk
-                    auto& nChunk = chunks[index + xoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                chunksToBuild.emplace(0, &chunk);
+            }
+        }
+    }
+    
+    // mark chunk neighbors for building (in-case of shared walls)
+    const int dim = 4; // size of chunk in tiles
+    const int yoff = 1;
+    const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
+    for (auto it = chunksToBuild.begin(); it != chunksToBuild.end();) {
+        auto& chunk = *it->second;
+        const int index = it->first;
+        bool foundDirtyNeighbor = false; // call the police
+        for (int x = -xoff; x <= xoff; x += xoff) {
+            for (int y = -yoff; y <= yoff; y += yoff) {
+                if ((x && y) || (!x && !y)) {
+                    continue;
                 }
-                if (chunk.y + chunk.h < map.height) { // build south chunk
-                    auto& nChunk = chunks[index + yoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                const int off = index + x + y;
+                if (off < 0 || off >= chunks.size()) {
+                    continue;
                 }
-                if (chunk.x > 0) { // build west chunk
-                    auto& nChunk = chunks[index - xoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
-                }
-                if (chunk.y > 0) { // build north chunk
-                    auto& nChunk = chunks[index - yoff];
-                    nChunk.build(map, !clouds, nChunk.x, nChunk.y, nChunk.w, nChunk.h);
+                auto& neighbor = chunks[off];
+                if (chunksToBuild.emplace(off, &neighbor).second) {
+                    if (neighbor.isDirty(map)) {
+                        // if this neighbor chunk needs rebuilding,
+                        // it's possible _its_ neighbors need rebuilding too.
+                        // therefore, restart the search for adjacent chunks.
+                        it = chunksToBuild.begin();
+                        foundDirtyNeighbor = true;
+                    }
                 }
             }
+        }
+        if (!foundDirtyNeighbor) {
+            ++it;
+        }
+    }
+    
+    // build chunks
+    for (auto& pair : chunksToBuild) {
+        auto& chunk = *pair.second;
+        chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+    }
+    
+    // draw chunks
+    for (auto& chunk : chunks) {
+        auto& dither = chunk.dithering[camera];
+        if (dither.value) {
             if (mode == REALCOLORS) {
                 if (dither.value == 10) {
                     worldShader.bind();
@@ -1701,7 +1728,6 @@ void glDrawWorld(view_t* camera, int mode)
                 chunk.draw();
             }
         }
-        ++index;
     }
     
     // draw clouds
@@ -2450,5 +2476,11 @@ static ConsoleCommand ccmd_build_test_chunk("/build_test_chunk", "builds a chunk
     chunks.emplace_back();
     auto& chunk = chunks.back();
     chunk.build(map, !shouldDrawClouds(map), 0, 0, map.width, map.height);
+    });
+
+static ConsoleCommand ccmd_update_chunks("/updatechunks", "rebuilds all chunks",
+    [](int argc, const char* argv[]){
+    clearChunks();
+    createChunks();
     });
 #endif
