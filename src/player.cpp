@@ -4036,6 +4036,17 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 			}
+			else
+			{
+				if ( Input::inputs[player].binary("Move Left")
+					|| Input::inputs[player].binary("Move Right")
+					|| Input::inputs[player].binary("Move Forward")
+					|| Input::inputs[player].binary("Move Backward") )
+				{
+					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_FREE;
+					continue;
+				}
+			}
 			if ( abs(yawDiff) > PI / 16 )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
