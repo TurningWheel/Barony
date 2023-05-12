@@ -4506,51 +4506,62 @@ void actPlayer(Entity* my)
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
             switch (PLAYER_TORCH) {
-            default: light_type = "player_ambient"; break;
-            case 1: light_type = "player_torch"; break;
-            case 2: light_type = "player_lantern"; break;
-            case 3: light_type = "player_shard"; break;
+            default: break;
+            case 1:
+                light_type = "player_torch";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
+                }
+                break;
+            case 2:
+                light_type = "player_lantern";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
+                }
+                break;
+            case 3:
+                light_type = "player_shard";
+                if (stats[PLAYER_NUM]->defending) {
+                    ++range_bonus;
+                }
+                break;
             }
         } else { // multiplayer != CLIENT
             if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
                 if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
                     light_type = "player_torch";
-                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                    if (stats[PLAYER_NUM]->defending) {
                         ++range_bonus;
                     }
                 }
                 else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
                     light_type = "player_lantern";
-                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                    if (stats[PLAYER_NUM]->defending) {
                         ++range_bonus;
                     }
                 }
                 else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
                     light_type = "player_shard";
-                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                    if (stats[PLAYER_NUM]->defending) {
                         ++range_bonus;
                     }
                 }
-                else {
+                else if (players[PLAYER_NUM]->isLocalPlayer()) {
                     light_type = "player_ambient";
                 }
             }
-            else {
+            else if (players[PLAYER_NUM]->isLocalPlayer()) {
                 // carrying no light source
-                if (players[PLAYER_NUM]->isLocalPlayer()) {
-                    if (playerRace == RAT) {
-                        light_type = "player_ambient_rat";
-                    }
-                    else if (playerRace == SPIDER) {
-                        light_type = "player_ambient_spider";
-                    }
-                    else if (stats[PLAYER_NUM]->sneaking) {
-                        light_type = "player_sneaking";
-                    }
-                    else {
-                        light_type = "player_ambient";
-                    }
-                } else {
+                if (playerRace == RAT) {
+                    light_type = "player_ambient_rat";
+                }
+                else if (playerRace == SPIDER) {
+                    light_type = "player_ambient_spider";
+                }
+                else if (stats[PLAYER_NUM]->sneaking) {
+                    light_type = "player_sneaking";
+                }
+                else {
                     light_type = "player_ambient";
                 }
             }

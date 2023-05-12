@@ -2298,6 +2298,19 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		// IMPORTANT! Assign actions to the objects the client has control over
 		clientActions(entity);
 	}},
+    
+    // raise/lower shield
+    {'SHLD', [](){
+        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+        stats[player]->defending = net_packet->data[5];
+    }},
+
+    // sneaking
+    {'SNEK', [](){
+        const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+        stats[player]->sneaking = net_packet->data[5];
+        return;
+    }},
 
 	{'EFFE', [](){
 		/*
@@ -5222,13 +5235,30 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	{'SHLD', [](){
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		stats[player]->defending = net_packet->data[5];
+        for (int c = 1; c < MAXPLAYERS; ++c) {
+            // relay packet to other players
+            if (client_disconnected[c] || c == player) {
+                continue;
+            }
+            net_packet->address.host = net_clients[c - 1].host;
+            net_packet->address.port = net_clients[c - 1].port;
+            sendPacketSafe(net_sock, -1, net_packet, c - 1);
+        }
 	}},
 
 	// sneaking
 	{'SNEK', [](){
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		stats[player]->sneaking = net_packet->data[5];
-		return;
+        for (int c = 1; c < MAXPLAYERS; ++c) {
+            // relay packet to other players
+            if (client_disconnected[c] || c == player) {
+                continue;
+            }
+            net_packet->address.host = net_clients[c - 1].host;
+            net_packet->address.port = net_clients[c - 1].port;
+            sendPacketSafe(net_sock, -1, net_packet, c - 1);
+        }
 	}},
 
 	// close shop
