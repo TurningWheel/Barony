@@ -4504,49 +4504,60 @@ void actPlayer(Entity* my)
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
 	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
 	if (!intro && *cvar_playerLight) {
-        if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
-            if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
-                light_type = "player_torch";
-                if (stats[PLAYER_NUM]->defending) {
-                    ++range_bonus;
-                }
+        if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
+            switch (PLAYER_TORCH) {
+            default: light_type = "player_ambient"; break;
+            case 1: light_type = "player_torch"; break;
+            case 2: light_type = "player_lantern"; break;
+            case 3: light_type = "player_shard"; break;
             }
-            else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
-                light_type = "player_lantern";
-                if (stats[PLAYER_NUM]->defending) {
-                    ++range_bonus;
+        } else { // multiplayer != CLIENT
+            if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
+                if (stats[PLAYER_NUM]->shield->type == TOOL_TORCH) {
+                    light_type = "player_torch";
+                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                        ++range_bonus;
+                    }
                 }
-            }
-            else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
-                light_type = "player_shard";
-                if (stats[PLAYER_NUM]->defending) {
-                    ++range_bonus;
+                else if (stats[PLAYER_NUM]->shield->type == TOOL_LANTERN) {
+                    light_type = "player_lantern";
+                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                        ++range_bonus;
+                    }
                 }
-            }
-            else if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
-                light_type = "player_ambient";
-            }
-        }
-        else {
-            // carrying no light source
-            if (players[PLAYER_NUM]->isLocalPlayer() && !PLAYER_DEBUGCAM) {
-                if (playerRace == RAT) {
-                    light_type = "player_ambient_rat";
-                }
-                else if (playerRace == SPIDER) {
-                    light_type = "player_ambient_spider";
-                }
-                else if (stats[PLAYER_NUM]->sneaking) {
-                    light_type = "player_sneaking";
+                else if (stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD) {
+                    light_type = "player_shard";
+                    if (players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->defending) {
+                        ++range_bonus;
+                    }
                 }
                 else {
+                    light_type = "player_ambient";
+                }
+            }
+            else {
+                // carrying no light source
+                if (players[PLAYER_NUM]->isLocalPlayer()) {
+                    if (playerRace == RAT) {
+                        light_type = "player_ambient_rat";
+                    }
+                    else if (playerRace == SPIDER) {
+                        light_type = "player_ambient_spider";
+                    }
+                    else if (stats[PLAYER_NUM]->sneaking) {
+                        light_type = "player_sneaking";
+                    }
+                    else {
+                        light_type = "player_ambient";
+                    }
+                } else {
                     light_type = "player_ambient";
                 }
             }
         }
 	}
     if (*cvar_playerLight) {
-        if ( my->flags[BURNING] ) {
+        if (my->flags[BURNING]) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
         else if (!my->light) {
@@ -6872,30 +6883,23 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	// set light size
-	if (my->sprite == 93)   // torch
-	{
-		my->skill[4] = 1;
-		players[my->skill[2]]->entity->skill[1] = 6;
+	// player lights for clients
+    if (my->sprite == 93) {
+        // PLAYER_TORCH == 1 aka torch
+		players[my->skill[2]]->entity->skill[1] = 1;
 	}
-	else if (my->sprite == 94)     // lantern
-	{
-		my->skill[4] = 1;
-		players[my->skill[2]]->entity->skill[1] = 9;
+    else if (my->sprite == 94) {
+        // PLAYER_TORCH == 2 aka lantern
+		players[my->skill[2]]->entity->skill[1] = 2;
 	}
-	else if ( my->sprite == 529 )	// crystal shard
-	{
-		my->skill[4] = 1;
-		players[my->skill[2]]->entity->skill[1] = 4;
+    else if ( my->sprite == 529 ) {
+        // PLAYER_TORCH == 3 aka crystal shard
+		players[my->skill[2]]->entity->skill[1] = 3;
 	}
-	else
-	{
-		if (my->skill[4] == 1)
-		{
-			players[my->skill[2]]->entity->skill[1] = 0;
-		}
+	else {
+        // PLAYER_TORCH == 4 aka none
+        players[my->skill[2]]->entity->skill[1] = 0;
 	}
-
 }
 
 void Entity::playerLevelEntrySpeechSecond()
