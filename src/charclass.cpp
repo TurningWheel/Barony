@@ -2868,6 +2868,7 @@ void initShapeshiftHotbar(int player)
 			{
 				if ( newSpell && newSpell == spell )
 				{
+					players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 					players[player]->magic.equipSpell(newSpell);
 					players[player]->magic.selected_spell_last_appearance = item->appearance;
 				}
@@ -2875,9 +2876,9 @@ void initShapeshiftHotbar(int player)
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
 					spellRevertUid = item->uid;
-					players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 					if ( !newSpell )
 					{
+						players[player]->magic.selected_spell_alternate[Player::Hotbar_t::HOTBAR_DEFAULT] = players[player]->magic.selectedSpell();
 						players[player]->magic.equipSpell(spell); // revert form add to spell equipped.
 						players[player]->magic.selected_spell_last_appearance = players[player]->magic.selectedSpell()->ID;
 

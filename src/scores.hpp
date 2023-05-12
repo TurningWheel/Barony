@@ -534,18 +534,21 @@ struct SaveGameInfo {
 			fp->property("conduct_vegetarian", conductVegetarian);
 			fp->property("conduct_illiterate", conductIlliterate);
 			fp->property("additional_conducts", additionalConducts);
-			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			if ( fp->isReading() )
 			{
-				hotbar[i] = UINT32_MAX;
+				for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+				{
+					hotbar[i] = UINT32_MAX;
+					for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+					{
+						hotbar_alternate[j][i] = UINT32_MAX;
+					}
+				}
+				selected_spell = UINT32_MAX;
 				for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 				{
-					hotbar_alternate[j][i] = UINT32_MAX;
+					selected_spell_alternate[j] = UINT32_MAX;
 				}
-			}
-			selected_spell = UINT32_MAX;
-			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
-			{
-				selected_spell_alternate[j] = UINT32_MAX;
 			}
 			fp->property("hotbar", hotbar);
 			fp->property("hotbar_alternate", hotbar_alternate);
