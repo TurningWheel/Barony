@@ -6885,20 +6885,28 @@ void actPlayerLimb(Entity* my)
 
 	// player lights for clients
     if (my->sprite == 93) {
-        // PLAYER_TORCH == 1 aka torch
+        // PLAYER_TORCH = 1 aka torch
 		players[my->skill[2]]->entity->skill[1] = 1;
+        my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
     else if (my->sprite == 94) {
-        // PLAYER_TORCH == 2 aka lantern
+        // PLAYER_TORCH = 2 aka lantern
 		players[my->skill[2]]->entity->skill[1] = 2;
+        my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
     else if ( my->sprite == 529 ) {
-        // PLAYER_TORCH == 3 aka crystal shard
+        // PLAYER_TORCH = 3 aka crystal shard
 		players[my->skill[2]]->entity->skill[1] = 3;
+        my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else {
-        // PLAYER_TORCH == 4 aka none
-        players[my->skill[2]]->entity->skill[1] = 0;
+        // PLAYER_TORCH = 4 aka none
+        if (my->skill[4]) {
+            // we have to check skill[4] because if this logic runs for every limb,
+            // the others will override the PLAYER_TORCH value set by the shield.
+            // skill[4] is only ever set by the shield. so this is a convenient workaround
+            players[my->skill[2]]->entity->skill[1] = 0;
+        }
 	}
 }
 
