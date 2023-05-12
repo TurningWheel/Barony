@@ -438,7 +438,10 @@ vec4_t unproject(
 
 -------------------------------------------------------------------------------*/
 
-static void fillSmoothLightmap() {
+static void fillSmoothLightmap(int which) {
+    auto lightmap = lightmaps[which].data();
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
     constexpr float epsilon = 1.f;
     constexpr float defaultSmoothRate = 4.f;
 #ifndef EDITOR
@@ -481,7 +484,9 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
-static void loadLightmapTexture() {
+static void loadLightmapTexture(int which) {
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
     // allocate lightmap pixel data
     static std::vector<float> pixels;
     pixels.clear();
@@ -526,15 +531,16 @@ static void loadLightmapTexture() {
     }
     
     // load lightmap texture data
-    lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
+    lightmapTexture[which]->loadFloat(pixels.data(), map.width, map.height, true, false);
+    lightmapTexture[which]->bind();
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
 }
 
 static void updateChunks();
 
 void beginGraphics() {
     // this runs exactly once each graphics frame.
-    fillSmoothLightmap();
-    loadLightmapTexture();
     updateChunks();
 }
 
@@ -777,11 +783,6 @@ void glBeginCamera(view_t* camera, bool useHDR)
     
     // store proj * view
     (void)mul_mat(&camera->projview, &proj, &view);
-
-	// lightmap dimensions
-	vec4_t mapDims;
-	mapDims.x = map.width;
-	mapDims.y = map.height;
     
     // set ambient lighting
     if ( camera->globalLightModifierActive ) {
@@ -790,6 +791,22 @@ void glBeginCamera(view_t* camera, bool useHDR)
     else {
         getLightAtModifier = 1.0;
     }
+    
+    // lightmap dimensions
+    vec4_t mapDims;
+    mapDims.x = map.width;
+    mapDims.y = map.height;
+    
+    // upload lightmap
+    int lightmapIndex = 0;
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (camera == &cameras[c]) {
+            lightmapIndex = c + 1;
+            break;
+        }
+    }
+    fillSmoothLightmap(lightmapIndex);
+    loadLightmapTexture(lightmapIndex);
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);

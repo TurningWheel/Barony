@@ -59,9 +59,6 @@ void Entity::actPowerCrystal()
 
 	real_t acceleration = 0.95;
 
-	//this->light = lightSphereShadow(this->x / 16, this->y / 16, 3, 64);
-	//messagePlayer(0, "vel z: %f", this->vel_z);
-
 	if ( ticks == 1 )
 	{
 		this->createWorldUITooltip();

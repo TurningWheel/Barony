@@ -701,8 +701,8 @@ extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
 extern int minimapObjectZoom;
-extern vec4_t* lightmap;
-extern vec4_t* lightmapSmoothed;
+extern std::vector<vec4_t> lightmaps[MAXPLAYERS + 1];
+extern std::vector<vec4_t> lightmapsSmoothed[MAXPLAYERS + 1];
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
@@ -725,6 +725,7 @@ extern char** language;
 extern bool movie;
 extern bool genmap;
 extern char classtoquickstart[256];
+extern bool splitscreen;
 
 // commands
 extern list_t messages;

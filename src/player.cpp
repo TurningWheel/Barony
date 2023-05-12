@@ -36,8 +36,6 @@ Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
 Sint32 mousexrel = 0, mouseyrel = 0;
 
-bool splitscreen = false;
-
 int gamepad_deadzone = 8000;
 int gamepad_trigger_deadzone = 18000;
 real_t gamepad_leftx_sensitivity = 1.0;

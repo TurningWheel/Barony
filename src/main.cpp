@@ -531,8 +531,8 @@ bool *lavatiles = nullptr;
 bool *swimmingtiles = nullptr;
 int rscale = 1;
 real_t vidgamma = 1.0f;
-vec4_t* lightmap = nullptr;
-vec4_t* lightmapSmoothed = nullptr;
+std::vector<vec4_t> lightmaps[MAXPLAYERS + 1];
+std::vector<vec4_t> lightmapsSmoothed[MAXPLAYERS + 1];
 bool mode3d = false;
 bool verticalSync = false;
 bool showStatusEffectIcons = true;
@@ -572,6 +572,7 @@ char maptoload[256], configtoload[256];
 bool loadingmap = false, genmap = false, loadingconfig = false;
 bool deleteallbuttons = false;
 Uint32 cursorflash = 0;
+bool splitscreen = false;
 
 bool no_sound = false;
 

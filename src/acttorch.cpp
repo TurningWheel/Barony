@@ -353,7 +353,7 @@ void Entity::actLightSource()
 		if ( !LIGHTSOURCE_LIGHT )
 		{
             const auto color = lightSourceBrightness / 255.f;
-			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
+			light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			LIGHTSOURCE_LIGHT = 1;
 		}
 		if ( lightSourceFlicker && flickerLights )
@@ -366,7 +366,7 @@ void Entity::actLightSource()
 			if ( !light )
 			{
                 const auto color = lightSourceBrightness / 255.f;
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 		}
 
@@ -378,14 +378,14 @@ void Entity::actLightSource()
 			{
 				removeLightField();
                 const auto color = lightSourceBrightness / 255.f;
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 			else
 			{
 				removeLightField();
                 const auto brightness = std::max(lightSourceBrightness - 16, 0);
                 const auto color = lightSourceBrightness / 255.f;
-                light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
+                light = lightSphereShadow(0, x / 16, y / 16, lightSourceRadius, color, color, color, 0.5f);
 			}
 			LIGHTSOURCE_FLICKER = 2 + local_rng.rand() % 7;
 		}

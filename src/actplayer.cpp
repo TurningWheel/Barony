@@ -4500,6 +4500,7 @@ void actPlayer(Entity* my)
 
 	// lights
     my->removeLightField();
+    bool ambientLight = false;
     const char* light_type = nullptr;
     static ConsoleVariable<bool> cvar_playerLight("/player_light_enabled", true);
 	int range_bonus = std::min(std::max(0, statGetPER(stats[PLAYER_NUM], my) / 5), 2);
@@ -4548,9 +4549,12 @@ void actPlayer(Entity* my)
                 }
                 else if (players[PLAYER_NUM]->isLocalPlayer()) {
                     light_type = "player_ambient";
+                    ambientLight = true;
                 }
             }
             else if (players[PLAYER_NUM]->isLocalPlayer()) {
+                ambientLight = true;
+                
                 // carrying no light source
                 if (playerRace == RAT) {
                     light_type = "player_ambient_rat";
@@ -4572,7 +4576,7 @@ void actPlayer(Entity* my)
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
         else if (!my->light) {
-            my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus);
+            my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
         }
     }
 

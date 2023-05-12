@@ -2250,13 +2250,6 @@ int deinitApp()
 			cameras[i].vismap = nullptr;
 		}
 	}
-	if (lightmap) {
-		free(lightmap);
-	}
-	if (lightmapSmoothed) {
-		free(lightmapSmoothed);
-	}
-
 	for (int c = 0; c < HASH_SIZE; ++c) {
 		list_FreeAll(&ttfTextHash[c]);
 	}

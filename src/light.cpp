@@ -22,9 +22,9 @@
 
 -------------------------------------------------------------------------------*/
 
-light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
+light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
 {
-	light_t* light = newLight(x, y, radius);
+	light_t* light = newLight(index, x, y, radius);
     r = r * 255.f;
     g = g * 255.f;
     b = b * 255.f;
@@ -43,9 +43,9 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, 
                 
                 // check origin is okay
 				bool wallhit = true;
-				const int index = v * MAPLAYERS + u * MAPLAYERS * map.height;
+				const int mapindex = v * MAPLAYERS + u * MAPLAYERS * map.height;
 				for (int z = 0; z < MAPLAYERS; z++) {
-					if (!map.tiles[index + z]) {
+					if (!map.tiles[mapindex + z]) {
 						wallhit = false;
 						break;
 					}
@@ -90,21 +90,31 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, 
                 
                 // light tile if it passed line test
 				if (wallhit == false || (wallhit == true && u2 == u && v2 == v)) {
-                    auto& d = lightmap[v + u * map.height];
-                    auto& s = light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
                     const float dist = exp != 1.f ? powf(dx * dx + dy * dy, exp) : dx * dx + dy * dy;
-                    constexpr float a = 255.f;
-                    
                     const auto falloff = std::min<float>(dist / radius, 1.0f);
+                    constexpr float a = 255.f;
+                    const auto soff = (dy + radius) + (dx + radius) * (radius * 2 + 1);
+                    auto& s = light->tiles[soff];
 					s.x += r - r * falloff;
                     s.y += g - g * falloff;
                     s.z += b - b * falloff;
                     s.w += a - a * falloff;
-                    
-					d.x += s.x;
-                    d.y += s.y;
-                    d.z += s.z;
-                    d.w += s.w;
+                    const auto doff = v + u * map.height;
+                    if (index) {
+                        auto& d = lightmaps[index][doff];
+                        d.x += s.x;
+                        d.y += s.y;
+                        d.z += s.z;
+                        d.w += s.w;
+                    } else {
+                        for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+                            auto& d = lightmaps[c][doff];
+                            d.x += s.x;
+                            d.y += s.y;
+                            d.z += s.z;
+                            d.w += s.w;
+                        }
+                    }
                 }
 			}
 		}
@@ -121,9 +131,9 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, float r, float g, 
 
 -------------------------------------------------------------------------------*/
 
-light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
+light_t* lightSphere(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp)
 {
-	light_t* light = newLight(x, y, radius);
+	light_t* light = newLight(index, x, y, radius);
     r = r * 255.f;
     g = g * 255.f;
     b = b * 255.f;
@@ -133,22 +143,31 @@ light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, float r, float g, float 
 			if (u >= 0 && v >= 0 && u < map.width && v < map.height) {
 				const int dx = u - x;
 				const int dy = v - y;
-                
-                auto& d = lightmap[v + u * map.height];
-                auto& s = light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
                 const float dist = exp != 1.f ? powf(dx * dx + dy * dy, exp) : dx * dx + dy * dy;
-                
-                constexpr float a = 255.f;
                 const auto falloff = std::min<float>(dist / radius, 1.0f);
+                constexpr float a = 255.f;
+                const auto soff = (dy + radius) + (dx + radius) * (radius * 2 + 1);
+                auto& s = light->tiles[soff];
                 s.x += r - r * falloff;
                 s.y += g - g * falloff;
                 s.z += b - b * falloff;
                 s.w += a - a * falloff;
-                
-                d.x += s.x;
-                d.y += s.y;
-                d.z += s.z;
-                d.w += s.w;
+                const auto doff = v + u * map.height;
+                if (index) {
+                    auto& d = lightmaps[index][doff];
+                    d.x += s.x;
+                    d.y += s.y;
+                    d.z += s.z;
+                    d.w += s.w;
+                } else {
+                    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+                        auto& d = lightmaps[c][doff];
+                        d.x += s.x;
+                        d.y += s.y;
+                        d.z += s.z;
+                        d.w += s.w;
+                    }
+                }
 			}
 		}
 	}
@@ -210,7 +229,7 @@ static ConsoleCommand ccmd_reloadLights("/reloadlights", "reload light json",
     });
 #endif
 
-light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus) {
+light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus, int index) {
     if (!name || !name[0]) {
         return nullptr;
     }
@@ -220,8 +239,8 @@ light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus) {
     }
     const auto& def = find->second;
     if (def.shadows) {
-        return lightSphereShadow(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphereShadow(index, x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
     } else {
-        return lightSphere(x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
+        return lightSphere(index, x, y, def.radius + range_bonus, def.r, def.g, def.b, def.falloff_exp);
     }
 }
