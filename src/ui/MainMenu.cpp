@@ -77,8 +77,8 @@ namespace MainMenu {
     // The fourth is the default Joystick input.
 	static const char* defaultBindings[][4] = {
 		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
-		{"Use", "Mouse3", "ButtonA", emptyBinding},
-		{"Cast Spell", "F", "ButtonRightBumper", emptyBinding},
+		{"Use", "Mouse3", "ButtonRightBumper", emptyBinding},
+		{"Cast Spell", "F", "ButtonLeftBumper", emptyBinding},
 		{"Defend", "Space", "LeftTrigger", emptyBinding},
 		{"Sneak", "Space", "LeftTrigger", emptyBinding},
 		{"Character Status", "Tab", "ButtonBack", emptyBinding},
@@ -86,21 +86,31 @@ namespace MainMenu {
 		{"Spell List", "B", hiddenBinding, emptyBinding},
 		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
 		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "ButtonX", emptyBinding},
-		{"Show NPC Commands", "C", "ButtonY", emptyBinding},
-		{"Cycle NPCs", "E", "ButtonB", emptyBinding},
+		{"Command NPC", "Q", "DpadX-", emptyBinding},
+		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
+		{"Cycle NPCs", "E", "DpadY-", emptyBinding},
 		{"Open Map", "M", hiddenBinding, emptyBinding},
 		{"Open Log", "L", hiddenBinding, emptyBinding},
 		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
 		{"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
-		{"Hotbar Left", "MouseWheelUp", "DpadX-", emptyBinding},
-		{"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
-		{"Hotbar Up / Select", "Mouse2", "DpadY-", emptyBinding},
+#ifdef NINTENDO
+		{"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "ButtonA", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
+#else
+		{"Hotbar Left", "MouseWheelUp", "ButtonX", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
+#endif
         {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+#ifdef NINTENDO
 		{"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+#else
+		{"Interact Tooltip Next", "R", "ButtonA", emptyBinding },
+#endif
 		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
 		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
-		{"Quick Turn", emptyBinding, "ButtonLeftBumper", emptyBinding },
+		{"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
 		{"Chat", "Return", hiddenBinding, emptyBinding},
 		{"Move Forward", "W", hiddenBinding, emptyBinding},
 		{"Move Left", "A", hiddenBinding, emptyBinding},
@@ -112,6 +122,51 @@ namespace MainMenu {
 		{"Look Down", "Down", hiddenBinding, emptyBinding},
 		{"Screenshot", "F6", hiddenBinding, hiddenBinding},
 	};
+
+	static const char* defaultSimpleClassicBindings[][4] = {
+		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
+		{"Use", "Mouse3", "ButtonA", emptyBinding},
+		{"Cast Spell", "F", "ButtonX", emptyBinding},
+		{"Defend", "Space", "LeftTrigger", emptyBinding},
+		{"Sneak", "Space", "LeftTrigger", emptyBinding},
+		{"Character Status", "Tab", "ButtonBack", emptyBinding},
+		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
+		{"Spell List", "B", hiddenBinding, emptyBinding},
+		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
+		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+		{"Command NPC", "Q", "DpadX-", emptyBinding},
+		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
+		{"Cycle NPCs", "E", "DpadY-", emptyBinding},
+		{"Open Map", "M", hiddenBinding, emptyBinding},
+		{"Open Log", "L", hiddenBinding, emptyBinding},
+		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
+		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
+#ifdef NINTENDO
+		{"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
+#else
+		{"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
+		{"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
+		{"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
+#endif
+		{"Hotbar Down / Cancel", hiddenBinding, emptyBinding, emptyBinding},
+		{"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
+		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
+		{"Chat", "Return", hiddenBinding, emptyBinding},
+		{"Move Forward", "W", hiddenBinding, emptyBinding},
+		{"Move Left", "A", hiddenBinding, emptyBinding},
+		{"Move Backward", "S", hiddenBinding, emptyBinding},
+		{"Move Right", "D", hiddenBinding, emptyBinding},
+		{"Turn Left", "Left", hiddenBinding, emptyBinding},
+		{"Turn Right", "Right", hiddenBinding, emptyBinding},
+		{"Look Up", "Up", hiddenBinding, emptyBinding},
+		{"Look Down", "Down", hiddenBinding, emptyBinding},
+		{"Screenshot", "F6", hiddenBinding, hiddenBinding},
+	};
+
 	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
 
 	static int main_menu_buttons_height = 0;
