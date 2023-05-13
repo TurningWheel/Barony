@@ -724,6 +724,7 @@ constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
 constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
+constexpr float defaultSamples = 16384;         // how many samples (pixels) to gather from the framebuffer for average scene luminance
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
@@ -733,6 +734,7 @@ static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
 static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
+static ConsoleVariable<int> cvar_hdrSamples("/hdr_samples", defaultSamples);
 static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
 bool hdrEnabled = *cvar_hdrEnabled;
 #endif
@@ -837,6 +839,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const float hdr_adjustment_rate = defaultAdjustmentRate;
     const float hdr_limit_high = defaultLimitHigh;
     const float hdr_limit_low = defaultLimitLow;
+    const int hdr_samples = defaultSamples;
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
     const bool hdr = useHDR ? *cvar_hdrEnabled : false;
@@ -845,6 +848,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
     const float hdr_limit_high = *cvar_hdrLimitHigh;
     const float hdr_limit_low = *cvar_hdrLimitLow;
+    const int hdr_samples = *cvar_hdrSamples;
     const Vector4 hdr_luma = *cvar_hdrLuma;
 #endif
     
@@ -864,7 +868,7 @@ void glEndCamera(view_t* camera, bool useHDR)
             float v[4] = { 0.f };
             const int size = camera->winw * camera->winh * 4;
             const auto end = pixels + size;
-            const int step = size / 64;
+            const int step = size / hdr_samples;
             for (; pixels < end; pixels += step) {
                 const float p[4] = {
                     toFloat32(*(pixels + 0)),
