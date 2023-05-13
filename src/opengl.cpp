@@ -890,7 +890,7 @@ void glEndCamera(view_t* camera, bool useHDR)
             const auto cores = std::thread::hardware_concurrency();
             std::vector<std::future<std::vector<float>>> jobs;
             const int size = camera->winw * camera->winh * 4;
-            const int step = size / hdr_samples;
+            const int step = ((size / 4) / hdr_samples) * 4;
             const int section = size / cores;
             auto begin = pixels;
             for (int c = 0; c < cores; ++c, begin += section) {
@@ -913,7 +913,7 @@ void glEndCamera(view_t* camera, bool useHDR)
             
             // calculate scene average luminance
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
-            luminance = luminance / (size / step);
+            luminance = luminance / hdr_samples;
             const float rate = hdr_adjustment_rate / fpsLimit;
             if (camera->luminance > luminance) {
                 camera->luminance -= std::min(rate, camera->luminance - luminance);
