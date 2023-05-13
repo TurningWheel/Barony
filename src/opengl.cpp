@@ -823,6 +823,9 @@ void glBeginCamera(view_t* camera, bool useHDR)
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
 }
 
+#include <thread>
+#include <future>
+
 void glEndCamera(view_t* camera, bool useHDR)
 {
     if (!camera) {
@@ -865,22 +868,50 @@ void glEndCamera(view_t* camera, bool useHDR)
         camera->fb[fbIndex].bindForReading();
         auto pixels = camera->fb[fbIndex].lock();
         if (pixels) {
-            float v[4] = { 0.f };
+            // functor for crawling through the framebuffer collecting samples
+            auto fn = [](GLhalf* pixels, GLhalf* end, const int step) {
+                std::vector<float> v(4);
+                for (; pixels < end; pixels += step) {
+                    const float p[4] = {
+                        toFloat32(*(pixels + 0)),
+                        toFloat32(*(pixels + 1)),
+                        toFloat32(*(pixels + 2)),
+                        toFloat32(*(pixels + 3)),
+                    };
+                    v[0] += p[0];
+                    v[1] += p[1];
+                    v[2] += p[2];
+                    v[3] += p[3];
+                }
+                return v;
+            };
+            
+            // spawn jobs to count samples
+            const auto cores = std::thread::hardware_concurrency();
+            std::vector<std::future<std::vector<float>>> jobs;
             const int size = camera->winw * camera->winh * 4;
-            const auto end = pixels + size;
             const int step = size / hdr_samples;
-            for (; pixels < end; pixels += step) {
-                const float p[4] = {
-                    toFloat32(*(pixels + 0)),
-                    toFloat32(*(pixels + 1)),
-                    toFloat32(*(pixels + 2)),
-                    toFloat32(*(pixels + 3)),
-                };
-                v[0] += p[0];
-                v[1] += p[1];
-                v[2] += p[2];
-                v[3] += p[3];
+            const int section = size / cores;
+            auto begin = pixels;
+            for (int c = 0; c < cores; ++c, begin += section) {
+                jobs.emplace_back(std::async(std::launch::async, fn,
+                    begin, begin + section, step));
             }
+            
+            // add samples together
+            float v[4] = { 0.f };
+            for (int c = 0; c < cores; ++c) {
+                auto& job = jobs[c];
+                if (job.valid()) {
+                    auto r = job.get();
+                    v[0] += r[0];
+                    v[1] += r[1];
+                    v[2] += r[2];
+                    v[3] += r[3];
+                }
+            }
+            
+            // calculate scene average luminance
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
             luminance = luminance / (size / step);
             const float rate = hdr_adjustment_rate / fpsLimit;
