@@ -2186,51 +2186,48 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #endif
 
 		// create new lightmap
-		if ( lightmap ) {
-			free(lightmap);
-		}
-		if ( lightmapSmoothed ) {
-			free(lightmapSmoothed);
-		}
-
-		lightmap = (vec4_t*) malloc(sizeof(vec4_t) * destmap->width * destmap->height);
-		lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (destmap->width + 2) * (destmap->height + 2));
-		if ( strncmp(map.name, "Hell", 4) )
-		{
-	        memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
-	        memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
-		}
-		else
-		{
-			for (c = 0; c < destmap->width * destmap->height; c++ )
-			{
-				lightmap[c].x = hellAmbience;
-                lightmap[c].y = hellAmbience;
-                lightmap[c].z = hellAmbience;
+        for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+            auto& lightmap = lightmaps[c];
+            auto& lightmapSmoothed = lightmapsSmoothed[c];
+            lightmap.resize(destmap->width * destmap->height);
+            lightmapSmoothed.resize((destmap->width + 2) * (destmap->height + 2));
+            if ( strncmp(map.name, "Hell", 4) )
+            {
+                memset(lightmap.data(), 0, sizeof(vec4_t) * map.width * map.height);
+                memset(lightmapSmoothed.data(), 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+            }
+            else
+            {
+                for (c = 0; c < destmap->width * destmap->height; c++ )
+                {
+                    lightmap[c].x = hellAmbience;
+                    lightmap[c].y = hellAmbience;
+                    lightmap[c].z = hellAmbience;
 #ifndef EDITOR
-				if ( svFlags & SV_FLAG_CHEATS )
-				{
-					lightmap[c].x = *cvar_hell_ambience;
-                    lightmap[c].y = *cvar_hell_ambience;
-                    lightmap[c].z = *cvar_hell_ambience;
-				}
+                    if ( svFlags & SV_FLAG_CHEATS )
+                    {
+                        lightmap[c].x = *cvar_hell_ambience;
+                        lightmap[c].y = *cvar_hell_ambience;
+                        lightmap[c].z = *cvar_hell_ambience;
+                    }
 #endif
-			}
-			for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
-			{
-				lightmapSmoothed[c].x = hellAmbience;
-                lightmapSmoothed[c].y = hellAmbience;
-                lightmapSmoothed[c].z = hellAmbience;
+                }
+                for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+                {
+                    lightmapSmoothed[c].x = hellAmbience;
+                    lightmapSmoothed[c].y = hellAmbience;
+                    lightmapSmoothed[c].z = hellAmbience;
 #ifndef EDITOR
-				if ( svFlags & SV_FLAG_CHEATS )
-				{
-					lightmapSmoothed[c].x = *cvar_hell_ambience;
-                    lightmapSmoothed[c].y = *cvar_hell_ambience;
-                    lightmapSmoothed[c].z = *cvar_hell_ambience;
-				}
+                    if ( svFlags & SV_FLAG_CHEATS )
+                    {
+                        lightmapSmoothed[c].x = *cvar_hell_ambience;
+                        lightmapSmoothed[c].y = *cvar_hell_ambience;
+                        lightmapSmoothed[c].z = *cvar_hell_ambience;
+                    }
 #endif
-			}
-		}
+                }
+            }
+        }
 
 		// reset minimap
 		for ( x = 0; x < MINIMAP_MAX_DIMENSION; x++ )

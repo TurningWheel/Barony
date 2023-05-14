@@ -829,7 +829,7 @@ int Entity::entityLight()
 	}
 	int light_x = (int)this->x / 16;
 	int light_y = (int)this->y / 16;
-    const auto& light = lightmap[light_y + light_x * map.height];
+    const auto& light = lightmaps[0][light_y + light_x * map.height];
     //return (light.x + light.y + light.z) / 3.f;
     return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f)), 255);
 	//return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f * 255.f)), 255);
@@ -850,35 +850,6 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 	int light = entityLight(); // max 255 light to start with.
 	if ( !isInvisible() )
 	{
-		if ( behavior == &actPlayer )
-		{
-			player = skill[2];
-			if ( player > -1 )
-			{
-				if ( stats[player]->shield )
-				{
-					if ( stats[player]->shield->type == TOOL_TORCH || stats[player]->shield->type == TOOL_LANTERN )
-					{
-					}
-					else if ( stats[player]->shield->type == TOOL_CRYSTALSHARD )
-					{
-						light -= 45;
-					}
-					else
-					{
-						light -= 95; // shields, quivers, spellbooks etc 
-					}
-				}
-				else
-				{
-					light -= 95;
-				}
-				if ( stats[player]->sneaking == 1 && !stats[player]->defending )
-				{
-					light -= 92;
-				}
-			}
-		}
 		// reduce light level 0-200 depending on target's stealth.
 		// add light level 0-150 for PER 0-30
 		if ( observer )

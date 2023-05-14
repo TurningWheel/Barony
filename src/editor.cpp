@@ -40,7 +40,6 @@ Sint32 mousexrel = 0, mouseyrel = 0;
 int itemSelect = 0;
 int itemSlotSelected = -1;
 char itemName[128];
-bool splitscreen = false; //Unused variable, for game only.
 real_t prev_x = 0;
 real_t prev_y = 0;
 bool duplicatedSprite = false;
@@ -1644,10 +1643,12 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	lightmap = (vec4_t*)malloc(sizeof(vec4_t) * map.width * map.height);
-	lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
-	memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
-	memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 
 	// initialize camera position
 	camera.x = 4;

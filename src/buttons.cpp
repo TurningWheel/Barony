@@ -550,16 +550,12 @@ void buttonNewConfirm(button_t* my)
 			}
 		}
 	}
-	if ( lightmap != nullptr ) {
-		free(lightmap);
-	}
-	if ( lightmapSmoothed != nullptr ) {
-		free(lightmapSmoothed);
-	}
-	lightmap = (vec4_t*)malloc(sizeof(vec4_t) * map.width * map.height);
-	lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
-	memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
-	memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 	strcpy(message, "                             Created a new map.");
 	filename[0] = 0;
 	oldfilename[0] = 0;
@@ -1457,16 +1453,12 @@ void buttonAttributesConfirm(button_t* my)
 	camera.vismap = (bool*) malloc(sizeof(bool) * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
-    if ( lightmap != nullptr ) {
-		free(lightmap);
-	}
-    if ( lightmapSmoothed != nullptr ) {
-		free(lightmapSmoothed);
-	}
-	lightmap = (vec4_t*)malloc(sizeof(vec4_t) * map.width * map.height);
-	lightmapSmoothed = (vec4_t*)malloc(sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
-	memset(lightmap, 0, sizeof(vec4_t) * map.width * map.height);
-	memset(lightmapSmoothed, 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmaps[c].clear();
+        lightmaps[c].resize(map.width * map.height);
+        lightmapsSmoothed[c].clear();
+        lightmapsSmoothed[c].resize((map.width + 2) * (map.height + 2));
+    }
 
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for ( z = 0; z < MAPLAYERS; z++ )

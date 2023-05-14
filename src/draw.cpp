@@ -76,7 +76,7 @@ Shader skyShader;
 Shader spriteShader;
 Shader spriteDitheredShader;
 Shader spriteBrightShader;
-TempTexture* lightmapTexture;
+TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
 static Shader gearShader;
 static Shader lineShader;
@@ -218,11 +218,10 @@ void createCommonDrawResources() {
     framebuffer::hdrShader.bind();
     GL_CHECK_ERR(glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0));
     
-    // create lightmap texture
-    lightmapTexture = new TempTexture();
-    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
-    lightmapTexture->bind();
-    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
+    // create lightmap textures
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        lightmapTexture[c] = new TempTexture();
+    }
     
     // voxel shader:
     
@@ -594,7 +593,9 @@ void destroyCommonDrawResources() {
 	cleanupMinimapTextures();
 #endif
     clearChunks();
-    delete lightmapTexture;
+    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+        delete lightmapTexture[c];
+    }
 }
 
 void Mesh::init() {
@@ -1794,6 +1795,13 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
     auto t = std::chrono::high_resolution_clock::now();
 
     // shoot the rays
+    const vec4_t* lightmap = lightmaps[0].data();
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (&camera == &cameras[c]) {
+            lightmap = lightmaps[c + 1].data();
+            break;
+        }
+    }
     if (DoRaysInParallel) {
         std::vector<std::future<std::vector<outs_t>>> tasks;
         for (int x = 0; x < NumRays; x += NumRaysPerJob) {

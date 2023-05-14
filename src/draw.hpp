@@ -286,7 +286,7 @@ extern Shader spriteShader;
 extern Shader spriteDitheredShader;
 extern Shader spriteBrightShader;
 extern Mesh spriteMesh;
-extern TempTexture* lightmapTexture;
+extern TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
 #define TRANSPARENT_TILE 246
 

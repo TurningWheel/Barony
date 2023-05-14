@@ -34,8 +34,6 @@ extern Entity* lastSelectedEntity[MAXPLAYERS];
  * I believe one of the splitscreen layouts included a version where all of the messages were communal and were in the center of the screen or summat.
  */
 
-extern bool splitscreen;
-
 extern int gamepad_deadzone;
 extern int gamepad_trigger_deadzone;
 extern real_t gamepad_leftx_sensitivity;

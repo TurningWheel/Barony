@@ -438,7 +438,10 @@ vec4_t unproject(
 
 -------------------------------------------------------------------------------*/
 
-static void fillSmoothLightmap() {
+static void fillSmoothLightmap(int which) {
+    auto lightmap = lightmaps[which].data();
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
     constexpr float epsilon = 1.f;
     constexpr float defaultSmoothRate = 4.f;
 #ifndef EDITOR
@@ -481,7 +484,9 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
 }
 
-static void loadLightmapTexture() {
+static void loadLightmapTexture(int which) {
+    auto lightmapSmoothed = lightmapsSmoothed[which].data();
+    
     // allocate lightmap pixel data
     static std::vector<float> pixels;
     pixels.clear();
@@ -526,15 +531,16 @@ static void loadLightmapTexture() {
     }
     
     // load lightmap texture data
-    lightmapTexture->loadFloat(pixels.data(), map.width, map.height, true, false);
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE1));
+    lightmapTexture[which]->loadFloat(pixels.data(), map.width, map.height, true, false);
+    lightmapTexture[which]->bind();
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));
 }
 
 static void updateChunks();
 
 void beginGraphics() {
     // this runs exactly once each graphics frame.
-    fillSmoothLightmap();
-    loadLightmapTexture();
     updateChunks();
 }
 
@@ -718,6 +724,7 @@ constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
 constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
+constexpr float defaultSamples = 16384;         // how many samples (pixels) to gather from the framebuffer for average scene luminance
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
@@ -726,6 +733,7 @@ static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
 static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
+static ConsoleVariable<int> cvar_hdrSamples("/hdr_samples", defaultSamples);
 static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
 bool hdrEnabled = true;
 #endif
@@ -776,11 +784,6 @@ void glBeginCamera(view_t* camera, bool useHDR)
     
     // store proj * view
     (void)mul_mat(&camera->projview, &proj, &view);
-
-	// lightmap dimensions
-	vec4_t mapDims;
-	mapDims.x = map.width;
-	mapDims.y = map.height;
     
     // set ambient lighting
     if ( camera->globalLightModifierActive ) {
@@ -789,6 +792,22 @@ void glBeginCamera(view_t* camera, bool useHDR)
     else {
         getLightAtModifier = 1.0;
     }
+    
+    // lightmap dimensions
+    vec4_t mapDims;
+    mapDims.x = map.width;
+    mapDims.y = map.height;
+    
+    // upload lightmap
+    int lightmapIndex = 0;
+    for (int c = 0; c < MAXPLAYERS; ++c) {
+        if (camera == &cameras[c]) {
+            lightmapIndex = c + 1;
+            break;
+        }
+    }
+    fillSmoothLightmap(lightmapIndex);
+    loadLightmapTexture(lightmapIndex);
     
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
@@ -802,6 +821,9 @@ void glBeginCamera(view_t* camera, bool useHDR)
     uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
 }
+
+#include <thread>
+#include <future>
 
 void glEndCamera(view_t* camera, bool useHDR)
 {
@@ -819,6 +841,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const float hdr_adjustment_rate = defaultAdjustmentRate;
     const float hdr_limit_high = defaultLimitHigh;
     const float hdr_limit_low = defaultLimitLow;
+    const int hdr_samples = defaultSamples;
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
     const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
@@ -827,6 +850,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
     const float hdr_limit_high = *cvar_hdrLimitHigh;
     const float hdr_limit_low = *cvar_hdrLimitLow;
+    const int hdr_samples = *cvar_hdrSamples;
     const Vector4 hdr_luma = *cvar_hdrLuma;
 #endif
     
@@ -843,24 +867,52 @@ void glEndCamera(view_t* camera, bool useHDR)
         camera->fb[fbIndex].bindForReading();
         auto pixels = camera->fb[fbIndex].lock();
         if (pixels) {
-            float v[4] = { 0.f };
+            // functor for crawling through the framebuffer collecting samples
+            auto fn = [](GLhalf* pixels, GLhalf* end, const int step) {
+                std::vector<float> v(4);
+                for (; pixels < end; pixels += step) {
+                    const float p[4] = {
+                        toFloat32(*(pixels + 0)),
+                        toFloat32(*(pixels + 1)),
+                        toFloat32(*(pixels + 2)),
+                        toFloat32(*(pixels + 3)),
+                    };
+                    v[0] += p[0];
+                    v[1] += p[1];
+                    v[2] += p[2];
+                    v[3] += p[3];
+                }
+                return v;
+            };
+            
+            // spawn jobs to count samples
+            const auto cores = std::thread::hardware_concurrency();
+            std::vector<std::future<std::vector<float>>> jobs;
             const int size = camera->winw * camera->winh * 4;
-            const auto end = pixels + size;
-            const int step = size / 64;
-            for (; pixels < end; pixels += step) {
-                const float p[4] = {
-                    toFloat32(*(pixels + 0)),
-                    toFloat32(*(pixels + 1)),
-                    toFloat32(*(pixels + 2)),
-                    toFloat32(*(pixels + 3)),
-                };
-                v[0] += p[0];
-                v[1] += p[1];
-                v[2] += p[2];
-                v[3] += p[3];
+            const int step = ((size / 4) / hdr_samples) * 4;
+            const int section = size / cores;
+            auto begin = pixels;
+            for (int c = 0; c < cores; ++c, begin += section) {
+                jobs.emplace_back(std::async(std::launch::async, fn,
+                    begin, begin + section, step));
             }
+            
+            // add samples together
+            float v[4] = { 0.f };
+            for (int c = 0; c < cores; ++c) {
+                auto& job = jobs[c];
+                if (job.valid()) {
+                    auto r = job.get();
+                    v[0] += r[0];
+                    v[1] += r[1];
+                    v[2] += r[2];
+                    v[3] += r[3];
+                }
+            }
+            
+            // calculate scene average luminance
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
-            luminance = luminance / (size / step);
+            luminance = luminance / hdr_samples;
             const float rate = hdr_adjustment_rate / fpsLimit;
             if (camera->luminance > luminance) {
                 camera->luminance -= std::min(rate, camera->luminance - luminance);
@@ -1674,7 +1726,6 @@ void glDrawWorld(view_t* camera, int mode)
     const int yoff = 1;
     const int xoff = (map.height / dim) + ((map.height % dim) ? 1 : 0);
     for (auto it = chunksToBuild.begin(); it != chunksToBuild.end();) {
-        auto& chunk = *it->second;
         const int index = it->first;
         bool foundDirtyNeighbor = false; // call the police
         for (int x = -xoff; x <= xoff; x += xoff) {

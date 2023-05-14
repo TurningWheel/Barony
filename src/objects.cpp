@@ -120,28 +120,37 @@ void statDeconstructor(void* data)
 
 void lightDeconstructor(void* data)
 {
-	Sint32 x, y;
-	light_t* light;
-
-	if ( data != NULL)
-	{
-		light = (light_t*)data;
-		if ( light->tiles != NULL )
-		{
-			for (y = 0; y < light->radius * 2; y++)
-			{
-				for (x = 0; x < light->radius * 2; x++)
-				{
-					if ( x + light->x - light->radius >= 0 && x + light->x - light->radius < map.width )
-						if ( y + light->y - light->radius >= 0 && y + light->y - light->radius < map.height )
-						{
-                            auto& d = lightmap[(y + light->y - light->radius) + (x + light->x - light->radius)*map.height];
-                            const auto& s = light->tiles[y + x * (light->radius * 2 + 1)];
-							d.x -= s.x;
+	if (data != nullptr) {
+        light_t* light = (light_t*)data;
+		if (light->tiles != nullptr) {
+            const auto lightsize = (light->radius * 2 + 1) * (light->radius * 2 + 1);
+            const auto mapsize = map.width * map.height;
+			for (int y = 0; y < light->radius * 2; y++) {
+				for (int x = 0; x < light->radius * 2; x++) {
+                    const auto soff = y + x * (light->radius * 2 + 1);
+                    if (soff < 0 || soff >= lightsize) {
+                        continue;
+                    }
+                    const auto& s = light->tiles[soff];
+                    const auto doff = (y + light->y - light->radius) + (x + light->x - light->radius) * map.height;
+                    if (doff < 0 || doff >= mapsize) {
+                        continue;
+                    }
+                    if (light->index) {
+                        auto& d = lightmaps[light->index][doff];
+                        d.x -= s.x;
+                        d.y -= s.y;
+                        d.z -= s.z;
+                        d.w -= s.w;
+                    } else {
+                        for (int c = 0; c < MAXPLAYERS + 1; ++c) {
+                            auto& d = lightmaps[c][doff];
+                            d.x -= s.x;
                             d.y -= s.y;
                             d.z -= s.z;
                             d.w -= s.w;
-						}
+                        }
+                    }
 				}
 			}
 			free(light->tiles);
@@ -300,13 +309,12 @@ button_t* newButton(void)
 
 -------------------------------------------------------------------------------*/
 
-light_t* newLight(Sint32 x, Sint32 y, Sint32 radius)
+light_t* newLight(int index, Sint32 x, Sint32 y, Sint32 radius)
 {
 	light_t* light;
 
 	// allocate memory for light
-	if ( (light = (light_t*) malloc(sizeof(light_t))) == NULL )
-	{
+	if ((light = (light_t*) malloc(sizeof(light_t))) == nullptr) {
 		printlog( "failed to allocate memory for new light!\n" );
 		exit(1);
 	}
@@ -318,16 +326,15 @@ light_t* newLight(Sint32 x, Sint32 y, Sint32 radius)
 	light->node->size = sizeof(light_t);
 
 	// now set all of my data elements to ZERO or NULL
+    light->index = index;
 	light->x = x;
 	light->y = y;
 	light->radius = radius;
-	if ( light->radius > 0 )
-	{
-		light->tiles = (vec4_t*) malloc(sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1));
-		memset(light->tiles, 0, sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1));
-	}
-	else
-	{
+	if (light->radius > 0) {
+        const auto size = sizeof(vec4_t) * (radius * 2 + 1) * (radius * 2 + 1);
+		light->tiles = (vec4_t*)malloc(size);
+		memset(light->tiles, 0, size);
+	} else {
 		light->tiles = nullptr;
 	}
 	return light;

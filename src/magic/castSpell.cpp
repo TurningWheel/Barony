@@ -669,8 +669,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
                 for (auto node = map.entities->first; node != nullptr; node = node->next) {
                     auto entity = (Entity*)node->element;
                     if (entity->behavior == &actMagiclightBall) {
-                        auto spell = (spell_t*)entity->children.first->element;
-                        spell->sustain = false; // remove other lightballs to prevent lightball insanity
+                        if (entity->parent == caster->getUID()) {
+                            auto spell = (spell_t*)entity->children.first->element;
+                            spell->sustain = false; // remove other lightballs to prevent lightball insanity
+                        }
                     }
                 }
             }

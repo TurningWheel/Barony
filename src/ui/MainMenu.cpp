@@ -3399,9 +3399,10 @@ namespace MainMenu {
 
 	static void inventorySortingDiscard(Button& button) {
 		soundCancel();
+        auto window = static_cast<Frame*>(button.getParent());
+        auto dimmer = static_cast<Frame*>(window->getParent());
+        dimmer->removeSelf();
 		if (main_menu_frame) {
-			auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
-			window->removeSelf();
 			auto settings = main_menu_frame->findFrame("settings");
 			if (settings) {
 				auto settings_subwindow = settings->findFrame("settings_subwindow");
@@ -3434,8 +3435,13 @@ namespace MainMenu {
 
 	static void settingsCustomizeInventorySorting(Button& button) {
 		soundActivate();
+        
+        auto dimmer = main_menu_frame->addFrame("dimmer");
+        dimmer->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
+        dimmer->setColor(makeColor(0, 0, 0, 63));
+        dimmer->setBorder(0);
 
-		auto window = main_menu_frame->addFrame("inventory_sorting_window");
+		auto window = dimmer->addFrame("inventory_sorting_window");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 978) / 2,
 			(Frame::virtualScreenY - 718) / 2,
