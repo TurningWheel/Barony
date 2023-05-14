@@ -5370,7 +5370,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-    entity->flags[BRIGHT] = true;
+	entity->flags[BRIGHT] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5393,6 +5393,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->flags[BRIGHT] = true;
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )

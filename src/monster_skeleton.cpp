@@ -605,6 +605,37 @@ void initSkeleton(Entity* my, Stat* myStats)
 
 void actSkeletonLimb(Entity* my)
 {
+	Entity* parent = uidToEntity(my->skill[2]);
+
+	if ( parent && parent->behavior == &actMonster )
+	{
+		if ( Stat* stats = parent->getStats() )
+		{
+			const char* lightName = nullptr;
+			if ( MonsterData_t::nameMatchesSpecialNPCName(*stats, "skeleton sentinel") )
+			{
+				lightName = "summoned_skeleton_glow";
+			}
+			else if ( MonsterData_t::nameMatchesSpecialNPCName(*stats, "skeleton knight") )
+			{
+				lightName = "summoned_skeleton_glow";
+			}
+
+			if ( my->light )
+			{
+				list_RemoveNode(my->light->node);
+				my->light = nullptr;
+			}
+
+			if ( lightName )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, lightName);
+			}
+
+			my->actMonsterLimb(false);
+			return;
+		}
+	}
 	my->actMonsterLimb(true);
 }
 

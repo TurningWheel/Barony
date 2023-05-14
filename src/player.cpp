@@ -4034,6 +4034,17 @@ void Player::WorldUI_t::handleTooltips()
 					continue;
 				}
 			}
+			else
+			{
+				if ( Input::inputs[player].binary("Move Left")
+					|| Input::inputs[player].binary("Move Right")
+					|| Input::inputs[player].binary("Move Forward")
+					|| Input::inputs[player].binary("Move Backward") )
+				{
+					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_FREE;
+					continue;
+				}
+			}
 			if ( abs(yawDiff) > PI / 16 )
 			{
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
@@ -5118,7 +5129,10 @@ void Inputs::warpMouse(const int player, const Sint32 x, const Sint32 y, Uint32 
         int w, h, gw, gh;
         SDL_GetWindowSize(screen, &w, &h);
         SDL_GL_GetDrawableSize(screen, &gw, &gh);
-		SDL_WarpMouseInWindow(screen, (x * w) / gw, (y * h) / gh); // this pushes to the SDL event queue
+		if ( !inputs.hasController(player) )
+		{
+			SDL_WarpMouseInWindow(screen, (x * w) / gw, (y * h) / gh); // this pushes to the SDL event queue
+		}
 		
 		// if we don't set mousex/y here, the mouse will flicker until the event is popped
 		mousex = x;

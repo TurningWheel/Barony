@@ -150,6 +150,7 @@ struct StatusEffectQueue_t
 	static const int kEffectConflict;
 	static const int kEffectWaterWalking;
 	static const int kEffectLifesaving;
+	static const int kEffectPush;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

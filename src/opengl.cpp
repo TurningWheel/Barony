@@ -728,7 +728,6 @@ constexpr float defaultSamples = 16384;         // how many samples (pixels) to 
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
-static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
@@ -736,7 +735,7 @@ static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitH
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
 static ConsoleVariable<int> cvar_hdrSamples("/hdr_samples", defaultSamples);
 static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
-bool hdrEnabled = *cvar_hdrEnabled;
+bool hdrEnabled = true;
 #endif
 
 static int oldViewport[4];
@@ -751,7 +750,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
 #ifdef EDITOR
     const bool hdr = useHDR;
 #else
-    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
 #endif
     
     if (hdr) {
@@ -845,7 +844,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const int hdr_samples = defaultSamples;
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
-    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
     const float hdr_exposure = *cvar_hdrExposure;
     const float hdr_gamma = *cvar_hdrGamma;
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
@@ -1097,6 +1096,8 @@ Mesh spriteMesh = {
 
 #ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
+static ConsoleVariable<float> cvar_ulight_factor_min("/sprite_ulight_factor_min", 0.5f);
+static ConsoleVariable<float> cvar_ulight_factor_mult("/sprite_ulight_factor_mult", 4.f);
 #endif
 
 void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
@@ -1170,7 +1171,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
-    const float b = std::max(0.5f, camera->luminance * 3.f);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1270,7 +1271,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(0.5f, camera->luminance * 3.f);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1397,7 +1398,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(0.5f, camera->luminance * 3.f);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1482,7 +1483,11 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     
     // upload light variables
     if (entity->flags[BRIGHT]) {
-        const float b = std::max(0.5f, camera->luminance * 3.f);
+#ifndef EDITOR
+        const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+#else
+        const float b = std::max(0.5f, camera->luminance * 4.f);
+#endif
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
         const GLfloat light[4] = { b, b, b, 1.f };
@@ -1584,7 +1589,11 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(0.5f, camera->luminance * 3.f);
+#ifndef EDITOR
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+#else
+    const float b = std::max(0.5f, camera->luminance * 4.f);
+#endif
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1913,7 +1922,7 @@ void GO_SwapBuffers(SDL_Window* screen)
     
 #ifndef EDITOR
     // enable HDR if desired
-    hdrEnabled = *cvar_hdrEnabled;
+    hdrEnabled = *MainMenu::cvar_hdrEnabled;
 #endif
     
     if (!hdrEnabled) {

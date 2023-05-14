@@ -2724,6 +2724,8 @@ void Entity::monsterRollLevelUpStats(int increasestat[3])
 	increasestat[2] = r;
 }
 
+static ConsoleVariable<bool> cvar_noxp("/noxp", false);
+
 void Entity::handleEffects(Stat* myStats)
 {
 	int increasestat[3] = { 0, 0, 0 };
@@ -2785,7 +2787,10 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-
+	if ( *cvar_noxp )
+	{
+		myStats->EXP = 0;
+	}
 
 	// level ups
 	if ( myStats->EXP >= 100 )
