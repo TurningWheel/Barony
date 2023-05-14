@@ -2198,7 +2198,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
             }
             else
             {
-                for (c = 0; c < destmap->width * destmap->height; c++ )
+                for (int c = 0; c < destmap->width * destmap->height; c++ )
                 {
                     lightmap[c].x = hellAmbience;
                     lightmap[c].y = hellAmbience;
@@ -2212,7 +2212,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
                     }
 #endif
                 }
-                for (c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+                for (int c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
                 {
                     lightmapSmoothed[c].x = hellAmbience;
                     lightmapSmoothed[c].y = hellAmbience;
