@@ -62,6 +62,7 @@ namespace MainMenu {
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
+	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -369,6 +370,8 @@ namespace MainMenu {
 		bool vertical_split_enabled;
 		bool staggered_split_enabled;
 		bool clipped_split_enabled;
+		float item_tooltip_height = 100.f;
+		bool hdr_enabled = true;
 		float fov;
 		float fps;
 		std::string audio_device;
@@ -2343,6 +2346,8 @@ namespace MainMenu {
         const bool oldUIFilter = *ui_filter;
         const float oldUIScale = uiScale;
         *ui_filter = ui_filter_enabled;
+		Player::WorldUI_t::tooltipHeightOffsetZ = (6 * (100 - item_tooltip_height)) / 100.f;
+		*cvar_hdrEnabled = hdr_enabled;
         uiScale = ui_scale / 100.f;
         result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
             VideoRefresh::General : VideoRefresh::None;
@@ -2450,6 +2455,9 @@ namespace MainMenu {
 		settings.minimap = Minimap::load();
         settings.ui_scale = uiScale * 100.f;
         settings.ui_filter_enabled = *ui_filter;
+		settings.item_tooltip_height =
+			100.f * (Player::WorldUI_t::tooltipHeightOffsetZ - 6) / -6;
+		settings.hdr_enabled = *cvar_hdrEnabled;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
 		settings.show_player_nametags_enabled = !hide_playertags;
@@ -2535,6 +2543,8 @@ namespace MainMenu {
 		settings.use_frame_interpolation = true;
 		settings.fov = 60;
 		settings.fps = AUTO_FPS;
+		settings.item_tooltip_height = 100.f;
+		settings.hdr_enabled = true;
 		settings.audio_device = "";
 		settings.master_volume = 100.f;
 		settings.gameplay_volume = 100.f;
@@ -2573,7 +2583,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 10;
+	    int version = 11;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2600,6 +2610,7 @@ namespace MainMenu {
 		file->property("minimap", minimap);
         file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);
         file->propertyVersion("ui_scale", version >= 7, ui_scale);
+		file->propertyVersion("item_tooltip_height", version >= 11, item_tooltip_height);
 		file->property("show_messages_enabled", show_messages_enabled);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
 		file->property("show_hud_enabled", show_hud_enabled);
@@ -2638,6 +2649,7 @@ namespace MainMenu {
         } else {
             file->property("fps", fps);
         }
+		file->propertyVersion("use_hdr", version >= 11, hdr_enabled);
 		file->propertyVersion("audio_device", version >= 4, audio_device);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
@@ -5225,6 +5237,10 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
 			"Display the name of each player character above their avatar.",
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
+		y += settingsAddSlider(*settings_subwindow, y, "item_tooltip_height", "Item Tooltip Height",
+			"Adjust the vertical position of in-world item tooltip popups.",
+			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
+			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
 
 #if 0
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
@@ -5243,6 +5259,7 @@ bind_failed:
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
+			{Setting::Type::Slider, "item_tooltip_height"},
 			//{Setting::Type::Boolean, "show_hud"},
         });
 #else
@@ -5253,6 +5270,7 @@ bind_failed:
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
+			{Setting::Type::Slider, "item_tooltip_height"},
         });
 #endif
 
@@ -5349,6 +5367,9 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
 			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", "High Dynamic Range (HDR)",
+			"Increases color contrast of the rendered world with both brightened and darkened areas.",
+			allSettings.hdr_enabled, [](Button& button) {soundToggle(); allSettings.hdr_enabled = button.isPressed(); });
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
 			"Smooth player camera by interpolating camera movements over additional frames.",
 			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed();});
@@ -5406,6 +5427,7 @@ bind_failed:
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Slider, "fps"},
+			{Setting::Type::Boolean, "hdr_enabled"},
 			{Setting::Type::Boolean, "use_frame_interpolation"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},

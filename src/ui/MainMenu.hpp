@@ -29,6 +29,7 @@ namespace MainMenu {
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
     extern ConsoleVariable<int> cvar_desiredFps;
     extern ConsoleVariable<int> cvar_displayHz;
+	extern ConsoleVariable<bool> cvar_hdrEnabled;
 	
 	static constexpr const char* emptyBinding = "[unbound]"; // string appended to default empty bindings
 	static constexpr const char* hiddenBinding = "[hidden]"; // string appended to hidden bindings on the UI

@@ -721,14 +721,13 @@ constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light 
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
-static ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
 static ConsoleVariable<float> cvar_hdrLimitHigh("/hdr_limit_high", defaultLimitHigh);
 static ConsoleVariable<float> cvar_hdrLimitLow("/hdr_limit_low", defaultLimitLow);
 static ConsoleVariable<Vector4> cvar_hdrLuma("/hdr_luma", Vector4{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f});
-bool hdrEnabled = *cvar_hdrEnabled;
+bool hdrEnabled = true;
 #endif
 
 static int oldViewport[4];
@@ -743,7 +742,7 @@ void glBeginCamera(view_t* camera, bool useHDR)
 #ifdef EDITOR
     const bool hdr = useHDR;
 #else
-    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
 #endif
     
     if (hdr) {
@@ -822,7 +821,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const float hdr_limit_low = defaultLimitLow;
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
-    const bool hdr = useHDR ? *cvar_hdrEnabled : false;
+    const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
     const float hdr_exposure = *cvar_hdrExposure;
     const float hdr_gamma = *cvar_hdrGamma;
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
@@ -1848,7 +1847,7 @@ void GO_SwapBuffers(SDL_Window* screen)
     
 #ifndef EDITOR
     // enable HDR if desired
-    hdrEnabled = *cvar_hdrEnabled;
+    hdrEnabled = *MainMenu::cvar_hdrEnabled;
 #endif
     
     if (!hdrEnabled) {
