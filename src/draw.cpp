@@ -279,7 +279,7 @@ void createCommonDrawResources() {
         "    (uColorRemap[0].rgb * Color.r)+"
         "    (uColorRemap[1].rgb * Color.g)+"
         "    (uColorRemap[2].rgb * Color.b);"
-        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (vec4(1.0) + uLightColor) + uColorAdd;"
+        "FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
         "}";
 
     buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,

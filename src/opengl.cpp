@@ -1021,7 +1021,19 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    uploadLightUniforms(camera, shader, entity, mode, true);
+    if (entity->flags[BRIGHT]) {
+        mat4x4_t remap(1.f);
+        GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
+        const float b = std::max(0.5f, camera->luminance * 4.f);
+        const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+        const GLfloat light[4] = { b, b, b, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
+    } else {
+        uploadLightUniforms(camera, shader, entity, mode, true);
+    }
     
     // draw mesh
 #ifdef VERTEX_ARRAYS_ENABLED
@@ -1702,8 +1714,10 @@ void glDrawWorld(view_t* camera, int mode)
     shader.bind();
     
     // upload uniforms for core shader
-    const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
-    GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+    if (&shader != &worldDarkShader) {
+        const GLfloat light[4] = { (float)getLightAtModifier, (float)getLightAtModifier, (float)getLightAtModifier, 1.f };
+        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+    }
     
     // update chunk dithering & mark chunks for rebuilding
     std::set<std::pair<int, Chunk*>> chunksToBuild;
