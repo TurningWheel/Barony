@@ -5723,6 +5723,7 @@ const int StatusEffectQueue_t::kEffectWaterBreathing = -16;
 const int StatusEffectQueue_t::kEffectConflict = -17;
 const int StatusEffectQueue_t::kEffectWaterWalking = -18;
 const int StatusEffectQueue_t::kEffectLifesaving = -19;
+const int StatusEffectQueue_t::kEffectPush = -20;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5911,7 +5912,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
+	for ( int i = kEffectBurning; i >= kEffectPush; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -5976,6 +5977,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectConflict] = true;
 			}
+			if ( stats[player]->ring && stats[player]->ring->type == RING_STRENGTH )
+			{
+				if ( !stats[player]->EFFECTS[EFF_POTION_STR] )
+				{
+					miscEffects[kEffectPush] = true;
+				}
+			}
 			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
 				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
 			{
@@ -6038,7 +6046,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectLifesaving; --i )
+	for ( int i = kEffectBurning; i >= kEffectPush; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
