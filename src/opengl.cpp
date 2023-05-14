@@ -1159,7 +1159,7 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
-    const float b = std::max(*cvar_ulight_factor_min, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1259,7 +1259,7 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(*cvar_ulight_factor_min, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1386,7 +1386,7 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(*cvar_ulight_factor_min, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1472,7 +1472,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     // upload light variables
     if (entity->flags[BRIGHT]) {
 #ifndef EDITOR
-        const float b = std::max(*cvar_ulight_factor_min, camera->luminance * *cvar_ulight_factor_mult);
+        const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
 #else
         const float b = std::max(0.5f, camera->luminance * 4.f);
 #endif
@@ -1578,7 +1578,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     
     // upload light variables
 #ifndef EDITOR
-    const float b = std::max(*cvar_ulight_factor_min, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
 #else
     const float b = std::max(0.5f, camera->luminance * 4.f);
 #endif
