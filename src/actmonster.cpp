@@ -9989,7 +9989,9 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		}
 		case ALLY_CMD_DROP_EQUIP:
-			if ( strcmp(myStats->name, "") && myStats->type == HUMAN )
+			if ( strcmp(myStats->name, "") 
+				&& myStats->getAttribute("special_npc") != ""
+				&& myStats->type == HUMAN )
 			{
 				// named humans refuse to drop equipment.
 				handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_HUMAN_REFUSE);
@@ -10109,6 +10111,22 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						confirmDropped = true;
 						dropped->itemOriginalOwner = owner;
 					}
+					if ( myStats->cloak )
+					{
+						if ( myStats->cloak->canUnequip(myStats) )
+						{
+							dropped = dropItemMonster(myStats->cloak, this, myStats);
+						}
+						else
+						{
+							unableToDrop = true;
+						}
+					}
+					if ( dropped )
+					{
+						confirmDropped = true;
+						dropped->itemOriginalOwner = owner;
+					}
 
 					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
 					{
@@ -10133,22 +10151,6 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 							if ( myStats->amulet->canUnequip(myStats) )
 							{
 								dropped = dropItemMonster(myStats->amulet, this, myStats);
-							}
-							else
-							{
-								unableToDrop = true;
-							}
-						}
-						if ( dropped )
-						{
-							confirmDropped = true;
-							dropped->itemOriginalOwner = owner;
-						}
-						if ( myStats->cloak )
-						{
-							if ( myStats->cloak->canUnequip(myStats) )
-							{
-								dropped = dropItemMonster(myStats->cloak, this, myStats);
 							}
 							else
 							{
