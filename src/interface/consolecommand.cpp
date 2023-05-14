@@ -4273,17 +4273,19 @@ namespace ConsoleCommands {
 		if (outpath) {
 			char buf[16];
 			File* fp = FileIO::open(outpath, "wb");
-			fp->write("{\n", sizeof(char), 2);
-			for (auto& pair : newMapHashes) {
-				fp->write("\t{ \"", sizeof(char), 4);
-				fp->write(pair.first.c_str(), sizeof(char), pair.first.size());
-				fp->write("\", ", sizeof(char), 3);
-				int len = snprintf(buf, sizeof(buf), "%d", pair.second);
-				fp->write(buf, sizeof(char), len);
-				fp->write(" },\n", sizeof(char), 4);
-			}
-			fp->write("};", sizeof(char), 2);
-			FileIO::close(fp);
+            if (fp) {
+                fp->write("{\n", sizeof(char), 2);
+                for (auto& pair : newMapHashes) {
+                    fp->write("\t{ \"", sizeof(char), 4);
+                    fp->write(pair.first.c_str(), sizeof(char), pair.first.size());
+                    fp->write("\", ", sizeof(char), 3);
+                    int len = snprintf(buf, sizeof(buf), "%d", pair.second);
+                    fp->write(buf, sizeof(char), len);
+                    fp->write(" },\n", sizeof(char), 4);
+                }
+                fp->write("};", sizeof(char), 2);
+                FileIO::close(fp);
+            }
 		}
 #endif
 	});
