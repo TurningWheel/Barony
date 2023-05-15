@@ -2400,7 +2400,7 @@ namespace MainMenu {
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
 		bindings.save();
 		*cvar_mkb_world_tooltips = mkb_world_tooltips_enabled;
-		*cvar_mkb_facehotbar = mkb_facehotbar;
+		*cvar_mkb_facehotbar = false; //mkb_facehotbar;
 		*cvar_gamepad_facehotbar = gamepad_facehotbar;
 		hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
 		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
