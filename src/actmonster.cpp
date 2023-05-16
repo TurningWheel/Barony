@@ -1570,7 +1570,9 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
     if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && (myStats->type == HUMAN || myStats->name[0]))
     {
         // give us a random name (if necessary)
-		if (!myStats->name[0] && !monsterNameIsGeneric(*myStats)) {
+		if ( myStats->type == HUMAN 
+			&& !myStats->name[0] 
+			&& !monsterNameIsGeneric(*myStats)) {
 			auto& names = myStats->sex == FEMALE ?
 				randomNPCNamesFemale : randomNPCNamesMale;
 			const int choice = local_rng.uniform(0, (int)names.size() - 1);
@@ -8710,7 +8712,9 @@ bool forceFollower(Entity& leader, Entity& follower)
     if (player >= 0 && player < MAXPLAYERS && (followerStats->type == HUMAN || followerStats->name[0]))
     {
 		// give us a random name (if necessary)
-		if (!followerStats->name[0] && !monsterNameIsGeneric(*followerStats)) {
+		if ( followerStats->type == HUMAN && 
+			!followerStats->name[0] 
+			&& !monsterNameIsGeneric(*followerStats)) {
 			auto& names = followerStats->sex == FEMALE ?
 				randomNPCNamesFemale : randomNPCNamesMale;
 			const int choice = local_rng.uniform(0, (int)names.size() - 1);

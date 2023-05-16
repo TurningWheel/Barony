@@ -9913,7 +9913,7 @@ void doNewGame(bool makeHighscore) {
 									}
                                     else if (multiplayer != CLIENT && players[c]->isLocalPlayer())
                                     {
-                                        if (monsterStats->type == HUMAN && monsterStats->name[0] && !monsterNameIsGeneric(*monsterStats)) {
+                                        if (monsterStats->name[0] && !monsterNameIsGeneric(*monsterStats)) {
                                             Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                                             nametag->x = monster->x;
                                             nametag->y = monster->y;
