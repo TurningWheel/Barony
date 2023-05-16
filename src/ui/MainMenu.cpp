@@ -2347,7 +2347,7 @@ namespace MainMenu {
         const float oldUIScale = uiScale;
         *ui_filter = ui_filter_enabled;
 		Player::WorldUI_t::tooltipHeightOffsetZ = (6 * (100 - item_tooltip_height)) / 100.f;
-		*cvar_hdrEnabled = hdr_enabled;
+		*cvar_hdrEnabled = true;// hdr_enabled;
         uiScale = ui_scale / 100.f;
         result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
             VideoRefresh::General : VideoRefresh::None;
@@ -2457,7 +2457,7 @@ namespace MainMenu {
         settings.ui_filter_enabled = *ui_filter;
 		settings.item_tooltip_height =
 			100.f * (Player::WorldUI_t::tooltipHeightOffsetZ - 6) / -6;
-		settings.hdr_enabled = *cvar_hdrEnabled;
+		settings.hdr_enabled = true;// *cvar_hdrEnabled;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
 		settings.show_player_nametags_enabled = !hide_playertags;
@@ -5373,9 +5373,9 @@ bind_failed:
 		y += settingsAddSlider(*settings_subwindow, y, "fps", "FPS limit",
 			"Limit the frame-rate of the game window. Do not set this higher than your refresh rate. (Recommended: Auto)",
 			allSettings.fps ? allSettings.fps : AUTO_FPS, MIN_FPS, AUTO_FPS, sliderFPS, [](Slider& slider){soundSlider(true); allSettings.fps = slider.getValue();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", "High Dynamic Range (HDR)",
+		/*y += settingsAddBooleanOption(*settings_subwindow, y, "hdr_enabled", "High Dynamic Range (HDR)",
 			"Increases color contrast of the rendered world with both brightened and darkened areas.",
-			allSettings.hdr_enabled, [](Button& button) {soundToggle(); allSettings.hdr_enabled = button.isPressed(); });
+			allSettings.hdr_enabled, [](Button& button) {soundToggle(); allSettings.hdr_enabled = button.isPressed(); });*/
 		y += settingsAddBooleanOption(*settings_subwindow, y, "use_frame_interpolation", "Camera Interpolation",
 			"Smooth player camera by interpolating camera movements over additional frames.",
 			allSettings.use_frame_interpolation, [](Button& button) {soundToggle(); allSettings.use_frame_interpolation = button.isPressed();});
@@ -5433,7 +5433,7 @@ bind_failed:
 			{Setting::Type::Slider, "gamma"},
 			{Setting::Type::Slider, "fov"},
 			{Setting::Type::Slider, "fps"},
-			{Setting::Type::Boolean, "hdr_enabled"},
+			/*{Setting::Type::Boolean, "hdr_enabled"},*/
 			{Setting::Type::Boolean, "use_frame_interpolation"},
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
