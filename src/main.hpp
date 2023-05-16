@@ -136,6 +136,9 @@ extern bool autoLimbReload;
   #endif
   #include <GL/gl.h>
   #include <GL/glu.h>
+  #ifdef LINUX
+  	typedef uint16_t GLhalf;
+  #endif
  #endif
 #ifndef WINDOWS
  #include <GL/glext.h>
@@ -200,16 +203,16 @@ const char* gl_error_string(GLenum err);
     {\
 		GLenum err;\
 		while((err = glGetError()) != GL_NO_ERROR) {\
-			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
-				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+			printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
+				err, gl_error_string(err));\
 		}\
 	}
 #define GL_CHECK_ERR_RET(expression) expression;\
     {\
 		GLenum err;\
 		while((err = glGetError()) != GL_NO_ERROR) {\
-			printlog("[OpenGL]: %s type = 0x%x, message = %s",\
-				(err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+			printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+				err, gl_error_string(err));\
 		}\
 	}
 #else
@@ -217,16 +220,16 @@ const char* gl_error_string(GLenum err);
     expression;\
     GLenum err;\
     while((err = glGetError()) != GL_NO_ERROR) {\
-        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
-            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+        printlog("[OpenGL]: ERROR type = 0x%x, message = %s",\
+            err, gl_error_string(err));\
     }\
 })
 #define GL_CHECK_ERR_RET(expression) ({ \
     auto retval = expression;\
     GLenum err;\
     while((err = glGetError()) != GL_NO_ERROR) {\
-        printlog("[OpenGL]: %s type = 0x%x, message = %s",\
-            (err == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), err, gl_error_string(err));\
+        printlog("[OpenGL]: ERROR %s type = 0x%x, message = %s",\
+            err, gl_error_string(err));\
     }\
     retval;\
 })
