@@ -252,6 +252,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = true;
 	entity->behavior = &actSprite;
 	entity->skill[0] = 1;
 	entity->skill[1] = 4;
