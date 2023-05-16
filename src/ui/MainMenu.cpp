@@ -654,7 +654,7 @@ namespace MainMenu {
     static SDL_Surface* fireSurface = nullptr;
     static TempTexture* fireTexture = nullptr;
 
-	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", true);
+	static ConsoleVariable<bool> cvar_story_fire_fx("/story_fire_fx", false);
 
     static void fireStart() {
 		if ( !*cvar_story_fire_fx )
