@@ -437,6 +437,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 			|| entity->sprite == 169	// statue
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
+			|| entity->sprite == 179 && (entity->colliderHasCollision != 0 || entity->colliderDiggable != 0) // collider
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
