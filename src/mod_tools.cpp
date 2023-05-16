@@ -7322,7 +7322,7 @@ void GameplayPreferences_t::process()
 					pref.needsUpdate = false;
 				}
 			}
-			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 			{
 				doUpdate = true;
 			}
@@ -7352,7 +7352,7 @@ void GameplayPreferences_t::process()
 			}
 			}
 
-			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 			{
 			doUpdate = true;
 			}
@@ -7382,7 +7382,7 @@ void GameplayPreferences_t::process()
 					}
 				}
 
-				if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+				if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 				{
 					doUpdate = true;
 				}
@@ -7569,7 +7569,7 @@ void GameplayPreferences_t::serverProcessGameConfig()
 		gameConfig[pref].needsUpdate = false;
 	}
 
-	if ( ticks - lastGameConfigUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+	if ( ticks - lastGameConfigUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 	{
 		doUpdate = true;
 	}

@@ -8442,30 +8442,32 @@ bind_failed:
 					    }
 #endif // USE_EOS
 				    }
-			    } else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
-				    if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+				}
+				else if ( result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_SUCCESS ) {
+					if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
 #ifdef STEAMWORKS
-					    if ( steamIDRemote[playerNum - 1] ) {
-						    cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
-					    }
-					    steamIDRemote[playerNum - 1] = new CSteamID();
-					    *static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-					    for ( int responses = 0; responses < 5; ++responses ) {
-						    SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-						    SDL_Delay(5);
-					    }
+						if ( steamIDRemote[playerNum - 1] ) {
+							cpp_Free_CSteamID(steamIDRemote[playerNum - 1]);
+						}
+						steamIDRemote[playerNum - 1] = new CSteamID();
+						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
+						for ( int responses = 0; responses < 5; ++responses ) {
+							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+							SDL_Delay(5);
+						}
 #endif // STEAMWORKS
-				    } else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+					}
+					else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
 #if defined USE_EOS
-					    EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
-					    for (int responses = 0; responses < 5; ++responses) {
-						    EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
-						    SDL_Delay(5);
-					    }
+						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+						for ( int responses = 0; responses < 5; ++responses ) {
+							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
+							SDL_Delay(5);
+						}
 #endif
-				    }
-                    sendSvFlagsOverNet();
-			    }
+					}
+					sendSvFlagsOverNet();
+				}
 
 			    // assume success after this point
 			    if (result != NET_LOBBY_JOIN_DIRECTIP_SUCCESS &&
