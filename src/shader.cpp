@@ -60,10 +60,6 @@ int Shader::uniform(const char* name) {
     }
 }
 
-void Shader::setParameter(unsigned int param, int value) {
-    GL_CHECK_ERR(glProgramParameteri(program, (GLenum)param, value));
-}
-
 void Shader::bindAttribLocation(const char* attribute, int location) {
     GL_CHECK_ERR(glBindAttribLocation(program, location, attribute));
 }

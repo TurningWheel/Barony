@@ -32,7 +32,6 @@ public:
         Fragment,
     };
 
-    void setParameter(unsigned int param, int value);
     void bindAttribLocation(const char* attribute, int location);
     bool compile(const char* source, size_t len, Type type);
     bool link();
