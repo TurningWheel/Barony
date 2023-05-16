@@ -5977,12 +5977,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectConflict] = true;
 			}
-			if ( stats[player]->ring && stats[player]->ring->type == RING_STRENGTH )
+			if ( (stats[player]->ring && stats[player]->ring->type == RING_STRENGTH)
+				|| (stats[player]->gloves && stats[player]->gloves->type == GAUNTLETS_STRENGTH)
+				|| stats[player]->EFFECTS[EFF_POTION_STR] )
 			{
-				if ( !stats[player]->EFFECTS[EFF_POTION_STR] )
-				{
-					miscEffects[kEffectPush] = true;
-				}
+				miscEffects[kEffectPush] = true;
 			}
 			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
 				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
@@ -6452,6 +6451,21 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( lowDurationFlash )
 			{
 				frameImg->disabled = true;
+			}
+		}
+		else if ( q.effect == kEffectPush )
+		{
+			q.lowDuration = false;
+			if ( !((stats[player]->ring && stats[player]->ring->type == RING_STRENGTH)
+				|| (stats[player]->gloves && stats[player]->gloves->type == GAUNTLETS_STRENGTH)) )
+			{
+				bool lowDuration = stats[player]->EFFECTS_TIMERS[EFF_POTION_STR] > 0 &&
+					(stats[player]->EFFECTS_TIMERS[EFF_POTION_STR] < TICKS_PER_SECOND * 5);
+				q.lowDuration = lowDuration;
+				if ( lowDurationFlash && lowDuration )
+				{
+					frameImg->disabled = true;
+				}
 			}
 		}
 
@@ -27974,7 +27988,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "BLOCK_DEGRADE_NORMAL_CHANCE" )
 		{
 			val = 25 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
+			val += 2 * (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 0.0;
@@ -27988,11 +28002,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "BLOCK_DEGRADE_DEFENDING_CHANCE" )
 		{
 			val = 10 + (stats[playernum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
-			val += (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
 			if ( svFlags & SV_FLAG_HARDCORE )
 			{
 				val = 40 + (stats[playernum]->type == GOBLIN ? 10 : 0);
 			}
+			val += 2 * (static_cast<int>(stats[playernum]->PROFICIENCIES[proficiency] / 10));
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 0.0;

@@ -2770,6 +2770,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_SHIELD] / 10;
 			int durabilityBonus = skillLVL * 10;
+			if ( itemCategory(&item) == ARMOR )
+			{
+				durabilityBonus *= 2;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_SHIELD).c_str());
 		}
 		else if ( detailTag.compare("shield_legendary_durability") == 0 )
@@ -7318,7 +7322,7 @@ void GameplayPreferences_t::process()
 					pref.needsUpdate = false;
 				}
 			}
-			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 			{
 				doUpdate = true;
 			}
@@ -7348,7 +7352,7 @@ void GameplayPreferences_t::process()
 			}
 			}
 
-			if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+			if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 			{
 			doUpdate = true;
 			}
@@ -7378,7 +7382,7 @@ void GameplayPreferences_t::process()
 					}
 				}
 
-				if ( ticks - lastUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+				if ( ticks - lastUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 				{
 					doUpdate = true;
 				}
@@ -7565,7 +7569,7 @@ void GameplayPreferences_t::serverProcessGameConfig()
 		gameConfig[pref].needsUpdate = false;
 	}
 
-	if ( ticks - lastGameConfigUpdateTick > TICKS_PER_SECOND * 15 + 5 )
+	if ( ticks - lastGameConfigUpdateTick > ((intro ? TICKS_PER_SECOND : (TICKS_PER_SECOND * 15)) + 5) )
 	{
 		doUpdate = true;
 	}

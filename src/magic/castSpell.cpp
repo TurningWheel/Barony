@@ -671,12 +671,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
                     if (entity->behavior == &actMagiclightBall) {
                         if (entity->parent == caster->getUID()) {
                             auto spell = (spell_t*)entity->children.first->element;
-                            spell->sustain = false; // remove other lightballs to prevent lightball insanity
+							if ( spell && spell->magicstaff )
+							{
+								spell->sustain = false; // remove other lightballs to prevent lightball insanity
+							}
                         }
                     }
                 }
             }
-			Entity* entity = newEntity(175, 1, map.entities, nullptr); // black magic ball
+			Entity* entity = newEntity(174, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;

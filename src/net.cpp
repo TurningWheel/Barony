@@ -1710,7 +1710,10 @@ Entity* receiveEntity(Entity* entity)
 	    entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
 	    entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
 	}
-	entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
+	if ( newentity || entity->behavior != &actMagiclightBall )
+	{
+		entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
+	}
 	entity->new_pitch = ((Sint16)SDLNet_Read16(&net_packet->data[23])) / 256.0;
 	entity->new_roll = ((Sint16)SDLNet_Read16(&net_packet->data[25])) / 256.0;
 	if ( newentity )
@@ -3893,7 +3896,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					strcpy(monster->clientStats->name, (char*)&net_packet->data[12]);
 				}
-                if (monster->clientStats->type == HUMAN && monster->clientStats->name[0] && !monsterNameIsGeneric(*monster->clientStats)) {
+                if ( monster->clientStats->name[0] && !monsterNameIsGeneric(*monster->clientStats) ) {
                     Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                     nametag->x = monster->x;
                     nametag->y = monster->y;

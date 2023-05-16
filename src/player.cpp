@@ -4078,12 +4078,51 @@ void Player::WorldUI_t::handleTooltips()
 				players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 				continue;
 			}
+
+			std::array<char*, 2> switchStrings = { language[4018], language[4019] };
+			bool foundSwitchString = false;
+			for ( auto s : switchStrings )
+			{
+				if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
+				{
+					foundSwitchString = true;
+					break;
+				}
+			}
+
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
+				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip.first) && foundSwitchString )
+				{
+					if ( Entity* parent = uidToEntity(tooltip.first->parent) )
+					{
+						if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
+						{
+							if ( parent->skill[0] == 1 )
+							{
+								if ( players[player]->worldUI.interactText.find(language[4019]) != std::string::npos )
+								{
+									// rescan, out of date string.
+									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+									break;
+								}
+							}
+							else
+							{
+								if ( players[player]->worldUI.interactText.find(language[4018]) != std::string::npos )
+								{
+									// rescan, out of date string.
+									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+									break;
+								}
+							}
+						}
+					}
+				}
 				if ( players[player]->worldUI.tooltipInRange(*tooltip.first) < 0.01 )
 				{
 					players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
-					continue;
+					break;
 				}
 			}
 		}
