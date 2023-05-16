@@ -1710,7 +1710,10 @@ Entity* receiveEntity(Entity* entity)
 	    entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
 	    entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
 	}
-	entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
+	if ( newentity || entity->behavior != &actMagiclightBall )
+	{
+		entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
+	}
 	entity->new_pitch = ((Sint16)SDLNet_Read16(&net_packet->data[23])) / 256.0;
 	entity->new_roll = ((Sint16)SDLNet_Read16(&net_packet->data[25])) / 256.0;
 	if ( newentity )

@@ -114,13 +114,28 @@ void actMagiclightBall(Entity* my)
 		}
 
 		lightball_timer--;
+		const real_t diff = std::max(.01, (1.0 - my->fskill[0])) / 15.0;
+		my->fskill[0] += diff;
+		my->fskill[0] = std::min(1.0, my->fskill[0]);
+		my->yaw += .01 + 0.5 * (1.0 - my->fskill[0]);
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
+		my->new_yaw = my->yaw;
 		return;
 	}
 
-	my->yaw += .01;
-	if ( my->yaw >= PI * 2 )
+	if ( magic_init )
 	{
-		my->yaw -= PI * 2;
+		const real_t diff = std::max(.01, (1.0 - my->fskill[0])) / 15.0;
+		my->fskill[0] += diff;
+		my->fskill[0] = std::min(1.0, my->fskill[0]);
+		my->yaw += .01 + 0.5 * (1.0 - my->fskill[0]);
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
 	}
 
 	/*if (!my->parent) { //This means that it doesn't have a caster. In other words, magic light staff.
