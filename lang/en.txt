@@ -704,7 +704,7 @@ thou makest use of them.#
 
 454 You're caught in a beartrap!#
 455 You are struck by a boulder!#
-456 You are not strong enough to move the boulder.#
+456 You lack the might to move the boulder.#
 457 You pull a torch from the fire.#
 458 The fire is extinguished.#
 459 The chest swings open!#
