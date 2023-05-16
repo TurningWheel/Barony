@@ -1567,39 +1567,43 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	newNode->element = myuid;
 	*myuid = my->getUID();
     
-    if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && !myStats->name[0] && race == HUMAN)
+    if (monsterclicked >= 0 && monsterclicked < MAXPLAYERS && (myStats->type == HUMAN || myStats->name[0]))
     {
-        // give us a random name
-        auto& names = myStats->sex == FEMALE ?
-            randomNPCNamesFemale : randomNPCNamesMale;
-        const int choice = local_rng.uniform(0, (int)names.size() - 1);
-        auto name = names[choice].c_str();
-        size_t len = names[choice].size();
-        stringCopy(myStats->name, name, sizeof(Stat::name), len);
+        // give us a random name (if necessary)
+		if (!myStats->name[0] && !monsterNameIsGeneric(*myStats)) {
+			auto& names = myStats->sex == FEMALE ?
+				randomNPCNamesFemale : randomNPCNamesMale;
+			const int choice = local_rng.uniform(0, (int)names.size() - 1);
+			auto name = names[choice].c_str();
+			size_t len = names[choice].size();
+			stringCopy(myStats->name, name, sizeof(Stat::name), len);
+		}
         
         // ... and a nametag
-        if (monsterclicked == clientnum || splitscreen) {
-            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
-            nametag->x = my->x;
-            nametag->y = my->y;
-            nametag->z = my->z - 6;
-            nametag->sizex = 1;
-            nametag->sizey = 1;
-            nametag->flags[NOUPDATE] = true;
-            nametag->flags[PASSABLE] = true;
-            nametag->flags[SPRITE] = true;
-            nametag->flags[UNCLICKABLE] = true;
-            nametag->flags[BRIGHT] = true;
-            nametag->behavior = &actSpriteNametag;
-            nametag->parent = my->getUID();
-            nametag->scalex = 0.2;
-            nametag->scaley = 0.2;
-            nametag->scalez = 0.2;
-            nametag->skill[0] = monsterclicked;
-            nametag->skill[1] = playerColor(monsterclicked, colorblind_lobby, true);
-            nametag->setUID(-3);
-            entity_uids--;
-        }
+		if (!monsterNameIsGeneric(*myStats)) {
+			if (monsterclicked == clientnum || splitscreen) {
+				Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+				nametag->x = my->x;
+				nametag->y = my->y;
+				nametag->z = my->z - 6;
+				nametag->sizex = 1;
+				nametag->sizey = 1;
+				nametag->flags[NOUPDATE] = true;
+				nametag->flags[PASSABLE] = true;
+				nametag->flags[SPRITE] = true;
+				nametag->flags[UNCLICKABLE] = true;
+				nametag->flags[BRIGHT] = true;
+				nametag->behavior = &actSpriteNametag;
+				nametag->parent = my->getUID();
+				nametag->scalex = 0.2;
+				nametag->scaley = 0.2;
+				nametag->scalez = 0.2;
+				nametag->skill[0] = monsterclicked;
+				nametag->skill[1] = playerColor(monsterclicked, colorblind_lobby, true);
+				nametag->setUID(-3);
+				entity_uids--;
+			}
+		}
     }
     
 	if ( my->getINT() > -2 && race == HUMAN )
@@ -8703,39 +8707,43 @@ bool forceFollower(Entity& leader, Entity& follower)
 
 	int player = leader.isEntityPlayer();
     
-    if (player >= 0 && player < MAXPLAYERS && !followerStats->name[0] && followerStats->type == HUMAN)
+    if (player >= 0 && player < MAXPLAYERS && (followerStats->type == HUMAN || followerStats->name[0]))
     {
-        // give us a random name
-        auto& names = followerStats->sex == FEMALE ?
-            randomNPCNamesFemale : randomNPCNamesMale;
-        const int choice = local_rng.uniform(0, (int)names.size() - 1);
-        auto name = names[choice].c_str();
-        size_t len = names[choice].size();
-        stringCopy(followerStats->name, name, sizeof(Stat::name), len);
+		// give us a random name (if necessary)
+		if (!followerStats->name[0] && !monsterNameIsGeneric(*followerStats)) {
+			auto& names = followerStats->sex == FEMALE ?
+				randomNPCNamesFemale : randomNPCNamesMale;
+			const int choice = local_rng.uniform(0, (int)names.size() - 1);
+			auto name = names[choice].c_str();
+			size_t len = names[choice].size();
+			stringCopy(followerStats->name, name, sizeof(Stat::name), len);
+		}
         
         // ... and a nametag
-        if (player == clientnum || splitscreen) {
-            Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
-            nametag->x = follower.x;
-            nametag->y = follower.y;
-            nametag->z = follower.z - 6;
-            nametag->sizex = 1;
-            nametag->sizey = 1;
-            nametag->flags[NOUPDATE] = true;
-            nametag->flags[PASSABLE] = true;
-            nametag->flags[SPRITE] = true;
-            nametag->flags[UNCLICKABLE] = true;
-            nametag->flags[BRIGHT] = true;
-            nametag->behavior = &actSpriteNametag;
-            nametag->parent = follower.getUID();
-            nametag->scalex = 0.2;
-            nametag->scaley = 0.2;
-            nametag->scalez = 0.2;
-            nametag->skill[0] = player;
-            nametag->skill[1] = playerColor(player, colorblind_lobby, true);
-            nametag->setUID(-3);
-            entity_uids--;
-        }
+		if (!monsterNameIsGeneric(*followerStats)) {
+			if (player == clientnum || splitscreen) {
+				Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+				nametag->x = follower.x;
+				nametag->y = follower.y;
+				nametag->z = follower.z - 6;
+				nametag->sizex = 1;
+				nametag->sizey = 1;
+				nametag->flags[NOUPDATE] = true;
+				nametag->flags[PASSABLE] = true;
+				nametag->flags[SPRITE] = true;
+				nametag->flags[UNCLICKABLE] = true;
+				nametag->flags[BRIGHT] = true;
+				nametag->behavior = &actSpriteNametag;
+				nametag->parent = follower.getUID();
+				nametag->scalex = 0.2;
+				nametag->scaley = 0.2;
+				nametag->scalez = 0.2;
+				nametag->skill[0] = player;
+				nametag->skill[1] = playerColor(player, colorblind_lobby, true);
+				nametag->setUID(-3);
+				entity_uids--;
+			}
+		}
     }
     
 	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )

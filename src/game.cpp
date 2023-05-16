@@ -2383,7 +2383,7 @@ void gameLogic(void)
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
                                     
-                                    if (players[c]->isLocalPlayer() && monsterStats->type == HUMAN && monsterStats->name[0]) {
+                                    if (players[c]->isLocalPlayer() && monsterStats->name[0] && !monsterNameIsGeneric(*monsterStats)) {
                                         Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
                                         nametag->x = monster->x;
                                         nametag->y = monster->y;

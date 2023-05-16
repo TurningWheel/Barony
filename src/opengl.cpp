@@ -649,15 +649,31 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
 #endif
             GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         }
-        
-        const GLfloat light[4] = {
-            (float)getLightAtModifier,
-            (float)getLightAtModifier,
-            (float)getLightAtModifier,
-            1.f,
-        };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
-        
+
+        if (entity->monsterEntityRenderAsTelepath) {
+            const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
+
+            Vector4 defaultLight{ 0.1f, 0.1f, 0.25f, 1.f };
+#ifndef EDITOR
+            static ConsoleVariable<Vector4> cvar_lightColor("/telepath_color", defaultLight);
+            const auto& light = *cvar_lightColor;
+#else
+            const auto& light = defaultLight;
+#endif
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&light));
+        } else {
+            const GLfloat light[4] = {
+                (float)getLightAtModifier,
+                (float)getLightAtModifier,
+                (float)getLightAtModifier,
+                1.f,
+            };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&entity->lightBonus));
+        }
+
+        // highlighting
         bool highlightEntity = false;
         bool highlightEntityFromParent = false;
         int player = -1;
@@ -675,7 +691,6 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 highlightEntity = highlightEntityFromParent;
             }
         }
-        
         if (highlightEntity) {
             if (!highlightEntityFromParent) {
                 entity->highlightForUIGlow = (0.05 * (entity->ticks % 41));
@@ -684,18 +699,16 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
             if (highlight > 1.f) {
                 highlight = 1.f - (highlight - 1.f);
             }
-            const GLfloat light[4] = {
-                (highlight - .5f) * .1f + entity->lightBonus.x,
-                (highlight - .5f) * .1f + entity->lightBonus.y,
-                (highlight - .5f) * .1f + entity->lightBonus.z,
-                entity->lightBonus.w };
-            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+            const GLfloat add[4] = {
+                (highlight - .5f) * .05f,
+                (highlight - .5f) * .05f,
+                (highlight - .5f) * .05f,
+                0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
         } else {
-            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, (float*)&entity->lightBonus));
+            constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
         }
-        
-        constexpr GLfloat add[4] = { 0.f, 0.f, 0.f, 0.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, add));
     } else {
         if (remap) {
             mat4x4_t empty(0.f);
@@ -980,7 +993,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     
     // bind shader
     auto& dither = entity->dithering[camera];
-    auto& shader = !entity->flags[BRIGHT] ?
+    auto& shader = !entity->flags[BRIGHT] && !entity->monsterEntityRenderAsTelepath ?
         (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader):
         voxelBrightShader;
     shader.bind();

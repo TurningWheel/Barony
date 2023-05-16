@@ -1972,6 +1972,13 @@ void drawEntities3D(view_t* camera, int mode)
         if (dither.value == 0) {
             continue;
         }
+
+		// don't draw hud weapons if we're being a telepath. they get in the way of world models
+		if (entity->flags[OVERDRAW] && currentPlayerViewport >= 0) {
+			if (stats[currentPlayerViewport]->EFFECTS[EFF_TELEPATH]) {
+				continue;
+			}
+		}
         
 		if ( entity->flags[SPRITE] == false )
 		{
