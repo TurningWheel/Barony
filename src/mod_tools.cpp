@@ -2770,6 +2770,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			int skillLVL = stats[player]->PROFICIENCIES[PRO_SHIELD] / 10;
 			int durabilityBonus = skillLVL * 10;
+			if ( itemCategory(&item) == ARMOR )
+			{
+				durabilityBonus *= 2;
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), durabilityBonus, getItemProficiencyName(PRO_SHIELD).c_str());
 		}
 		else if ( detailTag.compare("shield_legendary_durability") == 0 )

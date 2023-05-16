@@ -8287,6 +8287,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
 						{
 							armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+							if ( itemCategory(hitstats->shield) == ARMOR )
+							{
+								armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10); // 2x shield bonus offhand
+							}
 							if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 							{
 								armorDegradeChance = 100; // don't break.
@@ -8360,6 +8364,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										increaseSkill = false;
 									}
+									else if ( itemCategory(hitstats->shield) != ARMOR
+										&& hitstats->PROFICIENCIES[PRO_SHIELD] >= SKILL_LEVEL_SKILLED )
+									{
+										increaseSkill = false; // non-shield offhands dont increase skill past 40.
+									}
 									if ( increaseSkill )
 									{
 										hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
@@ -8382,6 +8391,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( hit.entity->behavior == &actPlayer )
 							{
 								shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+								if ( itemCategory(hitstats->shield) == ARMOR )
+								{
+									shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10); // 2x shield bonus offhand
+								}
 								if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 								{
 									shieldDegradeChance = 100; // don't break.
