@@ -905,11 +905,22 @@ void actBoulder(Entity* my)
 					if (inrange[i])
 					{
                         bool hasRingOfStr = false;
-						if ( players[i] && players[i]->entity ) {
-                            auto ring = stats[i]->ring;
-                            if (ring && ring->type == ItemType::RING_STRENGTH) {
+						if ( players[i] && players[i]->entity ) 
+						{
+                            if ( stats[i]->ring 
+								&& stats[i]->ring->type == ItemType::RING_STRENGTH) 
+							{
                                 hasRingOfStr = true;
                             }
+							else if ( stats[i]->gloves 
+								&& stats[i]->gloves->type == ItemType::GAUNTLETS_STRENGTH ) 
+							{
+								hasRingOfStr = true;
+							}
+							else if ( stats[i]->EFFECTS[EFF_POTION_STR] )
+							{
+								hasRingOfStr = true;
+							}
 						}
 						if ( !hasRingOfStr )
 						{
