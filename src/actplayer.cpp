@@ -4557,11 +4557,45 @@ void actPlayer(Entity* my)
                 
                 // carrying no light source
                 if (playerRace == RAT) {
-                    light_type = "player_ambient_rat";
+					if ( stats[PLAYER_NUM]->sneaking )
+					{
+						light_type = "player_ambient_rat_sneaking";
+					}
+					else
+					{
+						light_type = "player_ambient_rat";
+					}
                 }
                 else if (playerRace == SPIDER) {
-                    light_type = "player_ambient_spider";
+					if ( stats[PLAYER_NUM]->sneaking )
+					{
+						light_type = "player_ambient_spider_sneaking";
+					}
+					else
+					{
+						light_type = "player_ambient_spider";
+					}
                 }
+				else if ( playerRace == TROLL ) {
+					if ( stats[PLAYER_NUM]->sneaking )
+					{
+						light_type = "player_ambient_troll_sneaking";
+					}
+					else
+					{
+						light_type = "player_ambient_troll";
+					}
+				}
+				else if ( playerRace == CREATURE_IMP ) {
+					if ( stats[PLAYER_NUM]->sneaking )
+					{
+						light_type = "player_ambient_imp_sneaking";
+					}
+					else
+					{
+						light_type = "player_ambient_imp";
+					}
+				}
                 else if (stats[PLAYER_NUM]->sneaking) {
                     light_type = "player_sneaking";
                 }
