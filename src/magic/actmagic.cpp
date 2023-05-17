@@ -1451,9 +1451,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
-							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
