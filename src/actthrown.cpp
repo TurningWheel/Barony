@@ -714,6 +714,14 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic()
+					&& hit.entity->isColliderAttachableToBombs() )
+				{
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_COLLIDER, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 			}
 			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{

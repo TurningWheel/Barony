@@ -991,6 +991,7 @@ public:
 	bool isColliderWeakToBoulders() const;
 	bool isColliderShownAsWallOnMinimap() const;
 	bool isColliderDamageableByMagic() const;
+	bool isColliderAttachableToBombs() const;
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
 	int getColliderSfxOnHit() const;

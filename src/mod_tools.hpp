@@ -3202,6 +3202,7 @@ struct EditorEntityData_t
 		bool minotaurPathThroughAndBreak = false;
 		bool meleeAffects = false;
 		bool magicAffects = false;
+		bool bombsAttach = false;
 		bool boulderDestroys = false;
 		bool showAsWallOnMinimap = false;
 		std::unordered_set<int> proficiencyBonusDamage;

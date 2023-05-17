@@ -826,6 +826,25 @@ void actBomb(Entity* my)
 					shouldExplode = true;
 				}
 			}
+			else if ( onEntity->behavior == &actColliderDecoration )
+			{
+				if ( onEntity->colliderCurrentHP < BOMB_ENTITY_ATTACHED_START_HP
+					|| BOMB_HIT_BY_PROJECTILE == 1 )
+				{
+					if ( onEntity->colliderCurrentHP > 0 )
+					{
+						if ( BOMB_ITEMTYPE == TOOL_BOMB ) // fire bomb do more.
+						{
+							onEntity->colliderHandleDamageMagic(50, *my, uidToEntity(my->parent));
+						}
+						else
+						{
+							onEntity->colliderHandleDamageMagic(20, *my, uidToEntity(my->parent));
+						}
+					}
+					shouldExplode = true;
+				}
+			}
 		}
 		else
 		{
@@ -973,7 +992,9 @@ void actBomb(Entity* my)
 	}
 
 	if ( !bombExplodeAOETargets && triggered 
-		&& (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST) )
+		&& (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR 
+			|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST
+			|| BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_COLLIDER) )
 	{
 		// found enemy, do AoE effect.
 		BOMB_HIT_BY_PROJECTILE = 1;
