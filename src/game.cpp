@@ -2580,15 +2580,15 @@ void gameLogic(void)
 							losingConnection[c] = false;
 							messageLocalPlayers(MESSAGE_MISC, language[724], c, stats[c]->name);
 						}
-						else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 15 - 1 )
+						else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * TIMEOUT_WARNING_TIME - 1 )
 						{
-							// 15 second timer
+							// give warning
 							losingConnection[c] = true;
-							messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name);
+							messageLocalPlayers(MESSAGE_MISC, language[725], c, stats[c]->name, TIMEOUT_TIME - TIMEOUT_WARNING_TIME);
 						}
-						else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * 30 - 1 )
+						else if ( !client_disconnected[c] && ticks - client_keepalive[c] >= TICKS_PER_SECOND * TIMEOUT_TIME - 1 )
 						{
-							// additional 15 seconds (kick time)
+							// kick client
 							messageLocalPlayers(MESSAGE_MISC, language[726], c, stats[c]->name);
 							strcpy((char*)net_packet->data, "KICK");
 							net_packet->address.host = net_clients[c - 1].host;
@@ -2797,15 +2797,15 @@ void gameLogic(void)
 					losingConnection[0] = false;
 					messagePlayer(i, MESSAGE_MISC, language[728]);
 				}
-				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * 15 - 1 )
+				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * TIMEOUT_WARNING_TIME - 1 )
 				{
-					// 15 second timer
+					// give warning
 					losingConnection[0] = true;
-					messageLocalPlayers(MESSAGE_MISC, language[729]);
+					messageLocalPlayers(MESSAGE_MISC, language[729], TIMEOUT_TIME - TIMEOUT_WARNING_TIME);
 				}
-				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 30 - 1 )
+				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * TIMEOUT_TIME - 1 )
 				{
-					// additional 15 seconds (disconnect time)
+					// timeout
 					messageLocalPlayers(MESSAGE_MISC, language[730]);
 					MainMenu::timedOut();
 					client_disconnected[0] = true;

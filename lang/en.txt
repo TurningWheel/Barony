@@ -1130,7 +1130,7 @@ You should call a plumber!#
 724 Server connection to client %d (%s) regained.
  Auto-kick cancelled.#
 725 Client %d (%s) is not responding to server.
- Auto-kicking in 15 seconds...#
+ Auto-kicking in %d seconds...#
 726 Server connection to client %d (%s) lost.
  Kicking from game.#
 727 You have no room left in your pack for a
@@ -1138,7 +1138,7 @@ You should call a plumber!#
 728 Connection to server regained.
  Auto disconnect cancelled.#
 729 Server is not responding.
- Auto disconnect in 15 seconds...#
+ Auto disconnect in %d seconds...#
 730 Connection to server lost.
  Disconnecting.#
 731

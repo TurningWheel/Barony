@@ -7743,7 +7743,7 @@ bind_failed:
 #endif
 				}
 				if (*cvar_enableKeepAlives) {
-					if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * 30)) {
+					if (clientHasLostP2P || (ticks - client_keepalive[i] > TICKS_PER_SECOND * TIMEOUT_TIME)) {
 						client_disconnected[i] = true;
 						strncpy((char*)(net_packet->data), "DISC", 4);
 						net_packet->data[4] = i;
@@ -7812,8 +7812,8 @@ bind_failed:
 			}
 
 			if (*cvar_enableKeepAlives) {
-				if (ticks - client_keepalive[0] > TICKS_PER_SECOND * 30) {
-					// timeout after 30 seconds of no messages from server
+				if (ticks - client_keepalive[0] > TICKS_PER_SECOND * TIMEOUT_TIME) {
+					// timeout after X seconds of no messages from server
 					disconnectFromLobby();
 					destroyMainMenu();
 					createMainMenu(false);
