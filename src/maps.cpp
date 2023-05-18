@@ -4180,6 +4180,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
 
 				TileEntityList.addEntity(*childEntity);
 				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4192,6 +4193,8 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
+
 				TileEntityList.addEntity(*childEntity);
 				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
@@ -4977,6 +4980,7 @@ void assignActions(map_t* map)
                 childEntity->flags[BLOCKSIGHT] = true;
                 childEntity->x = entity->x - 7;
                 childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
                 TileEntityList.addEntity(*childEntity);
                 //printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
                 childEntity->sizex = 2;
@@ -4988,6 +4992,7 @@ void assignActions(map_t* map)
                 childEntity->flags[BLOCKSIGHT] = true;
                 childEntity->x = entity->x + 7;
                 childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
                 TileEntityList.addEntity(*childEntity);
                 //printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
                 childEntity->sizex = 2;
@@ -6037,6 +6042,7 @@ void assignActions(map_t* map)
                 childEntity->flags[BLOCKSIGHT] = true;
                 childEntity->x = entity->x - 7;
                 childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
                 TileEntityList.addEntity(*childEntity);
                 //printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
                 childEntity->sizex = 2;
@@ -6048,6 +6054,7 @@ void assignActions(map_t* map)
                 childEntity->flags[BLOCKSIGHT] = true;
                 childEntity->x = entity->x + 7;
                 childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
                 TileEntityList.addEntity(*childEntity);
                 //printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
                 childEntity->sizex = 2;

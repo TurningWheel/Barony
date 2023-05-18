@@ -3891,12 +3891,13 @@ void actMonster(Entity* my)
 						MONSTER_VELX = cos(tangent) * .1;
 						MONSTER_VELY = sin(tangent) * .1;
 					}
-					else
+					else if ( entity->behavior == &actDoorFrame && 
+						entity->flags[INVISIBLE] )
 					{
 						if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
 						{
 							// east/west doorway
-							if ( my->y < floor(my->y / 16) * 16 + 8 )
+							if ( my->y < floor(entity->y / 16) * 16 + 8 )
 							{
 								// slide south
 								MONSTER_VELX = 0;
@@ -3912,7 +3913,7 @@ void actMonster(Entity* my)
 						else
 						{
 							// north/south doorway
-							if ( my->x < floor(my->x / 16) * 16 + 8 )
+							if ( my->x < floor(entity->x / 16) * 16 + 8 )
 							{
 								// slide east
 								MONSTER_VELX = .25;
@@ -3939,6 +3940,10 @@ void actMonster(Entity* my)
 							MONSTER_VELY = 0.f;
 							continue;
 						}
+					}
+					else
+					{
+						continue;
 					}
 
 
