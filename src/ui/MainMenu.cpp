@@ -71,104 +71,214 @@ namespace MainMenu {
 	    Font::dumpCache();
 	    });
 
-	// If you want to add new player-visible bindings, ADD THEM HERE:
-	// The first string in a binding is the name of the binding.
-	// The second is the default Keyboard input.
-    // The third is the default Gamepad input.
-    // The fourth is the default Joystick input.
-	static const char* defaultBindings[][4] = {
-		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
-		{"Use", "Mouse3", "ButtonRightBumper", emptyBinding},
-		{"Cast Spell", "F", "ButtonLeftBumper", emptyBinding},
-		{"Defend", "Space", "LeftTrigger", emptyBinding},
-		{"Sneak", "Space", "LeftTrigger", emptyBinding},
-		{"Character Status", "Tab", "ButtonBack", emptyBinding},
-		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
-		{"Spell List", "B", hiddenBinding, emptyBinding},
-		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
-		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "DpadX-", emptyBinding},
-		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
-		{"Cycle NPCs", "E", "DpadY-", emptyBinding},
-		{"Open Map", "M", hiddenBinding, emptyBinding},
-		{"Open Log", "L", hiddenBinding, emptyBinding},
-		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
-		{"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
+    // If you want to add new player-visible bindings, ADD THEM HERE:
+    struct DefaultBinding {
+        const std::string action;
+        const std::string keyboard;
+        const std::string gamepad;
+        const std::string joystick;
+    };
+    struct BindingLayout {
+        const std::string name;
+        const std::vector<DefaultBinding> bindings;
+    };
+    static const std::vector<BindingLayout> defaultBindings = {
+        {
+            "Standard",
+            {
+                {"Attack", "Mouse1", "RightTrigger", emptyBinding},
+                {"Use", "Mouse3", "ButtonA", emptyBinding},
+                {"Cast Spell", "F", "ButtonLeftBumper", emptyBinding},
+                {"Defend", "Space", "LeftTrigger", emptyBinding},
+                {"Sneak", "Space", "LeftTrigger", emptyBinding},
+                {"Character Status", "Tab", "ButtonBack", emptyBinding},
+                {"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
+                {"Spell List", "B", hiddenBinding, emptyBinding},
+                {"Skill Sheet", "K", hiddenBinding, emptyBinding},
+                {"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+                {"Command NPC", "Q", "DpadX-", emptyBinding},
+                {"Show NPC Commands", "C", "DpadX+", emptyBinding},
+                {"Cycle NPCs", "E", "DpadY-", emptyBinding},
+                {"Open Map", "M", hiddenBinding, emptyBinding},
+                {"Open Log", "L", hiddenBinding, emptyBinding},
+                {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
-		{"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
-		{"Hotbar Right", "MouseWheelDown", "ButtonA", emptyBinding},
-		{"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
+                {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
 #else
-		{"Hotbar Left", "MouseWheelUp", "ButtonX", emptyBinding},
-		{"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
-		{"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
+                {"Hotbar Left", "MouseWheelUp", "ButtonX", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
 #endif
-        {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+                {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
+                {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+                {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
+                {"Chat", "Return", hiddenBinding, emptyBinding},
+                {"Move Forward", "W", hiddenBinding, emptyBinding},
+                {"Move Left", "A", hiddenBinding, emptyBinding},
+                {"Move Backward", "S", hiddenBinding, emptyBinding},
+                {"Move Right", "D", hiddenBinding, emptyBinding},
+                {"Turn Left", "Left", hiddenBinding, emptyBinding},
+                {"Turn Right", "Right", hiddenBinding, emptyBinding},
+                {"Look Up", "Up", hiddenBinding, emptyBinding},
+                {"Look Down", "Down", hiddenBinding, emptyBinding},
+                {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+            }
+        },
+        {
+            "Expert",
+            {
+                {"Attack", "Mouse1", "RightTrigger", emptyBinding},
+                {"Use", "Mouse3", "ButtonRightBumper", emptyBinding},
+                {"Cast Spell", "F", "ButtonLeftBumper", emptyBinding},
+                {"Defend", "Space", "LeftTrigger", emptyBinding},
+                {"Sneak", "Space", "LeftTrigger", emptyBinding},
+                {"Character Status", "Tab", "ButtonBack", emptyBinding},
+                {"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
+                {"Spell List", "B", hiddenBinding, emptyBinding},
+                {"Skill Sheet", "K", hiddenBinding, emptyBinding},
+                {"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+                {"Command NPC", "Q", "DpadX-", emptyBinding},
+                {"Show NPC Commands", "C", "DpadX+", emptyBinding},
+                {"Cycle NPCs", "E", "DpadY-", emptyBinding},
+                {"Open Map", "M", hiddenBinding, emptyBinding},
+                {"Open Log", "L", hiddenBinding, emptyBinding},
+                {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
 #ifdef NINTENDO
-		{"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Hotbar Left", "MouseWheelUp", "ButtonY", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonA", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
 #else
-		{"Interact Tooltip Next", "R", "ButtonA", emptyBinding },
+                {"Hotbar Left", "MouseWheelUp", "ButtonX", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonB", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
 #endif
-		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
-		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
-		{"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
-		{"Chat", "Return", hiddenBinding, emptyBinding},
-		{"Move Forward", "W", hiddenBinding, emptyBinding},
-		{"Move Left", "A", hiddenBinding, emptyBinding},
-		{"Move Backward", "S", hiddenBinding, emptyBinding},
-		{"Move Right", "D", hiddenBinding, emptyBinding},
-		{"Turn Left", "Left", hiddenBinding, emptyBinding},
-		{"Turn Right", "Right", hiddenBinding, emptyBinding},
-		{"Look Up", "Up", hiddenBinding, emptyBinding},
-		{"Look Down", "Down", hiddenBinding, emptyBinding},
-		{"Screenshot", "F6", hiddenBinding, hiddenBinding},
-	};
+                {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+#ifdef NINTENDO
+                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+#else
+                {"Interact Tooltip Next", "R", "ButtonA", emptyBinding },
+#endif
+                {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
+                {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+                {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
+                {"Chat", "Return", hiddenBinding, emptyBinding},
+                {"Move Forward", "W", hiddenBinding, emptyBinding},
+                {"Move Left", "A", hiddenBinding, emptyBinding},
+                {"Move Backward", "S", hiddenBinding, emptyBinding},
+                {"Move Right", "D", hiddenBinding, emptyBinding},
+                {"Turn Left", "Left", hiddenBinding, emptyBinding},
+                {"Turn Right", "Right", hiddenBinding, emptyBinding},
+                {"Look Up", "Up", hiddenBinding, emptyBinding},
+                {"Look Down", "Down", hiddenBinding, emptyBinding},
+                {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+            }
+        },
+        {
+            "Classic",
+            {
+                {"Attack", "Mouse1", "RightTrigger", emptyBinding},
+                {"Use", "Mouse3", "ButtonA", emptyBinding},
+                {"Cast Spell", "F", "ButtonLeftBumper", emptyBinding},
+                {"Defend", "Space", "LeftTrigger", emptyBinding},
+                {"Sneak", "Space", "LeftTrigger", emptyBinding},
+                {"Character Status", "Tab", "ButtonBack", emptyBinding},
+                {"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
+                {"Spell List", "B", hiddenBinding, emptyBinding},
+                {"Skill Sheet", "K", hiddenBinding, emptyBinding},
+                {"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+#ifdef NINTENDO
+                {"Command NPC", "Q", "ButtonY", emptyBinding},
+                {"Show NPC Commands", "C", "ButtonX", emptyBinding},
+                {"Cycle NPCs", "E", "ButtonB", emptyBinding},
+#else
+                {"Command NPC", "Q", "ButtonX", emptyBinding},
+                {"Show NPC Commands", "C", "ButtonY", emptyBinding},
+                {"Cycle NPCs", "E", "ButtonB", emptyBinding},
+#endif
+                {"Open Map", "M", hiddenBinding, emptyBinding},
+                {"Open Log", "L", hiddenBinding, emptyBinding},
+                {"Toggle Minimap", "`", "ButtonRightStick", emptyBinding},
+                {"Hotbar Left", "MouseWheelUp", "DpadX-", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "DpadX+", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "DpadY-", emptyBinding},
+                {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
+                {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+                {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
+                {"Chat", "Return", hiddenBinding, emptyBinding},
+                {"Move Forward", "W", hiddenBinding, emptyBinding},
+                {"Move Left", "A", hiddenBinding, emptyBinding},
+                {"Move Backward", "S", hiddenBinding, emptyBinding},
+                {"Move Right", "D", hiddenBinding, emptyBinding},
+                {"Turn Left", "Left", hiddenBinding, emptyBinding},
+                {"Turn Right", "Right", hiddenBinding, emptyBinding},
+                {"Look Up", "Up", hiddenBinding, emptyBinding},
+                {"Look Down", "Down", hiddenBinding, emptyBinding},
+                {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+            }
+        },
+        {
+            "Minimal",
+            {
+                {"Attack", "Mouse1", "RightTrigger", emptyBinding},
+                {"Use", "Mouse3", "ButtonA", emptyBinding},
+                {"Cast Spell", "F", "ButtonX", emptyBinding},
+                {"Defend", "Space", "LeftTrigger", emptyBinding},
+                {"Sneak", "Space", "LeftTrigger", emptyBinding},
+                {"Character Status", "Tab", "ButtonBack", emptyBinding},
+                {"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
+                {"Spell List", "B", hiddenBinding, emptyBinding},
+                {"Skill Sheet", "K", hiddenBinding, emptyBinding},
+                {"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
+                {"Command NPC", "Q", "DpadX-", emptyBinding},
+                {"Show NPC Commands", "C", "DpadX+", emptyBinding},
+                {"Cycle NPCs", "E", "DpadY-", emptyBinding},
+                {"Open Map", "M", hiddenBinding, emptyBinding},
+                {"Open Log", "L", hiddenBinding, emptyBinding},
+                {"Toggle Minimap", "`", emptyBinding, emptyBinding},
+#ifdef NINTENDO
+                {"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
+#else
+                {"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
+                {"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
+                {"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
+#endif
+                {"Hotbar Down / Cancel", hiddenBinding, emptyBinding, emptyBinding},
+                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
+                {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+                {"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
+                {"Chat", "Return", hiddenBinding, emptyBinding},
+                {"Move Forward", "W", hiddenBinding, emptyBinding},
+                {"Move Left", "A", hiddenBinding, emptyBinding},
+                {"Move Backward", "S", hiddenBinding, emptyBinding},
+                {"Move Right", "D", hiddenBinding, emptyBinding},
+                {"Turn Left", "Left", hiddenBinding, emptyBinding},
+                {"Turn Right", "Right", hiddenBinding, emptyBinding},
+                {"Look Up", "Up", hiddenBinding, emptyBinding},
+                {"Look Down", "Down", hiddenBinding, emptyBinding},
+                {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+            }
+        },
+    };
 
-	static const char* defaultSimpleClassicBindings[][4] = {
-		{"Attack", "Mouse1", "RightTrigger", emptyBinding},
-		{"Use", "Mouse3", "ButtonA", emptyBinding},
-		{"Cast Spell", "F", "ButtonX", emptyBinding},
-		{"Defend", "Space", "LeftTrigger", emptyBinding},
-		{"Sneak", "Space", "LeftTrigger", emptyBinding},
-		{"Character Status", "Tab", "ButtonBack", emptyBinding},
-		{"Pause Game", hiddenBinding, "ButtonStart", emptyBinding},
-		{"Spell List", "B", hiddenBinding, emptyBinding},
-		{"Skill Sheet", "K", hiddenBinding, emptyBinding},
-		{"Autosort Inventory", "R", "ButtonLeftStick", emptyBinding},
-		{"Command NPC", "Q", "DpadX-", emptyBinding},
-		{"Show NPC Commands", "C", "DpadX+", emptyBinding},
-		{"Cycle NPCs", "E", "DpadY-", emptyBinding},
-		{"Open Map", "M", hiddenBinding, emptyBinding},
-		{"Open Log", "L", hiddenBinding, emptyBinding},
-		{"Minimap Scale", hiddenBinding, hiddenBinding, hiddenBinding },
-		{"Toggle Minimap", "`", emptyBinding, emptyBinding},
-#ifdef NINTENDO
-		{"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
-		{"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
-		{"Hotbar Up / Select", "Mouse2", "ButtonX", emptyBinding},
-#else
-		{"Hotbar Left", "MouseWheelUp", "ButtonLeftBumper", emptyBinding},
-		{"Hotbar Right", "MouseWheelDown", "ButtonRightBumper", emptyBinding},
-		{"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
-#endif
-		{"Hotbar Down / Cancel", hiddenBinding, emptyBinding, emptyBinding},
-		{"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
-		{"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
-		{"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
-		{"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
-		{"Chat", "Return", hiddenBinding, emptyBinding},
-		{"Move Forward", "W", hiddenBinding, emptyBinding},
-		{"Move Left", "A", hiddenBinding, emptyBinding},
-		{"Move Backward", "S", hiddenBinding, emptyBinding},
-		{"Move Right", "D", hiddenBinding, emptyBinding},
-		{"Turn Left", "Left", hiddenBinding, emptyBinding},
-		{"Turn Right", "Right", hiddenBinding, emptyBinding},
-		{"Look Up", "Up", hiddenBinding, emptyBinding},
-		{"Look Down", "Down", hiddenBinding, emptyBinding},
-		{"Screenshot", "F6", hiddenBinding, hiddenBinding},
-	};
+    static const char defaultControlLayout[] = "Standard";
 
-	static const int numBindings = sizeof(defaultBindings) / sizeof(defaultBindings[0]);
+    inline static const auto& getBindings(const char* name) {
+        for (auto& layout : defaultBindings) {
+            if (layout.name == name) {
+                return layout.bindings;
+            }
+        }
+        return defaultBindings[0].bindings; // Should be "Standard"
+    }
 
 	static int main_menu_buttons_height = 0;
 	static Uint32 main_menu_ticks = 0u;
@@ -289,7 +399,7 @@ namespace MainMenu {
 		std::unordered_map<std::string, std::string> joystick_bindings[4];
 		inline void save();
 		static inline Bindings load();
-		static inline Bindings reset();
+		static inline Bindings reset(const char* profile);
 		bool serialize(FileInterface*);
 	};
 
@@ -2101,13 +2211,13 @@ namespace MainMenu {
 		return old_bindings;
 	}
 
-	inline Bindings Bindings::reset() {
+	inline Bindings Bindings::reset(const char* profile) {
 		Bindings bindings;
 		for (int c = 0; c < 4; ++c) {
-            for (int i = 0; i < numBindings; ++i) {
-			    bindings.kb_mouse_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][1]);
-			    bindings.gamepad_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][2]);
-			    bindings.joystick_bindings[c].emplace(defaultBindings[i][0], defaultBindings[i][3]);
+            for (auto& binding : getBindings(profile)) {
+			    bindings.kb_mouse_bindings[c].emplace(binding.action, binding.keyboard);
+			    bindings.gamepad_bindings[c].emplace(binding.action, binding.gamepad);
+			    bindings.joystick_bindings[c].emplace(binding.action, binding.joystick);
 			}
 		}
 		return bindings;
@@ -2133,11 +2243,16 @@ namespace MainMenu {
 				if (file->isReading()) {
 					bindings.clear();
 				}
-				Uint32 count = bindings.size();
+				Uint32 count = (Uint32)bindings.size();
 				file->beginArray(count);
 				if (file->isReading()) {
-                    for (int index = 0; index < numBindings; ++index) {
-                        bindings[defaultBindings[index][0]] = defaultBindings[index][j + 1];
+                    for (auto& binding : getBindings(defaultControlLayout)) {
+                        switch (j) {
+                        case 0: bindings[binding.action] = binding.keyboard; break;
+                        case 1: bindings[binding.action] = binding.gamepad; break;
+                        case 2: bindings[binding.action] = binding.joystick; break;
+                        default: break;
+                        }
                     }
 					for (Uint32 index = 0; index < count; ++index) {
 						file->beginObject();
@@ -2555,7 +2670,7 @@ namespace MainMenu {
 		settings.minimap_pings_enabled = true;
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
-		settings.bindings = Bindings::reset();
+		settings.bindings = Bindings::reset(defaultControlLayout);
 		settings.mkb_facehotbar = false;
 		settings.gamepad_facehotbar = true;
 		settings.mkb_world_tooltips_enabled = true;
@@ -2699,6 +2814,38 @@ namespace MainMenu {
 		file->property("port_number", port_number);
 		return true;
 	}
+
+    static const char* getMatchingProfileName(int player, bool controller) {
+        auto& bindings = controller ?
+            allSettings.bindings.gamepad_bindings[player]:
+            allSettings.bindings.kb_mouse_bindings[player];
+        for (auto& layout : defaultBindings) {
+            bool matchesLayout = true;
+            if (controller) {
+                for (auto& binding : layout.bindings) {
+                    if (binding.gamepad != hiddenBinding) {
+                        if (bindings[binding.action] != binding.gamepad) {
+                            matchesLayout = false;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                for (auto& binding : layout.bindings) {
+                    if (bindings[binding.action] != binding.keyboard) {
+                        if (binding.keyboard != hiddenBinding) {
+                            matchesLayout = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (matchesLayout) {
+                return layout.name.c_str();
+            }
+        }
+        return "Custom";
+    }
 
 /******************************************************************************/
 
@@ -3928,7 +4075,11 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+#ifdef APPLE
+				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+#else
+                snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
+#endif
 				allSettings.audio_device = guid_string;
 				fmod_system->setDriver(index);
 			}
@@ -4944,7 +5095,7 @@ namespace MainMenu {
 		}
 	}
 
-	static void settingsBindings(int player_index, int device_index, Setting setting_to_select) {
+	static void settingsBindings(int player_index, int device_index, const char* profile, Setting setting_to_select) {
 		soundActivate();
 
 		static Button* bound_button;
@@ -4952,6 +5103,7 @@ namespace MainMenu {
 		static std::string bound_input;
 		static int bound_player;
 		static int bound_device;
+        static const char* bound_profile;
 
 		bind_mode = false;
 		bound_button = nullptr;
@@ -4959,15 +5111,16 @@ namespace MainMenu {
 		bound_input = "";
 		bound_player = player_index;
 		bound_device = device_index;
+        bound_profile = profile;
 
 		auto window = settingsGenericWindow("bindings", "BINDINGS",
 			[](Button& button){ // restore defaults
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
-				allSettings.bindings = Bindings::reset();
+				allSettings.bindings = Bindings::reset(defaultControlLayout);
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-				settingsBindings(player, inputs.hasController(player) ? 1 : 0,
+				settingsBindings(player, inputs.hasController(player) ? 1 : 0, defaultControlLayout,
 				    {Setting::Type::Dropdown, "player_dropdown_button"});
 			},
 			[](Button& button){ // discard & exit
@@ -4996,10 +5149,11 @@ namespace MainMenu {
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
 
 		std::vector<Setting> bindings;
-		bindings.reserve(numBindings);
-		for (int c = 0; c < numBindings; ++c) {
-		    if (strcmp(defaultBindings[c][device_index + 1], hiddenBinding)) {
-		        bindings.push_back({Setting::Type::Binding, defaultBindings[c][0]});
+		bindings.reserve(getBindings(profile).size());
+		for (auto& binding : getBindings(profile)) {
+            const std::string& str = *(&binding.keyboard + device_index);
+            if (str != hiddenBinding) {
+		        bindings.push_back({Setting::Type::Binding, binding.action.c_str()});
 		    }
 		}
 
@@ -5019,12 +5173,12 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int player_index = (int)(entry.name.back() - '1');
-						settingsBindings(player_index, bound_device,
+						settingsBindings(player_index, bound_device, getMatchingProfileName(player_index, bound_device == 1),
 						    {Setting::Type::Dropdown, "player_dropdown_button"});
 					});
 			});
 
-		std::vector<const char*> devices = {
+		const std::vector<const char*> devices = {
 		    "KB & Mouse",
 		    "Gamepad",
 		    //"Joystick", // Maybe for the future.
@@ -5042,11 +5196,40 @@ namespace MainMenu {
 						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 						parent_background->removeSelf();
 						int device_index = getDeviceIndexForName(entry.text.c_str());
-						settingsBindings(bound_player, device_index,
+						settingsBindings(bound_player, device_index, getMatchingProfileName(bound_player, device_index == 1),
 						    {Setting::Type::Dropdown, "device_dropdown_button"});
 					});
 			});
 #endif
+        
+        std::vector<const char*> layouts;
+        for (auto& layout : defaultBindings) {
+            layouts.emplace_back(layout.name.c_str());
+        }
+        
+        y += settingsAddDropdown(*subwindow, y, "profile_dropdown_button", "Profile",
+            "Select a predefined binding layout for the given player.", false, layouts, profile,
+            [](Button& button){
+                soundActivate();
+                settingsOpenDropdown(button, "profile_dropdown", DropdownType::Short,
+                    [](Frame::entry_t& entry){
+                        soundActivate();
+                        auto parent = main_menu_frame->findFrame("bindings");
+                        auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
+                        parent_background->removeSelf();
+                        const char* profile = entry.text.c_str();
+                        allSettings.bindings.kb_mouse_bindings[bound_player].clear();
+                        allSettings.bindings.gamepad_bindings[bound_player].clear();
+                        allSettings.bindings.joystick_bindings[bound_player].clear();
+                        for (auto& binding : getBindings(profile)) {
+                            allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
+                            allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
+                            allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
+                        }
+                        settingsBindings(bound_player, bound_device, profile,
+                            {Setting::Type::Dropdown, "profile_dropdown_button"});
+                    });
+            });
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
 
@@ -5188,6 +5371,7 @@ bind_failed:
 #ifndef NINTENDO
 			{Setting::Type::Dropdown, "device_dropdown_button"},
 #endif
+            {Setting::Type::Dropdown, "profile_dropdown_button"},
 			bindings[0],
 			});
 		hookSettings(*subwindow, bindings);
@@ -5618,7 +5802,7 @@ bind_failed:
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-			    settingsBindings(player, inputs.hasController(player) ? 1 : 0,
+			    settingsBindings(player, inputs.hasController(player) ? 1 : 0, getMatchingProfileName(player, inputs.hasController(player)),
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 
@@ -5654,7 +5838,7 @@ bind_failed:
 			[](Button&){
 			    allSettings.bindings = Bindings::load();
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-			    settingsBindings(player, inputs.hasController(player) ? 1 : 0,
+			    settingsBindings(player, inputs.hasController(player) ? 1 : 0, getMatchingProfileName(player, inputs.hasController(player)),
 			        {Setting::Type::Dropdown, "player_dropdown_button"});
 			    });
 #else
@@ -7014,7 +7198,7 @@ bind_failed:
 		int y = 0;
 
 		// count all the different types of achievements
-		const int num_achievements = achievementNames.size();
+		const int num_achievements = (int)achievementNames.size();
 		int num_unlocked = 0;
 		int num_locked = 0;
 		int num_hidden = 0;
@@ -8058,7 +8242,7 @@ bind_failed:
 		memcpy((char*)net_packet->data, "CMSG", 4);
 		SDLNet_Write32(color, &net_packet->data[4]);
 		stringCopy((char*)net_packet->data + 8, msg, 256, len);
-		net_packet->len = 8 + len + 1;
+		net_packet->len = 8 + (int)len + 1;
 		net_packet->data[net_packet->len - 1] = 0;
 
         // send packet
@@ -9649,7 +9833,7 @@ failed:
 		}
 
 		char buf[32000];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+		const int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -9781,7 +9965,7 @@ failed:
 		}
 
 		char buf[10000];
-		int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+		const int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
 		FileIO::close(fp);
@@ -10277,7 +10461,7 @@ failed:
 				setting->select();
 			}
             
-            setting->setUserData((void*)c);
+            setting->setUserData((void*)(intptr_t)c);
 			setting->setDisabled(index != 0);
 			switch (c) {
 			case 0:
@@ -12364,7 +12548,7 @@ failed:
 
 				    // when selecting random class...
 					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[RNG.uniform(1, reduced_class_list.size() - 1)];
+					auto random_class = reduced_class_list[RNG.uniform(1, (int)reduced_class_list.size() - 1)];
 					for (int c = 1; c < num_classes; ++c) {
 						if (strcmp(random_class, classes_in_order[c]) == 0) {
 							client_classes[index] = c - 1;
@@ -12833,7 +13017,7 @@ failed:
 
 			// select a random class
 			const auto reduced_class_list = reducedClassList(index);
-			const auto class_choice = RNG.uniform(1, reduced_class_list.size() - 1);
+			const auto class_choice = RNG.uniform(1, (int)reduced_class_list.size() - 1);
 			const auto random_class = reduced_class_list[class_choice];
 			for (int c = 1; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
@@ -13095,11 +13279,11 @@ failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 		banner->setColor(playerColor(index, colorblind_lobby, false));
-		banner->setUserData((void*)index);
+		banner->setUserData((void*)(intptr_t)index);
 		banner->setTickCallback([](Widget& widget) {
 			auto field = static_cast<Field*>(&widget);
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
-			field->setColor(playerColor(index, colorblind_lobby, false));
+			field->setColor(playerColor((int)index, colorblind_lobby, false));
 		});
 
 		auto start = card->addField("start", 128);
@@ -13367,11 +13551,11 @@ failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 		banner->setColor(playerColor(index, colorblind_lobby, false));
-		banner->setUserData((void*)index);
+		banner->setUserData((void*)(intptr_t)index);
 		banner->setTickCallback([](Widget& widget) {
 			auto field = static_cast<Field*>(&widget);
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
-			field->setColor(playerColor(index, colorblind_lobby, false));
+			field->setColor(playerColor((int)index, colorblind_lobby, false));
 		});
 
 		auto invite = card->addButton("invite_button");
@@ -13426,11 +13610,11 @@ failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 		banner->setColor(playerColor(index, colorblind_lobby, false));
-		banner->setUserData((void*)index);
+		banner->setUserData((void*)(intptr_t)index);
 		banner->setTickCallback([](Widget& widget) {
 			auto field = static_cast<Field*>(&widget);
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
-			field->setColor(playerColor(index, colorblind_lobby, false));
+			field->setColor(playerColor((int)index, colorblind_lobby, false));
 		});
 
 		auto text = card->addField("text", 128);
@@ -13544,7 +13728,7 @@ failed:
 		banner->setVJustify(Field::justify_t::TOP);
 		banner->setHJustify(Field::justify_t::CENTER);
 		banner->setColor(playerColor(index, colorblind_lobby, false));
-		banner->setUserData((void*)index);
+		banner->setUserData((void*)(intptr_t)index);
 
 		// character name needs to be updated constantly in case it gets updated over the net
 		banner->setTickCallback([](Widget& widget){
@@ -13567,7 +13751,7 @@ failed:
 
 			// set color
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
-			field->setColor(playerColor(index, colorblind_lobby, false));
+			field->setColor(playerColor((int)index, colorblind_lobby, false));
 		    });
 
 		// account name
@@ -13577,7 +13761,7 @@ failed:
 		account->setVJustify(Field::justify_t::TOP);
 		account->setHJustify(Field::justify_t::CENTER);
 		account->setColor(playerColor(index, colorblind_lobby, false));
-		account->setUserData((void*)index);
+		account->setUserData((void*)(intptr_t)index);
 
 		// account name needs to be updated constantly in case it gets updated over the net
 		account->setTickCallback([](Widget& widget) {
@@ -13603,7 +13787,7 @@ failed:
 			}
 
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
-			field->setColor(playerColor(index, colorblind_lobby, false));
+			field->setColor(playerColor((int)index, colorblind_lobby, false));
 			});
 
         if (local) {
@@ -14814,7 +14998,7 @@ failed:
                         // pressing A on a lobby after selecting it will join that lobby
                         const auto& lobby = lobbies[lobbyId];
                         if (!lobby.locked) {
-							int index = lobby.index;
+							int index = (int)lobby.index;
                             if (connectToServer(lobby.address.c_str(), &index,
                                     directConnect ? LobbyType::LobbyLAN : LobbyType::LobbyOnline)) {
                                 // only deselect the list if the connection begins
@@ -18317,7 +18501,7 @@ failed:
 		} else {
 			tabs.push_back({"Game", settingsGame});
 		}
-		const int num_tabs = tabs.size();
+		const int num_tabs = (int)tabs.size();
 		for (int c = 0; c < num_tabs; ++c) {
 			const int x = settings->getSize().w / (num_tabs + 1);
 			auto button = settings->addButton(tabs[c].name);
@@ -19695,7 +19879,7 @@ failed:
 				});
 		}
 
-		const int num_options = options.size();
+		const int num_options = (int)options.size();
 
         y = (Frame::virtualScreenY - num_options * 32) / 2 + 1;
 		main_menu_buttons_height = y;

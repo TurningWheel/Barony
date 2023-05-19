@@ -386,6 +386,11 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		printlog("%s\n", str);
 		return true;
 	}
+    
+    // don't bother printing any message if we're not in game, it just clutters the log
+    if (intro) {
+        return false;
+    }
 
     // if this is for a local player, but we've disabled this message type, don't print it!
     const bool localPlayer = players[player]->isLocalPlayer();
