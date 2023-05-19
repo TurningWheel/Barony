@@ -737,7 +737,11 @@ constexpr float defaultLimitLow = 0.1f;         // your aperture can decrease to
 constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light for luma (ITU 709)
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
 constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
+#ifndef NINTENDO
 constexpr float defaultSamples = 16384;         // how many samples (pixels) to gather from the framebuffer for average scene luminance
+#else
+constexpr float defaultSamples = 4096;
+#endif
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
@@ -898,6 +902,11 @@ void glEndCamera(view_t* camera, bool useHDR)
                 return v;
             };
             
+#ifdef NINTENDO
+            const int size = camera->winw * camera->winh * 4;
+            const int step = ((size / 4) / hdr_samples) * 4;
+            auto v = fn(pixels, pixels + size, step);
+#else
             // spawn jobs to count samples
             const auto cores = std::thread::hardware_concurrency();
             std::vector<std::future<std::vector<float>>> jobs;
@@ -922,6 +931,7 @@ void glEndCamera(view_t* camera, bool useHDR)
                     v[3] += r[3];
                 }
             }
+#endif
             
             // calculate scene average luminance
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product

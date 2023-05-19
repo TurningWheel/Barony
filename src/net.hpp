@@ -17,6 +17,8 @@
 #define DEFAULT_PORT 57165
 #define LOBBY_CHATBOX_LENGTH 62
 #define PACKET_LIMIT 200
+#define TIMEOUT_TIME 60
+#define TIMEOUT_WARNING_TIME 5
 
 extern char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 extern list_t lobbyChatboxMessages;
