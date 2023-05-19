@@ -373,7 +373,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if ( bodypart == 3 && entity->skill[0] == 0 )
+							if ( bodypart == 3 && entity->skill[0] == 1 )
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;
