@@ -1143,6 +1143,7 @@ struct MonsterAllyFormation_t
 			int x = 0;
 			int y = 0;
 			int pathingDelay = 0;
+			int tryExtendPath = 0;
 			bool init = false;
 			bool expired = false;
 		};
@@ -1154,6 +1155,7 @@ struct MonsterAllyFormation_t
 	bool getFollowLocation(Uint32 uid, Uint32 leaderUid, std::pair<int, int>& outPos);
 	void updateOnPathFail(Uint32 uid, Entity* entity);
 	void updateOnPathSucceed(Uint32 uid, Entity* entity);
+	void updateOnFollowCommand(Uint32 uid, Entity* entity);
 	std::unordered_map<Uint32, MonsterAllies_t> units;
 	std::vector<std::pair<int, int>> formationShape;
 	MonsterAllyFormation_t()
@@ -1177,5 +1179,7 @@ struct MonsterAllyFormation_t
 	}
 	void reset() { units.clear(); }
 	int getFollowerChaseLeaderInterval(Entity& my, Stat& myStats);
+	int getFollowerPathingDelay(Entity& my, Stat& myStats);
+	int getFollowerTryExtendedPathSearch(Entity& my, Stat& myStats);
 };
 extern MonsterAllyFormation_t monsterAllyFormations;
