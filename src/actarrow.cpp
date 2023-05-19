@@ -131,6 +131,7 @@ void actArrow(Entity* my)
 				Entity* flame = spawnMagicParticleCustom(my, SPRITE_FLAME, 0.5, 4); // this looks nicer than the spawnFlame :)
 				if ( flame )
 				{
+					flame->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 					flame->flags[SPRITE] = true;
                     flame->ditheringDisabled = true;
 				}
@@ -144,6 +145,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 159, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
@@ -156,6 +158,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 160, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
@@ -168,6 +171,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
@@ -180,6 +184,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
@@ -192,6 +197,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 156, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
@@ -204,6 +210,7 @@ void actArrow(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, 157, 0.5, 4);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
