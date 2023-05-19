@@ -2279,21 +2279,36 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 		}
+
+		bool menuConfirmOnGamepad = input.input("MenuConfirm").isBindingUsingGamepad();
+		bool menuLeftClickOnKeyboard = input.input("MenuLeftClick").isBindingUsingKeyboard() && !inputs.hasController(gui_player);
+
 		// process commands if option selected on the wheel.
 		if ( !(players[gui_player]->bControlEnabled && !gamePaused && !players[gui_player]->usingCommand()) )
 		{
 			// no action
 		}
-		else if ( (!input.binaryToggle("Use") && !input.binaryToggle("Show NPC Commands") && !menuToggleClick && !holdWheel)
-			|| ((input.binaryToggle("Use") || input.binaryToggle("Show NPC Commands")) && menuToggleClick)
+		else if ( (!menuToggleClick && !holdWheel
+					&& !input.binaryToggle("Use") 
+					&& !input.binaryToggle("Show NPC Commands") 
+					&& !(input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
+					&& !(input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard) )
+			|| (menuToggleClick && (input.binaryToggle("Use") || input.binaryToggle("Show NPC Commands")) )
+			|| ( (input.binaryToggle("MenuConfirm") && menuConfirmOnGamepad)
+				|| (input.binaryToggle("MenuLeftClick") && menuLeftClickOnKeyboard)
+				|| (input.binaryToggle("Use") && holdWheel) )
 			|| (!input.binaryToggle("Show NPC Commands") && holdWheel && !menuToggleClick)
 			|| (input.binaryToggle("Command NPC") && optionPrevious != -1)
 			)
 		{
+			bool usingLastCmd = false;
+			if ( input.binaryToggle("Command NPC") )
+			{
+				usingLastCmd = true;
+			}
+
 			if ( menuToggleClick )
 			{
-			    input.consumeBinaryToggle("Use");
-			    input.consumeBinaryToggle("Show NPC Commands");
 				menuToggleClick = false;
 				if ( optionSelected == -1 )
 				{
@@ -2301,11 +2316,14 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
-			bool usingLastCmd = false;
-			if ( input.binaryToggle("Command NPC") )
-			{
-				usingLastCmd = true;
-			}
+			input.consumeBinaryToggle("Use");
+			input.consumeBinaryToggle("MenuConfirm");
+			input.consumeBinaryToggle("MenuLeftClick");
+			input.consumeBinaryToggle("Show NPC Commands");
+			input.consumeBindingsSharedWithBinding("Use");
+			input.consumeBindingsSharedWithBinding("MenuConfirm");
+			input.consumeBindingsSharedWithBinding("MenuLeftClick");
+			input.consumeBindingsSharedWithBinding("Show NPC Commands");
 
 			if ( followerStats->type == GYROBOT )
 			{
@@ -2338,7 +2356,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				animInvalidActionTicks = ticks;
 			}
 
-			if ( input.binaryToggle("Command NPC") )
+			if ( usingLastCmd )
 			{
 				if ( keepWheelOpen )
 				{
@@ -3725,7 +3743,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 			auto bannerGlyph = bannerFrame->findImage("banner glyph");
 			bannerGlyph->disabled = true;
-			bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
+			if ( inputs.hasController(gui_player) )
+			{
+				bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("MenuConfirm");
+			}
+			else
+			{
+				bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("MenuLeftClick");
+			}
+			//bannerGlyph->path = Input::inputs[gui_player].getGlyphPathForBinding("Use");
 			auto bannerGlyphModifier = bannerFrame->findImage("banner modifier glyph");
 			bannerGlyphModifier->disabled = true;
 			bannerGlyphModifier->path = Input::inputs[gui_player].getGlyphPathForBinding("Defend");
