@@ -8807,10 +8807,10 @@ static Frame* createMinimap(int player) {
 			&& players[player]->worldUI.bTooltipInView
 			&& players[player]->worldUI.tooltipsInRange.size() > 1 )
 		{
-			std::string scaleBinding = input.binding("Minimap Scale");
-			std::string expandBinding = input.binding("Toggle Minimap");
-			std::string cycleNextBinding = input.binding("Interact Tooltip Next");
-			std::string cyclePrevBinding = input.binding("Interact Tooltip Prev");
+			const std::string scaleBinding = input.binding("Minimap Scale");
+            const std::string expandBinding = input.binding("Toggle Minimap");
+            const std::string cycleNextBinding = input.binding("Interact Tooltip Next");
+            const std::string cyclePrevBinding = input.binding("Interact Tooltip Prev");
 			if ( scaleBinding == cycleNextBinding
 				|| scaleBinding == cyclePrevBinding )
 			{
