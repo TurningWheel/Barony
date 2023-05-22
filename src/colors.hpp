@@ -36,24 +36,20 @@ constexpr Uint32 uint32ColorPlayer1 = makeColorRGB(255, 212, 64);
 constexpr Uint32 uint32ColorPlayer2 = makeColorRGB(64, 255, 64);
 constexpr Uint32 uint32ColorPlayer3 = makeColorRGB(255, 64, 64);
 constexpr Uint32 uint32ColorPlayer4 = makeColorRGB(255, 160, 255);
+constexpr Uint32 uint32ColorPlayer5 = makeColorRGB(32, 192, 255);
+constexpr Uint32 uint32ColorPlayer6 = makeColorRGB(255, 128, 32);
+constexpr Uint32 uint32ColorPlayer7 = makeColorRGB(255, 32, 128);
+constexpr Uint32 uint32ColorPlayer8 = makeColorRGB(255, 255, 255);
 constexpr Uint32 uint32ColorPlayerX = makeColorRGB(191, 191, 191);
-
-constexpr Uint32 uint32ColorPlayer1_Ally = makeColorRGB(127, 106, 32);
-constexpr Uint32 uint32ColorPlayer2_Ally = makeColorRGB(31, 127, 31);
-constexpr Uint32 uint32ColorPlayer3_Ally = makeColorRGB(127, 31, 31);
-constexpr Uint32 uint32ColorPlayer4_Ally = makeColorRGB(127, 80, 127);
-constexpr Uint32 uint32ColorPlayerX_Ally = makeColorRGB(95, 95, 95);
 
 constexpr Uint32 uint32ColorPlayer1_colorblind = makeColorRGB(255, 64, 64);
 constexpr Uint32 uint32ColorPlayer2_colorblind = makeColorRGB(255, 160, 255);
 constexpr Uint32 uint32ColorPlayer3_colorblind = makeColorRGB(64, 255, 64);
 constexpr Uint32 uint32ColorPlayer4_colorblind = makeColorRGB(255, 255, 255);
+constexpr Uint32 uint32ColorPlayer5_colorblind = makeColorRGB(32, 192, 255);
+constexpr Uint32 uint32ColorPlayer6_colorblind = makeColorRGB(255, 128, 32);
+constexpr Uint32 uint32ColorPlayer7_colorblind = makeColorRGB(255, 32, 128);
+constexpr Uint32 uint32ColorPlayer8_colorblind = makeColorRGB(255, 212, 64);
 constexpr Uint32 uint32ColorPlayerX_colorblind = makeColorRGB(191, 191, 191);
-
-constexpr Uint32 uint32ColorPlayer1_Ally_colorblind = makeColorRGB(127, 31, 31);
-constexpr Uint32 uint32ColorPlayer2_Ally_colorblind = makeColorRGB(127, 80, 127);
-constexpr Uint32 uint32ColorPlayer3_Ally_colorblind = makeColorRGB(31, 127, 31);
-constexpr Uint32 uint32ColorPlayer4_Ally_colorblind = makeColorRGB(128, 128, 128);
-constexpr Uint32 uint32ColorPlayerX_Ally_colorblind = makeColorRGB(95, 95, 95);
 
 const Uint32 playerColor(int index, bool colorblind, bool ally);

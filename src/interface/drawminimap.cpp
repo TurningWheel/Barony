@@ -810,7 +810,11 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					}
 
 					if ( foundShadowTaggedEntity ) {
-						color = uint32ColorPlayerX_Ally; // grey
+						color = uint32ColorPlayerX; // grey
+                        uint8_t r, g, b, a;
+                        getColor(color, &r, &g, &b, &a);
+                        r /= 2; g /= 2; b /= 2;
+                        color = makeColor(r, g, b, a);
 					} else {
 						color = playerColor(drawMonsterAlly, colorblind_lobby, true);
 					}

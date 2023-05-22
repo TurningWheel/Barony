@@ -32,46 +32,41 @@
 
 const Uint32 playerColor(int index, bool colorblind, bool ally)
 {
-	 if ( ally ) {
-		 if ( colorblind ) {
-			 switch ( index ) {
-				 default: return uint32ColorPlayerX_Ally_colorblind;
-				 case 0: return uint32ColorPlayer1_Ally_colorblind;
-				 case 1: return uint32ColorPlayer2_Ally_colorblind;
-				 case 2: return uint32ColorPlayer3_Ally_colorblind;
-				 case 3: return uint32ColorPlayer4_Ally_colorblind;
-			 }
-		 }
-		 else {
-			 switch ( index ) {
-				 default: return uint32ColorPlayerX_Ally;
-				 case 0: return uint32ColorPlayer1_Ally;
-				 case 1: return uint32ColorPlayer2_Ally;
-				 case 2: return uint32ColorPlayer3_Ally;
-				 case 3: return uint32ColorPlayer4_Ally;
-			 }
-		 }
-	 }
-	 else {
-		 if ( colorblind ) {
-			 switch ( index ) {
-				 default: return uint32ColorPlayerX_colorblind;
-				 case 0: return uint32ColorPlayer1_colorblind;
-				 case 1: return uint32ColorPlayer2_colorblind;
-				 case 2: return uint32ColorPlayer3_colorblind;
-				 case 3: return uint32ColorPlayer4_colorblind;
-			 }
-		 }
-		 else {
-			 switch ( index ) {
-				 default: return uint32ColorPlayerX;
-				 case 0: return uint32ColorPlayer1;
-				 case 1: return uint32ColorPlayer2;
-				 case 2: return uint32ColorPlayer3;
-				 case 3: return uint32ColorPlayer4;
-			 }
-		 }
-	 }
+    Uint32 result;
+    if (colorblind) {
+        switch (index) {
+        default: result = uint32ColorPlayerX_colorblind; break;
+        case 0: result = uint32ColorPlayer1_colorblind; break;
+        case 1: result = uint32ColorPlayer2_colorblind; break;
+        case 2: result = uint32ColorPlayer3_colorblind; break;
+        case 3: result = uint32ColorPlayer4_colorblind; break;
+        case 4: result = uint32ColorPlayer5_colorblind; break;
+        case 5: result = uint32ColorPlayer6_colorblind; break;
+        case 6: result = uint32ColorPlayer7_colorblind; break;
+        case 7: result = uint32ColorPlayer8_colorblind; break;
+        }
+    }
+    else {
+        switch (index) {
+        default: result = uint32ColorPlayerX; break;
+        case 0: result = uint32ColorPlayer1; break;
+        case 1: result = uint32ColorPlayer2; break;
+        case 2: result = uint32ColorPlayer3; break;
+        case 3: result = uint32ColorPlayer4; break;
+        case 4: result = uint32ColorPlayer5; break;
+        case 5: result = uint32ColorPlayer6; break;
+        case 6: result = uint32ColorPlayer7; break;
+        case 7: result = uint32ColorPlayer8; break;
+        }
+    }
+    if (ally) {
+        uint8_t r, g, b, a;
+        getColor(result, &r, &g, &b, &a);
+        r /= 2; g /= 2; b /= 2;
+        return makeColor(r, g, b, a);
+    } else {
+        return result;
+    }
 }
 
 static const char* bigfont_outline = "fonts/pixelmix.ttf#16#2";
@@ -284,7 +279,11 @@ bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 CustomColors_t hudColors;
 EnemyBarSettings_t enemyBarSettings;
+#ifdef BARONY_SUPER_MULTIPLAYER
+StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7} };
+#else
 StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
+#endif
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
 Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipDescColor = 0xFFFFFFFF;
@@ -7007,6 +7006,21 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
 	const int nominalGlyphHeight = 26;
+    
+    bool usingTinkeringKit = false;
+    bool useBracketsReticle = false;
+    if (player.entity && stats[player.playernum]) {
+        if (stats[player.playernum]->defending) {
+            auto shield = stats[player.playernum]->shield;
+            if (shield && shield->type == TOOL_TINKERING_KIT) {
+                useBracketsReticle = true;
+                usingTinkeringKit = true;
+            }
+        }
+        if (stats[player.playernum]->sneaking) {
+            useBracketsReticle = true;
+        }
+    }
 
 	if ( followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
@@ -7065,7 +7079,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 			else
 			{
-				if ( (player.worldUI.isEnabled() && !player.worldUI.bTooltipInView) )
+				if ( player.worldUI.isEnabled() && !player.worldUI.bTooltipInView )
 				{
 					forceBlankInteractText = true;
 
@@ -7299,16 +7313,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		bool foundTinkeringKit = false;
-		if ( player.entity && stats[player.playernum]
-			&& stats[player.playernum]->defending )
-		{
-			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
-			{
-				foundTinkeringKit = true;
-			}
-		}
-		if ( player.worldUI.bTooltipInView )
+		if ( player.worldUI.bTooltipInView || useBracketsReticle )
 		{
 			cursor->path = "images/system/selectedcursor.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -7368,7 +7373,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 			textPos.x += skillIconToGlyphPadding;
 
-			if ( foundTinkeringKit )
+			if ( usingTinkeringKit )
 			{
 				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
 				{
@@ -7411,7 +7416,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				cursor->color = makeColor(255, 255, 255, 128);
 			}
 
-			if ( foundTinkeringKit )
+			if ( usingTinkeringKit )
 			{
 				if ( player.worldUI.isEnabled() )
 				{
