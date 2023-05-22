@@ -7090,6 +7090,19 @@ int main(int argc, char** argv)
 							ix, iy, pathMapGrounded[iy + ix * map.height]);
 					}
 				}
+				static ConsoleVariable<bool> cvar_light_debug("/lightdebug", false);
+				if ( *cvar_light_debug )
+				{
+					if ( players[clientnum]->entity )
+					{
+						int light = players[clientnum]->entity->entityLight();
+						int tiles = light / 16;
+						int lightAfterReductions = players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], players[clientnum]->entity);
+						int tilesAfterReductions = lightAfterReductions / 16;
+						printTextFormatted(font8x8_bmp, 8, 44, "player light: %3d, tiles: %2d | reduced light: %3d, tiles: %2d",
+							light, tiles, lightAfterReductions, tilesAfterReductions);
+					}
+				}
 			}
 
 			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
