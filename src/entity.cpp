@@ -860,7 +860,9 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light = TOUCHRANGE;
 			}
-			if ( observer->monsterLastDistractedByNoisemaker > 0 && uidToEntity(observer->monsterLastDistractedByNoisemaker) )
+			if ( observer->behavior == &actMonster
+				&& observer->monsterLastDistractedByNoisemaker > 0 
+				&& uidToEntity(observer->monsterLastDistractedByNoisemaker) )
 			{
 				if ( observer->monsterTarget == observer->monsterLastDistractedByNoisemaker
 					|| myStats.EFFECTS[EFF_DISORIENTED] )
