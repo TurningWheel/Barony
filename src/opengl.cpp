@@ -909,6 +909,7 @@ void glEndCamera(view_t* camera, bool useHDR)
             
             // collect samples
             std::vector<float> v(4);
+            int samplesCollected = 0;
             if (hdr_multithread) {
                 // spawn jobs to count samples
                 const auto cores = std::thread::hardware_concurrency();
@@ -920,6 +921,7 @@ void glEndCamera(view_t* camera, bool useHDR)
                 for (int c = 0; c < cores; ++c, begin += section) {
                     jobs.emplace_back(std::async(std::launch::async, fn,
                         begin, begin + section, step));
+                    samplesCollected += section / step;
                 }
                 
                 // add samples together
@@ -938,16 +940,19 @@ void glEndCamera(view_t* camera, bool useHDR)
                 const int size = camera->winw * camera->winh * 4;
                 const int step = ((size / 4) / hdr_samples) * 4;
                 v = fn(pixels, pixels + size, step);
+                samplesCollected = size / step;
             }
             
             // calculate scene average luminance
-            float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
-            luminance = luminance / hdr_samples;
-            const float rate = hdr_adjustment_rate / fpsLimit;
-            if (camera->luminance > luminance) {
-                camera->luminance -= std::min(rate, camera->luminance - luminance);
-            } else if (camera->luminance < luminance) {
-                camera->luminance += std::min(rate, luminance - camera->luminance);
+            if (samplesCollected) {
+                float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
+                luminance = luminance / samplesCollected;
+                const float rate = hdr_adjustment_rate / fpsLimit;
+                if (camera->luminance > luminance) {
+                    camera->luminance -= std::min(rate, camera->luminance - luminance);
+                } else if (camera->luminance < luminance) {
+                    camera->luminance += std::min(rate, luminance - camera->luminance);
+                }
             }
         }
         camera->fb[fbIndex].unlock();
