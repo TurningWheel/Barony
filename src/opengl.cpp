@@ -738,13 +738,16 @@ constexpr float defaultLumaRed = 0.2126f;       // how much to weigh red light f
 constexpr float defaultLumaGreen = 0.7152f;     // how much to weigh green light for luma (ITU 709)
 constexpr float defaultLumaBlue = 0.0722f;      // how much to weigh blue light for luma (ITU 709)
 #ifndef NINTENDO
+constexpr bool defaultMultithread = true;       // use multiple workers to collect luminance samples
 constexpr float defaultSamples = 16384;         // how many samples (pixels) to gather from the framebuffer for average scene luminance
 #else
+constexpr bool defaultMultithread = false;
 constexpr float defaultSamples = 4096;
 #endif
 #ifdef EDITOR
 bool hdrEnabled = true;
 #else
+static ConsoleVariable<bool> cvar_hdrMultithread("/hdr_multithread", defaultMultithread);
 static ConsoleVariable<float> cvar_hdrExposure("/hdr_exposure", defaultExposure);
 static ConsoleVariable<float> cvar_hdrGamma("/hdr_gamma", defaultGamma);
 static ConsoleVariable<float> cvar_hdrAdjustment("/hdr_adjust_rate", defaultAdjustmentRate);
@@ -853,6 +856,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     
 #ifdef EDITOR
     const bool hdr = useHDR;
+    const bool hdr_multithread = defaultMultithread;
     const float hdr_exposure = defaultExposure;
     const float hdr_gamma = defaultGamma;
     const float hdr_adjustment_rate = defaultAdjustmentRate;
@@ -862,6 +866,7 @@ void glEndCamera(view_t* camera, bool useHDR)
     const Vector4 hdr_luma{defaultLumaRed, defaultLumaGreen, defaultLumaBlue, 0.f};
 #else
     const bool hdr = useHDR ? *MainMenu::cvar_hdrEnabled : false;
+    const bool hdr_multithread = *cvar_hdrMultithread;
     const float hdr_exposure = *cvar_hdrExposure;
     const float hdr_gamma = *cvar_hdrGamma;
     const float hdr_adjustment_rate = *cvar_hdrAdjustment;
@@ -902,36 +907,38 @@ void glEndCamera(view_t* camera, bool useHDR)
                 return v;
             };
             
-#ifdef NINTENDO
-            const int size = camera->winw * camera->winh * 4;
-            const int step = ((size / 4) / hdr_samples) * 4;
-            auto v = fn(pixels, pixels + size, step);
-#else
-            // spawn jobs to count samples
-            const auto cores = std::thread::hardware_concurrency();
-            std::vector<std::future<std::vector<float>>> jobs;
-            const int size = camera->winw * camera->winh * 4;
-            const int step = ((size / 4) / hdr_samples) * 4;
-            const int section = size / cores;
-            auto begin = pixels;
-            for (int c = 0; c < cores; ++c, begin += section) {
-                jobs.emplace_back(std::async(std::launch::async, fn,
-                    begin, begin + section, step));
-            }
-            
-            // add samples together
-            float v[4] = { 0.f };
-            for (int c = 0; c < cores; ++c) {
-                auto& job = jobs[c];
-                if (job.valid()) {
-                    auto r = job.get();
-                    v[0] += r[0];
-                    v[1] += r[1];
-                    v[2] += r[2];
-                    v[3] += r[3];
+            // collect samples
+            std::vector<float> v(4);
+            if (hdr_multithread) {
+                // spawn jobs to count samples
+                const auto cores = std::thread::hardware_concurrency();
+                std::vector<std::future<std::vector<float>>> jobs;
+                const int size = camera->winw * camera->winh * 4;
+                const int step = ((size / 4) / hdr_samples) * 4;
+                const int section = size / cores;
+                auto begin = pixels;
+                for (int c = 0; c < cores; ++c, begin += section) {
+                    jobs.emplace_back(std::async(std::launch::async, fn,
+                        begin, begin + section, step));
                 }
+                
+                // add samples together
+                for (int c = 0; c < cores; ++c) {
+                    auto& job = jobs[c];
+                    if (job.valid()) {
+                        auto r = job.get();
+                        v[0] += r[0];
+                        v[1] += r[1];
+                        v[2] += r[2];
+                        v[3] += r[3];
+                    }
+                }
+            } else {
+                // synchronized sample collection
+                const int size = camera->winw * camera->winh * 4;
+                const int step = ((size / 4) / hdr_samples) * 4;
+                v = fn(pixels, pixels + size, step);
             }
-#endif
             
             // calculate scene average luminance
             float luminance = v[0] * hdr_luma.x + v[1] * hdr_luma.y + v[2] * hdr_luma.z + v[3] * hdr_luma.w; // dot-product
