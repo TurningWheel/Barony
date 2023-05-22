@@ -27902,7 +27902,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			if ( player )
 			{
 				val = player->entityLightAfterReductions(*stats[playernum], nullptr);
-				val = std::max(1, (static_cast<int>(val / 32.0))); // general visibility
+				val = std::max(1, (static_cast<int>(val / 16.0))); // general visibility
 				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 			}
 			else
