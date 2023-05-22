@@ -7313,7 +7313,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( player.worldUI.bTooltipInView || useBracketsReticle )
+		if ( player.worldUI.bTooltipInView )
 		{
 			cursor->path = "images/system/selectedcursor.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -7405,7 +7405,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			cursor->path = "*#images/system/cross.png";
+			cursor->path = useBracketsReticle?
+                "*#images/system/selectedcursor.png":
+                "*#images/system/cross.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
