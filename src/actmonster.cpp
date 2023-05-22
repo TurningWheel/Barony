@@ -4238,19 +4238,24 @@ void actMonster(Entity* my)
 							}
 							if ( targetdist > TOUCHRANGE && targetdist > light )
 							{
-								if ( !levitating )
+								if ( !(myStats->leader_uid == entity->getUID()) 
+									&& !(hitstats->leader_uid == my->getUID())
+									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-								}
-								else
-								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-								}
-								if ( hit.entity == entity )
-									if ( local_rng.rand() % 100 == 0 )
+									if ( !levitating )
 									{
-										entity->increaseSkill(PRO_STEALTH);
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 									}
+									else
+									{
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									}
+									if ( hit.entity == entity )
+										if ( local_rng.rand() % 100 == 0 )
+										{
+											entity->increaseSkill(PRO_STEALTH);
+										}
+								}
 								continue;
 							}
 							bool visiontest = false;
@@ -4887,20 +4892,25 @@ void actMonster(Entity* my)
 				{
 					if ( targetdist > TOUCHRANGE && targetdist > light && myReflex )
 					{
-						tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
-						if ( !levitating )
+						if ( !(myStats->leader_uid == entity->getUID())
+							&& !(hitstats->leader_uid == my->getUID())
+							&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 						{
-							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-						}
-						else
-						{
-							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-						}
-						if ( hit.entity == entity )
-						{	
-							if ( local_rng.rand() % 100 == 0 )
+							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
+							if ( !levitating )
 							{
-								entity->increaseSkill(PRO_STEALTH);
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
+							}
+							else
+							{
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+							}
+							if ( hit.entity == entity )
+							{	
+								if ( local_rng.rand() % 100 == 0 )
+								{
+									entity->increaseSkill(PRO_STEALTH);
+								}
 							}
 						}
 						// if target is within sight range but light level is too low and out of melee range.
@@ -5716,19 +5726,24 @@ timeToGoAgain:
 							}
 							if ( targetdist > TOUCHRANGE && targetdist > light )
 							{
-								if ( !levitating )
+								if ( !(myStats->leader_uid == entity->getUID())
+									&& !(hitstats->leader_uid == my->getUID())
+									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-								}
-								else
-								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-								}
-								if ( hit.entity == entity )
-								{
-									if ( local_rng.rand() % 100 == 0 )
+									if ( !levitating )
 									{
-										entity->increaseSkill(PRO_STEALTH);
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
+									}
+									else
+									{
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									}
+									if ( hit.entity == entity )
+									{
+										if ( local_rng.rand() % 100 == 0 )
+										{
+											entity->increaseSkill(PRO_STEALTH);
+										}
 									}
 								}
 								continue;
