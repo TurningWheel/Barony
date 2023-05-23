@@ -2843,9 +2843,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
         for (auto part : players[clientnum]->entity->bodyparts) {
             part->bNeedsRenderPositionInit = true;
         }
-        for (auto pair : map.entities_map) {
-            auto entity = (Entity*)pair.second->element;
-            if (entity->behavior == &actSpriteNametag) {
+        for (auto node = map.entities->first; node != nullptr; node = node->next) {
+            auto entity = (Entity*)node->element;
+            if (entity && entity->behavior == &actSpriteNametag) {
                 if (entity->parent == players[clientnum]->entity->getUID()) {
                     entity->bNeedsRenderPositionInit = true;
                 }
@@ -3933,7 +3933,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
                     nametag->scalez = 0.2;
                     nametag->skill[0] = clientnum;
                     nametag->skill[1] = playerColor(clientnum, colorblind_lobby, true);
-                    nametag->setUID(-3);
                 }
 			}
 			if ( !FollowerMenu[clientnum].recentEntity )

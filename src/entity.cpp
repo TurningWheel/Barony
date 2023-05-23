@@ -10476,9 +10476,9 @@ bool Entity::teleport(int tele_x, int tele_y)
     for (auto part : bodyparts) {
         part->bNeedsRenderPositionInit = true;
     }
-    for (auto pair : map.entities_map) {
-        auto entity = (Entity*)pair.second->element;
-        if (entity->behavior == &actSpriteNametag) {
+    for (auto node = map.entities->first; node != nullptr; node = node->next) {
+        auto entity = (Entity*)node->element;
+        if (entity && entity->behavior == &actSpriteNametag) {
             if (entity->parent == uid) {
                 entity->bNeedsRenderPositionInit = true;
             }
