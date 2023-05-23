@@ -10473,6 +10473,17 @@ bool Entity::teleport(int tele_x, int tele_y)
 	playSoundEntity(this, 77, 64);
     spawnPoof(x, y, 0);
     bNeedsRenderPositionInit = true;
+    for (auto part : bodyparts) {
+        part->bNeedsRenderPositionInit = true;
+    }
+    for (auto pair : map.entities_map) {
+        auto entity = (Entity*)pair.second->element;
+        if (entity->behavior == &actSpriteNametag) {
+            if (entity->parent == uid) {
+                entity->bNeedsRenderPositionInit = true;
+            }
+        }
+    }
     if (player == clientnum || (splitscreen && player >= 0)) {
         temporarilyDisableDithering();
     }

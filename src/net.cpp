@@ -2840,6 +2840,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		players[clientnum]->entity->x = (tele_x << 4) + 8;
 		players[clientnum]->entity->y = (tele_y << 4) + 8;
         players[clientnum]->entity->bNeedsRenderPositionInit = true;
+        for (auto part : players[clientnum]->entity->bodyparts) {
+            part->bNeedsRenderPositionInit = true;
+        }
+        for (auto pair : map.entities_map) {
+            auto entity = (Entity*)pair.second->element;
+            if (entity->behavior == &actSpriteNametag) {
+                if (entity->parent == players[clientnum]->entity->getUID()) {
+                    entity->bNeedsRenderPositionInit = true;
+                }
+            }
+        }
         temporarilyDisableDithering();
 	}},
 
