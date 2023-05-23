@@ -10471,7 +10471,9 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
-    spawnPoof(x, y, 0);
+    const float poofx = x + cosf(yaw) * 4.f;
+    const float poofy = y + sinf(yaw) * 4.f;
+    spawnPoof(poofx, poofy, 0);
     bNeedsRenderPositionInit = true;
     for (auto part : bodyparts) {
         part->bNeedsRenderPositionInit = true;
