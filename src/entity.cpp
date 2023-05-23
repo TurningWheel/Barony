@@ -10421,6 +10421,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play sound effect
 	playSoundEntity(this, 77, 64);
+    spawnPoof(x, y, 0);
 
 	// relocate entity
 	double oldx = x;
@@ -10470,6 +10471,11 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
+    spawnPoof(x, y, 0);
+    bNeedsRenderPositionInit = true;
+    if (player == clientnum || (splitscreen && player >= 0)) {
+        temporarilyDisableDithering();
+    }
 
 	if ( behavior == &actMonster )
 	{

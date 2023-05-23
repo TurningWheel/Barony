@@ -290,6 +290,9 @@ extern TempTexture* lightmapTexture[MAXPLAYERS + 1];
 
 #define TRANSPARENT_TILE 246
 
+extern Uint32 ditherDisabledTime;
+void temporarilyDisableDithering();
+
 struct Chunk {
     GLuint vao = 0;
     GLuint vbo_positions = 0;

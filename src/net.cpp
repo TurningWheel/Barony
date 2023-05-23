@@ -2839,6 +2839,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		players[clientnum]->entity->yaw = degrees * PI / 180;
 		players[clientnum]->entity->x = (tele_x << 4) + 8;
 		players[clientnum]->entity->y = (tele_y << 4) + 8;
+        players[clientnum]->entity->bNeedsRenderPositionInit = true;
+        temporarilyDisableDithering();
 	}},
 
 	// teleport player
