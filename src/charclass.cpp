@@ -531,7 +531,7 @@ void initClass(const int player)
 			free(item);
 
 			// ammo
-			item = newItem(QUIVER_KNOCKBACK, EXCELLENT, 0, 15, 0, true, nullptr);
+			item = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, 15, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
@@ -1187,7 +1187,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// ammo
-			item = newItem(QUIVER_FIRE, EXCELLENT, 0, 15, 0, true, nullptr);
+			item = newItem(QUIVER_FIRE, SERVICABLE, 0, 15, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
@@ -2394,17 +2394,17 @@ void initClass(const int player)
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_SILVER, EXCELLENT, 0, 40, 0, true, nullptr);
+			item = newItem(QUIVER_SILVER, SERVICABLE, 0, 40, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_LIGHTWEIGHT, EXCELLENT, 0, 40, 0, true, nullptr);
+			item = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, 40, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_HUNTING, EXCELLENT, 0, 20, 0, true, nullptr);
+			item = newItem(QUIVER_HUNTING, SERVICABLE, 0, 20, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[4].item = item2->uid;
 			free(item);
