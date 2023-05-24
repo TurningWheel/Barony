@@ -7097,9 +7097,10 @@ int main(int argc, char** argv)
 					{
 						int light = players[clientnum]->entity->entityLight();
 						int tiles = light / 16;
-						int lightAfterReductions = players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], players[clientnum]->entity);
+						int lightAfterReductions = std::max(TOUCHRANGE, 
+							players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], players[clientnum]->entity));
 						int tilesAfterReductions = lightAfterReductions / 16;
-						printTextFormatted(font8x8_bmp, 8, 44, "player light: %3d, tiles: %2d | reduced light: %3d, tiles: %2d",
+						printTextFormatted(font8x8_bmp, 8, 44, "base light: %3d, tiles: %2d | modified light: %3d, tiles: %2d",
 							light, tiles, lightAfterReductions, tilesAfterReductions);
 					}
 				}

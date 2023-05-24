@@ -864,16 +864,14 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			}
 		}
 
-		// reduce light level 0-200 depending on target's stealth.
-		// add light level 0-150 for PER 0-30
 		if ( observer )
 		{
-			light += observer->getPER() * 5;
+			light += observer->getPER() * 4; // add light level for PER x 4
 			if ( sneaking )
 			{
-				light /= 2;
+				light /= 2; // halve for sneaking
 			}
-			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0));
+			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
