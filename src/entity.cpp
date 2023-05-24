@@ -847,14 +847,33 @@ after reductions depending on the entity stats and another entity observing
 int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 {
 	int player = -1;
-	int light = entityLight(); // max 255 light to start with.
+	const int minLight = (int)(TOUCHRANGE * 1.5);
+	int light = std::max(minLight, entityLight()); // max 255 light to start with.
 	if ( !isInvisible() )
 	{
+		bool sneaking = false;
+		if ( behavior == &actPlayer )
+		{
+			player = skill[2];
+			if ( player > -1 && stats[player] )
+			{
+				if ( stats[player]->sneaking == 1 && !stats[player]->defending )
+				{
+					sneaking = true;
+				}
+			}
+		}
+
 		// reduce light level 0-200 depending on target's stealth.
 		// add light level 0-150 for PER 0-30
 		if ( observer )
 		{
-			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer->getPER() * 5;
+			light += observer->getPER() * 5;
+			if ( sneaking )
+			{
+				light /= 2;
+			}
+			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0));
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
