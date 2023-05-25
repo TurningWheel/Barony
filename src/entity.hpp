@@ -840,6 +840,7 @@ public:
 	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
 	 */
 	void spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink);
+	void spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink);
 
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);

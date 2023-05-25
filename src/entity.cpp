@@ -4200,6 +4200,11 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
+	//if ( myStats->EFFECTS[EFF_BLIND] )
+	//{
+	//	spawnAmbientParticles2(2, 175, 20, 0.5, true); // maybe some black clouds
+	//}
+
 	// Process Burning Status Effect
 	if ( this->flags[BURNING] )
 	{
@@ -14614,6 +14619,66 @@ void actAmbientParticleEffectIdle(Entity* my)
 	}
 
 	return;
+}
+
+void actAmbientParticleEffectIdle2(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( my->particleDuration < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		if ( my->particleShrink == 1 )
+		{
+			// shrink the particle.
+			my->scalex *= 0.95;
+			my->scaley *= 0.95;
+			my->scalez *= 0.95;
+		}
+		--my->particleDuration;
+		my->yaw += 0.1;
+		if ( my->yaw > 2 * PI )
+		{
+			my->yaw = 0;
+		}
+	}
+	return;
+}
+
+void Entity::spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink)
+{
+	if ( local_rng.rand() % chance == 0 )
+	{
+		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities, nullptr); //Particle entity.
+		spawnParticle->sizex = 1;
+		spawnParticle->sizey = 1;
+		spawnParticle->x = x + (-2 + local_rng.rand() % 5);
+		spawnParticle->y = y + (-2 + local_rng.rand() % 5);
+		spawnParticle->z = z - 2;
+		spawnParticle->scalex *= particleScale;
+		spawnParticle->scaley *= particleScale;
+		spawnParticle->scalez *= particleScale;
+		spawnParticle->vel_z = -1;
+		spawnParticle->particleDuration = duration;
+		if ( shrink )
+		{
+			spawnParticle->particleShrink = 1;
+		}
+		else
+		{
+			spawnParticle->particleShrink = 0;
+		}
+		spawnParticle->behavior = &actAmbientParticleEffectIdle2;
+		spawnParticle->flags[PASSABLE] = true;
+		spawnParticle->setUID(-3);
+	}
 }
 
 void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)
