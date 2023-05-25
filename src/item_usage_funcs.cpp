@@ -3864,12 +3864,22 @@ void item_ToolTinOpener(Item* item, int player)
 	{
 		return;
 	}
-
+	if ( !players[player]->isLocalPlayer() )
+	{
+		consumeItem(item, player);
+	}
 	messagePlayer(player, MESSAGE_HINT, language[886]);
 }
 
 void item_ToolMirror(Item*& item, int player)
 {
+	Sint16 beatitude = item->beatitude;
+	if ( !players[player]->isLocalPlayer() )
+	{
+		consumeItem(item, player);
+		item = nullptr;
+	}
+
 	if (players[player] == nullptr || players[player]->entity == nullptr || stats[player] == nullptr )
 	{
 		return;
@@ -3879,120 +3889,159 @@ void item_ToolMirror(Item*& item, int player)
 	{
 		messagePlayer(player, MESSAGE_INTERACTION, language[889]);
 	}
-	if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
-	{
-		if ( players[player]->isLocalPlayer() )
-		{
-			messagePlayer(player, MESSAGE_HINT, language[893]);
-		}
-		return;
-	}
-	else if ( stats[player]->type == AUTOMATON )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[3698]);
-	}
 
-	if (item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY])
-	{
-		if (multiplayer != CLIENT)
-		{
-			players[player]->entity->teleportRandom();
-		}
-	}
-	if ( !players[player]->isLocalPlayer() )
-	{
-		return;
-	}
+	bool broken = false;
 
-	if ( stats[player]->EFFECTS[EFF_GREASY] )
+	// server/local side
+	if ( multiplayer != CLIENT )
 	{
-		messagePlayer(player, MESSAGE_WORLD, language[887]);
-		messagePlayer(player, MESSAGE_INVENTORY, language[888]);
-		consumeItem(item, player);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_BLIND] )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[892]);
-		return;
-	}
-	if ( item->beatitude > 0 )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[890]);
-		return;
-	}
-	else if ( item->beatitude < 0 )
-	{
-		if ( stats[player]->EFFECTS[EFF_BLIND] )
+		if ( stats[player]->EFFECTS[EFF_GREASY] )
+		{
+			messagePlayer(player, MESSAGE_WORLD, language[887]);
+			messagePlayer(player, MESSAGE_INVENTORY, language[888]);
+			playSoundEntity(players[player]->entity, 162, 64); // whoops, *break*
+			broken = true;
+		}
+		else if ( stats[player]->EFFECTS[EFF_BLIND] )
 		{
 			messagePlayer(player, MESSAGE_HINT, language[892]);
 		}
+		else if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[893]);
+		}
+		else if ( beatitude > 0 )
+		{
+			players[player]->entity->teleportRandom();
+			messagePlayer(player, MESSAGE_HINT, language[890]);
+		}
+		else if ( beatitude < 0 )
+		{
+			messagePlayerColor(player, MESSAGE_HINT, makeColorRGB(255, 0, 0), language[891]); // you look like a monster *break*
+			playSoundEntity(players[player]->entity, 162, 64);
+			broken = true;
+			if ( players[player]->entity->setEffect(EFF_BLEEDING, true, TICKS_PER_SECOND * 15, true) )
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(255, 0, 0), language[701]); // you're bleeding!
+			}
+		}
+		else if ( stats[player]->type == AUTOMATON )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[3698]);
+		}
+		else if ( stats[player]->EFFECTS[EFF_DRUNK] )
+		{
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT, language[894]);
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, language[895]);
+			}
+		}
+		else if ( stats[player]->EFFECTS[EFF_CONFUSED] )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[896]);
+		}
+		else if ( stats[player]->EFFECTS[EFF_POISONED] )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[897]);
+		}
+		else if ( stats[player]->EFFECTS[EFF_VOMITING] )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[898]);
+		}
+		else if ( stats[player]->EFFECTS[EFF_MESSY] )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[899]);
+		}
+		else if ( stats[player]->HUNGER < 200 )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[900]);
+		}
+		else if ( stats[player]->HUNGER < 500 )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[901]);
+		}
+		else if ( stats[player]->CHR < 2 )
+		{
+			messagePlayer(player, MESSAGE_HINT, language[902]);
+		}
 		else
 		{
-			messagePlayer(player, MESSAGE_HINT, language[891]);
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT, language[903]);
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, language[904]);
+			}
 		}
-		consumeItem(item, player);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_DRUNK] )
-	{
-		if ( stats[player]->sex == MALE )
-		{
-			messagePlayer(player, MESSAGE_HINT, language[894]);
-		}
-		else
-		{
-			messagePlayer(player, MESSAGE_HINT, language[895]);
-		}
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_CONFUSED] )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[896]);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_POISONED] )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[897]);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_VOMITING] )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[898]);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_MESSY] )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[899]);
-		return;
-	}
-	if ( stats[player]->HUNGER < 200 )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[900]);
-		return;
-	}
-	if ( stats[player]->HUNGER < 500 )
-	{
-		messagePlayer(player, MESSAGE_HINT, language[901]);
-		return;
 	}
 
-	if ( stats[player]->CHR < 2 )
+	if ( players[player]->isLocalPlayer() && item )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[902]);
-		return;
-	}
-	else
-	{
-		if ( stats[player]->sex == MALE )
+		if ( stats[player]->EFFECTS[EFF_GREASY] )
 		{
-			messagePlayer(player, MESSAGE_HINT, language[903]);
+			broken = true;
 		}
-		else
+		else if ( stats[player]->EFFECTS[EFF_BLIND] )
 		{
-			messagePlayer(player, MESSAGE_HINT, language[904]);
 		}
-		return;
+		else if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
+		{
+		}
+		else if ( beatitude > 0 )
+		{
+			if ( local_rng.rand() % 4 == 0 )
+			{
+				if ( item->status > DECREPIT )
+				{
+					item->status = static_cast<Status>((int)item->status - 1);
+					messagePlayer(player, MESSAGE_HINT, language[681], item->getName());
+				}
+				else if ( item->status == DECREPIT )
+				{
+					item->status = BROKEN;
+					messagePlayer(player, MESSAGE_HINT, language[4344], item->getName());
+
+					if ( multiplayer == CLIENT )
+					{
+						strcpy((char*)net_packet->data, "MIRR");
+						net_packet->data[4] = player;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 5;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+
+						playSoundPlayer(player, 162, 64);
+					}
+					else
+					{
+						if ( players[player]->entity->setEffect(EFF_BLEEDING, true, TICKS_PER_SECOND * 15, true) )
+						{
+							messagePlayerColor(player, MESSAGE_STATUS,
+								makeColorRGB(255, 0, 0), language[701]); // you're bleeding!
+						}
+						playSoundEntity(players[player]->entity, 162, 64);
+					}
+
+					broken = true;
+				}
+			}
+		}
+		else if ( beatitude < 0 )
+		{
+			broken = true;
+		}
+
+		if ( broken )
+		{
+			consumeItem(item, player);
+			item = nullptr;
+		}
 	}
 }
 
