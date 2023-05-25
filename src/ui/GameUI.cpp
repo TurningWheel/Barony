@@ -5055,6 +5055,10 @@ int StatusEffectQueue_t::getBaseEffectPosY()
 {
 	if ( players[player]->bUseCompactGUIHeight() )
 	{
+		if ( players[player]->bUseCompactGUIWidth() && !players[player]->hotbar.useHotbarFaceMenu )
+		{
+			return statusEffectFrame->getSize().h / 2 + 50;
+		}
 		return statusEffectFrame->getSize().h / 2;
 	}
 	return statusEffectFrame->getSize().h / 2 - 50;
@@ -5723,6 +5727,7 @@ const int StatusEffectQueue_t::kEffectConflict = -17;
 const int StatusEffectQueue_t::kEffectWaterWalking = -18;
 const int StatusEffectQueue_t::kEffectLifesaving = -19;
 const int StatusEffectQueue_t::kEffectPush = -20;
+const int StatusEffectQueue_t::kEffectSneak = -21;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 void StatusEffectQueue_t::updateAllQueuedEffects()
@@ -5733,6 +5738,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		effectSet.insert((*it).effect);
 	}
 
+	std::vector<int> effectsToSkipAnim;
 	std::unordered_set<int> spellsActive;
 	int count = 0; //This is just for debugging purposes.
 	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
@@ -5865,26 +5871,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					}
 					if ( skipAnim )
 					{
-						auto& notif = notificationQueue.back();
-						notif.notificationState = StatusEffectQueueEntry_t::STATE_END;
-						notif.notificationStateInit = StatusEffectQueueEntry_t::STATE_END;
-
-						auto& entry = effectQueue.back();
-						entry.animateSetpointX = notif.notificationTargetPosition.x;
-						entry.animateSetpointY = notif.notificationTargetPosition.y;
-						entry.animateSetpointW = entry.notificationTargetPosition.w;
-						entry.animateSetpointH = entry.notificationTargetPosition.h;
-
-						entry.animateStartX = entry.animateSetpointX;
-						entry.animateStartY = entry.animateSetpointY;
-						entry.animateStartW = entry.animateSetpointW;
-						entry.animateStartH = entry.animateSetpointH;
-						entry.pos.x = entry.animateSetpointX;
-						entry.pos.y = entry.animateSetpointY;
-						entry.pos.w = entry.animateSetpointW;
-						entry.pos.h = entry.animateSetpointH;
-
-						notif.pos = entry.pos;
+						effectsToSkipAnim.push_back(i);
 					}
 			    }
 				else if ( i == EFF_SHAPESHIFT )
@@ -5911,7 +5898,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectPush; --i )
+	for ( int i = kEffectBurning; i >= kEffectSneak; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -5993,6 +5980,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectLifesaving] = true;
 			}
+			if ( stats[player]->sneaking == 1 && !stats[player]->defending && !skillCapstoneUnlocked(player, PRO_STEALTH) )
+			{
+				miscEffects[kEffectSneak] = true;
+			}
 		}
 
 		int playerx = static_cast<int>(players[player]->entity->x) >> 4;
@@ -6044,7 +6035,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectPush; --i )
+	for ( int i = kEffectBurning; i >= kEffectSneak; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -6055,9 +6046,15 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
+			bool skipAnim = false;
 			if ( effectSet.find(i) == effectSet.end() )
 			{
 				insertEffect(i, -1);
+
+				if ( i == kEffectSneak )
+				{
+					effectsToSkipAnim.push_back(i);
+				}
 			}
 		}
 	}
@@ -6083,16 +6080,16 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
 
 	int iconSize = 32;
-	int movex = 0;
+	int movex = splitscreen ? 4 : 0;
 	if ( hungerIconActive )
 	{
 		if ( effectSet.find(kEffectBread) != effectSet.end() )
 		{
-			movex = 76;
+			movex += 76;
 		}
 		else
 		{
-			movex = 64;
+			movex += 64;
 		}
 		movex += 4;
 	}
@@ -6100,6 +6097,44 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	int movey = statusEffectFrame->getSize().h - iconSize;
 	const int spacing = 36;
 	int numEffectsOnLine = 0;
+
+	for ( auto eff : effectsToSkipAnim )
+	{
+		for ( auto& notif : notificationQueue )
+		{
+			if ( notif.effect == eff )
+			{
+				notif.notificationState = StatusEffectQueueEntry_t::STATE_END;
+				notif.notificationStateInit = StatusEffectQueueEntry_t::STATE_END;
+
+				notif.notificationTargetPosition.x = movex;
+
+				for ( auto& entry : effectQueue )
+				{
+					if ( entry.effect == eff )
+					{
+						entry.animateSetpointX = notif.notificationTargetPosition.x;
+						entry.animateSetpointY = notif.notificationTargetPosition.y;
+						entry.animateSetpointW = entry.notificationTargetPosition.w;
+						entry.animateSetpointH = entry.notificationTargetPosition.h;
+
+						entry.animateStartX = entry.animateSetpointX;
+						entry.animateStartY = entry.animateSetpointY;
+						entry.animateStartW = entry.animateSetpointW;
+						entry.animateStartH = entry.animateSetpointH;
+						entry.pos.x = entry.animateSetpointX;
+						entry.pos.y = entry.animateSetpointY;
+						entry.pos.w = entry.animateSetpointW;
+						entry.pos.h = entry.animateSetpointH;
+
+						notif.pos = entry.pos;
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
 
 	auto notificationFrame = statusEffectFrame->findFrame("notification frame");
 	notificationFrame->setDisabled(true);
@@ -6320,6 +6355,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		&& !players[player]->skillSheet.bSkillSheetOpen
 		&& !players[player]->bookGUI.bBookOpen
 		&& !players[player]->signGUI.bSignOpen
+		&& !(players[player]->bUseCompactGUIHeight() && players[player]->hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET)
 		&& !inputs.getUIInteraction(player)->selectedItem && !players[player]->GUI.isDropdownActive() )
 	{
 		bFrameCapturesMouse = statusEffectFrame->capturesMouse();
@@ -7821,6 +7857,7 @@ void Player::HUD_t::updateActionPrompts()
 		|| (playercount == 2 
 			&& (*MainMenu::vertical_splitscreen 
 				/*|| !player.shootmode */
+				|| (!player.shootmode && player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET)
 				|| (!player.hotbar.useHotbarFaceMenu && *MainMenu::clipped_splitscreen))) 
 		|| *disableActionPrompts )
 	{
