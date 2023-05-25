@@ -7045,6 +7045,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
     
     bool usingTinkeringKit = false;
     bool useBracketsReticle = false;
+	bool useSneakingReticle = false;
     if (player.entity && stats[player.playernum]) {
         if (stats[player.playernum]->defending) {
             auto shield = stats[player.playernum]->shield;
@@ -7055,6 +7056,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
         }
         if (stats[player.playernum]->sneaking) {
             useBracketsReticle = true;
+			useSneakingReticle = true;
         }
     }
 
@@ -7441,9 +7443,18 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		else
 		{
-			cursor->path = useBracketsReticle?
-                "*#images/system/selectedcursor.png":
-                "*#images/system/cross.png";
+			if ( useSneakingReticle )
+			{
+				cursor->path = "*#images/system/sneakingcursor.png";
+			}
+			else if ( useBracketsReticle )
+			{
+				cursor->path = "*#images/system/selectedcursor.png";
+			}
+			else
+			{
+				cursor->path = "*#images/system/cross.png";
+			}
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
