@@ -1754,6 +1754,8 @@ void glDrawWorld(view_t* camera, int mode)
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, light));
     }
     
+    const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
+    
     // update chunk dithering & mark chunks for rebuilding
     std::set<std::pair<int, Chunk*>> chunksToBuild;
     for (int index = 0; index < chunks.size(); ++index) {
@@ -1764,13 +1766,20 @@ void glDrawWorld(view_t* camera, int mode)
             for (int x = chunk.x; x < chunk.x + chunk.w; ++x) {
                 for (int y = chunk.y; y < chunk.y + chunk.h; ++y) {
                     if (camera->vismap[y + x * map.height]) {
-                        dither.value = std::min(Chunk::Dither::MAX, dither.value + 2);
-                        //dither.value = Chunk::Dither::MAX;
+                        if (ditheringDisabled) {
+                            dither.value = Chunk::Dither::MAX;
+                        } else {
+                            dither.value = std::min(Chunk::Dither::MAX, dither.value + 2);
+                        }
                         goto end;
                     }
                 }
             }
-            dither.value = std::max(0, dither.value - 2);
+            if (ditheringDisabled) {
+                dither.value = 0;
+            } else {
+                dither.value = std::max(0, dither.value - 2);
+            }
         end:;
         }
         if (dither.value) {

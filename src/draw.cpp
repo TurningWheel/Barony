@@ -1842,6 +1842,11 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION])
 
 -------------------------------------------------------------------------------*/
 
+Uint32 ditherDisabledTime = 0;
+void temporarilyDisableDithering() {
+    ditherDisabledTime = ticks;
+}
+
 void drawEntities3D(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -1873,6 +1878,8 @@ void drawEntities3D(view_t* camera, int mode)
 			break;
 		}
 	}
+    
+    const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
 
 	node_t* nextnode = nullptr;
 	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
@@ -1964,9 +1971,12 @@ void drawEntities3D(view_t* camera, int mode)
             if (entity->ditheringDisabled) {
                 dither.value = decrease ? 0 : Entity::Dither::MAX;
             } else {
-                dither.value = decrease ? std::max(0, dither.value - 2) :
-					std::min(Entity::Dither::MAX, dither.value + 2);
-					//Entity::Dither::MAX;
+                if (ditheringDisabled) {
+                    dither.value = decrease ? 0 : Entity::Dither::MAX;
+                } else {
+                    dither.value = decrease ? std::max(0, dither.value - 2) :
+                        std::min(Entity::Dither::MAX, dither.value + 2);
+                }
             }
         }
         if (dither.value == 0) {

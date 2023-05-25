@@ -2192,11 +2192,6 @@ void actPlayer(Entity* my)
 		nametag->scalez = 0.2;
 		nametag->skill[0] = PLAYER_NUM;
 		nametag->skill[1] = playerColor(PLAYER_NUM, colorblind_lobby, false);
-		if ( multiplayer != CLIENT )
-		{
-			entity_uids--;
-		}
-		nametag->setUID(-3);
 
 		// hud weapon
 		if ( players[PLAYER_NUM]->isLocalPlayer() )

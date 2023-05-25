@@ -10440,6 +10440,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play sound effect
 	playSoundEntity(this, 77, 64);
+    spawnPoof(x, y, 0);
 
 	// relocate entity
 	double oldx = x;
@@ -10489,6 +10490,24 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
+    const float poofx = x + cosf(yaw) * 4.f;
+    const float poofy = y + sinf(yaw) * 4.f;
+    spawnPoof(poofx, poofy, 0);
+    bNeedsRenderPositionInit = true;
+    for (auto part : bodyparts) {
+        part->bNeedsRenderPositionInit = true;
+    }
+    for (auto node = map.entities->first; node != nullptr; node = node->next) {
+        auto entity = (Entity*)node->element;
+        if (entity && entity->behavior == &actSpriteNametag) {
+            if (entity->parent == uid) {
+                entity->bNeedsRenderPositionInit = true;
+            }
+        }
+    }
+    if (player == clientnum || (splitscreen && player >= 0)) {
+        temporarilyDisableDithering();
+    }
 
 	if ( behavior == &actMonster )
 	{

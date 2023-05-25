@@ -2839,6 +2839,19 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		players[clientnum]->entity->yaw = degrees * PI / 180;
 		players[clientnum]->entity->x = (tele_x << 4) + 8;
 		players[clientnum]->entity->y = (tele_y << 4) + 8;
+        players[clientnum]->entity->bNeedsRenderPositionInit = true;
+        for (auto part : players[clientnum]->entity->bodyparts) {
+            part->bNeedsRenderPositionInit = true;
+        }
+        for (auto node = map.entities->first; node != nullptr; node = node->next) {
+            auto entity = (Entity*)node->element;
+            if (entity && entity->behavior == &actSpriteNametag) {
+                if (entity->parent == players[clientnum]->entity->getUID()) {
+                    entity->bNeedsRenderPositionInit = true;
+                }
+            }
+        }
+        temporarilyDisableDithering();
 	}},
 
 	// teleport player
@@ -3920,7 +3933,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
                     nametag->scalez = 0.2;
                     nametag->skill[0] = clientnum;
                     nametag->skill[1] = playerColor(clientnum, colorblind_lobby, true);
-                    nametag->setUID(-3);
                 }
 			}
 			if ( !FollowerMenu[clientnum].recentEntity )

@@ -394,9 +394,9 @@ namespace MainMenu {
 
     // Binding options
 	struct Bindings {
-		std::unordered_map<std::string, std::string> kb_mouse_bindings[4];
-		std::unordered_map<std::string, std::string> gamepad_bindings[4];
-		std::unordered_map<std::string, std::string> joystick_bindings[4];
+		std::unordered_map<std::string, std::string> kb_mouse_bindings[MAX_SPLITSCREEN];
+		std::unordered_map<std::string, std::string> gamepad_bindings[MAX_SPLITSCREEN];
+		std::unordered_map<std::string, std::string> joystick_bindings[MAX_SPLITSCREEN];
 		inline void save();
 		static inline Bindings load();
 		static inline Bindings reset(const char* profile);
@@ -852,7 +852,7 @@ namespace MainMenu {
 		}
 
 	    int playercount = 0;
-	    for (int c = 0; c < 4; ++c) {
+	    for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 		    if (client_disconnected[c]) {
 			    continue;
 		    }
@@ -866,7 +866,7 @@ namespace MainMenu {
 #endif
 
 		int c, playerindex;
-		for (c = 0, playerindex = 0; c < 4; ++c, ++playerindex) {
+		for (c = 0, playerindex = 0; c < MAX_SPLITSCREEN; ++c, ++playerindex) {
 			if (client_disconnected[c]) {
 				--playerindex;
 				continue;
@@ -2186,7 +2186,7 @@ namespace MainMenu {
 	static Bindings old_bindings;
 
 	inline void Bindings::save() {
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 		    Input& input = Input::inputs[c];
 			input.getKeyboardBindings().clear();
 			input.setKeyboardBindings(kb_mouse_bindings[c]);
@@ -2213,7 +2213,7 @@ namespace MainMenu {
 
 	inline Bindings Bindings::reset(const char* profile) {
 		Bindings bindings;
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             for (auto& binding : getBindings(profile)) {
 			    bindings.kb_mouse_bindings[c].emplace(binding.action, binding.keyboard);
 			    bindings.gamepad_bindings[c].emplace(binding.action, binding.gamepad);
@@ -2226,10 +2226,10 @@ namespace MainMenu {
 	bool Bindings::serialize(FileInterface* file) {
 	    int version = 0;
 	    file->property("version", version);
-		Uint32 num_players = 4;
+		Uint32 num_players = MAX_SPLITSCREEN;
 		file->propertyName("players");
 		file->beginArray(num_players);
-		for (int c = 0; c < std::min(num_players, (Uint32)4); ++c) {
+		for (int c = 0; c < std::min(num_players, (Uint32)MAX_SPLITSCREEN); ++c) {
 			file->beginObject();
 			for (int j = 0; j < 3; ++j) {
 				auto& bindings =
@@ -5159,11 +5159,20 @@ namespace MainMenu {
 
 		int y = 0;
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
+        
+        std::vector<std::string> players;
+        std::vector<const char*> player_ptrs;
+        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+            std::string str = "Player ";
+            str += std::to_string(c + 1);
+            players.emplace_back(str);
+            player_ptrs.emplace_back(players.back().c_str());
+        }
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
 		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
 			"Select the player whose controls you wish to customize.", false,
-			{"Player 1", "Player 2", "Player 3", "Player 4"}, player_str.c_str(),
+            player_ptrs, player_str.c_str(),
 			[](Button& button){
 				soundActivate();
 				settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
@@ -13243,7 +13252,7 @@ failed:
 		// release any controller assigned to this player
         if (inputs.hasController(index)) {
             inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-			for (int c = 0; c < 4; ++c) {
+			for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             	Input::inputs[c].refresh();
 			}
         }
@@ -13429,7 +13438,7 @@ failed:
 					// release any controller assigned to this player
 					if (inputs.hasController(player)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(player));
-						for (int c = 0; c < 4; ++c) {
+						for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 							Input::inputs[c].refresh();
 						}
 					}
@@ -13636,34 +13645,31 @@ failed:
 
         bool atLeastOnePlayer = false;
 	    bool allReady = true;
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAXPLAYERS; ++c) {
 			auto card = lobby->findFrame((std::string("card") + std::to_string(c)).c_str());
-			if (!card) {
-			    // this can happen when a player enters a lobby and not all the stones exist yet.
-			    allReady = false;
-			    break;
-			}
-			auto backdrop = card->findImage("backdrop"); assert(backdrop);
-			if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
-				playersInLobby[c] = false;
-				if (multiplayer == SINGLE) {
-				    if (loadingsavegame && !playerSlotsLocked[c]) {
-				        allReady = false;
-				    }
-				} else {
-				    if (!client_disconnected[c]) {
-				        // we know a player is connected to this slot, and they're not ready
-			            allReady = false;
-			        }
-			    }
-			} else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
-				playersInLobby[c] = true;
-			    atLeastOnePlayer = true;
-			} else {
-				playersInLobby[c] = true;
-			    atLeastOnePlayer = true;
-			    allReady = false;
-			}
+            if (card) {
+                auto backdrop = card->findImage("backdrop"); assert(backdrop);
+                if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Invite_Window00.png") {
+                    playersInLobby[c] = false;
+                    if (multiplayer == SINGLE) {
+                        if (loadingsavegame && !playerSlotsLocked[c]) {
+                            allReady = false;
+                        }
+                    } else {
+                        if (!client_disconnected[c]) {
+                            // we know a player is connected to this slot, and they're not ready
+                            allReady = false;
+                        }
+                    }
+                } else if (backdrop->path == "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png") {
+                    playersInLobby[c] = true;
+                    atLeastOnePlayer = true;
+                } else {
+                    playersInLobby[c] = true;
+                    atLeastOnePlayer = true;
+                    allReady = false;
+                }
+            }
 		}
 		if (allReady && atLeastOnePlayer) {
 		    createCountdownTimer();
@@ -14024,7 +14030,7 @@ failed:
 		for (int c = 0; c < MAXPLAYERS; ++c) {
 			if (inputs.hasController(c)) {
 				inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
-				for (int c = 0; c < 4; ++c) {
+				for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 					Input::inputs[c].refresh();
 				}
 			}
@@ -14100,26 +14106,70 @@ failed:
 
 		currentLobbyType = type;
 
+        const int lobbySize = type == LobbyType::LobbyLocal ?
+            (Frame::virtualScreenX / 4) * MAX_SPLITSCREEN:
+            (Frame::virtualScreenX / 4) * MAXPLAYERS;
+        
 		auto lobby = main_menu_frame->addFrame("lobby");
 		lobby->setOwner(clientnum);
 		lobby->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
-		lobby->setActualSize(SDL_Rect{0, 0, lobby->getSize().w, lobby->getSize().h});
-		lobby->setHollow(true);
+		lobby->setActualSize(SDL_Rect{0, 0, lobbySize, lobby->getSize().h});
+        lobby->setColor(makeColor(0, 0, 0, 127));
+        lobby->setAllowScrollBinds(false);
 		lobby->setBorder(0);
+        
+        static ConsoleVariable<float> cvar_lobbyScroll("/lobby_scroll", 10.f);
+        
+        auto scrollRight = lobby->addButton("scroll_right");
+        scrollRight->setBackground("*#images/ui/Main Menus/Settings/Settings_Button_R00.png");
+        scrollRight->setBackgroundActivated("*#images/ui/Main Menus/Settings/Settings_Button_RPress00.png");
+        scrollRight->setBackgroundHighlighted("*#images/ui/Main Menus/Settings/Settings_Button_RHigh00.png");
+        scrollRight->setTickCallback([](Widget& widget){
+            auto button = static_cast<Button*>(&widget); assert(button);
+            auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
+            if (frame->getActualSize().w > frame->getSize().w) {
+                button->setSize(SDL_Rect{frame->getActualSize().x + Frame::virtualScreenX - 38,
+                    (Frame::virtualScreenY - 58) / 2, 38, 58});
+                button->setInvisible(false);
+            } else {
+                button->setInvisible(true);
+            }
+            });
+        scrollRight->setCallback([](Button& button){
+            auto frame = static_cast<Frame*>(button.getParent());
+            auto speed = *cvar_lobbyScroll * Frame::virtualScreenX;
+            frame->setAccelerationX(speed);
+            });
+        
+        auto scrollLeft = lobby->addButton("scroll_left");
+        scrollLeft->setBackground("*#images/ui/Main Menus/Settings/Settings_Button_L00.png");
+        scrollLeft->setBackgroundActivated("*#images/ui/Main Menus/Settings/Settings_Button_LPress00.png");
+        scrollLeft->setBackgroundHighlighted("*#images/ui/Main Menus/Settings/Settings_Button_LHigh00.png");
+        scrollLeft->setTickCallback([](Widget& widget){
+            auto button = static_cast<Button*>(&widget); assert(button);
+            auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
+            if (frame->getActualSize().w > frame->getSize().w) {
+                button->setSize(SDL_Rect{frame->getActualSize().x,
+                    (Frame::virtualScreenY - 58) / 2, 38, 58});
+                button->setInvisible(false);
+            } else {
+                button->setInvisible(true);
+            }
+            });
+        scrollLeft->setCallback([](Button& button){
+            auto frame = static_cast<Frame*>(button.getParent());
+            auto speed = -*cvar_lobbyScroll * Frame::virtualScreenX;
+            frame->setAccelerationX(speed);
+            });
 
-		auto dimmer = lobby->addImage(
-			lobby->getActualSize(),
-			makeColor(0, 0, 0, 127),
-			"images/system/white.png",
-			"dimmer");
-
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAXPLAYERS; ++c) {
 			auto name = std::string("paperdoll") + std::to_string(c);
 			auto paperdoll = lobby->addFrame(name.c_str());
 			paperdoll->setOwner(c);
 			//paperdoll->setColor(makeColor(33, 26, 24, 255));
 			//paperdoll->setBorderColor(makeColor(116, 55, 0, 255));
 			//paperdoll->setBorder(2);
+            paperdoll->setHollow(true);
 			paperdoll->setColor(0);
 			paperdoll->setBorderColor(0);
 			paperdoll->setBorder(0);
@@ -14151,7 +14201,11 @@ failed:
 		}
 
 		auto banner = lobby->addFrame("banner");
-		banner->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, 66});
+        banner->setTickCallback([](Widget& widget){
+            auto banner = static_cast<Frame*>(&widget); assert(banner);
+            auto lobby = static_cast<Frame*>(widget.getParent()); assert(lobby);
+            banner->setSize(SDL_Rect{lobby->getActualSize().x, 0, Frame::virtualScreenX, 66});
+            });
         {
             auto background = banner->addImage(
                 SDL_Rect{0, 0, Frame::virtualScreenX, 66},
@@ -14199,7 +14253,7 @@ failed:
                             const int index = button.getOwner();
                             if (inputs.hasController(index)) {
                                 inputs.removeControllerWithDeviceID(inputs.getControllerID(index));
-								for (int c = 0; c < 4; ++c) {
+								for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 									Input::inputs[c].refresh();
 								}
                             }
@@ -14562,24 +14616,23 @@ failed:
 
 		if (type == LobbyType::LobbyLocal) {
 			multiplayer = SINGLE;
-			createStartButton(0);
-			createStartButton(1);
-			createStartButton(2);
-			createStartButton(3);
+            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+                createStartButton(c);
+            }
 		} else if (type == LobbyType::LobbyLAN) {
 			setupNetGameAsServer();
 			createStartButton(0);
-			createWaitingStone(1);
-			createWaitingStone(2);
-			createWaitingStone(3);
+            for (int c = 1; c < MAXPLAYERS; ++c) {
+                createWaitingStone(c);
+            }
 		} else if (type == LobbyType::LobbyOnline) {
 			setupNetGameAsServer();
 			createStartButton(0);
-			createInviteButton(1);
-			createInviteButton(2);
-			createInviteButton(3);
+            for (int c = 1; c < MAXPLAYERS; ++c) {
+                createInviteButton(c);
+            }
 		} else if (type == LobbyType::LobbyJoined) {
-		    for (int c = 0; c < 4; ++c) {
+		    for (int c = 0; c < MAXPLAYERS; ++c) {
 		        if (clientnum == c) {
 		            createStartButton(c);
 		        } else {
@@ -17062,7 +17115,10 @@ failed:
 		    auto local_button = window->findButton("local"); assert(local_button);
 		    auto local_image = window->findImage("local_image"); assert(local_image);
 		    if (local_button->isSelected()) {
-		        tooltip->setText("Play singleplayer or with 2-4\nplayers in splitscreen multiplayer");
+                char buf[128];
+                const char fmt[] = "Play singleplayer or with 2-%d\nplayers in splitscreen multiplayer";
+                snprintf(buf, sizeof(buf), fmt, MAX_SPLITSCREEN);
+		        tooltip->setText(buf);
                 local_image->path =
 #ifdef NINTENDO
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_CouchCoOp_00.png";
@@ -17080,11 +17136,14 @@ failed:
 		    auto host_lan_button = window->findButton("host_lan"); assert(host_lan_button);
 		    auto host_lan_image = window->findImage("host_lan_image"); assert(host_lan_image);
 		    if (host_lan_button->isSelected()) {
+                char buf[128];
 #ifdef NINTENDO
-		        tooltip->setText("Host a game with 2-4 players\nover a wireless connection");
+                const char fmt[] = "Host a game with 2-%d players\nover a wireless connection";
 #else
-				tooltip->setText("Host a game with 2-4 players\nover a local area network (LAN)");
+                const char fmt[] = "Host a game with 2-%d players\nover a local area network (LAN)";
 #endif
+                snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
+                tooltip->setText(buf);
                 host_lan_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostLAN_00.png";
 		    } else {
@@ -17095,7 +17154,10 @@ failed:
 		    auto host_online_image = window->findImage("host_online_image"); assert(host_online_image);
 #if defined(STEAMWORKS) || defined(USE_EOS)
 		    if (host_online_button->isSelected()) {
-		        tooltip->setText("Host a game with 2-4 players\nover the internet");
+                char buf[128];
+                const char fmt[] = "Host a game with 2-%d players\nover the internet";
+                snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
+                tooltip->setText(buf);
                 host_online_image->path =
 		            "*images/ui/Main Menus/Play/NewGameConnectivity/UI_NewGame_Icon_HostOnline_00.png";
 		    } else {
@@ -17104,7 +17166,10 @@ failed:
 		    }
 #else
 		    if (host_online_button->isSelected()) {
-		        tooltip->setText("Host a game with 2-4 players\nover the internet (disabled)");
+                char buf[128];
+                const char fmt[] = "Host a game with 2-%d players\nover the internet (disabled)";
+                snprintf(buf, sizeof(buf), fmt, MAXPLAYERS);
+		        tooltip->setText(buf);
 		    }
 #endif
 		    auto join_button = window->findButton("join"); assert(join_button);
@@ -18380,7 +18445,7 @@ failed:
 	    if (splitscreen) {
 #ifdef NINTENDO
 			int numplayers = 0;
-			for (int c = 0; c < 4; ++c) {
+			for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 				if (isPlayerSignedIn(c)) {
 					++numplayers;
 				}
@@ -18389,8 +18454,8 @@ failed:
 #else
 	        static std::vector<int> players;
 	        players.clear();
-	        players.reserve(4);
-	        for (int c = 0; c < 4; ++c) {
+	        players.reserve(MAX_SPLITSCREEN);
+	        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 	            if (isPlayerSignedIn(c)) {
 	                players.push_back(c);
 	            }
@@ -19063,7 +19128,7 @@ failed:
 
 #ifndef NINTENDO
 				// unbind controllers
-				for (int c = 1; c < 4; ++c) {
+				for (int c = 1; c < MAX_SPLITSCREEN; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
@@ -19100,7 +19165,7 @@ failed:
 
 #ifndef NINTENDO
 				// unbind controllers
-				for (int c = 1; c < 4; ++c) {
+				for (int c = 1; c < MAX_SPLITSCREEN; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
@@ -19130,7 +19195,7 @@ failed:
                 }
 
 #ifndef NINTENDO
-                for (int c = 1; c < 4; ++c) {
+                for (int c = 1; c < MAX_SPLITSCREEN; ++c) {
                     if (inputs.hasController(c)) {
                         inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
                         Input::inputs[c].refresh();
@@ -19154,7 +19219,7 @@ failed:
 	            playMusic(intromusic[0], true, false, false);
 
 #ifndef NINTENDO
-				for (int c = 1; c < 4; ++c) {
+				for (int c = 1; c < MAX_SPLITSCREEN; ++c) {
 					if (inputs.hasController(c)) {
 						inputs.removeControllerWithDeviceID(inputs.getControllerID(c));
 						Input::inputs[c].refresh();
@@ -19233,7 +19298,7 @@ failed:
 				if (currentLobbyType == LobbyType::LobbyLocal) {
 		            clientnum = -1;
 		            int playercount = 0;
-		            for (int c = 0; c < 4; ++c) {
+		            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 			            if (playersInLobby[c]) {
 				            clientnum = clientnum == -1 ? c : clientnum;
 				            client_disconnected[c] = false;

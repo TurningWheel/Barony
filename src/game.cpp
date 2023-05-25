@@ -2402,8 +2402,6 @@ void gameLogic(void)
                                         nametag->scalez = 0.2;
                                         nametag->skill[0] = c;
                                         nametag->skill[1] = playerColor(c, colorblind_lobby, true);
-                                        nametag->setUID(-3);
-                                        entity_uids--;
                                     }
 
 									if ( !FollowerMenu[c].recentEntity && players[c]->isLocalPlayer() )

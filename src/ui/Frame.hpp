@@ -370,6 +370,8 @@ public:
 	void    setEntrySize(int _size) { entrySize = _size; }
 	void    setActivation(entry_t* entry) { activation = entry; }
 	void    setScrollWithLeftControls(const bool b) { scrollWithLeftControls = b; }
+    void    setAccelerationX(const float x) { scrollAccelerationX = x; }
+    void    setAccelerationY(const float y) { scrollAccelerationY = y; }
 
 	void setActualSize(SDL_Rect _actualSize) {
 		allowScrolling = true;
