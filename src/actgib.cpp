@@ -43,10 +43,7 @@ void poof(Entity* my) {
             const int x = my->x + local_rng.uniform(-4, 4);
             const int y = my->y + local_rng.uniform(-4, 4);
             const int z = my->z + local_rng.uniform(-4, -1);
-            auto poof = spawnPoof(x, y, z);
-            poof->scalex = 0.3;
-            poof->scaley = 0.3;
-            poof->scalez = 0.3;
+            auto poof = spawnPoof(x, y, z, 0.3);
         }
     }
 }

@@ -981,20 +981,14 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
     if (entity) {
         if (creature == MINOTAUR) {
             // extra big poof
-            auto poof = spawnPoof(entity->x, entity->y, -8);
-            poof->scalex = 2.0;
-            poof->scaley = 2.0;
-            poof->scalez = 2.0;
+            auto poof = spawnPoof(entity->x, entity->y, -8, 2.0);
         }
         else if (creature == GYROBOT) {
             // small poof
-            auto poof = spawnPoof(entity->x, entity->y, 4);
-            poof->scalex = 0.5;
-            poof->scaley = 0.5;
-            poof->scalez = 0.5;
+            auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
         }
         else {
-            (void)spawnPoof(entity->x, entity->y, 0);
+            (void)spawnPoof(entity->x, entity->y, 0, 1.0);
         }
     }
 
@@ -3953,8 +3947,7 @@ void actMonster(Entity* my)
 				if (my->ticks % 2 == 0) {
 				    const int x = my->x + local_rng.uniform(-3, 3);
 				    const int y = my->y + local_rng.uniform(-3, 3);
-				    auto poof = spawnPoof(x, y, 6);
-				    poof->scalex = poof->scaley = poof->scalez = 0.33;
+				    auto poof = spawnPoof(x, y, 6, 0.33, true);
 				}
 				ghoulMoveBodyparts(my, myStats, 0);
 				return;
