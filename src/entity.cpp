@@ -8820,143 +8820,112 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && local_rng.rand() % 4 == 0 )
 					{
-						int armornum = 0;
-						Item* armor = nullptr;
-						int armorstolen = local_rng.rand() % 9;
 						switch ( myStats->type )
 						{
-							case SCORPION:
-								hitstats->EFFECTS[EFF_PARALYZED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
-								serverUpdateEffects(playerhit);
-								break;
-							case SPIDER:
+						case SCORPION:
+							hitstats->EFFECTS[EFF_PARALYZED] = true;
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
+							messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
+							messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
+							serverUpdateEffects(playerhit);
+							break;
+						case SPIDER:
+						{
+							bool applyPoison = true;
+							if ( behavior == &actPlayer )
 							{
-								bool applyPoison = true;
-								if ( behavior == &actPlayer )
+								if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
 								{
-									if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
-									{
-										applyPoison = true;
-									}
-									else
-									{
-										applyPoison = false;
-									}
+									applyPoison = true;
 								}
-								if ( applyPoison )
+								else
 								{
-									playerPoisonedTarget = true;
-									hitstats->EFFECTS[EFF_POISONED] = true;
-									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-									hitstats->poisonKiller = getUID();
-									if (arachnophobia_filter) {
-									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
-									} else {
-									    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
-									}
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
-									serverUpdateEffects(playerhit);
-									for ( int tmp = 0; tmp < 3; ++tmp )
-									{
-										Entity* gib = spawnGib(hit.entity, 211);
-										serverSpawnGibForClient(gib);
-									}
+									applyPoison = false;
 								}
-								break;
 							}
-							case SUCCUBUS:
-								switch ( armorstolen )
-								{
-									case 0:
-										armor = hitstats->helmet;
-										armornum = 0;
-										break;
-									case 1:
-										armor = hitstats->breastplate;
-										armornum = 1;
-										break;
-									case 2:
-										armor = hitstats->gloves;
-										armornum = 2;
-										break;
-									case 3:
-										armor = hitstats->shoes;
-										armornum = 3;
-										break;
-									case 4:
-										armor = hitstats->shield;
-										armornum = 4;
-										break;
-									case 5:
-										armor = hitstats->cloak;
-										armornum = 6;
-										break;
-									case 6:
-										armor = hitstats->amulet;
-										armornum = 7;
-										break;
-									case 7:
-										armor = hitstats->ring;
-										armornum = 8;
-										break;
-									case 8:
-										armor = hitstats->mask;
-										armornum = 9;
-										break;
-									default:
-										break;
+							if ( applyPoison )
+							{
+								playerPoisonedTarget = true;
+								hitstats->EFFECTS[EFF_POISONED] = true;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = getUID();
+								if ( arachnophobia_filter ) {
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
 								}
-								if ( behavior == &actPlayer )
-								{
-									armor = nullptr;
+								else {
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
 								}
-								if ( armor != nullptr )
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
+								serverUpdateEffects(playerhit);
+								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
-									if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+							}
+							break;
+						}
+						case SUCCUBUS:
+						{
+							int armornum = 0;
+							Item* armor = nullptr;
+							int armorstolen = 0;
+							if ( behavior == &actPlayer )
+							{
+								armor = nullptr;
+							}
+							else
+							{
+								if ( local_rng.rand() % 4 == 0 )
+								{
+									armorstolen = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+								}
+							}
+							if ( armor != nullptr )
+							{
+								if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
+								{
+									if ( armor->count > 1 )
 									{
-										if ( armor->count > 1 )
-										{
-											newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
-										}
+										newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 									}
-									armor->count = 1;
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
-									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
-									stolenArmor->ownerUid = hit.entity->getUID();
-									Item** slot = itemSlot(hitstats, armor);
-									if ( slot )
-									{
-										*slot = NULL;
-									}
-									if ( armor->node )
-									{
-										list_RemoveNode(armor->node);
-									}
-									else
-									{
-										free(armor);
-									}
-									if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
-									{
-										strcpy((char*)net_packet->data, "STLA");
-										net_packet->data[4] = armornum;
-										net_packet->address.host = net_clients[playerhit - 1].host;
-										net_packet->address.port = net_clients[playerhit - 1].port;
-										net_packet->len = 5;
-										sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-									}
-									teleportRandom();
+								}
+								armor->count = 1;
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
+								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+								stolenArmor->ownerUid = hit.entity->getUID();
+								Item** slot = itemSlot(hitstats, armor);
+								if ( slot )
+								{
+									*slot = NULL;
+								}
+								if ( armor->node )
+								{
+									list_RemoveNode(armor->node);
+								}
+								else
+								{
+									free(armor);
+								}
+								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
+								{
+									strcpy((char*)net_packet->data, "STLA");
+									net_packet->data[4] = armornum;
+									net_packet->address.host = net_clients[playerhit - 1].host;
+									net_packet->address.port = net_clients[playerhit - 1].port;
+									net_packet->len = 5;
+									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+								}
+								teleportRandom();
 
-									// the succubus loses interest after this
-									monsterState = 0;
-									monsterTarget = 0;
-								}
-								break;
-							default:
-								break;
+								// the succubus loses interest after this
+								monsterState = 0;
+								monsterTarget = 0;
+							}
+							break;
+						}
+						default:
+							break;
 						}
 					}
 					else if ( damage == 0 && !(hitstats->defending) )
