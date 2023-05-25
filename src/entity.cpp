@@ -6712,6 +6712,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						bowDegradeChance = std::min(bowDegradeChance, 90);
 					}
 				}
+				if ( myStats->type == SKELETON && behavior == &actMonster && monsterAllySummonRank > 0 )
+				{
+					bowDegradeChance = 100; // conjured skeleton weapon doesn't break.
+				}
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW )
 				{
 					if ( myStats->weapon != NULL )
