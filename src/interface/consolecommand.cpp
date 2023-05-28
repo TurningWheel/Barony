@@ -2583,6 +2583,33 @@ namespace ConsoleCommands {
 		}
 		});
 
+	static ConsoleCommand ccmd_seteffect_rand("/seteffect_rand", "give assortment of effects (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			return;
+		}
+
+		int num = local_rng.rand() % 10;
+		std::vector<unsigned int> effects;
+		for ( int i = 0; i < NUMEFFECTS; ++i )
+		{
+			effects.push_back(1);
+		}
+		while ( num > 0 )
+		{
+			--num;
+			auto picked = local_rng.discrete(effects.data(), effects.size());
+			effects[picked] = 0;
+			players[clientnum]->entity->setEffect(picked, true, TICKS_PER_SECOND * 15, true);
+		}
+		});
+
 	static ConsoleCommand ccmd_levelsummon("/levelsummon", "level up monster summons (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{

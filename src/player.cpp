@@ -6125,6 +6125,7 @@ void Player::clearGUIPointers()
 	hud.enemyBarFrameHUD = nullptr;
 	hud.actionPromptsFrame = nullptr;
 	hud.worldTooltipFrame = nullptr;
+	hud.statusEffectFocusedWindow = nullptr;
 	hud.uiNavFrame = nullptr;
 	hud.cursorFrame = nullptr;
 

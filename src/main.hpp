@@ -289,7 +289,7 @@ class Item;
 //enum Item;
 //enum Status;
 
-#define AVERAGEFRAMES 32
+#define AVERAGEFRAMES 64
 
 extern bool stop;
 

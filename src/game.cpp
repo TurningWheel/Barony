@@ -574,6 +574,10 @@ void TimerExperiments::updateClocks()
 	{
 		real_t decimal = 0.0;
 		real_t ms = 1000 / fpsLimit;
+		if ( fps > 0.0 )
+		{
+			ms = 1000 / fps;
+		}
 		frameTimeLimit = ms;
 		if ( modf(ms, &decimal) > 0.01 )
 		{
@@ -5333,6 +5337,7 @@ void ingameHud()
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
+		players[player]->hud.updateStatusEffectFocusedWindow();
 		players[player]->messageZone.processLogFrame();
 		players[player]->minimap.processMapFrame();
 		players[player]->skillSheet.processSkillSheet();

@@ -1414,6 +1414,7 @@ public:
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;
 		Frame* worldTooltipFrame = nullptr;
+		Frame* statusEffectFocusedWindow = nullptr;
 		Frame* uiNavFrame = nullptr;
 		Frame* cursorFrame = nullptr;
 		real_t hudDamageTextVelocityX = 0.0;
@@ -1641,6 +1642,7 @@ public:
 		void updateWorldTooltipPrompts();
 		void updateUINavigation();
 		void updateMinotaurWarning();
+		void updateStatusEffectFocusedWindow();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
 	} hud;

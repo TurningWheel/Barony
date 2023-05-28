@@ -5057,7 +5057,7 @@ int StatusEffectQueue_t::getBaseEffectPosY()
 	{
 		if ( players[player]->bUseCompactGUIWidth() && !players[player]->hotbar.useHotbarFaceMenu )
 		{
-			return statusEffectFrame->getSize().h / 2 + 50;
+			return statusEffectFrame->getSize().h / 2 + 32;
 		}
 		return statusEffectFrame->getSize().h / 2;
 	}
@@ -5351,6 +5351,202 @@ void StatusEffectQueue_t::createStatusEffectTooltip()
 void Player::HUD_t::updateStatusEffectTooltip()
 {
 	StatusEffectQueue[player.playernum].createStatusEffectTooltip();
+}
+
+void Player::HUD_t::updateStatusEffectFocusedWindow()
+{
+	return;
+	Frame* fxFrame = nullptr;
+	if ( !statusEffectFocusedWindow )
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "player statusfx window %d", player.playernum);
+		statusEffectFocusedWindow = gameUIFrame[player.playernum]->addFrame(name);
+		Frame* frame = statusEffectFocusedWindow;
+		frame->setHollow(false);
+		frame->setDisabled(true);
+		frame->setInheritParentFrameOpacity(true);
+		frame->setBorder(0);
+		frame->setOwner(player.playernum);
+		frame->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+		{
+			Uint32 color = makeColor(255, 255, 255, 255);
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png", skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png", skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png", skillsheetEffectBackgroundImages[TOP].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", skillsheetEffectBackgroundImages[MIDDLE_LEFT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", skillsheetEffectBackgroundImages[MIDDLE_RIGHT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				makeColor(22, 24, 29, 255), "images/system/white.png", skillsheetEffectBackgroundImages[MIDDLE].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", skillsheetEffectBackgroundImages[BOTTOM_LEFT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", skillsheetEffectBackgroundImages[BOTTOM_RIGHT].c_str());
+			frame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
+			imageSetWidthHeight9x9(frame, skillsheetEffectBackgroundImages);
+
+			/*auto heading_txt = tooltipFrame->addField("heading txt", 128);
+			heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			heading_txt->setText("");
+			heading_txt->setColor(makeColor(255, 255, 255, 255));
+			heading_txt->setVJustify(Field::justify_t::CENTER);
+			heading_txt->setHJustify(Field::justify_t::LEFT);
+
+			auto desc_txt = tooltipFrame->addField("desc txt", 1024);
+			desc_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			desc_txt->setText("");
+			desc_txt->setColor(makeColor(0, 192, 255, 255));
+			desc_txt->setVJustify(Field::justify_t::LEFT);
+			desc_txt->setHJustify(Field::justify_t::LEFT);*/
+		}
+
+		auto automatonBgFrame = frame->addFrame("automaton bg");
+		automatonBgFrame->setSize(SDL_Rect{ 0, 0, 64, 64 });
+		automatonBgFrame->setDisabled(true);
+		automatonBgFrame->addImage(SDL_Rect{ 0, 0, 64, 64 }, 0xFFFFFFFF, "", "flame");
+
+		fxFrame = frame->addFrame("effects");
+	}
+	else
+	{
+		fxFrame = statusEffectFocusedWindow->findFrame("effects");
+	}
+
+	bool rebuildWindow = false;
+	if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		if ( statusEffectFocusedWindow->isDisabled() )
+		{
+			statusEffectFocusedWindow->setDisabled(false);
+			rebuildWindow = true;
+		}
+		else
+		{
+			statusEffectFocusedWindow->setDisabled(true);
+		}
+	}
+
+	if ( rebuildWindow && StatusEffectQueue[player.playernum].statusEffectFrame )
+	{
+		statusEffectFocusedWindow->setDisabled(false);
+		auto& effectQueue = StatusEffectQueue[player.playernum].effectQueue;
+		auto statusFx = StatusEffectQueue[player.playernum].statusEffectFrame->findFrame("effects");
+
+		statusEffectFocusedWindow->setSize(statusFx->getSize());
+		fxFrame->setSize(statusFx->getSize());
+
+		int numFrameImages = fxFrame->getImages().size();
+		while ( effectQueue.size() > numFrameImages )
+		{
+			auto img = fxFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inner img");
+			img->disabled = true;
+			numFrameImages = fxFrame->getImages().size();
+		}
+		while ( effectQueue.size() < numFrameImages )
+		{
+			fxFrame->getImages().erase(fxFrame->getImages().begin());
+			numFrameImages = fxFrame->getImages().size();
+		}
+		auto& frameImages = fxFrame->getImages();
+		for ( auto img : frameImages )
+		{
+			img->disabled = true;
+		}
+
+		auto automatonHungerFrame = statusEffectFocusedWindow->findFrame("automaton bg");
+		automatonHungerFrame->setDisabled(true);
+		auto frameImagesIterator = frameImages.begin();
+		size_t index = 0;
+		SDL_Rect windowSizeLimitMin{ 0, 0, 0, 0 };
+		SDL_Rect windowSizeLimitMax{ 0, 0, 0, 0 };
+		for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); )
+		{
+			auto& q = (*it);
+			Frame::image_t* frameImg = nullptr;
+			if ( frameImagesIterator != frameImages.end() )
+			{
+				frameImg = *frameImagesIterator;
+			}
+
+			StatusEffectQueue[player.playernum].updateEntryImage(q, frameImg);
+			frameImg->pos.x = q.animateSetpointX;
+			frameImg->pos.y = q.animateSetpointY;
+			frameImg->disabled = false;
+
+			if ( windowSizeLimitMin.x == 0 && index == 0 )
+			{
+				windowSizeLimitMin.x = frameImg->pos.x;
+			}
+			else
+			{
+				windowSizeLimitMin.x = std::min(frameImg->pos.x, windowSizeLimitMin.x);
+			}
+			if ( windowSizeLimitMin.y == 0 && index == 0 )
+			{
+				windowSizeLimitMin.y = frameImg->pos.y;
+			}
+			else
+			{
+				windowSizeLimitMin.y = std::min(frameImg->pos.y, windowSizeLimitMin.y);
+			}
+			windowSizeLimitMax.x = std::max(frameImg->pos.x + frameImg->pos.w, windowSizeLimitMax.x);
+			windowSizeLimitMax.y = std::max(frameImg->pos.y + frameImg->pos.h, windowSizeLimitMax.y);
+
+			if ( q.effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+			{
+				auto srcFrame = StatusEffectQueue[player.playernum].statusEffectFrame->findFrame("automaton hunger notification");
+				automatonHungerFrame->setDisabled(srcFrame->isDisabled());
+
+				SDL_Rect pos = srcFrame->getSize();
+				pos.x = q.animateSetpointX;
+				pos.y = q.animateSetpointY;
+
+				int heightDiff = q.getEffectSpriteNormalHeight() - pos.h;
+				pos.y += heightDiff;
+
+				automatonHungerFrame->setSize(pos);
+
+				auto flameImg = automatonHungerFrame->findImage("flame");
+				auto srcImg = srcFrame->findImage("flame");
+				flameImg->pos = SDL_Rect{ 0, -heightDiff, q.getEffectSpriteNormalWidth(), q.getEffectSpriteNormalHeight() };
+				flameImg->path = srcImg->path;
+			}
+
+			++it;
+			if ( frameImagesIterator != frameImages.end() )
+			{
+				++frameImagesIterator;
+			}
+			++index;
+		}
+
+		// rearrange icons to fit size
+		{
+			int borderX = 16;
+			int borderY = 32;
+			int bodyW = windowSizeLimitMax.x - windowSizeLimitMin.x;
+			int bodyH = windowSizeLimitMax.y - windowSizeLimitMin.y;
+			fxFrame->setSize(SDL_Rect{ borderX, borderY, bodyW, bodyH });
+			for ( auto img : frameImages )
+			{
+				img->pos.x -= (windowSizeLimitMin.x);
+				img->pos.y -= (windowSizeLimitMin.y);
+			}
+
+			SDL_Rect windowPos{ 0, 0, borderX * 2 + bodyW, borderY + bodyH + 8 };
+			statusEffectFocusedWindow->setSize(windowPos);
+			imageResizeToContainer9x9(statusEffectFocusedWindow, SDL_Rect{ 0, 0, windowPos.w, windowPos.h },
+				skillsheetEffectBackgroundImages);
+		}
+	}
 }
 
 void StatusEffectQueue_t::animateStatusEffectTooltip(bool showTooltip)
@@ -5738,7 +5934,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		effectSet.insert((*it).effect);
 	}
 
-	std::vector<int> effectsToSkipAnim;
+	std::vector<int> effectsToSkipAnimThisFrame;
+	std::set<int> effectsToSkipAnim;
 	std::unordered_set<int> spellsActive;
 	int count = 0; //This is just for debugging purposes.
 	for ( node_t* node = channeledSpells[player].first; node; node = node->next, count++ )
@@ -5851,6 +6048,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				if ( !activeWithoutSneak )
 				{
 					skipAnim = true;
+					effectsToSkipAnim.insert(i);
 				}
 			}
 
@@ -5871,7 +6069,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					}
 					if ( skipAnim )
 					{
-						effectsToSkipAnim.push_back(i);
+						effectsToSkipAnimThisFrame.push_back(i);
 					}
 			    }
 				else if ( i == EFF_SHAPESHIFT )
@@ -6046,14 +6244,17 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
-			bool skipAnim = false;
+			if ( i == kEffectSneak )
+			{
+				effectsToSkipAnim.insert(i);
+			}
 			if ( effectSet.find(i) == effectSet.end() )
 			{
 				insertEffect(i, -1);
 
 				if ( i == kEffectSneak )
 				{
-					effectsToSkipAnim.push_back(i);
+					effectsToSkipAnimThisFrame.push_back(i);
 				}
 			}
 		}
@@ -6098,7 +6299,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	const int spacing = 36;
 	int numEffectsOnLine = 0;
 
-	for ( auto eff : effectsToSkipAnim )
+	for ( auto eff : effectsToSkipAnimThisFrame )
 	{
 		for ( auto& notif : notificationQueue )
 		{
@@ -6128,10 +6329,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						entry.pos.h = entry.animateSetpointH;
 
 						notif.pos = entry.pos;
-						break;
 					}
 				}
-				break;
 			}
 		}
 	}
@@ -6334,7 +6533,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	int numFrameImages = innerFrame->getImages().size();
 	while ( effectQueue.size() > numFrameImages )
 	{
-		auto img = innerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "inner img");
+		auto img = innerFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "inner img");
 		img->disabled = true;
 		numFrameImages = innerFrame->getImages().size();
 	}
@@ -6382,6 +6581,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( (*it2).effect == q.effect )
 			{
 				existsInNotifications = true;
+				if ( effectsToSkipAnim.find(q.effect) != effectsToSkipAnim.end() )
+				{
+					updateEntryImage(q, frameImg);
+				}
 				break;
 			}
 		}
