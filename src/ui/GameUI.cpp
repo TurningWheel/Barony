@@ -1368,7 +1368,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 		if ( doAnimation )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			/*if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() )
 			{
 				real_t setpointDiffX = fpsScale * std::max(.01, (followerBar.animx)) / 2.0;
@@ -1454,7 +1454,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		{
 			if ( doAnimation )
 			{
-				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 				real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFade)) / 5.0;
 				followerBar.animFade += setpointDiffFade;
 				followerBar.animFade = std::min(1.0, followerBar.animFade);
@@ -1463,7 +1463,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 			if ( doAnimation && followerBar.animFade >= 0.9999 )
 			{
-				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 				real_t setpointDiffY = fpsScale * std::max(.01, (1.0 - followerBar.animy)) / 2.0;
 				followerBar.animy += setpointDiffY;
 				followerBar.animy = std::min(1.0, followerBar.animy);
@@ -1495,7 +1495,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 						&& barIndex < (followerDisplay.scrollSetpoint + kNumEntriesToShow) )
 					{
 						// visible in list
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScroll) / 1.0;
 						followerBar.animFadeScroll -= setpointDiffFade;
 						followerBar.animFadeScroll = std::max(0.0, followerBar.animFadeScroll);
@@ -1503,7 +1503,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					else
 					{
 						// not visible
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScroll)) / 1.0;
 						followerBar.animFadeScroll += setpointDiffFade;
 						followerBar.animFadeScroll = std::min(1.0, followerBar.animFadeScroll);
@@ -1519,7 +1519,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					{
 						//followerBar.animFadeScroll = 1.0;
 						// not visible
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						if ( !followerBar.dummy )
 						{
 							real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScroll)) / 10.0;
@@ -1530,7 +1530,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					}
 					else
 					{
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						if ( !followerBar.dummy )
 						{
 							real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScroll) / 10.0;
@@ -1546,7 +1546,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 							// otherwise fade in as the real bar is less than the current scroll
 							&& !(barIndex + realActiveBars >= followerDisplay.scrollSetpoint + kNumEntriesToShow - 1)) )
 					{
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						if ( !followerBar.dummy )
 						{
 							real_t setpointDiffFade = fpsScale * std::max(.01, followerBar.animFadeScrollDummy) / 10.0;
@@ -1556,7 +1556,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					}
 					else
 					{
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						if ( !followerBar.dummy )
 						{
 							real_t setpointDiffFade = fpsScale * std::max(.01, (1.0 - followerBar.animFadeScrollDummy)) / 10.0;
@@ -1965,7 +1965,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				if ( doAnimation )
 				{
 					real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
-					real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+					real_t fpsScale = getFPSScale(144.0);
 					hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 				}
 				hpForegroundValue = std::min(static_cast<real_t>(HPBar.animateSetpoint), hpForegroundValue);
@@ -1976,7 +1976,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				}
 
 				/*	int increment = 3;
-				double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));*/
+				double scaledIncrement = (increment * (getFPSScale(144.0)));*/
 				//real_t diff = std::max(.1, (HPBar.animateSetpoint * 10 - hpForegroundValue) / (maxValue / 5)); // 0.1-5 value
 				//if ( HPBar.animateSetpoint * 10 >= maxValue )
 				//{
@@ -2004,7 +2004,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					if ( doAnimation )
 					{
 						real_t setpointDiff = std::max(0.01, hpFadedValue - HPBar.animateSetpoint);
-						real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+						real_t fpsScale = getFPSScale(144.0);
 						hpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 					}
 					hpFadedValue = std::max(static_cast<real_t>(HPBar.animateSetpoint), hpFadedValue);
@@ -2119,7 +2119,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 							Uint8 r, g, b, a;
 							getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
 							int decrement = 20;
-							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							real_t fpsScale = getFPSScale(60.0);
 							decrement *= fpsScale;
 							a = std::max(0, (int)a - decrement);
 							hpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -2223,7 +2223,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				if ( doAnimation )
 				{
 					real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
-					real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+					real_t fpsScale = getFPSScale(144.0);
 					mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 				}
 				mpForegroundValue = std::min(static_cast<real_t>(MPBar.animateSetpoint), mpForegroundValue);
@@ -2250,7 +2250,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 					if ( doAnimation )
 					{
 						real_t setpointDiff = std::max(0.1, mpFadedValue - MPBar.animateSetpoint);
-						real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+						real_t fpsScale = getFPSScale(144.0);
 						mpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 					}
 					mpFadedValue = std::max(static_cast<real_t>(MPBar.animateSetpoint), mpFadedValue);
@@ -2345,7 +2345,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 							Uint8 r, g, b, a;
 							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 							int increment = 10;
-							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							real_t fpsScale = getFPSScale(60.0);
 							increment *= fpsScale;
 							a = std::min(255, (int)a + increment);
 							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -2397,7 +2397,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 							Uint8 r, g, b, a;
 							getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 							int decrement = 20;
-							real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+							real_t fpsScale = getFPSScale(60.0);
 							decrement *= fpsScale;
 							a = std::max(0, (int)a - decrement);
 							mpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -2910,7 +2910,7 @@ void updateAllyFollowerFrame(const int player)
 	updateAllyBarFrame(player, baseFrame, activeBars, realActiveBars, false);
 
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * 1.0 / 10.0;
 		followerDisplay.animSelected -= setpointDiffX;
 		followerDisplay.animSelected = std::max(0.0, followerDisplay.animSelected);
@@ -3036,7 +3036,7 @@ void updateAllyFollowerFrame(const int player)
 			}
 
 			followerDisplay.isInteractable = false;
-			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
 			const real_t scrollSpeed = 3.0;
 			if ( followerDisplay.scrollSetpoint - followerDisplay.scrollAnimateX > 0.0 )
@@ -4752,7 +4752,7 @@ const real_t kStatusEffectQueueAnimSpeedMult = 4.0;
 
 void StatusEffectQueueEntry_t::animate()
 {
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
 	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (5.0 / kStatusEffectQueueAnimSpeedMult);
 	animateX += setpointDiffX;
@@ -5209,7 +5209,7 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 			break;
 	}
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animateX)) / (animspeed);
 	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - animateY)) / (animspeed);
 	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - animateW)) / (animspeed);
@@ -5558,7 +5558,7 @@ void StatusEffectQueue_t::animateStatusEffectTooltip(bool showTooltip)
 	auto tooltipFrame = statusEffectTooltipFrame;
 	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipOpacitySetpoint )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipOpacitySetpoint == 0 )
 		{
 			if ( ticks - tooltipDeselectedTick > 5 )
@@ -7907,14 +7907,14 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 					if ( interactPrompt.activeTicks > TICKS_PER_SECOND / 10 )
 					{
-						const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+						const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 						real_t setpointDiff = fpsScale * std::max(.1, (1.0 - interactPrompt.promptAnim)) / 2.5;
 						interactPrompt.promptAnim += setpointDiff;
 						interactPrompt.promptAnim = std::min(1.0, interactPrompt.promptAnim);
 					}
 				}
 
-				const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+				const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 				real_t setpointDiff = fpsScale * 0.15;
 				interactPrompt.cycleAnim += setpointDiff;
 				interactPrompt.cycleAnim = std::min(1.0, interactPrompt.cycleAnim);
@@ -8813,7 +8813,7 @@ void Player::MessageZone_t::processChatbox()
 			break;
 	}
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	if ( player.bUseCompactGUIWidth() && actualAlignment == ALIGN_LEFT_TOP &&
 		((player.hud.levelupFrame && !player.hud.levelupFrame->isDisabled())
 		|| (player.hud.skillupFrame && !player.hud.skillupFrame->isDisabled())) )
@@ -9102,7 +9102,7 @@ static Frame* createMinimap(int player) {
 		minimap.animating = true;
 		if (minimap.big) {
             if (scale_ang < PI / 2.0) {
-                scale_ang += (PI / fpsLimit) * 2.0;
+                scale_ang += ((PI / 144.0) * 2.0) * getFPSScale(144.0);
                 if (scale_ang > PI / 2.0) {
                     scale_ang = PI / 2.0;
                 }
@@ -9113,7 +9113,7 @@ static Frame* createMinimap(int player) {
 			}
         } else {
             if (scale_ang > 0.0) {
-                scale_ang -= (PI / fpsLimit) * 2.0;
+                scale_ang -= ((PI / 144.0) * 2.0) * getFPSScale(144.0);
                 if (scale_ang < 0.0) {
                     scale_ang = 0.0;
                 }
@@ -9529,7 +9529,7 @@ void openMapWindow(int player) {
 
 	    // gamepad moves cursor with right stick
 	    auto& cursor = minimap_cursor[player];
-		const real_t fpsScale = (60.f / std::max(1U, fpsLimit)); // ported from 60Hz
+		const real_t fpsScale = getFPSScale(60.0); // ported from 60Hz
 		float leftright = (input.analog("MinimapRight") - input.analog("MinimapLeft"));
 		float updown = (input.analog("MinimapDown") - input.analog("MinimapUp"));
         cursor.x += (leftright) * (*speed * fpsScale);
@@ -13438,7 +13438,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 	
 	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipOpacitySetpoint )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipOpacitySetpoint == 0 )
 		{
 			if ( ticks - tooltipDeselectedTick > 5 )
@@ -17283,7 +17283,7 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 		animAppraisal = 0.0;
 		return;
 	}*/
-	real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	real_t fpsScale = getFPSScale(60.0);
 	real_t scale = PI / 40;
 	animAppraisal += fpsScale * (scale);
 	if ( animAppraisal >= 4 * PI )
@@ -22970,7 +22970,7 @@ void Player::Inventory_t::updateSelectedItemAnimation()
 
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		real_t setpointDiffX = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateX)) / (5);
 		real_t setpointDiffY = fpsScale * std::max(.05, (1.0 - selectedItemAnimate.animateY)) / (5);
 		selectedItemAnimate.animateX += setpointDiffX;
@@ -22996,7 +22996,7 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 
 	if ( static_cast<int>(tooltipFrame->getOpacity()) != tooltipDisplay.opacitySetpoint )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.opacitySetpoint == 0 )
 		{
 			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.opacityAnimate)) / (5);
@@ -23018,7 +23018,7 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 
 	if ( static_cast<int>(titleOnlyTooltipFrame->getOpacity()) != tooltipDisplay.titleOnlyOpacitySetpoint )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.titleOnlyOpacitySetpoint == 0 )
 		{
 			real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.titleOnlyOpacityAnimate)) / (5);
@@ -23046,7 +23046,7 @@ void Player::Inventory_t::updateInventoryItemTooltip()
 	tooltipDisplay.expandSetpoint = tooltipDisplay.expanded ? 100 : 0;
 	if ( static_cast<int>(tooltipDisplay.expandCurrent * 100) != tooltipDisplay.expandSetpoint )
 	{
-		const real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		const real_t fpsScale = getFPSScale(144.0);
 		if ( tooltipDisplay.expandSetpoint == 0 )
 		{
 			//real_t setpointDiff = fpsScale * std::max(.05, (tooltipDisplay.expandAnimate) / 50);
@@ -23481,7 +23481,7 @@ void Player::Inventory_t::updateCursor()
 		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
 			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
 			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
 			cursor.animateX += setpointDiffX;
@@ -23642,7 +23642,7 @@ void Player::HUD_t::updateCursor()
 		if ( cursor.animateSetpointX - offsetPosition != currentPos.x
 			|| cursor.animateSetpointY - offsetPosition != currentPos.y )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
 			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
 			real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - cursor.animateW)) / (2.5);
@@ -23774,7 +23774,7 @@ void Player::Hotbar_t::updateCursor()
 			|| shootmodeCursor.animateSetpointY - offsetPosition != currentPos.y )
 		{
 			auto& cursor = shootmodeCursor;
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - cursor.animateX)) / (2.5);
 			real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - cursor.animateY)) / (2.5);
 			cursor.animateX += setpointDiffX;
@@ -24240,7 +24240,7 @@ void Player::HUD_t::updateXPBar()
 	}
 	if ( tempHideXP )
 	{
-		//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		//real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
 		//animHideXP += setpointDiff;
 		//animHideXP = std::min(1.0, animHideXP);
@@ -24248,7 +24248,7 @@ void Player::HUD_t::updateXPBar()
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (animHideXP)) / 2.5;
 		animHideXP -= setpointDiff;
 		animHideXP = std::max(0.0, animHideXP);
@@ -24276,7 +24276,7 @@ void Player::HUD_t::updateXPBar()
 	{
 		xpBar.animateTicks = ticks;
 
-		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t fpsScale = getFPSScale(144.0);
 		xpBar.animateValue += fpsScale * (10); // constant speed
 		xpBar.animateValue = std::min(xpBar.maxValue, xpBar.animateValue);
 		if ( xpBar.animateValue == xpBar.maxValue )
@@ -24289,7 +24289,7 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks - xpBar.animateTicks > TICKS_PER_SECOND * 2 )
 		{
 			int decrement = 40;
-			double scaledDecrement = (decrement * (144.f / std::max(1U, fpsLimit)));
+			double scaledDecrement = (decrement * (getFPSScale(144.0)));
 			xpBar.animateValue -= scaledDecrement;
 			if ( xpBar.animateValue <= 0 )
 			{
@@ -24311,7 +24311,7 @@ void Player::HUD_t::updateXPBar()
 	else
 	{
 		int increment = 3;
-		double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));
+		double scaledIncrement = (increment * (getFPSScale(144.0)));
 		if ( xpBar.animateValue < xpBar.animateSetpoint * 10 )
 		{
 			//real_t diff = std::max(.1, (xpBar.animateSetpoint * 10 - xpBar.animateValue) / 200.0); // 0.1-5 value
@@ -24323,7 +24323,7 @@ void Player::HUD_t::updateXPBar()
 			//xpBar.animateValue = std::min(xpBar.animateSetpoint * 10.0, xpBar.animateValue + scaledIncrement);
 
 			real_t setpointDiff = std::max(10.0, xpBar.animateSetpoint * 10.0 - xpBar.animateValue);
-			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t fpsScale = getFPSScale(144.0);
 			xpBar.animateValue += fpsScale * (setpointDiff / 100.0); // reach it in x intervals, scaled to FPS
 			xpBar.animateValue = std::min(static_cast<real_t>(xpBar.animateSetpoint * 10.0), xpBar.animateValue);
 			//messagePlayer(0, "%.2f | %.2f", diff, scaledIncrement);
@@ -24334,7 +24334,7 @@ void Player::HUD_t::updateXPBar()
 		}
 		//else if ( xpBar.animateValue > xpBar.animateSetpoint * 10 )
 		//{
-		//	real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		//	real_t fpsScale = getFPSScale(144.0);
 		//	xpBar.animateValue += fpsScale * (10); // constant speed
 		//	xpBar.animateValue = std::min(xpBar.maxValue, xpBar.animateValue);
 		//}
@@ -24376,7 +24376,7 @@ void Player::HUD_t::updateXPBar()
 
 	//	if ( !xpInfo.fadeIn )
 	//	{
-	//		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	//		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	//		real_t setpointDiffX = fpsScale * std::max(.1, (xpInfo.fade)) / (2.5);
 	//		xpInfo.fade -= setpointDiffX;
 	//		xpInfo.fade = std::max(0.0, xpInfo.fade);
@@ -24395,7 +24395,7 @@ void Player::HUD_t::updateXPBar()
 	//	}
 	//	else
 	//	{
-	//		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	//		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	//		real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - xpInfo.fade)) / (2.5);
 	//		xpInfo.fade += setpointDiffX;
 	//		xpInfo.fade = std::min(1.0, xpInfo.fade);
@@ -25265,7 +25265,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 	{
 		if ( doAnimation )
 		{
-			enemyDetails->animator.fadeOut -= 10.0 * (60.f / std::max(1U, fpsLimit));
+			enemyDetails->animator.fadeOut -= 10.0 * getFPSScale(60.0);
 			if ( enemyDetails->animator.fadeOut < 0.0 ) 
 			{ 
 				enemyDetails->animator.fadeOut = 0.0; 
@@ -25405,7 +25405,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		if ( hpForegroundValue < enemyDetails->animator.setpoint ) // gaining HP, animate
 		{
 			real_t setpointDiff = std::max(0.01, enemyDetails->animator.setpoint - hpForegroundValue);
-			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t fpsScale = getFPSScale(144.0);
 			hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 			hpForegroundValue = std::min(static_cast<real_t>(enemyDetails->animator.setpoint), hpForegroundValue);
 
@@ -25429,7 +25429,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 			if ( ticks - enemyDetails->animator.animateTicks > 30 || enemyDetails->animator.setpoint <= 0 ) // fall after x ticks
 			{
 				real_t setpointDiff = std::max(0.01, hpFadedValue - enemyDetails->animator.setpoint);
-				real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+				real_t fpsScale = getFPSScale(144.0);
 				real_t intervals = 10.0;
 				if ( enemyDetails->animator.setpoint <= 0 )
 				{
@@ -25465,12 +25465,12 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		{
 			if ( (int)healthPercentage < skull.second )
 			{
-				real_t opacityChange = 4 * (60.f / std::max(1U, fpsLimit)); // change independent of fps
+				real_t opacityChange = 4 * getFPSScale(60.0); // change independent of fps
 				skullOpacity = std::max(0, (int)(skullOpacity - opacityChange));
 			}
 			else if ( (int)healthPercentage >= skull.second )
 			{
-				real_t opacityChange = 255;// *(144.f / std::max(1U, fpsLimit)); // change independent of fps
+				real_t opacityChange = 255;// *getFPSScale(144.0); // change independent of fps
 				skullOpacity = std::min(255, (int)(skullOpacity + opacityChange));
 			}
 		}
@@ -25495,7 +25495,7 @@ void Player::HUD_t::updateEnemyBar2(Frame* whichFrame, void* enemyHPDetails)
 		//real_t& opacity = enemyDetails->animator.damageFrameOpacity;
 		//if ( doAnimation )
 		//{
-		//	real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+		//	real_t opacityChange = .5 * getFPSScale(144.0); // change by .05% independent of fps
 		//	opacity = std::max(0.0, opacity - opacityChange);
 		//}
 		//dmgFrame->setOpacity(opacity);
@@ -25730,7 +25730,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 	if ( doFadeout )
 	{
-		enemyBar->fadeOut -= 10.0 * (60.f / std::max(1U, fpsLimit));
+		enemyBar->fadeOut -= 10.0 * getFPSScale(60.0);
 		if ( enemyBar->fadeOut < 0.0 ) { enemyBar->fadeOut = 0.0; enemyBar->fadeIn = 0.0; }
 		whichFrame->setOpacity(enemyBar->fadeOut);
 	}
@@ -25857,7 +25857,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	if ( hpForegroundValue < enemyBar->animateSetpoint ) // gaining HP, animate
 	{
 		real_t setpointDiff = std::max(0.01, enemyBar->animateSetpoint - hpForegroundValue);
-		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t fpsScale = getFPSScale(144.0);
 		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 		hpForegroundValue = std::min(static_cast<real_t>(enemyBar->animateSetpoint), hpForegroundValue);
 
@@ -25881,7 +25881,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 		if ( ticks - enemyBar->animateTicks > 30 || enemyBar->animateSetpoint <= 0 ) // fall after x ticks
 		{
 			real_t setpointDiff = std::max(0.01, hpFadedValue - enemyBar->animateSetpoint);
-			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t fpsScale = getFPSScale(144.0);
 			real_t intervals = 10.0;
 			if ( enemyBar->animateSetpoint <= 0 )
 			{
@@ -25912,12 +25912,12 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 
 		if ( (int)healthPercentage < skull.second )
 		{
-			real_t opacityChange = 4 * (60.f / std::max(1U, fpsLimit)); // change independent of fps
+			real_t opacityChange = 4 * getFPSScale(60.0); // change independent of fps
 			a = std::max(0, a - (int)opacityChange);
 		}
 		else if ( (int)healthPercentage >= skull.second )
 		{
-			real_t opacityChange = 255;// *(144.f / std::max(1U, fpsLimit)); // change independent of fps
+			real_t opacityChange = 255;// *getFPSScale(144.0); // change independent of fps
 			a = std::min(255, a + (int)opacityChange);
 		}
 		a *= whichFrame->getOpacity() / 100.0;
@@ -25945,7 +25945,7 @@ void Player::HUD_t::updateEnemyBar(Frame* whichFrame)
 	{
 		dmgProgress->disabled = true;
 		real_t opacity = dmgFrame->getOpacity();
-		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independent of fps
+		real_t opacityChange = .5 * getFPSScale(144.0); // change by .05% independent of fps
 		dmgFrame->setOpacity(std::max(0.0, opacity - opacityChange));
 		dmgFrame->setOpacity(dmgFrame->getOpacity() * whichFrame->getOpacity() / 100.0);
 		// make this element fade out to the left
@@ -26158,7 +26158,7 @@ void Player::HUD_t::updateHPBar()
 		}*/
 
 		real_t setpointDiff = std::max(0.0, HPBar.animateSetpoint - hpForegroundValue);
-		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t fpsScale = getFPSScale(144.0);
 		hpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 		hpForegroundValue = std::min(static_cast<real_t>(HPBar.animateSetpoint), hpForegroundValue);
 
@@ -26168,7 +26168,7 @@ void Player::HUD_t::updateHPBar()
 		}
 
 		/*	int increment = 3;
-			double scaledIncrement = (increment * (144.f / std::max(1U, fpsLimit)));*/
+			double scaledIncrement = (increment * (getFPSScale(144.0)));*/
 		//real_t diff = std::max(.1, (HPBar.animateSetpoint * 10 - hpForegroundValue) / (maxValue / 5)); // 0.1-5 value
 		//if ( HPBar.animateSetpoint * 10 >= maxValue )
 		//{
@@ -26194,7 +26194,7 @@ void Player::HUD_t::updateHPBar()
 		if ( ticks - HPBar.animateTicks > 30 /*|| stats[player.playernum]->HP <= 0*/ ) // fall after x ticks
 		{
 			real_t setpointDiff = std::max(0.01, hpFadedValue - HPBar.animateSetpoint);
-			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t fpsScale = getFPSScale(144.0);
 			hpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 			hpFadedValue = std::max(static_cast<real_t>(HPBar.animateSetpoint), hpFadedValue);
 		}
@@ -26221,7 +26221,7 @@ void Player::HUD_t::updateHPBar()
 	{
 		hpFaded->disabled = true;
 		real_t opacity = hpFadeFrame->getOpacity();
-		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independant of fps
+		real_t opacityChange = .5 * getFPSScale(144.0); // change by .05% independant of fps
 		hpFadeFrame->setOpacity(std::max(0.0, opacity - opacityChange));
 
 		// make this element fade out to the left, starting 54px then finally at 40px. @ 40px it's out of shot (6 width + 8 endcap width)
@@ -26357,7 +26357,7 @@ void Player::HUD_t::updateHPBar()
 					Uint8 r, g, b, a;
 					getColor(hpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
-					real_t fpsScale = (60.f / std::max(1U, fpsLimit))/* / (real_t)(*cvar_hpanimdebug)*/;
+					real_t fpsScale = getFPSScale(60.0);
 					decrement *= fpsScale;
 					a = std::max(0, (int)a - decrement);
 					hpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -26515,7 +26515,7 @@ void Player::HUD_t::updateMPBar()
 		}*/
 
 		real_t setpointDiff = std::max(.1, MPBar.animateSetpoint - mpForegroundValue);
-		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t fpsScale = getFPSScale(144.0);
 		mpForegroundValue += fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 		mpForegroundValue = std::min(static_cast<real_t>(MPBar.animateSetpoint), mpForegroundValue);
 
@@ -26539,7 +26539,7 @@ void Player::HUD_t::updateMPBar()
 		if ( ticks - MPBar.animateTicks > 30 /*|| stats[player.playernum]->MP <= 0*/ ) // fall after x ticks
 		{
 			real_t setpointDiff = std::max(0.1, mpFadedValue - MPBar.animateSetpoint);
-			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+			real_t fpsScale = getFPSScale(144.0);
 			mpFadedValue -= fpsScale * (setpointDiff / 20.0); // reach it in 20 intervals, scaled to FPS
 			mpFadedValue = std::max(static_cast<real_t>(MPBar.animateSetpoint), mpFadedValue);
 		}
@@ -26566,7 +26566,7 @@ void Player::HUD_t::updateMPBar()
 	{
 		mpFaded->disabled = true;
 		real_t opacity = mpFadeFrame->getOpacity();
-		real_t opacityChange = .5 * (144.f / std::max(1U, fpsLimit)); // change by .05% independant of fps
+		real_t opacityChange = .5 * getFPSScale(144.0); // change by .05% independant of fps
 		mpFadeFrame->setOpacity(std::max(0.0, opacity - opacityChange));
 
 		// make this element fade out to the left, starting 54px then finally at 40px. @ 40px it's out of shot (6 width + 8 endcap width)
@@ -26689,7 +26689,7 @@ void Player::HUD_t::updateMPBar()
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int increment = 10;
-					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					real_t fpsScale = getFPSScale(60.0);
 					increment *= fpsScale;
 					a = std::min(255, (int)a + increment);
 					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -26755,7 +26755,7 @@ void Player::HUD_t::updateMPBar()
 					Uint8 r, g, b, a;
 					getColor(mpProgressEndCapFlash->color, &r, &g, &b, &a);
 					int decrement = 20;
-					real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+					real_t fpsScale = getFPSScale(60.0);
 					decrement *= fpsScale;
 					a = std::max(0, (int)a - decrement);
 					mpProgressEndCapFlash->color = makeColor(r, g, b, a);
@@ -26888,7 +26888,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 	if ( tempHideHotbar )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHide)) / 2.5;
 		animHide += setpointDiff;
 		animHide = std::min(1.0, animHide);
@@ -26896,7 +26896,7 @@ void Player::Hotbar_t::updateHotbar()
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (animHide)) / 2.5;
 		animHide -= setpointDiff;
 		animHide = std::max(0.0, animHide);
@@ -26974,7 +26974,7 @@ void Player::Hotbar_t::updateHotbar()
 		{
 			faceMenuSnapCursorInstantly = true;
 		}
-		real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+		real_t fpsScale = getFPSScale(144.0);
 		real_t setpointDiff = std::max(0.1, 1.0 - selectedSlotAnimateCurrentValue);
 		selectedSlotAnimateCurrentValue += fpsScale * (setpointDiff / 10.0);
 		selectedSlotAnimateCurrentValue = std::min(1.0, selectedSlotAnimateCurrentValue);
@@ -29862,7 +29862,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	sheetSize.x = skillFrame->getSize().w / 2 - sheetSize.w / 2;
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - skillsFadeInAnimationY)) / 3.0;
 	skillsFadeInAnimationY += setpointDiffX;
 	skillsFadeInAnimationY = std::min(1.0, skillsFadeInAnimationY);
@@ -29896,7 +29896,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 	if ( skillSlideDirection != 0 )
 	{
-		const real_t fpsScale = (144.0 / std::max(1U, fpsLimit)); // ported from 144Hz
+		const real_t fpsScale = (getFPSScale(144.0)); // ported from 144Hz
 		real_t setpointDiff = std::max(0.1, 1.0 - abs(skillSlideAmount));
 		skillSlideAmount += fpsScale * (setpointDiff / 5.0) * skillSlideDirection;
 		if ( skillSlideAmount < -1.0 )
@@ -30661,7 +30661,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 					//		if ( doMarquee )
 					//		{
-					//			const real_t fpsScale = (60.f / std::max(1U, fpsLimit)); // ported from 60Hz
+					//			const real_t fpsScale = getFPSScale(60.0); // ported from 60Hz
 					//			effect_t.marquee[player.playernum] += (.005 * fpsScale);
 					//			//effect_t.marquee[player.playernum] = std::min(1.0, effect_t.marquee[player.playernum]);
 
@@ -30939,14 +30939,14 @@ void Player::SkillSheet_t::processSkillSheet()
 			{
 				scrollInertia = 0.0;
 				real_t delta = Input::inputs[player.playernum].analog("MenuScrollDown");
-				scrollPercent = std::min(1.0, scrollPercent + .05 * (60.f / std::max(1U, fpsLimit)) * delta);
+				scrollPercent = std::min(1.0, scrollPercent + .05 * (getFPSScale(60.0)) * delta);
 				slider->setValue(scrollPercent * 100);
 			}
 			else if ( Input::inputs[player.playernum].analog("MenuScrollUp") )
 			{
 				scrollInertia = 0.0;
 				real_t delta = Input::inputs[player.playernum].analog("MenuScrollUp");
-				scrollPercent = std::max(0.0, scrollPercent -.05 * (60.f / std::max(1U, fpsLimit) * delta));
+				scrollPercent = std::max(0.0, scrollPercent -.05 * (getFPSScale(60.0)) * delta);
 				slider->setValue(scrollPercent * 100);
 			}
 		}
@@ -31194,7 +31194,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( !spellFrame->isDisabled() && bOpen )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -31437,7 +31437,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		{
 			isInteractable = false;
 			player.inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
-			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
@@ -31704,7 +31704,7 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	auto closeBtn = baseFrame->findButton("close chest button");
 	if ( !chestFrame->isDisabled() && bOpen )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -32348,14 +32348,14 @@ void Player::HUD_t::updateMinotaurWarning()
 
 		if ( m.state >= 8 || m.initialWarningCompleted )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiff = fpsScale * std::max(.01, (m.animFade)) / 5.0;
 			m.animFade -= setpointDiff;
 			m.animFade = std::max(0.0, m.animFade);
 		}
 		else
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiff = fpsScale * std::max(.01, (1.0 - m.animFade)) / 5.0;
 			m.animFade += setpointDiff;
 			m.animFade = std::min(1.0, m.animFade);
@@ -32666,7 +32666,7 @@ void Player::HUD_t::updateMinotaurWarning()
 		}
 		else if ( m.animFlashIncrease )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiff = fpsScale * (*cvar_minoflashrate) / 5.0;
 			m.animFlash += setpointDiff;
 			if ( m.animFlash >= *cvar_minoflashmax )
@@ -32677,7 +32677,7 @@ void Player::HUD_t::updateMinotaurWarning()
 		}
 		else	
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiff = fpsScale * (*cvar_minoflashrate) / 5.0;
 			m.animFlash -= setpointDiff;
 			if ( m.animFlash <= *cvar_minoflashmin )
@@ -32753,7 +32753,7 @@ void Player::HUD_t::updateMinotaurWarning()
 		minotaurImgBg->disabled = false;
 	}
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - m.animateX)) / (animspeed);
 	real_t setpointDiffY = fpsScale * std::max(.1, (1.0 - m.animateY)) / (animspeed);
 	real_t setpointDiffW = fpsScale * std::max(.1, (1.0 - m.animateW)) / (animspeed);
@@ -34059,7 +34059,7 @@ void DamageIndicatorHandler_t::DamageIndicator_t::process()
 			{
 				imagePath = hitDealtDamage ? indicatorDamagePaths[0] : indicatorBlockPaths[0];
 				int decrement = 20;
-				real_t fpsScale = (60.f / std::max(1U, fpsLimit)) / damageIndicatorSettings.fadeSpeed;
+				real_t fpsScale = (getFPSScale(60.0)) / damageIndicatorSettings.fadeSpeed;
 				decrement *= fpsScale;
 				alpha = std::max(0, (int)alpha - decrement);
 			}
@@ -34373,7 +34373,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 			break;
 		case STATE_END:
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			if ( ticksActive >= TICKS_PER_SECOND )
 			{
 				real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animCurrentStat)) / (2.5 * *cvar_lvlup_animfall);
@@ -34382,7 +34382,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 
 				if ( animCurrentStat >= 1.0 )
 				{
-					const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+					const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 					real_t setpointDiffX = fpsScale * 1.0 / (10.0 * *cvar_lvlup_bounce);
 					animIncreaseStat += setpointDiffX;
 					animIncreaseStat = std::min(1.0, animIncreaseStat);
@@ -34395,7 +34395,7 @@ void LevelUpAnimation_t::LevelUp_t::StatUp_t::animateNotification(const int play
 	}
 
 	real_t oldAngle = animAngle;
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	animAngle += fpsScale * std::max(.1, (1.0 - animAngle)) / (5.0);
 	animAngle = std::min(1.0, animAngle);
 	if ( animAngle > 0.0 && oldAngle <= 0.001 )
@@ -34452,7 +34452,7 @@ void LevelUpAnimation_t::LevelUp_t::animateTitle(SDL_Rect basePos)
 	if ( ticksActive >= *cvar_lvlup_title_fade_ticks )
 	{
 		titleFinishAnim = true;
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		animTitleFade += fpsScale * std::max(.1, (1.0 - animTitleFade)) / (5.0);
 		animTitleFade = std::min(1.0, animTitleFade);
 
@@ -34568,7 +34568,7 @@ void updateLevelUpFrame(const int player)
 
 	if ( lvlUpAnimation.lvlUps.front().expired )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		lvlUpAnimation.lvlUps.front().fadeout += fpsScale * std::max(.1, (1.0 - lvlUpAnimation.lvlUps.front().fadeout)) / (5.0);
 		lvlUpAnimation.lvlUps.front().fadeout = std::min(1.0, lvlUpAnimation.lvlUps.front().fadeout);
 		hud_t.levelupFrame->setOpacity(hud_t.hudFrame->getOpacity() 
@@ -34937,7 +34937,7 @@ void SkillUpAnimation_t::SkillUp_t::animateNotification(const int player)
 	const int baseEffectPosX = baseX;
 	const int baseEffectPosY = baseY;
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	if ( notificationState >= STATE_4 )
 	{
 		real_t setpointDiffX = fpsScale * std::max(.1, (1.0 - animBackground)) / (2.5);
@@ -35284,7 +35284,7 @@ void updateSkillUpFrame(const int player)
 	}
 	
 	auto& skillUpCheck = skillUpAnim.getSkillUpToDisplay();
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	if ( skillUpCheck.expired )
 	{
 		skillUpCheck.fadeout += fpsScale * std::max(.1, (1.0 - skillUpCheck.fadeout)) / (5.0);

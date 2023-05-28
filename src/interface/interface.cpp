@@ -2191,7 +2191,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 	if ( followerToCommand )
 	{
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animTitle)) / 2.5;
 			animTitle += setpointDiff;
 			animTitle = std::min(1.0, animTitle);
@@ -10892,7 +10892,7 @@ void EnemyHPDamageBarHandler::displayCurrentHPBar(const int player)
 	//			int healthDiff = HPDetails.enemy_oldhp - HPDetails.enemy_hp;
 
 	//			// scale duration to FPS - tested @ 144hz
-	//			real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+	//			real_t fpsScale = getFPSScale(144.0);
 	//			HPDetails.depletionAnimationPercent -= fpsScale * (std::max((healthDiff) / std::max(depletionTicks, 1), 1) / 100.0);
 	//			HPDetails.enemy_oldhp = HPDetails.depletionAnimationPercent * HPDetails.enemy_maxhp; // this follows the animation
 	//		}
@@ -11343,7 +11343,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 	{
 		if ( true || ((ticks - animScrapStartTicks) > TICKS_PER_SECOND / 2) )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (animScrap)) / 10.0;
 			animScrap -= setpointDiffX;
 			animScrap = std::max(0.0, animScrap);
@@ -11358,7 +11358,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerScrapHeld(void* metalHeldText, voi
 		{
 			pauseChangeScrapAnim = true;
 
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animScrap)) / 10.0;
 			animScrap += setpointDiffX;
 			animScrap = std::min(1.0, animScrap);
@@ -11489,7 +11489,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			createTinkerMenu();
 		}
 
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -11553,14 +11553,14 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	bool usingConstructMenu = parentGUI.tinkeringFilter == GenericGUIMenu::TINKER_FILTER_CRAFTABLE;
 	if ( !usingConstructMenu )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
 		animFilter += setpointDiffX;
 		animFilter = std::min(1.0, animFilter);
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (animFilter)) / 2.0;
 		animFilter -= setpointDiffX;
 		animFilter = std::max(0.0, animFilter);
@@ -11833,7 +11833,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		// shaking feedback for invalid action
 		// constant decay for animation
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
 		animInvalidAction -= setpointDiffX;
 		animInvalidAction = std::max(0.0, animInvalidAction);
@@ -12182,7 +12182,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 	{
 		if ( isInteractable )
 		{
-			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
 			//animTooltip += setpointDiffX;
 			//animTooltip = std::min(1.0, animTooltip);
@@ -12493,7 +12493,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			|| (usingGamepad)
 			|| animTooltip < 0.9999 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
 			animTooltip -= setpointDiffX;
 			animTooltip = std::max(0.0, animTooltip);
@@ -12572,7 +12572,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 
 		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
 			animPrompt -= setpointDiffX;
 			animPrompt = std::max(0.0, animPrompt);
@@ -14050,7 +14050,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			createAlchemyMenu();
 		}
 
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -14322,7 +14322,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.05, (animPotionResult)) / 3.0;
 		animPotionResult -= setpointDiffX;
 		animPotionResult = std::max(0.0, animPotionResult);
@@ -14342,7 +14342,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		animRecipeAutoAddToSlot1Uid = 0;
 	}
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion1)) / 3.0;
 		animPotion1 -= setpointDiffX;
 		animPotion1 = std::max(0.0, animPotion1);
@@ -14406,7 +14406,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 	auto animPotion2Frame = getAlchemySlotFrame(ALCH_SLOT_SECONDARY_POTION_X, 0);
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.05, (animPotion2)) / 3.0;
 		animPotion2 -= setpointDiffX;
 		animPotion2 = std::max(0.0, animPotion2);
@@ -14581,7 +14581,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 		if ( n.second.state == 0 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - n.second.animx)) / 2.0;
 			n.second.animx += setpointDiffX;
 			n.second.animx = std::min(1.0, n.second.animx);
@@ -14600,7 +14600,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else if ( n.second.state == 2 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.05, (n.second.animx)) / 3.0;
 			n.second.animx -= setpointDiffX;
 			n.second.animx = std::max(0.0, n.second.animx);
@@ -15148,7 +15148,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	{
 		if ( isInteractable )
 		{
-			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
 			//animTooltip += setpointDiffX;
 			//animTooltip = std::min(1.0, animTooltip);
@@ -15347,7 +15347,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			|| (usingGamepad)
 			|| animTooltip < 0.9999 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
 			animTooltip -= setpointDiffX;
 			animTooltip = std::max(0.0, animTooltip);
@@ -16825,7 +16825,7 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 	const int slotSize = players[player]->inventoryUI.getSlotSize();
 	if ( !recipeFrame->isDisabled() && bOpen )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -17126,7 +17126,7 @@ void GenericGUIMenu::AlchemyGUI_t::AlchemyRecipes_t::updateRecipePanel()
 		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
 		{
 			isInteractable = false;
-			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
@@ -17373,7 +17373,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, 
 		if ( ((ticks - animChargeStartTicks) > TICKS_PER_SECOND) 
 			&& (inscribeSuccessTicks == 0 || (ticks - inscribeSuccessTicks) >= 1.5 * TICKS_PER_SECOND) )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (animCharge)) / 10.0;
 			animCharge -= setpointDiffX;
 			animCharge = std::max(0.0, animCharge);
@@ -17387,7 +17387,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherCharge(void* featherChargeText, 
 		{
 			pauseChangeChargeAnim = true;
 
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animCharge)) / 10.0;
 			animCharge += setpointDiffX;
 			animCharge = std::min(1.0, animCharge);
@@ -17861,7 +17861,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			createFeatherMenu();
 		}
 
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -17918,14 +17918,14 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		&& bDrawerOpen;
 	if ( !usingScribingMenu )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
 		animFilter += setpointDiffX;
 		animFilter = std::min(1.0, animFilter);
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (animFilter)) / 2.0;
 		animFilter -= setpointDiffX;
 		animFilter = std::max(0.0, animFilter);
@@ -18197,7 +18197,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		// shaking feedback for invalid action
 		// constant decay for animation
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
 		animInvalidAction -= setpointDiffX;
 		animInvalidAction = std::max(0.0, animInvalidAction);
@@ -18209,7 +18209,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	}
 
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.1, (animQtyChange)) / 10.0;
 		animQtyChange -= setpointDiffX;
 		animQtyChange = std::max(0.0, animQtyChange);
@@ -18522,7 +18522,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 	{
 		if ( isInteractable )
 		{
-			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
 			//animTooltip += setpointDiffX;
 			//animTooltip = std::min(1.0, animTooltip);
@@ -18780,7 +18780,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 			|| (usingGamepad && !bFeatherDrawerOpen)
 			|| animTooltip < 0.9999 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
 			animTooltip -= setpointDiffX;
 			animTooltip = std::max(0.0, animTooltip);
@@ -18835,7 +18835,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
 			animPrompt -= setpointDiffX;
 			animPrompt = std::max(0.0, animPrompt);
@@ -19291,7 +19291,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
 		{
 			isInteractable = false;
-			const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
@@ -20737,7 +20737,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			createItemEffectMenu();
 		}
 
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -20763,7 +20763,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	}
 
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animFilter)) / 2.0;
 		animFilter += setpointDiffX;
 		animFilter = std::min(1.0, animFilter);
@@ -21127,7 +21127,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	{
 		// shaking feedback for invalid action
 		// constant decay for animation
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
 		animInvalidAction -= setpointDiffX;
 		animInvalidAction = std::max(0.0, animInvalidAction);
@@ -21231,7 +21231,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	{
 		if ( isInteractable )
 		{
-			//const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
 			//animTooltip += setpointDiffX;
 			//animTooltip = std::min(1.0, animTooltip);
@@ -21409,7 +21409,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			|| (usingGamepad)
 			|| animTooltip < 0.9999 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
 			animTooltip -= setpointDiffX;
 			animTooltip = std::max(0.0, animTooltip);
@@ -21473,7 +21473,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 
 		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
 			animPrompt -= setpointDiffX;
 			animPrompt = std::max(0.0, animPrompt);

@@ -255,6 +255,12 @@ Uint32 messagesEnabled = 0xffffffff & ~MESSAGE_DEBUG; // all but debug enabled
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 #endif
 
+real_t getFPSScale(real_t baseFPS)
+{
+	return baseFPS / (std::max(1U, (unsigned int)fps));
+	//return baseFPS / (std::max(1U, fpsLimit));
+}
+
 //ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();

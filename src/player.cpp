@@ -253,7 +253,7 @@ real_t getGamepadMenuXSensitivity(int player)
 	{
 		return gamepad_menux_sensitivity;
 	}
-	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	const real_t fpsScale = getFPSScale(60.0);
 	return gamepad_menux_sensitivity * fpsScale;
 }
 
@@ -263,7 +263,7 @@ real_t getGamepadMenuYSensitivity(int player)
 	{
 		return gamepad_menuy_sensitivity;
 	}
-	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	const real_t fpsScale = getFPSScale(60.0);
 	return gamepad_menuy_sensitivity * fpsScale;
 }
 
@@ -273,7 +273,7 @@ real_t getGamepadRightXSensitivity(int player)
 	{
 		return gamepad_rightx_sensitivity;
 	}
-	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	const real_t fpsScale = getFPSScale(60.0);
 	return gamepad_rightx_sensitivity * fpsScale;
 }
 
@@ -283,7 +283,7 @@ real_t getGamepadRightYSensitivity(int player)
 	{
 		return gamepad_righty_sensitivity;
 	}
-	const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+	const real_t fpsScale = getFPSScale(60.0);
 	return gamepad_righty_sensitivity * fpsScale;
 }
 
