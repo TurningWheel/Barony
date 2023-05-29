@@ -817,7 +817,11 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	if ( !Input::inputs[player].binaryToggle("InventoryMoveUp")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveLeft")
 		&& !Input::inputs[player].binaryToggle("InventoryMoveRight")
-		&& !Input::inputs[player].binaryToggle("InventoryMoveDown") )
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDown")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveUpAnalog")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveLeftAnalog")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveRightAnalog")
+		&& !Input::inputs[player].binaryToggle("InventoryMoveDownAnalog") )
 	{
 		return false;
 	}
@@ -896,7 +900,10 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 				elementSelectableList.push_back(e);
 			}
 
-			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") || Input::inputs[player].binaryToggle("InventoryMoveRight") )
+			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
+				|| Input::inputs[player].binaryToggle("InventoryMoveLeftAnalog")
+				|| Input::inputs[player].binaryToggle("InventoryMoveRight")
+				|| Input::inputs[player].binaryToggle("InventoryMoveRightAnalog") )
 			{
 				defaultElement = Player::CharacterSheet_t::SHEET_STR;
 			}
@@ -911,7 +918,10 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 			{
 				elementSelectableList.push_back(e);
 			}
-			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") || Input::inputs[player].binaryToggle("InventoryMoveRight") )
+			if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") 
+				|| Input::inputs[player].binaryToggle("InventoryMoveLeftAnalog")
+				|| Input::inputs[player].binaryToggle("InventoryMoveRight")
+				|| Input::inputs[player].binaryToggle("InventoryMoveRightAnalog") )
 			{
 				defaultElement = Player::CharacterSheet_t::SHEET_OPEN_MAP;
 			}
@@ -936,9 +946,11 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	}
 
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
+		|| Input::inputs[player].binaryToggle("InventoryMoveLeftAnalog") )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeftAnalog");
 		if ( bCompactView )
 		{
 			if ( currentElement == Player::CharacterSheet_t::SHEET_OPEN_LOG )
@@ -1001,9 +1013,11 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 		dpad_moved = true;
 	}
-	else if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
+	else if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
+		|| Input::inputs[player].binaryToggle("InventoryMoveRightAnalog") )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRightAnalog");
 		if ( bCompactView )
 		{
 			if ( currentElement == Player::CharacterSheet_t::SHEET_OPEN_MAP )
@@ -1068,9 +1082,11 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 	}
 	else
 	{
-		if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
+		if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
+			|| Input::inputs[player].binaryToggle("InventoryMoveUpAnalog") )
 		{
 			Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
+			Input::inputs[player].consumeBinaryToggle("InventoryMoveUpAnalog");
 
 			auto itr = std::find(elementSelectableList.begin(), elementSelectableList.end(), currentElement);
 			if ( itr == elementSelectableList.end() )
@@ -1093,9 +1109,11 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 			characterSheet_t.selectElement((Player::CharacterSheet_t::SheetElements)currentElement, false, false);
 			dpad_moved = true;
 		}
-		if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
+		if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
+			|| Input::inputs[player].binaryToggle("InventoryMoveDownAnalog") )
 		{
 			Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+			Input::inputs[player].consumeBinaryToggle("InventoryMoveDownAnalog");
 
 			auto itr = std::find(elementSelectableList.begin(), elementSelectableList.end(), currentElement);
 			if ( itr == elementSelectableList.end() )
@@ -1916,9 +1934,18 @@ bool Player::GUI_t::handleInventoryMovement()
 		return false;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft") )
+	bool rightStickMovement = 
+		!(this->player.inventoryUI.itemTooltipDisplay.expanded 
+			&& (players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY
+				|| players[player]->GUI.activeModule != Player::GUI_t::MODULE_HOTBAR))
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_FEATHER
+		&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_SPELLS;
+
+	if ( Input::inputs[player].binaryToggle("InventoryMoveLeft")
+		|| (Input::inputs[player].binaryToggle("InventoryMoveLeftAnalog") && rightStickMovement) )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeft");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveLeftAnalog");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2014,9 +2041,11 @@ bool Player::GUI_t::handleInventoryMovement()
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveRight") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveRight")
+		|| (Input::inputs[player].binaryToggle("InventoryMoveRightAnalog") && rightStickMovement) )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveRight");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveRightAnalog");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2112,9 +2141,11 @@ bool Player::GUI_t::handleInventoryMovement()
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveUp") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveUp")
+		|| (Input::inputs[player].binaryToggle("InventoryMoveUpAnalog") && rightStickMovement) )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveUp");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveUpAnalog");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{
@@ -2262,9 +2293,11 @@ bool Player::GUI_t::handleInventoryMovement()
 		dpad_moved = true;
 	}
 
-	if ( Input::inputs[player].binaryToggle("InventoryMoveDown") )
+	if ( Input::inputs[player].binaryToggle("InventoryMoveDown")
+		|| (Input::inputs[player].binaryToggle("InventoryMoveDownAnalog") && rightStickMovement) )
 	{
 		Input::inputs[player].consumeBinaryToggle("InventoryMoveDown");
+		Input::inputs[player].consumeBinaryToggle("InventoryMoveDownAnalog");
 		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			&& hotbarGamepadControlEnabled(player) )
 		{

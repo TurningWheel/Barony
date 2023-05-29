@@ -11980,8 +11980,13 @@ void Player::GUIDropdown_t::process()
 
 	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown")
-			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
+		bool pressedDown = Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDown");
+		pressedDown = Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveDownAnalog") || pressedDown;
+
+		bool pressedUp = Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp");
+		pressedUp = Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUpAnalog") || pressedUp;
+
+		if ( pressedDown && player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			++dropDownOptionSelected;
 			if ( dropDownOptionSelected >= dropDown.options.size() )
@@ -11989,8 +11994,7 @@ void Player::GUIDropdown_t::process()
 				dropDownOptionSelected = 0;
 			}
 		}
-		else if ( Input::inputs[player.playernum].consumeBinaryToggle("InventoryMoveUp")
-			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
+		else if ( pressedUp	&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
 			--dropDownOptionSelected;
 			if ( dropDownOptionSelected < 0 )
@@ -21691,14 +21695,14 @@ void createPlayerInventory(const int player)
 				{
 					if ( !players[player]->inventoryUI.itemTooltipDisplay.scrollable )
 					{
-						if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+						/*if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
 						{
 							camera_charsheet_offsetyaw -= 0.05;
 						}
 						else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
 						{
 							camera_charsheet_offsetyaw += 0.05;
-						}
+						}*/
 					}
 					if ( camera_charsheet_offsetyaw > 2 * PI )
 					{
