@@ -5392,13 +5392,13 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", skillsheetEffectBackgroundImages[BOTTOM].c_str());
 			imageSetWidthHeight9x9(frame, skillsheetEffectBackgroundImages);
 
-			/*auto heading_txt = tooltipFrame->addField("heading txt", 128);
+			auto heading_txt = frame->addField("heading txt", 128);
 			heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-			heading_txt->setText("");
+			heading_txt->setText("Status Effects");
 			heading_txt->setColor(makeColor(255, 255, 255, 255));
 			heading_txt->setVJustify(Field::justify_t::CENTER);
 			heading_txt->setHJustify(Field::justify_t::LEFT);
-
+			/*
 			auto desc_txt = tooltipFrame->addField("desc txt", 1024);
 			desc_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
 			desc_txt->setText("");
@@ -5500,6 +5500,28 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			windowSizeLimitMax.x = std::max(frameImg->pos.x + frameImg->pos.w, windowSizeLimitMax.x);
 			windowSizeLimitMax.y = std::max(frameImg->pos.y + frameImg->pos.h, windowSizeLimitMax.y);
 
+			{
+				SDL_Rect size = statusEffectFocusedWindow->getAbsoluteSize();
+				int mouseDetectionPadding = 2;
+				size.x += frameImg->pos.x - (mouseDetectionPadding);
+				size.y += frameImg->pos.y - (mouseDetectionPadding);
+				size.w = frameImg->pos.w + (mouseDetectionPadding * 2);
+				size.h = frameImg->pos.h + (mouseDetectionPadding * 2);
+
+				bool tooltipShowing = false;
+				if ( rectContainsPoint(size, mousex, mousey) )
+				{
+					if ( players[player.playernum]->GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS )
+					{
+					}
+					tooltipShowing = StatusEffectQueue[player.playernum].doStatusEffectTooltip(q, size);
+					players[player.playernum]->GUI.activateModule(Player::GUI_t::MODULE_STATUS_EFFECTS);
+					players[player.playernum]->hud.setCursorDisabled(false);
+					players[player.playernum]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding,
+						frameImg->pos.w, frameImg->pos.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+				}
+			}
+
 			if ( q.effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 			{
 				auto srcFrame = StatusEffectQueue[player.playernum].statusEffectFrame->findFrame("automaton hunger notification");
@@ -5541,11 +5563,15 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 				img->pos.y -= (windowSizeLimitMin.y);
 			}
 
-			SDL_Rect windowPos{ 0, 0, borderX * 2 + bodyW, borderY + bodyH + 8 };
+			SDL_Rect windowPos{ 0, 0, borderX * 2 + bodyW, borderY + bodyH + 16 };
 			statusEffectFocusedWindow->setSize(windowPos);
 			imageResizeToContainer9x9(statusEffectFocusedWindow, SDL_Rect{ 0, 0, windowPos.w, windowPos.h },
 				skillsheetEffectBackgroundImages);
+
+			auto heading_txt = statusEffectFocusedWindow->findField("heading txt");
+			heading_txt->setSize(SDL_Rect{4, 4, windowPos.w - 4 * 2, 24});
 		}
+
 	}
 }
 
