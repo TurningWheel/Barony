@@ -170,11 +170,14 @@ public:
         NintendoSwitch,
         Xbox,
     };
-
+    
     static ControllerType getControllerType(int index);
+    static const char* getKeyboardGlyph(int index);
+    static const char* getControllerGlyph(int index);
     ControllerType getControllerType() const;
-    static const char* getKeyboardGlyph();
-    static const char* getControllerGlyph();
+    const char* getKeyboardGlyph() const;
+    const char* getControllerGlyph() const;
+    
 	static std::string getGlyphPathForInput(const char* input, bool pressed = false, ControllerType type = ControllerType::Xbox);
 	static std::string getGlyphPathForBinding(const binding_t& binding, bool pressed = false);
 	std::string getGlyphPathForBinding(const char* binding, bool pressed = false) const;

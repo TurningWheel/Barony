@@ -14815,7 +14815,7 @@ failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
-                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(c) : Input::getKeyboardGlyph(c);
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
@@ -19853,7 +19853,7 @@ failed:
 			if (splitscreen) {
 				const int player = getMenuOwner();
 				const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
-					Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(player) : Input::getKeyboardGlyph(player);
 				auto image = Image::get(path);
 				const int w = image->getWidth();
 				const int h = image->getHeight();
@@ -20859,7 +20859,7 @@ failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
-                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(c) : Input::getKeyboardGlyph(c);
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();

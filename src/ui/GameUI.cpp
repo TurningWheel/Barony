@@ -8280,7 +8280,7 @@ void Player::HUD_t::processHUD()
             "#*images/system/white.png",
             "dimmer");
 
-        const char* path = Input::getControllerGlyph();
+        const char* path = Input::getControllerGlyph(player.playernum);
         auto image = Image::get(path);
         const int w = image->getWidth();
         const int h = image->getHeight();

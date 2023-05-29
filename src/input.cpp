@@ -343,42 +343,66 @@ Input::ControllerType Input::getControllerType() const {
     return getControllerType(player);
 }
 
+#ifndef EDITOR
+static ConsoleVariable<int> cvar_forceGlyphs("/forceglyphs", -1, "Force use of specific controller glyphs");
+#endif
+
 Input::ControllerType Input::getControllerType(int index) {
 #if defined(EDITOR)
     return ControllerType::Xbox;
 #elif defined(NINTENDO)
     // nintendo switch joycons
-    return ControllerType::NintendoSwitch;
+    if (*cvar_forceGlyphs >= 0) {
+        return (ControllerType)*cvar_forceGlyphs;
+    } else {
+        return ControllerType::NintendoSwitch;
+    }
 #else
-    // SDL lets us differentiate controller types
-    const int device = ::inputs.getControllerID(index);
-    auto type = SDL_GameControllerTypeForIndex(device);
-    switch(type) {
-    default:
-    case SDL_CONTROLLER_TYPE_UNKNOWN: return ControllerType::Xbox;
-    case SDL_CONTROLLER_TYPE_XBOX360: return ControllerType::Xbox;
-    case SDL_CONTROLLER_TYPE_XBOXONE: return ControllerType::Xbox;
-    case SDL_CONTROLLER_TYPE_PS3: return ControllerType::PlayStation;
-    case SDL_CONTROLLER_TYPE_PS4: return ControllerType::PlayStation;
-    case SDL_CONTROLLER_TYPE_PS5: return ControllerType::PlayStation;
-    case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO: return ControllerType::NintendoSwitch;
-    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT: return ControllerType::NintendoSwitch;
-    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT: return ControllerType::NintendoSwitch;
-    //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: return ControllerType::NintendoSwitch;
+    if (*cvar_forceGlyphs >= 0) {
+        return (ControllerType)*cvar_forceGlyphs;
+    } else {
+        // SDL lets us differentiate controller types
+        const int device = ::inputs.getControllerID(index);
+        auto type = SDL_GameControllerTypeForIndex(device);
+        switch(type) {
+        default:
+        case SDL_CONTROLLER_TYPE_UNKNOWN: return ControllerType::Xbox;
+        case SDL_CONTROLLER_TYPE_XBOX360: return ControllerType::Xbox;
+        case SDL_CONTROLLER_TYPE_XBOXONE: return ControllerType::Xbox;
+        case SDL_CONTROLLER_TYPE_PS3: return ControllerType::PlayStation;
+        case SDL_CONTROLLER_TYPE_PS4: return ControllerType::PlayStation;
+        case SDL_CONTROLLER_TYPE_PS5: return ControllerType::PlayStation;
+        case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO: return ControllerType::NintendoSwitch;
+        //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT: return ControllerType::NintendoSwitch;
+        //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT: return ControllerType::NintendoSwitch;
+        //case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: return ControllerType::NintendoSwitch;
+        }
     }
 #endif
 }
 
-const char* Input::getKeyboardGlyph() {
+const char* Input::getKeyboardGlyph(int index) {
     return "*#images/ui/Glyphs/G_Control_KBM_01.png";
 }
 
-const char* Input::getControllerGlyph() {
-#ifdef NINTENDO
-    return "*#images/ui/Glyphs/G_Control_Switch_01.png";
-#else
-    return "*#images/ui/Glyphs/G_Control_Xbox_02.png";
-#endif
+const char* Input::getKeyboardGlyph() const {
+    return "*#images/ui/Glyphs/G_Control_KBM_01.png";
+}
+
+const char* Input::getControllerGlyph(int index) {
+    switch (getControllerType(index)) {
+    default:
+    case ControllerType::Xbox:
+        return "*#images/ui/Glyphs/G_Control_Xbox_02.png";
+    case ControllerType::NintendoSwitch:
+        return "*#images/ui/Glyphs/G_Control_Switch_01.png";
+    case ControllerType::PlayStation:
+        return "*#images/ui/Glyphs/G_Control_PS5_01.png";
+    }
+}
+
+const char* Input::getControllerGlyph() const {
+    return getControllerGlyph(player);
 }
 
 std::string Input::getGlyphPathForInput(const char* input, bool pressed, ControllerType type)
