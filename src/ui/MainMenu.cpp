@@ -5160,13 +5160,16 @@ namespace MainMenu {
 		int y = 0;
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
         
-        std::vector<std::string> players;
-        std::vector<const char*> player_ptrs;
-        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
-            std::string str = "Player ";
-            str += std::to_string(c + 1);
-            players.emplace_back(str);
-            player_ptrs.emplace_back(players.back().c_str());
+        static std::vector<std::string> players;
+        static std::vector<const char*> player_ptrs;
+        if (players.empty()) {
+            players.reserve(MAX_SPLITSCREEN);
+            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+                std::string str = "Player ";
+                str += std::to_string(c + 1);
+                players.emplace_back(str);
+                player_ptrs.emplace_back(players.back().c_str());
+            }
         }
 
 		std::string player_str = "Player " + std::to_string(player_index + 1);
@@ -14812,7 +14815,7 @@ failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
-                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(c) : Input::getKeyboardGlyph(c);
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
@@ -19850,7 +19853,7 @@ failed:
 			if (splitscreen) {
 				const int player = getMenuOwner();
 				const char* path = inputs.hasController(player) || inputs.getPlayerIDAllowedKeyboard() != player ?
-					Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(player) : Input::getKeyboardGlyph(player);
 				auto image = Image::get(path);
 				const int w = image->getWidth();
 				const int h = image->getHeight();
@@ -20856,7 +20859,7 @@ failed:
 	    for (int c = 0; c < MAXPLAYERS; ++c) {
 	        if ((multiplayer == SINGLE && isPlayerSignedIn(c)) || (multiplayer != SINGLE && c == 0)) {
                 const char* path = inputs.hasController(c) || inputs.getPlayerIDAllowedKeyboard() != c ?
-                    Input::getControllerGlyph() : Input::getKeyboardGlyph();
+                    Input::getControllerGlyph(c) : Input::getKeyboardGlyph(c);
                 auto image = Image::get(path);
                 const int w = image->getWidth();
                 const int h = image->getHeight();
