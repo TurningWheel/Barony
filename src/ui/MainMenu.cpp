@@ -10734,10 +10734,11 @@ failed:
 			    invite->setCallback([](Button& button){
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
-			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
-			        auto open = parent->findButton("open"); assert(open);
+#ifndef NINTENDO
+					auto friends = parent->findButton("friends"); assert(friends);
 			        friends->setPressed(false);
+#endif
+					auto open = parent->findButton("open"); assert(open);
 			        open->setPressed(false);
 
                     if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -10822,7 +10823,6 @@ failed:
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
 			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
 			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
 			        open->setPressed(false);
@@ -10921,10 +10921,11 @@ failed:
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
 			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
-			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
+#ifndef NINTENDO
+					auto friends = parent->findButton("friends"); assert(friends);
 			        friends->setPressed(false);
+#endif
 
                     if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
