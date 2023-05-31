@@ -5122,7 +5122,7 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 	}
 
 	const SDL_Rect dest{rect.x + offset.x, rect.y + offset.y, rect.w, rect.h};
-	const SDL_Rect src{ sx, sy, w, h };
+	const SDL_Rect src{(int)sx, (int)sy, (int)w, (int)h};
 	drawTexturedQuad(textureId, tw, th, src, dest, alpha);
 }
 
