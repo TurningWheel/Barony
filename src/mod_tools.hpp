@@ -2942,11 +2942,11 @@ extern ScriptTextParser_t ScriptTextParser;
 class VideoManager_t
 {
 	theoraplayer::VideoClip* clip = NULL;
-	theoraplayer::OutputMode outputMode = theoraplayer::FORMAT_RGB;
 	static bool isInit;
 	bool started = false;
-	GLuint textureId = 0;
-	unsigned int textureFormat = GL_RGB;
+	bool whichTexture = false;
+	GLuint textureId1 = 0;
+	GLuint textureId2 = 0;
 	void drawTexturedQuad(unsigned int texID, int tw, int th, const SDL_Rect& src, const SDL_Rect& dest, float alpha);
 	GLuint createTexture(int w, int h, unsigned int format);
 	int potCeil(int value)
