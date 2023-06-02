@@ -2168,7 +2168,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 		return;
 	}
-	if ( input.binaryToggle("MenuCancel") )
+	if ( followerMenuIsOpen() && input.binaryToggle("MenuCancel") )
 	{
 		input.consumeBinaryToggle("MenuCancel");
 		closeFollowerMenuGUI();
