@@ -5,7 +5,7 @@
 //#define STEAMWORKS
 //#define USE_EOS
 //#define BARONY_SUPER_MULTIPLAYER
-#define USE_THEORA_PLAYER
+#define USE_THEORA_VIDEO
 #define GL_SILENCE_DEPRECATION
 //#define USE_IMGUI
 #endif

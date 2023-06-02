@@ -2936,8 +2936,8 @@ extern ScriptTextParser_t ScriptTextParser;
 //#define USE_THEORA_VIDEO
 #endif // !EDITOR
 #ifdef USE_THEORA_VIDEO
-#include <theoraplayer/Manager.h>
 #include <theoraplayer/theoraplayer.h>
+#include <theoraplayer/Manager.h>
 #include <theoraplayer/VideoFrame.h>
 class VideoManager_t
 {
