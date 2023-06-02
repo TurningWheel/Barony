@@ -282,31 +282,39 @@ void actFountain(Entity* my)
 							}
 							else if ( currentlevel < 10 )
 							{
-								messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
-								spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
+								if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
+								{
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
+								}
 							}
 							else if ( currentlevel < 20 )
 							{
 								if ( local_rng.rand() % 2 )
 								{
-									spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
-									Stat* tmpStats = spawnedMonster->getStats();
-									if ( tmpStats )
+									if ( spawnedMonster = summonMonster(INCUBUS, my->x, my->y) )
 									{
-										strcpy(tmpStats->name, "lesser incubus");
+										Stat* tmpStats = spawnedMonster->getStats();
+										if ( tmpStats )
+										{
+											strcpy(tmpStats->name, "lesser incubus");
+										}
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
 									}
-									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
 								}
 								else
 								{
-									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
-									spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
+									if ( spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y) )
+									{
+										messagePlayerColor(i, MESSAGE_INTERACTION, color, language[469]);
+									}
 								}
 							}
 							else
 							{
-								messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
-								spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
+								if ( spawnedMonster = summonMonster(INCUBUS, my->x, my->y) )
+								{
+									messagePlayerColor(i, MESSAGE_INTERACTION, color, language[2519]);
+								}
 							}
 							break;
 						}
