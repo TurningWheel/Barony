@@ -412,7 +412,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CON = 3;
 			stats->INT = -1;
 			stats->RANDOM_INT = 3;
-			stats->PER = -3;
+			stats->PER = 0;
 			stats->RANDOM_PER = 4;
 			stats->CHR = -3;
 			stats->RANDOM_CHR = 3;
@@ -1293,7 +1293,7 @@ bool isMonsterStatsDefault(Stat& myStats)
 		&& baseStats.DEX == myStats.DEX
 		&& baseStats.CON == myStats.CON
 		&& baseStats.INT == myStats.INT
-		&& baseStats.PER == myStats.PER
+		&& (baseStats.PER == myStats.PER || (baseStats.PER == -3 && myStats.type == HUMAN)) // increased human PER from -3 to 0.
 		&& baseStats.CHR == myStats.CHR
 		&& baseStats.LVL == myStats.LVL
 		&& baseStats.RANDOM_LVL == myStats.RANDOM_LVL

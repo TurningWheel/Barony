@@ -734,6 +734,20 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		|| pathingType == GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2	)
 	{
 		maxtries = *cvar_pathlimit_allyfollow;
+		if ( my->behavior == &actMonster )
+		{
+			if ( Stat* myStats = my->getStats() )
+			{
+				if ( monsterAllyFormations.getFollowerTryExtendedPathSearch(*my, *myStats) > 0 )
+				{
+					if ( *cvar_pathing_debug )
+					{
+						messagePlayer(0, MESSAGE_DEBUG, "Trying extended path range");
+						maxtries = *cvar_pathlimit_commandmove;
+					}
+				}
+			}
+		}
 	}
 	else if ( pathingType == GeneratePathTypes::GENERATE_PATH_PLAYER_ALLY_MOVETO
 		|| pathingType == GeneratePathTypes::GENERATE_PATH_INTERACT_MOVE )

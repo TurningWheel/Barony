@@ -2553,6 +2553,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		spawnSleepZ(x, y, z);
 	}},
 
+	// spawn a poof
+	{ 'PUFF', []() {
+		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
+		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		Uint16 scale = (Uint16)SDLNet_Read16(&net_packet->data[10]);
+		Entity* poof = spawnPoof(x, y, z, scale / 100.0);
+	}},
+
 	// spawn a misc sprite like the sleep Z
 	{'SLEM', [](){
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
@@ -3201,10 +3210,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 
 		const real_t effectOffset = 2.0;
-		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8);
-		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8);
-		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8);
-		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8);
+		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 - effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 - effectOffset), 8, 1.0);
+		spawnPoof(static_cast<Sint16>(x * 16.0 + 16.0 + effectOffset), static_cast<Sint16>(y * 16.0 + 16.0 + effectOffset), 8, 1.0);
 	}},
 
 	// destroy wall
@@ -6182,6 +6191,20 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    net_packet->data[24],
 		    &stats[player]->inventory);
 		item_FoodAutomaton(item, player);
+	}},
+
+	// broke a mirror
+	{ 'MIRR', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		if ( players[player]->entity )
+		{
+			if ( players[player]->entity->setEffect(EFF_BLEEDING, true, TICKS_PER_SECOND * 15, true) )
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, 
+					makeColorRGB(255, 0, 0), language[701]); // you're bleeding!
+			}
+			playSoundEntity(players[player]->entity, 162, 64);
+		}
 	}},
 };
 

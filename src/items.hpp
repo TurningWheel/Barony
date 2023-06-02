@@ -486,7 +486,8 @@ public:
 		BOMB_FLOOR,
 		BOMB_WALL,
 		BOMB_CHEST,
-		BOMB_DOOR
+		BOMB_DOOR,
+		BOMB_COLLIDER
 	};
 	enum ItemBombFacingDirection : int
 	{

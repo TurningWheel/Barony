@@ -565,7 +565,7 @@ void updatePlayerGold(const int player, const int flipped)
 	{
 		if ( ((ticks - players[player]->shopGUI.animGoldStartTicks) > TICKS_PER_SECOND / 2) )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.1, (animGold)) / 10.0;
 			animGold -= setpointDiffX;
 			animGold = std::max(0.0, animGold);
@@ -579,7 +579,7 @@ void updatePlayerGold(const int player, const int flipped)
 		{
 			pauseChangeGoldAnim = true;
 
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animGold)) / 10.0;
 			animGold += setpointDiffX;
 			animGold = std::min(1.0, animGold);
@@ -609,7 +609,7 @@ void updatePlayerGold(const int player, const int flipped)
 
 	{ 
 		// constant decay for animation
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
 		animNoDeal -= setpointDiffX;
 		animNoDeal = std::max(0.0, animNoDeal);
@@ -1024,7 +1024,7 @@ void Player::ShopGUI_t::updateShop()
 
 	if ( !shopFrame->isDisabled() && bOpen )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
 		animx += setpointDiffX;
 		animx = std::min(1.0, animx);
@@ -1462,7 +1462,7 @@ void Player::ShopGUI_t::updateShop()
 
 		if ( isInteractable )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
 			animTooltip += setpointDiffX;
 			animTooltip = std::min(1.0, animTooltip);
@@ -1635,7 +1635,7 @@ void Player::ShopGUI_t::updateShop()
 			|| usingGamepad
 			|| animTooltip < 0.9999 )
 		{
-			const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
 			animTooltip -= setpointDiffX;
 			animTooltip = std::max(0.0, animTooltip);

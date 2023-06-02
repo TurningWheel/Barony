@@ -255,6 +255,12 @@ Uint32 messagesEnabled = 0xffffffff & ~MESSAGE_DEBUG; // all but debug enabled
 Uint32 messagesEnabled = 0xffffffff; // all enabled
 #endif
 
+real_t getFPSScale(real_t baseFPS)
+{
+	return baseFPS / (std::max(1U, (unsigned int)fps));
+	//return baseFPS / (std::max(1U, fpsLimit));
+}
+
 //ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
 TimerExperiments::time_point TimerExperiments::timepoint{};
 TimerExperiments::time_point TimerExperiments::currentTime = Clock::now();
@@ -574,6 +580,10 @@ void TimerExperiments::updateClocks()
 	{
 		real_t decimal = 0.0;
 		real_t ms = 1000 / fpsLimit;
+		if ( fps > 0.0 )
+		{
+			ms = 1000 / fps;
+		}
 		frameTimeLimit = ms;
 		if ( modf(ms, &decimal) > 0.01 )
 		{
@@ -5333,6 +5343,7 @@ void ingameHud()
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
 		players[player]->characterSheet.processCharacterSheet();
+		players[player]->hud.updateStatusEffectFocusedWindow();
 		players[player]->messageZone.processLogFrame();
 		players[player]->minimap.processMapFrame();
 		players[player]->skillSheet.processSkillSheet();
@@ -7086,6 +7097,20 @@ int main(int argc, char** argv)
 					{
 						printTextFormatted(font8x8_bmp, 8, 44, "pos: x: %d y: %d pathmapZone: %d", 
 							ix, iy, pathMapGrounded[iy + ix * map.height]);
+					}
+				}
+				static ConsoleVariable<bool> cvar_light_debug("/lightdebug", false);
+				if ( *cvar_light_debug )
+				{
+					if ( players[clientnum]->entity )
+					{
+						int light = players[clientnum]->entity->entityLight();
+						int tiles = light / 16;
+						int lightAfterReductions = std::max(TOUCHRANGE, 
+							players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], players[clientnum]->entity));
+						int tilesAfterReductions = lightAfterReductions / 16;
+						printTextFormatted(font8x8_bmp, 8, 44, "base light: %3d, tiles: %2d | modified light: %3d, tiles: %2d",
+							light, tiles, lightAfterReductions, tilesAfterReductions);
 					}
 				}
 			}

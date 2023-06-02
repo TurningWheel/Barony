@@ -1451,9 +1451,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
-							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -3063,6 +3063,8 @@ void actMagicParticle(Entity* my)
 	}
 }
 
+static ConsoleVariable<float> cvar_magic_fx_light_bonus("/magic_fx_light_bonus", 0.25f);
+
 Entity* spawnMagicParticle(Entity* parentent)
 {
 	if ( !parentent )
@@ -3089,6 +3091,8 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->behavior = &actMagicParticle;
 	if ( multiplayer != CLIENT )
 	{
@@ -3126,6 +3130,8 @@ Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, re
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->behavior = &actMagicParticle;
 	if ( multiplayer != CLIENT )
 	{
@@ -3175,6 +3181,8 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus, 
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )
@@ -3208,6 +3216,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	real_t tmp = entity->yaw;
@@ -3228,6 +3238,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3246,6 +3258,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = -0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3264,6 +3278,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3282,6 +3298,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 
 	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
@@ -3300,6 +3318,8 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->fskill[0] = 0.1;
 	entity->behavior = &actParticleCircle;
 	entity->flags[PASSABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->setUID(-3);
 }
 
@@ -3360,6 +3380,8 @@ void createParticleDot(Entity* parent)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3393,6 +3415,8 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -3429,6 +3453,8 @@ void createParticleRock(Entity* parent, int sprite)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3474,6 +3500,8 @@ void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3626,6 +3654,8 @@ void createParticleErupt(Entity* parent, int sprite)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3834,6 +3864,11 @@ void createParticleSap(Entity* parent)
 			}
 			entity->yaw += PI / 3;
 		}
+		else
+		{
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
+		}
 	}
 }
 
@@ -3863,6 +3898,8 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -4314,6 +4351,8 @@ void actParticleTimer(Entity* my)
 					entity->flags[PASSABLE] = true;
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UNCLICKABLE] = true;
+					entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+						*cvar_magic_fx_light_bonus, 0.f);
 					if ( multiplayer != CLIENT )
 					{
 						entity_uids--;
@@ -4422,9 +4461,11 @@ void actParticleSap(Entity* my)
 			Entity* particle = spawnMagicParticleCustom(my, (local_rng.rand() % 2) ? 943 : 979, 1, 10);
 			if ( particle )
 			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->focalx = 2;
 				particle->focaly = -2;
 				particle->focalz = 2.5;
+				particle->ditheringDisabled = true;
 			}
 			if ( PARTICLE_LIFE < 100 && my->ticks % 6 == 0 )
 			{
@@ -4995,6 +5036,8 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
@@ -5032,6 +5075,8 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
@@ -5306,6 +5351,8 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->flags[INVISIBLE] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		parent = entity;
 	}
 	Stat* stats = parent->getStats();
@@ -5409,6 +5456,8 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uin
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
 		entity->flags[BRIGHT] = true;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )
@@ -5486,6 +5535,8 @@ void actParticleShadowTag(Entity* my)
 			entity->flags[PASSABLE] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
 			if ( multiplayer != CLIENT )
 			{
 				entity_uids--;
@@ -5646,6 +5697,8 @@ void actParticleShadowTag(Entity* my)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->flags[UNCLICKABLE] = true;
+				entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+					*cvar_magic_fx_light_bonus, 0.f);
 				if ( multiplayer != CLIENT )
 				{
 					entity_uids--;
@@ -5683,6 +5736,8 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	/*entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);*/
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5713,6 +5768,8 @@ void createParticleCharmMonster(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -5745,6 +5802,8 @@ void actParticleCharmMonster(Entity* my)
 			entity->flags[PASSABLE] = true;
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
 			if ( multiplayer != CLIENT )
 			{
 				entity_uids--;

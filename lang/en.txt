@@ -6419,5 +6419,6 @@ for accessory to violence!#
 4341 barricade#
 4342 Colorblind assist has been enabled for the lobby.#
 4343 Colorblind assist has been disabled for the lobby.#
+4344 The %s shatters in your grasp!#
 
 4399 end#

@@ -631,7 +631,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START 
+				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN
+				&& !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
 			{
 				my->z = -.5;
 				my->pitch = 0;

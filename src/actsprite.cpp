@@ -415,13 +415,16 @@ Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)
 	return explosion;
 }
 
-Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
+Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z, real_t scale, bool updateClients)
 {
 	// poof
 	auto entity = newEntity(170, 1, map.entities, nullptr);
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
+	entity->scalex = scale;
+	entity->scaley = scale;
+	entity->scalez = scale;
     entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = true;
 	entity->flags[PASSABLE] = true;
@@ -438,6 +441,27 @@ Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z)
 		entity_uids--;
 	}
 	entity->setUID(-3);
+
+	if ( updateClients && multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] == true || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "PUFF");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			SDLNet_Write16(static_cast<Uint16>(scale * 100), &net_packet->data[10]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 12;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
 	return entity;
 }
 

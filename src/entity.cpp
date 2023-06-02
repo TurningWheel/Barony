@@ -847,20 +847,39 @@ after reductions depending on the entity stats and another entity observing
 int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 {
 	int player = -1;
-	int light = entityLight(); // max 255 light to start with.
+	const int minLight = (int)(TOUCHRANGE * 1.5);
+	int light = std::max(minLight, entityLight()); // max 255 light to start with.
 	if ( !isInvisible() )
 	{
-		// reduce light level 0-200 depending on target's stealth.
-		// add light level 0-150 for PER 0-30
+		bool sneaking = false;
+		if ( behavior == &actPlayer )
+		{
+			player = skill[2];
+			if ( player > -1 && stats[player] )
+			{
+				if ( stats[player]->sneaking == 1 && !stats[player]->defending )
+				{
+					sneaking = true;
+				}
+			}
+		}
+
 		if ( observer )
 		{
-			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer->getPER() * 5;
+			light += observer->getPER() * 4; // add light level for PER x 4
+			if ( sneaking )
+			{
+				light /= 2; // halve for sneaking
+			}
+			light -= (light - TOUCHRANGE) * (1.0 * (myStats.PROFICIENCIES[PRO_STEALTH] / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
 				light = TOUCHRANGE;
 			}
-			if ( observer->monsterLastDistractedByNoisemaker > 0 && uidToEntity(observer->monsterLastDistractedByNoisemaker) )
+			if ( observer->behavior == &actMonster
+				&& observer->monsterLastDistractedByNoisemaker > 0 
+				&& uidToEntity(observer->monsterLastDistractedByNoisemaker) )
 			{
 				if ( observer->monsterTarget == observer->monsterLastDistractedByNoisemaker
 					|| myStats.EFFECTS[EFF_DISORIENTED] )
@@ -4181,6 +4200,11 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
+	//if ( myStats->EFFECTS[EFF_BLIND] )
+	//{
+	//	spawnAmbientParticles2(2, 175, 20, 0.5, true); // maybe some black clouds
+	//}
+
 	// Process Burning Status Effect
 	if ( this->flags[BURNING] )
 	{
@@ -6693,6 +6717,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						bowDegradeChance = std::min(bowDegradeChance, 90);
 					}
 				}
+				if ( myStats->type == SKELETON && behavior == &actMonster && monsterAllySummonRank > 0 )
+				{
+					bowDegradeChance = 100; // conjured skeleton weapon doesn't break.
+				}
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW )
 				{
 					if ( myStats->weapon != NULL )
@@ -8792,143 +8820,128 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && local_rng.rand() % 4 == 0 )
 					{
-						int armornum = 0;
-						Item* armor = nullptr;
-						int armorstolen = local_rng.rand() % 9;
 						switch ( myStats->type )
 						{
-							case SCORPION:
-								hitstats->EFFECTS[EFF_PARALYZED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
-								serverUpdateEffects(playerhit);
-								break;
-							case SPIDER:
+						case SCORPION:
+							hitstats->EFFECTS[EFF_PARALYZED] = true;
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
+							messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
+							messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
+							serverUpdateEffects(playerhit);
+							break;
+						case SPIDER:
+						{
+							bool applyPoison = true;
+							if ( behavior == &actPlayer )
 							{
-								bool applyPoison = true;
-								if ( behavior == &actPlayer )
+								if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
 								{
-									if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
+									applyPoison = true;
+								}
+								else
+								{
+									applyPoison = false;
+								}
+							}
+							if ( applyPoison )
+							{
+								playerPoisonedTarget = true;
+								hitstats->EFFECTS[EFF_POISONED] = true;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = getUID();
+								if ( arachnophobia_filter ) {
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+								}
+								else {
+									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+								}
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
+								serverUpdateEffects(playerhit);
+								for ( int tmp = 0; tmp < 3; ++tmp )
+								{
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+							}
+							break;
+						}
+						case SUCCUBUS:
+						{
+							Item* armor = nullptr;
+							int armornum = 0;
+							if ( behavior == &actPlayer )
+							{
+								armor = nullptr;
+							}
+							else
+							{
+								if ( !monsterAllyGetPlayerLeader() )
+								{
+									if ( currentlevel >= 10 )
 									{
-										applyPoison = true;
+										armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
 									}
 									else
 									{
-										applyPoison = false;
-									}
-								}
-								if ( applyPoison )
-								{
-									playerPoisonedTarget = true;
-									hitstats->EFFECTS[EFF_POISONED] = true;
-									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-									hitstats->poisonKiller = getUID();
-									if (arachnophobia_filter) {
-									    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
-									} else {
-									    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
-									}
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
-									serverUpdateEffects(playerhit);
-									for ( int tmp = 0; tmp < 3; ++tmp )
-									{
-										Entity* gib = spawnGib(hit.entity, 211);
-										serverSpawnGibForClient(gib);
-									}
-								}
-								break;
-							}
-							case SUCCUBUS:
-								switch ( armorstolen )
-								{
-									case 0:
-										armor = hitstats->helmet;
-										armornum = 0;
-										break;
-									case 1:
-										armor = hitstats->breastplate;
-										armornum = 1;
-										break;
-									case 2:
-										armor = hitstats->gloves;
-										armornum = 2;
-										break;
-									case 3:
-										armor = hitstats->shoes;
-										armornum = 3;
-										break;
-									case 4:
-										armor = hitstats->shield;
-										armornum = 4;
-										break;
-									case 5:
-										armor = hitstats->cloak;
-										armornum = 6;
-										break;
-									case 6:
-										armor = hitstats->amulet;
-										armornum = 7;
-										break;
-									case 7:
-										armor = hitstats->ring;
-										armornum = 8;
-										break;
-									case 8:
-										armor = hitstats->mask;
-										armornum = 9;
-										break;
-									default:
-										break;
-								}
-								if ( behavior == &actPlayer )
-								{
-									armor = nullptr;
-								}
-								if ( armor != nullptr )
-								{
-									if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
-									{
-										if ( armor->count > 1 )
+										if ( local_rng.rand() % 4 == 0 )
 										{
-											newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
+											armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
 										}
 									}
-									armor->count = 1;
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
-									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
-									stolenArmor->ownerUid = hit.entity->getUID();
-									Item** slot = itemSlot(hitstats, armor);
-									if ( slot )
-									{
-										*slot = NULL;
-									}
-									if ( armor->node )
-									{
-										list_RemoveNode(armor->node);
-									}
-									else
-									{
-										free(armor);
-									}
-									if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
-									{
-										strcpy((char*)net_packet->data, "STLA");
-										net_packet->data[4] = armornum;
-										net_packet->address.host = net_clients[playerhit - 1].host;
-										net_packet->address.port = net_clients[playerhit - 1].port;
-										net_packet->len = 5;
-										sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-									}
-									teleportRandom();
-
-									// the succubus loses interest after this
-									monsterState = 0;
-									monsterTarget = 0;
 								}
-								break;
-							default:
-								break;
+								else
+								{
+									if ( local_rng.rand() % 8 == 0 )
+									{
+										armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+									}
+								}
+							}
+							if ( armor != nullptr )
+							{
+								if ( (playerhit >= 0 && players[playerhit]->isLocalPlayer()) || playerhit < 0 )
+								{
+									if ( armor->count > 1 )
+									{
+										newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
+									}
+								}
+								armor->count = 1;
+								messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
+								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+								stolenArmor->ownerUid = hit.entity->getUID();
+								Item** slot = itemSlot(hitstats, armor);
+								if ( slot )
+								{
+									*slot = NULL;
+								}
+								if ( armor->node )
+								{
+									list_RemoveNode(armor->node);
+								}
+								else
+								{
+									free(armor);
+								}
+								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
+								{
+									strcpy((char*)net_packet->data, "STLA");
+									net_packet->data[4] = armornum;
+									net_packet->address.host = net_clients[playerhit - 1].host;
+									net_packet->address.port = net_clients[playerhit - 1].port;
+									net_packet->len = 5;
+									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+								}
+								teleportRandom();
+
+								// the succubus loses interest after this
+								monsterState = 0;
+								monsterTarget = 0;
+							}
+							break;
+						}
+						default:
+							break;
 						}
 					}
 					else if ( damage == 0 && !(hitstats->defending) )
@@ -10421,7 +10434,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play sound effect
 	playSoundEntity(this, 77, 64);
-    spawnPoof(x, y, 0);
+    spawnPoof(x, y, 0, 1.0, true);
 
 	// relocate entity
 	double oldx = x;
@@ -10473,7 +10486,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	playSoundEntity(this, 77, 64);
     const float poofx = x + cosf(yaw) * 4.f;
     const float poofy = y + sinf(yaw) * 4.f;
-    spawnPoof(poofx, poofy, 0);
+    spawnPoof(poofx, poofy, 0, 1.0, true);
     bNeedsRenderPositionInit = true;
     for (auto part : bodyparts) {
         part->bNeedsRenderPositionInit = true;
@@ -14591,6 +14604,66 @@ void actAmbientParticleEffectIdle(Entity* my)
 	}
 
 	return;
+}
+
+void actAmbientParticleEffectIdle2(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( my->particleDuration < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		if ( my->particleShrink == 1 )
+		{
+			// shrink the particle.
+			my->scalex *= 0.95;
+			my->scaley *= 0.95;
+			my->scalez *= 0.95;
+		}
+		--my->particleDuration;
+		my->yaw += 0.1;
+		if ( my->yaw > 2 * PI )
+		{
+			my->yaw = 0;
+		}
+	}
+	return;
+}
+
+void Entity::spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink)
+{
+	if ( local_rng.rand() % chance == 0 )
+	{
+		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities, nullptr); //Particle entity.
+		spawnParticle->sizex = 1;
+		spawnParticle->sizey = 1;
+		spawnParticle->x = x + (-2 + local_rng.rand() % 5);
+		spawnParticle->y = y + (-2 + local_rng.rand() % 5);
+		spawnParticle->z = z - 2;
+		spawnParticle->scalex *= particleScale;
+		spawnParticle->scaley *= particleScale;
+		spawnParticle->scalez *= particleScale;
+		spawnParticle->vel_z = -1;
+		spawnParticle->particleDuration = duration;
+		if ( shrink )
+		{
+			spawnParticle->particleShrink = 1;
+		}
+		else
+		{
+			spawnParticle->particleShrink = 0;
+		}
+		spawnParticle->behavior = &actAmbientParticleEffectIdle2;
+		spawnParticle->flags[PASSABLE] = true;
+		spawnParticle->setUID(-3);
+	}
 }
 
 void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)

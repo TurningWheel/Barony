@@ -610,6 +610,14 @@ bool Entity::isColliderDamageableByMagic() const
 	return colliderDmgType.magicAffects;
 }
 
+bool Entity::isColliderAttachableToBombs() const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	auto& colliderDmgType = EditorEntityData_t::colliderDmgTypes[colliderData.damageCalculationType];
+	return colliderDmgType.bombsAttach;
+}
+
 bool Entity::isDamageableCollider() const 
 { 
 	return behavior == &actColliderDecoration && colliderMaxHP > 0;
@@ -758,22 +766,22 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[hit.entity->getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[getColliderLangName()]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2508], language[hit.entity->getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2508], language[getColliderLangName()]);
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[hit.entity->getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[getColliderLangName()]);
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[hit.entity->getColliderLangName()]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[getColliderLangName()]);
 				}
 			}
 			updateEnemyBar(caster, this, language[getColliderLangName()], colliderCurrentHP, colliderMaxHP);

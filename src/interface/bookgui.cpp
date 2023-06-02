@@ -202,7 +202,7 @@ void Player::BookGUI_t::updateBookGUI()
 	SDL_Rect bookSize = innerFrame->getSize();
 	bookSize.x = bookFrame->getSize().w / 2 - bookSize.w / 2;
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - bookFadeInAnimationY)) / 5.0;
 	bookFadeInAnimationY += setpointDiffX;
 	bookFadeInAnimationY = std::min(1.0, bookFadeInAnimationY);
@@ -766,7 +766,7 @@ void Player::SignGUI_t::updateSignGUI()
 	SDL_Rect bookSize = innerFrame->getSize();
 	bookSize.x = signFrame->getSize().w / 2 - bookSize.w / 2;
 
-	const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+	const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 	real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - signFadeInAnimationY)) / 5.0;
 	signFadeInAnimationY += setpointDiffX;
 	signFadeInAnimationY = std::min(1.0, signFadeInAnimationY);
@@ -846,7 +846,7 @@ void Player::SignGUI_t::updateSignGUI()
 		{
 			VideoManager[player.playernum].loadfile(signEntry.signVideoContent.path.c_str());
 		}
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - signAnimVideo)) / 5.0;
 		signAnimVideo += setpointDiffX;
 		signAnimVideo = std::min(1.0, signAnimVideo);

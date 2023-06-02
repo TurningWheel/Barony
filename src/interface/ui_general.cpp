@@ -210,7 +210,7 @@ void UIToastNotification::updateCardEvent(bool updateMainText, bool updateSecond
 void UIToastNotification::animate(int& xout, int& current_ticks, int duration, int width, bool hideElement, bool& isHidden)
 {
 	// scale duration to FPS - tested @ 144hz
-	double scaledDuration = (duration / (144.f / std::max(1U, fpsLimit)));
+	double scaledDuration = (duration / (144.0 / (std::max(1U, fpsLimit))));
 
 	double t = current_ticks / static_cast<double>(scaledDuration);
 	double result = -width * t * t * (3.0f - 2.0f * t); // bezier from 0 to width as t (0-1)

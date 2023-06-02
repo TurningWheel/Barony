@@ -151,6 +151,7 @@ struct StatusEffectQueue_t
 	static const int kEffectWaterWalking;
 	static const int kEffectLifesaving;
 	static const int kEffectPush;
+	static const int kEffectSneak;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;
@@ -180,11 +181,11 @@ struct StatusEffectQueue_t
 	}
 	void deleteEffect(int effect)
 	{
-		requiresAnimUpdate = true;
 		for ( auto it = effectQueue.begin(); it != effectQueue.end(); )
 		{
 			if ( (*it).effect == effect )
 			{
+				requiresAnimUpdate = true;
 				it = effectQueue.erase(it);
 				continue;
 			}

@@ -5478,6 +5478,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
+				&& this->type != TOOL_MIRROR
 				&& this->type != TOOL_BLINDFOLD
 				&& this->type != TOOL_BLINDFOLD_FOCUS
 				&& this->type != TOOL_BLINDFOLD_TELEPATHY)
@@ -5491,6 +5492,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
+				&& this->type != TOOL_MIRROR
 				&& this->type != TOOL_BLINDFOLD
 				&& this->type != TOOL_BLINDFOLD_FOCUS
 				&& this->type != TOOL_BLINDFOLD_TELEPATHY)

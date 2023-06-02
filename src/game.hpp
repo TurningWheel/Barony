@@ -261,7 +261,7 @@ void actSleepZ(Entity* my);
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z);
-Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z);
+Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z, real_t scale, bool updateClients = false);
 Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
@@ -615,3 +615,5 @@ public:
 
 void loadAchievementData(const char* path);
 void sortAchievementsForDisplay();
+
+real_t getFPSScale(real_t baseFPS);

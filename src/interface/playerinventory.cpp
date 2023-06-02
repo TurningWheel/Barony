@@ -6261,7 +6261,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         {
             if ( tooltipDisplayedSettings.scrollable )
             {
-                const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+                const real_t fpsScale = getFPSScale(60.0);
                 if ( inputs.bPlayerUsingKeyboardControl(player) )
                 {
                     if ( Input::inputs[player].binaryToggle("MenuMouseWheelUpAlt") )
@@ -6319,7 +6319,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             
             if ( abs(frameTooltipScrollSetpoint - frameTooltipScrollAnim) > 0.00001 )
             {
-                const real_t fpsScale = (60.f / std::max(1U, fpsLimit));
+                const real_t fpsScale = getFPSScale(60.0);
                 real_t setpointDiff = 0.0;
                 if ( frameTooltipScrollSetpoint - frameTooltipScrollAnim > 0.0 )
                 {
@@ -6562,7 +6562,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 gradientBottom->disabled = false;
                 gradientTop->disabled = false;
                 
-                real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+                real_t fpsScale = getFPSScale(144.0);
                 if ( frameTooltipScrollSetpoint < scrollOverflow )
                 {
                     Uint8 r, g, b, a;
@@ -6624,7 +6624,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         {
             if ( scrollOverflow > 0 )
             {
-                real_t fpsScale = (144.f / std::max(1U, fpsLimit));
+                real_t fpsScale = getFPSScale(144.0);
                 {
                     Uint8 r, g, b, a;
                     getColor(gradientTop->color, &r, &g, &b, &a);
@@ -7187,14 +7187,14 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 		&& (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
 			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP) )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - slideOutPercent)) / 2.0;
 		slideOutPercent += setpointDiff;
 		slideOutPercent = std::min(1.0, slideOutPercent);
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (slideOutPercent)) / 2.0;
 		slideOutPercent -= setpointDiff;
 		slideOutPercent = std::max(0.0, slideOutPercent);
@@ -7422,14 +7422,14 @@ void Player::Inventory_t::updateInventory()
 		|| (GenericGUI[player].isGUIOpen() && !(GenericGUI[player].itemfxGUI.bOpen))
 		|| shopGUI.bOpen) )
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animPaperDollHide)) / 2.0;
 		animPaperDollHide += setpointDiffX;
 		animPaperDollHide = std::min(1.0, animPaperDollHide);
 	}
 	else
 	{
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiffX = fpsScale * std::max(.01, (animPaperDollHide)) / 2.0;
 		animPaperDollHide -= setpointDiffX;
 		animPaperDollHide = std::max(0.0, animPaperDollHide);
@@ -7440,7 +7440,7 @@ void Player::Inventory_t::updateInventory()
 		closeInventory();
 
 		// process the slide out animation for other panels (character sheet view)
-		const real_t fpsScale = (50.f / std::max(1U, fpsLimit)); // ported from 50Hz
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.01, (slideOutPercent)) / 2.0;
 		slideOutPercent -= setpointDiff;
 		slideOutPercent = std::max(0.0, slideOutPercent);

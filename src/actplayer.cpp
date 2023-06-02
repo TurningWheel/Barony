@@ -3025,6 +3025,26 @@ void actPlayer(Entity* my)
 	    }
 	}
 
+	static ConsoleVariable<bool> cvar_player_light_radius_test("/player_light_radius_test", false);
+	if ( *cvar_player_light_radius_test && (svFlags & SV_FLAG_CHEATS) )
+	{
+		if ( ticks % 4 == 0 )
+		{
+			int entityLight = my->entityLightAfterReductions(*stats[PLAYER_NUM], my);
+			entityLight = std::max(TOUCHRANGE, entityLight);
+			for ( int degree = 0; degree < 360; degree += 1 )
+			{
+				real_t rad = degree * PI / 180.0;
+				Entity* particle = spawnMagicParticle(my);
+				particle->sprite = 576;
+				particle->x = my->x + entityLight * cos(rad);
+				particle->y = my->y + entityLight * sin(rad);
+				particle->z = 7;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		if ( my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )

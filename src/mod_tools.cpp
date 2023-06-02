@@ -7652,6 +7652,7 @@ void EditorEntityData_t::readFromFile()
 			colliderDmg.minotaurPathThroughAndBreak = itr->value["minotaur_path_and_break"].GetBool();
 			colliderDmg.meleeAffects = itr->value["melee"].GetBool();
 			colliderDmg.magicAffects = itr->value["magic"].GetBool();
+			colliderDmg.bombsAttach = itr->value["bombs_attach"].GetBool();
 			colliderDmg.boulderDestroys = itr->value["boulder_destroy"].GetBool();
 			colliderDmg.showAsWallOnMinimap = itr->value["minimap_appear_as_wall"].GetBool();
 			if ( itr->value.HasMember("bonus_damage_skills") && itr->value["bonus_damage_skills"].IsArray() )

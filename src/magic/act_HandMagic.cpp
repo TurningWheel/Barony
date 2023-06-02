@@ -431,10 +431,12 @@ void actLeftHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
+					entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					entity->z += 3.0;
 					if ( cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook )
 					{
 						entity->y -= 1.5;
@@ -786,6 +788,8 @@ void actRightHandMagic(Entity* my)
 					entity->flags[NOUPDATE] = true;
 					entity->flags[UPDATENEEDED] = false;
 					entity->flags[OVERDRAW] = true;
+					entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					entity->z += 3.0;
 					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
 					//entity->sizey = 1;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!

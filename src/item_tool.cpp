@@ -1122,7 +1122,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			entity->skill[21] = type;
 		}
 	}
-	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR )
+	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR || placement == BOMB_COLLIDER )
 	{
 		if ( thrown && onEntity && (hit.entity == onEntity) )
 		{
@@ -1216,6 +1216,17 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 					}
 				}
 			}
+			else if ( placement == BOMB_COLLIDER )
+			{
+				if ( hit.side == HORIZONTAL )
+				{
+					height = onEntity->sizex;
+				}
+				else if ( hit.side == VERTICAL )
+				{
+					height = onEntity->sizey;
+				}
+			}
 
 			switch ( dir )
 			{
@@ -1286,7 +1297,11 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			else if ( placement == BOMB_CHEST )
 			{
 				entity->skill[19] = onEntity->skill[3]; //chestHealth
-				entity->skill[22] = onEntity->skill[1];
+				entity->skill[23] = onEntity->skill[1];
+			}
+			else if ( placement == BOMB_COLLIDER )
+			{
+				entity->skill[19] = onEntity->colliderCurrentHP;
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;

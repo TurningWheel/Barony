@@ -603,12 +603,24 @@ void MonsterAllyFormation_t::updateOnPathFail(Uint32 uid, Entity* entity)
 				if ( find2 != find->second.meleeUnits.end() )
 				{
 					find2->second.pathingDelay = std::min(10, find2->second.pathingDelay + 1);
+					find2->second.tryExtendPath = std::max(0, find2->second.tryExtendPath - 2);
+					if ( find2->second.pathingDelay == 5 )
+					{
+						// see if we can't do an extended search to succeed
+						find2->second.tryExtendPath = 10;
+					}
 					return;
 				}
 				auto find3 = find->second.rangedUnits.find(uid);
 				if ( find3 != find->second.rangedUnits.end() )
 				{
 					find3->second.pathingDelay = std::min(10, find3->second.pathingDelay + 1);
+					find3->second.tryExtendPath = std::max(0, find3->second.tryExtendPath - 2);
+					if ( find3->second.pathingDelay == 5 )
+					{
+						// see if we can't do an extended search to succeed
+						find3->second.tryExtendPath = 10; 
+					}
 					return;
 				}
 			}
@@ -638,13 +650,53 @@ void MonsterAllyFormation_t::updateOnPathSucceed(Uint32 uid, Entity* entity)
 				auto find2 = find->second.meleeUnits.find(uid);
 				if ( find2 != find->second.meleeUnits.end() )
 				{
+					find2->second.pathingDelay = std::max(0, find2->second.pathingDelay - 2);
+					find2->second.tryExtendPath = std::max(0, find2->second.tryExtendPath - 1);
+					return;
+				}
+				auto find3 = find->second.rangedUnits.find(uid);
+				if ( find3 != find->second.rangedUnits.end() )
+				{
+					find3->second.pathingDelay = std::max(0, find3->second.pathingDelay - 2);
+					find3->second.tryExtendPath = std::max(0, find3->second.tryExtendPath - 1);
+					return;
+				}
+			}
+		}
+	}
+}
+
+void MonsterAllyFormation_t::updateOnFollowCommand(Uint32 uid, Entity* entity)
+{
+	if ( !entity )
+	{
+		entity = uidToEntity(uid);
+	}
+
+	if ( !entity )
+	{
+		return;
+	}
+
+	if ( Stat* myStats = entity->getStats() )
+	{
+		if ( myStats->leader_uid != 0 )
+		{
+			auto find = units.find(myStats->leader_uid);
+			if ( find != units.end() )
+			{
+				auto find2 = find->second.meleeUnits.find(uid);
+				if ( find2 != find->second.meleeUnits.end() )
+				{
 					find2->second.pathingDelay = 0;
+					find2->second.tryExtendPath = 10;
 					return;
 				}
 				auto find3 = find->second.rangedUnits.find(uid);
 				if ( find3 != find->second.rangedUnits.end() )
 				{
 					find3->second.pathingDelay = 0;
+					find3->second.tryExtendPath = 10;
 					return;
 				}
 			}
@@ -672,6 +724,50 @@ int MonsterAllyFormation_t::getFollowerChaseLeaderInterval(Entity& my, Stat& myS
 		}
 	}
 	return TICKS_PER_SECOND;
+}
+
+int MonsterAllyFormation_t::getFollowerPathingDelay(Entity& my, Stat& myStats)
+{
+	if ( myStats.leader_uid != 0 )
+	{
+		auto find = units.find(myStats.leader_uid);
+		if ( find != units.end() )
+		{
+			auto find2 = find->second.meleeUnits.find(my.getUID());
+			if ( find2 != find->second.meleeUnits.end() )
+			{
+				return find2->second.pathingDelay;
+			}
+			auto find3 = find->second.rangedUnits.find(my.getUID());
+			if ( find3 != find->second.rangedUnits.end() )
+			{
+				return find3->second.pathingDelay;
+			}
+		}
+	}
+	return 0;
+}
+
+int MonsterAllyFormation_t::getFollowerTryExtendedPathSearch(Entity& my, Stat& myStats)
+{
+	if ( myStats.leader_uid != 0 )
+	{
+		auto find = units.find(myStats.leader_uid);
+		if ( find != units.end() )
+		{
+			auto find2 = find->second.meleeUnits.find(my.getUID());
+			if ( find2 != find->second.meleeUnits.end() )
+			{
+				return find2->second.tryExtendPath;
+			}
+			auto find3 = find->second.rangedUnits.find(my.getUID());
+			if ( find3 != find->second.rangedUnits.end() )
+			{
+				return find3->second.tryExtendPath;
+			}
+		}
+	}
+	return 0;
 }
 
 void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpdateUid)
@@ -885,20 +981,14 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
     if (entity) {
         if (creature == MINOTAUR) {
             // extra big poof
-            auto poof = spawnPoof(entity->x, entity->y, -8);
-            poof->scalex = 2.0;
-            poof->scaley = 2.0;
-            poof->scalez = 2.0;
+            auto poof = spawnPoof(entity->x, entity->y, -8, 2.0);
         }
         else if (creature == GYROBOT) {
             // small poof
-            auto poof = spawnPoof(entity->x, entity->y, 4);
-            poof->scalex = 0.5;
-            poof->scaley = 0.5;
-            poof->scalez = 0.5;
+            auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
         }
         else {
-            (void)spawnPoof(entity->x, entity->y, 0);
+            (void)spawnPoof(entity->x, entity->y, 0, 1.0);
         }
     }
 
@@ -3857,8 +3947,7 @@ void actMonster(Entity* my)
 				if (my->ticks % 2 == 0) {
 				    const int x = my->x + local_rng.uniform(-3, 3);
 				    const int y = my->y + local_rng.uniform(-3, 3);
-				    auto poof = spawnPoof(x, y, 6);
-				    poof->scalex = poof->scaley = poof->scalez = 0.33;
+				    auto poof = spawnPoof(x, y, 6, 0.33, true);
 				}
 				ghoulMoveBodyparts(my, myStats, 0);
 				return;
@@ -3889,12 +3978,13 @@ void actMonster(Entity* my)
 						MONSTER_VELX = cos(tangent) * .1;
 						MONSTER_VELY = sin(tangent) * .1;
 					}
-					else
+					else if ( entity->behavior == &actDoorFrame && 
+						entity->flags[INVISIBLE] )
 					{
 						if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
 						{
 							// east/west doorway
-							if ( my->y < floor(my->y / 16) * 16 + 8 )
+							if ( my->y < floor(entity->y / 16) * 16 + 8 )
 							{
 								// slide south
 								MONSTER_VELX = 0;
@@ -3910,7 +4000,7 @@ void actMonster(Entity* my)
 						else
 						{
 							// north/south doorway
-							if ( my->x < floor(my->x / 16) * 16 + 8 )
+							if ( my->x < floor(entity->x / 16) * 16 + 8 )
 							{
 								// slide east
 								MONSTER_VELX = .25;
@@ -3937,6 +4027,10 @@ void actMonster(Entity* my)
 							MONSTER_VELY = 0.f;
 							continue;
 						}
+					}
+					else
+					{
+						continue;
 					}
 
 
@@ -4135,19 +4229,24 @@ void actMonster(Entity* my)
 							}
 							if ( targetdist > TOUCHRANGE && targetdist > light )
 							{
-								if ( !levitating )
+								if ( !(myStats->leader_uid == entity->getUID()) 
+									&& !(hitstats->leader_uid == my->getUID())
+									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-								}
-								else
-								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-								}
-								if ( hit.entity == entity )
-									if ( local_rng.rand() % 100 == 0 )
+									if ( !levitating )
 									{
-										entity->increaseSkill(PRO_STEALTH);
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 									}
+									else
+									{
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									}
+									if ( hit.entity == entity )
+										if ( local_rng.rand() % 100 == 0 )
+										{
+											entity->increaseSkill(PRO_STEALTH);
+										}
+								}
 								continue;
 							}
 							bool visiontest = false;
@@ -4784,20 +4883,25 @@ void actMonster(Entity* my)
 				{
 					if ( targetdist > TOUCHRANGE && targetdist > light && myReflex )
 					{
-						tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
-						if ( !levitating )
+						if ( !(myStats->leader_uid == entity->getUID())
+							&& !(hitstats->leader_uid == my->getUID())
+							&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 						{
-							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-						}
-						else
-						{
-							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-						}
-						if ( hit.entity == entity )
-						{	
-							if ( local_rng.rand() % 100 == 0 )
+							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
+							if ( !levitating )
 							{
-								entity->increaseSkill(PRO_STEALTH);
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
+							}
+							else
+							{
+								lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+							}
+							if ( hit.entity == entity )
+							{	
+								if ( local_rng.rand() % 100 == 0 )
+								{
+									entity->increaseSkill(PRO_STEALTH);
+								}
 							}
 						}
 						// if target is within sight range but light level is too low and out of melee range.
@@ -5613,19 +5717,24 @@ timeToGoAgain:
 							}
 							if ( targetdist > TOUCHRANGE && targetdist > light )
 							{
-								if ( !levitating )
+								if ( !(myStats->leader_uid == entity->getUID())
+									&& !(hitstats->leader_uid == my->getUID())
+									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
-								}
-								else
-								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
-								}
-								if ( hit.entity == entity )
-								{
-									if ( local_rng.rand() % 100 == 0 )
+									if ( !levitating )
 									{
-										entity->increaseSkill(PRO_STEALTH);
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
+									}
+									else
+									{
+										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									}
+									if ( hit.entity == entity )
+									{
+										if ( local_rng.rand() % 100 == 0 )
+										{
+											entity->increaseSkill(PRO_STEALTH);
+										}
 									}
 								}
 								continue;
@@ -9898,6 +10007,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			else
 			{
+				monsterAllyFormations.updateOnFollowCommand(getUID(), this);
 				handleNPCInteractDialogue(*myStats, ALLY_EVENT_FOLLOW);
 			}
 			break;
