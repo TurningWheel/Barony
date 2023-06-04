@@ -20388,6 +20388,10 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			{
 				result = ITEMFX_ACTION_INVALID_ITEM;
 			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
 			else 
 			{
 				switch ( itemCategory(item) )
