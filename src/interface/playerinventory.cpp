@@ -27,6 +27,7 @@
 #include "../ui/Image.hpp"
 #include "../ui/Field.hpp"
 #include "../ui/Text.hpp"
+#include "../ui/Button.hpp"
 #include "../ui/MainMenu.hpp"
 #include "../mod_tools.hpp"
 #include "../book.hpp"
@@ -4404,6 +4405,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
     {
         return;
     }
+
+	players[player]->inventoryUI.miscTooltipOpacitySetpoint = 0;
+	players[player]->inventoryUI.miscTooltipOpacityAnimate = 0.0;
     
     auto& tooltipDisplayedSettings = this->player.inventoryUI.itemTooltipDisplay;
     
@@ -7183,9 +7187,12 @@ void Player::Inventory_t::resizeAndPositionInventoryElements()
 	}
 
 	if ( bCompactView 
-		&& player.bUseCompactGUIWidth() 
+		&& (player.bUseCompactGUIWidth() 
 		&& (player.GUI.activeModule == Player::GUI_t::MODULE_HOTBAR
-			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP) )
+			|| player.GUI.activeModule == Player::GUI_t::MODULE_SHOP))
+		|| (player.bUseCompactGUIHeight()
+			&& (player.GUI.activeModule == Player::GUI_t::MODULE_STATUS_EFFECTS
+				|| player.hud.statusFxFocusedWindowActive)) )
 	{
 		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
 		real_t setpointDiff = fpsScale * std::max(.1, (1.0 - slideOutPercent)) / 2.0;
@@ -7381,6 +7388,24 @@ bool Player::Inventory_t::guiAllowDropItems() const
 		return true;
 	}
 	return false;
+}
+
+bool Player::Inventory_t::paperDollContextMenuActive()
+{
+	bool inventoryControlActive = player.bControlEnabled
+		&& !gamePaused
+		&& !player.usingCommand();
+	return inventoryControlActive 
+		&& !player.shootmode
+		&& !inputs.getUIInteraction(player.playernum)->selectedItem
+		&& !(player.GUI.isDropdownActive() && player.GUI.dropdownMenu.currentName.find("paper_doll") == std::string::npos)
+		&& player.inventory_mode == INVENTORY_MODE_ITEM
+		&& animPaperDollHide <= 0.001
+		&& isInteractable
+		&& slideOutPercent <= 0.001
+		&& (inputs.getVirtualMouse(player.playernum)->draw_cursor
+			|| (!inputs.getVirtualMouse(player.playernum)->draw_cursor 
+				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY) ));
 }
 
 bool blitInventorySlotFramesToSurf = false;
@@ -7603,23 +7628,124 @@ void Player::Inventory_t::updateInventory()
 	}
 
 	Input& input = Input::inputs[player];
+	auto selectedSlotFrame = playerInventoryFrames[player].selectedSlotFrame;
+	auto selectedSlotCursor = selectedItemCursorFrame;
 
-	if ( inventoryControlActive && input.consumeBinaryToggle("Autosort Inventory"))
 	{
-		autosortInventory(player);
-		//quickStackItems();
-		//*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
-		inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
-		playSound(139, 64);
+		auto autosortFrame = frame->findFrame("autosort frame");
+		auto autosortBtn = autosortFrame->findButton("autosort button");
+		auto autosortGlyph = autosortFrame->findImage("autosort glyph");
+		autosortGlyph->disabled = true;
+
+		SDL_Rect autosortFrameSize = autosortFrame->getSize();
+		SDL_Rect portraitSize = playerInventoryFrames[player].characterPreview->getSize();
+		static ConsoleVariable<int> cvar_autosortBtnX("/autosort_button_x", 0);
+		static ConsoleVariable<int> cvar_autosortBtnY("/autosort_button_y", 0);
+		autosortFrameSize.x = portraitSize.x + 2 + *cvar_autosortBtnX;
+		autosortFrameSize.y = portraitSize.y + 2 + *cvar_autosortBtnY;
+		autosortFrame->setSize(autosortFrameSize);
+
+		autosortBtn->setDisabled(!paperDollContextMenuActive());
+		autosortBtn->setInvisible(false);
+
+		if ( !inputs.getVirtualMouse(player)->draw_cursor )
+		{
+			autosortBtn->setBackground("*#images/ui/Inventory/HUD_Button_AutosortGamepad.png");
+			autosortBtn->setSize(SDL_Rect{ autosortFrameSize.w - 42, autosortFrameSize.h - 42, 42, 38 });
+
+			autosortGlyph->path = input.getGlyphPathForBinding("PaperDollContextMenu", true);
+			if ( auto imgGet = Image::get(autosortGlyph->path.c_str()) )
+			{
+				autosortGlyph->disabled = autosortBtn->isDisabled();
+				autosortGlyph->pos.w = imgGet->getWidth();
+				autosortGlyph->pos.h = imgGet->getHeight();
+				autosortGlyph->pos.x = autosortBtn->getSize().x + 4;
+				autosortGlyph->pos.y = autosortBtn->getSize().y;
+			}
+		}
+		else
+		{
+			autosortBtn->setBackground("*#images/ui/Inventory/HUD_Button_AutosortUnselect.png");
+			autosortBtn->setSize(SDL_Rect{ autosortFrameSize.w - 42, autosortFrameSize.h - 42, 42, 38 });
+		}
+
+		if ( paperDollContextMenuActive() )
+		{
+			bool keyboardInputPressed = (Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player));
+			if ( keyboardInputPressed && autosortBtn->isSelected() && autosortBtn->isHighlighted() )
+			{
+				if ( /*players[player]->bUseCompactGUIHeight()*/true )
+				{
+					players[player]->GUI.dropdownMenu.open("paper_doll");
+					players[player]->GUI.dropdownMenu.dropDownToggleClick = false;
+					players[player]->GUI.dropdownMenu.dropDownY = std::max(players[player]->GUI.dropdownMenu.dropDownY, 
+						players[player]->camera_virtualy1());
+				}
+			}
+			else if ( input.consumeBinaryToggle("PaperDollContextMenu") )
+			{
+				players[player]->GUI.dropdownMenu.open("paper_doll");
+				players[player]->GUI.dropdownMenu.dropDownToggleClick = !keyboardInputPressed;
+				SDL_Rect dropdownPos = players[player]->inventoryUI.frame->findFrame("inventory character preview")->getSize();
+				dropdownPos.y += dropdownPos.h;
+				if ( auto interactMenuTop = players[player]->GUI.dropdownMenu.dropdownFrame->findImage("interact top background") )
+				{
+					// 10px is slot half height, move by 1.5 slots, minus the top interact text height
+					dropdownPos.y -= (interactMenuTop->pos.h + (3 * 10) + 4);
+				}
+				if ( players[player]->GUI.dropdownMenu.getDropDownAlignRight("paper_doll") )
+				{
+					players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x + dropdownPos.w;
+				}
+				else
+				{
+					players[player]->GUI.dropdownMenu.dropDownX = dropdownPos.x;
+				}
+				players[player]->GUI.dropdownMenu.dropDownX += players[player]->camera_virtualx1();
+				players[player]->GUI.dropdownMenu.dropDownY = dropdownPos.y + players[player]->camera_virtualy1();
+			}
+			if ( input.consumeBinaryToggle("Autosort Inventory") && input.input("Autosort Inventory").isBindingUsingKeyboard() )
+			{
+				autosortInventory(player);
+				//quickStackItems();
+				//*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
+				//inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
+				playSound(139, 64);
+			}
+		}
+
+		if ( (inputs.getVirtualMouse(player)->draw_cursor
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
+			&& autosortBtn->isHighlighted())
+			|| (players[player]->GUI.isDropdownActive()
+				&& players[player]->GUI.dropdownMenu.currentName == "paper_doll") )
+		{
+			if ( inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_INVENTORY);
+				if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_INVENTORY )
+				{
+					players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				}
+			}
+			SDL_Rect pos = autosortBtn->getAbsoluteSize();
+			// make sure to adjust absolute size to camera viewport
+			pos.x -= players[player]->camera_virtualx1();
+			pos.y -= players[player]->camera_virtualy1();
+
+			//selectedSlotCursor->setDisabled(false);
+			//updateSelectedSlotAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+
+			players[player]->hud.setCursorDisabled(false);
+			players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h,
+				true);
+		}
 	}
 	//DebugStats.gui7 = std::chrono::high_resolution_clock::now();
 	resetInventorySlotFrames(player);
 
 	auto invSlotsFrame = playerInventoryFrames[player].invSlotsFrame;
 	auto dollSlotsFrame = playerInventoryFrames[player].dollSlotsFrame;
-
-	auto selectedSlotFrame = playerInventoryFrames[player].selectedSlotFrame;
-	auto selectedSlotCursor = selectedItemCursorFrame;
 
 	bool tinkerCraftableListOpen = tinkerGUI.isConstructMenuActive();
 	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
@@ -7944,9 +8070,11 @@ void Player::Inventory_t::updateInventory()
 		bool highlighted = false;
 		if ( slotFrameToHighlight )
 		{
-			if ( (players[player]->GUI.isDropdownActive() && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
+			bool paperDollMenuOpen = players[player]->GUI.dropdownMenu.currentName == "paper_doll";
+			if ( (players[player]->GUI.isDropdownActive() && !paperDollMenuOpen && !itemMenuFromHotbar) || // if item menu open, then always draw cursor on current item.
 				(!selectedItem	// otherwise, if no selected item, and mouse hovering over item
 					&& !(players[player]->GUI.isDropdownActive() && itemMenuFromHotbar)
+					&& !paperDollMenuOpen
 					&& (!inputs.getVirtualMouse(player)->draw_cursor
 						|| (inputs.getVirtualMouse(player)->draw_cursor && slotFrameToHighlight->capturesMouse()))) )
 			{

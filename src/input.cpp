@@ -123,6 +123,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("PaperDollContextMenu", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogHome", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogEnd", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageDown", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));

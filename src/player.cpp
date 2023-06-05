@@ -1200,6 +1200,10 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		{
 			return false;
 		}
+		if ( player.hud.statusFxFocusedWindowActive )
+		{
+			return false;
+		}
 		return true;
 	}
 	return true;
@@ -6117,6 +6121,7 @@ void Player::clearGUIPointers()
 	inventoryUI.selectedItemCursorFrame = nullptr;
 	inventoryUI.spellFrame = nullptr;
 	inventoryUI.chestFrame = nullptr;
+	inventoryUI.miscTooltipFrame = nullptr;
 	inventoryUI.itemTooltipDisplay.uid = 0;
 
 	inventoryUI.slotFrames.clear();
@@ -6223,6 +6228,7 @@ void Player::clearGUIPointers()
 	playerInventoryFrames[playernum].oldSelectedSlotItemImg = nullptr;
 	playerInventoryFrames[playernum].chestBaseImg = nullptr;
 	playerInventoryFrames[playernum].spellBaseImg = nullptr;
+	playerInventoryFrames[playernum].autosortFrame = nullptr;
 
 	FollowerMenu[playernum].followerFrame = nullptr;
 }

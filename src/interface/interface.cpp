@@ -1045,6 +1045,12 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 	switch ( activeModule )
 	{
 		case MODULE_INVENTORY:
+			if ( dropdownMenu.bOpen 
+				&& (dropdownMenu.currentName.find("paper_doll") != std::string::npos) )
+			{
+				return false;
+			}
+			return true;
 		case MODULE_HOTBAR:
 		case MODULE_SHOP:
 		case MODULE_CHEST:
@@ -1456,6 +1462,7 @@ void Player::closeAllGUIs(CloseGUIShootmode shootmodeAction, CloseGUIIgnore what
 		messageZone.logWindow->removeSelf();
 		messageZone.logWindow = nullptr;
 	}
+	hud.closeStatusFxWindow();
 
 	if ( shootmodeAction == CLOSEGUI_ENABLE_SHOOTMODE )
 	{

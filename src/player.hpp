@@ -808,10 +808,17 @@ public:
 		void openInventory();
 		void closeInventory();
 
+		int miscTooltipOpacitySetpoint = 100;
+		real_t miscTooltipOpacityAnimate = 1.0;
+		Uint32 miscTooltipDeselectedTick = 0;
+		Frame* miscTooltipFrame = nullptr;
+
 		PanelJustify_t inventoryPanelJustify = PANEL_JUSTIFY_LEFT;
 		PanelJustify_t paperDollPanelJustify = PANEL_JUSTIFY_LEFT;
 		void setCompactView(bool bCompact);
 		void resizeAndPositionInventoryElements();
+		bool paperDollContextMenuActive();
+		void updateInventoryMiscTooltip();
 		enum GamepadDropdownTypes : int
 		{
 			GAMEPAD_DROPDOWN_DISABLE,
@@ -1579,6 +1586,8 @@ public:
 		};
 		CompactLayoutModes compactLayoutMode = COMPACT_LAYOUT_CHARSHEET;
 		bool bShowUINavigation = false;
+		void closeStatusFxWindow();
+		bool statusFxFocusedWindowActive = false;
 
 		HUD_t(Player& p) : player(p)
 		{};

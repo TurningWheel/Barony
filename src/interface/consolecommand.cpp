@@ -2606,7 +2606,7 @@ namespace ConsoleCommands {
 			--num;
 			auto picked = local_rng.discrete(effects.data(), effects.size());
 			effects[picked] = 0;
-			players[clientnum]->entity->setEffect(picked, true, TICKS_PER_SECOND * 15, true);
+			players[clientnum]->entity->setEffect(picked, true, TICKS_PER_SECOND * 60, true);
 		}
 		});
 
