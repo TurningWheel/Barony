@@ -6405,15 +6405,6 @@ int main(int argc, char** argv)
 		Input::defaultBindings();
 		MainMenu::randomizeUsername();
 
-		// load config file
-		if ( loadingconfig )
-		{
-			loadConfig(configtoload);
-		}
-		else
-		{
-			loadDefaultConfig();
-		}
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();
