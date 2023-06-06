@@ -22808,6 +22808,7 @@ void createPlayerInventory(const int player)
 
 					if ( Input::inputs[player].consumeBinaryToggle("ResetPortraitRotation") )
 					{
+						Input::inputs[player].consumeBindingsSharedWithBinding("ResetPortraitRotation");
 						scrollPercent = 0.0;
 						scrollInertia = 0.0;
 						portraitYaw = (330) * PI / 180;
