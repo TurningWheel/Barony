@@ -21,8 +21,14 @@
 
 #include "interface/consolecommand.hpp"
 
+#include "Config.hpp"
+
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-static const char VERSION[] = "v3.9.1";
+#ifdef NINTENDO
+static const char VERSION[] = "v4.0.0";
+#else
+static const char VERSION[] = "v4.0.1";
+#endif
 #define GAME_CODE
 
 class Entity;

@@ -5045,19 +5045,21 @@ void VideoManager_t::drawTexturedQuad(unsigned int texID, int tw, int th, const 
         &src, dest, viewport, color);
 }
 
+#ifndef EDITOR
+static ConsoleVariable<bool> cvar_doublebufferVideo("/video_doublebuffer", true);
+#endif
+
 void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSize, SDL_Rect offset, float alpha)
 {
-	if ( !clip )
-	{
+	if (!clip) {
 		return;
 	}
 
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
-	if ( frame != nullptr )
-	{
+	if (frame) {
+		GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, whichTexture ? textureId1 : textureId2));
         GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-            clip->getWidth(), clip->getHeight(), textureFormat,
+            clip->getWidth(), clip->getHeight(), GL_RGBA,
             GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
@@ -5066,80 +5068,71 @@ void VideoManager_t::drawAsFrameCallback(const Widget& widget, SDL_Rect frameSiz
 	float h = clip->getSubFrameHeight();
 	float sx = clip->getSubFrameX();
 	float sy = clip->getSubFrameY();
-	float tw = potCeil(w);
-	float th = potCeil(h);
+	float tw = w;
+	float th = h;
 
 	SDL_Rect rect = frameSize;
-	if ( offset.w <= 0 )
-	{
+	if (offset.w <= 0) {
 		// use native size of video
 		rect.w = w;
 		rect.w += offset.w;
 		w += offset.w;
-	}
-	else
-	{
+	} else {
 		// manual scale video
 		rect.w = offset.w;
 	}
-	if ( offset.h <= 0 )
-	{
+
+	if (offset.h <= 0) {
 		// use native size of video
 		rect.h = h;
 		rect.h += offset.h;
 		h += offset.h;
-	}
-	else
-	{
+	} else {
 		// manual scale video
 		rect.h = offset.h;
 	}
 
-
-	if ( offset.x < 0 )
-	{
+	if (offset.x < 0) {
 		sx += -offset.x; // shift video to re-center
 		offset.x = 0;
 	}
-	else
-	{
-		if ( offset.x + rect.w > frameSize.w )
-		{
-			rect.w -= (offset.x + rect.w) - frameSize.w; // limit output rect width to frame
-		}
+	else if (offset.x + rect.w > frameSize.w) {
+		rect.w -= (offset.x + rect.w) - frameSize.w; // limit output rect width to frame
 	}
-	if ( offset.y < 0 )
-	{
+	if (offset.y < 0) {
 		sy += -offset.y; // shift video to re-center
 		offset.y = 0;
 	}
-	else
-	{
-		if ( offset.y + rect.h > frameSize.h )
-		{
-			rect.h -= (offset.y + rect.h) - frameSize.h; // limit output rect height to frame
+	else if (offset.y + rect.h > frameSize.h) {
+		rect.h -= (offset.y + rect.h) - frameSize.h; // limit output rect height to frame
+	}
+
+	if (frame) {
+#ifndef EDITOR
+		if (*cvar_doublebufferVideo) {
+			whichTexture = (whichTexture == false);
 		}
+#else
+		whichTexture = (whichTexture == false);
+#endif
 	}
 
 	const SDL_Rect dest{rect.x + offset.x, rect.y + offset.y, rect.w, rect.h};
-	const SDL_Rect src{ sx, sy, w, h };
-	drawTexturedQuad(textureId, tw, th, src, dest, alpha);
+	const SDL_Rect src{(int)sx, (int)sy, (int)w, (int)h};
+	drawTexturedQuad(whichTexture ? textureId1 : textureId2, tw, th, src, dest, alpha);
 }
 
 void VideoManager_t::draw()
 {
-	if ( !clip )
-	{
+	if (!clip) {
 		return;
 	}
     
-    GL_CHECK_ERR(glEnable(GL_BLEND));
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
 	theoraplayer::VideoFrame* frame = clip->fetchNextFrame();
-	if ( frame != NULL )
-	{
+	if (frame) {
+		GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, whichTexture ? textureId1 : textureId2));
         GL_CHECK_ERR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-            clip->getWidth(), clip->getHeight(), textureFormat,
+            clip->getWidth(), clip->getHeight(), GL_RGBA,
             GL_UNSIGNED_BYTE, frame->getBuffer()));
 		clip->popFrame();
 	}
@@ -5148,28 +5141,36 @@ void VideoManager_t::draw()
     const int sh = clip->getSubFrameHeight();
     const int sx = clip->getSubFrameX();
     const int sy = clip->getSubFrameY();
-    const int tw = potCeil(sw);
-    const int th = potCeil(sh);
+    const int tw = sw;
+    const int th = sh;
+
+	if (frame) {
+#ifndef EDITOR
+		if (*cvar_doublebufferVideo) {
+			whichTexture = (whichTexture == false);
+		}
+#else
+		whichTexture = (whichTexture == false);
+#endif
+	}
 
 	const SDL_Rect dest{400, 200, 320, 180};
 	const SDL_Rect src{sx, sy, sw, sh};
-	drawTexturedQuad(textureId, tw, th, src, dest, 1.f);
-    
-    GL_CHECK_ERR(glDisable(GL_BLEND));
+	drawTexturedQuad(whichTexture ? textureId1 : textureId2, tw, th, src, dest, 1.f);
 }
 
 unsigned int VideoManager_t::createTexture(int w, int h, unsigned int format)
 {
-	unsigned int textureId = 0;
-    GL_CHECK_ERR(glGenTextures(1, &textureId));
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, textureId));
+	unsigned int tex = 0;
+    GL_CHECK_ERR(glGenTextures(1, &tex));
+    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tex));
 	unsigned char* data = new unsigned char[w * h * 4];
 	memset(data, 0, w * h * 4);
-    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, format == GL_RGB ? GL_RGB : GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data));
+    GL_CHECK_ERR(glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data));
     GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     GL_CHECK_ERR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	delete[] data;
-	return textureId;
+	return tex;
 }
 
 void VideoManager_t::init()
@@ -5205,16 +5206,19 @@ void VideoManager_t::destroyClip()
 		theoraplayer::manager->destroyVideoClip(clip);
 		clip = NULL;
 	}
-	if ( textureId != 0 )
+	if ( textureId1 != 0 )
 	{
-        GL_CHECK_ERR(glDeleteTextures(1, &textureId));
-		textureId = 0;
+        GL_CHECK_ERR(glDeleteTextures(1, &textureId1));
+		textureId1 = 0;
+	}
+	if (textureId2 != 0)
+	{
+		GL_CHECK_ERR(glDeleteTextures(1, &textureId2));
+		textureId2 = 0;
 	}
 }
 
-#ifndef NDEBUG
 #define PRELOAD_VIDEO_TO_RAM
-#endif
 
 #ifdef PRELOAD_VIDEO_TO_RAM
 #include <theoraplayer/MemoryDataSource.h>
@@ -5222,9 +5226,10 @@ void VideoManager_t::destroyClip()
 
 void VideoManager_t::loadfile(const char* filename)
 {
-	if ( !isInit ) { init(); }
-	if ( clip )
-	{
+	if (!isInit) {
+		init();
+	}
+	if (clip) {
 		destroyClip();
 	}
 	if (!filename || !PHYSFS_getRealDir(filename)) {
@@ -5234,18 +5239,29 @@ void VideoManager_t::loadfile(const char* filename)
 	path += PHYSFS_getDirSeparator();
 	path += filename;
 
-#ifdef PRELOAD_VIDEO_TO_RAM
-	clip = theoraplayer::manager->createVideoClip(new theoraplayer::MemoryDataSource(path.c_str()), theoraplayer::FORMAT_RGB);
-#else
-	clip = theoraplayer::manager->createVideoClip(path.c_str(), outputMode, 16);
+	auto output_format = theoraplayer::FORMAT_RGBX;
+
+#ifndef EDITOR
+	static ConsoleVariable<int> cvar_theoraOutput("/theora_output", 0);
+	if (*cvar_theoraOutput > 0) {
+		output_format = (theoraplayer::OutputMode)*cvar_theoraOutput;
+	}
 #endif
-	if ( !clip )
-	{
+
+#ifdef PRELOAD_VIDEO_TO_RAM
+	clip = theoraplayer::manager->createVideoClip(new theoraplayer::MemoryDataSource(path.c_str()), output_format);
+#else
+	clip = theoraplayer::manager->createVideoClip(path, output_format);
+#endif
+
+	if (!clip) {
 		return;
 	}
 	currentfile = filename;
 	clip->setAutoRestart(true);
-	textureId = createTexture(potCeil(clip->getWidth()), potCeil(clip->getHeight()), textureFormat);
+	clip->setPrecachedFramesCount(16);
+	textureId1 = createTexture(clip->getWidth(), clip->getHeight(), GL_RGBA);
+	textureId2 = createTexture(clip->getWidth(), clip->getHeight(), GL_RGBA);
 }
 
 void VideoManager_t::updateCurrentClip(float timeDelta)

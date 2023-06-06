@@ -3499,7 +3499,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
+				snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
 				if (!selected_driver && current_audio_device == guid_string) {
 					selected_driver = i;
 				}
@@ -4075,11 +4075,7 @@ namespace MainMenu {
 				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
 				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
 				char guid_string[25];
-#ifdef APPLE
-				snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
-#else
-                snprintf(guid_string, sizeof(guid_string), "%.8x%.16lx", _1, _2);
-#endif
+                snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
 				allSettings.audio_device = guid_string;
 				fmod_system->setDriver(index);
 			}
@@ -5699,7 +5695,7 @@ bind_failed:
 			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, (unsigned long long)_2);
+			snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
 			if (!selected_device && allSettings.audio_device == guid_string) {
 				selected_device = c;
 			}
@@ -10329,7 +10325,9 @@ failed:
 
 	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return nullptr;
+        }
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
@@ -10363,6 +10361,9 @@ failed:
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 664);
+        if (!card) {
+            return;
+        }
 
 		if (multiplayer == CLIENT) {
 			allSettings.classic_mode_enabled = lobbyWindowSvFlags & SV_FLAG_CLASSIC;
@@ -10605,6 +10606,10 @@ failed:
 		const bool online = currentLobbyType == LobbyType::LobbyOnline;
 
 		auto card = initCharacterCard(index, 424);
+        if (!card) {
+            return;
+        }
+        
 		const std::string name = std::string("card") + std::to_string(index);
 
 		static void (*back_fn)(int) = [](int index){
@@ -10725,10 +10730,11 @@ failed:
 			    invite->setCallback([](Button& button){
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
-			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
-			        auto open = parent->findButton("open"); assert(open);
+#ifndef NINTENDO
+					auto friends = parent->findButton("friends"); assert(friends);
 			        friends->setPressed(false);
+#endif
+					auto open = parent->findButton("open"); assert(open);
 			        open->setPressed(false);
 
                     if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
@@ -10813,7 +10819,6 @@ failed:
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
 			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
 			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
 			        open->setPressed(false);
@@ -10912,10 +10917,11 @@ failed:
 			        soundActivate();
 			        auto parent = static_cast<Frame*>(button.getParent());
 			        auto invite = parent->findButton("invite"); assert(invite);
-			        auto friends = parent->findButton("friends"); assert(friends);
-			        auto open = parent->findButton("open"); assert(open);
 			        invite->setPressed(false);
+#ifndef NINTENDO
+					auto friends = parent->findButton("friends"); assert(friends);
 			        friends->setPressed(false);
+#endif
 
                     if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
@@ -11197,6 +11203,9 @@ failed:
 		bool local = currentLobbyType == LobbyType::LobbyLocal;
 
 		auto card = initCharacterCard(index, 580);
+        if (!card) {
+            return;
+        }
 
 		static void (*back_fn)(int) = [](int index){
 			createCharacterCard(index);
@@ -11556,6 +11565,9 @@ failed:
 
 	static void characterCardRaceMenu(int index, bool details, int selection) {
 		auto card = initCharacterCard(index, details ? 664 : 488);
+        if (!card) {
+            return;
+        }
 
 		static int race_selection[MAXPLAYERS];
 
@@ -12142,6 +12154,9 @@ failed:
 	static void characterCardClassMenu(int index, bool details, int selection) {
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, details? 664 : 446);
+        if (!card) {
+            return;
+        }
 
 		static int class_selection[MAXPLAYERS];
 
@@ -12694,6 +12709,9 @@ failed:
 		saveLastCharacter(index, multiplayer);
 
 		auto card = initCharacterCard(index, 346);
+        if (!card) {
+            return;
+        }
 
 		(void)createBackWidget(card,[](Button& button){
 			createStartButton(button.getOwner());
@@ -13165,7 +13183,9 @@ failed:
 	    }
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return;
+        }
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
@@ -13243,7 +13263,9 @@ failed:
 	    }
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return;
+        }
 
 		sendReadyOverNet(index, false);
 		auto countdown = lobby->findFrame("countdown");
@@ -13535,7 +13557,9 @@ failed:
 	    }
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return;
+        }
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
@@ -13594,7 +13618,9 @@ failed:
 		}
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return;
+        }
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
@@ -13920,7 +13946,9 @@ failed:
 		static const char* timer_font = "fonts/pixelmix_bold.ttf#64#2";
 
 		auto lobby = main_menu_frame->findFrame("lobby");
-		assert(lobby);
+        if (!lobby) {
+            return;
+        }
 
 		auto frame = lobby->addFrame("countdown");
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 300) / 2, 64, 300, 120});

@@ -2555,12 +2555,6 @@ GameController::Haptic_t::Haptic_t()
 	memset(&hapticEffect, 0, sizeof(SDL_HapticEffect));
 }
 
-#ifdef NINTENDO
-#include <chrono>
-static std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
-static std::chrono::high_resolution_clock::time_point timeEnd;
-#endif
-
 SDL_HapticEffect * GameController::handleRumble()
 {
 #ifdef DISABLE_RUMBLE
@@ -2572,16 +2566,15 @@ SDL_HapticEffect * GameController::handleRumble()
 	}
 	else
 	{
-#ifndef NINTENDO
-		++haptics.hapticTick;
-#else
-		timeEnd = std::chrono::high_resolution_clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeNow);
-		if ((elapsed.count()) > 10)
-		{
-			timeNow = std::chrono::high_resolution_clock::now();
+#ifdef NINTENDO
+		timeNow = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now());
+		auto elapsed = (timeNow - timeStart).count();
+		if (elapsed > 1000 / TICKS_PER_SECOND) {
+			timeStart = timeNow;
 			++haptics.hapticTick;
 		}
+#else
+		++haptics.hapticTick;
 #endif
 	}
 	size_t size = haptics.activeRumbles.size();

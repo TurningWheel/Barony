@@ -62,7 +62,7 @@ bool initSoundEngine()
 			uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
 			uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
 			char guid_string[25];
-			snprintf(guid_string, sizeof(guid_string), "%.8x%.16llx", _1, _2);
+			snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
 			if (!selected_driver && MainMenu::current_audio_device == guid_string)
 			{
 				selected_driver = i;
