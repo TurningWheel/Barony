@@ -5333,8 +5333,6 @@ void ingameHud()
 
 	DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
-    doSharedMinimap();
-
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( !players[player]->isLocalPlayer() )
