@@ -187,7 +187,6 @@ struct StatusEffectQueue_t
 	void updateAllQueuedEffects();
 	void animateStatusEffectTooltip(bool showTooltip);
 	bool doStatusEffectTooltip(StatusEffectQueueEntry_t& entry, SDL_Rect pos);
-	bool doEmptyStatusEffectTooltip(SDL_Rect pos);
 	void updateEntryImage(StatusEffectQueueEntry_t& entry, Frame::image_t* img);
 	void createStatusEffectTooltip();
 	Frame* getStatusEffectFrame();
