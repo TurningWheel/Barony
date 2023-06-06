@@ -575,6 +575,28 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				real_t skully = std::min<real_t>(std::max(0.0, entity->y / 16), map.height - 1);
 				int playerOwner = entity->sprite - items[TOOL_PLAYER_LOOT_BAG].index;
 				Uint32 color = playerColor(playerOwner, colorblind_lobby, false);
+
+				if ( colorblind_lobby )
+				{
+					switch ( playerOwner )
+					{
+					case 3:
+						playerOwner = 1;
+						break;
+					case 2:
+						playerOwner = 0;
+						break;
+					case 1:
+						playerOwner = 2;
+						break;
+					case 4:
+						playerOwner = 3;
+					default:
+						break;
+					}
+					color = playerColor(playerOwner, colorblind_lobby, false);
+				}
+
 				deathboxSkulls.push_back(std::make_pair(color, std::make_pair(skullx, skully)));
 			}
 			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
