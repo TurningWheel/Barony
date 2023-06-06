@@ -91,6 +91,14 @@ public:
 	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
     void    setGlyphPosition(glyph_position_t p) { glyphPosition = p; }
     void    setAlwaysShowGlyphs(bool b) { alwaysShowGlyphs = b; }
+    
+    //! removes the widget safely
+    void removeSelf();
+    
+    //! remove an object from the widget
+    //! @param name the name of the object to remove
+    //! @return true if the object was successfully removed, false otherwise
+    virtual bool remove(const char* name);
 
     //! recursively locates the head widget for this widget
     //! @return the head widget, which may be this widget

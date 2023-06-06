@@ -6218,42 +6218,42 @@ bind_failed:
             Uint32 outlineColor;
         };
         static Victory victories[] = {
-            {
+            { // defeat (victory = 0)
                 "Here lies\n%s\nRequiescat In Pace",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Plate_00A.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_DeadEnd_Image_01B.png",
                 makeColor(151, 115, 58, 255),
                 makeColor(21, 9, 8, 255)
             },
-            {
+            { // classic victory (victory = 1)
                 "Make Way For\n%s\nthe Triumphant!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
-            {
+            { // classic hell victory (victory = 2)
                 "Bow Before\n%s\nthe Eternal!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
-            {
+            { // neutral (beast) victory (victory = 3)
                 "Long Live\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Plate_00.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_Gold_Image_01B.png",
                 makeColor(230, 183, 20, 255),
                 makeColor(82, 31, 4, 255)
             },
-            {
+            { // good (human) victory (victory = 4)
                 "All Hail\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Plate_00.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_GoodEnd_Image_01B.png",
                 makeColor(110, 107, 224, 255),
                 makeColor(22, 16, 30, 255)
             },
-            {
+            { // evil (demon) victory (victory = 5)
                 "Tremble Before\n%s\nthe Baron!",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Plate_00.png",
                 "*images/ui/Main Menus/Leaderboards/AA_VictoryPlate_EvilEnd_Image_01B.png",
@@ -6414,6 +6414,11 @@ bind_failed:
 		    conduct->clearEntries();
 		    conduct->setWidgetLeft(button.getName());
 		    conduct->setActualSize(SDL_Rect{0, 0, 272, 102});
+            conduct->setTickCallback([](Widget& widget){
+                auto frame = static_cast<Frame*>(&widget);
+                frame->setAllowScrollBinds(frame->isSelected());
+                });
+            
 		    auto conduct_header = conduct->addEntry("header", true);
 		    conduct_header->text = " Voluntary Challenges:";
 		    conduct_header->color = makeColor(203, 171, 101, 255);
@@ -6637,7 +6642,7 @@ bind_failed:
                             }
                         }
                     }
-                    if (button->getSize().y + button->getSize().h >= list->getActualSize().y + list->getSize().h) {
+                    if (button->getSize().y + button->getSize().h > list->getActualSize().y + list->getSize().h) {
                         auto next = button->getWidgetMovements().find("MenuUp");
                         if (next != button->getWidgetMovements().end() && !next->second.empty()) {
                             auto result = list->findButton(next->second.c_str());

@@ -254,7 +254,33 @@ Frame::~Frame() {
 		SDL_FreeSurface(blitSurface);
 		blitSurface = nullptr;
 	}
-	clear();
+    
+    // delete frames
+    while (frames.size()) {
+        delete frames.back();
+        frames.pop_back();
+    }
+
+    // delete fields
+    while (fields.size()) {
+        delete fields.back();
+        fields.pop_back();
+    }
+    
+    // delete buttons
+    while (buttons.size()) {
+        delete buttons.back();
+        buttons.pop_back();
+    }
+    
+    // delete sliders
+    while (sliders.size()) {
+        delete sliders.back();
+        sliders.pop_back();
+    }
+    
+    // delete anything else
+    clear();
 }
 
 #ifndef EDITOR
@@ -952,9 +978,7 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 }
 
 Frame::result_t Frame::process() {
-	std::vector<Widget*> selectedWidgets;
-	findSelectedWidgets(selectedWidgets);
-	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, selectedWidgets, true);
+	result_t result = process(size, allowScrolling ? actualSize : SDL_Rect{0, 0, size.w, size.h}, true);
 
 	tooltip = nullptr;
 	if (result.tooltip && result.tooltip[0] != '\0') {
@@ -967,7 +991,7 @@ Frame::result_t Frame::process() {
 	return result;
 }
 
-Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<Widget*>& selectedWidgets, bool usable) {
+Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, bool usable) {
 	result_t result;
 	result.removed = toBeDeleted;
 	result.usable = usable;
@@ -1172,7 +1196,7 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	{
 		for (int i = (int)frames.size() - 1; i >= 0; --i) {
 			Frame* frame = frames[i];
-			result_t frameResult = frame->process(_size, actualSize, selectedWidgets, result.usable);
+			result_t frameResult = frame->process(_size, actualSize, result.usable);
 			result.usable = frameResult.usable;
 			if (!frameResult.removed) {
 				if (frameResult.tooltip != nullptr) {
@@ -1523,33 +1547,36 @@ Frame::result_t Frame::process(SDL_Rect _size, SDL_Rect _actualSize, const std::
 	}
 
 	// scroll with arrows or left stick
-    const bool hasFocus = (selected || (selectedWidgets[owner] && selectedWidgets[owner]->isChildOf(*this)));
-    if (result.usable && allowScrolling && allowScrollBinds && scrollWithLeftControls && hasFocus) {
-		Input& input = Input::inputs[owner];
-
-		// x scroll
-		if (this->actualSize.w > size.w) {
-			if (input.binaryToggle("MenuRight") || input.binaryToggle("AltMenuRight")) {
-				scrollAccelerationX += scrollSpeed;
-				result.usable = false;
-			}
-			else if (input.binaryToggle("MenuLeft") || input.binaryToggle("AltMenuLeft")) {
-				scrollAccelerationX -= scrollSpeed;
-				result.usable = false;
-			}
-		}
-
-		// y scroll
-		if (this->actualSize.h > size.h) {
-			if (input.binaryToggle("MenuDown") || input.binaryToggle("AltMenuDown")) {
-				scrollAccelerationY += scrollSpeed;
-				result.usable = false;
-			}
-			else if (input.binaryToggle("MenuUp") || input.binaryToggle("AltMenuUp")) {
-				scrollAccelerationY -= scrollSpeed;
-				result.usable = false;
-			}
-		}
+    if (result.usable && allowScrolling && allowScrollBinds && scrollWithLeftControls) {
+        const auto selectedChild = findSelectedWidget(owner);
+        const bool hasFocus = selected || selectedChild;
+        if (hasFocus) {
+            Input& input = Input::inputs[owner];
+            
+            // x scroll
+            if (this->actualSize.w > size.w) {
+                if (input.binaryToggle("MenuRight") || input.binaryToggle("AltMenuRight")) {
+                    scrollAccelerationX += scrollSpeed;
+                    result.usable = false;
+                }
+                else if (input.binaryToggle("MenuLeft") || input.binaryToggle("AltMenuLeft")) {
+                    scrollAccelerationX -= scrollSpeed;
+                    result.usable = false;
+                }
+            }
+            
+            // y scroll
+            if (this->actualSize.h > size.h) {
+                if (input.binaryToggle("MenuDown") || input.binaryToggle("AltMenuDown")) {
+                    scrollAccelerationY += scrollSpeed;
+                    result.usable = false;
+                }
+                else if (input.binaryToggle("MenuUp") || input.binaryToggle("AltMenuUp")) {
+                    scrollAccelerationY -= scrollSpeed;
+                    result.usable = false;
+                }
+            }
+        }
 	}
 
 	if ( mouseActive && rectContainsPoint(_size, omousex, omousey) && !hollow ) {
@@ -1693,14 +1720,6 @@ void Frame::postprocess() {
 	        }
 	    }
 	}
-    for (int c = 0; c < frames.size(); ++c) {
-        auto frame = frames[c];
-        if (frame->toBeDeleted) {
-            delete frame;
-            frames.erase(frames.begin() + c);
-            --c;
-        }
-    }
 
 #ifndef EDITOR
 	if (dropDown && inputs.bPlayerUsingKeyboardControl(owner)) {
@@ -1722,6 +1741,40 @@ void Frame::postprocess() {
 		}
 	}
 #endif
+    
+    // delete any widgets marked for removal
+    for (int c = 0; c < frames.size(); ++c) {
+        auto frame = frames[c];
+        if (frame->isToBeDeleted()) {
+            frames.erase(frames.begin() + c);
+            delete frame;
+            --c;
+        }
+    }
+    for (int c = 0; c < fields.size(); ++c) {
+        auto field = fields[c];
+        if (field->isToBeDeleted()) {
+            fields.erase(fields.begin() + c);
+            delete field;
+            --c;
+        }
+    }
+    for (int c = 0; c < buttons.size(); ++c) {
+        auto button = buttons[c];
+        if (button->isToBeDeleted()) {
+            buttons.erase(buttons.begin() + c);
+            delete button;
+            --c;
+        }
+    }
+    for (int c = 0; c < sliders.size(); ++c) {
+        auto slider = sliders[c];
+        if (slider->isToBeDeleted()) {
+            sliders.erase(sliders.begin() + c);
+            delete slider;
+            --c;
+        }
+    }
 }
 
 Frame* Frame::addFrame(const char* name) {
@@ -1776,39 +1829,16 @@ Frame::entry_t* Frame::addEntry(const char* name, bool resizeFrame) {
 	return entry;
 }
 
-void Frame::removeSelf() {
-	toBeDeleted = true;
-}
-
 void Frame::clear() {
-	// delete frames
-	while (frames.size()) {
-		delete frames.back();
-		frames.pop_back();
-	}
-
-	// delete buttons
-	while (buttons.size()) {
-		delete buttons.back();
-		buttons.pop_back();
-	}
-
-	// delete fields
-	while (fields.size()) {
-		delete fields.back();
-		fields.pop_back();
-	}
+	// delete widgets
+    for (auto widget : widgets) {
+        widget->removeSelf();
+    }
 
 	// delete images
 	while (images.size()) {
 		delete images.back();
 		images.pop_back();
-	}
-
-	// delete sliders
-	while (sliders.size()) {
-		delete sliders.back();
-		sliders.pop_back();
 	}
 
 	// delete list
@@ -1828,47 +1858,18 @@ void Frame::clearEntries() {
 }
 
 bool Frame::remove(const char* name) {
-	for (int i = 0; i < frames.size(); ++i) {
-		Frame* frame = frames[i];
-		if (strcmp(frame->getName(), name) == 0) {
-			delete frame;
-			frames.erase(frames.begin() + i);
-			return true;
-		}
-	}
-	for (int i = 0; i < buttons.size(); ++i) {
-		Button* button = buttons[i];
-		if (strcmp(button->getName(), name) == 0) {
-			delete button;
-			buttons.erase(buttons.begin() + i);
-			return true;
-		}
-	}
-	for (int i = 0; i < fields.size(); ++i) {
-		Field* field = fields[i];
-		if (strcmp(field->getName(), name) == 0) {
-			delete field;
-			fields.erase(fields.begin() + i);
-			return true;
-		}
-	}
-	for (int i = 0; i < images.size(); ++i) {
-		image_t* image = images[i];
-		if (strcmp(image->name.c_str(), name) == 0) {
-			delete image;
-			images.erase(images.begin() + i);
-			return true;
-		}
-	}
-	for (int i = 0; i < sliders.size(); ++i) {
-		Slider* slider = sliders[i];
-		if (strcmp(slider->getName(), name) == 0) {
-			delete slider;
-			sliders.erase(sliders.begin() + i);
-			return true;
-		}
-	}
-	return false;
+    bool result = Widget::remove(name);
+    if (!result) {
+        for (int i = 0; i < images.size(); ++i) {
+            image_t* image = images[i];
+            if (strcmp(image->name.c_str(), name) == 0) {
+                delete image;
+                images.erase(images.begin() + i);
+                return true;
+            }
+        }
+    }
+    return result;
 }
 
 bool Frame::removeEntry(const char* name, bool resizeFrame) {

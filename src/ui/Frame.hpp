@@ -201,14 +201,11 @@ public:
 
 	//! remove all list entries from the frame
 	void clearEntries();
-
-	//! removes the frame itself, as well as all contained objects
-	void removeSelf();
-
-	//! remove an object from the frame
-	//! @param name the name of the object to remove
-	//! @return true if the object was successfully removed, false otherwise
-	bool remove(const char* name);
+    
+    //! remove an object from the frame
+    //! @name the name of the object to remove
+    //! @return true if an object was removed, or false if it was not found
+    virtual bool remove(const char* name) override;
 
 	//! remove an entry from the frame list
 	//! @param name the name of the object to remove
@@ -463,10 +460,9 @@ private:
 	//! handle clicks and other events
 	//! @param _size real position of the frame onscreen
 	//! @param _actualSize offset into the frame space (scroll)
-	//! @param selectedWidgets the currently selected widgets, if any
 	//! @param usable true if another object doesn't have the mouse's attention, false otherwise
 	//! @return compiled results of frame processing
-	result_t process(SDL_Rect _size, SDL_Rect actualSize, const std::vector<Widget*>& selectedWidgets, const bool usable);
+	result_t process(SDL_Rect _size, SDL_Rect actualSize, const bool usable);
 
 	bool capturesMouseImpl(SDL_Rect& _size, SDL_Rect& _actualSize, bool realtime) const;
 

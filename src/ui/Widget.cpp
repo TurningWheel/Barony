@@ -28,6 +28,20 @@ Widget::~Widget() {
 	deselect();
 }
 
+bool Widget::remove(const char* name) {
+    for (auto widget : widgets) {
+        if (strcmp(widget->getName(), name) == 0) {
+            widget->removeSelf();
+            return true;
+        }
+    }
+    return false;
+}
+
+void Widget::removeSelf() {
+    toBeDeleted = true;
+}
+
 void Widget::select() {
 	if (selected) {
 		return;
