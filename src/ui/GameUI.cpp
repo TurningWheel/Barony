@@ -5396,7 +5396,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 		{
 			auto heading_txt = backgroundFrame->addField("heading txt", 128);
 			heading_txt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
-			heading_txt->setText("Status Effects");
+			heading_txt->setText(language[4345]);
 			heading_txt->setColor(makeColor(255, 255, 255, 255));
 			heading_txt->setVJustify(Field::justify_t::CENTER);
 			heading_txt->setHJustify(Field::justify_t::CENTER);
@@ -5448,7 +5448,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 
 			auto noEffectTxt = backgroundFrame->addField("no effect txt", 128);
 			noEffectTxt->setFont(smallfont_outline);
-			noEffectTxt->setText("No effects active");
+			noEffectTxt->setText(language[4346]);
 			noEffectTxt->setDisabled(true);
 			noEffectTxt->setColor(makeColor(255, 255, 255, 255));
 			noEffectTxt->setVJustify(Field::justify_t::CENTER);
