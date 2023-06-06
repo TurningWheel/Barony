@@ -123,6 +123,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Up", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("Look Down", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("PaperDollContextMenu", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogHome", (std::string("Pad") + std::to_string(c) + std::string("ButtonLeftStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogEnd", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("LogPageDown", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightBumper")).c_str()));
@@ -136,6 +137,7 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapLeft", (std::string("Pad") + std::to_string(c) + std::string("StickRightX-")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapDown", (std::string("Pad") + std::to_string(c) + std::string("StickRightY+")).c_str()));
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("MinimapUp", (std::string("Pad") + std::to_string(c) + std::string("StickRightY-")).c_str()));
+		inputs[c].gamepad_system_bindings.insert(std::make_pair("ResetPortraitRotation", (std::string("Pad") + std::to_string(c) + std::string("ButtonRightStick")).c_str()));
 
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginA", (std::string("Pad") + std::to_string(c) + std::string("ButtonA")).c_str()));
 #ifndef NINTENDO
@@ -158,11 +160,14 @@ void Input::defaultBindings() {
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDown", "MouseWheelDown")); // consumed automatically by frame.cpp
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUpAlt", "MouseWheelUp"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDownAlt", "MouseWheelDown"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("InventoryCharacterRotateLeftMouse", "MouseWheelUp"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("InventoryCharacterRotateRightMouse", "MouseWheelDown"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuLeftClick", "Mouse1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMiddleClick", "Mouse2"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuRightClick", "Mouse3"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("InspectWithMouse", "Mouse1"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MinimapPing", "Mouse1"));
+		inputs[c].kb_system_bindings.insert(std::make_pair("ResetPortraitRotation", "Mouse2"));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("KeyboardLogin", "Space"));
 

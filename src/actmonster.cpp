@@ -968,9 +968,11 @@ void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpd
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 {
-	Entity* entity = summonMonster(creature, x, y);
-	entity->flags[INVISIBLE] = false;
-	entity->setUID(uid);
+	if ( Entity* entity = summonMonster(creature, x, y) )
+	{
+		entity->flags[INVISIBLE] = false;
+		entity->setUID(uid);
+	}
 }
 
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)

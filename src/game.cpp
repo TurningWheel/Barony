@@ -257,8 +257,19 @@ Uint32 messagesEnabled = 0xffffffff; // all enabled
 
 real_t getFPSScale(real_t baseFPS)
 {
+#ifndef EDITOR
+	static ConsoleVariable<bool> cvar_ui_fps_scale_fixed("/ui_fps_scale_fixed", false);
+	if ( *cvar_ui_fps_scale_fixed )
+	{
+		return baseFPS / (std::max(1U, fpsLimit));
+	}
+	else
+	{
+		return baseFPS / (std::max(1U, (unsigned int)fps));
+	}
+#else
 	return baseFPS / (std::max(1U, (unsigned int)fps));
-	//return baseFPS / (std::max(1U, fpsLimit));
+#endif
 }
 
 //ConsoleVariable<bool> cvar_useTimerInterpolation("/timer_interpolation_enabled", true);
@@ -5273,6 +5284,7 @@ void ingameHud()
 			{
 				players[player]->skillSheet.closeSkillSheet();
 			}
+			players[player]->hud.closeStatusFxWindow();
 
 			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
@@ -5321,8 +5333,6 @@ void ingameHud()
 
 	DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
-    doSharedMinimap();
-
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( !players[player]->isLocalPlayer() )
@@ -5335,6 +5345,7 @@ void ingameHud()
 		updateLevelUpFrame(player);
 		players[player]->inventoryUI.updateSelectedItemAnimation();
 		players[player]->inventoryUI.updateInventoryItemTooltip();
+		players[player]->inventoryUI.updateInventoryMiscTooltip();
 		players[player]->hotbar.processHotbar();
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
@@ -6405,15 +6416,6 @@ int main(int argc, char** argv)
 		Input::defaultBindings();
 		MainMenu::randomizeUsername();
 
-		// load config file
-		if ( loadingconfig )
-		{
-			loadConfig(configtoload);
-		}
-		else
-		{
-			loadDefaultConfig();
-		}
         MainMenu::settingsReset();
         MainMenu::settingsApply();
 		bool load_successful = MainMenu::settingsLoad();

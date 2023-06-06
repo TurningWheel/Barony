@@ -6420,5 +6420,7 @@ for accessory to violence!#
 4342 Colorblind assist has been enabled for the lobby.#
 4343 Colorblind assist has been disabled for the lobby.#
 4344 The %s shatters in your grasp!#
+4345 Status Effects#
+4346 No effects active#
 
 4399 end#

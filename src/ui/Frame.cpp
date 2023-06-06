@@ -171,6 +171,7 @@ void Frame::guiInit() {
 	gui->setHollow(true);
 
 #ifndef EDITOR
+	doSharedMinimap();
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		char name[32] = "";
