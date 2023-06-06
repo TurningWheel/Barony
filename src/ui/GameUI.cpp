@@ -12373,6 +12373,30 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 				player.hud.statusFxFocusedWindowActive = true;
 			}
 		}
+		else if ( dropdown.options[option].action == "view_portrait" )
+		{
+			if ( playerInventoryFrames[player.playernum].characterPreview )
+			{
+				player.GUI.previousModule = players[player.playernum]->GUI.activeModule;
+				player.GUI.activateModule(Player::GUI_t::MODULE_PORTRAIT);
+
+				SDL_Rect size = playerInventoryFrames[player.playernum].characterPreview->getAbsoluteSize();
+
+				// make sure to adjust absolute size to camera viewport
+				const int offsetX = 4;
+				const int offsetY = 6;
+				size.x += offsetX;
+				size.y += offsetY;
+				size.w -= offsetX * 2;
+				size.h -= offsetY * 2;
+				size.x -= player.camera_virtualx1();
+				size.y -= player.camera_virtualy1();
+
+				player.hud.updateCursorAnimation(size.x - 1, size.y - 1,
+					size.w, size.h, inputs.getVirtualMouse(player.playernum)->draw_cursor);
+				player.paperDoll.portraitActiveToEdit = true;
+			}
+		}
 		else if ( dropdown.options[option].action == "inventory_autosort" )
 		{
 			autosortInventory(player.playernum);
@@ -19924,14 +19948,14 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 	{
         GL_CHECK_ERR(glClear(GL_DEPTH_BUFFER_BIT));
 
-		//TODO: These two NOT PLAYERSWAP
-		//camera.x=players[player]->x/16.0+.5*cos(players[player]->yaw)-.4*sin(players[player]->yaw);
-		//camera.y=players[player]->y/16.0+.5*sin(players[player]->yaw)+.4*cos(players[player]->yaw);
-		view.x = players[player]->entity->x / 16.0 + (.92 * cos(offsetyaw));
-		view.y = players[player]->entity->y / 16.0 + (.92 * sin(offsetyaw));
+		static ConsoleVariable<bool> cvar_char_portrait_static_angle("/char_portrait_static_angle", true);
+		view.x = players[player]->entity->x / 16.0 + (.92 * cos(offsetyaw 
+			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
+		view.y = players[player]->entity->y / 16.0 + (.92 * sin(offsetyaw 
+			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)));
 		view.z = players[player]->entity->z * 2;
-		//camera.ang=atan2(players[player]->y/16.0-camera.y,players[player]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
-		view.ang = (offsetyaw - PI); //5 * PI / 4;
+		view.ang = (offsetyaw - PI
+			+ (*cvar_char_portrait_static_angle ? players[player]->entity->yaw : 0)); //5 * PI / 4;
 		view.vang = PI / 20;
 
 		view.winx = pos.x;
@@ -22700,47 +22724,130 @@ void createPlayerInventory(const int player)
 			charSize.w -= 2 * (inventorySlotSize + baseSlotOffsetX + 4);
 			charFrame->setSize(charSize);
 			charFrame->setTickCallback([](Widget& widget) {
+				Frame* frame = static_cast<Frame*>(&widget);
 				int player = widget.getOwner();
-				if ( players[player]->GUI.bActiveModuleUsesInventory() 
-					&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+				auto& scrollInertia = players[player]->paperDoll.portraitRotationInertia;
+				auto& scrollPercent = players[player]->paperDoll.portraitRotationPercent;
+				auto& portraitYaw = players[player]->paperDoll.portraitYaw;
+				static ConsoleVariable<float> cvar_char_portrait_spd("/char_portrait_spd", 15.0);
+				static ConsoleVariable<float> cvar_char_portrait_decel("/char_portrait_decel", 25.0);
+
+				bool close = false;
+				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_PORTRAIT )
 				{
-					if ( !players[player]->inventoryUI.itemTooltipDisplay.scrollable )
+					SDL_Rect size = frame->getAbsoluteSize();
+
+					// make sure to adjust absolute size to camera viewport
+					const int offsetX = 4;
+					const int offsetY = 6;
+					size.x += offsetX;
+					size.y += offsetY;
+					size.w -= offsetX * 2;
+					size.h -= offsetY * 2;
+					size.x -= players[player]->camera_virtualx1();
+					size.y -= players[player]->camera_virtualy1();
+
+					players[player]->hud.updateCursorAnimation(size.x - 1, size.y - 1,
+						size.w, size.h, inputs.getVirtualMouse(player)->draw_cursor);
+					players[player]->paperDoll.portraitActiveToEdit = true;
+
+					if ( inputs.bPlayerUsingKeyboardControl(player) )
 					{
-						/*if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+						if ( Input::inputs[player].binaryToggle("InventoryCharacterRotateLeftMouse") )
 						{
-							camera_charsheet_offsetyaw -= 0.05;
+							scrollInertia = std::min(scrollInertia + .05 / *cvar_char_portrait_spd, .05);
 						}
-						else if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+						if ( Input::inputs[player].binaryToggle("InventoryCharacterRotateRightMouse") )
 						{
-							camera_charsheet_offsetyaw += 0.05;
-						}*/
+							scrollInertia = std::max(scrollInertia - .05 / *cvar_char_portrait_spd, -.05);
+						}
+						close |= Input::inputs[player].consumeBinaryToggle("MenuLeftClick");
+						close |= Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 					}
-					if ( camera_charsheet_offsetyaw > 2 * PI )
+					if ( inputs.hasController(player) )
 					{
-						camera_charsheet_offsetyaw -= 2 * PI;
+						close |= Input::inputs[player].consumeBinaryToggle("MenuConfirm");
+						close |= Input::inputs[player].consumeBinaryToggle("MenuCancel");
 					}
-					if ( camera_charsheet_offsetyaw < 0.0 )
+
+					if ( players[player]->shootmode )
 					{
-						camera_charsheet_offsetyaw += 2 * PI;
+						close = true;
 					}
+
+					if ( Input::inputs[player].analog("InventoryCharacterRotateRight") )
+					{
+						scrollInertia = 0.0;
+						real_t delta = Input::inputs[player].analog("InventoryCharacterRotateRight");
+						scrollPercent = (scrollPercent + .05 * (getFPSScale(60.0)) * delta);
+						while ( scrollPercent >= 1.0 )
+						{
+							scrollPercent -= 1.0;
+						}
+					}
+					else if ( Input::inputs[player].analog("InventoryCharacterRotateLeft") )
+					{
+						scrollInertia = 0.0;
+						real_t delta = Input::inputs[player].analog("InventoryCharacterRotateLeft");
+						scrollPercent = scrollPercent - .05 * (getFPSScale(60.0)) * delta;
+						while ( scrollPercent < 0.0 )
+						{
+							scrollPercent += 1.0;
+						}
+					}
+
+					if ( abs(scrollInertia) > 0.0 )
+					{
+						scrollInertia *= .9;
+						if ( abs(scrollInertia) < (.01 / *cvar_char_portrait_decel) )
+						{
+							scrollInertia = 0.0;
+						}
+						scrollPercent += scrollInertia;
+					}
+
+					if ( Input::inputs[player].consumeBinaryToggle("ResetPortraitRotation") )
+					{
+						scrollPercent = 0.0;
+						scrollInertia = 0.0;
+						portraitYaw = (330) * PI / 180;
+						close = true;
+					}
+				}
+
+				if ( close )
+				{
+					if ( !inputs.getVirtualMouse(player)->draw_cursor )
+					{
+						players[player]->GUI.returnToPreviousActiveModule();
+					}
+					else
+					{
+						players[player]->GUI.activateModule(Player::GUI_t::MODULE_NONE);
+					}
+				}
+				if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_PORTRAIT )
+				{
+					players[player]->paperDoll.portraitActiveToEdit = false;
+				}
+				portraitYaw = (330) * PI / 180 + (scrollPercent * 2 * PI);
+				if ( portraitYaw > 2 * PI )
+				{
+					portraitYaw -= 2 * PI;
+				}
+				if ( portraitYaw < 0.0 )
+				{
+					portraitYaw += 2 * PI;
 				}
 				});
 			charFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
-				drawCharacterPreview(widget.getOwner(), pos, 50, camera_charsheet_offsetyaw);
+				drawCharacterPreview(widget.getOwner(), pos, 50, players[widget.getOwner()]->paperDoll.portraitYaw);
 			});
 
 			/*charFrame->addImage(SDL_Rect{ 0, 0, charSize.w, charSize.h },
 				makeColor( 255, 255, 255, 255),
 				"images/system/white.png", "inventory character preview bg");*/
 		}
-
-		/*auto selectedFrame = dollSlotsFrame->addFrame("paperdoll selected item");
-		selectedFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
-		selectedFrame->setDisabled(true);
-
-		Uint32 color = makeColor( 255, 255, 0, 255);
-		selectedFrame->addImage(SDL_Rect{ 0, 0, selectedFrame->getSize().w, selectedFrame->getSize().h },
-			color, "images/system/hotbar_slot.png", "paperdoll selected highlight");*/
 	}
 
 	createPlayerSpellList(player);

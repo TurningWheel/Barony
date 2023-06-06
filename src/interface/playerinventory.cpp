@@ -7403,6 +7403,7 @@ bool Player::Inventory_t::paperDollContextMenuActive()
 		&& animPaperDollHide <= 0.001
 		&& isInteractable
 		&& slideOutPercent <= 0.001
+		&& player.GUI.activeModule != Player::GUI_t::MODULE_PORTRAIT
 		&& (inputs.getVirtualMouse(player.playernum)->draw_cursor
 			|| (!inputs.getVirtualMouse(player.playernum)->draw_cursor 
 				&& (player.GUI.activeModule == Player::GUI_t::MODULE_INVENTORY) ));
@@ -7648,7 +7649,42 @@ void Player::Inventory_t::updateInventory()
 		autosortBtn->setDisabled(!paperDollContextMenuActive());
 		autosortBtn->setInvisible(false);
 
-		if ( !inputs.getVirtualMouse(player)->draw_cursor )
+		if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_PORTRAIT )
+		{
+			autosortBtn->setInvisible(true);
+			if ( inputs.hasController(player) && !inputs.getVirtualMouse(player)->draw_cursor )
+			{
+				if ( ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+				{
+					autosortGlyph->path = input.getGlyphPathForBinding("InventoryCharacterRotateLeft", false);
+				}
+				else
+				{
+					autosortGlyph->path = input.getGlyphPathForBinding("InventoryCharacterRotateRight", false);
+				}
+			}
+			else
+			{
+				if ( ticks % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+				{
+					autosortGlyph->path = input.getGlyphPathForBinding("InventoryCharacterRotateLeftMouse", false);
+				}
+				else
+				{
+					autosortGlyph->path = input.getGlyphPathForBinding("InventoryCharacterRotateRightMouse", false);
+				}
+			}
+			if ( auto imgGet = Image::get(autosortGlyph->path.c_str()) )
+			{
+				autosortGlyph->disabled = false;
+				autosortGlyph->color = makeColor(255, 255, 255, 255);
+				autosortGlyph->pos.w = imgGet->getWidth();
+				autosortGlyph->pos.h = imgGet->getHeight();
+				autosortGlyph->pos.x = autosortBtn->getSize().x + autosortBtn->getSize().w / 2 - autosortGlyph->pos.w / 2;
+				autosortGlyph->pos.y = autosortBtn->getSize().y;
+			}
+		}
+		else if ( !inputs.getVirtualMouse(player)->draw_cursor )
 		{
 			autosortBtn->setBackground("*#images/ui/Inventory/HUD_Button_AutosortGamepad.png");
 			autosortBtn->setSize(SDL_Rect{ autosortFrameSize.w - 42, autosortFrameSize.h - 42, 42, 38 });
@@ -7656,7 +7692,12 @@ void Player::Inventory_t::updateInventory()
 			autosortGlyph->path = input.getGlyphPathForBinding("PaperDollContextMenu", true);
 			if ( auto imgGet = Image::get(autosortGlyph->path.c_str()) )
 			{
-				autosortGlyph->disabled = autosortBtn->isDisabled();
+				autosortGlyph->disabled = false;
+				autosortGlyph->color = makeColor(255, 255, 255, 255);
+				if ( autosortBtn->isDisabled() )
+				{
+					autosortGlyph->color = makeColor(255, 255, 255, 128);
+				}
 				autosortGlyph->pos.w = imgGet->getWidth();
 				autosortGlyph->pos.h = imgGet->getHeight();
 				autosortGlyph->pos.x = autosortBtn->getSize().x + 4;
@@ -7708,13 +7749,11 @@ void Player::Inventory_t::updateInventory()
 			{
 				autosortInventory(player);
 				//quickStackItems();
-				//*inputPressedForPlayer(player, impulses[IN_AUTOSORT]) = 0;
-				//inputs.controllerClearInput(player, INJOY_MENU_CHEST_GRAB_ALL);
 				playSound(139, 64);
 			}
 		}
 
-		if ( (inputs.getVirtualMouse(player)->draw_cursor
+		if ( (inventoryControlActive && inputs.getVirtualMouse(player)->draw_cursor
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY)
 			&& autosortBtn->isHighlighted())
 			|| (players[player]->GUI.isDropdownActive()
@@ -7739,6 +7778,28 @@ void Player::Inventory_t::updateInventory()
 			players[player]->hud.setCursorDisabled(false);
 			players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h,
 				true);
+			//else if ( playerInventoryFrames[player].characterPreview->capturesMouse()
+			//	&& players[player]->GUI.hoveringOverModuleButton() == Player::GUI_t::MODULE_NONE )
+			//{
+			//	if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_PORTRAIT )
+			//	{
+			//		SDL_Rect size = playerInventoryFrames[player].characterPreview->getAbsoluteSize();
+			//		players[player]->GUI.activateModule(Player::GUI_t::MODULE_PORTRAIT);
+
+			//		// make sure to adjust absolute size to camera viewport
+			//		const int offsetX = 4;
+			//		const int offsetY = 6;
+			//		size.x += offsetX;
+			//		size.y += offsetY;
+			//		size.w -= offsetX * 2;
+			//		size.h -= offsetY * 2;
+			//		size.x -= players[player]->camera_virtualx1();
+			//		size.y -= players[player]->camera_virtualy1();
+
+			//		players[player]->hud.updateCursorAnimation(size.x - 1, size.y - 1,
+			//			size.w, size.h, inputs.getVirtualMouse(player)->draw_cursor);
+			//	}
+			//}
 		}
 	}
 	//DebugStats.gui7 = std::chrono::high_resolution_clock::now();

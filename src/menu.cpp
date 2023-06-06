@@ -9505,6 +9505,7 @@ void doNewGame(bool makeHighscore) {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
+		players[i]->paperDoll.resetPortrait(); // reset paper doll camera view.
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
@@ -10651,6 +10652,7 @@ void doEndgame(bool saveHighscore) {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
+		players[i]->paperDoll.resetPortrait(); // reset paper doll camera view.
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();

@@ -741,7 +741,8 @@ public:
 			MODULE_LOG,
 			MODULE_MAP,
 			MODULE_SIGN_VIEW,
-			MODULE_ITEMEFFECTGUI
+			MODULE_ITEMEFFECTGUI,
+			MODULE_PORTRAIT
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -2028,6 +2029,16 @@ public:
 		void selectPaperDollCoordinatesFromSlotType(PaperDollSlotType slot) const;
 		std::vector<Uint32> returningItemsToInventory;
 		void warpMouseToMostRecentReturnedInventoryItem();
+		bool portraitActiveToEdit = false;
+		real_t portraitRotationInertia = 0.0;
+		real_t portraitRotationPercent = 0.0;
+		real_t portraitYaw = (330) * PI / 180;
+		void resetPortrait()
+		{
+			portraitRotationInertia = 0.0;
+			portraitRotationPercent = 0.0;
+			portraitYaw = (330) * PI / 180;
+		}
 	} paperDoll;
 
 	class Hotbar_t {

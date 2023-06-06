@@ -1204,6 +1204,10 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		{
 			return false;
 		}
+		if ( player.paperDoll.portraitActiveToEdit )
+		{
+			return false;
+		}
 		return true;
 	}
 	return true;
