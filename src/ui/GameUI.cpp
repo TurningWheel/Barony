@@ -6811,7 +6811,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					miscEffects[kEffectSlowDigestion] = true;
 				}
 			}
-			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION )
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+				&& stats[player]->type != SKELETON )
 			{
 				miscEffects[kEffectStrangulation] = true;
 			}

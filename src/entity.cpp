@@ -4476,7 +4476,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->amulet != NULL )
 	{
 		// strangulation
-		if ( myStats->amulet->type == AMULET_STRANGULATION )
+		if ( myStats->amulet->type == AMULET_STRANGULATION && myStats->type != SKELETON )
 		{
 			if ( ticks % 60 == 0 )
 			{

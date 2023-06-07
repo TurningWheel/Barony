@@ -2230,15 +2230,22 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_STRANGULATION:
+		{
+			bool oldStrangulation = stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION;
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
-			if ( stats[player]->amulet )
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+				&& !oldStrangulation )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
+				if ( players[player]->isLocalPlayer() )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
+				}
 			}
 			if ( item->beatitude >= 0 )
 			{
 				item->beatitude = -1;
 			}
+		}
 			break;
 		case AMULET_POISONRESISTANCE:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
