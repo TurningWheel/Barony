@@ -14560,10 +14560,21 @@ failed:
 		            };
 
 		        // roomcode
+                auto roomcode_header = banner->addField("roomcode_header", 32);
+                roomcode_header->setHJustify(Field::justify_t::RIGHT);
+                roomcode_header->setVJustify(Field::justify_t::CENTER);
+                roomcode_header->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 35});
+                roomcode_header->setFont(smallfont_outline);
+                if (directConnect) {
+                    roomcode_header->setText("LAN address");
+                } else {
+                    roomcode_header->setText("Room code");
+                }
+                
 			    auto roomcode = banner->addField("roomcode", 128);
 			    roomcode->setHJustify(Field::justify_t::RIGHT);
 			    roomcode->setVJustify(Field::justify_t::CENTER);
-			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292, 0, 288, 48});
+			    roomcode->setSize(SDL_Rect{Frame::virtualScreenX - 212 - 44 - 292 - 32, 0, 320, 70});
 		        roomcode->setFont(bigfont_outline);
 
 				if (roomcodeDisabled) {
