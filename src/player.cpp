@@ -3808,6 +3808,12 @@ void Player::WorldUI_t::handleTooltips()
 			players[player]->worldUI.reset();
 			continue;
 		}
+		if ( players[player]->entity && players[player]->entity->ticks < TICKS_PER_SECOND / 2 )
+		{
+			players[player]->worldUI.reset();
+			Input::inputs[player].consumeBinaryToggle("Use");
+			continue;
+		}
 
 #ifdef NINTENDO
 		players[player]->worldUI.bEnabled = true;
