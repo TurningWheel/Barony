@@ -6625,6 +6625,7 @@ bind_failed:
             button->setTextColor(makeColor(203,171,101,255));
             button->setTextHighlightColor(makeColor(231,213,173,255));
             button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+            button->setHideGlyphs(true);
             button->setWidgetSearchParent("leaderboards");
             button->addWidgetAction("MenuCancel", "back_button");
             button->addWidgetAction("MenuAlt1", "delete_entry");
