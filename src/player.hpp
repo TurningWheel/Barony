@@ -330,7 +330,7 @@ class Inputs
 
 		bool draw_cursor = true; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 		bool moved = false;
-		bool lastMovementFromController = false;
+		bool lastMovementFromController = true;
 		real_t mouseAnimationPercent = 0.0;
 		VirtualMouse() {};
 		~VirtualMouse() {};

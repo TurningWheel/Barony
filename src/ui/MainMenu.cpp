@@ -321,6 +321,12 @@ namespace MainMenu {
 		return main_menu_frame != nullptr;
 	}
 
+    static bool isMouseVisible() {
+        auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
+        auto vmouse = intro ? cmouse : inputs.getVirtualMouse(getMenuOwner());
+        return !vmouse->lastMovementFromController;
+    }
+
 	void beginFade(FadeDestination fd) {
 		main_menu_fade_destination = fd;
 		fadeout = true;
@@ -6575,6 +6581,23 @@ bind_failed:
         static constexpr int num_categories = sizeof(categories) / sizeof(categories[0]);
         static int category;
         category = 1;
+        
+        static auto set_links = [](const char* name){
+            assert(main_menu_frame);
+            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+            auto list = window->findFrame("list"); assert(list);
+            auto category_right = window->findButton("category_right"); assert(category_right);
+            auto category_left = window->findButton("category_left"); assert(category_left);
+            auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
+            auto slider = window->findSlider("scroll_slider"); assert(slider);
+            auto subframe = window->findFrame("subframe"); assert(subframe);
+            auto conduct = subframe->findFrame("conduct"); assert(conduct);
+            category_right->setWidgetUp(name);
+            category_left->setWidgetUp(name);
+            delete_entry->setWidgetUp(name);
+            slider->setWidgetRight(name);
+            conduct->setWidgetLeft(name);
+            };
 
         static const char* fmt = "  #%d %s";
 
@@ -6586,6 +6609,10 @@ bind_failed:
 
             char buf[128];
             snprintf(buf, sizeof(buf), fmt, index + 1, name);
+            
+            if (index == 0) {
+                set_links(buf);
+            }
 
             auto button = list->addButton(buf);
             button->setUserData(score);
@@ -6613,7 +6640,9 @@ bind_failed:
             button->setBackgroundHighlighted("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
             button->setBackgroundActivated("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
             button->setCallback([](Button& button){
-                soundActivate();
+                if (isMouseVisible()) {
+                    soundActivate();
+                }
                 auto list = static_cast<Frame*>(button.getParent());
                 button.setTextColor(makeColor(231,213,173,255));
                 button.setBackground("*images/ui/Main Menus/Leaderboards/AA_NameList_Selected_00.png");
@@ -6651,6 +6680,12 @@ bind_failed:
                             }
                         }
                     }
+                    if (!isMouseVisible()) {
+                        const char* unselected = "*images/ui/Main Menus/Leaderboards/AA_NameList_Unselected_00.png";
+                        if (strcmp(button->getBackground(), unselected) == 0) {
+                            button->activate();
+                        }
+                    }
                 }
                 });
 
@@ -6683,32 +6718,6 @@ bind_failed:
         static int scores_loaded;
         scores_loaded = 0;
 
-        static auto set_links = [](){
-            assert(main_menu_frame);
-            auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
-            auto list = window->findFrame("list"); assert(list);
-		    auto category_right = window->findButton("category_right"); assert(category_right);
-		    auto category_left = window->findButton("category_left"); assert(category_left);
-		    auto delete_entry = window->findButton("delete_entry"); assert(delete_entry);
-            auto slider = window->findSlider("scroll_slider"); assert(slider);
-            auto subframe = window->findFrame("subframe"); assert(subframe);
-            auto conduct = subframe->findFrame("conduct"); assert(conduct);
-		    if (list->getButtons().empty()) {
-		        category_right->setWidgetUp("");
-		        category_left->setWidgetUp("");
-		        delete_entry->setWidgetUp("");
-		        slider->setWidgetRight("");
-		        conduct->setWidgetLeft("");
-		    } else {
-		        auto name = list->getButtons()[0]->getName();
-		        category_right->setWidgetUp(name);
-		        category_left->setWidgetUp(name);
-		        delete_entry->setWidgetUp(name);
-		        slider->setWidgetRight(name);
-		        conduct->setWidgetLeft(name);
-		    }
-            };
-
         static auto repopulate_list = [](BoardType type){
             downloadedScores.deleteAll();
             selectedScore = nullptr;
@@ -6720,6 +6729,7 @@ bind_failed:
 
             auto size = list->getActualSize();
             size.h = list->getSize().h;
+            size.y = 0;
             list->setActualSize(size);
 
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
@@ -6760,6 +6770,7 @@ bind_failed:
                     } else {
                         field->setText("No scores found.");
                     }
+                    set_links("");
                 }
             } else {
 #ifdef STEAMWORKS
@@ -6776,10 +6787,9 @@ bind_failed:
                 } else {
                     field->setText("Downloading scores...");
                 }
+                set_links("");
 #endif
             }
-
-            set_links();
             };
 
         auto disableIfNotOnline = [](Widget& widget){
@@ -6825,17 +6835,19 @@ bind_failed:
 		category_left->setWidgetSearchParent(window->getName());
 		category_left->setTickCallback(disableIfNotOnline);
 		category_left->setCallback([](Button& button){
-		    soundActivate();
-		    --category;
-		    if (category <= 0) {
-		        category = num_categories - 1;
-		    }
-		    repopulate_list(boardType);
-		    auto window = static_cast<Frame*>(button.getParent());
-		    auto category_text = window->findField("category_text");
-		    if (category_text) {
-		        category_text->setText(categories[category]);
-		    }
+            if (!button.isInvisible()) {
+                soundActivate();
+                --category;
+                if (category <= 0) {
+                    category = num_categories - 1;
+                }
+                repopulate_list(boardType);
+                auto window = static_cast<Frame*>(button.getParent());
+                auto category_text = window->findField("category_text");
+                if (category_text) {
+                    category_text->setText(categories[category]);
+                }
+            }
 		    });
         category_left->addWidgetAction("MenuCancel", "back_button");
         category_left->addWidgetAction("MenuAlt1", "delete_entry");
@@ -6855,17 +6867,19 @@ bind_failed:
 		category_right->setHighlightColor(makeColor(255, 255, 255, 255));
 		category_right->setTickCallback(disableIfNotOnline);
 		category_right->setCallback([](Button& button){
-		    soundActivate();
-		    ++category;
-		    if (category >= num_categories) {
-		        category = 1;
-		    }
-		    repopulate_list(boardType);
-		    auto window = static_cast<Frame*>(button.getParent());
-		    auto category_text = window->findField("category_text");
-		    if (category_text) {
-		        category_text->setText(categories[category]);
-		    }
+            if (!button.isInvisible()) {
+                soundActivate();
+                ++category;
+                if (category >= num_categories) {
+                    category = 1;
+                }
+                repopulate_list(boardType);
+                auto window = static_cast<Frame*>(button.getParent());
+                auto category_text = window->findField("category_text");
+                if (category_text) {
+                    category_text->setText(categories[category]);
+                }
+            }
 		    });
 		category_right->setWidgetSearchParent(window->getName());
         category_right->addWidgetAction("MenuCancel", "back_button");
@@ -6933,7 +6947,9 @@ bind_failed:
 						}
                         add_score(score, name, prev_buf, next_buf, index);
                     }
-                    set_links();
+                    if (num_scores == 0) {
+                        set_links("");
+                    }
                 }
             }
             });
@@ -7149,8 +7165,17 @@ bind_failed:
                         },
                     [](Button& button){ // No
 		                soundCancel();
-		                repopulate_list(boardType);
 		                closeBinary();
+                        assert(main_menu_frame);
+                        auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
+                        auto list = window->findFrame("list"); assert(list);
+                        for (auto button : list->getButtons()) {
+                            auto score = (score_t*)button->getUserData();
+                            if (score == selectedScore) {
+                                button->select();
+                                break;
+                            }
+                        }
                         });
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
                     &topscores : &topscoresMultiplayer;
@@ -19578,9 +19603,8 @@ failed:
         }
 
 		// hide mouse if we're driving around with a controller
-		auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
-		auto vmouse = intro ? cmouse : inputs.getVirtualMouse(getMenuOwner());
-		cmouse->draw_cursor = !vmouse->lastMovementFromController;
+        auto cmouse = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard());
+        cmouse->draw_cursor = isMouseVisible();
 
 		static ConsoleVariable<bool> cvar_disableFadeFinished("/test_disable_fade_finished", false);
 		if (fadeout && fadealpha >= 255 && !*cvar_disableFadeFinished) {
