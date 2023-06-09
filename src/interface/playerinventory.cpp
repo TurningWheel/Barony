@@ -9783,65 +9783,65 @@ void Player::Inventory_t::updateInventory()
 					&& inputs.bPlayerUsingKeyboardControl(player) )
 				{
 					int slotNum = -1;
-					if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 1") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 1");
 						hotbar[0].item = item->uid;
 						slotNum = 0;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 2") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 2");
 						hotbar[1].item = item->uid;
 						slotNum = 1;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 3") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 3");
 						hotbar[2].item = item->uid;
 						slotNum = 2;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 4") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 4");
 						hotbar[3].item = item->uid;
 						slotNum = 3;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 5") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 5");
 						hotbar[4].item = item->uid;
 						slotNum = 4;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 6") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 6");
 						hotbar[5].item = item->uid;
 						slotNum = 5;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 7") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 7");
 						hotbar[6].item = item->uid;
 						slotNum = 6;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 8") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 8");
 						hotbar[7].item = item->uid;
 						slotNum = 7;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 9") )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 9");
 						hotbar[8].item = item->uid;
 						slotNum = 8;
 					}
-					if ( Input::inputs[player].binaryToggle("HotbarSlot10") 
+					if ( Input::inputs[player].binaryToggle("Hotbar Slot 10") 
 						&& this->player.hotbar.getHotbarSlotFrame(9)
 						&& !this->player.hotbar.getHotbarSlotFrame(9)->isDisabled() )
 					{
-						Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
+						Input::inputs[player].consumeBinaryToggle("Hotbar Slot 10");
 						hotbar[9].item = item->uid;
 						slotNum = 9;
 					}

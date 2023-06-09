@@ -3557,7 +3557,7 @@ void createHotbar(const int player)
 		createPlayerInventorySlotFrameElements(itemSlot);
 		itemSlot->setSize(slot->getSize());
 
-		char numStr[4];
+		char numStr[32];
 		if ( i + 1 == 10 )
 		{
 			snprintf(numStr, sizeof(numStr), "%d", 0);
@@ -3566,7 +3566,7 @@ void createHotbar(const int player)
 		{
 			snprintf(numStr, sizeof(numStr), "%d", i + 1);
 		}
-		auto text = slot->addField("slot num text", 4);
+		auto text = slot->addField("slot num text", 32);
 		text->setText(numStr);
 		text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
 		text->setFont(font);
@@ -3643,7 +3643,7 @@ void createHotbar(const int player)
 		0xFFFFFFFF, "", "hotbar cancel glyph");
 	cancelPromptGlyph->disabled = true;
 
-	auto text = highlightFrame->addField("slot num text", 4);
+	auto text = highlightFrame->addField("slot num text", 32);
 	text->setText("");
 	text->setSize(SDL_Rect{ 0, -4, slotPos.w, slotPos.h });
 	text->setFont(font);
@@ -27987,6 +27987,30 @@ void hotbar_slot_t::storeLastItem(Item* item)
 	lastCategory = itemCategory(item);
 }
 
+std::string hotbarSlotBindingText(const int player, const int slotnum, const Input::binding_t& binding)
+{
+	std::string inputName = "";
+	if ( binding.type == Input::binding_t::KEYBOARD && binding.keycode != SDLK_UNKNOWN )
+	{
+		if ( binding.keycode >= SDLK_0 && binding.keycode <= SDLK_9 )
+		{
+			inputName = SDL_GetKeyName(binding.keycode);
+		}
+	}
+	else if ( binding.type != Input::binding_t::MOUSE_BUTTON )
+	{
+		if ( slotnum + 1 == 10 )
+		{
+			inputName = "0";
+		}
+		else
+		{
+			inputName = std::to_string(slotnum + 1);
+		}
+	}
+	return inputName;
+}
+
 void Player::Hotbar_t::updateHotbar()
 {
 	if ( !hotbarFrame )
@@ -28425,10 +28449,26 @@ void Player::Hotbar_t::updateHotbar()
 				default:
 					break;
 			}
+
+			slot->setSize(pos);
+
+			auto glyphImage = Image::get(glyph->path.c_str());
+			if ( glyphImage )
+			{
+				glyph->pos.w = std::min((int)glyphImage->getWidth(), slot->getSize().w);
+				glyph->pos.h = glyphImage->getHeight();
+				glyph->pos.x = pos.x + pos.w / 2 - glyph->pos.w / 2;
+				glyph->pos.y = pos.y - glyph->pos.h;
+			}
 		}
 		else
 		{
-			slot->findField("slot num text")->setDisabled(false); // enable the hotkey prompts per slot
+			auto slot_text = slot->findField("slot num text");
+			slot_text->setDisabled(false); // enable the hotkey prompts per slot
+			std::string slotstr = "Hotbar Slot " + std::to_string(num + 1);
+			auto binding = Input::inputs[player.playernum].input(slotstr.c_str());
+			std::string inputName = hotbarSlotBindingText(player.playernum, num, binding);
+
 			const unsigned int midpoint = NUM_HOTBAR_SLOTS / 2;
 			if ( num < midpoint )
 			{
@@ -28438,17 +28478,41 @@ void Player::Hotbar_t::updateHotbar()
 			{
 				pos.x += (pos.w) * (num - midpoint);
 			}
-		}
 
-		slot->setSize(pos);
+			if ( inputName == "" )
+			{
+				slot_text->setText("");
+				glyph->disabled = slot->isDisabled();
+				glyph->color = 0xFFFFFFFF;// player.shootmode ? 0xFFFFFFFF : makeColor(255, 255, 255, 192);
+				if ( binding.type == Input::binding_t::KEYBOARD )
+				{
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(slotstr.c_str(), true);
+				}
+				else
+				{
+					glyph->path = Input::inputs[player.playernum].getGlyphPathForBinding(slotstr.c_str());
+				}
+			}
+			else
+			{
+				slot_text->setText(inputName.c_str());
+			}
 
-		auto glyphImage = Image::get(glyph->path.c_str());
-		if ( glyphImage )
-		{
-			glyph->pos.w = glyphImage->getWidth();
-			glyph->pos.h = glyphImage->getHeight();
-			glyph->pos.x = pos.x + pos.w / 2 - glyph->pos.w / 2;
-			glyph->pos.y = pos.y - glyph->pos.h;
+			slot->setSize(pos);
+
+			auto glyphImage = Image::get(glyph->path.c_str());
+			if ( glyphImage )
+			{
+				glyph->pos.w = std::min((int)glyphImage->getWidth(), slot->getSize().w);
+				glyph->pos.h = glyphImage->getHeight();
+				glyph->pos.x = pos.x + pos.w / 2 - glyph->pos.w / 2;
+				glyph->pos.y = pos.y - glyph->pos.h;
+
+				if ( binding.type == Input::binding_t::MOUSE_BUTTON )
+				{
+					glyph->pos.y += 4;
+				}
+			}
 		}
 
 		if ( current_hotbar == num )
