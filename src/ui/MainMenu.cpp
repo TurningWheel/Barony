@@ -50,6 +50,7 @@ namespace MainMenu {
 	std::string current_audio_device;
 	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
+	bool hidden_roomcode = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
     ConsoleVariable<bool> staggered_splitscreen("/split_staggered", true);
     ConsoleVariable<bool> clipped_splitscreen("/split_clipped", true);
@@ -564,6 +565,7 @@ namespace MainMenu {
 		bool cheats_enabled;
 		bool skipintro;
 		int port_number;
+		bool show_lobby_code = false;
 		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
@@ -2586,6 +2588,7 @@ namespace MainMenu {
 	    sendSvFlagsOverNet();
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
+		hidden_roomcode = !show_lobby_code;
 
 #if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
@@ -2671,6 +2674,7 @@ namespace MainMenu {
 		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		settings.skipintro = true;
 		settings.port_number = ::portnumber;
+		settings.show_lobby_code = !hidden_roomcode;
 		return settings;
 	}
 
@@ -2740,11 +2744,12 @@ namespace MainMenu {
 		settings.cheats_enabled = false;
 		settings.skipintro = true;
 		settings.port_number = DEFAULT_PORT;
+		settings.show_lobby_code = true;
 		return settings;
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 11;
+	    int version = 12;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2858,6 +2863,7 @@ namespace MainMenu {
 		file->property("use_model_cache", useModelCache);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
+		file->propertyVersion("show_lobby_code", version >= 12, show_lobby_code);
 		return true;
 	}
 
@@ -14530,7 +14536,6 @@ failed:
 		    label->setText(type_str);
 
 			if (type != LobbyType::LobbyLocal) {
-		        static bool hidden_roomcode;
 		        static auto hide_roomcode = [](Field& roomcode, Button& button, bool hide){
 		            hidden_roomcode = hide;
 	                if (hide) {
@@ -14635,6 +14640,13 @@ failed:
 					privacy->setTickCallback([](Widget& widget){
 						auto& input = Input::inputs[widget.getOwner()];
 
+						auto banner = static_cast<Frame*>(widget.getParent()); assert(banner);
+						auto roomcode = banner->findField("roomcode"); assert(roomcode);
+						if ( !strcmp(roomcode->getText(), "") )
+						{
+							hide_roomcode(*roomcode, static_cast<Button&>(widget), hidden_roomcode);
+						}
+
 						// this refocuses the player card
 						if (widget.isSelected()) {
 							if (input.consumeBinaryToggle("MenuCancel")) {
@@ -14650,7 +14662,7 @@ failed:
 						});
 
 					// set default privacy
-					hide_roomcode(*roomcode, *privacy, true);
+					hide_roomcode(*roomcode, *privacy, hidden_roomcode);
 				}
 
                 // chat button
