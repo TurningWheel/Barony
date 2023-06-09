@@ -6061,7 +6061,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             }
             else
             {
-                snprintf(valueBuf, sizeof(valueBuf), "%d", item->sellValue(player));
+                snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].value);
                 txtGoldValue->setText(valueBuf);
             }
             txtGoldValue->setDisabled(false);

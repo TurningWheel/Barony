@@ -656,6 +656,9 @@ void ItemTooltips_t::readItemsFromFile()
 
 	printlog("[JSON]: Successfully read %d items from '%s'", itemsRead, inputPath.c_str());
 
+	//itemValueTable.clear();
+	//itemValueTableByCategory.clear();
+
 	for ( int i = 0; i < NUMITEMS && i < itemsRead; ++i )
 	{
 		assert(i == tmpItems[i].itemId);
@@ -795,6 +798,24 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			items[i].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM;
 		}
+
+		/*{
+			auto pair = std::make_pair(items[i].value, i);
+			auto lower = std::lower_bound(itemValueTable.begin(), itemValueTable.end(), pair,
+				[](const auto& lhs, const auto& rhs) {
+					return lhs < rhs;
+			});
+			itemValueTable.insert(lower, pair);
+		}
+		{
+			auto pair = std::make_pair(items[i].value, i);
+			auto lower = std::lower_bound(itemValueTableByCategory[items[i].category].begin(), 
+				itemValueTableByCategory[items[i].category].end(), pair,
+				[](const auto& lhs, const auto& rhs) {
+					return lhs < rhs;
+				});
+			itemValueTableByCategory[items[i].category].insert(lower, pair);
+		}*/
 	}
 
 	spellItems.clear();
@@ -1021,6 +1042,19 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 	{
 		spell.second.name = spellNameLocalizations[spell.second.internalName];
 	}
+
+	/*for ( auto i : itemValueTable )
+	{
+		printlog("itemValueTable %4d | %s", items[i.second].value, items[i.second].getIdentifiedName());
+	}
+	for ( int cat = 0; cat < NUMCATEGORIES; ++cat )
+	{
+		for ( auto i : itemValueTableByCategory[cat] )
+		{
+			printlog("itemValueTableByCategory %2d | %4d | %s", cat,
+				items[i.second].value, items[i.second].getIdentifiedName());
+		}
+	}*/
 }
 
 #ifndef EDITOR

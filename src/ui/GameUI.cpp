@@ -5488,10 +5488,10 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 		closeStatusFxWindow();
 		return;
 	}
-	if ( enableDebugKeys && keystatus[SDLK_g] )
+	/*if ( enableDebugKeys && keystatus[SDLK_g] )
 	{
 		statusFxFocusedWindowActive = true;
-	}
+	}*/
 	statusEffectFocusedWindow->setDisabled(true);
 	if ( StatusEffectQueue[player.playernum].statusEffectFrame && statusFxFocusedWindowActive )
 	{
@@ -29964,11 +29964,19 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			else
 			{
 				val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
-				if ( val < 0.1 )
+				if ( val < 0.0 )
+				{
+					snprintf(buf, sizeof(buf), rawValue.c_str(), 0);
+				}
+				else if ( val < 0.1 )
 				{
 					val = 9;
+					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 				}
-				snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+				else
+				{
+					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+				}
 			}
 		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
