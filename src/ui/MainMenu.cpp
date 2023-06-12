@@ -9374,8 +9374,8 @@ bind_failed:
         if (strncmp(name, str, len) == 0) {
             lobbyID = (int)strtol(name + len, nullptr, 10);
         }
-        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.results.size()) {
-            return &EOS.LobbySearchResults.results[lobbyID];
+        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.resultsSortedForDisplay.size()) {
+			return EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyID);
         } else {
             return nullptr;
         }
@@ -15425,17 +15425,19 @@ failed:
 	            }
 #endif
 #if defined(USE_EOS)
-	            for (int c = 0; c < EOS.LobbySearchResults.results.size(); ++c) {
-	                auto& lobby = EOS.LobbySearchResults.results[c];
-	                LobbyInfo info;
-					info.name = lobby.LobbyAttributes.lobbyName;
-                    info.version = lobby.LobbyAttributes.gameVersion;
-	                info.players = MAXPLAYERS - lobby.FreeSlots;
-	                info.ping = 50; // TODO
-	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
-	                info.flags = lobby.LobbyAttributes.serverFlags;
-	                info.address = "epic:" + std::to_string(c);
-	                addLobby(info);
+	            for (int c = 0; c < EOS.LobbySearchResults.resultsSortedForDisplay.size(); ++c) {
+					if ( auto lobby = EOS.LobbySearchResults.getResultFromDisplayedIndex(c) )
+					{
+						LobbyInfo info;
+						info.name = lobby->LobbyAttributes.lobbyName;
+						info.version = lobby->LobbyAttributes.gameVersion;
+						info.players = MAXPLAYERS - lobby->FreeSlots;
+						info.ping = 50; // TODO
+						info.locked = lobby->LobbyAttributes.gameCurrentLevel != -1;
+						info.flags = lobby->LobbyAttributes.serverFlags;
+						info.address = "epic:" + std::to_string(c);
+						addLobby(info);
+					}
 	            }
 #endif
             }
@@ -15475,6 +15477,12 @@ failed:
 	    else
 	    {
 		    EOS.bRequestingLobbies = false; // don't attempt search if not logged in
+			for ( auto& result : EOS.LobbySearchResults.results )
+			{
+				result.ClearData();
+			}
+			EOS.LobbySearchResults.results.clear();
+			EOS.LobbySearchResults.resultsSortedForDisplay.clear();
 	    }
 #else
 	    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
@@ -16475,7 +16483,8 @@ failed:
 	    slider->setWidgetBack("back_button");
 	    slider->setWidgetUp("wireless_tab");
 	    slider->setWidgetDown("join_lobby");
-	    slider->setWidgetLeft("pings");
+	    //slider->setWidgetLeft("pings");
+		slider->setWidgetLeft("names");
 		slider->setCallback([](Slider& slider){
 			Frame* frame = static_cast<Frame*>(slider.getParent()); assert(frame);
 			{
@@ -16490,11 +16499,17 @@ failed:
 			    actualSize.y = slider.getValue();
 			    column->setActualSize(actualSize);
 			}
-			{
+			/*{
 			    Frame* column = frame->findFrame("pings"); assert(column);
 			    auto actualSize = column->getActualSize();
 			    actualSize.y = slider.getValue();
 			    column->setActualSize(actualSize);
+			}*/
+			{
+				Frame* column = frame->findFrame("versions"); assert(column);
+				auto actualSize = column->getActualSize();
+				actualSize.y = slider.getValue();
+				column->setActualSize(actualSize);
 			}
 			slider.updateHandlePosition();
 			});
