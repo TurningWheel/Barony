@@ -3364,7 +3364,7 @@ namespace MainMenu {
 			u8" \n"
 			u8" \n"
 			u8" \n \n \n \n \n"
-			u8"A big shout-out to our open-source community!\n"
+			u8"Many thanks to our open-source community!\n"
 			u8" \n"
 			u8" \n \n \n \n \n"
 			u8"Barony is a product of Turning Wheel LLC\n"
@@ -3412,7 +3412,7 @@ namespace MainMenu {
 			u8"Jesse Riddle\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Learn more at https://www.github.com/TurningWheel/Barony\n"
+			u8"Barony was made possible by many anonymous contributors.\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Copyright \u00A9 %s, all rights reserved\n"
@@ -20046,11 +20046,19 @@ failed:
 				});
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
+#ifdef NINTENDO
+            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2)) {
+                button->setWidgetDown(options[forward].name);
+            } else {
+                button->setWidgetDown("banner1");
+            }
+#else
 			if (ingame || c + 1 < num_options) {
 			    button->setWidgetDown(options[forward].name);
 			} else {
 			    button->setWidgetDown("banner1");
 			}
+#endif
 			button->setWidgetUp(options[back].name);
 			if (!ingame) {
 			    button->setWidgetBack("back_button");
@@ -20150,7 +20158,8 @@ failed:
 		        },
 		    };
 #ifdef NINTENDO
-			constexpr int num_banners = 1;
+			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
+                0 : 1;
 #else
 		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
 #endif
