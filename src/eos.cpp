@@ -2132,11 +2132,11 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	    }
 	    else
 	    {
-		    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		    /*ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
 		    AttrData.Key = "PERMISSIONLEVEL";
 		    AttrData.Value.AsUtf8 = "0";
 		    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);*/
 	    }
 
 	    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
