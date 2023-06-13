@@ -6010,7 +6010,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 
 		if ( parent )
 		{
-			if ( parent->behavior == &actPlayer )
+			if ( parent->behavior == &actPlayer && hit.entity->isDamageableCollider() )
 			{
 				messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[4337],
 					language[hit.entity->getColliderLangName()]); // you destroy the %s!
