@@ -5323,6 +5323,9 @@ bind_failed:
 #ifdef NINTENDO
 					if ( Input::lastInputOfAnyKind.size() >= 4 )
 					{
+						if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
+							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt1");
+						}
 						if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
 							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
 						}
@@ -5330,6 +5333,9 @@ bind_failed:
 #else
 					if ( Input::lastInputOfAnyKind.size() >= 4 )
 					{
+						if (Input::lastInputOfAnyKind.substr(4) == "ButtonX") {
+							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt1");
+						}
 						if (Input::lastInputOfAnyKind.substr(4) == "ButtonY") {
 							Input::inputs[widget.getOwner()].consumeBinary("MenuAlt2");
 						}
