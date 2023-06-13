@@ -3486,26 +3486,9 @@ namespace MainMenu {
 			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
 		}
 
-		// update volume for sound groups
+		// set volume and sound driver
 		if (initialized) {
-#ifdef USE_FMOD
-			int selected_driver = 0;
-			int numDrivers = 0;
-			fmod_system->getNumDrivers(&numDrivers);
-			for (int i = 0; i < numDrivers; ++i) {
-				FMOD_GUID guid;
-				fmod_result = fmod_system->getDriverInfo(i, nullptr, 0, &guid, nullptr, nullptr, nullptr);
-
-				uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
-				uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
-				char guid_string[25];
-				snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
-				if (!selected_driver && current_audio_device == guid_string) {
-					selected_driver = i;
-				}
-			}
-			fmod_system->setDriver(selected_driver);
-#endif
+			setAudioDevice(current_audio_device);
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 		}
 	}
@@ -7918,6 +7901,13 @@ bind_failed:
 		gameModeManager.currentSession.restoreSavedServerFlags();
 
 	    closeNetworkInterfaces();
+
+		// hide all mouses
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			auto vmouse = inputs.getVirtualMouse(c);
+			vmouse->lastMovementFromController = true;
+			vmouse->draw_cursor = false;
+		}
 
 #ifdef NINTENDO
 		nxEnableAutoSleep();
@@ -18853,6 +18843,7 @@ failed:
 		discard_and_exit->setHighlightColor(makeColor(255, 255, 255, 255));
 		discard_and_exit->setCallback([](Button& button){
 			soundCancel();
+			setAudioDevice(current_audio_device);
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 			if (main_menu_frame) {
 				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
