@@ -453,22 +453,22 @@ void Widget::drawPost(const SDL_Rect size,
         if (glyphPosition == CENTERED ||
             glyphPosition == CENTERED_TOP ||
             glyphPosition == CENTERED_BOTTOM) {
-            x += size.w / 2;
+            x += (size.w + buttonsOffset.w) / 2;
         }
         if (glyphPosition == CENTERED_RIGHT ||
             glyphPosition == UPPER_RIGHT ||
             glyphPosition == BOTTOM_RIGHT) {
-            x += size.w;
+            x += size.w + buttonsOffset.w;
         }
         if (glyphPosition == CENTERED_LEFT ||
             glyphPosition == CENTERED ||
             glyphPosition == CENTERED_RIGHT) {
-            y += size.h / 2;
+            y += (size.h + buttonsOffset.h) / 2;
         }
         if (glyphPosition == CENTERED_BOTTOM ||
             glyphPosition == BOTTOM_LEFT ||
             glyphPosition == BOTTOM_RIGHT) {
-            y += size.h;
+            y += size.h + buttonsOffset.h;
         }
 
         // draw glyphs
