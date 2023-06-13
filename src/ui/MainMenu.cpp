@@ -15870,7 +15870,7 @@ failed:
 		        checkbox->setWidgetDown(next_name.c_str());
 		        checkbox->setWidgetUp(prev_name.c_str());
 				checkbox->addWidgetAction("MenuAlt2", "refresh");
-
+				checkbox->addWidgetAction("MenuLeft", "filter_settings");
 		        ++index;
             }
 		}
@@ -16014,7 +16014,8 @@ failed:
 		online_tab->setColor(0);
 		online_tab->setText("ONLINE");
 		online_tab->setFont(smallfont_outline);
-		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_LEFT);
+		online_tab->setButtonsOffset(SDL_Rect{ 0, 0, 0, 0 });
 		online_tab->setWidgetSearchParent(window->getName());
 		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
 		online_tab->addWidgetAction("MenuPageRight", "lan_tab");
@@ -16097,7 +16098,8 @@ failed:
 		lan_tab->setText("LAN");
 #endif
 		lan_tab->setFont(smallfont_outline);
-		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		lan_tab->setButtonsOffset(SDL_Rect{ 0, 0, 0, 0 });
 		lan_tab->setWidgetSearchParent(window->getName());
 		lan_tab->addWidgetAction("MenuPageLeft", "online_tab");
 		lan_tab->addWidgetAction("MenuPageRight", "lan_tab");
@@ -16654,8 +16656,8 @@ failed:
 					auto selectedWidget = frame_right->findSelectedWidget(frame_right->getOwner());
 					if ( selectedWidget )
 					{
-						soundCancel();
 						button.select();
+						soundMove();
 					}
 					else
 					{
@@ -16663,8 +16665,8 @@ failed:
 						if (checkbox) {
 							checkbox->select();
 						}
+						soundActivate();
 					}
-					soundActivate();
 				}
 			}
 			else {
