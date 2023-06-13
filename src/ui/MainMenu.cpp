@@ -1716,13 +1716,6 @@ namespace MainMenu {
     }
 
     static void openDLCPrompt(int which) {
-#ifdef NINTENDO
-		// For now, DLC is disabled for the 1.0 build.
-		// This is because we can't setup store pages for our DLC yet,
-		// So this feature simply won't pass lot-check until later.
-		soundError();
-		return;
-#else
 		static int dlcPromptIndex;
 		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
@@ -1733,7 +1726,9 @@ namespace MainMenu {
 				soundActivate();
 				openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
 #elif defined(NINTENDO)
-				nxShowDLCPage(dlcPromptIndex);
+				if (nxShowDLCPage(dlcPromptIndex) == false) {
+					soundError();
+				}
 #elif defined(USE_EOS)
 				soundActivate();
 				openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
@@ -1846,7 +1841,6 @@ namespace MainMenu {
                 soundCancel();
                 closeTextField();
             });
-#endif
 #endif
     }
 
@@ -3454,7 +3448,7 @@ namespace MainMenu {
 			u8" \n"
 			u8" \n"
 			u8" \n \n \n \n \n"
-			u8"A big shout-out to our open-source community!\n"
+			u8"Many thanks to our open-source community!\n"
 			u8" \n"
 			u8" \n \n \n \n \n"
 			u8"Barony is a product of Turning Wheel LLC\n"
@@ -3502,7 +3496,7 @@ namespace MainMenu {
 			u8"Jesse Riddle\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
-			u8"Learn more at https://www.github.com/TurningWheel/Barony\n"
+			u8"Barony was made possible by many anonymous contributors.\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Copyright \u00A9 %s, all rights reserved\n"
@@ -3629,8 +3623,9 @@ namespace MainMenu {
 	static void inventorySortingDefaults(Button& button) {
 		soundActivate();
 		allSettings.inventory_sorting = InventorySorting::reset();
-		auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
-		window->removeSelf();
+		auto window = static_cast<Frame*>(button.getParent());
+		auto dimmer = static_cast<Frame*>(window->getParent());
+		dimmer->removeSelf();
 		settingsCustomizeInventorySorting(button);
 	}
 
@@ -3655,8 +3650,9 @@ namespace MainMenu {
 
 	static void inventorySortingConfirm(Button& button) {
 		soundActivate();
-		auto window = main_menu_frame->findFrame("inventory_sorting_window"); assert(window);
-		window->removeSelf();
+		auto window = static_cast<Frame*>(button.getParent());
+		auto dimmer = static_cast<Frame*>(window->getParent());
+		dimmer->removeSelf();
 		auto settings = main_menu_frame->findFrame("settings");
 		if (settings) {
 			auto settings_subwindow = settings->findFrame("settings_subwindow");
@@ -20365,7 +20361,11 @@ failed:
 			int back = c - 1 < 0 ? num_options - 1 : c - 1;
 			int forward = c + 1 >= num_options ? 0 : c + 1;
 #ifdef NINTENDO
-			button->setWidgetDown(options[forward].name);
+            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2)) {
+                button->setWidgetDown(options[forward].name);
+            } else {
+                button->setWidgetDown("banner1");
+            }
 #else
 			if (ingame || c + 1 < num_options) {
 			    button->setWidgetDown(options[forward].name);
@@ -20437,7 +20437,6 @@ failed:
 		);
 
 		if (!ingame) {
-#ifndef NINTENDO
 		    const char* banner_images[][2] = {
 		        {
 		            "*#images/ui/Main Menus/Banners/UI_MainMenu_QoDPatchNotes1_base.png",
@@ -20472,7 +20471,12 @@ failed:
                 openURLTryWithOverlay("https://discord.gg/xDhtaR9KA2");
 		        },
 		    };
+#ifdef NINTENDO
+			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
+                0 : 1;
+#else
 		    constexpr int num_banners = sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+#endif
 		    auto banners = main_menu_frame->addFrame("banners");
 		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
 			for (int c = 0; c < num_banners; ++c) {
@@ -20517,7 +20521,6 @@ failed:
 				auto dimmer = main_menu_frame->findFrame("dimmer");
 				widget.setInvisible(dimmer != nullptr);
 				});
-#endif
 
 			char buf[64];
 			const char date[] = __DATE__;

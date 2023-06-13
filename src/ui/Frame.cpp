@@ -735,25 +735,41 @@ void Frame::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const W
 			entry_t& entry = *list[i];
 
 			// draw highlighted background
+            bool drawHighlight = false;
 		    if (activated || mouseActive) {
-		        SDL_Rect pos;
-		        pos.x = _size.x + border - scroll.x;
-		        pos.y = _size.y + border + i * entrySize - scroll.y;
-		        pos.w = _size.w;
-		        pos.h = entrySize;
+                drawHighlight = true;
+            } else {
+                auto fparent = parent ?
+                    static_cast<Frame*>(parent) : nullptr;
+                if (fparent) {
+                    for (auto target : syncScrollTargets) {
+                        auto frame = fparent->findFrame(target.c_str());
+                        if (frame && frame->isActivated()) {
+                            drawHighlight = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (drawHighlight) {
+                SDL_Rect pos;
+                pos.x = _size.x + border - scroll.x;
+                pos.y = _size.y + border + i * entrySize - scroll.y;
+                pos.w = _size.w;
+                pos.h = entrySize;
 
-		        SDL_Rect dest;
-		        dest.x = std::max(_size.x, pos.x);
-		        dest.y = std::max(_size.y, pos.y);
-		        dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
-		        dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
+                SDL_Rect dest;
+                dest.x = std::max(_size.x, pos.x);
+                dest.y = std::max(_size.y, pos.y);
+                dest.w = pos.w - (dest.x - pos.x) - std::max(0, (pos.x + pos.w) - (_size.x + _size.w));
+                dest.h = pos.h - (dest.y - pos.y) - std::max(0, (pos.y + pos.h) - (_size.y + _size.h));
 
                 if (activation == &entry && activatedEntryColor) {
-					auto white = Image::get("images/system/white.png");
+                    auto white = Image::get("images/system/white.png");
                     white->drawColor(nullptr, dest, viewport, activatedEntryColor);
                 }
-		        else if (selection == i && selectedEntryColor) {
-					auto white = Image::get("images/system/white.png");
+                else if (selection == i && selectedEntryColor) {
+                    auto white = Image::get("images/system/white.png");
                     white->drawColor(nullptr, dest, viewport, selectedEntryColor);
                 }
             }
@@ -2573,9 +2589,13 @@ void Frame::addSyncScrollTarget(const char* name) {
 }
 
 void Frame::syncScroll() {
-    assert(gui);
-    for (auto name : syncScrollTargets) {
-        auto frame = gui->findFrame(name.c_str());
+    Frame* fparent = parent ?
+        static_cast<Frame*>(parent) : nullptr;
+    if (!fparent) {
+        return;
+    }
+    for (auto target : syncScrollTargets) {
+        auto frame = fparent->findFrame(target.c_str());
         if (frame) {
             auto _size = frame->getActualSize();
             _size.x = actualSize.x;
