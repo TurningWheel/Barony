@@ -15289,7 +15289,7 @@ failed:
 		entry_version->highlight = selection_fn;
 		entry_version->selected = selection_fn;
 		entry_version->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(183, 155, 119, 255);
-		entry_version->text = std::string("  [") + info.version + std::string("]");
+		entry_version->text = std::string("  ") + info.version;
 		entry_version->data = (info.index < 0 || info.index >= lobbies.size()) ?
 			(void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
@@ -15748,7 +15748,7 @@ failed:
 
 
 		auto frame_right = window->addFrame("frame_right");
-		frame_right->setInvisible(true);
+		frame_right->setInvisible(!lobbyFiltersEnabled);
 		frame_right->setSize(SDL_Rect{background->pos.x + background->pos.w - 16, 28, 304, 414});
 		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
 		frame_right->setBorder(0);
@@ -15833,6 +15833,15 @@ failed:
                     case Filter::OFF: *filter = Filter::UNCHECKED; break;
                     }
                     button.setIcon(icons[(int)*filter]);
+					lobbyFiltersEnabled = false;
+					for ( int i = 0; i < numFilters; ++i )
+					{
+						if ( lobbyFilters[i] != Filter::UNCHECKED )
+						{
+							lobbyFiltersEnabled = true;
+							break;
+						}
+					}
                     clearLobbies();
                     for (auto& lobby : lobbies) {
                         addLobby(lobby);
@@ -15843,11 +15852,21 @@ failed:
 		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
 		        checkbox->setWidgetDown(next_name.c_str());
 		        checkbox->setWidgetUp(prev_name.c_str());
+				checkbox->addWidgetAction("MenuAlt2", "refresh");
 
 		        ++index;
             }
 		}
-        lobbyFiltersEnabled = !frame_right->isInvisible();
+
+		lobbyFiltersEnabled = false;
+		for ( int i = 0; i < numFilters; ++i )
+		{
+			if ( lobbyFilters[i] != Filter::UNCHECKED )
+			{
+				lobbyFiltersEnabled = true;
+				break;
+			}
+		}
 
 		auto frame_left = window->addFrame("frame_left");
 		frame_left->setInvisible(true);
@@ -16249,13 +16268,35 @@ failed:
 		SDL_Rect prevColumnSize;
         // name column
         {
-		    auto name_column_header = window->addField("name_column_header", 32);
+		    auto name_column_header = window->addField("name_column_header", 64);
 		    name_column_header->setHJustify(Field::justify_t::LEFT);
 		    name_column_header->setVJustify(Field::justify_t::TOP);
 		    name_column_header->setFont(smallfont_no_outline);
-		    name_column_header->setSize(SDL_Rect{354, 116, 172, 20});
+		    name_column_header->setSize(SDL_Rect{354, 116, 380, 20});
 		    name_column_header->setColor(makeColor(106, 192, 159, 255));
 		    name_column_header->setText(" Lobby Name");
+			name_column_header->setTickCallback([](Widget& widget) {
+				Field* name_column_header = static_cast<Field*>(&widget);
+				if ( lobbyFiltersEnabled )
+				{
+					auto names = static_cast<Frame*>(widget.getParent())->findFrame("names");
+					int lobbiesFiltered = std::max(0, (int)lobbies.size() - (int)names->getEntries().size());
+					if ( lobbiesFiltered > 0 )
+					{
+						char buf[64] = {'\0'};
+						snprintf(buf, sizeof(buf), " Lobby Name (%d hidden)", lobbiesFiltered);
+						name_column_header->setText(buf);
+					}
+					else
+					{
+						name_column_header->setText(" Lobby Name");
+					}
+				}
+				else
+				{
+					name_column_header->setText(" Lobby Name");
+				}
+			});
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
@@ -16273,6 +16314,45 @@ failed:
 		    list->setEntrySize(18);
 		    list->setSelectedEntryColor(highlightColor);
 		    list->setActivatedEntryColor(activatedColor);
+
+			static auto tick_callback = [](Widget& widget) {
+				widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
+				Frame* frame = static_cast<Frame*>(&widget);
+				if ( frame->isActivated() )
+				{
+					widget.setHideSelectors(true);
+					frame->setGlyphPosition(Widget::UPPER_LEFT);
+					SDL_Rect rect{ 0, 0, 0, 0 };
+					rect.y = frame->getSelection() * frame->getEntrySize();
+					rect.y -= frame->getActualSize().y; // subtract scroll
+					rect.x -= 7;
+					rect.y += 8;
+					if ( rect.y < 0 ) {
+						frame->setHideGlyphs(true);
+					}
+					else if ( rect.y > frame->getSize().h )
+					{
+						frame->setHideGlyphs(true);
+					}
+					else
+					{
+						frame->setHideGlyphs(false);
+					}
+					//rect.y = std::max(0, rect.y);
+					//rect.y = std::min(frame->getSize().h, rect.y);
+					frame->setButtonsOffset(rect);
+				}
+				else
+				{
+					frame->setHideGlyphs(false);
+					frame->setButtonsOffset(SDL_Rect{ 0, 0, 192, 0 });
+					frame->setGlyphPosition(Widget::CENTERED_BOTTOM);
+				}
+				if ( !gui->findSelectedWidget(widget.getOwner()) ) {
+					widget.select();
+				}
+			};
+
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -16288,6 +16368,8 @@ failed:
 		    list->addSyncScrollTarget("players");
 		    //list->addSyncScrollTarget("pings");
 			list->addSyncScrollTarget("versions");
+			list->setSelectorOffset(SDL_Rect{ 0, 0, 150, 0 });
+			list->setButtonsOffset(SDL_Rect{ 0, 0, 192, 0 });
 		    list->select();
 
 			auto divider = window->addImage(
@@ -16525,20 +16607,48 @@ failed:
 		auto filter_settings_fn = [](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
 			auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
-			frame_right->setInvisible(frame_right->isInvisible() == false);
-			lobbyFiltersEnabled = !frame_right->isInvisible();
-			clearLobbies();
+
+			lobbyFiltersEnabled = false;
+			for ( int i = 0; i < numFilters; ++i )
+			{
+				if ( lobbyFilters[i] != Filter::UNCHECKED )
+				{
+					lobbyFiltersEnabled = true;
+					break;
+				}
+			}
+
+			if ( button.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor )
+			{
+				frame_right->setInvisible(false);
+			}
+			else
+			{
+				frame_right->setInvisible(!lobbyFiltersEnabled && !frame_right->isInvisible());
+			}
+
+			/*clearLobbies();
 			for (auto& lobby : lobbies) {
 				addLobby(lobby);
-			}
-			if (lobbyFiltersEnabled) {
+			}*/
+
+			if (!frame_right->isInvisible()) {
 				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-					auto checkbox = frame_right->findButton("filter_checkbox0");
-					if (checkbox) {
-						checkbox->select();
+					auto selectedWidget = frame_right->findSelectedWidget(frame_right->getOwner());
+					if ( selectedWidget )
+					{
+						soundCancel();
+						button.select();
 					}
+					else
+					{
+						auto checkbox = frame_right->findButton("filter_checkbox0");
+						if (checkbox) {
+							checkbox->select();
+						}
+					}
+					soundActivate();
 				}
-				soundActivate();
 			}
 			else {
 				soundCancel();
@@ -16548,7 +16658,7 @@ failed:
 
 #if defined(STEAMWORKS) && defined(USE_EOS)
 		auto filter_settings = window->addButton("filter_settings");
-		filter_settings->setSize(SDL_Rect{online_tab->getSize().x + 32, 344, 160, 32});
+		filter_settings->setSize(SDL_Rect{online_tab->getSize().x + 36, 344, 160, 32});
 		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
 		filter_settings->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsHigh00.png");
 		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsPress00.png");
