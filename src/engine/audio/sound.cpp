@@ -398,6 +398,7 @@ OPENAL_BUFFER* caveslairmusic = NULL;
 OPENAL_BUFFER* bramscastlemusic = NULL;
 OPENAL_BUFFER* hamletmusic = NULL;
 OPENAL_BUFFER* tutorialmusic = nullptr;
+OPENAL_BUFFER* introstorymusic = nullptr;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = nullptr;

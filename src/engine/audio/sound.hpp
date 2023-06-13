@@ -66,7 +66,7 @@ extern FMOD::Sound** hellmusic;
 #define NUMHELLMUSIC 3
 extern FMOD::Sound** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern FMOD::Sound** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD::Sound* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
+extern FMOD::Sound* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic, *introstorymusic;
 extern FMOD::Sound* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern FMOD::Sound** cavesmusic;
@@ -165,7 +165,7 @@ extern OPENAL_BUFFER** hellmusic;
 #define NUMHELLMUSIC 3
 extern OPENAL_BUFFER** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
-extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
+extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic, *introstorymusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern OPENAL_BUFFER** cavesmusic;

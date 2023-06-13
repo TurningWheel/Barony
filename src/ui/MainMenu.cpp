@@ -19300,13 +19300,13 @@ failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::RootMainMenu);});
-				playMusic(sounds[501], false, true, false);
+				playMusic(introstorymusic, false, true, false);
 			}
 			else if (main_menu_fade_destination == FadeDestination::IntroStoryScreenNoMusicFade) {
 				destroyMainMenu();
 				createDummyMainMenu();
 				createStoryScreen("data/story/intro.json", [](){beginFade(FadeDestination::TitleScreen);});
-				playMusic(sounds[501], false, false, false);
+				playMusic(introstorymusic, false, false, false);
 			}
 			else if (main_menu_fade_destination >= FadeDestination::HerxMidpointHuman &&
 			    main_menu_fade_destination <= FadeDestination::ClassicBaphometEndingEvil) {
