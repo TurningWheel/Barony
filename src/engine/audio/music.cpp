@@ -49,6 +49,7 @@ int fmod_result;
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SANCTUM, FMOD_DEFAULT, nullptr, &sanctummusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TUTORIAL, FMOD_DEFAULT, nullptr, &tutorialmusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTROSTORY, FMOD_DEFAULT, nullptr, &introstorymusic);
+	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GAMEOVER, FMOD_DEFAULT, nullptr, &gameovermusic);
 	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GNOMISH_MINES) != nullptr )
 	{
 		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GNOMISH_MINES, FMOD_DEFAULT, nullptr, &gnomishminesmusic);

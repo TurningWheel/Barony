@@ -13,6 +13,7 @@ const char* MUSIC_FILEPATH_DEVIL = "music/devil.ogg";
 const char* MUSIC_FILEPATH_SANCTUM = "music/sanctum.ogg";
 const char* MUSIC_FILEPATH_TUTORIAL = "music/tutorial.ogg";
 const char* MUSIC_FILEPATH_INTROSTORY = "sound/ui/StoryMusicV3.ogg";
+const char* MUSIC_FILEPATH_GAMEOVER = "sound/ui/gameover.ogg";
 const char* MUSIC_FILEPATH_GNOMISH_MINES = "music/gnomishmines.ogg";
 const char* MUSIC_FILEPATH_GREATCASTLE = "music/greatcastle.ogg";
 const char* MUSIC_FILEPATH_SOKOBAN = "music/sokoban.ogg";
