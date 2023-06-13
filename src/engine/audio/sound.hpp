@@ -110,6 +110,7 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
 // all parameters should be in ranges of [0.0 - 1.0]
+void setAudioDevice(const std::string& device);
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification);
 
 bool loadMusic();
