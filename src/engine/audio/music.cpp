@@ -48,6 +48,8 @@ int fmod_result;
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_DEVIL, FMOD_DEFAULT, nullptr, &devilmusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_SANCTUM, FMOD_DEFAULT, nullptr, &sanctummusic);
 	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_TUTORIAL, FMOD_DEFAULT, nullptr, &tutorialmusic);
+	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_INTROSTORY, FMOD_DEFAULT, nullptr, &introstorymusic);
+	fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GAMEOVER, FMOD_DEFAULT, nullptr, &gameovermusic);
 	if ( PHYSFS_getRealDir(MUSIC_FILEPATH_GNOMISH_MINES) != nullptr )
 	{
 		fmod_result = fmod_system->createStream(MUSIC_FILEPATH_GNOMISH_MINES, FMOD_DEFAULT, nullptr, &gnomishminesmusic);
@@ -243,6 +245,7 @@ void playMusic(FMOD::Sound* sound, bool loop, bool crossfade, bool resume)
 	}
 	else
 	{
+		music_channel->setVolume(1.0f); // start at max volume
 		music_channel2->stop();
 	}
 	if (loop == true)

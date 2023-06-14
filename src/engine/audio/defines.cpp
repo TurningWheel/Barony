@@ -53,6 +53,8 @@ FMOD::Sound* caveslairmusic = nullptr;
 FMOD::Sound* bramscastlemusic = nullptr;
 FMOD::Sound* hamletmusic = nullptr;
 FMOD::Sound* tutorialmusic = nullptr;
+FMOD::Sound* introstorymusic = nullptr;
+FMOD::Sound* gameovermusic = nullptr;
 bool levelmusicplaying = false;
 
 FMOD::Channel* music_channel = nullptr;

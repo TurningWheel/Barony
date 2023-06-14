@@ -66,7 +66,7 @@ extern FMOD::Sound** hellmusic;
 #define NUMHELLMUSIC 3
 extern FMOD::Sound** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern FMOD::Sound** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD::Sound* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
+extern FMOD::Sound* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic, *introstorymusic, *gameovermusic;
 extern FMOD::Sound* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern FMOD::Sound** cavesmusic;
@@ -110,6 +110,7 @@ FMOD::Channel* playSoundNotification(Uint16 snd, Uint8 vol);
 FMOD::Channel* playSoundVelocity();
 
 // all parameters should be in ranges of [0.0 - 1.0]
+void setAudioDevice(const std::string& device);
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification);
 
 bool loadMusic();
@@ -165,7 +166,7 @@ extern OPENAL_BUFFER** hellmusic;
 #define NUMHELLMUSIC 3
 extern OPENAL_BUFFER** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
-extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic;
+extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic, *tutorialmusic, *introstorymusic, *gameovermusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern OPENAL_BUFFER** cavesmusic;

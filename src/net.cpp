@@ -3459,7 +3459,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		combatmusicplaying = false;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment * 4;
-		playMusic(sounds[209], false, true, false);
+		playMusic(gameovermusic, false, true, false);
 #endif
 		combat = false;
 		assailant[clientnum] = false;
