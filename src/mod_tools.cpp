@@ -2889,7 +2889,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 			else if ( detailTag == "EFF_WARNING" )
 			{
-				int radius = std::max(3, 11 + 5 * item.beatitude);
+				int beatitude = shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude;
+				int radius = std::max(3, 11 + 5 * beatitude);
 				snprintf(buf, sizeof(buf), str.c_str(), radius, getItemBeatitudeAdjective(item.beatitude).c_str());
 			}
 			else
