@@ -4078,6 +4078,37 @@ void StatueManager_t::refreshAllStatues()
 #endif // !EDITOR
 }
 
+void StatueManager_t::readAllStatues()
+{
+	std::string baseDir = "data/statues";
+	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
+	for ( auto file : files )
+	{
+		std::string checkFile = baseDir + '/' + file;
+		PHYSFS_Stat stat;
+		if ( PHYSFS_stat(checkFile.c_str(), &stat) == 0 ) { continue; }
+
+		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+		{
+			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
+			for ( auto file2 : files2 )
+			{
+				std::string checkFile2 = checkFile + '/' + file2;
+				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
+
+				if ( stat.filetype != PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+				{
+					readStatueFromFile(0, checkFile2);
+				}
+			}
+		}
+		else
+		{
+			readStatueFromFile(0, checkFile);
+		}
+	}
+}
+
 void StatueManager_t::readStatueFromFile(int index, std::string filename)
 {
 	std::string fileName = "/data/statues/statue" + std::to_string(index) + ".json";

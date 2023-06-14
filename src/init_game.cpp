@@ -225,6 +225,7 @@ int initGame()
 	ClassHotbarConfig_t::init();
 	MainMenu::RaceDescriptions::readFromFile();
 	MainMenu::ClassDescriptions::readFromFile();
+	StatueManager.readAllStatues();
 
 	std::atomic_bool loading_done {false};
 	auto loading_task = std::async(std::launch::async, [&loading_done](){

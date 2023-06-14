@@ -2774,6 +2774,7 @@ public:
 	real_t statueEditorHeightOffset = 0.0;
 	bool drawGreyscale = false;
 	void readStatueFromFile(int index, std::string filename);
+	void readAllStatues();
 	void refreshAllStatues();
 	void resetStatueEditor();
 	static Uint32 statueId;
