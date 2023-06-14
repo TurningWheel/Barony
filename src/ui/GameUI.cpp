@@ -30027,7 +30027,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				val = 10 * (stats[playernum]->PROFICIENCIES[proficiency] + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
 				if ( val < 0.0 )
 				{
-					snprintf(buf, sizeof(buf), rawValue.c_str(), 0);
+					snprintf(buf, sizeof(buf), "??? Gold");
 				}
 				else if ( val < 0.1 )
 				{
