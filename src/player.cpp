@@ -1959,39 +1959,40 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 	return MODULE_NONE;
 }
 
+static ConsoleVariable<int> cvar_game_ui_sfx_volume("/game_ui_sfx_volume", 32);
 void Player::soundMovement()
 {
-	playSound(604, 32);
+	playSound(604, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundHotbarShootmodeMovement()
 {
-	playSound(604, 32);
+	playSound(604, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundModuleNavigation()
 {
-	playSound(494, 32);
+	playSound(494, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundActivate() 
 {
-	playSound(493, 32);
+	playSound(493, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundCancel() 
 {
-	playSound(499, 32);
+	playSound(499, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundStatusOpen()
 {
-	//playSound(494, 32);
+	//playSound(494, *cvar_game_ui_sfx_volume);
 }
 
 void Player::soundStatusClose()
 {
-	playSound(494, 32);
+	playSound(494, *cvar_game_ui_sfx_volume);
 }
 
 bool Player::GUI_t::handleInventoryMovement()

@@ -5449,6 +5449,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 			dismiss->setOntop(true);
 			dismiss->setCallback([](Button& button) {
 				players[button.getOwner()]->hud.closeStatusFxWindow();
+				Player::soundCancel();
 			});
 
 			auto noEffectTxt = backgroundFrame->addField("no effect txt", 128);
