@@ -3201,6 +3201,14 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					dist += 2; // distance penalty
 				}
 			}
+			else if ( parent->behavior == &actItem && parent->sprite == items[GEM_ROCK].index )
+			{
+				dist += 8.0; // distance penalty for rocks from digging etc
+			}
+			else if ( parent->behavior == &actGoldBag )
+			{
+				dist = std::max(0.02, dist - 4.0); // bonus priority for goldbag
+			}
 
 			if ( followerSelectInteract )
 			{
