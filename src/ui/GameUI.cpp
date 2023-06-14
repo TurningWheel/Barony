@@ -3716,6 +3716,7 @@ void createUINavigation(const int player)
 		statusButton->setColor(makeColor(255, 255, 255, 255));
 		statusButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		statusButton->setCallback([](Button& button) {
+			Player::soundActivate();
 			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_CHARSHEET )
 			{
 				players[button.getOwner()]->inventoryUI.slideOutPercent = 1.0;
@@ -3750,6 +3751,10 @@ void createUINavigation(const int player)
 		itemsButton->setColor(makeColor(255, 255, 255, 255));
 		itemsButton->setHighlightColor(makeColor(255, 255, 255, 255));
 		itemsButton->setCallback([](Button& button) {
+			if ( players[button.getOwner()]->hud.compactLayoutMode != Player::HUD_t::COMPACT_LAYOUT_INVENTORY )
+			{
+				Player::soundActivate();
+			}
 			players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 			if ( inputs.getVirtualMouse(button.getOwner())->draw_cursor )
 			{
@@ -5652,6 +5657,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 				if ( !bgFrame->capturesMouse() )
 				{
 					closeStatusFxWindow();
+					Player::soundCancel();
 					return;
 				}
 			}
@@ -5690,6 +5696,7 @@ void Player::HUD_t::updateStatusEffectFocusedWindow()
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm");
 				closeStatusFxWindow();
+				Player::soundCancel();
 				return;
 			}
 		}
@@ -6540,6 +6547,7 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 		if ( findIndex != selectedEntry->navigation.end() )
 		{
 			selectedElement = (*findIndex).second;
+			Player::soundMovement();
 		}
 	}
 
@@ -10222,6 +10230,7 @@ void openMapWindow(int player) {
 		{
 			players[player]->GUI.returnToPreviousActiveModule();
 		}
+		Player::soundCancel();
         return;
     }
 
@@ -10237,6 +10246,8 @@ void openMapWindow(int player) {
 		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
 			players[player]->inventory_mode, Player::GUI_t::MODULE_MAP); // Reset the GUI to the inventory.
 	}
+
+	Player::soundActivate();
 
     auto& otherWindow = players[player]->messageZone.logWindow;
     if (otherWindow) {
@@ -10487,6 +10498,7 @@ void openMapWindow(int player) {
 				{
 					players[player]->GUI.returnToPreviousActiveModule();
 				}
+				Player::soundCancel();
             }
         }
 
@@ -10567,6 +10579,7 @@ void openMapWindow(int player) {
         if (players[player]->gui_mode == GUI_MODE_NONE) {
             players[player]->shootmode = true;
         }
+		Player::soundCancel();
         });
 }
 
@@ -10686,6 +10699,7 @@ void openLogWindow(int player) {
 		{
 			players[player]->GUI.returnToPreviousActiveModule();
 		}
+		Player::soundCancel();
         return;
     }
 
@@ -10700,6 +10714,8 @@ void openLogWindow(int player) {
 		players[player]->openStatusScreen(GUI_MODE_INVENTORY,
 			players[player]->inventory_mode, Player::GUI_t::MODULE_LOG); // Reset the GUI to the inventory.
 	}
+
+	Player::soundActivate();
 
     auto& otherWindow = players[player]->minimap.mapWindow;
     if (otherWindow) {
@@ -10961,6 +10977,7 @@ void openLogWindow(int player) {
 		if ( Input::inputs[player].consumeBinaryToggle("LogClose") ) {
 			Input::inputs[player].consumeBindingsSharedWithBinding("LogClose");
 			if ( players[player]->messageZone.logWindow ) {
+				Player::soundCancel();
 				players[player]->messageZone.logWindow->removeSelf();
 				players[player]->messageZone.logWindow = nullptr;
 				if ( players[player]->gui_mode == GUI_MODE_NONE ) {
@@ -11102,6 +11119,7 @@ void openLogWindow(int player) {
 		{
 			players[player]->GUI.returnToPreviousActiveModule();
 		}
+		Player::soundCancel();
         });
 	close_button->setDrawCallback([](const Widget& widget, SDL_Rect rect)
 	{
@@ -11458,6 +11476,14 @@ void Player::CharacterSheet_t::createCharacterSheet()
 			timerButton->setCallback([](Button& button){
 				bool& bShowTimer = players[button.getOwner()]->characterSheet.showGameTimerAlways;
 				bShowTimer = !bShowTimer;
+				if ( bShowTimer )
+				{
+					Player::soundActivate();
+				}
+				else
+				{
+					Player::soundCancel();
+				}
 			});
 			timerButton->setTickCallback(charsheet_deselect_fn);
 
@@ -12336,7 +12362,7 @@ void Player::GUIDropdown_t::activateSelection(const std::string& name, const int
 		{
 			autosortInventory(player.playernum);
 			//quickStackItems();
-			playSound(139, 64);
+			//playSound(139, 64);
 		}
 		messagePlayer(player.playernum, MESSAGE_DEBUG, "[Dropdowns]: Executing action '%s' for [%s] : option %d",
 			dropdown.options[option].action.c_str(), name.c_str(), option);
@@ -12959,6 +12985,7 @@ void Player::GUIDropdown_t::process()
 			{
 				dropDownOptionSelected = 0;
 			}
+			Player::soundMovement();
 		}
 		else if ( pressedUp	&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
 		{
@@ -12967,6 +12994,7 @@ void Player::GUIDropdown_t::process()
 			{
 				dropDownOptionSelected = dropDown.options.size() - 1;
 			}
+			Player::soundMovement();
 		}
 	}
 
@@ -13182,6 +13210,10 @@ void Player::GUIDropdown_t::process()
 	if ( !dropDownToggleClick && !Input::inputs[player.playernum].binary("MenuRightClick") )
 	{
 		activate = true;
+		if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
+		{
+			Player::soundActivate();
+		}
 	}
 	else if ( dropDownToggleClick )
 	{
@@ -13192,10 +13224,15 @@ void Player::GUIDropdown_t::process()
 		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuConfirm") )
 		{
 			activate = true;
+			if ( dropDownOptionSelected >= 0 && dropDownOptionSelected < dropDown.options.size() )
+			{
+				Player::soundActivate();
+			}
 		}
 		else if ( Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel") )
 		{
 			close();
+			Player::soundCancel();
 		}
 	}
 
@@ -13313,6 +13350,10 @@ void Player::GUIDropdown_t::open(const std::string name)
 		return;
 	}
 
+	if ( !inputs.getVirtualMouse(player.playernum)->draw_cursor )
+	{
+		Player::soundActivate();
+	}
 	bOpen = true;
 	bClosedThisTick = false;
 
@@ -22038,6 +22079,7 @@ void createChestGUI(const int player)
 		grabAllBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		grabAllBtn->setCallback([](Button& button) {
 			takeAllChestGUIAction(button.getOwner());
+			Player::soundActivate();
 		});
 
 		std::string promptFont = "fonts/pixel_maz.ttf#32#2";
@@ -22228,6 +22270,7 @@ void createShopGUI(const int player)
 		closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 		closeBtn->setCallback([](Button& button) {
 			closeShopGUIAction(button.getOwner());
+			Player::soundCancel();
 		});
 
 		auto discountFrame = bgFrame->addFrame("discount frame");
@@ -22356,6 +22399,7 @@ void createShopGUI(const int player)
 			buybackBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			buybackBtn->setCallback([](Button& button) {
 				toggleShopBuybackView(button.getOwner());
+				Player::soundActivate();
 			});
 
 			auto closeText = bgFrame->addField("close shop prompt", 32);
@@ -22704,6 +22748,10 @@ void createPlayerInventory(const int player)
 						close |= Input::inputs[player].consumeBinaryToggle("MenuConfirm");
 						close |= Input::inputs[player].consumeBinaryToggle("MenuCancel");
 					}
+					if ( close )
+					{
+						Player::soundCancel();
+					}
 
 					if ( players[player]->shootmode )
 					{
@@ -22748,6 +22796,7 @@ void createPlayerInventory(const int player)
 						scrollInertia = 0.0;
 						portraitYaw = (330) * PI / 180;
 						close = true;
+						Player::soundCancel();
 					}
 				}
 
@@ -22848,7 +22897,8 @@ void createPlayerInventory(const int player)
 			autosortButton->setHighlightColor(makeColor(255, 255, 255, 255));
 			autosortButton->setCallback([](Button& button) {
 				autosortInventory(button.getOwner());
-				playSound(139, 64);
+				//playSound(139, 64);
+				Player::soundActivate();
 			});
 			autosortButton->setTickCallback([](Widget& widget) {
 				if ( widget.isSelected()
@@ -29291,6 +29341,10 @@ void Player::SkillSheet_t::openSkillSheet()
 		players[player.playernum]->openStatusScreen(GUI_MODE_INVENTORY,
 			players[player.playernum]->inventory_mode, player.GUI.MODULE_SKILLS_LIST); // Reset the GUI to the inventory.
 	}
+	if ( !bSkillSheetOpen )
+	{
+		Player::soundActivate();
+	}
 	bSkillSheetOpen = true;
 	openTick = ticks;
 	scrollPercent = 0.0;
@@ -30763,6 +30817,7 @@ void Player::SkillSheet_t::processSkillSheet()
 		else
 		{
 			closeSkillSheet();
+			Player::soundCancel();
 		}
 	}
 
@@ -31254,6 +31309,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				}
 			}
 			inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+			Player::soundMovement();
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel")
 			&& player.bControlEnabled && !gamePaused && !player.usingCommand() )
@@ -31332,6 +31388,7 @@ void Player::SkillSheet_t::processSkillSheet()
 						{
 							selectSkill(i);
 							Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
+							Player::soundActivate();
 						}
 					}
 				}
@@ -32304,6 +32361,7 @@ void Player::SkillSheet_t::processSkillSheet()
 			}
 		}
 		closeSkillSheet();
+		Player::soundCancel();
 		return;
 	}
 
@@ -32342,6 +32400,7 @@ void Player::Inventory_t::SpellPanel_t::openSpellPanel()
 			scrollPercent = 0.0;
 			scrollInertia = 0.0;
 			bFirstTimeSnapCursor = false;
+			Player::soundActivate();
 		}
 		bOpen = true;
 	}
@@ -32359,6 +32418,12 @@ void Player::Inventory_t::SpellPanel_t::closeSpellPanel()
 	scrollPercent = 0.0;
 	scrollInertia = 0.0;
 	scrollAnimateX = scrollSetpoint;
+	if ( bOpen 
+		&& !(player.inventoryUI.bCompactView 
+			&& player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET) )
+	{
+		Player::soundCancel();
+	}
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
 }
@@ -33030,23 +33095,23 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	}
 	else
 	{
-		closeBtn->setInvisible(true);
-		grabAllBtn->setInvisible(true);
-		grabAllBtn->setDisabled(true);
-		closeBtn->setDisabled(true);
+		closeBtn->setInvisible(false);
+		grabAllBtn->setInvisible(false);
+		grabAllBtn->setDisabled(!isInteractable);
+		closeBtn->setDisabled(!isInteractable);
 	}
 
 	//auto slider = baseFrame->findSlider("chest slider");
 	auto chestSlotsFrame = chestFrame->findFrame("chest slots");
 
 	auto promptBack = baseFrame->findField("prompt back txt");
-	promptBack->setDisabled(!drawGlyphs);
+	promptBack->setDisabled(true);
 	auto promptBackImg = baseFrame->findImage("prompt back img");
-	promptBackImg->disabled = !drawGlyphs;
+	promptBackImg->disabled = !drawGlyphs || player.inventoryUI.spellPanel.bOpen;
 	auto promptGrab = baseFrame->findField("prompt grab txt");
-	promptGrab->setDisabled(!drawGlyphs);
+	promptGrab->setDisabled(true);
 	auto promptGrabImg = baseFrame->findImage("prompt grab img");
-	promptGrabImg->disabled = !drawGlyphs;
+	promptGrabImg->disabled = !drawGlyphs || player.inventoryUI.spellPanel.bOpen;
 	// handle height changing..
 	{
 		int frameHeight = 236 + 16;
@@ -33175,6 +33240,23 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				promptBackImg->pos = glyphPos;
 			}
 		}
+		else if ( drawGlyphs )
+		{
+			SDL_Rect glyphPos = closeBtn->getSize();
+			//glyphPos.x += glyphPos.w / 2;
+			promptBackImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuCancel");
+			promptBackImg->ontop = true;
+			Image* glyphImage = Image::get(promptBackImg->path.c_str());
+			if ( glyphImage )
+			{
+				glyphPos.w = glyphImage->getWidth();
+				glyphPos.h = glyphImage->getHeight();
+				glyphPos.x -= glyphPos.w;
+				glyphPos.x += 2;
+				glyphPos.y += 2;
+				promptBackImg->pos = glyphPos;
+			}
+		}
 		if ( !promptGrab->isDisabled() )
 		{
 			promptGrab->setText(language[4091]);
@@ -33211,6 +33293,22 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				}
 			}
 		}
+		else if ( drawGlyphs )
+		{
+			SDL_Rect glyphPos = grabAllBtn->getSize();
+			glyphPos.x += glyphPos.w / 2;
+			glyphPos.y += glyphPos.h - 4;
+			promptGrabImg->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuPageRightAlt");
+			promptGrabImg->ontop = true;
+			Image* glyphImage = Image::get(promptGrabImg->path.c_str());
+			if ( glyphImage )
+			{
+				glyphPos.w = glyphImage->getWidth();
+				glyphPos.h = glyphImage->getHeight();
+				glyphPos.x -= glyphPos.w / 2;
+				promptGrabImg->pos = glyphPos;
+			}
+		}
 		if ( !promptBack->isDisabled() )
 		{
 			if ( furthestLeftPrompt < promptBackImg->pos.x + promptBackImg->pos.w / 2 )
@@ -33238,9 +33336,10 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 				closeChestAction = true;
 			}
-			else if ( !promptGrab->isDisabled() && Input::inputs[player.playernum].consumeBinaryToggle("MenuPageRightAlt") )
+			else if ( !promptGrabImg->disabled && Input::inputs[player.playernum].consumeBinaryToggle("MenuPageRightAlt") )
 			{
 				takeAllChestGUIAction(player.playernum);
+				Player::soundActivate();
 			}
 		}
 	}

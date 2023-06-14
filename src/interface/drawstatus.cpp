@@ -2990,7 +2990,7 @@ void drawStatusNew(const int player)
 								}
 							}
 						}
-
+						Player::soundCancel();
 						players[player]->hotbar.faceMenuButtonHeld = Player::Hotbar_t::GROUP_NONE;
 						break;
 					}
@@ -3027,11 +3027,13 @@ void drawStatusNew(const int player)
 					{
 						hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierLeft");
+						Player::soundHotbarShootmodeMovement();
 					}
 					else if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierRight") )
 					{
 						hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierRight");
+						Player::soundHotbarShootmodeMovement();
 					}
 					else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
 					{
@@ -3091,8 +3093,6 @@ void drawStatusNew(const int player)
 			}
 		}
 
-		bool bumper_moved = false;
-
 		//Gamepad change hotbar selection.
 		if ( !players[player]->hotbar.useHotbarFaceMenu && Input::inputs[player].binaryToggle("Hotbar Right") )
 		{
@@ -3134,6 +3134,7 @@ void drawStatusNew(const int player)
 						warpMouseToSelectedHotbarSlot(player); // controller only functionality
 					}
 					hotbar_t.hotbarTooltipLastGameTick = ticks;
+					//Player::soundHotbarShootmodeMovement();
 				}
 			}
 			else
@@ -3181,6 +3182,7 @@ void drawStatusNew(const int player)
 						warpMouseToSelectedHotbarSlot(player); // controller only functionality
 					}
 					hotbar_t.hotbarTooltipLastGameTick = ticks;
+					//Player::soundHotbarShootmodeMovement();
 				}
 			}
 			else

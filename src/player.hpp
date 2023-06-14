@@ -290,12 +290,6 @@ public:
 	float x_forceMaxForwardThreshold = 0.7;
 	float x_forceMaxBackwardThreshold = 0.5;
 	float y_forceMaxStrafeThreshold = 0.7;
-
-	/*
-	* Uses dpad to move the cursor through the item context menu and select entries.
-	* Returns true if moved.
-	*/
-	bool handleRepairGUIMovement(const int player);
 };
 const int MAX_GAME_CONTROLLERS = 16;
 extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
@@ -2153,19 +2147,7 @@ public:
 		auto& slots() { return hotbar; };
 		auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
 		auto& slotsAlternate() { return hotbar_alternate; }
-		void selectHotbarSlot(int slot)
-		{
-			if ( slot < 0 )
-			{
-				slot = NUM_HOTBAR_SLOTS - 1;
-			}
-			if ( slot >= NUM_HOTBAR_SLOTS )
-			{
-				slot = 0;
-			}
-			current_hotbar = slot;
-			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
-		}
+		void selectHotbarSlot(int slot);
 		void initFaceButtonHotbar();
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 		void processHotbar();
@@ -2206,6 +2188,14 @@ public:
 		static real_t compactBigScale;
 		static real_t compact2pVerticalBigScale;
 	} minimap;
+
+	static void soundMovement();
+	static void soundActivate();
+	static void soundCancel();
+	static void soundModuleNavigation();
+	static void soundStatusOpen();
+	static void soundStatusClose();
+	static void soundHotbarShootmodeMovement();
 };
 
 extern Player* players[MAXPLAYERS];

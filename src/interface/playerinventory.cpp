@@ -3326,6 +3326,7 @@ void releaseItem(const int player) //TODO: This function uses toggleclick. Confl
 		selectedItemFromChest = 0;
 		selectedItem = nullptr;
 		Input::inputs[player].consumeBinaryToggle("MenuCancel");
+		Player::soundCancel();
 		return;
 	}
 
@@ -7584,50 +7585,39 @@ void Player::Inventory_t::updateInventory()
 			// do nothing?
 		}
 		else if ( inventoryControlActive
-			&& GenericGUI[player].selectedSlot < 0
 			&& players[player]->GUI.handleInventoryMovement() ) // handleInventoryMovement should be at the end of this check
 		{
-			if ( GenericGUI[player].selectedSlot < 0 ) //This second check prevents the extra mouse warp.
-			{
-				if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
-				{
-					warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
-				{
-					warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
-				{
-					warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
-				{
-					players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
-				{
-					tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
-				{
-					alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
-				{
-					featherGUI.warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER));
-				}
-				else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
-				{
-					disableMouseDisablingHotbarFocus = true;
-				}
-			}
-		}
-		else if ( GenericGUI[player].selectedSlot >= 0 && inventoryControlActive && inputs.getController(player)->handleRepairGUIMovement(player) )
-		{
-			if ( GenericGUI[player].selectedSlot < 0 )
+			if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 			{
 				warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+			{
+				warpMouseToSelectedSpell(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_CHEST )
+			{
+				warpMouseToSelectedChestSlot(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_SHOP )
+			{
+				players[player]->shopGUI.warpMouseToSelectedShopItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_TINKERING )
+			{
+				tinkerGUI.warpMouseToSelectedTinkerItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
+			{
+				alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
+			{
+				featherGUI.warpMouseToSelectedFeatherItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_HOTBAR )
+			{
+				disableMouseDisablingHotbarFocus = true;
 			}
 		}
 	}
@@ -7753,7 +7743,7 @@ void Player::Inventory_t::updateInventory()
 			{
 				autosortInventory(player);
 				//quickStackItems();
-				playSound(139, 64);
+				Player::soundActivate();
 			}
 		}
 

@@ -5018,10 +5018,12 @@ void ingameHud()
 			if ( players[player]->shootmode )
 			{
 				players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				//Player::soundStatusOpen();
 			}
 			else
 			{
 				players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+				//Player::soundStatusClose();
 			}
 		}
 
@@ -5057,6 +5059,7 @@ void ingameHud()
                     input.consumeBinaryToggle("Hotbar Up / Select");
                     input.consumeBinaryToggle("Hotbar Right");
                 }
+				Player::soundCancel();
 			}
 		}
 

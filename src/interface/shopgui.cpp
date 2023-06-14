@@ -1144,6 +1144,7 @@ void Player::ShopGUI_t::updateShop()
 			{
 				Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
 				::closeShop(player.playernum);
+				Player::soundCancel();
 				return;
 			}
 			else

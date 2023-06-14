@@ -1147,6 +1147,7 @@ bool Player::GUI_t::handleCharacterSheetMovement()
 		dpad_moved = false;
 		warpControllerToModule(false);
 		inputs.getVirtualMouse(player)->draw_cursor = false;
+		Player::soundMovement();
 		return true;
 	}
 	return false;
@@ -1295,6 +1296,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavLeftBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_INVENTORY;
 				}
@@ -1307,6 +1309,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavLeftBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_SHOP;
 				}
@@ -1338,6 +1341,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavLeftBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_ALCHEMY;
 				}
@@ -1351,6 +1355,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHEST;
 			}
@@ -1363,6 +1368,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_HOTBAR;
 			}
@@ -1379,6 +1385,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1397,6 +1404,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_HOTBAR;
 		}
@@ -1410,6 +1418,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
 		}
@@ -1423,6 +1432,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
 		}
@@ -1446,6 +1456,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_INVENTORY;
 			}
@@ -1473,6 +1484,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1485,6 +1497,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_SPELLS;
 			}
@@ -1545,6 +1558,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_INVENTORY;
 			}
@@ -1565,6 +1579,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavLeftBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1575,6 +1590,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavLeftBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_HOTBAR;
 		}
@@ -1601,6 +1617,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_INVENTORY;
 				}
@@ -1613,6 +1630,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_SHOP;
 				}
@@ -1644,6 +1662,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_ALCHEMY;
 				}
@@ -1657,6 +1676,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHEST;
 			}
@@ -1669,6 +1689,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_HOTBAR;
 			}
@@ -1687,6 +1708,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_HOTBAR;
 		}
@@ -1700,6 +1722,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
 		}
@@ -1713,6 +1736,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				warpControllerToModule(false);
 				input.consumeBinaryToggle("UINavRightBumper");
 				inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
 		}
@@ -1736,6 +1760,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_INVENTORY;
 			}
@@ -1763,6 +1788,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1777,6 +1803,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_SPELLS;
 				}
@@ -1837,6 +1864,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_INVENTORY;
 				}
@@ -1851,6 +1879,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 						warpControllerToModule(false);
 						input.consumeBinaryToggle("UINavRightBumper");
 						inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+						soundModuleNavigation();
 					}
 					return MODULE_SPELLS;
 				}
@@ -1868,6 +1897,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1888,6 +1918,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_CHARACTERSHEET;
 			}
@@ -1900,6 +1931,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_SPELLS;
 			}
@@ -1912,6 +1944,7 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 					warpControllerToModule(false);
 					input.consumeBinaryToggle("UINavRightBumper");
 					inputs.getVirtualMouse(player.playernum)->draw_cursor = false;
+					soundModuleNavigation();
 				}
 				return MODULE_INVENTORY;
 			}
@@ -1924,6 +1957,41 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 		}
 	}
 	return MODULE_NONE;
+}
+
+void Player::soundMovement()
+{
+	playSound(604, 32);
+}
+
+void Player::soundHotbarShootmodeMovement()
+{
+	playSound(604, 32);
+}
+
+void Player::soundModuleNavigation()
+{
+	playSound(494, 32);
+}
+
+void Player::soundActivate() 
+{
+	playSound(493, 32);
+}
+
+void Player::soundCancel() 
+{
+	playSound(499, 32);
+}
+
+void Player::soundStatusOpen()
+{
+	//playSound(494, 32);
+}
+
+void Player::soundStatusClose()
+{
+	playSound(494, 32);
 }
 
 bool Player::GUI_t::handleInventoryMovement()
@@ -2456,43 +2524,7 @@ bool Player::GUI_t::handleInventoryMovement()
 	{
 		dpad_moved = false;
 		inputs.getVirtualMouse(player)->draw_cursor = false;
-
-		return true;
-	}
-
-	return false;
-}
-
-bool GameController::handleRepairGUIMovement(const int player)
-{
-	bool dpad_moved = false;
-
-	if ( inputs.getUIInteraction(player)->itemMenuOpen )
-	{
-		return false;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_UP) )
-	{
-		GenericGUI[player].selectSlot(GenericGUI[player].selectedSlot - 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_UP);
-
-		dpad_moved = true;
-	}
-
-	if ( inputs.bControllerInputPressed(player, INJOY_DPAD_DOWN) )
-	{
-		GenericGUI[player].selectSlot(GenericGUI[player].selectedSlot + 1);
-		inputs.controllerClearInput(player, INJOY_DPAD_DOWN);
-
-		dpad_moved = true;
-	}
-
-	if ( dpad_moved )
-	{
-		dpad_moved = false;
-		//inputs.getVirtualMouse(player)->draw_cursor = false;
-
+		Player::soundMovement();
 		return true;
 	}
 
@@ -4170,6 +4202,20 @@ void Player::WorldUI_t::handleTooltips()
 	//DebugTimers.addTimePoint("tooltip", "tooltip end");
 }
 
+void Player::Hotbar_t::selectHotbarSlot(int slot)
+{
+	if ( slot < 0 )
+	{
+		slot = NUM_HOTBAR_SLOTS - 1;
+	}
+	if ( slot >= NUM_HOTBAR_SLOTS )
+	{
+		slot = 0;
+	}
+	current_hotbar = slot;
+	player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
+}
+
 void Player::Hotbar_t::initFaceButtonHotbar()
 {
 	faceButtonTopYPosition = yres;
@@ -4542,30 +4588,6 @@ const int Player::Inventory_t::getPlayerItemInventoryY() const
 	}
 	return y;
 }
-
-// TODO UI: REMOVE
-//const int Player::Inventory_t::getStartX() const 
-//{
-//	if ( bNewInventoryLayout )
-//	{
-//		return (player.characterSheet.characterSheetBox.x) + 8;
-//	}
-//	else
-//	{
-//		return (player.camera_midx() - (sizex) * (getSlotSize()) / 2 - inventory_mode_item_img->w / 2);
-//	}
-//}
-//const int Player::Inventory_t::getStartY() const
-//{
-//	if ( bNewInventoryLayout )
-//	{
-//		return player.characterSheet.characterSheetBox.y + player.characterSheet.characterSheetBox.h + 2;
-//	}
-//	else
-//	{
-//		return player.camera_y1() + starty;
-//	}
-//}
 
 bool Player::Inventory_t::warpMouseToSelectedItem(Item* snapToItem, Uint32 flags)
 {
