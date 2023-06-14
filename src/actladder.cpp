@@ -140,10 +140,10 @@ void actLadderUp(Entity* my)
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}*/
-	if ( my->ticks == 1 )
+	/*if ( my->ticks == 1 )
 	{
 		my->createWorldUITooltip();
-	}
+	}*/
 
 	// use ladder
 	if ( multiplayer != CLIENT )
