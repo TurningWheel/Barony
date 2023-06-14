@@ -929,6 +929,10 @@ void gameLogic(void)
 	deleteent_t* deleteent;
 	bool entitydeletedself;
 
+#ifdef NINTENDO
+	(void)nxUpdateCrashMessage();
+#endif
+
     if (!gamePaused && !loading) {
         if (demo_file) {
             // demo recording
