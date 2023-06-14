@@ -82,6 +82,7 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
 	stats[0]->playerRace = RACE_HUMAN;
 	stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+	client_classes[0] = CLASS_WARRIOR;
 	initClass(0);
 }
 
