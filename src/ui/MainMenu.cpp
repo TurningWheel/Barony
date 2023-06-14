@@ -1659,7 +1659,11 @@ namespace MainMenu {
 		static int dlcPromptIndex;
 		dlcPromptIndex = which;
 #if defined(NINTENDO) || defined(STEAMWORKS) || defined(USE_EOS)
+#ifdef NINTENDO
+		const char* window_text = "Would you like to browse this\nDLC in the Nintendo eShop?";
+#else
 		const char* window_text = "Would you like to browse this\nDLC in the online store?";
+#endif
 		binaryPrompt(window_text, "Yes", "No",
 			[](Button& button){
 #if defined(STEAMWORKS)
