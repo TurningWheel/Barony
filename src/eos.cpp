@@ -3586,7 +3586,7 @@ void EOSFuncs::CrossplayAccounts_t::denyCrossplay()
 
 void EOSFuncs::CrossplayAccounts_t::viewPrivacyPolicy()
 {
-	openURLTryWithOverlay("https://www.baronygame.com/privacypolicy.html");
+	openURLTryWithOverlay("https://www.baronygame.com/privacypolicy");
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
