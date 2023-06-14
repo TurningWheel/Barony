@@ -630,10 +630,9 @@ void actSkeletonLimb(Entity* my)
 			if ( lightName )
 			{
 				my->light = addLight(my->x / 16, my->y / 16, lightName);
+				my->actMonsterLimb(false);
+				return;
 			}
-
-			my->actMonsterLimb(false);
-			return;
 		}
 	}
 	my->actMonsterLimb(true);
