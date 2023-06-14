@@ -7508,6 +7508,10 @@ void Player::Inventory_t::updateInventory()
 				//warpMouseToSelectedItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 		}
+		if ( !isInteractable )
+		{
+			tooltipDelayTick = ticks + 4;
+		}
 		isInteractable = true;
 	}
 	else
