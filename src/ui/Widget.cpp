@@ -128,7 +128,7 @@ Widget* Widget::handleInput() {
 				if (input.consumeBinaryToggle(move.first.c_str())) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(move.second.c_str(), true);
-					if (!result) {
+					if (!result && !dontSearchAncestors) {
 						result = head ? head->findWidget(move.second.c_str(), true) : nullptr;
 					}
 					//printlog("%s: %p", move.second.c_str(), (void*)result);
@@ -154,7 +154,7 @@ Widget* Widget::handleInput() {
 				if (input.consumeBinaryToggle(action.first.c_str()) && !inputstr) {
 					root = root ? root : findSearchRoot();
 					Widget* result = root->findWidget(action.second.c_str(), true);
-					if (!result) {
+					if (!result && !dontSearchAncestors) {
 						result = head ? head->findWidget(action.second.c_str(), true) : nullptr;
 					}
 					//printlog("%s: %p", action.second.c_str(), (void*)result);
