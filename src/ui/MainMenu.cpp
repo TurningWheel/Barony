@@ -17744,293 +17744,324 @@ failed:
             none_exists->setText("No compatible save files found.");
             none_exists->setJustify(Field::justify_t::CENTER);
         } else {
-            int saveGameCount = 0;
+			// sort savegames by date/time
+			using list_type = std::pair<int, SaveGameInfo>;
+			std::list<list_type> savegames;
 		    for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
                 if (saveGameExists(singleplayer, i)) {
-                    const int posX = saveGameCount * 256 + (898 - 220) / 2;
-                    auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(i);
-                    auto savegame_book = subwindow.addButton(str.c_str());
-                    savegame_book->setSize(SDL_Rect{posX, 0, 220, 280});
-                    savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
-		            savegame_book->setColor(makeColor(255, 255, 255, 255));
-		            savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
-		            savegame_book->setFont(smallfont_outline);
-		            savegame_book->setTextColor(makeColor(255, 182, 73, 255));
-		            savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
-		            savegame_book->setTickCallback([](Widget& widget){
-	                    auto button = static_cast<Button*>(&widget);
-	                    auto frame = static_cast<Frame*>(widget.getParent());
+					savegames.emplace_back(i, getSaveGameInfo(singleplayer, i));
+				}
+			}
+			savegames.sort([](const list_type& lhs, const list_type& rhs){
+				return rhs.second.timestamp < lhs.second.timestamp;
+				});
 
-		                Input& input = Input::inputs[widget.getOwner()];
-		                bool scrolled = false;
-		                scrolled |= input.binary("MenuScrollDown");
-		                scrolled |= input.binary("MenuScrollUp");
-		                scrolled |= input.binary("MenuScrollLeft");
-		                scrolled |= input.binary("MenuScrollRight");
-		                scrolled |= input.binary("MenuMouseWheelUp");
-		                scrolled |= input.binary("MenuMouseWheelDown");
-		                if (scrolled) {
-		                    timeSinceScroll = ticks;
-		                } else if (widget.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-		                    savegame_selected = button;
-		                }
+			// create save game entries
+			int index = 0;
+			for (auto it = savegames.begin(); it != savegames.end(); ++it) {
+				auto& savegame = *it;
+                const int posX = index * 256 + (898 - 220) / 2;
+                auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(savegame.first);
+                auto savegame_book = subwindow.addButton(str.c_str());
+                savegame_book->setSize(SDL_Rect{posX, 0, 220, 280});
+                savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
+		        savegame_book->setColor(makeColor(255, 255, 255, 255));
+		        savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
+		        savegame_book->setFont(smallfont_outline);
+		        savegame_book->setTextColor(makeColor(255, 182, 73, 255));
+		        savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
+		        savegame_book->setTickCallback([](Widget& widget){
+	                auto button = static_cast<Button*>(&widget);
+	                auto frame = static_cast<Frame*>(widget.getParent());
 
-	                    auto frame_pos = frame->getActualSize();
-	                    auto button_size = button->getSize();
-	                    const int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+		            Input& input = Input::inputs[widget.getOwner()];
+		            bool scrolled = false;
+		            scrolled |= input.binary("MenuScrollDown");
+		            scrolled |= input.binary("MenuScrollUp");
+		            scrolled |= input.binary("MenuScrollLeft");
+		            scrolled |= input.binary("MenuScrollRight");
+		            scrolled |= input.binary("MenuMouseWheelUp");
+		            scrolled |= input.binary("MenuMouseWheelDown");
+		            if (scrolled) {
+		                timeSinceScroll = ticks;
+		            } else if (widget.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+		                savegame_selected = button;
+		            }
 
-		                if (ticks - timeSinceScroll > TICKS_PER_SECOND / 2) {
-		                    if (savegame_selected == button) {
-		                        if (diff > 0) {
-		                            frame_pos.x += std::max(1, diff / 8);
-		                        } else if (diff < 0) {
-		                            frame_pos.x += std::min(-1, diff / 8);
-		                        }
-		                        frame->setActualSize(frame_pos);
+	                auto frame_pos = frame->getActualSize();
+	                auto button_size = button->getSize();
+	                const int diff = ((button_size.x - (898 - 220) / 2) - frame_pos.x);
+
+		            if (ticks - timeSinceScroll > TICKS_PER_SECOND / 2) {
+		                if (savegame_selected == button) {
+		                    if (diff > 0) {
+		                        frame_pos.x += std::max(1, diff / 8);
+		                    } else if (diff < 0) {
+		                        frame_pos.x += std::min(-1, diff / 8);
 		                    }
-		                } else {
-	                        if (abs(diff) < 100) {
-	                            savegame_selected = button;
-	                        }
+		                    frame->setActualSize(frame_pos);
 		                }
-		                });
-		            savegame_book->setCallback([](Button& button){
-		                if (savegame_selected != &button && inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-		                    soundCheckmark();
-	                        savegame_selected = &button;
-	                        timeSinceScroll = 0;
-		                    return;
-		                } else {
-	                        savegame_selected = &button;
-		                    int save_index = -1;
-	                        const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
-	                        size_t name_len = strlen(name);
-                            save_index = (int)strtol(button.getName() + name_len, nullptr, 10);
-                            if (cursor_delete_mode) {
-                                deleteSavePrompt(continueSingleplayer, save_index);
-                            } else {
-                                loadSavePrompt(continueSingleplayer, save_index);
-                            }
-		                }
-		                });
-		            if (i > 0) {
-		                int prev;
-		                for (prev = i - 1; prev >= 0 && !saveGameExists(singleplayer, prev); --prev);
-                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(prev);
-                        savegame_book->setWidgetLeft(str.c_str());
+		            } else {
+	                    if (abs(diff) < 100) {
+	                        savegame_selected = button;
+	                    }
 		            }
-		            if (i < SAVE_GAMES_MAX - 1) {
-		                int next;
-		                for (next = i + 1; next < SAVE_GAMES_MAX && !saveGameExists(singleplayer, next); ++next);
-                        auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next);
-                        savegame_book->setWidgetRight(str.c_str());
+		            });
+		        savegame_book->setCallback([](Button& button){
+		            if (savegame_selected != &button && inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
+		                soundCheckmark();
+	                    savegame_selected = &button;
+	                    timeSinceScroll = 0;
+		                return;
+		            } else {
+	                    savegame_selected = &button;
+		                int save_index = -1;
+	                    const char* name = continueSingleplayer ? "savegame" : "savegame_multiplayer";
+	                    size_t name_len = strlen(name);
+                        save_index = (int)strtol(button.getName() + name_len, nullptr, 10);
+                        if (cursor_delete_mode) {
+                            deleteSavePrompt(continueSingleplayer, save_index);
+                        } else {
+                            loadSavePrompt(continueSingleplayer, save_index);
+                        }
 		            }
-		            savegame_book->setWidgetBack("back_button");
-		            savegame_book->addWidgetAction("MenuAlt1", "delete");
-		            savegame_book->addWidgetAction("MenuConfirm", "enter");
-		            savegame_book->addWidgetAction("MenuPageLeft", "singleplayer");
-		            savegame_book->addWidgetAction("MenuPageRight", "multiplayer");
-		            savegame_book->setWidgetSearchParent("continue_window");
+		            });
 
-		            first_savegame = first_savegame ? first_savegame : savegame_book;
+				// set previous book in line
+				std::string prevstr;
+				auto prev = it;
+				if (prev != savegames.begin()) {
+					--prev;
+					prevstr = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(prev->first);
+				} else {
+					prevstr = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(savegames.back().first);
+				}
+				savegame_book->setWidgetLeft(prevstr.c_str());
 
-		            auto saveGameInfo = getSaveGameInfo(singleplayer, i);
+				// set next book in line
+				std::string nextstr;
+				auto next = it;
+				++next;
+				if (next == savegames.end()) {
+					nextstr = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(savegames.front().first);
+				} else {
+					nextstr = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(next->first);
+				}
+				savegame_book->setWidgetRight(nextstr.c_str());
 
-                    // extract savegame info
-                    const std::string& game_name = saveGameInfo.gamename;
-                    const std::string class_name = playerClassLangEntry(saveGameInfo.players[saveGameInfo.player_num].char_class, 0);
-                    char* class_name_c = const_cast<char*>(class_name.c_str());
-                    class_name_c[0] = (char)toupper((int)class_name[0]);
-                    const int dungeon_lvl = saveGameInfo.dungeon_lvl;
-                    const int player_lvl = saveGameInfo.players[saveGameInfo.player_num].stats.LVL;
-					int numplayers = 0;
-					for (auto p : saveGameInfo.players_connected) {
-						if (p) {
-							++numplayers;
-						}
+		        savegame_book->setWidgetBack("back_button");
+		        savegame_book->addWidgetAction("MenuAlt1", "delete");
+		        savegame_book->addWidgetAction("MenuConfirm", "enter");
+		        savegame_book->addWidgetAction("MenuPageLeft", "singleplayer");
+		        savegame_book->addWidgetAction("MenuPageRight", "multiplayer");
+		        savegame_book->setWidgetSearchParent("continue_window");
+
+		        first_savegame = first_savegame ? first_savegame : savegame_book;
+
+		        auto& saveGameInfo = savegame.second;
+
+                // extract savegame info
+                const std::string& game_name = saveGameInfo.gamename;
+                const auto timestamp = saveGameInfo.timestamp;
+				int numplayers = 0;
+				for (auto p : saveGameInfo.players_connected) {
+					if (p) {
+						++numplayers;
 					}
+				}
+				auto time = timestamp.substr(11);
+				time[2] = ':';
+				time[5] = ':';
+				auto date = timestamp.substr(0, 10);
+				date[4] = '/';
+				date[7] = '/';
 
-                    // create shortened player name
-                    char shortened_name[20] = { '\0' };
-                    int len = (int)game_name.size();
-                    strncpy(shortened_name, game_name.c_str(), std::min(len, 16));
-                    if (len > 16) {
-                        strcat(shortened_name, "...");
-                    }
-
-					// create game type string
-					char game_type[32] = { '\0' };
-					switch (saveGameInfo.multiplayer_type) {
-					default:
-					case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
-					case SERVER: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
-					case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client %dp (#%d)", numplayers, saveGameInfo.player_num + 1); break;
-					case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host %dp (#1)", numplayers); break;
-					case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
-					case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
-					case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen %dp", numplayers); break;
-					}
-
-                    // format book label string
-		            char text[1024];
-		            snprintf(text, sizeof(text), "%s\n%s\nDungeon LVL %d",
-		                shortened_name, game_type, dungeon_lvl);
-		            savegame_book->setText(text);
-
-                    // offset text
-                    SDL_Rect offset;
-                    offset.x = 34;
-                    offset.y = 184;
-		            savegame_book->setTextOffset(offset);
-		            savegame_book->setJustify(Button::justify_t::LEFT);
-
-		            // add savegame screenshot
-		            /*auto screenshot_path = setSaveGameFileName(singleplayer, SaveFileType::SCREENSHOT, i);
-                    if (dataPathExists(screenshot_path.c_str(), false)) {
-		                auto screenshot = subwindow.addImage(
-		                    SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
-		                    0xffffffff,
-		                    screenshot_path.c_str(),
-		                    (str + "_screenshot").c_str()
-		                );
-		                screenshot->ontop = true;
-		                Image* image = Image::get(screenshot_path.c_str()); assert(image);
-		                screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
-		                screenshot->section.w = image->getHeight();
-		            }*/
-                    
-                    auto cover = subwindow.addFrame("bookcover");
-                    cover->setSize(SDL_Rect{posX, 0, 220, 280});
-                    cover->setColor(0);
-                    cover->setHollow(true);
-
-					// add savegame picture
-					std::string screenshot_path = "images/ui/Main Menus/ContinueGame/savescreens/";
-					if (saveGameInfo.level_track == 1) {
-						switch (saveGameInfo.dungeon_lvl) {
-						default: screenshot_path += "save_unknown00.png"; break;
-						case 3: screenshot_path += "save_gnome00.png"; break;
-						case 4: screenshot_path += "save_minetown00.png"; break;
-						case 6:
-						case 7: screenshot_path += "save_underworld00.png"; break;
-						case 8: screenshot_path += "save_temple00.png"; break;
-						case 9: screenshot_path += "save_castle00.png"; break;
-						case 12: screenshot_path += "save_sokoban00.png"; break;
-						case 14: screenshot_path += "save_maze00.png"; break;
-						case 17: screenshot_path += "save_library00.png"; break;
-						case 19:
-						case 20: screenshot_path += "save_underworld00.png"; break;
-						case 24: screenshot_path += "save_boss00.png"; break;
-						case 29: screenshot_path += "save_lair00.png"; break;
-						case 34: screenshot_path += "save_bram00.png"; break;
-						}
-					} else {
-						switch (saveGameInfo.dungeon_lvl) {
-						default: screenshot_path += "save_unknown00.png"; break;
-						case 0: screenshot_path += "save_start00.png"; break;
-						case 1:
-						case 2:
-						case 3:
-						case 4: screenshot_path += "save_mines00.png"; break;
-						case 5: screenshot_path += "save_minetoswamp00.png"; break;
-						case 6:
-						case 7:
-						case 8:
-						case 9: screenshot_path += "save_swamp00.png"; break;
-						case 10: screenshot_path += "save_swamptolab00.png"; break;
-						case 11:
-						case 12:
-						case 13:
-						case 14: screenshot_path += "save_labyrinth00.png"; break;
-						case 15: screenshot_path += "save_labtoruin00.png"; break;
-						case 16:
-						case 17:
-						case 18:
-						case 19: screenshot_path += "save_ruin00.png"; break;
-						case 20: screenshot_path += "save_boss00.png"; break;
-						case 21:
-						case 22:
-						case 23: screenshot_path += "save_hell00.png"; break;
-						case 24: screenshot_path += "save_devil00.png"; break;
-						case 25: screenshot_path += "save_hamlet00.png"; break;
-						case 26:
-						case 27:
-						case 28:
-						case 29: screenshot_path += "save_caves00.png"; break;
-						case 30: screenshot_path += "save_cavetocitadel00.png"; break;
-						case 31:
-						case 32:
-						case 33:
-						case 34: screenshot_path += "save_citadel00.png"; break;
-						case 35: screenshot_path += "save_sanctum00.png"; break;
-						}
-					}
-
-					auto screenshot = cover->addImage(
-						SDL_Rect{32, 16, 160, 162},
-						0xffffffff,
-						screenshot_path.c_str(),
-						(str + "_screenshot").c_str()
-					);
-					Image* image = Image::get(screenshot_path.c_str()); assert(image);
-					screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
-					screenshot->section.w = image->getHeight();
-
-		            // add book overlay
-		            auto overlay = cover->addImage(
-		                SDL_Rect{32, 16, 160, 162},
-		                0xffffffff,
-		                "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
-		                (str + "_overlay").c_str()
-		            );
-                    
-                    // add player info
-                    if (numplayers == 1) {
-                        addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
-                    }
-                    else if (numplayers == 2) {
-                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-                            if (saveGameInfo.players_connected[c]) {
-                                switch (index) {
-                                default:
-                                case 0:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                    break;
-                                case 1:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                    break;
-                                }
-                                ++index;
-                            }
-                        }
-                    }
-                    else if (numplayers >= 3) {
-                        for (int c = 0, index = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-                            if (saveGameInfo.players_connected[c]) {
-                                switch (index) {
-                                default:
-                                case 0:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
-                                    break;
-                                case 1:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
-                                    break;
-                                case 2:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                    break;
-                                case 3:
-                                    addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                    break;
-                                }
-                                ++index;
-                            }
-                        }
-                    }
-
-		            ++saveGameCount;
+                // create shortened game name
+                char shortened_name[20] = { '\0' };
+                int len = (int)game_name.size();
+                strncpy(shortened_name, game_name.c_str(), std::min(len, 16));
+                if (len > 16) {
+                    strcat(shortened_name, "...");
                 }
+
+				// create game type string
+				char game_type[32] = { '\0' };
+				switch (saveGameInfo.multiplayer_type) {
+				default:
+				case SINGLE: snprintf(game_type, sizeof(game_type), "Singleplayer"); break;
+				case SERVER: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+				case CLIENT: snprintf(game_type, sizeof(game_type), "Online Client %dp (#%d)", numplayers, saveGameInfo.player_num + 1); break;
+				case DIRECTSERVER: snprintf(game_type, sizeof(game_type), "Local Host %dp (#1)", numplayers); break;
+				case DIRECTCLIENT: snprintf(game_type, sizeof(game_type), "Local Client (#%d/%d)", saveGameInfo.player_num + 1, numplayers); break;
+				case SERVERCROSSPLAY: snprintf(game_type, sizeof(game_type), "Online Host %dp (#1)", numplayers); break;
+				case SPLITSCREEN: snprintf(game_type, sizeof(game_type), "Splitscreen %dp", numplayers); break;
+				}
+
+                // format book label string
+		        char text[1024];
+				if (singleplayer) {
+					snprintf(text, sizeof(text), "%s\n%s\n%s",
+						shortened_name, time.c_str(), date.c_str());
+				} else {
+					snprintf(text, sizeof(text), "%s\n%s\n%s",
+						game_type, time.c_str(), date.c_str());
+				}
+		        savegame_book->setText(text);
+
+                // offset text
+                SDL_Rect offset;
+                offset.x = 34;
+                offset.y = 181;
+				savegame_book->setPaddingPerTextLine(4);
+		        savegame_book->setTextOffset(offset);
+		        savegame_book->setJustify(Button::justify_t::LEFT);
+
+		        // add savegame screenshot
+		        /*auto screenshot_path = setSaveGameFileName(singleplayer, SaveFileType::SCREENSHOT, i);
+                if (dataPathExists(screenshot_path.c_str(), false)) {
+		            auto screenshot = subwindow.addImage(
+		                SDL_Rect{saveGameCount * 256 + (898 - 220) / 2 + 32, 16, 160, 162},
+		                0xffffffff,
+		                screenshot_path.c_str(),
+		                (str + "_screenshot").c_str()
+		            );
+		            screenshot->ontop = true;
+		            Image* image = Image::get(screenshot_path.c_str()); assert(image);
+		            screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
+		            screenshot->section.w = image->getHeight();
+		        }*/
+                    
+                auto cover = subwindow.addFrame("bookcover");
+                cover->setSize(SDL_Rect{posX, 0, 220, 280});
+                cover->setColor(0);
+                cover->setHollow(true);
+
+				// add savegame picture
+				std::string screenshot_path = "images/ui/Main Menus/ContinueGame/savescreens/";
+				if (saveGameInfo.level_track == 1) {
+					switch (saveGameInfo.dungeon_lvl) {
+					default: screenshot_path += "save_unknown00.png"; break;
+					case 3: screenshot_path += "save_gnome00.png"; break;
+					case 4: screenshot_path += "save_minetown00.png"; break;
+					case 6:
+					case 7: screenshot_path += "save_underworld00.png"; break;
+					case 8: screenshot_path += "save_temple00.png"; break;
+					case 9: screenshot_path += "save_castle00.png"; break;
+					case 12: screenshot_path += "save_sokoban00.png"; break;
+					case 14: screenshot_path += "save_maze00.png"; break;
+					case 17: screenshot_path += "save_library00.png"; break;
+					case 19:
+					case 20: screenshot_path += "save_underworld00.png"; break;
+					case 24: screenshot_path += "save_boss00.png"; break;
+					case 29: screenshot_path += "save_lair00.png"; break;
+					case 34: screenshot_path += "save_bram00.png"; break;
+					}
+				} else {
+					switch (saveGameInfo.dungeon_lvl) {
+					default: screenshot_path += "save_unknown00.png"; break;
+					case 0: screenshot_path += "save_start00.png"; break;
+					case 1:
+					case 2:
+					case 3:
+					case 4: screenshot_path += "save_mines00.png"; break;
+					case 5: screenshot_path += "save_minetoswamp00.png"; break;
+					case 6:
+					case 7:
+					case 8:
+					case 9: screenshot_path += "save_swamp00.png"; break;
+					case 10: screenshot_path += "save_swamptolab00.png"; break;
+					case 11:
+					case 12:
+					case 13:
+					case 14: screenshot_path += "save_labyrinth00.png"; break;
+					case 15: screenshot_path += "save_labtoruin00.png"; break;
+					case 16:
+					case 17:
+					case 18:
+					case 19: screenshot_path += "save_ruin00.png"; break;
+					case 20: screenshot_path += "save_boss00.png"; break;
+					case 21:
+					case 22:
+					case 23: screenshot_path += "save_hell00.png"; break;
+					case 24: screenshot_path += "save_devil00.png"; break;
+					case 25: screenshot_path += "save_hamlet00.png"; break;
+					case 26:
+					case 27:
+					case 28:
+					case 29: screenshot_path += "save_caves00.png"; break;
+					case 30: screenshot_path += "save_cavetocitadel00.png"; break;
+					case 31:
+					case 32:
+					case 33:
+					case 34: screenshot_path += "save_citadel00.png"; break;
+					case 35: screenshot_path += "save_sanctum00.png"; break;
+					}
+				}
+
+				auto screenshot = cover->addImage(
+					SDL_Rect{32, 16, 160, 162},
+					0xffffffff,
+					screenshot_path.c_str(),
+					(str + "_screenshot").c_str()
+				);
+				Image* image = Image::get(screenshot_path.c_str()); assert(image);
+				screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
+				screenshot->section.w = image->getHeight();
+
+		        // add book overlay
+		        auto overlay = cover->addImage(
+		            SDL_Rect{32, 16, 160, 162},
+		            0xffffffff,
+		            "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
+		            (str + "_overlay").c_str()
+		        );
+                    
+                // add player info
+                if (numplayers == 1) {
+                    addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
+                }
+                else if (numplayers == 2) {
+                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                        if (saveGameInfo.players_connected[c]) {
+                            switch (player) {
+                            default:
+                            case 0:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                break;
+                            case 1:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                break;
+                            }
+                            ++player;
+                        }
+                    }
+                }
+                else if (numplayers >= 3) {
+                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+                        if (saveGameInfo.players_connected[c]) {
+                            switch (player) {
+                            default:
+                            case 0:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+                                break;
+                            case 1:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+                                break;
+                            case 2:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+                                break;
+                            case 3:
+                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+                                break;
+                            }
+                            ++player;
+                        }
+                    }
+                }
+
+		        ++index;
 		    }
-		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 256 * (saveGameCount - 1), 294});
+		    subwindow.setActualSize(SDL_Rect{0, 0, 898 + 256 * ((int)savegames.size() - 1), 294});
         }
         return first_savegame;
 	}
@@ -19355,13 +19386,34 @@ failed:
 			}
 			else if (main_menu_fade_destination == FadeDestination::GameStart) {
 				gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
+
+				// set save game file index
 				if (!loadingsavegame) {
+					const bool singleplayer = (multiplayer == SINGLE);
+					bool foundEmptySlot = false;
 	                for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
-                        if (!saveGameExists(multiplayer == SINGLE, i)) {
+						// look for an empty save slot
+                        if (!saveGameExists(singleplayer, i)) {
                             savegameCurrentFileIndex = i;
+							foundEmptySlot = true;
                             break;
                         }
                     }
+					if (!foundEmptySlot) {
+						// no empty save slots, look for the oldest one to overwrite
+						using list_type = std::pair<int, SaveGameInfo>;
+						std::list<list_type> savegames;
+						for (int i = 0; i < SAVE_GAMES_MAX; ++i) {
+							if (saveGameExists(singleplayer, i)) {
+								savegames.emplace_back(i, getSaveGameInfo(singleplayer, i));
+							}
+						}
+						assert(!savegames.empty());
+						savegames.sort([](const list_type& lhs, const list_type& rhs) {
+							return rhs.second.timestamp > lhs.second.timestamp;
+							});
+						savegameCurrentFileIndex = savegames.front().first;
+					}
 				}
 
 				// set clientnum and client_disconnected[] based on the state of the lobby

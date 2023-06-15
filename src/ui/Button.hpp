@@ -122,6 +122,7 @@ public:
 	void	setVJustify(const int _justify) { vjustify = static_cast<justify_t>(_justify); }
 	void    setTextOffset(const SDL_Rect& offset) { textOffset = offset; }
 	void	setOntop(const bool _ontop) { ontop = _ontop; }
+	void	setPaddingPerTextLine(int padding) { paddingPerTextLine = padding; }
 
 private:
 	void (*callback)(Button&) = nullptr;			//!< native callback for clicking
@@ -145,4 +146,5 @@ private:
 	justify_t vjustify = CENTER;					//!< vertical text justification
 	SDL_Rect textOffset{0, 0, 0, 0};                //!< offset used by label test
 	bool ontop = false;								//!< whether the button is drawn ontop of others
+	int paddingPerTextLine = 0;						//!< extra padding on text lines
 };
