@@ -50,6 +50,25 @@ bool FMODErrorCheck()
 	return false;
 }
 
+void setAudioDevice(const std::string& device) {
+	int selected_driver = 0;
+	int numDrivers = 0;
+	fmod_system->getNumDrivers(&numDrivers);
+	for (int i = 0; i < numDrivers; ++i) {
+		FMOD_GUID guid;
+		fmod_result = fmod_system->getDriverInfo(i, nullptr, 0, &guid, nullptr, nullptr, nullptr);
+
+		uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+		uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+		char guid_string[25];
+		snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
+		if (!selected_driver && device == guid_string) {
+			selected_driver = i;
+		}
+	}
+	fmod_system->setDriver(selected_driver);
+}
+
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification) {
     master = std::min(std::max(0.0, master), 1.0);
     music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
@@ -398,6 +417,8 @@ OPENAL_BUFFER* caveslairmusic = NULL;
 OPENAL_BUFFER* bramscastlemusic = NULL;
 OPENAL_BUFFER* hamletmusic = NULL;
 OPENAL_BUFFER* tutorialmusic = nullptr;
+OPENAL_BUFFER* introstorymusic = nullptr;
+OPENAL_BUFFER* gameovermusic = nullptr;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = nullptr;
