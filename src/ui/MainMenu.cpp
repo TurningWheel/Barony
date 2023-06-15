@@ -4257,6 +4257,7 @@ namespace MainMenu {
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(255,255,255,255));
+        button->setDontSearchAncestors(true);
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
@@ -4336,6 +4337,7 @@ namespace MainMenu {
 		field->setBackgroundColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
 		field->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+        field->setDontSearchAncestors(true);
 		field->setWidgetSearchParent(frame.getParent()->getName());
 		field->setWidgetBack("discard_and_exit");
 		field->setWidgetPageLeft("tab_left");
@@ -4374,6 +4376,7 @@ namespace MainMenu {
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(255,255,255,255));
+        button->setDontSearchAncestors(true);
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -4412,6 +4415,7 @@ namespace MainMenu {
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(255,255,255,255));
+        button->setDontSearchAncestors(true);
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetLeft((fullname + "_button").c_str());
 		button->setWidgetBack("discard_and_exit");
@@ -4420,6 +4424,7 @@ namespace MainMenu {
 		button->addWidgetAction("MenuAlt1", "restore_defaults");
 		button->addWidgetAction("MenuStart", "confirm_and_exit");
 		auto boolean = frame.findButton((fullname + "_button").c_str()); assert(boolean);
+        boolean->setDontSearchAncestors(true);
 		boolean->setWidgetSearchParent(frame.getParent()->getName());
 		boolean->setWidgetRight((fullname + "_customize_button").c_str());
 		boolean->setWidgetBack("discard_and_exit");
@@ -4457,6 +4462,7 @@ namespace MainMenu {
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(255,255,255,255));
+        button->setDontSearchAncestors(true);
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -4501,6 +4507,7 @@ namespace MainMenu {
 		button->setColor(makeColor(255,255,255,255));
 		button->setTextHighlightColor(makeColor(255,255,255,255));
 		button->setTextColor(makeColor(255,255,255,255));
+        button->setDontSearchAncestors(true);
 		button->setWidgetSearchParent(frame.getParent()->getName());
 		button->setWidgetBack("discard_and_exit");
 		button->setWidgetPageLeft("tab_left");
@@ -4580,6 +4587,7 @@ namespace MainMenu {
 		} else {
 			slider->setRailImage("*images/ui/Main Menus/Settings/Settings_ValueSlider_Backing00.png");
 		}
+        slider->setDontSearchAncestors(true);
 		slider->setWidgetSearchParent(frame.getParent()->getName());
 		slider->setWidgetBack("discard_and_exit");
 		slider->setWidgetPageLeft("tab_left");
