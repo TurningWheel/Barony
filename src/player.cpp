@@ -3024,6 +3024,7 @@ void Player::cleanUpOnEntityRemoval()
 		worldUI.reset();
 	}
 	selectedEntity[playernum] = nullptr;
+	client_selected[playernum] = nullptr;
 }
 
 const bool Player::isLocalPlayer() const
