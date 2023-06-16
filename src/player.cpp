@@ -2585,10 +2585,11 @@ SDL_GameControllerAxis GameController::getSDLTriggerFromImpulse(const unsigned c
 GameController::Haptic_t::Haptic_t()
 {
 	hapticTick = 0;
-	memset(&hapticEffect, 0, sizeof(SDL_HapticEffect));
+	oscillatorTick = 0;
+	memset(&hapticEffect, 0, sizeof(HapticEffect));
 }
 
-SDL_HapticEffect * GameController::handleRumble()
+GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 {
 #ifdef DISABLE_RUMBLE
 	return nullptr;
@@ -2602,9 +2603,13 @@ SDL_HapticEffect * GameController::handleRumble()
 #ifdef NINTENDO
 		timeNow = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now());
 		auto elapsed = (timeNow - timeStart).count();
-		if (elapsed > 1000 / TICKS_PER_SECOND) {
+		if ( elapsed > 500 / TICKS_PER_SECOND ) {
 			timeStart = timeNow;
-			++haptics.hapticTick;
+			++haptics.oscillatorTick;
+			if ( haptics.oscillatorTick % 2 == 0 )
+			{
+				++haptics.hapticTick;
+			}
 		}
 #else
 		++haptics.hapticTick;
@@ -2660,11 +2665,15 @@ SDL_HapticEffect * GameController::handleRumble()
 	}
 
 	if ( rumbleToPlay != haptics.activeRumbles.end() 
+#ifdef NINTENDO
+		/*constantly update for all patterns*/ )
+#else
 		&& (!rumbleToPlay->second.isPlaying 
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER 
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_DEATH
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
+#endif
 	{
 		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
 		rumbleToPlay->second.startTime = newStartTime; // move the playhead forward.
@@ -2723,31 +2732,37 @@ void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
 			return;
 		}
 
+		real_t durationMult = 1.0;
+#ifdef NINTENDO
+		durationMult = 0.5;
+#endif // NINTENDO
+
+
 		real_t percentHPLost = std::min(1.0, (stats[player]->OLDHP - stats[player]->HP) / static_cast<real_t>(std::max(1, stats[player]->MAXHP)));
 		if ( stats[player]->HP <= 0 )
 		{
-			rumble(player, GameController::Haptic_t::RUMBLE_DEATH, 32000, 32000, 2 * TICKS_PER_SECOND, 0);
+			rumble(player, GameController::Haptic_t::RUMBLE_DEATH, 32000, 32000, durationMult * 2 * TICKS_PER_SECOND, 0);
 		}
 		else if ( stats[player]->OLDHP == stats[player]->HP )
 		{
-			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 8000, 8000, 6, 0);
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 8000, 8000, durationMult * 6, 0);
 		}
 		else if ( percentHPLost < .05 )
 		{
-			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 16000, 16000, 6, 0);
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 16000, 16000, durationMult * 6, 0);
 		}
 		else if ( percentHPLost < .25 )
 		{
-			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 24000, 24000, 11, 0);
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 24000, 24000, durationMult * 11, 0);
 		}
 		else
 		{
-			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 32000, 32000, 11, 0);
+			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 32000, 32000, durationMult * 11, 0);
 		}
 	}
-}
+		}
 
-SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
+GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 {
 #ifdef DISABLE_RUMBLE
 	return nullptr;
@@ -2759,7 +2774,7 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 
 	// init an effect.
 	haptics.hapticEffect.type = SDL_HAPTIC_LEFTRIGHT;
-	haptics.hapticEffect.leftright.type = SDL_HAPTIC_LEFTRIGHT;
+	haptics.hapticEffect.leftRightBalance = 0;
 
 	Entity* ent = uidToEntity(r->entityUid);
 	real_t dampening = 1.0;
@@ -2771,14 +2786,20 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 			{
 				int dist = static_cast<int>(entityDist(ent, players[i]->entity));
 				dampening = 1.0 - std::min((dist / TOUCHRANGE) * .1, 1.0);
+
+				//if we want l/r vibration channels
+				//real_t tangent = atan2(ent->y - players[i]->entity->y, ent->x - players[i]->entity->x);
+				//real_t leftright = sin(tangent - players[i]->entity->yaw);
+
+				//haptics.hapticEffect.leftRightBalance = leftright * 100;
 			}
 		}
 	}
 
 	if ( r->pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE )
 	{
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * dampening;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * dampening;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * dampening;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * dampening;
 	}
 	else if ( r->pattern == Haptic_t::RUMBLE_BOULDER )
 	{
@@ -2797,8 +2818,8 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 		{
 			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .33);
 		}*/
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect * dampening;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect * dampening;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect * dampening;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect * dampening;
 	}
 	else if ( r->pattern == Haptic_t::RUMBLE_BOULDER_ROLLING )
 	{
@@ -2811,8 +2832,8 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 		//{
 		//	r->customEffect = 1.0;
 		//}
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * dampening;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * dampening;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * dampening;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * dampening;
 	}
 	else if ( r->pattern == Haptic_t::RUMBLE_TMP )
 	{
@@ -2837,8 +2858,8 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 		{
 			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .165);
 		}
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
 	}
 	else if ( r->pattern == Haptic_t::RUMBLE_DEATH )
 	{
@@ -2851,22 +2872,28 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 		{
 			r->customEffect = 1.0;
 		}
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude * r->customEffect;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude * r->customEffect;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
 	}
 	else
 	{
-		haptics.hapticEffect.leftright.large_magnitude = r->largeMagnitude;
-		haptics.hapticEffect.leftright.small_magnitude = r->smallMagnitude;
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude;
 	}
-	haptics.hapticEffect.leftright.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
+	haptics.hapticEffect.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
 
 #ifdef NINTENDO
 	return &haptics.hapticEffect;
 #else
-	if ( sdl_haptic )
+	if (sdl_device)
 	{
-		if ( haptics.hapticEffectId == -1 )
+		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.large_magnitude * 2, haptics.hapticEffect.small_magnitude * 2, 
+			haptics.hapticEffect.length);
+	}
+	else if ( sdl_haptic )
+	{
+		// not in use
+		/*if ( haptics.hapticEffectId == -1 )
 		{
 			haptics.hapticEffectId = SDL_HapticNewEffect(sdl_haptic, &haptics.hapticEffect);
 			if ( haptics.hapticEffectId == -1 )
@@ -2882,11 +2909,7 @@ SDL_HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 		if ( SDL_HapticRunEffect(sdl_haptic, haptics.hapticEffectId, 1) < 0 )
 		{
 			printlog("SDL_HapticUpdateEffect error: %s", SDL_GetError());
-		}
-	}
-	else if (sdl_device)
-	{
-		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.leftright.large_magnitude * 2, haptics.hapticEffect.leftright.small_magnitude * 2, haptics.hapticEffect.leftright.length);
+		}*/
 	}
 #endif
 	return nullptr;

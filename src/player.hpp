@@ -88,8 +88,17 @@ public:
 			RUMBLE_TMP
 		};
 		int hapticEffectId = -1;
-		SDL_HapticEffect hapticEffect;
+		struct HapticEffect
+		{
+			Uint16 type = SDL_HAPTIC_LEFTRIGHT;
+			Uint32 length = 0;
+			Uint16 large_magnitude = 0;
+			Uint16 small_magnitude = 0;
+			Sint32 leftRightBalance = 0;
+		};
+		HapticEffect hapticEffect;
 		Uint32 hapticTick;
+		Uint32 oscillatorTick;
 		Haptic_t();
 		~Haptic_t() {};
 
@@ -219,8 +228,8 @@ public:
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
-	SDL_HapticEffect* doRumble(Haptic_t::Rumble* r);
-	SDL_HapticEffect* handleRumble();
+	GameController::Haptic_t::HapticEffect* doRumble(Haptic_t::Rumble* r);
+	GameController::Haptic_t::HapticEffect* handleRumble();
 	void stopRumble();
 	void reinitHaptic();
 
