@@ -20710,6 +20710,10 @@ failed:
 	void closeMainMenu() {
 		destroyMainMenu();
 		gamePaused = false;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			Input::inputs[i].consumeBindingsSharedWithBinding("MenuConfirm");
+		}
 	}
 
 	void disconnectedFromServer(const char* text) {
