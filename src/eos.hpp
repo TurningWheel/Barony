@@ -113,7 +113,7 @@ public:
 		static void retryCrossplaySetupOnFailure();
 	} CrossplayAccountManager;
 
-	const int kMaxLobbiesToSearch = 100;
+	const int kMaxLobbiesToSearch = 200;
 
 	// global shenanigans
 	bool bRequestingLobbies = false; // client is waiting for lobby data to display

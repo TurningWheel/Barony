@@ -82,6 +82,7 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
 	stats[0]->playerRace = RACE_HUMAN;
 	stats[0]->appearance = local_rng.rand() % NUMAPPEARANCES;
+	client_classes[0] = CLASS_WARRIOR;
 	initClass(0);
 }
 
@@ -656,6 +657,9 @@ void ItemTooltips_t::readItemsFromFile()
 
 	printlog("[JSON]: Successfully read %d items from '%s'", itemsRead, inputPath.c_str());
 
+	//itemValueTable.clear();
+	//itemValueTableByCategory.clear();
+
 	for ( int i = 0; i < NUMITEMS && i < itemsRead; ++i )
 	{
 		assert(i == tmpItems[i].itemId);
@@ -795,6 +799,24 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			items[i].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM;
 		}
+
+		/*{
+			auto pair = std::make_pair(items[i].value, i);
+			auto lower = std::lower_bound(itemValueTable.begin(), itemValueTable.end(), pair,
+				[](const auto& lhs, const auto& rhs) {
+					return lhs < rhs;
+			});
+			itemValueTable.insert(lower, pair);
+		}
+		{
+			auto pair = std::make_pair(items[i].value, i);
+			auto lower = std::lower_bound(itemValueTableByCategory[items[i].category].begin(), 
+				itemValueTableByCategory[items[i].category].end(), pair,
+				[](const auto& lhs, const auto& rhs) {
+					return lhs < rhs;
+				});
+			itemValueTableByCategory[items[i].category].insert(lower, pair);
+		}*/
 	}
 
 	spellItems.clear();
@@ -1021,6 +1043,19 @@ void ItemTooltips_t::readItemLocalizationsFromFile()
 	{
 		spell.second.name = spellNameLocalizations[spell.second.internalName];
 	}
+
+	/*for ( auto i : itemValueTable )
+	{
+		printlog("itemValueTable %4d | %s", items[i.second].value, items[i.second].getIdentifiedName());
+	}
+	for ( int cat = 0; cat < NUMCATEGORIES; ++cat )
+	{
+		for ( auto i : itemValueTableByCategory[cat] )
+		{
+			printlog("itemValueTableByCategory %2d | %4d | %s", cat,
+				items[i.second].value, items[i.second].getIdentifiedName());
+		}
+	}*/
 }
 
 #ifndef EDITOR
@@ -2854,7 +2889,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			}
 			else if ( detailTag == "EFF_WARNING" )
 			{
-				int radius = std::max(3, 11 + 5 * item.beatitude);
+				int beatitude = shouldInvertEquipmentBeatitude(stats[player]) ? abs(item.beatitude) : item.beatitude;
+				int radius = std::max(3, 11 + 5 * beatitude);
 				snprintf(buf, sizeof(buf), str.c_str(), radius, getItemBeatitudeAdjective(item.beatitude).c_str());
 			}
 			else
@@ -4040,6 +4076,37 @@ void StatueManager_t::refreshAllStatues()
 		}
 	}
 #endif // !EDITOR
+}
+
+void StatueManager_t::readAllStatues()
+{
+	std::string baseDir = "data/statues";
+	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
+	for ( auto file : files )
+	{
+		std::string checkFile = baseDir + '/' + file;
+		PHYSFS_Stat stat;
+		if ( PHYSFS_stat(checkFile.c_str(), &stat) == 0 ) { continue; }
+
+		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+		{
+			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
+			for ( auto file2 : files2 )
+			{
+				std::string checkFile2 = checkFile + '/' + file2;
+				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
+
+				if ( stat.filetype != PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
+				{
+					readStatueFromFile(0, checkFile2);
+				}
+			}
+		}
+		else
+		{
+			readStatueFromFile(0, checkFile);
+		}
+	}
 }
 
 void StatueManager_t::readStatueFromFile(int index, std::string filename)

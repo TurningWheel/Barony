@@ -2188,6 +2188,7 @@ Frame* Frame::getParent() {
 void Frame::deselect() {
 	Widget::deselect();
 	activated = false;
+	activation = nullptr;
 	for (auto frame : frames) {
 		if (frame->getOwner() == owner) {
 			frame->deselect();

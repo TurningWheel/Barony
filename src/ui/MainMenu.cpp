@@ -45,11 +45,13 @@ namespace MainMenu {
     constexpr int MIN_FPS = 30;
     constexpr int MAX_FPS = 300;
     constexpr int AUTO_FPS = MAX_FPS + 1;
+	constexpr int MAX_LOBBY_FILTERS_SAVED = 32;
 
 	// ALL NEW menu options:
 	std::string current_audio_device;
 	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
+	bool hidden_roomcode = false;
 	ConsoleVariable<bool> vertical_splitscreen("/vertical_splitscreen", false);
     ConsoleVariable<bool> staggered_splitscreen("/split_staggered", true);
     ConsoleVariable<bool> clipped_splitscreen("/split_clipped", true);
@@ -63,6 +65,14 @@ namespace MainMenu {
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
+	static const int numFilters = NUM_SERVER_FLAGS + 3;
+	enum Filter : int {
+		UNCHECKED,
+		OFF,
+		ON,
+		NUM,
+	};
+	static Filter lobbyFilters[numFilters] = { Filter::UNCHECKED };
 
 	static ConsoleCommand ccmd_dumpcache("/dumpcache", "Dump UI asset caches",
 	    [](int argc, const char** argv){
@@ -112,7 +122,11 @@ namespace MainMenu {
                 {"Hotbar Up / Select", "Mouse2", "ButtonY", emptyBinding},
 #endif
                 {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
+#ifdef NINTENDO
                 {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+#else
+				{"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
+#endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
@@ -126,6 +140,16 @@ namespace MainMenu {
                 {"Look Up", "Up", hiddenBinding, emptyBinding},
                 {"Look Down", "Down", hiddenBinding, emptyBinding},
                 {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 1", "1", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 2", "2", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 3", "3", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 4", "4", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 5", "5", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 6", "6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 7", "7", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 8", "8", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 9", "9", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 10", "0", hiddenBinding, hiddenBinding},
             }
         },
         {
@@ -175,6 +199,16 @@ namespace MainMenu {
                 {"Look Up", "Up", hiddenBinding, emptyBinding},
                 {"Look Down", "Down", hiddenBinding, emptyBinding},
                 {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 1", "1", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 2", "2", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 3", "3", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 4", "4", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 5", "5", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 6", "6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 7", "7", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 8", "8", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 9", "9", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 10", "0", hiddenBinding, hiddenBinding},
             }
         },
         {
@@ -220,6 +254,16 @@ namespace MainMenu {
                 {"Look Up", "Up", hiddenBinding, emptyBinding},
                 {"Look Down", "Down", hiddenBinding, emptyBinding},
                 {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 1", "1", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 2", "2", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 3", "3", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 4", "4", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 5", "5", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 6", "6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 7", "7", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 8", "8", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 9", "9", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 10", "0", hiddenBinding, hiddenBinding},
             }
         },
         {
@@ -265,6 +309,16 @@ namespace MainMenu {
                 {"Look Up", "Up", hiddenBinding, emptyBinding},
                 {"Look Down", "Down", hiddenBinding, emptyBinding},
                 {"Screenshot", "F6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 1", "1", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 2", "2", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 3", "3", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 4", "4", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 5", "5", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 6", "6", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 7", "7", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 8", "8", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 9", "9", hiddenBinding, hiddenBinding},
+				{"Hotbar Slot 10", "0", hiddenBinding, hiddenBinding},
             }
         },
     };
@@ -524,10 +578,20 @@ namespace MainMenu {
 		bool cheats_enabled;
 		bool skipintro;
 		int port_number;
+		bool show_lobby_code = false;
+		std::vector<int> lobby_filter_settings;
 		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load();
 		static inline AllSettings reset();
 		bool serialize(FileInterface*);
+		AllSettings()
+		{
+			lobby_filter_settings.resize(MAX_LOBBY_FILTERS_SAVED);
+			for ( auto& filter : lobby_filter_settings )
+			{
+				filter = 0;
+			}
+		};
 	};
 
 	int getMenuOwner() {
@@ -2544,6 +2608,14 @@ namespace MainMenu {
 	    sendSvFlagsOverNet();
 		::skipintro = skipintro;
 		::portnumber = (Uint16)port_number ? (Uint16)port_number : DEFAULT_PORT;
+		hidden_roomcode = !show_lobby_code;
+		for ( int i = 0; i < MAX_LOBBY_FILTERS_SAVED; ++i )
+		{
+			if ( i < numFilters )
+			{
+				lobbyFilters[i] = (MainMenu::Filter)lobby_filter_settings[i];
+			}
+		}
 
 #if defined(USE_EOS) && defined(STEAMWORKS)
 	    if ( crossplay_enabled && !LobbyHandler.crossplayEnabled )
@@ -2629,6 +2701,15 @@ namespace MainMenu {
 		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		settings.skipintro = true;
 		settings.port_number = ::portnumber;
+		settings.show_lobby_code = !hidden_roomcode;
+		for ( int i = 0; i < MAX_LOBBY_FILTERS_SAVED; ++i )
+		{
+			settings.lobby_filter_settings[i] = 0;
+			if ( i < numFilters )
+			{
+				settings.lobby_filter_settings[i] = lobbyFilters[i];
+			}
+		}
 		return settings;
 	}
 
@@ -2698,11 +2779,16 @@ namespace MainMenu {
 		settings.cheats_enabled = false;
 		settings.skipintro = true;
 		settings.port_number = DEFAULT_PORT;
+		settings.show_lobby_code = true;
+		for ( int i = 0; i < MAX_LOBBY_FILTERS_SAVED; ++i )
+		{
+			settings.lobby_filter_settings[i] = 0;
+		}
 		return settings;
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 11;
+	    int version = 13;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2816,6 +2902,8 @@ namespace MainMenu {
 		file->property("use_model_cache", useModelCache);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
+		file->propertyVersion("show_lobby_code", version >= 12, show_lobby_code);
+		file->propertyVersion("lobby_filters", version >= 13, lobby_filter_settings);
 		return true;
 	}
 
@@ -9294,8 +9382,8 @@ bind_failed:
         if (strncmp(name, str, len) == 0) {
             lobbyID = (int)strtol(name + len, nullptr, 10);
         }
-        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.results.size()) {
-            return &EOS.LobbySearchResults.results[lobbyID];
+        if (lobbyID >= 0 && lobbyID < EOS.LobbySearchResults.resultsSortedForDisplay.size()) {
+			return EOS.LobbySearchResults.getResultFromDisplayedIndex(lobbyID);
         } else {
             return nullptr;
         }
@@ -11775,7 +11863,8 @@ failed:
 				assert(main_menu_frame);
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
-					widget.select();
+					// TODO - last race is always being rescued when cancelling DLC prompt
+					widget.select(); // select this widget
 				}
 		        });
 
@@ -14495,7 +14584,6 @@ failed:
 		    label->setText(type_str);
 
 			if (type != LobbyType::LobbyLocal) {
-		        static bool hidden_roomcode;
 		        static auto hide_roomcode = [](Field& roomcode, Button& button, bool hide){
 		            hidden_roomcode = hide;
 	                if (hide) {
@@ -14611,6 +14699,13 @@ failed:
 					privacy->setTickCallback([](Widget& widget){
 						auto& input = Input::inputs[widget.getOwner()];
 
+						auto banner = static_cast<Frame*>(widget.getParent()); assert(banner);
+						auto roomcode = banner->findField("roomcode"); assert(roomcode);
+						if ( !strcmp(roomcode->getText(), "") )
+						{
+							hide_roomcode(*roomcode, static_cast<Button&>(widget), hidden_roomcode);
+						}
+
 						// this refocuses the player card
 						if (widget.isSelected()) {
 							if (input.consumeBinaryToggle("MenuCancel")) {
@@ -14626,7 +14721,7 @@ failed:
 						});
 
 					// set default privacy
-					hide_roomcode(*roomcode, *privacy, true);
+					hide_roomcode(*roomcode, *privacy, hidden_roomcode);
 				}
 
                 // chat button
@@ -14945,20 +15040,11 @@ failed:
 	    {}
 	};
 
-	enum Filter : int {
-	    UNCHECKED,
-	    OFF,
-	    ON,
-	    NUM,
-	};
-
-    static const int numFilters = NUM_SERVER_FLAGS + 3;
-    static Filter lobbyFilters[numFilters] = { Filter::UNCHECKED };
     static bool lobbyFiltersEnabled = false;
 	static std::vector<LobbyInfo> lobbies;
 	static int selectedLobby = 0;
 
-	static void addLobby(const LobbyInfo& info) {
+	static void addLobby(LobbyInfo& info) {
 	    if (info.ping < 0) {
 	        // probably the result of an out-of-date network scan
 	        return;
@@ -14981,6 +15067,15 @@ failed:
 #ifdef USE_EOS
             auto lobby = getLobbyEpic(info.address.c_str());
             if (lobby) {
+				if ( lobby->LobbyAttributes.PermissionLevel != 0 )
+				{
+					// this is a invite-only lobby.
+					info.locked = true;
+					info.name = "Private lobby";
+					lobbies.back().name = info.name;
+					lobbies.back().locked = info.locked;
+					//return;
+				}
                 for (auto& player : lobby->playersInLobby) {
                     for (auto& _friend : EOS.CurrentUserInfo.Friends) {
                         if (_friend.EpicAccountId == player.memberEpicAccountId) {
@@ -14995,7 +15090,11 @@ failed:
                 if (lobby->LobbyAttributes.friendsOnly) {
                     if (!foundFriend) {
                         // this is a friends-only lobby, and we don't have any friends in it.
-                        return;
+						info.locked = true;
+						info.name = "Private lobby";
+						lobbies.back().name = info.name;
+						lobbies.back().locked = info.locked;
+                        //return;
                     }
                 }
             }
@@ -15009,8 +15108,12 @@ failed:
             if (lobby) {
 				auto invite_only = SteamMatchmaking()->GetLobbyData(*lobby, "invite_only");
 				if (invite_only && stringCmp(invite_only, "true", 4, 4) == 0) {
-					// this is an invite-only lobby.
-					return;
+					// this is a invite-only lobby.
+					info.locked = true;
+					info.name = "Private lobby";
+					lobbies.back().name = info.name;
+					lobbies.back().locked = info.locked;
+					//return;
 				}
                 const int num_friends = SteamFriends()->GetFriendCount( k_EFriendFlagImmediate );
                 for (int i = 0; i < num_friends; ++i) {
@@ -15026,7 +15129,11 @@ failed:
                 if (friends && stringCmp(friends, "true", 4, 4) == 0) {
                     if (!foundFriend) {
                         // this is a friends-only lobby, and we don't have any friends in it.
-                        return;
+						info.locked = true;
+						info.name = "Private lobby";
+						lobbies.back().name = info.name;
+						lobbies.back().locked = info.locked;
+                        //return;
                     }
                 }
             }
@@ -15087,7 +15194,8 @@ failed:
 
 	    auto names = window->findFrame("names"); assert(names);
 	    auto players = window->findFrame("players"); assert(players);
-	    auto pings = window->findFrame("pings"); assert(pings);
+	    //auto pings = window->findFrame("pings"); assert(pings);
+		auto versions = window->findFrame("versions"); assert(versions);
 
 	    // function to make highlight the same on all columns...
 	    static auto selection_fn = [](Frame::entry_t& entry){
@@ -15095,11 +15203,13 @@ failed:
 	        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
 	        auto names = window->findFrame("names"); assert(names);
 	        auto players = window->findFrame("players"); assert(players);
-	        auto pings = window->findFrame("pings"); assert(pings);
+			//auto pings = window->findFrame("pings"); assert(pings);
+	        auto versions = window->findFrame("versions"); assert(versions);
 	        auto selection = entry.parent.getSelection();
 	        names->setSelection(selection);
 	        players->setSelection(selection);
-	        pings->setSelection(selection);
+			versions->setSelection(selection);
+			//pings->setSelection(selection);
             
             auto mouse = inputs.getVirtualMouse(entry.parent.getOwner());
             if (mouse && !mouse->draw_cursor) {
@@ -15114,11 +15224,13 @@ failed:
 	        auto window = main_menu_frame->findFrame("lobby_browser_window"); assert(window);
 	        auto names = window->findFrame("names"); assert(names);
 	        auto players = window->findFrame("players"); assert(players);
-	        auto pings = window->findFrame("pings"); assert(pings);
+			//auto pings = window->findFrame("pings"); assert(pings);
+	        auto versions = window->findFrame("versions"); assert(versions);
 	        auto selection = entry.parent.getSelection();
             names->setActivation(names->getEntries()[selection]);
             players->setActivation(players->getEntries()[selection]);
-            pings->setActivation(pings->getEntries()[selection]);
+			//pings->setActivation(pings->getEntries()[selection]);
+			versions->setActivation(versions->getEntries()[selection]);
 			auto lobbyId = (intptr_t)entry.data;
 			if (selectedLobby != lobbyId) {
 				selectedLobby = (int)lobbyId;
@@ -15179,26 +15291,36 @@ failed:
         entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
             (void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
-        // ping cell
-        auto entry_ping = pings->addEntry(info.name.c_str(), true);
-        entry_ping->click = activate_fn;
-        entry_ping->ctrlClick = activate_fn;
-        entry_ping->highlight = selection_fn;
-        entry_ping->selected = selection_fn;
-        entry_ping->color = 0xffffffff;
-        entry_ping->data = (info.index < 0 || info.index >= lobbies.size()) ?
-            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
-        if (!info.locked) {
-            if (info.ping < 100) {
-                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
-            } else if (info.ping < 200) {
-                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Yellow00.png";
-            } else if (info.ping < 300) {
-                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Orange00.png";
-            } else {
-                entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Red00.png";
-            }
-        }
+		auto entry_version = versions->addEntry(info.name.c_str(), true);
+		entry_version->click = activate_fn;
+		entry_version->ctrlClick = activate_fn;
+		entry_version->highlight = selection_fn;
+		entry_version->selected = selection_fn;
+		entry_version->color = info.locked ? makeColor(50, 56, 67, 255) : makeColor(183, 155, 119, 255);
+		entry_version->text = std::string("  ") + info.version;
+		entry_version->data = (info.index < 0 || info.index >= lobbies.size()) ?
+			(void*)lobbies.back().index : (void*)lobbies[info.index].index;
+
+        //// ping cell
+        //auto entry_ping = pings->addEntry(info.name.c_str(), true);
+        //entry_ping->click = activate_fn;
+        //entry_ping->ctrlClick = activate_fn;
+        //entry_ping->highlight = selection_fn;
+        //entry_ping->selected = selection_fn;
+        //entry_ping->color = 0xffffffff;
+        //entry_ping->data = (info.index < 0 || info.index >= lobbies.size()) ?
+        //    (void*)lobbies.back().index : (void*)lobbies[info.index].index;
+        //if (!info.locked) {
+        //    if (info.ping < 100) {
+        //        entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Green00.png";
+        //    } else if (info.ping < 200) {
+        //        entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Yellow00.png";
+        //    } else if (info.ping < 300) {
+        //        entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Orange00.png";
+        //    } else {
+        //        entry_ping->image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Ping_Red00.png";
+        //    }
+        //}
 
         auto slider = window->findSlider("scroll_slider");
         slider->setMaxValue(names->getActualSize().h - names->getSize().h);
@@ -15213,16 +15335,20 @@ failed:
 	    }
 	    auto names = window->findFrame("names"); assert(names);
 	    auto players = window->findFrame("players"); assert(players);
-	    auto pings = window->findFrame("pings"); assert(pings);
+	    //auto pings = window->findFrame("pings"); assert(pings);
+		auto versions = window->findFrame("versions"); assert(versions);
 	    names->clearEntries();
 	    names->setSelection(-1);
 	    names->setActivation(nullptr);
 	    players->clearEntries();
 	    players->setSelection(-1);
 	    players->setActivation(nullptr);
-	    pings->clearEntries();
-	    pings->setSelection(-1);
-	    pings->setActivation(nullptr);
+	    //pings->clearEntries();
+	    //pings->setSelection(-1);
+	    //pings->setActivation(nullptr);
+		versions->clearEntries();
+		versions->setSelection(-1);
+		versions->setActivation(nullptr);
 	}
 
 	static void refreshOnlineLobbies() {
@@ -15307,17 +15433,19 @@ failed:
 	            }
 #endif
 #if defined(USE_EOS)
-	            for (int c = 0; c < EOS.LobbySearchResults.results.size(); ++c) {
-	                auto& lobby = EOS.LobbySearchResults.results[c];
-	                LobbyInfo info;
-	                info.name = lobby.LobbyAttributes.lobbyName;
-                    info.version = lobby.LobbyAttributes.gameVersion;
-	                info.players = MAXPLAYERS - lobby.FreeSlots;
-	                info.ping = 50; // TODO
-	                info.locked = lobby.LobbyAttributes.gameCurrentLevel != -1;
-	                info.flags = lobby.LobbyAttributes.serverFlags;
-	                info.address = "epic:" + std::to_string(c);
-	                addLobby(info);
+	            for (int c = 0; c < EOS.LobbySearchResults.resultsSortedForDisplay.size(); ++c) {
+					if ( auto lobby = EOS.LobbySearchResults.getResultFromDisplayedIndex(c) )
+					{
+						LobbyInfo info;
+						info.name = lobby->LobbyAttributes.lobbyName;
+						info.version = lobby->LobbyAttributes.gameVersion;
+						info.players = MAXPLAYERS - lobby->FreeSlots;
+						info.ping = 50; // TODO
+						info.locked = lobby->LobbyAttributes.gameCurrentLevel != -1;
+						info.flags = lobby->LobbyAttributes.serverFlags;
+						info.address = "epic:" + std::to_string(c);
+						addLobby(info);
+					}
 	            }
 #endif
             }
@@ -15357,6 +15485,12 @@ failed:
 	    else
 	    {
 		    EOS.bRequestingLobbies = false; // don't attempt search if not logged in
+			for ( auto& result : EOS.LobbySearchResults.results )
+			{
+				result.ClearData();
+			}
+			EOS.LobbySearchResults.results.clear();
+			EOS.LobbySearchResults.resultsSortedForDisplay.clear();
 	    }
 #else
 	    EOS.searchLobbies(EOSFuncs::LobbyParameters_t::LobbySearchOptions::LOBBY_SEARCH_ALL,
@@ -15506,12 +15640,13 @@ failed:
 
 		// create lobby browser window
 		auto window = dimmer->addFrame("lobby_browser_window");
+		const int lobbyBrowserWidth = 1280;
 		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - 1020) / 2,
+			(Frame::virtualScreenX - lobbyBrowserWidth) / 2,
 			(Frame::virtualScreenY - 552) / 2,
-			1020,
+			lobbyBrowserWidth,
 			552});
-		window->setActualSize(SDL_Rect{0, 0, 1020, 552});
+		window->setActualSize(SDL_Rect{0, 0, lobbyBrowserWidth, 552});
 		window->setColor(0);
 		window->setBorder(0);
 
@@ -15591,20 +15726,20 @@ failed:
 		    }, SDL_Rect{292, 4, 0, 0});
 
 		auto background = window->addImage(
-			SDL_Rect{288, 0, 444, 552},
+			SDL_Rect{lobbyBrowserWidth / 2 - 696 / 2, 0, 696, 552},
 			0xffffffff,
 			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Window01.png",
 			"background"
 		);
 
 		auto banner_title = window->addField("banner", 64);
-		banner_title->setSize(SDL_Rect{408, 24, 204, 18});
+		banner_title->setSize(SDL_Rect{538, 24, 204, 18});
 		banner_title->setText("ONLINE LOBBY BROWSER");
 		banner_title->setFont(smallfont_outline);
 		banner_title->setJustify(Field::justify_t::CENTER);
 
 		auto interior = window->addImage(
-			SDL_Rect{330, 70, 358, 380},
+			SDL_Rect{ background->pos.x + 52, 70, 590, 380},
 			0xffffffff,
 #if defined(STEAMWORKS) && defined(USE_EOS)
 			mode == BrowserMode::Online ?
@@ -15618,16 +15753,20 @@ failed:
 			"interior"
 		);
 
-		auto lobby_slider_topper = window->addImage(
-			SDL_Rect{640, 116, 38, 20},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Topper00.png",
-			"lobby_slider_topper"
-		);
+		lobbyFiltersEnabled = false;
+		for ( int i = 0; i < numFilters; ++i )
+		{
+			if ( lobbyFilters[i] != Filter::UNCHECKED )
+			{
+				lobbyFiltersEnabled = true;
+				break;
+			}
+		}
+
 
 		auto frame_right = window->addFrame("frame_right");
-		frame_right->setInvisible(true);
-		frame_right->setSize(SDL_Rect{716, 28, 304, 414});
+		frame_right->setInvisible(!lobbyFiltersEnabled);
+		frame_right->setSize(SDL_Rect{background->pos.x + background->pos.w - 16, 28, 304, 414});
 		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
 		frame_right->setBorder(0);
 		frame_right->setColor(0);
@@ -15711,25 +15850,56 @@ failed:
                     case Filter::OFF: *filter = Filter::UNCHECKED; break;
                     }
                     button.setIcon(icons[(int)*filter]);
+					lobbyFiltersEnabled = false;
+					for ( int i = 0; i < numFilters; ++i )
+					{
+						if ( lobbyFilters[i] != Filter::UNCHECKED )
+						{
+							lobbyFiltersEnabled = true;
+							break;
+						}
+					}
                     clearLobbies();
                     for (auto& lobby : lobbies) {
                         addLobby(lobby);
                     }
+
+					if ( Frame* parent = static_cast<Frame*>(button.getParent()) ) 
+					{
+						if ( Frame* parent2 = parent->getParent() )
+						{
+							if ( auto slider = parent2->findSlider("scroll_slider") )
+							{
+								slider->setValue(0.0);
+								slider->getCallback()(*slider);
+							}
+						}
+					}
 		            });
 		        checkbox->setWidgetBack("filter_settings");
 		        std::string next_name = std::string("filter_checkbox") + std::to_string(index + 1);
 		        std::string prev_name = std::string("filter_checkbox") + std::to_string(index - 1);
 		        checkbox->setWidgetDown(next_name.c_str());
 		        checkbox->setWidgetUp(prev_name.c_str());
-
+				checkbox->addWidgetAction("MenuAlt2", "refresh");
+				checkbox->addWidgetAction("MenuLeft", "filter_settings");
 		        ++index;
             }
 		}
-        lobbyFiltersEnabled = !frame_right->isInvisible();
+
+		lobbyFiltersEnabled = false;
+		for ( int i = 0; i < numFilters; ++i )
+		{
+			if ( lobbyFilters[i] != Filter::UNCHECKED )
+			{
+				lobbyFiltersEnabled = true;
+				break;
+			}
+		}
 
 		auto frame_left = window->addFrame("frame_left");
 		frame_left->setInvisible(true);
-		frame_left->setSize(SDL_Rect{0, 28, 304, 414});
+		frame_left->setSize(SDL_Rect{4, 28, 304, 414});
 		frame_left->setActualSize(SDL_Rect{0, 0, 304, 414});
 		frame_left->setBorder(0);
 		frame_left->setColor(0);
@@ -15850,13 +16020,14 @@ failed:
 		}
 
 		auto online_tab = window->addButton("online_tab");
-		online_tab->setSize(SDL_Rect{392, 70, 106, 38});
+		online_tab->setSize(SDL_Rect{background->pos.x + 230, 70, 106, 38});
 		online_tab->setHighlightColor(0);
 		online_tab->setBorder(0);
 		online_tab->setColor(0);
 		online_tab->setText("ONLINE");
 		online_tab->setFont(smallfont_outline);
-		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		online_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_LEFT);
+		online_tab->setButtonsOffset(SDL_Rect{ 0, 0, 0, 0 });
 		online_tab->setWidgetSearchParent(window->getName());
 		online_tab->addWidgetAction("MenuPageLeft", "online_tab");
 		online_tab->addWidgetAction("MenuPageRight", "lan_tab");
@@ -15929,7 +16100,7 @@ failed:
 #endif
 
 		auto lan_tab = window->addButton("lan_tab");
-		lan_tab->setSize(SDL_Rect{502, 70, 128, 38});
+		lan_tab->setSize(SDL_Rect{online_tab->getSize().x + online_tab->getSize().w + 4, 70, 128, 38});
 		lan_tab->setHighlightColor(0);
 		lan_tab->setBorder(0);
 		lan_tab->setColor(0);
@@ -15939,7 +16110,8 @@ failed:
 		lan_tab->setText("LAN");
 #endif
 		lan_tab->setFont(smallfont_outline);
-		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_TOP);
+		lan_tab->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		lan_tab->setButtonsOffset(SDL_Rect{ 0, 0, 0, 0 });
 		lan_tab->setWidgetSearchParent(window->getName());
 		lan_tab->addWidgetAction("MenuPageLeft", "online_tab");
 		lan_tab->addWidgetAction("MenuPageRight", "lan_tab");
@@ -15985,23 +16157,6 @@ failed:
 #endif
 			});
 
-		auto refresh = window->addButton("refresh");
-		refresh->setSize(SDL_Rect{634, 62, 40, 40});
-		refresh->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
-		refresh->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshHigh00.png");
-		refresh->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshPress00.png");
-		refresh->setHighlightColor(makeColor(255, 255, 255, 255));
-		refresh->setColor(makeColor(255, 255, 255, 255));
-		refresh->setWidgetSearchParent(window->getName());
-		refresh->addWidgetAction("MenuPageLeft", "online_tab");
-		refresh->addWidgetAction("MenuPageRight", "lan_tab");
-		refresh->addWidgetAction("MenuStart", "join_lobby");
-		refresh->addWidgetAction("MenuAlt1", "enter_code");
-		refresh->addWidgetAction("MenuAlt2", "refresh");
-		refresh->setWidgetBack("back_button");
-		refresh->setWidgetLeft("lan_tab");
-		refresh->setWidgetDown("names");
-		refresh->setCallback([](Button&){refreshLobbyBrowser();});
 
 		static auto enter_code_fn = [](Button& button){
 #ifdef NINTENDO
@@ -16040,7 +16195,7 @@ failed:
 		    };
 
 		auto enter_code = window->addButton("enter_code");
-		enter_code->setSize(SDL_Rect{342, 454, 164, 62});
+		enter_code->setSize(SDL_Rect{ online_tab->getSize().x - 50, 454, 164, 62});
 		enter_code->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
 		enter_code->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicHigh00.png");
 		enter_code->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
@@ -16108,7 +16263,7 @@ failed:
 		    };
 
 		auto join_lobby = window->addButton("join_lobby");
-		join_lobby->setSize(SDL_Rect{514, 454, 164, 62});
+		join_lobby->setSize(SDL_Rect{enter_code->getSize().x + enter_code->getSize().w + 8, 454, 164, 62});
 		join_lobby->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_Basic00.png");
 		join_lobby->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicHigh00.png");
 		join_lobby->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/UI_Button_BasicPress00.png");
@@ -16141,31 +16296,94 @@ failed:
 	    constexpr Uint32 highlightColor = makeColor(22, 25, 30, 255);
 	    constexpr Uint32 activatedColor = makeColor(30, 25, 22, 255);
 
+		SDL_Rect prevColumnSize;
         // name column
         {
-		    auto name_column_header = window->addField("name_column_header", 32);
+		    auto name_column_header = window->addField("name_column_header", 64);
 		    name_column_header->setHJustify(Field::justify_t::LEFT);
 		    name_column_header->setVJustify(Field::justify_t::TOP);
 		    name_column_header->setFont(smallfont_no_outline);
-		    name_column_header->setSize(SDL_Rect{340, 116, 172, 20});
+		    name_column_header->setSize(SDL_Rect{354, 116, 380, 20});
 		    name_column_header->setColor(makeColor(106, 192, 159, 255));
 		    name_column_header->setText(" Lobby Name");
+			name_column_header->setTickCallback([](Widget& widget) {
+				Field* name_column_header = static_cast<Field*>(&widget);
+				if ( lobbyFiltersEnabled )
+				{
+					auto names = static_cast<Frame*>(widget.getParent())->findFrame("names");
+					int lobbiesFiltered = std::max(0, (int)lobbies.size() - (int)names->getEntries().size());
+					if ( lobbiesFiltered > 0 )
+					{
+						char buf[64] = {'\0'};
+						snprintf(buf, sizeof(buf), " Lobby Name (%d hidden)", lobbiesFiltered);
+						name_column_header->setText(buf);
+					}
+					else
+					{
+						name_column_header->setText(" Lobby Name");
+					}
+				}
+				else
+				{
+					name_column_header->setText(" Lobby Name");
+				}
+			});
 
 		    auto list = window->addFrame("names");
 		    list->setScrollBarsEnabled(false);
 #if defined(STEAMWORKS) && defined(USE_EOS)
-			list->setSize(SDL_Rect{ 336, 140, 174, 200 });
-			list->setActualSize(SDL_Rect{ 0, 0, 174, 200 });
+			list->setSize(SDL_Rect{ name_column_header->getSize().x - 4, 140, 384, 200});
+			list->setActualSize(SDL_Rect{ 0, 0, 384, 200 });
 #else
-			list->setSize(SDL_Rect{ 336, 140, 174, 234 });
-			list->setActualSize(SDL_Rect{ 0, 0, 174, 234 });
+			list->setSize(SDL_Rect{ name_column_header->getSize().x - 4, 140, 384, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 384, 234 });
 #endif
+			prevColumnSize = list->getSize();
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
 		    list->setEntrySize(18);
 		    list->setSelectedEntryColor(highlightColor);
 		    list->setActivatedEntryColor(activatedColor);
+
+			static auto tick_callback = [](Widget& widget) {
+				widget.setHideSelectors(!inputs.hasController(widget.getOwner()));
+				Frame* frame = static_cast<Frame*>(&widget);
+				if ( frame->isActivated() )
+				{
+					widget.setHideSelectors(true);
+					frame->setGlyphPosition(Widget::UPPER_LEFT);
+					SDL_Rect rect{ 0, 0, 0, 0 };
+					rect.y = frame->getSelection() * frame->getEntrySize();
+					rect.y -= frame->getActualSize().y; // subtract scroll
+					rect.x -= 7;
+					rect.y += 7;
+					if ( rect.y < 0 ) {
+						frame->setHideGlyphs(true);
+					}
+					else if ( rect.y > frame->getSize().h )
+					{
+						frame->setHideGlyphs(true);
+					}
+					else
+					{
+						frame->setHideGlyphs(false);
+					}
+					//rect.y = std::max(0, rect.y);
+					//rect.y = std::min(frame->getSize().h, rect.y);
+					frame->setButtonsOffset(rect);
+				}
+				else
+				{
+					frame->setHideGlyphs(false);
+					frame->setButtonsOffset(SDL_Rect{ 0, 0, 192, 0 });
+					frame->setGlyphPosition(Widget::CENTERED_BOTTOM);
+				}
+				if ( !gui->findSelectedWidget(widget.getOwner()) ) {
+					widget.select();
+				}
+			};
+
 		    list->setTickCallback(tick_callback);
 		    list->setWidgetSearchParent(window->getName());
 		    list->addWidgetMovement("MenuListCancel", list->getName());
@@ -16175,12 +16393,22 @@ failed:
 		    list->addWidgetAction("MenuAlt1", "enter_code");
 		    list->addWidgetAction("MenuAlt2", "refresh");
 		    list->setWidgetBack("back_button");
-		    list->setWidgetUp("online_tab");
-		    list->setWidgetRight("players");
+		    //list->setWidgetUp("online_tab");
+		    //list->setWidgetRight("players");
 		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("players");
-		    list->addSyncScrollTarget("pings");
+		    //list->addSyncScrollTarget("pings");
+			list->addSyncScrollTarget("versions");
+			list->setSelectorOffset(SDL_Rect{ 0, 0, 150, 0 });
+			list->setButtonsOffset(SDL_Rect{ 0, 0, 192, 0 });
 		    list->select();
+
+			auto divider = window->addImage(
+				SDL_Rect{ list->getSize().x, 116, 6, 256 },
+				0xffffffff,
+				"*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
+				"divider");
+			divider->ontop = true;
 		}
 
         // players column
@@ -16189,19 +16417,20 @@ failed:
 		    players_column_header->setHJustify(Field::justify_t::LEFT);
 		    players_column_header->setVJustify(Field::justify_t::TOP);
 		    players_column_header->setFont(smallfont_no_outline);
-		    players_column_header->setSize(SDL_Rect{514, 116, 76, 20});
+		    players_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 76, 20});
 		    players_column_header->setColor(makeColor(106, 192, 159, 255));
 		    players_column_header->setText(" Players");
 
 		    auto list = window->addFrame("players");
 		    list->setScrollBarsEnabled(false);
 #if defined(STEAMWORKS) && defined(USE_EOS)
-			list->setSize(SDL_Rect{ 510, 140, 78, 200 });
+			list->setSize(SDL_Rect{ players_column_header->getSize().x - 4, 140, 78, 200});
 			list->setActualSize(SDL_Rect{ 0, 0, 78, 200 });
 #else
-			list->setSize(SDL_Rect{ 510, 140, 78, 234 });
+			list->setSize(SDL_Rect{ players_column_header->getSize().x - 4, 140, 78, 234 });
 			list->setActualSize(SDL_Rect{ 0, 0, 78, 234 });
 #endif
+			prevColumnSize = list->getSize();
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -16218,32 +16447,91 @@ failed:
 		    list->addWidgetAction("MenuAlt2", "refresh");
 		    list->setWidgetBack("back_button");
 		    list->setWidgetUp("online_tab");
-		    list->setWidgetRight("pings");
+		    //list->setWidgetRight("pings");
+			//list->setWidgetRight("versions");
 		    list->setWidgetLeft("names");
 		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
-		    list->addSyncScrollTarget("pings");
+		    //list->addSyncScrollTarget("pings");
+			list->addSyncScrollTarget("versions");
+
+			auto divider = window->addImage(
+				SDL_Rect{ list->getSize().x, 116, 6, 256 },
+				0xffffffff,
+				"*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
+				"divider");
+			divider->ontop = true;
+		}
+
+		// version column
+		{
+			auto version_column_header = window->addField("version_column_header", 32);
+			version_column_header->setHJustify(Field::justify_t::LEFT);
+			version_column_header->setVJustify(Field::justify_t::TOP);
+			version_column_header->setFont(smallfont_no_outline);
+			version_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 70, 20 });
+			version_column_header->setColor(makeColor(106, 192, 159, 255));
+			version_column_header->setText(" Version");
+
+			auto list = window->addFrame("versions");
+			list->setScrollBarsEnabled(false);
+#if defined(STEAMWORKS) && defined(USE_EOS)
+			list->setSize(SDL_Rect{ version_column_header->getSize().x - 4, 140, version_column_header->getSize().w + 4, 200 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 200 });
+#else
+			list->setSize(SDL_Rect{ version_column_header->getSize().x - 4, 140, version_column_header->getSize().w + 4, 234 });
+			list->setActualSize(SDL_Rect{ 0, 0, 52, 234 });
+#endif
+			prevColumnSize = list->getSize();
+			list->setFont(smallfont_no_outline);
+			list->setColor(0);
+			list->setBorder(0);
+			list->setEntrySize(18);
+			list->setSelectedEntryColor(highlightColor);
+			list->setActivatedEntryColor(activatedColor);
+			list->setTickCallback(tick_callback);
+			list->setWidgetSearchParent(window->getName());
+			list->addWidgetMovement("MenuListCancel", list->getName());
+			list->addWidgetAction("MenuPageLeft", "online_tab");
+			list->addWidgetAction("MenuPageRight", "lan_tab");
+			list->addWidgetAction("MenuStart", "join_lobby");
+			list->addWidgetAction("MenuAlt1", "enter_code");
+			list->addWidgetAction("MenuAlt2", "refresh");
+			list->setWidgetBack("back_button");
+			list->setWidgetUp("online_tab");
+			list->setWidgetLeft("names");
+			list->setWidgetDown("filter_settings");
+			list->addSyncScrollTarget("names");
+			list->addSyncScrollTarget("players");
+
+			auto divider = window->addImage(
+				SDL_Rect{ list->getSize().x, 116, 6, 256 },
+				0xffffffff,
+				"*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
+				"divider");
+			divider->ontop = true;
 		}
 
         // ping column
-        {
+		/*{
 		    auto ping_column_header = window->addField("ping_column_header", 32);
 		    ping_column_header->setHJustify(Field::justify_t::LEFT);
 		    ping_column_header->setVJustify(Field::justify_t::TOP);
 		    ping_column_header->setFont(smallfont_no_outline);
-		    ping_column_header->setSize(SDL_Rect{592, 116, 48, 20});
+		    ping_column_header->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w + 4, 116, 48, 20});
 		    ping_column_header->setColor(makeColor(106, 192, 159, 255));
 		    ping_column_header->setText(" Ping");
 
 		    auto list = window->addFrame("pings");
 		    list->setScrollBarsEnabled(false);
 #if defined(STEAMWORKS) && defined(USE_EOS)
-			list->setSize(SDL_Rect{ 588, 140, 52, 200 });
+			list->setSize(SDL_Rect{ ping_column_header->getSize().x - 4, 140, 52, 200});
 			list->setActualSize(SDL_Rect{ 0, 0, 52, 200 });
 #else
-			list->setSize(SDL_Rect{ 588, 140, 52, 234 });
+			list->setSize(SDL_Rect{ ping_column_header->getSize().x - 4, 140, 52, 234 });
 			list->setActualSize(SDL_Rect{ 0, 0, 52, 234 });
 #endif
+			prevColumnSize = list->getSize();
 		    list->setFont(smallfont_no_outline);
 		    list->setColor(0);
 		    list->setBorder(0);
@@ -16264,19 +16552,37 @@ failed:
 		    list->setWidgetDown("filter_settings");
 		    list->addSyncScrollTarget("names");
 		    list->addSyncScrollTarget("players");
-		}
+		}*/
 
-		auto dividers = window->addImage(
-		    SDL_Rect{336, 138, 308, 204},
-		    0xffffffff,
-		    "*#images/ui/Main Menus/Play/LobbyBrowser/Lobby_InteriorWindow_Dividers.png",
-		    "dividers");
-		dividers->ontop = true;
+		auto refresh = window->addButton("refresh");
+		refresh->setSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w, 62, 40, 40 });
+		refresh->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_Refresh00.png");
+		refresh->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshHigh00.png");
+		refresh->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_RefreshPress00.png");
+		refresh->setHighlightColor(makeColor(255, 255, 255, 255));
+		refresh->setColor(makeColor(255, 255, 255, 255));
+		refresh->setWidgetSearchParent(window->getName());
+		refresh->addWidgetAction("MenuPageLeft", "online_tab");
+		refresh->addWidgetAction("MenuPageRight", "lan_tab");
+		refresh->addWidgetAction("MenuStart", "join_lobby");
+		refresh->addWidgetAction("MenuAlt1", "enter_code");
+		refresh->addWidgetAction("MenuAlt2", "refresh");
+		refresh->setWidgetBack("back_button");
+		refresh->setWidgetLeft("lan_tab");
+		refresh->setWidgetDown("names");
+		refresh->setCallback([](Button&) {refreshLobbyBrowser(); });
+
+		auto lobby_slider_topper = window->addImage(
+			SDL_Rect{ prevColumnSize.x + prevColumnSize.w, 116, 38, 20 },
+			0xffffffff,
+			"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Topper00.png",
+			"lobby_slider_topper"
+		);
 
 		auto slider = window->addSlider("scroll_slider");
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		slider->setGlyphPosition(Widget::glyph_position_t::CENTERED);
-		slider->setRailSize(SDL_Rect{640, 138, 38, 234});
+		slider->setRailSize(SDL_Rect{ prevColumnSize.x + prevColumnSize.w, 138, 38, 234});
 		slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
 		slider->setRailImage("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Slider_Backing01B.png");
 		slider->setHandleImage("*images/ui/Main Menus/Play/LobbyBrowser/UI_Slider_Boulder00.png");
@@ -16290,7 +16596,8 @@ failed:
 	    slider->setWidgetBack("back_button");
 	    slider->setWidgetUp("wireless_tab");
 	    slider->setWidgetDown("join_lobby");
-	    slider->setWidgetLeft("pings");
+	    //slider->setWidgetLeft("pings");
+		slider->setWidgetLeft("names");
 		slider->setCallback([](Slider& slider){
 			Frame* frame = static_cast<Frame*>(slider.getParent()); assert(frame);
 			{
@@ -16305,11 +16612,17 @@ failed:
 			    actualSize.y = slider.getValue();
 			    column->setActualSize(actualSize);
 			}
-			{
+			/*{
 			    Frame* column = frame->findFrame("pings"); assert(column);
 			    auto actualSize = column->getActualSize();
 			    actualSize.y = slider.getValue();
 			    column->setActualSize(actualSize);
+			}*/
+			{
+				Frame* column = frame->findFrame("versions"); assert(column);
+				auto actualSize = column->getActualSize();
+				actualSize.y = slider.getValue();
+				column->setActualSize(actualSize);
 			}
 			slider.updateHandlePosition();
 			});
@@ -16325,20 +16638,48 @@ failed:
 		auto filter_settings_fn = [](Button& button){
 			auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
 			auto frame_right = frame->findFrame("frame_right"); assert(frame_right);
-			frame_right->setInvisible(frame_right->isInvisible() == false);
-			lobbyFiltersEnabled = !frame_right->isInvisible();
-			clearLobbies();
+
+			lobbyFiltersEnabled = false;
+			for ( int i = 0; i < numFilters; ++i )
+			{
+				if ( lobbyFilters[i] != Filter::UNCHECKED )
+				{
+					lobbyFiltersEnabled = true;
+					break;
+				}
+			}
+
+			if ( button.isSelected() && !inputs.getVirtualMouse(getMenuOwner())->draw_cursor )
+			{
+				frame_right->setInvisible(false);
+			}
+			else
+			{
+				frame_right->setInvisible(!lobbyFiltersEnabled && !frame_right->isInvisible());
+			}
+
+			/*clearLobbies();
 			for (auto& lobby : lobbies) {
 				addLobby(lobby);
-			}
-			if (lobbyFiltersEnabled) {
+			}*/
+
+			if (!frame_right->isInvisible()) {
 				if (!inputs.getVirtualMouse(getMenuOwner())->draw_cursor) {
-					auto checkbox = frame_right->findButton("filter_checkbox0");
-					if (checkbox) {
-						checkbox->select();
+					auto selectedWidget = frame_right->findSelectedWidget(frame_right->getOwner());
+					if ( selectedWidget )
+					{
+						button.select();
+						soundMove();
+					}
+					else
+					{
+						auto checkbox = frame_right->findButton("filter_checkbox0");
+						if (checkbox) {
+							checkbox->select();
+						}
+						soundActivate();
 					}
 				}
-				soundActivate();
 			}
 			else {
 				soundCancel();
@@ -16348,7 +16689,7 @@ failed:
 
 #if defined(STEAMWORKS) && defined(USE_EOS)
 		auto filter_settings = window->addButton("filter_settings");
-		filter_settings->setSize(SDL_Rect{424, 344, 160, 32});
+		filter_settings->setSize(SDL_Rect{online_tab->getSize().x + 36, 344, 160, 32});
 		filter_settings->setBackground("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettings00.png");
 		filter_settings->setBackgroundHighlighted("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsHigh00.png");
 		filter_settings->setBackgroundActivated("*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Button_FilterSettingsPress00.png");
@@ -16369,12 +16710,12 @@ failed:
 
 		auto crossplay_label = window->addField("crossplay_label", 128);
 		crossplay_label->setJustify(Field::justify_t::CENTER);
-		crossplay_label->setSize(SDL_Rect{378, 378, 96, 48});
+		crossplay_label->setSize(SDL_Rect{ online_tab->getSize().x - 14, 378, 96, 48});
 		crossplay_label->setFont(smallfont_outline);
 		crossplay_label->setText("Crossplay");
 
 		auto crossplay = window->addButton("crossplay");
-		crossplay->setSize(SDL_Rect{474, 378, 158, 48});
+		crossplay->setSize(SDL_Rect{ filter_settings->getSize().x + 50, 378, 158, 48});
 		crossplay->setJustify(Button::justify_t::CENTER);
 		crossplay->setPressed(LobbyHandler.crossplayEnabled);
 		crossplay->setStyle(Button::style_t::STYLE_TOGGLE);
@@ -16406,7 +16747,7 @@ failed:
 			});
 #else
 		auto filter_settings = window->addButton("filter_settings");
-		filter_settings->setSize(SDL_Rect{430, 384, 158, 44});
+		filter_settings->setSize(SDL_Rect{ online_tab->getSize().x + 38, 384, 158, 44});
 		filter_settings->setFont(smallfont_outline);
 		filter_settings->setText("Filter Settings");
 		filter_settings->setJustify(Button::justify_t::CENTER);
@@ -16461,6 +16802,23 @@ failed:
 		    addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
 		    addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
 		    addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
+			addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
+			addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
+			addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
+			addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
+			addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
+			addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
+			addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
+			addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
+			addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
+			addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
+			addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
+			addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
+			addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
+			addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
+			addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
+			addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
+			addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
 		} else {
 		    refresh->activate();
 		}

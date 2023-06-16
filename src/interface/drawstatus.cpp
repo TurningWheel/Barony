@@ -2692,9 +2692,9 @@ void drawStatusNew(const int player)
 						&& inputs.bPlayerUsingKeyboardControl(player) )
 					{
 						Uint32 swapItem = 0;
-						if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 1") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 1");
 							swapItem = hotbar[0].item;
 							hotbar[0].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2707,9 +2707,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 2") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 2");
 							swapItem = hotbar[1].item;
 							hotbar[1].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2722,9 +2722,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 3") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 3");
 							swapItem = hotbar[2].item;
 							hotbar[2].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2737,9 +2737,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 4") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 4");
 							swapItem = hotbar[3].item;
 							hotbar[3].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2752,9 +2752,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 5") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 5");
 							swapItem = hotbar[4].item;
 							hotbar[4].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2767,9 +2767,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 6") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 6");
 							swapItem = hotbar[5].item;
 							hotbar[5].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2782,9 +2782,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 7") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 7");
 							swapItem = hotbar[6].item;
 							hotbar[6].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2797,9 +2797,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 8") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 8");
 							swapItem = hotbar[7].item;
 							hotbar[7].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2812,9 +2812,9 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 9") )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 9");
 							swapItem = hotbar[8].item;
 							hotbar[8].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2827,11 +2827,11 @@ void drawStatusNew(const int player)
 								hotbar[num].resetLastItem();
 							}
 						}
-						if ( Input::inputs[player].binaryToggle("HotbarSlot10")
+						if ( Input::inputs[player].binaryToggle("Hotbar Slot 10")
 							&& hotbar_t.getHotbarSlotFrame(9)
 							&& !hotbar_t.getHotbarSlotFrame(9)->isDisabled() )
 						{
-							Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
+							Input::inputs[player].consumeBinaryToggle("Hotbar Slot 10");
 							swapItem = hotbar[9].item;
 							hotbar[9].item = hotbar[num].item;
 							hotbar[num].item = swapItem;
@@ -2877,65 +2877,65 @@ void drawStatusNew(const int player)
 		{
 			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
 			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
-			if ( Input::inputs[player].binaryToggle("HotbarSlot1") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 1") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot1");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 1");
 				item = uidToItem(hotbar[0].item);
 				hotbar_t.current_hotbar = 0;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot2") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 2") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot2");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 2");
 				item = uidToItem(hotbar[1].item);
 				hotbar_t.current_hotbar = 1;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot3") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 3") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot3");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 3");
 				item = uidToItem(hotbar[2].item);
 				hotbar_t.current_hotbar = 2;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot4") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 4") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot4");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 4");
 				item = uidToItem(hotbar[3].item);
 				hotbar_t.current_hotbar = 3;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot5") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 5") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot5");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 5");
 				item = uidToItem(hotbar[4].item);
 				hotbar_t.current_hotbar = 4;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot6") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 6") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot6");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 6");
 				item = uidToItem(hotbar[5].item);
 				hotbar_t.current_hotbar = 5;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot7") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 7") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot7");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 7");
 				item = uidToItem(hotbar[6].item);
 				hotbar_t.current_hotbar = 6;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot8") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 8") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot8");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 8");
 				item = uidToItem(hotbar[7].item);
 				hotbar_t.current_hotbar = 7;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot9") )
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 9") )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot9");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 9");
 				item = uidToItem(hotbar[8].item);
 				hotbar_t.current_hotbar = 8;
 			}
-			if ( Input::inputs[player].binaryToggle("HotbarSlot10")
+			if ( Input::inputs[player].binaryToggle("Hotbar Slot 10")
 				&& hotbar_t.getHotbarSlotFrame(9)
 				&& !hotbar_t.getHotbarSlotFrame(9)->isDisabled() )
 			{
-				Input::inputs[player].consumeBinaryToggle("HotbarSlot10");
+				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 10");
 				item = uidToItem(hotbar[9].item);
 				hotbar_t.current_hotbar = 9;
 			}
@@ -2990,7 +2990,7 @@ void drawStatusNew(const int player)
 								}
 							}
 						}
-
+						Player::soundCancel();
 						players[player]->hotbar.faceMenuButtonHeld = Player::Hotbar_t::GROUP_NONE;
 						break;
 					}
@@ -3027,11 +3027,13 @@ void drawStatusNew(const int player)
 					{
 						hotbar_t.selectHotbarSlot(std::max(centerSlot - 1, hotbar_t.current_hotbar - 1));
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierLeft");
+						Player::soundHotbarShootmodeMovement();
 					}
 					else if ( Input::inputs[player].binaryToggle("HotbarFacebarModifierRight") )
 					{
 						hotbar_t.selectHotbarSlot(std::min(centerSlot + 1, hotbar_t.current_hotbar + 1));
 						Input::inputs[player].consumeBinaryToggle("HotbarFacebarModifierRight");
+						Player::soundHotbarShootmodeMovement();
 					}
 					else if ( players[player]->hotbar.faceMenuButtonHeld == Player::Hotbar_t::GROUP_NONE )
 					{
@@ -3091,8 +3093,6 @@ void drawStatusNew(const int player)
 			}
 		}
 
-		bool bumper_moved = false;
-
 		//Gamepad change hotbar selection.
 		if ( !players[player]->hotbar.useHotbarFaceMenu && Input::inputs[player].binaryToggle("Hotbar Right") )
 		{
@@ -3134,6 +3134,7 @@ void drawStatusNew(const int player)
 						warpMouseToSelectedHotbarSlot(player); // controller only functionality
 					}
 					hotbar_t.hotbarTooltipLastGameTick = ticks;
+					//Player::soundHotbarShootmodeMovement();
 				}
 			}
 			else
@@ -3181,6 +3182,7 @@ void drawStatusNew(const int player)
 						warpMouseToSelectedHotbarSlot(player); // controller only functionality
 					}
 					hotbar_t.hotbarTooltipLastGameTick = ticks;
+					//Player::soundHotbarShootmodeMovement();
 				}
 			}
 			else

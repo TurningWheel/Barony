@@ -62,7 +62,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	Input& input = Input::inputs[player];
 
 	if ( gamePaused || movie || !players[player] || !players[player]->entity 
-		|| players[player]->entity->ticks < (TICKS_PER_SECOND)
+		|| players[player]->entity->ticks < (TICKS_PER_SECOND / 2)
 		|| fadeout
 		|| (players[player]->usingCommand() && input.input("Use").type == Input::binding_t::KEYBOARD) )
 	{
