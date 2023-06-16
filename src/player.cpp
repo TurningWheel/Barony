@@ -2760,7 +2760,52 @@ void Inputs::addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount)
 			rumble(player, GameController::Haptic_t::RUMBLE_NORMAL, 32000, 32000, durationMult * 11, 0);
 		}
 	}
-		}
+}
+
+const Uint32 Inputs::HAPTIC_SFX_BOULDER_BOUNCE_VOL = 1;
+const Uint32 Inputs::HAPTIC_SFX_BOULDER_ROLL_LOW_VOL = 2;
+const Uint32 Inputs::HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL = 3;
+const Uint32 Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL = 4;
+
+void Inputs::addRumbleRemotePlayer(const int player, Uint32 hapticType, Uint32 uid)
+{
+	if ( multiplayer != SERVER ) { return; }
+	if ( player <= 0 || player >= MAXPLAYERS ) { return; }
+	if ( players[player]->isLocalPlayer() ) 
+	{
+		return;
+	}
+	if ( !client_disconnected[player] )
+	{
+		strcpy((char*)net_packet->data, "BRRR");
+		SDLNet_Write32(hapticType, &net_packet->data[4]);
+		SDLNet_Write32(uid, &net_packet->data[8]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void Inputs::addRumbleForHapticType(const int player, Uint32 hapticType, Uint32 uid)
+{
+	if ( hapticType == HAPTIC_SFX_BOULDER_BOUNCE_VOL )
+	{
+		inputs.rumble(player, GameController::Haptic_t::RUMBLE_BOULDER_BOUNCE, 32000, 32000, 15, uid);
+	}
+	else if ( hapticType == HAPTIC_SFX_BOULDER_ROLL_LOW_VOL )
+	{
+		inputs.rumble(player, GameController::Haptic_t::RUMBLE_BOULDER_ROLLING, 0, 8000, TICKS_PER_SECOND / 2, uid);
+	}
+	else if ( hapticType == HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL )
+	{
+		inputs.rumble(player, GameController::Haptic_t::RUMBLE_BOULDER_ROLLING, 0, 16000, TICKS_PER_SECOND / 2, uid);
+	}
+	else if ( hapticType == HAPTIC_SFX_BOULDER_LAUNCH_VOL )
+	{
+		rumble(player, GameController::Haptic_t::RUMBLE_BOULDER, 0, 32000, TICKS_PER_SECOND, uid);
+	}
+}
 
 GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumble* r)
 {
