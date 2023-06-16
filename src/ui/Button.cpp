@@ -185,7 +185,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 					++lines;
 				}
 			}
-			int fullH = lines * _font->height(false) + _font->getOutline() * 2;
+			int fullH = lines * (_font->height(false) + paddingPerTextLine) + _font->getOutline() * 2;
 
 			char* buf = (char*)malloc(text.size() + 1);
 			memcpy(buf, text.c_str(), text.size() + 1);
@@ -222,7 +222,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 				x += textOffset.x;
 				y += textOffset.y;
 
-				yoff += _font->height(false);
+				yoff += _font->height(false) + paddingPerTextLine;
 
 				SDL_Rect pos = _size;
 				pos.x += std::max(0, x - scroll.x);

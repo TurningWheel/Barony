@@ -91,6 +91,7 @@ public:
 	void	setMenuConfirmControlType(int flags) { menuConfirmControlType = flags; }
     void    setGlyphPosition(glyph_position_t p) { glyphPosition = p; }
     void    setAlwaysShowGlyphs(bool b) { alwaysShowGlyphs = b; }
+    void    setDontSearchAncestors(bool b) { dontSearchAncestors = b; }
     
     //! removes the widget safely
     void removeSelf();
@@ -198,6 +199,7 @@ protected:
     void (*tickCallback)(Widget&) = nullptr;		                //!< the callback to run each frame for this widget
     void (*drawCallback)(const Widget&, const SDL_Rect) = nullptr;  //!< the callback to run after the widget is drawn
     void* userData = nullptr;                                       //!< user data
+    bool dontSearchAncestors = false;                               //!< if true, doesn't fall back to a full-search if a widget can't be found for a binding
 
     std::unordered_map<std::string, std::string>
         widgetActions;                              //!< widgets to select and activate when input is pressed
