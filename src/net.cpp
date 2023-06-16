@@ -3109,9 +3109,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	{'DAMI', [](){
 		DamageIndicatorHandler.insert(clientnum, SDLNet_Read32(&net_packet->data[4]), 
 			SDLNet_Read32(&net_packet->data[8]), net_packet->data[12] == 1 ? true : false);
+u	} },
+
+	// remote vibration
+	{ 'BRRR', []() {
+		inputs.addRumbleForHapticType(clientnum, SDLNet_Read32(&net_packet->data[4]),
+			SDLNet_Read32(&net_packet->data[8]));
 	}},
 
-	// play sound position
+		// play sound position
 	{'SNDP', [](){
 		playSoundPos(
 		    SDLNet_Read32(&net_packet->data[4]),
@@ -3120,7 +3126,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    (Uint8)net_packet->data[14]);
 	}},
 
-	// play sound global
+		// play sound global
 	{'SNDG', [](){
 		playSound(
 		    SDLNet_Read16(&net_packet->data[4]),

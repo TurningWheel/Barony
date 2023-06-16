@@ -607,6 +607,12 @@ public:
 	}
 	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
 	SDL_Rect getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse);
+	void addRumbleForHapticType(const int player, Uint32 hapticType, Uint32 uid);
+	static const Uint32 HAPTIC_SFX_BOULDER_BOUNCE_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_LOW_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_LAUNCH_VOL;
+	void addRumbleRemotePlayer(const int player, Uint32 hapticType, Uint32 uid);
 };
 extern Inputs inputs;
 void initGameControllers();
