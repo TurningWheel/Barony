@@ -5908,6 +5908,11 @@ that would make it invisible
 
 bool Entity::isInvisible() const
 {
+	if ( intro ) 
+	{
+		// show up in hi-scores
+		return false;
+	}
 	Stat* entitystats;
 	if ( (entitystats = getStats()) == NULL )
 	{
