@@ -6365,6 +6365,7 @@ const int StatusEffectQueue_t::kEffectWaterWalking = -18;
 const int StatusEffectQueue_t::kEffectLifesaving = -19;
 const int StatusEffectQueue_t::kEffectPush = -20;
 const int StatusEffectQueue_t::kEffectSneak = -21;
+const int StatusEffectQueue_t::kEffectDrunkGoatman = -22;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -6726,6 +6727,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					effectsToSkipAnim.insert(i);
 				}
 			}
+			else if ( i == EFF_DRUNK && stats[player]->type == GOATMAN )
+			{
+				effectActive = false;
+			}
 
 		    if ( effectActive )
 		    {
@@ -6771,7 +6776,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectSneak; --i )
+	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -6792,6 +6797,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
 			{
 				miscEffects[kEffectFreeAction] = true;
+			}
+			if ( stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK] )
+			{
+				miscEffects[kEffectDrunkGoatman] = true;
 			}
 			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
 			{
@@ -6909,7 +6918,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectSneak; --i )
+	for ( int i = kEffectBurning; i >= kEffectDrunkGoatman; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
