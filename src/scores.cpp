@@ -6068,7 +6068,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 				char key[32];
 				char value[32];
 				stringCopy(key, attr.first.c_str(), sizeof(key), attr.first.size());
-				stringCopy(value, attr.first.c_str(), sizeof(value), attr.first.size());
+				stringCopy(value, attr.second.c_str(), sizeof(value), attr.second.size());
 				stats->attributes.emplace(std::make_pair(key, value));
 			}
 
