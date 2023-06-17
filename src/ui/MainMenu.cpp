@@ -2788,7 +2788,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 13;
+	    int version = 14;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2817,6 +2817,7 @@ namespace MainMenu {
         file->propertyVersion("ui_scale", version >= 7, ui_scale);
 		file->propertyVersion("item_tooltip_height", version >= 11, item_tooltip_height);
 		file->property("show_messages_enabled", show_messages_enabled);
+		file->propertyVersion("message_filters", version >= 14, show_messages);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
 		file->property("show_hud_enabled", show_hud_enabled);
 		file->property("show_ip_address_enabled", show_ip_address_enabled);
@@ -5076,47 +5077,47 @@ namespace MainMenu {
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_combat", "Combat messages",
 			"Enable report of damage received or given in combat.",
-			allSettings.show_messages.combat, [](Button& button){allSettings.show_messages.combat = button.isPressed();});
+			allSettings.show_messages.combat, [](Button& button) {soundToggle(); allSettings.show_messages.combat = button.isPressed(); });
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_status", "Status messages",
 			"Enable report of character status changes and other passive effects.",
-			allSettings.show_messages.status, [](Button& button){allSettings.show_messages.status = button.isPressed();});
+			allSettings.show_messages.status, [](Button& button){soundToggle(); allSettings.show_messages.status = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inventory", "Inventory messages",
 			"Enable report of inventory and item appraisal messages.",
-			allSettings.show_messages.inventory, [](Button& button){allSettings.show_messages.inventory = button.isPressed();});
+			allSettings.show_messages.inventory, [](Button& button){soundToggle(); allSettings.show_messages.inventory = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_equipment", "Equipment messages",
 			"Enable report of player equipment changes.",
-			allSettings.show_messages.equipment, [](Button& button){allSettings.show_messages.equipment = button.isPressed();});
+			allSettings.show_messages.equipment, [](Button& button){soundToggle(); allSettings.show_messages.equipment = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_world", "World messages",
 			"Enable report of diegetic messages, such as speech and text.",
-			allSettings.show_messages.world, [](Button& button){allSettings.show_messages.world = button.isPressed();});
+			allSettings.show_messages.world, [](Button& button){soundToggle(); allSettings.show_messages.world = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_chat", "Player chat",
 			"Enable multiplayer chat.",
-			allSettings.show_messages.chat, [](Button& button){allSettings.show_messages.chat = button.isPressed();});
+			allSettings.show_messages.chat, [](Button& button){soundToggle(); allSettings.show_messages.chat = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_progression", "Progression messages",
 			"Enable report of player character progression messages (ie level-ups).",
-			allSettings.show_messages.progression, [](Button& button){allSettings.show_messages.progression = button.isPressed();});
+			allSettings.show_messages.progression, [](Button& button){soundToggle(); allSettings.show_messages.progression = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_interaction", "Interaction messages",
 			"Enable report of player interactions with the world.",
-			allSettings.show_messages.interaction, [](Button& button){allSettings.show_messages.interaction = button.isPressed();});
+			allSettings.show_messages.interaction, [](Button& button){soundToggle(); allSettings.show_messages.interaction = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_inspection", "Inspection messages",
 			"Enable player inspections of world objects.",
-			allSettings.show_messages.inspection, [](Button& button){allSettings.show_messages.inspection = button.isPressed();});
+			allSettings.show_messages.inspection, [](Button& button){soundToggle(); allSettings.show_messages.inspection = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_hint", "Hint messages",
 			"Enable cryptic hints for certain items, world events, etc.",
-			allSettings.show_messages.hint, [](Button& button){allSettings.show_messages.hint = button.isPressed();});
+			allSettings.show_messages.hint, [](Button& button){soundToggle(); allSettings.show_messages.hint = button.isPressed();});
 
 		y += settingsAddBooleanOption(*subwindow, y, "messages_obituary", "Obituary messages",
 			"Enable obituary messages for player deaths.",
-			allSettings.show_messages.obituary, [](Button& button){allSettings.show_messages.obituary = button.isPressed();});
+			allSettings.show_messages.obituary, [](Button& button){soundToggle(); allSettings.show_messages.obituary = button.isPressed();});
 
 		hookSettings(*subwindow,
 			{{Setting::Type::Boolean, "messages_combat"},
