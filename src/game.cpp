@@ -5380,8 +5380,7 @@ void ingameHud()
 			{
 				drawStatusNew(player);
 			}
-			drawSustainedSpells(player);
-			updateAppraisalItemBox(player);
+			//drawSustainedSpells(player);
 		}
 
 		// inventory and stats

@@ -246,7 +246,6 @@ int saveConfig(char const * const filename);
 void defaultConfig();
 void updateChestInventory(const int player);
 Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificInventoryItem, bool forceNewStack, bool bDoPickupMessage = true);
-void updateAppraisalItemBox(const int player);
 void updateShopWindow(const int player);
 bool getShopFreeSlot(const int player, list_t* shopInventory, Item* itemToSell, int& xout, int& yout, Item*& itemToStackInto);
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick = false);
