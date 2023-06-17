@@ -10228,6 +10228,7 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 			return "MenuAlt1";
 		case PROMPT_TINKER:
 		case PROMPT_INTERACT:
+		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
 		case PROMPT_EAT:
 		case PROMPT_SPELL_QUICKCAST:
 		case PROMPT_CONSUME:
@@ -10263,6 +10264,7 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_SPELL_EQUIP:
 			return itemEquipString(player, item);
 		case PROMPT_INTERACT:
+		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
 		case PROMPT_EAT:
 			return itemUseString(player, item);
 		case PROMPT_SPELL_QUICKCAST:

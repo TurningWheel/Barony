@@ -12931,6 +12931,16 @@ void Player::GUIDropdown_t::process()
 			if ( currentName == "hotbar_interact" )
 			{
 				contextOptions.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
+				if ( itemCategory(item) == SPELLBOOK )
+				{
+					for ( auto it = contextOptions.begin(); it != contextOptions.end(); ++it )
+					{
+						if ( (*it) == PROMPT_INTERACT )
+						{
+							(*it) = PROMPT_INTERACT_SPELLBOOK_HOTBAR;
+						}
+					}
+				}
 			}
 			if ( player.inventoryUI.useItemDropdownOnGamepad == Inventory_t::GAMEPAD_DROPDOWN_FULL )
 			{
@@ -23118,6 +23128,16 @@ void Player::Inventory_t::updateItemContextMenu()
 	{
 		options.push_back(PROMPT_CLEAR_HOTBAR_SLOT);
 		std::reverse(options.begin(), options.end());
+		if ( itemCategory(item) == SPELLBOOK )
+		{
+			for ( auto& it : options )
+			{
+				if ( it == PROMPT_INTERACT )
+				{
+					it = PROMPT_INTERACT_SPELLBOOK_HOTBAR;
+				}
+			}
+		}
 	}
 	std::vector<std::pair<Frame::image_t*, Field*>> optionFrames;
 	auto glyph1 = interactFrame->findImage("glyph 1");
@@ -23928,7 +23948,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		item_FoodAutomaton(item, player);
 		return;
 	}
-	else if ( prompt == PROMPT_INTERACT || prompt == PROMPT_INSPECT || prompt == PROMPT_INSPECT_ALTERNATE || prompt == PROMPT_TINKER )
+	else if ( prompt == PROMPT_INTERACT 
+		|| prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR
+		|| prompt == PROMPT_INSPECT 
+		|| prompt == PROMPT_INSPECT_ALTERNATE 
+		|| prompt == PROMPT_TINKER )
 	{
 		if ( item->type == TOOL_PLAYER_LOOT_BAG )
 		{
@@ -23988,7 +24012,16 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		}
 		else
 		{
-			if ( !disableItemUsage && prompt == PROMPT_INTERACT )
+			if ( !disableItemUsage && prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR )
+			{
+				if ( itemCategory(item) == SPELLBOOK )
+				{
+					players[player]->magic.spellbookUidFromHotbarSlot = item->uid;
+				}
+				useItem(item, player);
+				players[player]->magic.spellbookUidFromHotbarSlot = 0;
+			}
+			else if ( !disableItemUsage && prompt == PROMPT_INTERACT )
 			{
 				useItem(item, player);
 			}
@@ -32401,7 +32434,10 @@ void Player::Inventory_t::SpellPanel_t::openSpellPanel()
 			scrollPercent = 0.0;
 			scrollInertia = 0.0;
 			bFirstTimeSnapCursor = false;
-			Player::soundActivate();
+			if ( !inputs.getUIInteraction(player.playernum)->selectedItem )
+			{
+				Player::soundActivate();
+			}
 		}
 		bOpen = true;
 	}
@@ -32423,7 +32459,10 @@ void Player::Inventory_t::SpellPanel_t::closeSpellPanel()
 		&& !(player.inventoryUI.bCompactView 
 			&& player.hud.compactLayoutMode == Player::HUD_t::COMPACT_LAYOUT_CHARSHEET) )
 	{
-		Player::soundCancel();
+		if ( !inputs.getUIInteraction(player.playernum)->selectedItem )
+		{
+			Player::soundCancel();
+		}
 	}
 	bOpen = false;
 	bFirstTimeSnapCursor = false;
