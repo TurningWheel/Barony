@@ -11430,13 +11430,6 @@ bool mouseInsidePlayerHotbar(const int player)
 		}
 	}
 	return false;
-	// TODO UI: CLEAN UP / VERIFY
-	//SDL_Rect pos;
-	//pos.x = players[player]->hotbar.getStartX();
-	//pos.y = players[player]->statusBarUI.getStartY() - hotbar_img->h * uiscale_hotbar;
-	//pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w * uiscale_hotbar;
-	//pos.h = hotbar_img->h * uiscale_hotbar;
-	//return mouseInBounds(player, pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
 }
 
 bool playerLearnedSpellbook(int player, Item* current_item)
