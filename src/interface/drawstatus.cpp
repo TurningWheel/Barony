@@ -1041,7 +1041,9 @@ void drawStatus(int player)
 								}
 							}
 
-							if ( itemCategory(item) == SPELLBOOK && stats[player] && stats[player]->type == GOBLIN )
+							if ( itemCategory(item) == SPELLBOOK && stats[player] 
+								&& (stats[player]->type == GOBLIN
+									|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
 							{
 								learnedSpell = true; // goblinos can't learn spells but always equip books.
 							}
@@ -1989,7 +1991,8 @@ void drawStatus(int player)
 
 			if ( itemCategory(item) == SPELLBOOK && stats[player] )
 			{
-				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP )
+				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP
+						|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0) )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}
@@ -3368,7 +3371,8 @@ void drawStatusNew(const int player)
 
 			if ( itemCategory(item) == SPELLBOOK && stats[player] )
 			{
-				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP )
+				if ( stats[player]->type == GOBLIN || stats[player]->type == CREATURE_IMP
+					|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0) )
 				{
 					learnedSpell = true; // goblinos can't learn spells but always equip books.
 				}
