@@ -119,6 +119,7 @@ void Button::draw(SDL_Rect _size, SDL_Rect _actualSize, const std::vector<const 
 	image.ontop = false;
 	image.pos = {0, 0, size.w, size.h};
 	image.tiled = false;
+	image.noBlitParent = true;
 	auto frame = static_cast<Frame*>(parent);
 	frame->drawImage(&image, _size,
 		SDL_Rect{
