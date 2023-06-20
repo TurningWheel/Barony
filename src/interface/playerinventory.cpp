@@ -10509,7 +10509,9 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		{
 			learnedSpell = true; // equipped spellbook will unequip on use.
 		}
-		else if ( stats[player] && stats[player]->type == GOBLIN )
+		else if ( stats[player] 
+			&& (stats[player]->type == GOBLIN
+				|| (stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0)) )
 		{
 			// goblinos can't learn spells but always equip books.
 			learnedSpell = true; 
