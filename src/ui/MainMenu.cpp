@@ -10292,9 +10292,16 @@ failed:
 			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
 		}
 		Monster modifiedRace = static_cast<Stat*>(stats)->type;
-		if ( arachnophobia_filter && modifiedRace == SPIDER )
+		if ( arachnophobia_filter )
 		{
-			modifiedRace = CRAB;
+			if ( modifiedRace == SPIDER )
+			{
+				modifiedRace = CRAB;
+			}
+			if ( race == SPIDER )
+			{
+				race = CRAB;
+			}
 		}
 
 		auto& raceDescriptionData = RaceDescriptions::getMonsterDescriptionData(modifiedRace);
@@ -10352,7 +10359,7 @@ failed:
 				++numIndividualPadding;
 			}
 
-			details_text_buf += language[4347]; // "traits"
+			details_text_buf += Player::CharacterSheet_t::getHoverTextString("race_traits");
 			details_text_buf += '\n';
 			details_text->addColorToLine(line, color_traits);
 			details_text_buf += raceDescriptionData.traitsBasedOnMonsterType;
