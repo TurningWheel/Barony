@@ -10076,6 +10076,11 @@ failed:
 		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 	}
 
+	RaceDescriptions::DescData_t& RaceDescriptions::getMonsterDescriptionData(int type) 
+	{ 
+		return data[monstertypename[type]]; 
+	}
+
 	void RaceDescriptions::readFromFile()
 	{
 		const std::string filename = "data/race_descriptions.json";
@@ -10096,7 +10101,7 @@ failed:
 			return;
 		}
 
-		char buf[10000];
+		static char buf[16000];
 		const int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 		buf[count] = '\0';
 		rapidjson::StringStream is(buf);
@@ -10118,6 +10123,8 @@ failed:
 			std::string key = it->name.GetString();
 			auto& raceEntry = data[key];
 			raceEntry.title = it->value["title"].GetString();
+			std::vector<std::string> textLeftLines;
+			std::vector<std::string> textRightLines;
 			for ( auto it2 = it->value["left_align"].Begin(); it2 != it->value["left_align"].End(); )
 			{
 				std::string line = (it2->GetString());
@@ -10126,11 +10133,33 @@ failed:
 					line[0] = '\x1E';
 				}
 				raceEntry.textLeft += line;
-
+				textLeftLines.push_back(line);
 				++it2;
 				if ( it2 != it->value["left_align"].End() )
 				{
 					raceEntry.textLeft += '\n';
+				}
+			}
+			raceEntry.traitsBasedOnPlayerRace = "";
+			for ( auto it2 = it->value["traits_active_if_polymorphed_out_of"].Begin(); 
+				it2 != it->value["traits_active_if_polymorphed_out_of"].End(); )
+			{
+				raceEntry.traitsBasedOnPlayerRace += (textLeftLines[it2->GetInt()]);
+				++it2;
+				if ( it2 != it->value["traits_active_if_polymorphed_out_of"].End() )
+				{
+					raceEntry.traitsBasedOnPlayerRace += '\n';
+				}
+			}
+			raceEntry.traitsBasedOnMonsterType = "";
+			for ( auto it2 = it->value["traits_active_if_polymorphed_into"].Begin();
+				it2 != it->value["traits_active_if_polymorphed_into"].End(); )
+			{
+				raceEntry.traitsBasedOnMonsterType += (textLeftLines[it2->GetInt()]);
+				++it2;
+				if ( it2 != it->value["traits_active_if_polymorphed_into"].End() )
+				{
+					raceEntry.traitsBasedOnMonsterType += '\n';
 				}
 			}
 			for ( auto it2 = it->value["right_align"].Begin(); it2 != it->value["right_align"].End(); )
@@ -10141,7 +10170,7 @@ failed:
 					line[0] = '\x1E';
 				}
 				raceEntry.textRight += line;
-
+				textRightLines.push_back(line);
 				++it2;
 				if ( it2 != it->value["right_align"].End() )
 				{
@@ -10149,7 +10178,10 @@ failed:
 				}
 			}
 
-			auto& highlights = it->value["text_line_hightlights"];
+			auto& highlights = it->value["text_line_highlights"];
+			int minProLine = 999;
+			int spellProLine = 999;
+			int maxProLine = 0;
 			for ( auto it2 = highlights["traits_lines"].Begin(); it2 != highlights["traits_lines"].End(); ++it2 )
 			{
 				raceEntry.traitLines.insert(it2->GetInt());
@@ -10157,10 +10189,72 @@ failed:
 			for ( auto it2 = highlights["benefit_lines"].Begin(); it2 != highlights["benefit_lines"].End(); ++it2 )
 			{
 				raceEntry.proLines.insert(it2->GetInt());
+				if ( it2->GetInt() > 1 ) // skip racial spells
+				{
+					minProLine = std::min(minProLine, it2->GetInt());
+				}
+				else
+				{
+					spellProLine = std::min(spellProLine, it2->GetInt());
+				}
+				maxProLine = std::max(maxProLine, it2->GetInt());
 			}
 			for ( auto it2 = it->value["line_spacing"].Begin(); it2 != it->value["line_spacing"].End(); ++it2 )
 			{
 				raceEntry.linePaddings.push_back(it2->GetInt());
+			}
+			
+			int numweaknesses = 0;
+			int numresistances = 0;
+			for ( size_t index = minProLine; index < textLeftLines.size(); ++index )
+			{
+				if ( textLeftLines[index] == "" ) {	break; }
+				if ( raceEntry.resistances != "" )
+				{
+					raceEntry.resistances += '\n';
+				}
+				raceEntry.resistances += textLeftLines[index];
+				++numresistances;
+			}
+			for ( size_t index = maxProLine; index < textLeftLines.size(); ++index )
+			{
+				if ( textLeftLines[index] == "" ) { break; }
+				if ( raceEntry.friendlyWith != "" )
+				{
+					raceEntry.friendlyWith += '\n';
+				}
+				raceEntry.friendlyWith += textLeftLines[index];
+			}
+			for ( size_t index = minProLine; index < textRightLines.size(); ++index )
+			{
+				if ( textRightLines[index] == "" ) { break; }
+				if ( raceEntry.weaknesses != "" )
+				{
+					raceEntry.weaknesses += '\n';
+				}
+				raceEntry.weaknesses += textRightLines[index];
+				++numweaknesses;
+			}
+			while ( numweaknesses > numresistances )
+			{
+				raceEntry.resistances += '\n';
+				++numresistances;
+			}
+			if ( spellProLine < 999 )
+			{
+				for ( size_t index = spellProLine; index < textLeftLines.size(); ++index )
+				{
+					if ( textLeftLines[index] == "" ) { break; }
+					if ( index > spellProLine )
+					{
+						if ( textLeftLines[index][0] != '\x1E' ) { break; }
+					}
+					if ( raceEntry.racialSpells != "" )
+					{
+						raceEntry.racialSpells += '\n';
+					}
+					raceEntry.racialSpells += textLeftLines[index];
+				}
 			}
 		}
 		init = true;
@@ -10190,9 +10284,155 @@ failed:
 		return result;
 	}
 
-	static void update_details_text(Frame& card) {
-	    const int index = card.getOwner();
-        const int race = stats[index]->playerRace;
+	void RaceDescriptions::update_details_text(Frame& card, void* stats) {
+		
+		Monster race = HUMAN;
+		if ( static_cast<Stat*>(stats)->appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
+		{
+			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
+		}
+		Monster modifiedRace = static_cast<Stat*>(stats)->type;
+		if ( arachnophobia_filter && modifiedRace == SPIDER )
+		{
+			modifiedRace = CRAB;
+		}
+
+		auto& raceDescriptionData = RaceDescriptions::getMonsterDescriptionData(modifiedRace);
+		auto& raceDescriptionDataBase = RaceDescriptions::getMonsterDescriptionData(race);
+		auto details_text = card.findField("details"); assert(details_text);
+		auto details_text_right = card.findField("details_right"); assert(details_text_right);
+		std::string details_text_buf = "";
+		std::string details_text_right_buf = "";
+		if ( details_text ) {
+			details_text->clearLinesToColor();
+			details_text->clearIndividualLinePadding();
+			details_text->setPaddingPerLine(-2);
+			details_text_right->clearLinesToColor();
+			details_text_right->clearIndividualLinePadding();
+			details_text_right->setPaddingPerLine(-2);
+
+			int line = 0;
+			int numIndividualPadding = 0;
+
+			size_t c = 0;
+			if ( raceDescriptionDataBase.racialSpells.size() > 0 )
+			{
+				details_text_buf += raceDescriptionDataBase.racialSpells;
+				if ( race != modifiedRace )
+				{
+					// Add (Insectoid) etc if we're polymorphed from our base race.
+					char buf[64] = "";
+					auto localizedName = getMonsterLocalizedName(race);
+					camelCaseString(localizedName);
+					snprintf(buf, sizeof(buf), " (%s)", localizedName.c_str());
+					for ( size_t d = 0; d < details_text_buf.size(); ++d )
+					{
+						// first newline "Innate Spells", insert the monster type name here
+						if ( details_text_buf[d] == '\n' ) 
+						{
+							details_text_buf.insert(d, buf);
+							break;
+						}
+					}
+				}
+				details_text_buf += '\n';
+				details_text_buf += '\n';
+				details_text->addColorToLine(line, color_pro);
+
+				for ( ; c < details_text_buf.size(); ++c )
+				{
+					if ( details_text_buf[c] == '\n' )
+					{
+						++line;
+						details_text_right_buf += '\n';
+					}
+				}
+				details_text->setIndividualLinePadding(line - 1, -16);
+				details_text_right->setIndividualLinePadding(line - 1, -16);
+				++numIndividualPadding;
+			}
+
+			details_text_buf += language[4347]; // "traits"
+			details_text_buf += '\n';
+			details_text->addColorToLine(line, color_traits);
+			details_text_buf += raceDescriptionData.traitsBasedOnMonsterType;
+			if ( race != modifiedRace )
+			{
+				if ( raceDescriptionDataBase.traitsBasedOnPlayerRace != "" )
+				{
+					details_text_buf += '\n';
+					details_text_buf += raceDescriptionDataBase.traitsBasedOnPlayerRace;
+				}
+			}
+			details_text_buf += '\n';
+			details_text_buf += '\n';
+			for ( ; c < details_text_buf.size(); ++c )
+			{
+				if ( details_text_buf[c] == '\n' )
+				{ 
+					++line;
+					details_text_right_buf += '\n';
+				}
+			}
+
+			details_text->setIndividualLinePadding(line - 1, -16);
+			++numIndividualPadding;
+			details_text->addColorToLine(line, color_pro);
+			details_text_right->setIndividualLinePadding(line - 1, -16);
+			details_text_right->addColorToLine(line, color_con);
+
+			details_text_buf += raceDescriptionData.resistances;
+			details_text_right_buf += raceDescriptionData.weaknesses;
+			details_text_buf += '\n';
+			details_text_buf += '\n';
+			for ( ; c < details_text_buf.size(); ++c )
+			{
+				if ( details_text_buf[c] == '\n' ) { ++line; }
+			}
+
+			details_text->setIndividualLinePadding(line - 1, -16);
+			++numIndividualPadding;
+			details_text->addColorToLine(line, color_pro);
+			details_text_buf += raceDescriptionData.friendlyWith;
+			details_text->setText(details_text_buf.c_str());
+			details_text_right->setText(details_text_right_buf.c_str());
+
+			if ( auto actualFont = Font::get(details_text->getFont()) )
+			{
+				const int numlines = details_text->getNumTextLines();
+				const int pad = details_text->getPaddingPerLine();
+				const int actualHeight = actualFont->height(true);
+				int height = 0;
+				for ( int line = 0; line < numlines; ++line )
+				{
+					height += actualHeight + pad;
+				}
+
+				if ( height < Frame::virtualScreenY / 2 )
+				{
+					int extraSpace = (Frame::virtualScreenY / 2) - height / std::max(1,  numIndividualPadding);
+					extraSpace = std::min(8, extraSpace);
+					for ( int line = 0; line < numlines; ++line )
+					{
+						if ( int pad = details_text->getIndividualLinePadding(line) )
+						{
+							pad += extraSpace;
+							details_text->setIndividualLinePadding(line, pad);
+						}
+						if ( int pad = details_text_right->getIndividualLinePadding(line) )
+						{
+							pad += extraSpace;
+							details_text_right->setIndividualLinePadding(line, pad);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void RaceDescriptions::update_details_text(Frame& card) {
+		const int index = card.getOwner();
+		const int race = stats[index]->playerRace;
 
 	    // color title
 	    Uint32 color_race;
@@ -10331,7 +10571,7 @@ failed:
 
 		auto card = static_cast<Frame*>(frame->getParent());
 		if (card) {
-		    update_details_text(*card);
+		    RaceDescriptions::update_details_text(*card);
 		}
 	}
 
@@ -10388,7 +10628,7 @@ failed:
 		initClass(index);
 		sendPlayerOverNet();
 		saveLastCharacter(index, multiplayer);
-		update_details_text(*card);
+		RaceDescriptions::update_details_text(*card);
 	}
 
 	static void female_button_fn(Button& button, int index) {
@@ -10444,7 +10684,7 @@ failed:
 		initClass(index);
 		sendPlayerOverNet();
 		saveLastCharacter(index, multiplayer);
-		update_details_text(*card);
+		RaceDescriptions::update_details_text(*card);
 	}
 
 	static Frame* initCharacterCard(int index, int height) {
@@ -11736,7 +11976,7 @@ failed:
 		    details_text_right->setFont(font);
 		    details_text_right->setSize(SDL_Rect{161, 68, 121, 300 });
 
-		    update_details_text(*card);
+			RaceDescriptions::update_details_text(*card);
 		}
 
 		auto subframe = card->addFrame("subframe");
@@ -18238,7 +18478,9 @@ failed:
 				}
 				auto time = timestamp.substr(11);
 				time[2] = ':';
-				time[5] = ':';
+				time[5] = ' ';
+				time[6] = ' ';
+				time[7] = ' ';
 				auto date = timestamp.substr(0, 10);
 				date[4] = '/';
 				date[7] = '/';
@@ -18267,11 +18509,11 @@ failed:
                 // format book label string
 		        char text[1024];
 				if (singleplayer) {
-					snprintf(text, sizeof(text), "%s\n%s\n%s",
-						shortened_name, time.c_str(), date.c_str());
+					snprintf(text, sizeof(text), "%s\n\n%s %s",
+						shortened_name, date.c_str(), time.c_str());
 				} else {
-					snprintf(text, sizeof(text), "%s\n%s\n%s",
-						game_type, time.c_str(), date.c_str());
+					snprintf(text, sizeof(text), "%s\n\n%s %s",
+						game_type, date.c_str(), time.c_str());
 				}
 		        savegame_book->setText(text);
 
