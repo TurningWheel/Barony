@@ -1243,7 +1243,9 @@ namespace MainMenu {
 	}
 
 	static void closePrompt(const char* name) {
-        assert(main_menu_frame);
+        if (!main_menu_frame) {
+			return;
+		}
         auto prompt = main_menu_frame->findFrame(name);
         if (prompt) {
             auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
@@ -1317,7 +1319,9 @@ namespace MainMenu {
 		field->select();
         field->activate();
 		field->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto field = static_cast<Field*>(&widget);
@@ -1363,7 +1367,9 @@ namespace MainMenu {
 	}
 
 	static const char* closeTextField() {
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return "";
+		}
         auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
         auto field = prompt->findField("field"); assert(field);
         auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
@@ -1416,7 +1422,9 @@ namespace MainMenu {
 		okay->setCallback(okay_callback);
 		okay->select();
 		okay->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -1527,7 +1535,9 @@ namespace MainMenu {
 		if (selected) {
 		    selected->select();
 			selected->setTickCallback([](Widget& widget){
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					auto button = static_cast<Button*>(&widget);
@@ -1581,7 +1591,9 @@ namespace MainMenu {
 		cancel->setWidgetBack("cancel");
 		cancel->select();
 		cancel->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -1624,7 +1636,9 @@ namespace MainMenu {
 		okay->setCallback(okay_callback);
 		okay->select();
 		okay->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -6181,7 +6195,9 @@ bind_failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto leaderboards = buttons->findButton("Leaderboards"); assert(leaderboards);
 			leaderboards->select();
@@ -7307,7 +7323,9 @@ bind_failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto achievements = buttons->findButton("Achievements"); assert(achievements);
 			achievements->select();
@@ -7601,7 +7619,9 @@ bind_failed:
 		soundCancel();
         destroyMainMenu();
         createMainMenu(false);
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return;
+		}
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto selection = buttons->findButton("Adventure Archives");
 		if (selection) {
@@ -7717,7 +7737,9 @@ bind_failed:
     }
 
     static Frame* toggleLobbyChatWindow() {
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return nullptr;
+		}
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
@@ -10771,7 +10793,9 @@ failed:
 		auto back = createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
         if (multiplayer == CLIENT) {
             back->setTickCallback([](Widget& widget){
-                assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
                 if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
                     widget.select(); // rescue cursor
                 }
@@ -10853,7 +10877,9 @@ failed:
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
                 if (multiplayer != CLIENT) {
                     setting->setTickCallback([](Widget& widget) {
-                        assert(main_menu_frame);
+						if (!main_menu_frame) {
+							return;
+						}
                         if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
                             widget.select(); // rescue cursor
                         }
@@ -11026,7 +11052,9 @@ failed:
 		custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(button.getOwner());});
 		custom_difficulty->setTickCallback([](Widget& widget){
 			// rescue player selection
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selected_widget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selected_widget) {
 				widget.select();
@@ -12108,7 +12136,9 @@ failed:
 		        }
 
 				// rescue this player's focus
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					// TODO - last race is always being rescued when cancelling DLC prompt
@@ -13034,7 +13064,9 @@ failed:
 				}
 
 				// rescue this player's focus
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					widget.select();
@@ -13160,7 +13192,9 @@ failed:
 			name_field_fn(field->getText(), field->getOwner());
 
 			// rescue this player's focus
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				widget.select();
@@ -13541,7 +13575,9 @@ failed:
 		ready_button->setWidgetUp("class");
 		ready_button->setCallback([](Button& button){ready_button_fn(button, button.getOwner());});
 		ready_button->setTickCallback([](Widget& widget){
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
 				widget.select();
 			}
