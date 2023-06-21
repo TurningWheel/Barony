@@ -17033,40 +17033,45 @@ failed:
                     allBlanks.append("\n");
                 }
             }
-		    addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
-		    addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
-		    addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
-		    addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
-		    addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
-		    addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
-		    addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
-		    addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
-		    addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
-            addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
-		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
-		    addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
-		    addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
-		    addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
-		    addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
-		    addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
-		    addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
-			addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
-			addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
-			addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
-			addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
-			addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
-			addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
-			addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
-			addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
-			addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
-			addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
-			addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
-			addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
-			addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
-			addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
-			addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
-			addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
-			addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
+			LobbyInfo testLobbies[] = {
+				{"Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS},
+				{"Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC},
+				{"Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE},
+				{"Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING},
+				{"Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY},
+				{"Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE},
+				{"Boaty McBoatFace", VERSION, 2, 20, false},
+				{"RIP_Morgan_", VERSION, 0, 120, false},
+				{"This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff},
+				{allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff},
+				{"16 PLAYER SMASH FEST", VERSION, 16, 90, false},
+				{"ur mom", VERSION, 16, 160, true},
+				{"waow more lobbies", VERSION, 16, 160, true},
+				{"snobby lobby", VERSION, 16, 260, true},
+				{"gAmERs RiSe uP!!", VERSION, 16, 0, false},
+				{"a very unsuspicious lobby", VERSION, 2, 130, false},
+				{"cool lobby bro!", VERSION, 3, 240, false},
+				{"Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS},
+				{"Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC},
+				{"Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE},
+				{"Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING},
+				{"Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY},
+				{"Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE},
+				{"Boaty McBoatFace", VERSION, 2, 20, false},
+				{"RIP_Morgan_", VERSION, 0, 120, false},
+				{"This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff},
+				{allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff},
+				{"16 PLAYER SMASH FEST", VERSION, 16, 90, false},
+				{"ur mom", VERSION, 16, 160, true},
+				{"waow more lobbies", VERSION, 16, 160, true},
+				{"snobby lobby", VERSION, 16, 260, true},
+				{"gAmERs RiSe uP!!", VERSION, 16, 0, false},
+				{"a very unsuspicious lobby", VERSION, 2, 130, false},
+				{"cool lobby bro!", VERSION, 3, 240, false},
+			};
+			for (auto& lobby : testLobbies) {
+				addLobby(lobby);
+			}
 		} else {
 		    refresh->activate();
 		}
