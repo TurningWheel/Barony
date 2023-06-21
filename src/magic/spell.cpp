@@ -400,7 +400,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			pickedUp->notifyIcon = true;
 			if ( players[player]->magic.spellbookUidFromHotbarSlot != 0 )
 			{
-				if ( !autoAddHotbarFilter(*pickedUp) )
+				if ( autoAddHotbarFilter(*pickedUp) )
 				{
 					for ( auto& slot : players[player]->hotbar.slots() )
 					{
