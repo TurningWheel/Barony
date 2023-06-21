@@ -1243,7 +1243,9 @@ namespace MainMenu {
 	}
 
 	static void closePrompt(const char* name) {
-        assert(main_menu_frame);
+        if (!main_menu_frame) {
+			return;
+		}
         auto prompt = main_menu_frame->findFrame(name);
         if (prompt) {
             auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
@@ -1317,7 +1319,9 @@ namespace MainMenu {
 		field->select();
         field->activate();
 		field->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto field = static_cast<Field*>(&widget);
@@ -1363,7 +1367,9 @@ namespace MainMenu {
 	}
 
 	static const char* closeTextField() {
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return "";
+		}
         auto prompt = main_menu_frame->findFrame("text_field_prompt"); assert(prompt);
         auto field = prompt->findField("field"); assert(field);
         auto dimmer = static_cast<Frame*>(prompt->getParent()); assert(dimmer);
@@ -1416,7 +1422,9 @@ namespace MainMenu {
 		okay->setCallback(okay_callback);
 		okay->select();
 		okay->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -1527,7 +1535,9 @@ namespace MainMenu {
 		if (selected) {
 		    selected->select();
 			selected->setTickCallback([](Widget& widget){
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					auto button = static_cast<Button*>(&widget);
@@ -1581,7 +1591,9 @@ namespace MainMenu {
 		cancel->setWidgetBack("cancel");
 		cancel->select();
 		cancel->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -1624,7 +1636,9 @@ namespace MainMenu {
 		okay->setCallback(okay_callback);
 		okay->select();
 		okay->setTickCallback([](Widget& widget) {
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				auto button = static_cast<Button*>(&widget);
@@ -6181,7 +6195,9 @@ bind_failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto leaderboards = buttons->findButton("Leaderboards"); assert(leaderboards);
 			leaderboards->select();
@@ -7307,7 +7323,9 @@ bind_failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 			auto achievements = buttons->findButton("Achievements"); assert(achievements);
 			achievements->select();
@@ -7601,7 +7619,9 @@ bind_failed:
 		soundCancel();
         destroyMainMenu();
         createMainMenu(false);
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return;
+		}
 		auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
 		auto selection = buttons->findButton("Adventure Archives");
 		if (selection) {
@@ -7717,7 +7737,9 @@ bind_failed:
     }
 
     static Frame* toggleLobbyChatWindow() {
-        assert(main_menu_frame);
+		if (!main_menu_frame) {
+			return nullptr;
+		}
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
@@ -10771,7 +10793,9 @@ failed:
 		auto back = createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
         if (multiplayer == CLIENT) {
             back->setTickCallback([](Widget& widget){
-                assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
                 if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
                     widget.select(); // rescue cursor
                 }
@@ -10853,7 +10877,9 @@ failed:
 				setting->setCallback([](Button& button){soundCheckmark(); allSettings.hunger_enabled = !button.isPressed();});
                 if (multiplayer != CLIENT) {
                     setting->setTickCallback([](Widget& widget) {
-                        assert(main_menu_frame);
+						if (!main_menu_frame) {
+							return;
+						}
                         if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
                             widget.select(); // rescue cursor
                         }
@@ -11026,7 +11052,9 @@ failed:
 		custom_difficulty->setCallback([](Button& button){soundActivate(); characterCardGameFlagsMenu(button.getOwner());});
 		custom_difficulty->setTickCallback([](Widget& widget){
 			// rescue player selection
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selected_widget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selected_widget) {
 				widget.select();
@@ -12108,7 +12136,9 @@ failed:
 		        }
 
 				// rescue this player's focus
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					// TODO - last race is always being rescued when cancelling DLC prompt
@@ -13034,7 +13064,9 @@ failed:
 				}
 
 				// rescue this player's focus
-				assert(main_menu_frame);
+				if (!main_menu_frame) {
+					return;
+				}
 				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 				if (!selectedWidget) {
 					widget.select();
@@ -13160,7 +13192,9 @@ failed:
 			name_field_fn(field->getText(), field->getOwner());
 
 			// rescue this player's focus
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
 			if (!selectedWidget) {
 				widget.select();
@@ -13541,7 +13575,9 @@ failed:
 		ready_button->setWidgetUp("class");
 		ready_button->setCallback([](Button& button){ready_button_fn(button, button.getOwner());});
 		ready_button->setTickCallback([](Widget& widget){
-			assert(main_menu_frame);
+			if (!main_menu_frame) {
+				return;
+			}
 			if (!main_menu_frame->findSelectedWidget(widget.getOwner())) {
 				widget.select();
 			}
@@ -17033,40 +17069,45 @@ failed:
                     allBlanks.append("\n");
                 }
             }
-		    addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
-		    addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
-		    addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
-		    addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
-		    addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
-		    addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
-		    addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
-		    addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
-		    addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
-            addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
-		    addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
-		    addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
-		    addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
-		    addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
-		    addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
-		    addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
-		    addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
-			addLobby(LobbyInfo("Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS));
-			addLobby(LobbyInfo("Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC));
-			addLobby(LobbyInfo("Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE));
-			addLobby(LobbyInfo("Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING));
-			addLobby(LobbyInfo("Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY));
-			addLobby(LobbyInfo("Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE));
-			addLobby(LobbyInfo("Boaty McBoatFace", VERSION, 2, 20, false));
-			addLobby(LobbyInfo("RIP_Morgan_", VERSION, 0, 120, false));
-			addLobby(LobbyInfo("This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff));
-			addLobby(LobbyInfo(allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff));
-			addLobby(LobbyInfo("16 PLAYER SMASH FEST", VERSION, 16, 90, false));
-			addLobby(LobbyInfo("ur mom", VERSION, 16, 160, true));
-			addLobby(LobbyInfo("waow more lobbies", VERSION, 16, 160, true));
-			addLobby(LobbyInfo("snobby lobby", VERSION, 16, 260, true));
-			addLobby(LobbyInfo("gAmERs RiSe uP!!", VERSION, 16, 0, false));
-			addLobby(LobbyInfo("a very unsuspicious lobby", VERSION, 2, 130, false));
-			addLobby(LobbyInfo("cool lobby bro!", VERSION, 3, 240, false));
+			LobbyInfo testLobbies[] = {
+				{"Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS},
+				{"Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC},
+				{"Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE},
+				{"Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING},
+				{"Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY},
+				{"Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE},
+				{"Boaty McBoatFace", VERSION, 2, 20, false},
+				{"RIP_Morgan_", VERSION, 0, 120, false},
+				{"This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff},
+				{allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff},
+				{"16 PLAYER SMASH FEST", VERSION, 16, 90, false},
+				{"ur mom", VERSION, 16, 160, true},
+				{"waow more lobbies", VERSION, 16, 160, true},
+				{"snobby lobby", VERSION, 16, 260, true},
+				{"gAmERs RiSe uP!!", VERSION, 16, 0, false},
+				{"a very unsuspicious lobby", VERSION, 2, 130, false},
+				{"cool lobby bro!", VERSION, 3, 240, false},
+				{"Ben", VERSION, 1, 50, false, SV_FLAG_CHEATS},
+				{"Sheridan", VERSION, 3, 50, false, SV_FLAG_FRIENDLYFIRE | SV_FLAG_MINOTAURS | SV_FLAG_HUNGER | SV_FLAG_TRAPS | SV_FLAG_CLASSIC},
+				{"Paulie", VERSION, 2, 250, false, SV_FLAG_HARDCORE},
+				{"Fart_Face", VERSION, 1, 420, false, SV_FLAG_KEEPINVENTORY | SV_FLAG_LIFESAVING},
+				{"Tim", VERSION, 3, 90, true, SV_FLAG_MINOTAURS | SV_FLAG_KEEPINVENTORY},
+				{"Johnny", VERSION, 3, 30, false, SV_FLAG_FRIENDLYFIRE},
+				{"Boaty McBoatFace", VERSION, 2, 20, false},
+				{"RIP_Morgan_", VERSION, 0, 120, false},
+				{"This is the longest name we can fit in a Barony lobby for real.", VERSION, 4, 150, false, 0xffffffff},
+				{allBlanks.c_str(), VERSION, 4, 420, false, 0xffffffff},
+				{"16 PLAYER SMASH FEST", VERSION, 16, 90, false},
+				{"ur mom", VERSION, 16, 160, true},
+				{"waow more lobbies", VERSION, 16, 160, true},
+				{"snobby lobby", VERSION, 16, 260, true},
+				{"gAmERs RiSe uP!!", VERSION, 16, 0, false},
+				{"a very unsuspicious lobby", VERSION, 2, 130, false},
+				{"cool lobby bro!", VERSION, 3, 240, false},
+			};
+			for (auto& lobby : testLobbies) {
+				addLobby(lobby);
+			}
 		} else {
 		    refresh->activate();
 		}
@@ -18515,13 +18556,8 @@ failed:
 
                 // format book label string
 		        char text[1024];
-				if (singleplayer) {
-					snprintf(text, sizeof(text), "%s\n\n%s %s",
-						shortened_name, date.c_str(), time.c_str());
-				} else {
-					snprintf(text, sizeof(text), "%s\n\n%s %s",
-						game_type, date.c_str(), time.c_str());
-				}
+				snprintf(text, sizeof(text), "%s\n%s\n%s %s",
+					shortened_name, game_type, date.c_str(), time.c_str());
 		        savegame_book->setText(text);
 
                 // offset text

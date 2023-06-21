@@ -2603,7 +2603,7 @@ GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 #ifdef NINTENDO
 		timeNow = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now());
 		auto elapsed = (timeNow - timeStart).count();
-		if ( elapsed > 500 / TICKS_PER_SECOND ) {
+		if (elapsed > 500 / TICKS_PER_SECOND) {
 			timeStart = timeNow;
 			++haptics.oscillatorTick;
 			if ( haptics.oscillatorTick % 2 == 0 )
@@ -2620,6 +2620,29 @@ GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 	{
 		return nullptr;
 	}
+
+#ifdef NINTENDO
+	// unbound controllers are rumbling on nintendo. stop that
+	int player = -1;
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		if (inputs.getController(c) == this) {
+			player = c;
+			break;
+		}
+	}
+	if (multiplayer == SINGLE) {
+		if (player >= 0 && player < MAXPLAYERS) {
+			if (client_disconnected[player]) {
+				return nullptr;
+			}
+		}
+	}
+	else {
+		if (player != clientnum) {
+			return nullptr;
+		}
+	}
+#endif
 
 	Uint32 highestPriority = 0;
 	Uint32 earliestTick = std::numeric_limits<Uint32>::max();
@@ -2820,7 +2843,6 @@ GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumbl
 	// init an effect.
 	haptics.hapticEffect.type = SDL_HAPTIC_LEFTRIGHT;
 	haptics.hapticEffect.leftRightBalance = 0;
-
 	Entity* ent = uidToEntity(r->entityUid);
 	real_t dampening = 1.0;
 	if ( ent )
@@ -2926,13 +2948,13 @@ GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumbl
 		haptics.hapticEffect.small_magnitude = r->smallMagnitude;
 	}
 	haptics.hapticEffect.length = ((r->length - r->startTime) * 1000 / TICKS_PER_SECOND); // convert to ms
-
+	haptics.hapticEffect.type = r->pattern;
 #ifdef NINTENDO
 	return &haptics.hapticEffect;
 #else
-	if (sdl_device)
+	if ( sdl_device )
 	{
-		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.large_magnitude * 2, haptics.hapticEffect.small_magnitude * 2, 
+		SDL_GameControllerRumble(sdl_device, haptics.hapticEffect.large_magnitude * 2, haptics.hapticEffect.small_magnitude * 2,
 			haptics.hapticEffect.length);
 	}
 	else if ( sdl_haptic )
