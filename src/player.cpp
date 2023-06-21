@@ -2621,6 +2621,29 @@ GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 		return nullptr;
 	}
 
+#ifdef NINTENDO
+	// unbound controllers are rumbling on nintendo. stop that
+	int player = -1;
+	for (int c = 0; c < MAXPLAYERS; ++c) {
+		if (inputs.getController(c) == this) {
+			player = c;
+			break;
+		}
+	}
+	if (multiplayer == SINGLE) {
+		if (player >= 0 && player < MAXPLAYERS) {
+			if (client_disconnected[player]) {
+				return nullptr;
+			}
+		}
+	}
+	else {
+		if (player != clientnum) {
+			return nullptr;
+		}
+	}
+#endif
+
 	Uint32 highestPriority = 0;
 	Uint32 earliestTick = std::numeric_limits<Uint32>::max();
 	for ( auto it = haptics.activeRumbles.begin(); it != haptics.activeRumbles.end(); /*blank*/ )
