@@ -5483,7 +5483,9 @@ void MonsterData_t::loadMonsterDataJSON()
 								{
 									if ( !noOverrideIcon )
 									{
-										entry.iconSpritesAndPaths[m] = iconPath;
+										entry.iconSpritesAndPaths[m].iconPath = iconPath;
+										entry.iconSpritesAndPaths[m].key = special_itr->name.GetString();
+										entry.keyToSpriteLookup[special_itr->name.GetString()].push_back(m);
 									}
 								}
 								specialNPC.modelIndexes.insert(m);
@@ -5532,7 +5534,9 @@ void MonsterData_t::loadMonsterDataJSON()
 									entry.playerModelIndexes.insert(m);
 								}
 								entry.modelIndexes.insert(m);
-								entry.iconSpritesAndPaths[m] = iconPath;
+								entry.iconSpritesAndPaths[m].iconPath = iconPath;
+								entry.iconSpritesAndPaths[m].key = entry_itr->name.GetString();
+								entry.keyToSpriteLookup[entry_itr->name.GetString()].push_back(m);
 							}
 						}
 					}

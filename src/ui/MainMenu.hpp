@@ -145,6 +145,12 @@ namespace MainMenu {
 			std::set<int> proLines;
 			std::vector<int> linePaddings;
 			std::string title;
+			std::string traitsBasedOnPlayerRace;
+			std::string traitsBasedOnMonsterType;
+			std::string resistances;
+			std::string weaknesses;
+			std::string friendlyWith;
+			std::string racialSpells;
 		};
 		static std::unordered_map<std::string, DescData_t> data;
 		static void readFromFile();
@@ -176,6 +182,9 @@ namespace MainMenu {
 			return "";
 		}
 		static DescData_t& getRaceDescriptionData(int race) { return data[getRaceKey(race)]; }
+		static DescData_t& getMonsterDescriptionData(int type);
 		static bool init;
+		static void update_details_text(Frame& card);
+		static void update_details_text(Frame& card, void* stats);
 	};
 }

@@ -1587,7 +1587,7 @@ void* cpp_LobbyCreated_Lobby(void* pCallback)
 
 static std::string generateRoomKey(Uint32 key)
 {
-	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const char allChars[37] = "0123456789abcdefghijklmnppqrstuvwxyz";
 	std::string code = "";
 	while ( key != 0 )
 	{

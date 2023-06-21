@@ -654,7 +654,14 @@ void actBoulder(Entity* my)
 			my->vel_z = -(my->vel_z / 2);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_BOUNCE, 32000, 32000, 15, my->getUID());	
+				if ( players[i]->isLocalPlayer() )
+				{
+					inputs.addRumbleForHapticType(i, Inputs::HAPTIC_SFX_BOULDER_BOUNCE_VOL, my->getUID());
+				}
+				else
+				{
+					inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_BOUNCE_VOL, my->getUID());
+				}
 			}
 			nobounce = true;
 		}
@@ -665,7 +672,14 @@ void actBoulder(Entity* my)
 				playSoundEntity(my, 182, 128);
 				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_BOUNCE, 32000, 32000, 15, my->getUID());
+					if ( players[i]->isLocalPlayer() )
+					{
+						inputs.addRumbleForHapticType(i, Inputs::HAPTIC_SFX_BOULDER_BOUNCE_VOL, my->getUID());
+					}
+					else
+					{
+						inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_BOUNCE_VOL, my->getUID());
+					}
 				}
 			}
 			my->vel_z = 0;
@@ -1164,7 +1178,14 @@ void actBoulder(Entity* my)
 					playSoundEntity(my, 151, 128);
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_ROLLING, 0, 8000, TICKS_PER_SECOND / 2, my->getUID());
+						if ( players[i]->isLocalPlayer() )
+						{
+							inputs.addRumbleForHapticType(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_LOW_VOL, my->getUID());
+						}
+						else
+						{
+							inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_LOW_VOL, my->getUID());
+						}
 					}
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
@@ -1208,7 +1229,14 @@ void actBoulder(Entity* my)
 			playSoundEntity(my, 151, 128);
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				inputs.rumble(i, GameController::Haptic_t::RUMBLE_BOULDER_ROLLING, 0, 16000, TICKS_PER_SECOND / 2, my->getUID());
+				if ( players[i]->isLocalPlayer() )
+				{
+					inputs.addRumbleForHapticType(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL, my->getUID());
+				}
+				else
+				{
+					inputs.addRumbleRemotePlayer(i, Inputs::HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL, my->getUID());
+				}
 			}
 		}
 
@@ -1389,10 +1417,18 @@ void actBoulderTrap(Entity* my)
 			if ( foundTrapdoor >= 0 )
 			{
 				playSoundEntity(my, 150, 128);
+				playSoundPlayer(clientnum, 150, 64);
 				for ( c = 0; c < MAXPLAYERS; c++ )
 				{
-					inputs.rumble(c, GameController::Haptic_t::RUMBLE_BOULDER, 0, 32000, TICKS_PER_SECOND, my->getUID());
-					playSoundPlayer(c, 150, 64);
+					if ( players[c]->isLocalPlayer() )
+					{
+						inputs.addRumbleForHapticType(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, my->getUID());
+					}
+					else
+					{
+						playSoundPlayer(c, 150, 64);
+						inputs.addRumbleRemotePlayer(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, my->getUID());
+					}
 				}
 			}
 		}
@@ -1440,9 +1476,13 @@ void actBoulderTrapEast(Entity* my)
 				return;
 			}
 			playSoundEntity(my, 150, 128);
+			playSoundPlayer(clientnum, 150, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer(c, 150, 64);
+				if ( !players[c]->isLocalPlayer() )
+				{
+					playSoundPlayer(c, 150, 64);
+				}
 			}
 			my->boulderTrapFired = 1;
 
@@ -1531,9 +1571,13 @@ void actBoulderTrapSouth(Entity* my)
 				return;
 			}
 			playSoundEntity(my, 150, 128);
+			playSoundPlayer(clientnum, 150, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer(c, 150, 64);
+				if ( !players[c]->isLocalPlayer() )
+				{
+					playSoundPlayer(c, 150, 64);
+				}
 			}
 			my->boulderTrapFired = 1;
 
@@ -1622,11 +1666,14 @@ void actBoulderTrapWest(Entity* my)
 				return;
 			}
 			playSoundEntity(my, 150, 128);
+			playSoundPlayer(clientnum, 150, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer(c, 150, 64);
+				if ( !players[c]->isLocalPlayer() )
+				{
+					playSoundPlayer(c, 150, 64);
+				}
 			}
-
 			my->boulderTrapFired = 1;
 
 			c = 2; // direction
@@ -1714,9 +1761,13 @@ void actBoulderTrapNorth(Entity* my)
 				return;
 			}
 			playSoundEntity(my, 150, 128);
+			playSoundPlayer(clientnum, 150, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				playSoundPlayer(c, 150, 64);
+				if ( !players[c]->isLocalPlayer() )
+				{
+					playSoundPlayer(c, 150, 64);
+				}
 			}
 			my->boulderTrapFired = 1;
 

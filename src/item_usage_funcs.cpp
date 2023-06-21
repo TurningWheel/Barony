@@ -5199,6 +5199,11 @@ void item_Spellbook(Item*& item, int player)
 				break;
 		}
 
+		if ( players[player] )
+		{
+			players[player]->magic.spellbookUidFromHotbarSlot = 0;
+		}
+
 		if ( learned )
 		{
 			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )

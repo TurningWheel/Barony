@@ -60,6 +60,10 @@ void autoHotbarTryAdd(const int player, Item& item)
 	{
 		return;
 	}
+	if ( item.type == SPELL_ITEM && players[player]->magic.spellbookUidFromHotbarSlot != 0 )
+	{
+		return; // we're going to replace our spellbook slot
+	}
 	Category cat = itemCategory(&item);
 	if ( !item.identified && cat != SPELL_CAT ) { return; }
 

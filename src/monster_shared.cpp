@@ -34,6 +34,37 @@ void Entity::initMonster(int mySprite)
 				{
 					sprite = specialNPCModel;
 				}
+				else
+				{
+					if ( skill[3] != 0 ) // MONSTER_INIT, loading a savefile
+					{
+						auto key = MonsterData_t::getKeyFromSprite(sprite);
+						if ( myStats->sex == sex_t::MALE )
+						{
+							if ( key == "monster female" )
+							{
+								// need to swap
+								int newsprite = MonsterData_t::getSpriteFromKey(sprite, "monster male");
+								if ( newsprite != 0 )
+								{
+									sprite = newsprite;
+								}
+							}
+						}
+						else if ( myStats->sex == sex_t::FEMALE )
+						{
+							if ( key == "monster male" )
+							{
+								// need to swap
+								int newsprite = MonsterData_t::getSpriteFromKey(sprite, "monster female");
+								if ( newsprite != 0 )
+								{
+									sprite = newsprite;
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -361,6 +392,57 @@ void Entity::spawnBlood(int bloodSprite)
 MonsterData_t monsterData;
 std::map<int, MonsterData_t::MonsterDataEntry_t> MonsterData_t::monsterDataEntries;
 std::string MonsterData_t::iconDefaultString = "#*images/ui/HUD/allies/icons/Icon_HeadDefaultM_00.png";
+std::string MonsterData_t::keyDefaultString = "";
+
+int MonsterData_t::getSpriteFromKey(int sprite, std::string key, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return 0;
+	}
+
+	auto& data = monsterDataEntries[type];
+	auto find = data.keyToSpriteLookup.find(key);
+	if ( find == data.keyToSpriteLookup.end() ) {
+		return 0;
+	}
+	else 
+	{
+		if ( find->second.size() > 0 )
+		{
+			return find->second[0];
+		}
+		return 0;
+	}
+}
+
+std::string& MonsterData_t::getKeyFromSprite(int sprite, int type)
+{
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		type = Entity::getMonsterTypeFromSprite(sprite);
+	}
+
+	if ( type < NOTHING || type >= NUMMONSTERS )
+	{
+		return keyDefaultString;
+	}
+
+	auto& data = monsterDataEntries[type];
+	auto find = data.iconSpritesAndPaths.find(sprite);
+	if ( find == data.iconSpritesAndPaths.end() ) {
+		return keyDefaultString;
+	}
+	else 
+	{
+		return find->second.key;
+	}
+}
 std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
 {
 	if ( type < NOTHING || type >= NUMMONSTERS )
@@ -378,7 +460,7 @@ std::string& MonsterData_t::getAllyIconFromSprite(int sprite, int type)
     if (find == data.iconSpritesAndPaths.end()) {
         return data.defaultIconPath;
     } else {
-        return find->second;
+        return find->second.iconPath;
     }
 }
 

@@ -398,6 +398,18 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		if ( !intro )
 		{
 			pickedUp->notifyIcon = true;
+			if ( players[player]->magic.spellbookUidFromHotbarSlot != 0 )
+			{
+				for ( auto& slot : players[player]->hotbar.slots() )
+				{
+					if ( slot.item == players[player]->magic.spellbookUidFromHotbarSlot )
+					{
+						slot.item = pickedUp->uid;
+						players[player]->magic.spellbookUidFromHotbarSlot = 0;
+						break;
+					}
+				}
+			}
 		}
 	}
 	free(item);
