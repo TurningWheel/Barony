@@ -18515,13 +18515,8 @@ failed:
 
                 // format book label string
 		        char text[1024];
-				if (singleplayer) {
-					snprintf(text, sizeof(text), "%s\n\n%s %s",
-						shortened_name, date.c_str(), time.c_str());
-				} else {
-					snprintf(text, sizeof(text), "%s\n\n%s %s",
-						game_type, date.c_str(), time.c_str());
-				}
+				snprintf(text, sizeof(text), "%s\n%s\n%s %s",
+					shortened_name, game_type, date.c_str(), time.c_str());
 		        savegame_book->setText(text);
 
                 // offset text
