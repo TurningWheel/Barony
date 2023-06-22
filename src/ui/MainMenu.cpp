@@ -10544,6 +10544,90 @@ failed:
 		}
 	}
 
+	void ClassDescriptions::update_stat_growths(Frame& card, int classnum, int shapeshiftedType)
+	{
+		// stats definitions
+		const char* class_stats_text[] = {
+			"STR", "DEX", "CON", "INT", "PER", "CHR"
+		};
+		constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+
+		switch ( shapeshiftedType )
+		{
+			case RAT:
+				classnum = 100;
+				break;
+			case SPIDER:
+				classnum = 101;
+				break;
+			case TROLL:
+				classnum = 102;
+				break;
+			case CREATURE_IMP:
+				classnum = 103;
+				break;
+			default:
+				break;
+		}
+
+		for ( int c = 0; c < num_class_stats; ++c )
+		{
+			static char buf[16];
+			snprintf(buf, sizeof(buf), "%d", c);
+			auto field = card.findField(buf);
+			field->setColor(ClassDescriptions::data[classnum].statRatings[c]);
+
+			char buf2[32];
+			snprintf(buf2, sizeof(buf2), "stat img bottom %d", c);
+			auto class_stat_img_bottom = card.findImage(buf2);
+			if ( !class_stat_img_bottom )
+			{
+				return;
+			}
+
+			if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "bad" )
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "poor" )
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo1.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "decent" )
+			{
+				//class_stat_img_top->disabled = false;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi1.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "good" )
+			{
+				//class_stat_img_top->disabled = false;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi2.png";
+			}
+			else
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_neutral.png";
+			}
+		}
+	}
+
 	void RaceDescriptions::update_details_text(Frame& card) {
 		const int index = card.getOwner();
 		const int race = stats[index]->playerRace;

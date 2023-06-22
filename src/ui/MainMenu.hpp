@@ -135,6 +135,7 @@ namespace MainMenu {
 		static std::unordered_map<int, DescData_t> data;
 		static void readFromFile();
 		static bool init;
+		static void update_stat_growths(Frame& card, int classnum, int shapeshiftedType);
 	};
 
 	struct RaceDescriptions
