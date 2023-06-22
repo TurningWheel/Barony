@@ -312,6 +312,7 @@ void drawAllPlayerCameras();
 
 // function prototypes for charclass.c:
 void initClass(int player);
+void initClassStats(const int classnum, void* myStats);
 void initShapeshiftHotbar(int player);
 void deinitShapeshiftHotbar(int player);
 bool playerUnlockedShamanSpell(int player, Item* item);

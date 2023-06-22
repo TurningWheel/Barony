@@ -10087,12 +10087,19 @@ failed:
 		static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
 
 		auto& classes = d["descriptions"];
+		Stat tmpStats(0);
 		for ( auto it = classes.MemberBegin(); it != classes.MemberEnd(); ++it )
 		{
 			std::string classname = it->name.GetString();
 			int key = it->value["id"].GetInt();
 			auto& classEntry = data[key];
 			classEntry.internal_name = classname;
+
+			tmpStats.clearStats();
+			initClassStats(key, &tmpStats);
+			classEntry.hp = tmpStats.HP;
+			classEntry.mp = tmpStats.MP;
+
 			for ( auto it2 = it->value["desc"].Begin(); it2 != it->value["desc"].End(); )
 			{
 				std::string line = (it2->GetString());
@@ -12800,12 +12807,60 @@ failed:
 				(*class_stat->getTickCallback())(*class_stat);
 		    }
 
+			// hpmp header
+			{
+				SDL_Rect hpmp_size{ 48, 339, 52, 44 };
+				auto hpmp_header = card->addField("hpmp_header", 32);
+				hpmp_header->setFont(smallfont_outline);
+				hpmp_header->setColor(makeColorRGB(209, 166, 161));
+				hpmp_header->setText("HP:\nMP:");
+				hpmp_header->setHJustify(Field::justify_t::LEFT);
+				hpmp_header->setVJustify(Field::justify_t::TOP);
+				hpmp_header->setSize(hpmp_size);
+				hpmp_header->setPaddingPerLine(-4);
+
+				static constexpr int hpmp_buf_size = 32;
+				static auto hpmp_fn = [](Field& field, int index) {
+					const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+					char buf[hpmp_buf_size];
+					snprintf(buf, sizeof(buf), "%d\n%d",
+						ClassDescriptions::data[i].hp,
+						ClassDescriptions::data[i].mp);
+					field.setText(buf);
+				};
+
+				auto hpmp_values = card->addField("hpmp_values", 128);
+				hpmp_size.x += 32;
+				if ( false )
+				{
+					hpmp_size.y -= 3;
+					hpmp_values->setFont("fonts/PixelMaz_monospace.ttf#32#2");
+					hpmp_values->setPaddingPerLine(-10);
+				}
+				else
+				{
+					hpmp_values->setFont(smallfont_outline);
+					hpmp_values->setPaddingPerLine(-4);
+				}
+				hpmp_values->setColor(makeColorRGB(209, 166, 161));
+				hpmp_values->setText("20\n20");
+				hpmp_values->setHJustify(Field::justify_t::RIGHT);
+				if ( hpmp_values->getHJustify() == Field::justify_t::RIGHT )
+				{
+					hpmp_size.x -= 26;
+				}
+				hpmp_values->setVJustify(Field::justify_t::TOP);
+				hpmp_values->setSize(hpmp_size);
+				hpmp_values->setTickCallback([](Widget& widget) {hpmp_fn(*static_cast<Field*>(&widget), widget.getOwner()); });
+				(*hpmp_values->getTickCallback())(*hpmp_values);
+			}
+
 		    // difficulty header
-		    constexpr SDL_Rect difficulty_size{82, 339, 160, 44};
+		    constexpr SDL_Rect difficulty_size{115, 339, 158, 44};
 		    auto difficulty_header = card->addField("difficulty_header", 128);
 		    difficulty_header->setFont(smallfont_outline);
 		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
-		    difficulty_header->setText("Survival\nComplexity");
+		    difficulty_header->setText("Survival:\nComplexity:");
 		    difficulty_header->setHJustify(Field::justify_t::LEFT);
 		    difficulty_header->setVJustify(Field::justify_t::TOP);
 		    difficulty_header->setSize(difficulty_size);

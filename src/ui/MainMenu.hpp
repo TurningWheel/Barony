@@ -129,6 +129,8 @@ namespace MainMenu {
 			std::vector<std::tuple<int, std::string, Uint32>> survivalComplexity;
 			std::vector<Uint32> statRatings;
 			std::vector<std::string> statRatingsStrings;
+			Sint32 hp = DEFAULT_HP;
+			Sint32 mp = DEFAULT_MP;
 		};
 		static std::unordered_map<int, DescData_t> data;
 		static void readFromFile();
