@@ -1135,7 +1135,7 @@ static ConsoleVariable<float> cvar_ulight_factor_min("/sprite_ulight_factor_min"
 static ConsoleVariable<float> cvar_ulight_factor_mult("/sprite_ulight_factor_mult", 4.f);
 #endif
 
-void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
+void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* enemyHPBarDetails)
 {
 #ifndef EDITOR
     if (!camera || mode != REALCOLORS || !enemyHPBarDetails) {
@@ -1184,7 +1184,14 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails)
         worldCoords.w = 1.f;
         
         const vec4_t window(camera->winx, camera->winy, camera->winw, camera->winh);
-        const float topOfWindow = window.w + window.y;
+        float topOfWindow = window.w + window.y;
+        const float factorY = (float)yres / Frame::virtualScreenY;
+        if ( playerViewport >= 0 )
+        {
+            // sprite height >50 means status effects active, let the effect do the padding
+            // otherwise push approx below XP bar, 26 pixels
+            topOfWindow += factorY * (sprite->h > 50 ? 0 : -26); 
+        }
 		vec4_t screenCoordinates = project(&worldCoords, &m, &camera->projview, &window);
         if (screenCoordinates.y >= topOfWindow && screenCoordinates.z >= 0.f) {
             // above camera limit
