@@ -29,6 +29,7 @@ namespace MainMenu {
 	extern ConsoleVariable<bool> cvar_gamepad_facehotbar;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
+	extern ConsoleVariable<float> cvar_enemybar_scale;
     extern ConsoleVariable<int> cvar_desiredFps;
     extern ConsoleVariable<int> cvar_displayHz;
 	extern ConsoleVariable<bool> cvar_hdrEnabled;

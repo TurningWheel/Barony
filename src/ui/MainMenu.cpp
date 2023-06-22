@@ -62,6 +62,7 @@ namespace MainMenu {
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
+	ConsoleVariable<float> cvar_enemybar_scale("/enemybar_scale", 100.0);
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
@@ -517,6 +518,7 @@ namespace MainMenu {
 	    bool fast_restart = false;
 		float world_tooltip_scale = 100.f;
 		float world_tooltip_scale_splitscreen = 150.f;
+		float enemybar_scale = 100.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		LastCreatedCharacter lastCharacter;
@@ -2537,6 +2539,7 @@ namespace MainMenu {
 		*cvar_fastRestart = fast_restart;
 		*cvar_worldtooltip_scale = world_tooltip_scale;
 		*cvar_worldtooltip_scale_splitscreen = world_tooltip_scale_splitscreen;
+		*cvar_enemybar_scale = enemybar_scale;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		lastCharacter.save();
@@ -2660,6 +2663,7 @@ namespace MainMenu {
 		settings.fast_restart = *cvar_fastRestart;
 		settings.world_tooltip_scale = *cvar_worldtooltip_scale;
 		settings.world_tooltip_scale_splitscreen = *cvar_worldtooltip_scale_splitscreen;
+		settings.enemybar_scale = *cvar_enemybar_scale;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.lastCharacter = LastCreatedCharacter::load();
@@ -2743,6 +2747,7 @@ namespace MainMenu {
 		settings.fast_restart = false;
 		settings.world_tooltip_scale = 100.f;
 		settings.world_tooltip_scale_splitscreen = 150.f;
+		settings.enemybar_scale = 100.f;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.lastCharacter = LastCreatedCharacter::reset();
@@ -2813,7 +2818,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 15;
+	    int version = 16;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2905,6 +2910,7 @@ namespace MainMenu {
             file->property("world_tooltip_scale", world_tooltip_scale);
             file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
         }
+		file->propertyVersion("enemybar_scale", version >= 16, enemybar_scale);
 		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
@@ -5515,6 +5521,7 @@ bind_failed:
 		"Plus (Large)",
 		"Cross",
 		"Carat",
+		"Circle",
 		"Dots (3x)",
 		"Dots (4x)",
 		":)",
@@ -5588,6 +5595,9 @@ bind_failed:
 			"Adjust the vertical position of in-world item tooltip popups.",
 			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
 			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", "Enemy Health Bar Scaling",
+			"Control size of in-world popups for enemy health bars.",
+			allSettings.enemybar_scale, 50, 100, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.enemybar_scale = slider.getValue(); });
 		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", "Crosshair Opacity",
 			"Adjust the opacity of the crosshair.",
 			allSettings.shootmode_crosshair_opacity, 0, 100, sliderPercent, [
@@ -5660,6 +5670,7 @@ bind_failed:
 			{Setting::Type::Slider, "world_tooltip_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Slider, "item_tooltip_height"},
+			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
 			{Setting::Type::Dropdown, "shootmode_crosshair"},
             {Setting::Type::Boolean, "ui_filter"},
@@ -5688,6 +5699,7 @@ bind_failed:
 			{Setting::Type::Slider, "world_tooltip_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Slider, "item_tooltip_height"},
+			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
 			{Setting::Type::Dropdown, "shootmode_crosshair"},
 

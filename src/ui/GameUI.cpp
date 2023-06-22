@@ -8187,15 +8187,18 @@ const char* Player::HUD_t::getCrosshairPath()
 			return "*#images/ui/Crosshairs/cursor_carrot.png";
 			break;
 		case 7:
-			return "*#images/ui/Crosshairs/cursor_dotsB.png";
+			return "*#images/ui/Crosshairs/cursor_circleB.png";
 			break;
 		case 8:
-			return "*#images/ui/Crosshairs/cursor_dotsC.png";
+			return "*#images/ui/Crosshairs/cursor_dotsB.png";
 			break;
 		case 9:
-			return "*#images/ui/Crosshairs/cursor_smiley.png";
+			return "*#images/ui/Crosshairs/cursor_dotsC.png";
 			break;
 		case 10:
+			return "*#images/ui/Crosshairs/cursor_smiley.png";
+			break;
+		case 11:
 			return "*#images/ui/Crosshairs/cursor_nethack.png";
 			break;
 	}

@@ -1169,7 +1169,8 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     mat4x4_t i;
     (void)rotate_mat(&t, &m, -90.f - camera->ang * (180.f / PI), &i.y); m = t;
     (void)rotate_mat(&t, &m, -camera->vang * (180.f / PI), &i.x); m = t;
-    const float scale = 0.08;
+    float scale = 0.08;
+    scale += (0.05f * ((*MainMenu::cvar_enemybar_scale / 100.f) - 1.f));
     v = vec4(scale * tex->w, scale * tex->h, scale * enemybar->screenDistance, 0.f);
     (void)scale_mat(&t, &m, &v); m = t;
     
