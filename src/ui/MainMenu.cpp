@@ -10115,6 +10115,10 @@ failed:
 					classEntry.text += '\n';
 				}
 			}
+			for ( auto it2 = it->value["line_spacing"].Begin(); it2 != it->value["line_spacing"].End(); ++it2 )
+			{
+				classEntry.linePaddings.push_back(it2->GetInt());
+			}
 
 			int c = 0;
 			for ( auto it2 = it->value["survival_complexity"].Begin(); it2 != it->value["survival_complexity"].End(); ++it2 )
@@ -12783,10 +12787,16 @@ failed:
 			    } else {
 			        field.addColorToLine(0, color_dlc2);
 			    }
+
+				field.clearIndividualLinePadding();
+				for ( auto line = 0; line < ClassDescriptions::data[i].linePaddings.size(); ++line )
+				{
+					field.setIndividualLinePadding(line, ClassDescriptions::data[i].linePaddings[line]);
+				}
 		    };
 
 		    auto class_desc = card->addField("class_desc", 1024);
-		    class_desc->setSize(SDL_Rect{42, 68, 240, 218});
+		    class_desc->setSize(SDL_Rect{42, 68, 240, 220});
 		    class_desc->setFont(smallfont_no_outline);
 		    class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		    (*class_desc->getTickCallback())(*class_desc);
