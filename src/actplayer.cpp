@@ -4939,7 +4939,7 @@ void actPlayer(Entity* my)
 
 							if (allDead)
 							{
-								playMusic(gameovermusic, false, false, false);
+								playMusic(gameovermusic, false, true, false);
 							}
 #endif
 							combat = false;
