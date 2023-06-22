@@ -25817,6 +25817,7 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool tempHideXP = false;
+	bool fadeOut = false;
 	if ( !levelUpAnimation[player.playernum].lvlUps.empty() && !levelUpAnimation[player.playernum].lvlUps[0].titleFinishAnim )
 	{
 		tempHideXP = true;
@@ -25826,13 +25827,26 @@ void Player::HUD_t::updateXPBar()
 	{
 		tempHideXP = true;
 	}
+	else if ( player.bUseCompactGUIHeight() && player.shootmode && !skillUpAnimation[player.playernum].skillUps.empty()
+		&& !(!levelUpAnimation[player.playernum].lvlUps.empty() && levelUpAnimation[player.playernum].lvlUps[0].titleFinishAnim) )
+	{
+		// hide xp in compact height, if skillup active and level up isn't playing
+		tempHideXP = true;
+		fadeOut = true;
+	}
 	if ( tempHideXP )
 	{
-		//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
-		//real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
-		//animHideXP += setpointDiff;
-		//animHideXP = std::min(1.0, animHideXP);
-		animHideXP = 1.0;
+		if ( fadeOut )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
+			animHideXP += setpointDiff;
+			animHideXP = std::min(1.0, animHideXP);
+		}
+		else
+		{
+			animHideXP = 1.0;
+		}
 	}
 	else
 	{
@@ -37565,7 +37579,13 @@ void updateSkillUpFrame(const int player)
 	}
 
 	static ConsoleVariable<int> cvar_skillup_framey("/skillup_framey", 48);
-	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, *cvar_skillup_framey,
+	int framey = *cvar_skillup_framey;
+	if ( players[player]->bUseCompactGUIHeight() && players[player]->shootmode )
+	{
+		framey -= 28;
+		framey = std::max(4, framey);
+	}
+	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, framey,
 		frameWidth, skillsFramePos.y + skillsFramePos.h };
 	levelUpFramePos.x += players[player]->camera_virtualx1();
 	levelUpFramePos.y += players[player]->camera_virtualy1();
