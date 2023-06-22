@@ -8273,7 +8273,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		bool forceBlankInteractText = false;
 		if ( !player.worldUI.isEnabled() )
 		{
-			cursor->path = "#*images/ui/Crosshairs/cursor.png";
+			cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
@@ -8290,7 +8290,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		{
 			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
-				cursor->path = "#*images/ui/Crosshairs/cursor.png";
+				cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
 				{
 					cursor->disabled = false;

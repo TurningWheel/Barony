@@ -5571,7 +5571,7 @@ void ingameHud()
 						auto cursor = Image::get("*#images/system/cursor_hand.png");
 						if ( enableDebugKeys && keystatus[SDLK_j] )
 						{
-							cursor = Image::get("*#images/ui/Crosshairs/cursor.png");
+							cursor = Image::get("*#images/ui/Crosshairs/cursor_xB.png");
 						}
 
                         const int w = cursor->getWidth() * factorX;
@@ -5664,7 +5664,7 @@ void ingameHud()
 				}
 				if ( enableDebugKeys && keystatus[SDLK_j] )
 				{
-					cursor = Image::get("*#images/ui/Crosshairs/cursor.png");
+					cursor = Image::get("*#images/ui/Crosshairs/cursor_xB.png");
 				}
                 const int w = cursor->getWidth() * factorX;
                 const int h = cursor->getHeight() * factorY;
@@ -5693,7 +5693,7 @@ void ingameHud()
 					auto cursor = Image::get("*#images/system/cursor_hand.png");
 					if ( enableDebugKeys && keystatus[SDLK_j] )
 					{
-						cursor = Image::get("*#images/ui/Crosshairs/cursor.png");
+						cursor = Image::get("*#images/ui/Crosshairs/cursor_xB.png");
 					}
                     const int w = cursor->getWidth() * factorX;
                     const int h = cursor->getHeight() * factorY;
