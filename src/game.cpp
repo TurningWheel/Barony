@@ -5585,43 +5585,6 @@ void ingameHud()
 						cursor->drawColor(nullptr, pos, SDL_Rect{ 0, 0, xres, yres }, 0xFF0000FF);
 					}
 				}
-				else
-				{
-					pos.x = inputs.getMouse(player, Inputs::X) - 15;
-					pos.y = inputs.getMouse(player, Inputs::Y) - 15;
-					pos.w = 32 * uiscale_inventory;
-					pos.h = 32 * uiscale_inventory;
-
-					drawImageScaled(itemSprite(selectedItem), NULL, &pos);
-					if ( selectedItem->count > 1 )
-					{
-						ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
-					}
-					if ( itemCategory(selectedItem) != SPELL_CAT )
-					{
-						if ( itemIsEquipped(selectedItem, player) )
-						{
-							pos.y += 16;
-							drawImage(equipped_bmp, NULL, &pos);
-						}
-						else if ( selectedItem->status == BROKEN )
-						{
-							pos.y += 16;
-							drawImage(itembroken_bmp, NULL, &pos);
-						}
-					}
-					else
-					{
-						spell_t* spell = getSpellFromItem(player, selectedItem);
-						if ( players[player]->magic.selectedSpell() == spell &&
-							(players[player]->magic.selected_spell_last_appearance == selectedItem->appearance
-								|| players[player]->magic.selected_spell_last_appearance == -1) )
-						{
-							pos.y += 16;
-							drawImage(equipped_bmp, NULL, &pos);
-						}
-					}
-				}
 			}
 			else if ( players[player]->isLocalPlayer() && followerMenu.selectMoveTo &&
 				(followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
@@ -5776,14 +5739,14 @@ void drawAllPlayerCameras() {
 		}
 		else
 		{
-			if ( ::fov >= 15 )
+			/*if ( ::fov >= 15 )
 			{
 				::fov -= 15;
 			}
 			else
 			{
 				::fov = 0;
-			}
+			}*/
 		}
 	}
 
