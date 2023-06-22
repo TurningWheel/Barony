@@ -5585,6 +5585,9 @@ bind_failed:
             allSettings.ui_scale, 50.f, 100.f, sliderPercent,
             [](Slider& slider){soundSlider(true); allSettings.ui_scale = floorf(slider.getValue());});
 #endif
+		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", "Enemy Health Bar Scaling",
+			"Control size of in-world popups for enemy health bars.",
+			allSettings.enemybar_scale, 50, 100, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.enemybar_scale = slider.getValue(); });
 		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
 			"Control size of in-world popups for items, gravestones and NPC dialogue.",
 			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
@@ -5595,9 +5598,6 @@ bind_failed:
 			"Adjust the vertical position of in-world item tooltip popups.",
 			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
 			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", "Enemy Health Bar Scaling",
-			"Control size of in-world popups for enemy health bars.",
-			allSettings.enemybar_scale, 50, 100, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.enemybar_scale = slider.getValue(); });
 		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", "Crosshair Opacity",
 			"Adjust the opacity of the crosshair.",
 			allSettings.shootmode_crosshair_opacity, 0, 100, sliderPercent, [
@@ -5667,10 +5667,10 @@ bind_failed:
 
 			// hud options
             {Setting::Type::Slider, "ui_scale"},
+			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Slider, "item_tooltip_height"},
-			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
 			{Setting::Type::Dropdown, "shootmode_crosshair"},
             {Setting::Type::Boolean, "ui_filter"},
@@ -5696,10 +5696,10 @@ bind_failed:
 			{Setting::Type::Customize, "inventory_sorting"},
 
 			// hud options
+			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale"},
 			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
 			{Setting::Type::Slider, "item_tooltip_height"},
-			{Setting::Type::Slider, "enemybar_scale"},
 			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
 			{Setting::Type::Dropdown, "shootmode_crosshair"},
 
