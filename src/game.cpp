@@ -5650,7 +5650,7 @@ void ingameHud()
                 const float factorY = (float)yres / Frame::virtualScreenY;
 				auto cursor = Image::get("*#images/system/cursor_hand.png");
 				real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
-				if ( mousestatus[SDL_BUTTON_LEFT] )
+				if ( Input::inputs[player].binary("MenuLeftClick") )
 				{
 					mouseAnim = .5;
 				}
@@ -5660,7 +5660,7 @@ void ingameHud()
 				}
 				if ( mouseAnim > 0.0 )
 				{
-					mouseAnim -= .05;
+					mouseAnim -= .05 * getFPSScale(144.0);
 				}
 				if ( enableDebugKeys && keystatus[SDLK_j] )
 				{
@@ -5707,6 +5707,11 @@ void ingameHud()
 				}
 #endif
 			}
+		}
+		else
+		{
+			real_t& mouseAnim = inputs.getVirtualMouse(player)->mouseAnimationPercent;
+			mouseAnim = 0.0;
 		}
 		players[player]->hud.updateWorldTooltipPrompts();
 	}
@@ -6756,22 +6761,60 @@ int main(int argc, char** argv)
 							auto cursor = Image::get("*#images/system/cursor_hand.png");
                             const int w = cursor->getWidth() * factorX;
                             const int h = cursor->getHeight() * factorY;
-                            pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - w / 2;
-                            pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - h / 2;
-                            pos.x += 4;
-                            pos.y += 4;
-                            pos.w = w;
-                            pos.h = h;
-							cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
 
-							if (MainMenu::cursor_delete_mode)
+							if ( inputs.getPlayerIDAllowedKeyboard() >= 0 )
 							{
-							    auto icon = Image::get("*#images/system/Broken.png");
-							    pos.x = pos.x + pos.w;
-							    pos.y = pos.y + pos.h;
-							    pos.w = icon->getWidth() * 2;
-							    pos.h = icon->getHeight() * 2;
-							    icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+								real_t& mouseAnim = inputs.getVirtualMouse(inputs.getPlayerIDAllowedKeyboard())->mouseAnimationPercent;
+								if ( Input::inputs[inputs.getPlayerIDAllowedKeyboard()].binary("MenuLeftClick") )
+								{
+									mouseAnim = .5;
+								}
+								if ( mouseAnim > .25 )
+								{
+									cursor = Image::get("*#images/system/cursor_hand2.png");
+								}
+								if ( mouseAnim > 0.0 )
+								{
+									mouseAnim -= .05 * getFPSScale(144.0);
+								}
+
+								pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - (mouseAnim * w / 7) - w / 2;
+								pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - (mouseAnim * h / 7) - h / 2;
+								pos.x += 4;
+								pos.y += 4;
+								pos.w = w;
+								pos.h = h;
+								cursor->draw(nullptr, pos, SDL_Rect{ 0, 0, xres, yres });
+
+								if ( MainMenu::cursor_delete_mode )
+								{
+									auto icon = Image::get("*#images/system/Broken.png");
+									pos.x = pos.x + pos.w;
+									pos.y = pos.y + pos.h;
+									pos.w = icon->getWidth() * 2;
+									pos.h = icon->getHeight() * 2;
+									icon->draw(nullptr, pos, SDL_Rect{ 0, 0, xres, yres });
+								}
+							}
+							else
+							{
+								pos.x = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::X) - w / 2;
+								pos.y = inputs.getMouse(inputs.getPlayerIDAllowedKeyboard(), Inputs::Y) - h / 2;
+								pos.x += 4;
+								pos.y += 4;
+								pos.w = w;
+								pos.h = h;
+								cursor->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+
+								if (MainMenu::cursor_delete_mode)
+								{
+									auto icon = Image::get("*#images/system/Broken.png");
+									pos.x = pos.x + pos.w;
+									pos.y = pos.y + pos.h;
+									pos.w = icon->getWidth() * 2;
+									pos.h = icon->getHeight() * 2;
+									icon->draw(nullptr, pos, SDL_Rect{0, 0, xres, yres});
+								}
 							}
 						}
 #endif
@@ -7031,8 +7074,23 @@ int main(int argc, char** argv)
 							auto cursor = Image::get("*#images/system/cursor_hand.png");
                             const int w = cursor->getWidth() * factorX;
                             const int h = cursor->getHeight() * factorY;
-                            pos.x = inputs.getMouse(i, Inputs::X) - w / 2;
-                            pos.y = inputs.getMouse(i, Inputs::Y) - h / 2;
+
+							real_t& mouseAnim = inputs.getVirtualMouse(i)->mouseAnimationPercent;
+							if ( Input::inputs[i].binary("MenuLeftClick") )
+							{
+								mouseAnim = .5;
+							}
+							if ( mouseAnim > .25 )
+							{
+								cursor = Image::get("*#images/system/cursor_hand2.png");
+							}
+							if ( mouseAnim > 0.0 )
+							{
+								mouseAnim -= .05 * getFPSScale(144.0);
+							}
+
+                            pos.x = inputs.getMouse(i, Inputs::X) - (mouseAnim * w / 7) - w / 2;
+                            pos.y = inputs.getMouse(i, Inputs::Y) - (mouseAnim * h / 7) - h / 2;
                             pos.x += 4;
                             pos.y += 4;
                             pos.w = w;
