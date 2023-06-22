@@ -25189,7 +25189,7 @@ void Player::HUD_t::updateCursor()
 		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			if ( player.GUI.dropdownMenu.bOpen )
+			if ( player.GUI.dropdownMenu.bOpen || player.GUI.activeModule == Player::GUI_t::MODULE_PORTRAIT )
 			{
 				// animate cursor
 			}
