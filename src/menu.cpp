@@ -1602,11 +1602,11 @@ void handleMainMenu(bool mode)
 		SDL_Rect src;
 		src.x = 20;
 		src.y = 20;
-		src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
-		src.h = title_bmp->h * (230.0 / 240.0);
+		//src.w = title_bmp->w * (230.0 / 240.0); // new banner scaled to old size.
+		//src.h = title_bmp->h * (230.0 / 240.0);
 		if ( mode || introstage != 5 )
 		{
-			drawImageScaled(title_bmp, nullptr, &src);
+			//drawImageScaled(title_bmp, nullptr, &src);
 		}
 
 		if ( mode && subtitleVisible )
@@ -8357,128 +8357,128 @@ void handleMainMenu(bool mode)
 	}
 
 	// credits sequence
-	if ( creditstage > 0 )
-	{
-		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
-		        (credittime >= 480 && creditstage == 13) || inputs.bMouseLeft(clientnum) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
-		{
-			inputs.mouseClearLeft(clientnum);
-			if ( rebindaction == -1 )
-			{
-				inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
-			}
-			introstage = 4;
-			fadeout = true;
-		}
+	//if ( creditstage > 0 )
+	//{
+	//	if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
+	//	        (credittime >= 480 && creditstage == 13) || inputs.bMouseLeft(clientnum) || (inputs.bControllerInputPressed(clientnum, INJOY_MENU_NEXT) && rebindaction == -1) )
+	//	{
+	//		inputs.mouseClearLeft(clientnum);
+	//		if ( rebindaction == -1 )
+	//		{
+	//			inputs.controllerClearInput(clientnum, INJOY_MENU_NEXT);
+	//		}
+	//		introstage = 4;
+	//		fadeout = true;
+	//	}
 
-		// stages
-		Uint32 colorBlue = makeColor( 0, 92, 255, 255);
-		if ( creditstage == 1 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[56]), yres / 2 - 9 - 18, colorBlue, language[56]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE02), yres / 2 - 9 + 18, CREDITSLINE02);
-		}
-		else if ( creditstage == 2 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[57]), yres / 2 - 9 - 18, colorBlue, language[57]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE04), yres / 2 - 9 + 18, CREDITSLINE04);
-		}
-		else if ( creditstage == 3 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
-		}
-		else if ( creditstage == 4 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18, colorBlue, language[59]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE39), yres / 2 + 9, CREDITSLINE39);
-		}
-		else if ( creditstage == 5 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[60]), yres / 2 - 9 - 18, colorBlue, language[60]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE11), yres / 2 - 9, CREDITSLINE11);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE08), yres / 2 - 9 + 18, CREDITSLINE08);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE09), yres / 2 + 9 + 18 * 1, CREDITSLINE09);
-		}
-		else if ( creditstage == 6 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[61]), yres / 2 - 9 - 18, colorBlue, language[61]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE13), yres / 2 - 9 + 18, CREDITSLINE13);
-		}
-		else if ( creditstage == 7 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[62]), yres / 2 - 9 - 18 * 4, colorBlue, language[62]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE15), yres / 2 - 9 - 18 * 2, CREDITSLINE15);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE16), yres / 2 - 9 - 18 * 1, CREDITSLINE16);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE17), yres / 2 - 9, CREDITSLINE17);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE18), yres / 2 + 9, CREDITSLINE18);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE19), yres / 2 + 9 + 18 * 1, CREDITSLINE19);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE20), yres / 2 + 9 + 18 * 2, CREDITSLINE20);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE21), yres / 2 + 9 + 18 * 3, CREDITSLINE21);
-		}
-		else if ( creditstage == 8 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[63]), yres / 2 - 9 - 18 * 4, colorBlue, language[63]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE23), yres / 2 - 9 - 18 * 2, CREDITSLINE23);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE24), yres / 2 - 9 - 18 * 1, CREDITSLINE24);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE25), yres / 2 - 9, CREDITSLINE25);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE26), yres / 2 + 9, CREDITSLINE26);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE27), yres / 2 + 9 + 18 * 1, CREDITSLINE27);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE28), yres / 2 + 9 + 18 * 2, CREDITSLINE28);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE29), yres / 2 + 9 + 18 * 3, CREDITSLINE29);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE30), yres / 2 + 9 + 18 * 4, CREDITSLINE30);
-		}
-		else if ( creditstage == 9 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
-		}
-		else if ( creditstage == 10 )
-		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
-		}
-		else if ( creditstage == 11 )
-		{
+	//	// stages
+	//	Uint32 colorBlue = makeColor( 0, 92, 255, 255);
+	//	if ( creditstage == 1 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[56]), yres / 2 - 9 - 18, colorBlue, language[56]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE02), yres / 2 - 9 + 18, CREDITSLINE02);
+	//	}
+	//	else if ( creditstage == 2 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[57]), yres / 2 - 9 - 18, colorBlue, language[57]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE04), yres / 2 - 9 + 18, CREDITSLINE04);
+	//	}
+	//	else if ( creditstage == 3 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
+	//	}
+	//	else if ( creditstage == 4 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18, colorBlue, language[59]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE39), yres / 2 + 9, CREDITSLINE39);
+	//	}
+	//	else if ( creditstage == 5 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[60]), yres / 2 - 9 - 18, colorBlue, language[60]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE11), yres / 2 - 9, CREDITSLINE11);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE08), yres / 2 - 9 + 18, CREDITSLINE08);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE09), yres / 2 + 9 + 18 * 1, CREDITSLINE09);
+	//	}
+	//	else if ( creditstage == 6 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[61]), yres / 2 - 9 - 18, colorBlue, language[61]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE13), yres / 2 - 9 + 18, CREDITSLINE13);
+	//	}
+	//	else if ( creditstage == 7 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[62]), yres / 2 - 9 - 18 * 4, colorBlue, language[62]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE15), yres / 2 - 9 - 18 * 2, CREDITSLINE15);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE16), yres / 2 - 9 - 18 * 1, CREDITSLINE16);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE17), yres / 2 - 9, CREDITSLINE17);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE18), yres / 2 + 9, CREDITSLINE18);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE19), yres / 2 + 9 + 18 * 1, CREDITSLINE19);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE20), yres / 2 + 9 + 18 * 2, CREDITSLINE20);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE21), yres / 2 + 9 + 18 * 3, CREDITSLINE21);
+	//	}
+	//	else if ( creditstage == 8 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[63]), yres / 2 - 9 - 18 * 4, colorBlue, language[63]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE23), yres / 2 - 9 - 18 * 2, CREDITSLINE23);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE24), yres / 2 - 9 - 18 * 1, CREDITSLINE24);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE25), yres / 2 - 9, CREDITSLINE25);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE26), yres / 2 + 9, CREDITSLINE26);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE27), yres / 2 + 9 + 18 * 1, CREDITSLINE27);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE28), yres / 2 + 9 + 18 * 2, CREDITSLINE28);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE29), yres / 2 + 9 + 18 * 3, CREDITSLINE29);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE30), yres / 2 + 9 + 18 * 4, CREDITSLINE30);
+	//	}
+	//	else if ( creditstage == 9 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
+	//	}
+	//	else if ( creditstage == 10 )
+	//	{
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
+	//	}
+	//	else if ( creditstage == 11 )
+	//	{
 
-			// title
-			SDL_Rect src;
-			src.x = 0;
-			src.y = 0;
-			src.w = title_bmp->w;
-			src.h = title_bmp->h;
-			SDL_Rect dest;
-			dest.x = xres / 2 - (title_bmp->w) / 2;
-			dest.y = yres / 2 - title_bmp->h / 2 - 96;
-			dest.w = xres;
-			dest.h = yres;
-			drawImage(title_bmp, &src, &dest);
-			// text
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[66]), yres / 2, language[66]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[67]), yres / 2 + 20, language[67]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[68]), yres / 2 + 40, language[68]);
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[69]), yres / 2 + 60, colorBlue, language[69]);
+	//		// title
+	//		SDL_Rect src;
+	//		src.x = 0;
+	//		src.y = 0;
+	//		src.w = title_bmp->w;
+	//		src.h = title_bmp->h;
+	//		SDL_Rect dest;
+	//		dest.x = xres / 2 - (title_bmp->w) / 2;
+	//		dest.y = yres / 2 - title_bmp->h / 2 - 96;
+	//		dest.w = xres;
+	//		dest.h = yres;
+	//		drawImage(title_bmp, &src, &dest);
+	//		// text
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[66]), yres / 2, language[66]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[67]), yres / 2 + 20, language[67]);
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[68]), yres / 2 + 40, language[68]);
+	//		ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2) * strlen(language[69]), yres / 2 + 60, colorBlue, language[69]);
 
-			// logo
-			src.x = 0;
-			src.y = 0;
-			src.w = logo_bmp->w;
-			src.h = logo_bmp->h;
-			dest.x = xres / 2 - (logo_bmp->w) / 2;
-			dest.y = yres / 2 + 80;
-			dest.w = xres;
-			dest.h = yres;
-			drawImage(logo_bmp, &src, &dest);
-		}
-		else if ( creditstage == 13 )
-		{
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE37), yres / 2 - 9, CREDITSLINE37);
-			//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
-		}
-	}
+	//		// logo
+	//		src.x = 0;
+	//		src.y = 0;
+	//		src.w = logo_bmp->w;
+	//		src.h = logo_bmp->h;
+	//		dest.x = xres / 2 - (logo_bmp->w) / 2;
+	//		dest.y = yres / 2 + 80;
+	//		dest.w = xres;
+	//		dest.h = yres;
+	//		drawImage(logo_bmp, &src, &dest);
+	//	}
+	//	else if ( creditstage == 13 )
+	//	{
+	//		ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE37), yres / 2 - 9, CREDITSLINE37);
+	//		//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
+	//	}
+	//}
 
 	// intro sequence
 	if ( intromoviestage > 0 )

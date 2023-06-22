@@ -541,6 +541,8 @@ namespace MainMenu {
 		bool staggered_split_enabled;
 		bool clipped_split_enabled;
 		float item_tooltip_height = 100.f;
+		int shootmode_crosshair = 0;
+		int shootmode_crosshair_opacity = 50;
 		bool hdr_enabled = true;
 		float fov;
 		float fps;
@@ -2544,6 +2546,11 @@ namespace MainMenu {
         const float oldUIScale = uiScale;
         *ui_filter = ui_filter_enabled;
 		Player::WorldUI_t::tooltipHeightOffsetZ = (6 * (100 - item_tooltip_height)) / 100.f;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			playerSettings[i].shootmodeCrosshair = shootmode_crosshair;
+			playerSettings[i].shootmodeCrosshairOpacity = shootmode_crosshair_opacity;
+		}
 		*cvar_hdrEnabled = true;// hdr_enabled;
         uiScale = ui_scale / 100.f;
         result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
@@ -2662,6 +2669,8 @@ namespace MainMenu {
         settings.ui_filter_enabled = *ui_filter;
 		settings.item_tooltip_height =
 			100.f * (Player::WorldUI_t::tooltipHeightOffsetZ - 6) / -6;
+		settings.shootmode_crosshair = playerSettings[0].shootmodeCrosshair;
+		settings.shootmode_crosshair_opacity = playerSettings[0].shootmodeCrosshairOpacity;
 		settings.hdr_enabled = true;// *cvar_hdrEnabled;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
@@ -2758,6 +2767,8 @@ namespace MainMenu {
 		settings.fov = 60;
 		settings.fps = AUTO_FPS;
 		settings.item_tooltip_height = 100.f;
+		settings.shootmode_crosshair = 0;
+		settings.shootmode_crosshair_opacity = 50;
 		settings.hdr_enabled = true;
 		settings.audio_device = "";
 		settings.master_volume = 100.f;
@@ -2802,7 +2813,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 14;
+	    int version = 15;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2830,6 +2841,8 @@ namespace MainMenu {
         file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);
         file->propertyVersion("ui_scale", version >= 7, ui_scale);
 		file->propertyVersion("item_tooltip_height", version >= 11, item_tooltip_height);
+		file->propertyVersion("shootmode_crosshair", version >= 15, shootmode_crosshair);
+		file->propertyVersion("shootmode_crosshair_opacity", version >= 15, shootmode_crosshair_opacity);
 		file->property("show_messages_enabled", show_messages_enabled);
 		file->propertyVersion("message_filters", version >= 14, show_messages);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
@@ -5493,6 +5506,43 @@ bind_failed:
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
+	static const std::vector<const char*> crosshairs =
+	{ 
+		"Dot",
+		"Dot (Large)",
+		"Plus (Small)",
+		"Plus (Medium)",
+		"Plus (Large)",
+		"Cross",
+		"Carat",
+		"Dots (3x)",
+		"Dots (4x)",
+		":)",
+		"@" };
+	static void settingsCrosshairType(Button& button) {
+		settingsOpenDropdown(button, "shootmode_crosshair", DropdownType::Short, [](Frame::entry_t& entry) {
+			soundActivate();
+
+		int index = 0;
+		for ( auto str : crosshairs )
+		{
+			if ( entry.name == str )
+			{
+				allSettings.shootmode_crosshair = index;
+				break;
+			}
+			++index;
+		}
+		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		auto button = settings_subwindow->findButton("setting_shootmode_crosshair_dropdown_button"); assert(button);
+		auto dropdown = settings_subwindow->findFrame("setting_shootmode_crosshair_dropdown"); assert(dropdown);
+		button->setText(entry.name.c_str());
+		dropdown->removeSelf();
+		button->select();
+			});
+	}
+
 	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
@@ -5546,6 +5596,14 @@ bind_failed:
 			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
 			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
 
+		const char* selected_mode = crosshairs[allSettings.shootmode_crosshair];
+		y += settingsAddDropdown(*settings_subwindow, y, "shootmode_crosshair", "Crosshair Type", "Adjust the appearance of the crosshair.",
+			false, crosshairs, selected_mode, settingsCrosshairType);
+		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", "Crosshair Opacity",
+			"Adjust the opacity of the crosshair.",
+			allSettings.shootmode_crosshair_opacity, 0, 100, sliderPercent, [
+			](Slider& slider) {soundSlider(true); allSettings.shootmode_crosshair_opacity = slider.getValue(); });
+
 #if 0
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
@@ -5564,6 +5622,8 @@ bind_failed:
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
 			{Setting::Type::Slider, "item_tooltip_height"},
+			{Setting::Type::Dropdown, "shootmode_crosshair"},
+			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
 			//{Setting::Type::Boolean, "show_hud"},
         });
 #else

@@ -254,6 +254,10 @@ int initApp(char const * const title, int fullscreen)
 #endif
 #endif // !STEAMWORKS
 #endif
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		playerSettings->init(i);
+	}
 
 	// I'm not sure when we'd need the following block.
 	// mobile ports????

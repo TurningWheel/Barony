@@ -50,6 +50,18 @@ extern bool gamepad_righty_invert;
 extern bool gamepad_menux_invert;
 extern bool gamepad_menuy_invert;
 
+struct PlayerSettings_t
+{
+	int player = -1;
+	int shootmodeCrosshair = 0;
+	int shootmodeCrosshairOpacity = 50;
+	void init(const int _player)
+	{
+		player = _player;
+	}
+};
+extern PlayerSettings_t playerSettings[MAXPLAYERS];
+
 //Game Controller 1 handler
 //TODO: Joystick support?
 //extern SDL_GameController* game_controller;
@@ -1673,6 +1685,7 @@ public:
 		void updateStatusEffectFocusedWindow();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
+		const char* getCrosshairPath();
 	} hud;
 
 	class Magic_t

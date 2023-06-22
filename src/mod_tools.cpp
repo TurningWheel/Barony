@@ -303,48 +303,49 @@ void GameModeManager_t::Tutorial_t::Menu_t::onClickEntry()
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 {
-	bWindowOpen = true;
-	showFirstTimePrompt = false;
+	return;
+	//bWindowOpen = true;
+	//showFirstTimePrompt = false;
+	//if ( !title_bmp )
+	//{
+	//	return;
+	//}
 
-	if ( !title_bmp )
-	{
-		return;
-	}
+	//// create window
+	//subwindow = 1;
+	//subx1 = xres / 2 - ((0.75 * title_bmp->w / 2) + 52);
+	//subx2 = xres / 2 + ((0.75 * title_bmp->w / 2) + 52);
+	//suby1 = yres / 2 - ((0.75 * title_bmp->h / 2) + 88);
+	//suby2 = yres / 2 + ((0.75 * title_bmp->h / 2) + 88);
+	//strcpy(subtext, "");
 
-	// create window
-	subwindow = 1;
-	subx1 = xres / 2 - ((0.75 * title_bmp->w / 2) + 52);
-	subx2 = xres / 2 + ((0.75 * title_bmp->w / 2) + 52);
-	suby1 = yres / 2 - ((0.75 * title_bmp->h / 2) + 88);
-	suby2 = yres / 2 + ((0.75 * title_bmp->h / 2) + 88);
-	strcpy(subtext, "");
+	//Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
 
-	Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
+	//button_t* button = newButton();
+	//strcpy(button->label, language[3965]);
+	//button->sizex = strlen(language[3965]) * 10 + 8;
+	//button->sizey = 20;
+	//button->x = centerWindowX - button->sizex / 2;
+	//button->y = suby2 - 28 - 24;
+	//button->action = &buttonPromptEnterTutorialHub;
+	//button->visible = 1;
+	//button->focused = 1;
 
-	button_t* button = newButton();
-	strcpy(button->label, language[3965]);
-	button->sizex = strlen(language[3965]) * 10 + 8;
-	button->sizey = 20;
-	button->x = centerWindowX - button->sizex / 2;
-	button->y = suby2 - 28 - 24;
-	button->action = &buttonPromptEnterTutorialHub;
-	button->visible = 1;
-	button->focused = 1;
-
-	button = newButton();
-	strcpy(button->label, language[3966]);
-	button->sizex = strlen(language[3966]) * 12 + 8;
-	button->sizey = 20;
-	button->x = centerWindowX - button->sizex / 2;
-	button->y = suby2 - 28;
-	button->action = &buttonSkipPrompt;
-	button->visible = 1;
-	button->focused = 1;
+	//button = newButton();
+	//strcpy(button->label, language[3966]);
+	//button->sizex = strlen(language[3966]) * 12 + 8;
+	//button->sizey = 20;
+	//button->x = centerWindowX - button->sizex / 2;
+	//button->y = suby2 - 28;
+	//button->action = &buttonSkipPrompt;
+	//button->visible = 1;
+	//button->focused = 1;
 }
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 {
-	if ( !bWindowOpen )
+	return;
+	/*if ( !bWindowOpen )
 	{
 		return;
 	}
@@ -364,7 +365,7 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	
 	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), language[3936]);
 	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);
-	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);*/
 }
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonSkipPrompt(button_t* my)

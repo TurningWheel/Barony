@@ -165,12 +165,6 @@ std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpoi
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
-	std::make_pair(&title_bmp, "images/system/title.png"),
-	std::make_pair(&logo_bmp, "images/system/logo.png"),
-	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
-	std::make_pair(&cross_bmp, "images/system/cross.png"),
-	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
-
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
 	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
 	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),

@@ -8160,6 +8160,47 @@ void createWorldTooltipPrompts(const int player)
 	cursor->disabled = true;
 }
 
+const char* Player::HUD_t::getCrosshairPath()
+{
+	switch ( playerSettings[player.playernum].shootmodeCrosshair )
+	{
+		case 0:
+		default:
+			return "*#images/ui/Crosshairs/cross.png";
+			break;
+		case 1:
+			return "*#images/ui/Crosshairs/cursor_thicc.png";
+			break;
+		case 2:
+			return "*#images/ui/Crosshairs/cursor_plusA.png";
+			break;
+		case 3:
+			return "*#images/ui/Crosshairs/cursor_plusB.png";
+			break;
+		case 4:
+			return "*#images/ui/Crosshairs/cursor_crosshair.png";
+			break;
+		case 5:
+			return "*#images/ui/Crosshairs/cursor_xB.png";
+			break;
+		case 6:
+			return "*#images/ui/Crosshairs/cursor_carrot.png";
+			break;
+		case 7:
+			return "*#images/ui/Crosshairs/cursor_dotsB.png";
+			break;
+		case 8:
+			return "*#images/ui/Crosshairs/cursor_dotsC.png";
+			break;
+		case 9:
+			return "*#images/ui/Crosshairs/cursor_smiley.png";
+			break;
+		case 10:
+			return "*#images/ui/Crosshairs/cursor_nethack.png";
+			break;
+	}
+}
+
 void Player::HUD_t::updateWorldTooltipPrompts()
 {
 	if ( !hudFrame )
@@ -8229,7 +8270,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		bool forceBlankInteractText = false;
 		if ( !player.worldUI.isEnabled() )
 		{
-			cursor->path = "images/system/cursor.png";
+			cursor->path = "#*images/ui/Crosshairs/cursor.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
@@ -8246,7 +8287,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		{
 			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
-				cursor->path = "images/system/cursor.png";
+				cursor->path = "#*images/ui/Crosshairs/cursor.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
 				{
 					cursor->disabled = false;
@@ -8284,7 +8325,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				{
 					forceBlankInteractText = true;
 
-					cursor->path = "*#images/system/cross.png";
+					cursor->path = getCrosshairPath();
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
@@ -8292,7 +8333,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 128);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 
 					textPos.x = cursor->pos.x + cursor->pos.w / 2;
@@ -8326,7 +8367,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 128);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 				}
 			}
@@ -8514,7 +8555,11 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( player.worldUI.bTooltipInView )
+		if ( !player.entity )
+		{
+			cursor->disabled = true;
+		}
+		else if ( player.worldUI.bTooltipInView )
 		{
 			cursor->path = "images/system/selectedcursor.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -8524,7 +8569,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 128);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			textPos.x += 40;
@@ -8616,7 +8661,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 			else
 			{
-				cursor->path = "*#images/system/cross.png";
+				cursor->path = getCrosshairPath();
 			}
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
@@ -8625,7 +8670,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 128);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			if ( usingTinkeringKit )
@@ -8654,7 +8699,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					}
 
 					// skip cursor here, no tooltip in view
-					//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
 					textPos.x += 40;
 					textPos.y += 20;
 
@@ -32794,7 +32838,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		SDL_Rect closeBtnPos = closeBtn->getSize();
 		SDL_Rect bgImgPos = bgImgFrame->getSize();
-		closeBtnPos.x = bgImgPos.x + bgImgPos.w - 44;
+		closeBtnPos.x = bgImgPos.x + bgImgPos.w - 38;
 		closeBtnPos.y = bgImgPos.y + 22;
 		closeBtn->setSize(closeBtnPos);
 	}

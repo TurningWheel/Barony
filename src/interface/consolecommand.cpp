@@ -4658,5 +4658,16 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_load_class_descriptions("/loadclassdescriptions", "reloads class_descriptions.json", []CCMD{
 		MainMenu::ClassDescriptions::readFromFile();
 	});
+
+	static ConsoleCommand ccmd_crosshair("/crosshair", "cycles crosshair type", []CCMD{
+		if ( argc >= 2 )
+		{
+			playerSettings[0].shootmodeCrosshair = (int)strtol(argv[1], nullptr, 10);
+		}
+		else
+		{
+			++playerSettings[0].shootmodeCrosshair;
+		}
+	});
 }
 
