@@ -393,7 +393,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode);
 void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode);
-void glDrawEnemyBarSprite(view_t* camera, int mode, void* enemyHPBarDetails);
+void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* enemyHPBarDetails);
 void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode);
 void glDrawWorld(view_t* camera, int mode);
 void glEndCamera(view_t* camera, bool useHDR);

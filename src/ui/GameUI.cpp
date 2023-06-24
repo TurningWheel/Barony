@@ -8160,6 +8160,50 @@ void createWorldTooltipPrompts(const int player)
 	cursor->disabled = true;
 }
 
+const char* Player::HUD_t::getCrosshairPath()
+{
+	switch ( playerSettings[player.playernum].shootmodeCrosshair )
+	{
+		case 0:
+		default:
+			return "*#images/ui/Crosshairs/cross.png";
+			break;
+		case 1:
+			return "*#images/ui/Crosshairs/cursor_thicc.png";
+			break;
+		case 2:
+			return "*#images/ui/Crosshairs/cursor_plusA.png";
+			break;
+		case 3:
+			return "*#images/ui/Crosshairs/cursor_plusB.png";
+			break;
+		case 4:
+			return "*#images/ui/Crosshairs/cursor_crosshair.png";
+			break;
+		case 5:
+			return "*#images/ui/Crosshairs/cursor_xB.png";
+			break;
+		case 6:
+			return "*#images/ui/Crosshairs/cursor_carrot.png";
+			break;
+		case 7:
+			return "*#images/ui/Crosshairs/cursor_circleB.png";
+			break;
+		case 8:
+			return "*#images/ui/Crosshairs/cursor_dotsB.png";
+			break;
+		case 9:
+			return "*#images/ui/Crosshairs/cursor_dotsC.png";
+			break;
+		case 10:
+			return "*#images/ui/Crosshairs/cursor_smiley.png";
+			break;
+		case 11:
+			return "*#images/ui/Crosshairs/cursor_nethack.png";
+			break;
+	}
+}
+
 void Player::HUD_t::updateWorldTooltipPrompts()
 {
 	if ( !hudFrame )
@@ -8229,7 +8273,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		bool forceBlankInteractText = false;
 		if ( !player.worldUI.isEnabled() )
 		{
-			cursor->path = "images/system/cursor.png";
+			cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
 				cursor->disabled = false;
@@ -8246,7 +8290,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		{
 			if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 			{
-				cursor->path = "images/system/cursor.png";
+				cursor->path = "#*images/ui/Crosshairs/cursor_xB.png";
 				if ( auto imgGet = Image::get(cursor->path.c_str()) )
 				{
 					cursor->disabled = false;
@@ -8284,7 +8328,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				{
 					forceBlankInteractText = true;
 
-					cursor->path = "*#images/system/cross.png";
+					cursor->path = getCrosshairPath();
 					if ( auto imgGet = Image::get(cursor->path.c_str()) )
 					{
 						cursor->disabled = false;
@@ -8292,7 +8336,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 128);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 
 					textPos.x = cursor->pos.x + cursor->pos.w / 2;
@@ -8326,7 +8370,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 						promptPos.y -= (int)imgGet->getHeight() / 2;
 						SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 						cursor->pos = cursorPos;
-						cursor->color = makeColor(255, 255, 255, 128);
+						cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 					}
 				}
 			}
@@ -8514,7 +8558,11 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 	else
 	{
-		if ( player.worldUI.bTooltipInView )
+		if ( !player.entity )
+		{
+			cursor->disabled = true;
+		}
+		else if ( player.worldUI.bTooltipInView )
 		{
 			cursor->path = "images/system/selectedcursor.png";
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
@@ -8524,7 +8572,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 128);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			textPos.x += 40;
@@ -8616,7 +8664,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 			else
 			{
-				cursor->path = "*#images/system/cross.png";
+				cursor->path = getCrosshairPath();
 			}
 			if ( auto imgGet = Image::get(cursor->path.c_str()) )
 			{
@@ -8625,7 +8673,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				promptPos.y -= (int)imgGet->getHeight() / 2;
 				SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
 				cursor->pos = cursorPos;
-				cursor->color = makeColor(255, 255, 255, 128);
+				cursor->color = makeColor(255, 255, 255, 255 * playerSettings[player.playernum].shootmodeCrosshairOpacity / 100.f);
 			}
 
 			if ( usingTinkeringKit )
@@ -8654,7 +8702,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					}
 
 					// skip cursor here, no tooltip in view
-					//drawImageAlpha(selected_cursor_bmp, NULL, &pos, 128);
 					textPos.x += 40;
 					textPos.y += 20;
 
@@ -12317,6 +12364,55 @@ void Player::CharacterSheet_t::createCharacterSheet()
 
 				MainMenu::RaceDescriptions::update_details_text(*raceTooltip, stats[player.playernum]);
 			}
+
+			{
+				auto classTooltip = tooltipFrame->addFrame("sheet class tooltip");
+				classTooltip->setDisabled(true);
+				classTooltip->setHollow(true);
+				auto statGrowths = classTooltip->addFrame("stat growths");
+				// stats definitions
+				const char* class_stats_text[] = {
+					"STR", "DEX", "CON", "INT", "PER", "CHR"
+				};
+				constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+				constexpr SDL_Rect bottom{ 0, 0, 236, 30 };
+				constexpr int column = bottom.w / num_class_stats;
+
+				classTooltip->setSize(SDL_Rect{ 0, 0, bottom.w, bottom.h });
+				statGrowths->setSize(bottom);
+
+				for ( int c = 0; c < num_class_stats; ++c ) 
+				{
+					char buf[16];
+					snprintf(buf, sizeof(buf), "%d", c);
+					auto class_stat = statGrowths->addField(buf, 16);
+					class_stat->setSize(SDL_Rect{
+						bottom.x + column * c, bottom.y, column, bottom.h });
+					class_stat->setHJustify(Field::justify_t::CENTER);
+					class_stat->setVJustify(Field::justify_t::TOP);
+					class_stat->setFont(smallfont_outline);
+					class_stat->setText(class_stats_text[c]);
+					//class_stat->setTickCallback([](Widget& widget) {class_stat_fn(*static_cast<Field*>(&widget), widget.getOwner()); });
+
+					SDL_Rect imgPos = class_stat->getSize();
+					imgPos.x += imgPos.w / 2;
+					imgPos.w = 14;
+					imgPos.x -= imgPos.w / 2;
+					imgPos.h = 16;
+					imgPos.y -= imgPos.h - 4;
+
+					char buf2[32];
+					/*snprintf(buf2, sizeof(buf2), "stat img top %d", c);
+					auto class_stat_img_top = statGrowths->addImage(imgPos, 0xFFFFFFFF,
+						"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi2.png", buf2);
+					class_stat_img_top->disabled = true;*/
+					snprintf(buf2, sizeof(buf2), "stat img bottom %d", c);
+					imgPos.y = class_stat->getSize().y + 17;
+					auto class_stat_img_bottom = statGrowths->addImage(imgPos, 0xFFFFFFFF,
+						"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png", buf2);
+					class_stat_img_bottom->disabled = true;
+				}
+			}
 		}
 	}
 }
@@ -14453,6 +14549,7 @@ struct CharacterSheetTooltipCache_t
 	int playerRace = RACE_HUMAN;
 	int playerRaceType = NOTHING;
 	int type = NOTHING;
+	int classnum = -1;
 	bool hungerEnabled = false;
 	int weapontype = 0;
 	Sint32 ATK = -1;
@@ -14512,6 +14609,7 @@ struct CharacterSheetTooltipCache_t
 		}
 		if ( type != this->type ) { return true; }
 		if ( playerRaceType != this->playerRaceType ) { return true; }
+		if ( client_classes[player] != classnum ) { return true; }
 		return false;
 	}
 	void updateToCharacter(const int player)
@@ -14535,6 +14633,7 @@ struct CharacterSheetTooltipCache_t
 		playerRace = stats[player]->playerRace;
 		playerRaceType = getMonsterFromPlayerRace(playerRace);
 		type = stats[player]->type;
+		classnum = client_classes[player];
 		if ( arachnophobia_filter )
 		{
 			if ( type == SPIDER )
@@ -14680,6 +14779,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 	auto raceTooltip = tooltipFrame->findFrame("sheet race tooltip");
 	raceTooltip->setDisabled(true);
+	auto classTooltip = tooltipFrame->findFrame("sheet class tooltip");
+	classTooltip->setDisabled(true);
 
 	if ( !(element >= Player::CharacterSheet_t::SHEET_STR && element <= Player::CharacterSheet_t::SHEET_CHR) )
 	{
@@ -17611,7 +17712,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		const int extraTextHeightForLowerCharacters = 4;
 		currentHeight += padyMid;
 		
-		if ( auto raceTooltip = tooltipFrame->findFrame("sheet race tooltip") )
+		if ( raceTooltip )
 		{
 			raceTooltip->setDisabled(false);
 			MainMenu::RaceDescriptions::update_details_text(*raceTooltip, stats[player.playernum]);
@@ -17659,6 +17760,178 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			raceTooltip->setSize(raceTooltipPos);
 			tooltipPos.w = raceTooltipPos.w + padxMid * 2;
 			currentHeight = std::max(raceTooltipPos.y + raceTooltipPos.h - extraTextHeightForLowerCharacters + heightOffset, 0);
+		}
+
+		tooltipPos.h = pady1 + currentHeight + pady2;
+		if ( tooltipJustify == PANEL_JUSTIFY_RIGHT )
+		{
+			tooltipPos.x = pos.x - tooltipPos.w;
+		}
+		else
+		{
+			tooltipPos.x = pos.x;
+		}
+		tooltipPos.y = pos.y;
+		if ( tooltipPos.y + tooltipPos.h > sheetFrame->getSize().h )
+		{
+			// keep on-screen
+			tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - sheetFrame->getSize().h);
+			tooltipFrame->setSize(tooltipPos);
+		}
+		tooltipFrame->setSize(tooltipPos);
+		imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+			skillsheetEffectBackgroundImages);
+	}
+	else if ( element == Player::CharacterSheet_t::SHEET_CHAR_CLASS )
+	{
+		auto tooltipTopLeft = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_LEFT].c_str());
+		tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+		auto tooltipTop = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP].c_str());
+		tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+		auto tooltipTopRight = tooltipFrame->findImage(skillsheetEffectBackgroundImages[TOP_RIGHT].c_str());
+		tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+		imageSetWidthHeight9x9(tooltipFrame, skillsheetEffectBackgroundImages);
+
+		int maxWidth = 260;
+		int minWidth = 0;
+		if ( getHoverTextString("stat_growth_min_tooltip_width") != defaultString )
+		{
+			minWidth = std::max(0, std::stoi(getHoverTextString("stat_growth_min_tooltip_width")));
+		}
+		if ( getHoverTextString("stat_growth_max_tooltip_width") != defaultString )
+		{
+			maxWidth = std::max(0, std::stoi(getHoverTextString("stat_growth_max_tooltip_width")));
+		}
+
+		const int padx = 16;
+		const int pady1 = 8;
+		const int pady2 = 4;
+		const int padxMid = 4;
+		const int padyMid = 8;
+		SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+		Monster race = HUMAN;
+		if ( stats[player.playernum]->appearance == 0 && stats[player.playernum]->playerRace != RACE_HUMAN )
+		{
+			race = getMonsterFromPlayerRace(stats[player.playernum]->playerRace);
+		}
+		Monster modifiedRace = stats[player.playernum]->type;
+		if ( arachnophobia_filter )
+		{
+			if ( modifiedRace == SPIDER )
+			{
+				modifiedRace = CRAB;
+			}
+			if ( race == SPIDER )
+			{
+				race = CRAB;
+			}
+		}
+
+		char titleBuf[64];
+		if ( player.entity && player.entity->effectShapeshift != 0 )
+		{
+			txt->setText(getHoverTextString("class_title_shapeshift").c_str());
+		}
+		else
+		{
+			txt->setText(getHoverTextString("class_title").c_str());
+		}
+		SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 2, maxWidth - padx * 2, 80 };
+		txt->setSize(txtPos);
+		if ( charsheetTooltipCache[player.playernum].textEntries[element].title != txt->getText() )
+		{
+			txt->reflowTextToFit(0);
+			charsheetTooltipCache[player.playernum].textEntries[element].title = txt->getText();
+		}
+		txt->setColor(hudColors.characterSheetHeadingText);
+		Font* actualFont = Font::get(txt->getFont());
+		int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+		txtPos.h = txtHeight + 4;
+		auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+			txt->getTextColor(), txt->getOutlineColor());
+		txtPos.w = txtGet->getWidth();
+		txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+		txt->setSize(txtPos);
+
+		tooltipPos.w = (txtPos.w + padx * 2);
+
+		std::map<int, std::pair<Field*, SDL_Rect>> valueSizes;
+
+		int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+		const int extraTextHeightForLowerCharacters = 4;
+		currentHeight += padyMid;
+
+		if ( classTooltip )
+		{
+			classTooltip->setDisabled(false);
+			auto statGrowths = classTooltip->findFrame("stat growths");
+			if ( player.entity )
+			{
+				MainMenu::ClassDescriptions::update_stat_growths(*statGrowths, client_classes[player.playernum], player.entity->effectShapeshift);
+			}
+			else
+			{
+				MainMenu::ClassDescriptions::update_stat_growths(*statGrowths, client_classes[player.playernum], 0);
+			}
+
+			SDL_Rect classTooltipPos = classTooltip->getSize();
+			classTooltipPos.w = statGrowths->getSize().w;
+			classTooltipPos.h = statGrowths->getSize().h;
+			classTooltipPos.x = tooltipPos.w / 2 - classTooltipPos.w / 2;
+			classTooltipPos.y = currentHeight;
+			classTooltip->setSize(classTooltipPos);
+
+			currentHeight += classTooltipPos.h;
+
+			std::string descText = "";
+			descText = getHoverTextString("stat_growth_info");
+			
+			{
+				currentHeight += padyMid;
+
+				div->pos.x = padx;
+				div->pos.y = currentHeight;
+				div->pos.w = txtPos.w;
+				div->disabled = false;
+
+				currentHeight += padyMid;
+
+				auto entry = characterSheetTooltipTextFields[player.playernum][1]; assert(entry);
+				entry->setDisabled(false);
+				char buf[512] = "";
+
+				std::string descTextFormatted = "\x1E ";
+				for ( auto s : descText )
+				{
+					descTextFormatted += s;
+					if ( s == '\n' )
+					{
+						descTextFormatted += "\x1E ";
+					}
+				}
+
+				snprintf(buf, sizeof(buf), "%s", descTextFormatted.c_str());
+				entry->setText(buf);
+
+				SDL_Rect entryPos = entry->getSize();
+				entryPos.x = padx;
+				entryPos.y = currentHeight;
+				entryPos.w = txtPos.w;
+				entry->setSize(entryPos);
+				if ( charsheetTooltipCache[player.playernum].textEntries[element].entry1 != entry->getText() )
+				{
+					entry->reflowTextToFit(0);
+					charsheetTooltipCache[player.playernum].textEntries[element].entry1 = entry->getText();
+				}
+				entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+				entry->setSize(entryPos);
+				entry->setColor(hudColors.characterSheetOffWhiteText);
+				currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+
+				currentHeight += padyMid / 4;
+				tooltipPos.h = pady1 + currentHeight + pady2;
+			}
 		}
 
 		tooltipPos.h = pady1 + currentHeight + pady2;
@@ -17832,6 +18105,25 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		charLevel->setSize(charLevelPos);
 		className->setSize(classNamePos);
 		//messagePlayer(0, "%d | %d", charLevelPos.x - startX, 198 - (classNamePos.x + classNamePos.w));
+
+		if ( selectedElement == SHEET_CHAR_CLASS && enableTooltips )
+		{
+			SDL_Rect tooltipPos = characterInfoFrame->getSize();
+			tooltipPos.y -= 4;
+			//tooltipPos.y += raceText->getSize().y;
+			Player::PanelJustify_t tooltipJustify = PANEL_JUSTIFY_RIGHT;
+			if ( (panelJustify == PANEL_JUSTIFY_LEFT && !bCompactView) || (panelJustify == PANEL_JUSTIFY_RIGHT && bCompactView) )
+			{
+				tooltipJustify = PANEL_JUSTIFY_LEFT;
+				tooltipPos.x += tooltipPos.w;
+			}
+			if ( bCompactView )
+			{
+				tooltipPos.y = 0;
+				tooltipPos.x += (tooltipJustify == PANEL_JUSTIFY_LEFT) ? 6 : -6;
+			}
+			updateCharacterSheetTooltip(selectedElement, tooltipPos, tooltipJustify);
+		}
 	}
 	if ( auto raceText = characterInnerFrame->findField("character race text") )
 	{
@@ -25145,7 +25437,7 @@ void Player::HUD_t::updateCursor()
 		int offset = ((ticks - cursor.lastUpdateTick) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2) ? largeOffset : smallOffset;
 		if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 		{
-			if ( player.GUI.dropdownMenu.bOpen )
+			if ( player.GUI.dropdownMenu.bOpen || player.GUI.activeModule == Player::GUI_t::MODULE_PORTRAIT )
 			{
 				// animate cursor
 			}
@@ -25773,6 +26065,7 @@ void Player::HUD_t::updateXPBar()
 	}
 
 	bool tempHideXP = false;
+	bool fadeOut = false;
 	if ( !levelUpAnimation[player.playernum].lvlUps.empty() && !levelUpAnimation[player.playernum].lvlUps[0].titleFinishAnim )
 	{
 		tempHideXP = true;
@@ -25782,13 +26075,26 @@ void Player::HUD_t::updateXPBar()
 	{
 		tempHideXP = true;
 	}
+	else if ( player.bUseCompactGUIHeight() && player.shootmode && !skillUpAnimation[player.playernum].skillUps.empty()
+		&& !(!levelUpAnimation[player.playernum].lvlUps.empty() && levelUpAnimation[player.playernum].lvlUps[0].titleFinishAnim) )
+	{
+		// hide xp in compact height, if skillup active and level up isn't playing
+		tempHideXP = true;
+		fadeOut = true;
+	}
 	if ( tempHideXP )
 	{
-		//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
-		//real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
-		//animHideXP += setpointDiff;
-		//animHideXP = std::min(1.0, animHideXP);
-		animHideXP = 1.0;
+		if ( fadeOut )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiff = fpsScale * std::max(.1, (1.0 - animHideXP)) / 2.5;
+			animHideXP += setpointDiff;
+			animHideXP = std::min(1.0, animHideXP);
+		}
+		else
+		{
+			animHideXP = 1.0;
+		}
 	}
 	else
 	{
@@ -32794,7 +33100,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		SDL_Rect closeBtnPos = closeBtn->getSize();
 		SDL_Rect bgImgPos = bgImgFrame->getSize();
-		closeBtnPos.x = bgImgPos.x + bgImgPos.w - 44;
+		closeBtnPos.x = bgImgPos.x + bgImgPos.w - 38;
 		closeBtnPos.y = bgImgPos.y + 22;
 		closeBtn->setSize(closeBtnPos);
 	}
@@ -37521,7 +37827,13 @@ void updateSkillUpFrame(const int player)
 	}
 
 	static ConsoleVariable<int> cvar_skillup_framey("/skillup_framey", 48);
-	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, *cvar_skillup_framey,
+	int framey = *cvar_skillup_framey;
+	if ( players[player]->bUseCompactGUIHeight() && players[player]->shootmode )
+	{
+		framey -= 28;
+		framey = std::max(4, framey);
+	}
+	SDL_Rect levelUpFramePos{ hud_t.hudFrame->getSize().w / 2 - frameWidth / 2, framey,
 		frameWidth, skillsFramePos.y + skillsFramePos.h };
 	levelUpFramePos.x += players[player]->camera_virtualx1();
 	levelUpFramePos.y += players[player]->camera_virtualy1();

@@ -114,12 +114,6 @@ extern int currentlevel;
 extern bool secretlevel;
 extern bool darkmap;
 extern int shaking, bobbing;
-extern SDL_Surface* title_bmp;
-extern SDL_Surface* titleDefault_bmp;
-extern SDL_Surface* logo_bmp;
-extern SDL_Surface* cursor_bmp;
-extern SDL_Surface* cross_bmp;
-extern SDL_Surface* selected_cursor_bmp;
 
 enum MessageType : Uint32 {
 	MESSAGE_COMBAT = 1u << 0, // damage received or given in combat
@@ -318,6 +312,7 @@ void drawAllPlayerCameras();
 
 // function prototypes for charclass.c:
 void initClass(int player);
+void initClassStats(const int classnum, void* myStats);
 void initShapeshiftHotbar(int player);
 void deinitShapeshiftHotbar(int player);
 bool playerUnlockedShamanSpell(int player, Item* item);

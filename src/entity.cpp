@@ -4864,11 +4864,8 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 	}
 
 	attack = BASE_MELEE_DAMAGE; // base attack strength
-	if ( myStats->weapon != nullptr )
-	{
-		attack += myStats->weapon->weaponGetAttack(myStats);
-	}
-	else if ( myStats->weapon == nullptr )
+	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
+	if ( myStats->weapon == nullptr || shapeshifted )
 	{
 		// bare handed.
 		if ( isPlayer )
@@ -4876,7 +4873,7 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
 			attack += (myStats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
 		}
-		if ( myStats->gloves )
+		if ( myStats->gloves && !shapeshifted )
 		{
 			int beatitude = myStats->gloves->beatitude;
 			if ( myStats->gloves->type == BRASS_KNUCKLES )
@@ -4898,7 +4895,12 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 			attack += 1 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 		}
 	}
-	if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+	else if ( myStats->weapon != nullptr )
+	{
+		attack += myStats->weapon->weaponGetAttack(myStats);
+	}
+
+	if ( !shapeshifted && myStats->weapon && myStats->weapon->type == TOOL_WHIP )
 	{
 		int atk = statGetSTR(myStats, my) + statGetDEX(myStats, my);
 		atk = std::min(atk / 2, atk);

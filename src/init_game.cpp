@@ -498,11 +498,6 @@ int initGame()
 		}
 
 		// load extraneous game resources
-		title_bmp = loadImage("images/system/title.png");
-		logo_bmp = loadImage("images/system/logo.png");
-		cursor_bmp = loadImage("images/system/cursor.png");
-		cross_bmp = loadImage("images/system/cross.png");
-		selected_cursor_bmp = loadImage("images/system/selectedcursor.png");
 		if (!loadInterfaceResources())
 		{
 			printlog("Failed to load interface resources.\n");
@@ -609,26 +604,6 @@ void deinitGame()
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	list_FreeAll(&removedEntities);
-	if ( title_bmp != nullptr )
-	{
-		SDL_FreeSurface(title_bmp);
-	}
-	if ( logo_bmp != nullptr )
-	{
-		SDL_FreeSurface(logo_bmp);
-	}
-	if ( cursor_bmp != nullptr )
-	{
-		SDL_FreeSurface(cursor_bmp);
-	}
-	if ( cross_bmp != nullptr )
-	{
-		SDL_FreeSurface(cross_bmp);
-	}
-	if ( selected_cursor_bmp != nullptr )
-	{
-		SDL_FreeSurface(selected_cursor_bmp);
-	}
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		list_FreeAll(&chestInv[i]);

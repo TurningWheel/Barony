@@ -62,6 +62,7 @@ namespace MainMenu {
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
+	ConsoleVariable<float> cvar_enemybar_scale("/enemybar_scale", 100.0);
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
@@ -517,6 +518,7 @@ namespace MainMenu {
 	    bool fast_restart = false;
 		float world_tooltip_scale = 100.f;
 		float world_tooltip_scale_splitscreen = 150.f;
+		float enemybar_scale = 100.f;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		LastCreatedCharacter lastCharacter;
@@ -541,6 +543,8 @@ namespace MainMenu {
 		bool staggered_split_enabled;
 		bool clipped_split_enabled;
 		float item_tooltip_height = 100.f;
+		int shootmode_crosshair = 0;
+		int shootmode_crosshair_opacity = 50;
 		bool hdr_enabled = true;
 		float fov;
 		float fps;
@@ -2535,6 +2539,7 @@ namespace MainMenu {
 		*cvar_fastRestart = fast_restart;
 		*cvar_worldtooltip_scale = world_tooltip_scale;
 		*cvar_worldtooltip_scale_splitscreen = world_tooltip_scale_splitscreen;
+		*cvar_enemybar_scale = enemybar_scale;
 		auto_hotbar_new_items = add_items_to_hotbar_enabled;
 		inventory_sorting.save();
 		lastCharacter.save();
@@ -2544,6 +2549,11 @@ namespace MainMenu {
         const float oldUIScale = uiScale;
         *ui_filter = ui_filter_enabled;
 		Player::WorldUI_t::tooltipHeightOffsetZ = (6 * (100 - item_tooltip_height)) / 100.f;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			playerSettings[i].shootmodeCrosshair = shootmode_crosshair;
+			playerSettings[i].shootmodeCrosshairOpacity = shootmode_crosshair_opacity;
+		}
 		*cvar_hdrEnabled = true;// hdr_enabled;
         uiScale = ui_scale / 100.f;
         result |= (oldUIFilter != *ui_filter || oldUIScale != uiScale) ?
@@ -2653,6 +2663,7 @@ namespace MainMenu {
 		settings.fast_restart = *cvar_fastRestart;
 		settings.world_tooltip_scale = *cvar_worldtooltip_scale;
 		settings.world_tooltip_scale_splitscreen = *cvar_worldtooltip_scale_splitscreen;
+		settings.enemybar_scale = *cvar_enemybar_scale;
 		settings.add_items_to_hotbar_enabled = auto_hotbar_new_items;
 		settings.inventory_sorting = InventorySorting::load();
 		settings.lastCharacter = LastCreatedCharacter::load();
@@ -2662,6 +2673,8 @@ namespace MainMenu {
         settings.ui_filter_enabled = *ui_filter;
 		settings.item_tooltip_height =
 			100.f * (Player::WorldUI_t::tooltipHeightOffsetZ - 6) / -6;
+		settings.shootmode_crosshair = playerSettings[0].shootmodeCrosshair;
+		settings.shootmode_crosshair_opacity = playerSettings[0].shootmodeCrosshairOpacity;
 		settings.hdr_enabled = true;// *cvar_hdrEnabled;
 		settings.show_messages_enabled = !disable_messages;
 		settings.show_messages = Messages::load();
@@ -2734,6 +2747,7 @@ namespace MainMenu {
 		settings.fast_restart = false;
 		settings.world_tooltip_scale = 100.f;
 		settings.world_tooltip_scale_splitscreen = 150.f;
+		settings.enemybar_scale = 100.f;
 		settings.add_items_to_hotbar_enabled = true;
 		settings.inventory_sorting = InventorySorting::reset();
 		settings.lastCharacter = LastCreatedCharacter::reset();
@@ -2758,6 +2772,8 @@ namespace MainMenu {
 		settings.fov = 60;
 		settings.fps = AUTO_FPS;
 		settings.item_tooltip_height = 100.f;
+		settings.shootmode_crosshair = 0;
+		settings.shootmode_crosshair_opacity = 50;
 		settings.hdr_enabled = true;
 		settings.audio_device = "";
 		settings.master_volume = 100.f;
@@ -2802,7 +2818,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 14;
+	    int version = 16;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2830,6 +2846,8 @@ namespace MainMenu {
         file->propertyVersion("ui_filter", version >= 7, ui_filter_enabled);
         file->propertyVersion("ui_scale", version >= 7, ui_scale);
 		file->propertyVersion("item_tooltip_height", version >= 11, item_tooltip_height);
+		file->propertyVersion("shootmode_crosshair", version >= 15, shootmode_crosshair);
+		file->propertyVersion("shootmode_crosshair_opacity", version >= 15, shootmode_crosshair_opacity);
 		file->property("show_messages_enabled", show_messages_enabled);
 		file->propertyVersion("message_filters", version >= 14, show_messages);
 		file->property("show_player_nametags_enabled", show_player_nametags_enabled);
@@ -2892,6 +2910,7 @@ namespace MainMenu {
             file->property("world_tooltip_scale", world_tooltip_scale);
             file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
         }
+		file->propertyVersion("enemybar_scale", version >= 16, enemybar_scale);
 		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
 		file->property("mouse_sensitivity", mouse_sensitivity);
 		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
@@ -5493,6 +5512,44 @@ bind_failed:
 		settingsSelect(*subwindow, setting_to_select);
 	}
 
+	static const std::vector<const char*> crosshairs =
+	{ 
+		"Dot",
+		"Dot (Large)",
+		"Plus (Small)",
+		"Plus (Medium)",
+		"Plus (Large)",
+		"Cross",
+		"Carat",
+		"Circle",
+		"Dots (3x)",
+		"Dots (4x)",
+		":)",
+		"@" };
+	static void settingsCrosshairType(Button& button) {
+		settingsOpenDropdown(button, "shootmode_crosshair", DropdownType::Short, [](Frame::entry_t& entry) {
+			soundActivate();
+
+		int index = 0;
+		for ( auto str : crosshairs )
+		{
+			if ( entry.name == str )
+			{
+				allSettings.shootmode_crosshair = index;
+				break;
+			}
+			++index;
+		}
+		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+		auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+		auto button = settings_subwindow->findButton("setting_shootmode_crosshair_dropdown_button"); assert(button);
+		auto dropdown = settings_subwindow->findFrame("setting_shootmode_crosshair_dropdown"); assert(dropdown);
+		button->setText(entry.name.c_str());
+		dropdown->removeSelf();
+		button->select();
+			});
+	}
+
 	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
 		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
@@ -5527,10 +5584,34 @@ bind_failed:
             "Scale the UI to a larger or smaller size. (Recommended values: 50%, 75%, or 100%)",
             allSettings.ui_scale, 50.f, 100.f, sliderPercent,
             [](Slider& slider){soundSlider(true); allSettings.ui_scale = floorf(slider.getValue());});
+#endif
+		y += settingsAddSlider(*settings_subwindow, y, "enemybar_scale", "Enemy Health Bar Scaling",
+			"Control size of in-world popups for enemy health bars.",
+			allSettings.enemybar_scale, 50, 100, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.enemybar_scale = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
+			"Control size of in-world popups for items, gravestones and NPC dialogue.",
+			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
+			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
+			allSettings.world_tooltip_scale_splitscreen, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "item_tooltip_height", "Item Tooltip Height",
+			"Adjust the vertical position of in-world item tooltip popups.",
+			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
+			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
+		y += settingsAddSlider(*settings_subwindow, y, "shootmode_crosshair_opacity", "Crosshair Opacity",
+			"Adjust the opacity of the crosshair.",
+			allSettings.shootmode_crosshair_opacity, 0, 100, sliderPercent, [
+			](Slider& slider) {soundSlider(true); allSettings.shootmode_crosshair_opacity = slider.getValue(); });
+		const char* selected_mode = crosshairs[allSettings.shootmode_crosshair];
+		y += settingsAddDropdown(*settings_subwindow, y, "shootmode_crosshair", "Crosshair Type", "Adjust the appearance of the crosshair.",
+			false, crosshairs, selected_mode, settingsCrosshairType);
+
+#ifndef NINTENDO
         y += settingsAddBooleanOption(*settings_subwindow, y, "ui_filter", "Filter Scaling",
             "Scaled UI elements will have softer edges if this is enabled, at the cost of some sharpness.",
             allSettings.ui_filter_enabled, [](Button& button){soundToggle(); allSettings.ui_filter_enabled = button.isPressed();});
 #endif
+
 		y += settingsAddCustomize(*settings_subwindow, y, "minimap_settings", "Minimap Settings",
 			"Customize the appearance of the in-game minimap.",
 			[](Button& button){allSettings.minimap = Minimap::load(); settingsMinimap(button);});
@@ -5541,11 +5622,34 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_player_nametags", "Show Player Nametags",
 			"Display the name of each player character above their avatar.",
 			allSettings.show_player_nametags_enabled, [](Button& button){soundToggle(); allSettings.show_player_nametags_enabled = button.isPressed();});
-		y += settingsAddSlider(*settings_subwindow, y, "item_tooltip_height", "Item Tooltip Height",
-			"Adjust the vertical position of in-world item tooltip popups.",
-			allSettings.item_tooltip_height, 50, 100, sliderPercent, [
-			](Slider& slider) {soundSlider(true); allSettings.item_tooltip_height = slider.getValue(); });
 
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
+		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
+			"Disable the appearance of blood and other explicit kinds of content in the game",
+			allSettings.content_control_enabled, [](Button& button) {soundToggle(); allSettings.content_control_enabled = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
+			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
+			allSettings.colorblind_mode_enabled, [](Button& button) {soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed(); });
+		const char* arachnophobia_desc;
+		if ( intro ) {
+			arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
+		}
+		else {
+			arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
+		}
+		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
+			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
+			[](Button& button) {soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
+			"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
+			allSettings.shaking_enabled, [](Button& button) {soundToggle(); allSettings.shaking_enabled = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
+			"Toggle the camera's ability to bob steadily as the player moves.",
+			allSettings.bobbing_enabled, [](Button& button) {soundToggle(); allSettings.bobbing_enabled = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
+			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
+			allSettings.light_flicker_enabled, [](Button& button) {soundToggle(); allSettings.light_flicker_enabled = button.isPressed(); });
 #if 0
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
@@ -5555,26 +5659,61 @@ bind_failed:
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Boolean, "fast_restart"},
+
+			// inventory options
 			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
 			{Setting::Type::Boolean, "use_on_release"},
+
+			// hud options
             {Setting::Type::Slider, "ui_scale"},
+			{Setting::Type::Slider, "enemybar_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
+			{Setting::Type::Slider, "item_tooltip_height"},
+			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
+			{Setting::Type::Dropdown, "shootmode_crosshair"},
             {Setting::Type::Boolean, "ui_filter"},
+
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
-			{Setting::Type::Slider, "item_tooltip_height"},
+
+			// accessibility
+			{Setting::Type::Boolean, "content_control"},
+			{Setting::Type::Boolean, "colorblind_mode"},
+			{Setting::Type::Boolean, "arachnophobia_filter"},
+			{Setting::Type::Boolean, "shaking"},
+			{Setting::Type::Boolean, "bobbing"},
+			{Setting::Type::Boolean, "light_flicker"},
 			//{Setting::Type::Boolean, "show_hud"},
         });
 #else
 		hookSettings(*settings_subwindow,
 			{{Setting::Type::Boolean, "fast_restart"},
+			// inventory options
 			{Setting::Type::Boolean, "add_items_to_hotbar"},
 			{Setting::Type::Customize, "inventory_sorting"},
+
+			// hud options
+			{Setting::Type::Slider, "enemybar_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale"},
+			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
+			{Setting::Type::Slider, "item_tooltip_height"},
+			{Setting::Type::Slider, "shootmode_crosshair_opacity"},
+			{Setting::Type::Dropdown, "shootmode_crosshair"},
+
 			{Setting::Type::Customize, "minimap_settings"},
 			{Setting::Type::BooleanWithCustomize, "show_messages"},
 			{Setting::Type::Boolean, "show_player_nametags"},
-			{Setting::Type::Slider, "item_tooltip_height"},
+
+			// accessibility
+			{Setting::Type::Boolean, "content_control"},
+			{Setting::Type::Boolean, "colorblind_mode"},
+			{Setting::Type::Boolean, "arachnophobia_filter"},
+			{Setting::Type::Boolean, "shaking"},
+			{Setting::Type::Boolean, "bobbing"},
+			{Setting::Type::Boolean, "light_flicker"},
         });
 #endif
 
@@ -5688,40 +5827,6 @@ bind_failed:
 			"For splitscreen with two-players: stagger each viewport so they each rest in a corner of the display.",
 			allSettings.staggered_split_enabled, [](Button& button){soundToggle(); allSettings.staggered_split_enabled = button.isPressed();});
 
-		y += settingsAddSubHeader(*settings_subwindow, y, "accessibility", "Accessibility");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "content_control", "Content Control",
-			"Disable the appearance of blood and other explicit kinds of content in the game",
-			allSettings.content_control_enabled, [](Button& button){soundToggle(); allSettings.content_control_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "colorblind_mode", "Colorblind Mode",
-			"Change the appearance of certain UI elements to improve visibility for certain colorblind individuals.",
-			allSettings.colorblind_mode_enabled, [](Button& button){soundToggle(); allSettings.colorblind_mode_enabled = button.isPressed();});
-		const char* arachnophobia_desc;
-		if (intro) {
-		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans.";
-		} else {
-		    arachnophobia_desc = "Replace all giant spiders in the game with hostile crustaceans. (Updates at end of current dungeon level)";
-		}
-		y += settingsAddBooleanOption(*settings_subwindow, y, "arachnophobia_filter", "Arachnophobia Filter",
-			arachnophobia_desc, allSettings.arachnophobia_filter_enabled,
-			[](Button& button){soundToggle(); allSettings.arachnophobia_filter_enabled = button.isPressed();});
-		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale", "Popup Scaling",
-			"Control size of in-world popups for items, gravestones and NPC dialogue.",
-			allSettings.world_tooltip_scale, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale = slider.getValue(); });
-		y += settingsAddSlider(*settings_subwindow, y, "world_tooltip_scale_splitscreen", "Popup Scaling (Splitscreen)",
-			"Control size of in-world popups for items, gravestones and NPC dialogue in splitscreen.",
-			allSettings.world_tooltip_scale_splitscreen, 100, 200, sliderPercent, [](Slider& slider) {soundSlider(true); allSettings.world_tooltip_scale_splitscreen = slider.getValue(); });
-
-		y += settingsAddSubHeader(*settings_subwindow, y, "effects", "Effects");
-		y += settingsAddBooleanOption(*settings_subwindow, y, "shaking", "Shaking",
-			"Toggle the camera's ability to twist and roll when the player stumbles or receives damage.",
-			allSettings.shaking_enabled, [](Button& button){soundToggle(); allSettings.shaking_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "bobbing", "Bobbing",
-			"Toggle the camera's ability to bob steadily as the player moves.",
-			allSettings.bobbing_enabled, [](Button& button){soundToggle(); allSettings.bobbing_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
-			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
-			allSettings.light_flicker_enabled, [](Button& button){soundToggle(); allSettings.light_flicker_enabled = button.isPressed();});
-
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,{
             {Setting::Type::Dropdown, "resolution"},
@@ -5736,14 +5841,7 @@ bind_failed:
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
-			{Setting::Type::Boolean, "content_control"},
-			{Setting::Type::Boolean, "colorblind_mode"},
-			{Setting::Type::Boolean, "arachnophobia_filter"},
-			{Setting::Type::Slider, "world_tooltip_scale"},
-			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
-			{Setting::Type::Boolean, "shaking"},
-			{Setting::Type::Boolean, "bobbing"},
-			{Setting::Type::Boolean, "light_flicker"},
+
 			});
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Dropdown, "resolution"});
@@ -5755,14 +5853,6 @@ bind_failed:
 			{Setting::Type::Boolean, "vertical_split"},
 			{Setting::Type::Boolean, "clipped_split"},
 			{Setting::Type::Boolean, "staggered_split"},
-			{Setting::Type::Boolean, "content_control"},
-			{Setting::Type::Boolean, "colorblind_mode"},
-			{Setting::Type::Boolean, "arachnophobia_filter"},
-			{Setting::Type::Slider, "world_tooltip_scale"},
-			{Setting::Type::Slider, "world_tooltip_scale_splitscreen"},
-			{Setting::Type::Boolean, "shaking"},
-			{Setting::Type::Boolean, "bobbing"},
-			{Setting::Type::Boolean, "light_flicker"},
 			});
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Slider, "gamma"});
@@ -10009,12 +10099,19 @@ failed:
 		static constexpr Uint32 bad = makeColorRGB(255, 64, 0);
 
 		auto& classes = d["descriptions"];
+		Stat tmpStats(0);
 		for ( auto it = classes.MemberBegin(); it != classes.MemberEnd(); ++it )
 		{
 			std::string classname = it->name.GetString();
 			int key = it->value["id"].GetInt();
 			auto& classEntry = data[key];
 			classEntry.internal_name = classname;
+
+			tmpStats.clearStats();
+			initClassStats(key, &tmpStats);
+			classEntry.hp = tmpStats.HP;
+			classEntry.mp = tmpStats.MP;
+
 			for ( auto it2 = it->value["desc"].Begin(); it2 != it->value["desc"].End(); )
 			{
 				std::string line = (it2->GetString());
@@ -10029,6 +10126,10 @@ failed:
 				{
 					classEntry.text += '\n';
 				}
+			}
+			for ( auto it2 = it->value["line_spacing"].Begin(); it2 != it->value["line_spacing"].End(); ++it2 )
+			{
+				classEntry.linePaddings.push_back(it2->GetInt());
 			}
 
 			int c = 0;
@@ -10455,6 +10556,90 @@ failed:
 						}
 					}
 				}
+			}
+		}
+	}
+
+	void ClassDescriptions::update_stat_growths(Frame& card, int classnum, int shapeshiftedType)
+	{
+		// stats definitions
+		const char* class_stats_text[] = {
+			"STR", "DEX", "CON", "INT", "PER", "CHR"
+		};
+		constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+
+		switch ( shapeshiftedType )
+		{
+			case RAT:
+				classnum = 100;
+				break;
+			case SPIDER:
+				classnum = 101;
+				break;
+			case TROLL:
+				classnum = 102;
+				break;
+			case CREATURE_IMP:
+				classnum = 103;
+				break;
+			default:
+				break;
+		}
+
+		for ( int c = 0; c < num_class_stats; ++c )
+		{
+			static char buf[16];
+			snprintf(buf, sizeof(buf), "%d", c);
+			auto field = card.findField(buf);
+			field->setColor(ClassDescriptions::data[classnum].statRatings[c]);
+
+			char buf2[32];
+			snprintf(buf2, sizeof(buf2), "stat img bottom %d", c);
+			auto class_stat_img_bottom = card.findImage(buf2);
+			if ( !class_stat_img_bottom )
+			{
+				return;
+			}
+
+			if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "bad" )
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "poor" )
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo1.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "decent" )
+			{
+				//class_stat_img_top->disabled = false;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi1.png";
+			}
+			else if ( ClassDescriptions::data[classnum].statRatingsStrings[c] == "good" )
+			{
+				//class_stat_img_top->disabled = false;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_hi2.png";
+			}
+			else
+			{
+				//class_stat_img_top->disabled = true;
+				class_stat_img_bottom->disabled = false;
+
+				class_stat_img_bottom->path =
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_neutral.png";
 			}
 		}
 	}
@@ -12614,10 +12799,16 @@ failed:
 			    } else {
 			        field.addColorToLine(0, color_dlc2);
 			    }
+
+				field.clearIndividualLinePadding();
+				for ( auto line = 0; line < ClassDescriptions::data[i].linePaddings.size(); ++line )
+				{
+					field.setIndividualLinePadding(line, ClassDescriptions::data[i].linePaddings[line]);
+				}
 		    };
 
 		    auto class_desc = card->addField("class_desc", 1024);
-		    class_desc->setSize(SDL_Rect{42, 68, 240, 218});
+		    class_desc->setSize(SDL_Rect{42, 68, 240, 220});
 		    class_desc->setFont(smallfont_no_outline);
 		    class_desc->setTickCallback([](Widget& widget){class_desc_fn(*static_cast<Field*>(&widget), widget.getOwner());});
 		    (*class_desc->getTickCallback())(*class_desc);
@@ -12722,12 +12913,60 @@ failed:
 				(*class_stat->getTickCallback())(*class_stat);
 		    }
 
+			// hpmp header
+			{
+				SDL_Rect hpmp_size{ 48, 339, 52, 44 };
+				auto hpmp_header = card->addField("hpmp_header", 32);
+				hpmp_header->setFont(smallfont_outline);
+				hpmp_header->setColor(makeColorRGB(209, 166, 161));
+				hpmp_header->setText("HP:\nMP:");
+				hpmp_header->setHJustify(Field::justify_t::LEFT);
+				hpmp_header->setVJustify(Field::justify_t::TOP);
+				hpmp_header->setSize(hpmp_size);
+				hpmp_header->setPaddingPerLine(-4);
+
+				static constexpr int hpmp_buf_size = 32;
+				static auto hpmp_fn = [](Field& field, int index) {
+					const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+					char buf[hpmp_buf_size];
+					snprintf(buf, sizeof(buf), "%d\n%d",
+						ClassDescriptions::data[i].hp,
+						ClassDescriptions::data[i].mp);
+					field.setText(buf);
+				};
+
+				auto hpmp_values = card->addField("hpmp_values", 128);
+				hpmp_size.x += 32;
+				if ( false )
+				{
+					hpmp_size.y -= 3;
+					hpmp_values->setFont("fonts/PixelMaz_monospace.ttf#32#2");
+					hpmp_values->setPaddingPerLine(-10);
+				}
+				else
+				{
+					hpmp_values->setFont(smallfont_outline);
+					hpmp_values->setPaddingPerLine(-4);
+				}
+				hpmp_values->setColor(makeColorRGB(209, 166, 161));
+				hpmp_values->setText("20\n20");
+				hpmp_values->setHJustify(Field::justify_t::RIGHT);
+				if ( hpmp_values->getHJustify() == Field::justify_t::RIGHT )
+				{
+					hpmp_size.x -= 26;
+				}
+				hpmp_values->setVJustify(Field::justify_t::TOP);
+				hpmp_values->setSize(hpmp_size);
+				hpmp_values->setTickCallback([](Widget& widget) {hpmp_fn(*static_cast<Field*>(&widget), widget.getOwner()); });
+				(*hpmp_values->getTickCallback())(*hpmp_values);
+			}
+
 		    // difficulty header
-		    constexpr SDL_Rect difficulty_size{82, 339, 160, 44};
+		    constexpr SDL_Rect difficulty_size{115, 339, 158, 44};
 		    auto difficulty_header = card->addField("difficulty_header", 128);
 		    difficulty_header->setFont(smallfont_outline);
 		    difficulty_header->setColor(makeColorRGB(209, 166, 161));
-		    difficulty_header->setText("Survival\nComplexity");
+		    difficulty_header->setText("Survival:\nComplexity:");
 		    difficulty_header->setHJustify(Field::justify_t::LEFT);
 		    difficulty_header->setVJustify(Field::justify_t::TOP);
 		    difficulty_header->setSize(difficulty_size);
