@@ -124,7 +124,7 @@ namespace MainMenu {
 #endif
                 {"Hotbar Down / Cancel", hiddenBinding, "DpadY+", emptyBinding},
 #ifdef NINTENDO
-                {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
+                {"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #else
 				{"Interact Tooltip Next", "R", "DpadY+", emptyBinding },
 #endif

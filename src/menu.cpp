@@ -1564,8 +1564,10 @@ void handleTutorialPauseMenu()
 
 -------------------------------------------------------------------------------*/
 
-void handleMainMenu(bool mode)
+static void handleMainMenu(bool mode)
 {
+	// deprecated
+#if 0
 	int x, c;
 	//int y;
 	bool b;
@@ -9438,6 +9440,7 @@ void handleMainMenu(bool mode)
 			fadealpha = std::min(fadealpha + 2, 255);
 		}
 	}
+#endif
 }
 
 void doQuitGame() {

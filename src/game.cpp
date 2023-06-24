@@ -6735,17 +6735,8 @@ int main(int argc, char** argv)
 							list_RemoveNode(light->node);
 						}
 
-						if (newui)
-						{
-							MainMenu::doMainMenu(!intro);
-							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
-						}
-						else
-						{
-							handleMainMenu(intro);
-							UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
-						}
-
+						MainMenu::doMainMenu(!intro);
+						UIToastNotificationManager.drawNotifications(MainMenu::isCutsceneActive(), true); // draw this before the cursor
                         framesProcResult = doFrames();
 
 #ifdef USE_IMGUI
@@ -7018,15 +7009,7 @@ int main(int argc, char** argv)
 
 				if ( gamePaused )
 				{
-					// handle menu
-					if (newui)
-					{
-						MainMenu::doMainMenu(!intro);
-					}
-					else
-					{
-						handleMainMenu(intro);
-					}
+					MainMenu::doMainMenu(!intro);
 				}
 				else
 				{

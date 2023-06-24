@@ -11,9 +11,6 @@
 
 #pragma once
 
-// main menu code
-void handleMainMenu(bool mode);
-
 #define NUMSUBTITLES 30
 extern int subtitleCurrent;
 extern bool subtitleVisible;
