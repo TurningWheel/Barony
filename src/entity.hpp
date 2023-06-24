@@ -899,6 +899,19 @@ public:
 			case SUCCUBUS:
 				succubusChooseWeapon(target, dist);
 				break;
+			case SHOPKEEPER:
+				if ( target )
+				{
+					if ( Stat* targetStats = target->getStats() )
+					{
+						if ( targetStats->type == SHOPKEEPER && myStats->weapon && myStats->weapon->type == SPELLBOOK_DRAIN_SOUL )
+						{
+							// gentlemans agreement to shoot bleed
+							myStats->weapon->type = SPELLBOOK_BLEED;
+						}
+					}
+				}
+				break;
 			default:
 				break;
 		}
