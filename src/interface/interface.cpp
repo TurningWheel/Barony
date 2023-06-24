@@ -17857,6 +17857,24 @@ void buttonFeatherUpdateSelectorOnHighlight(const int player, Button* button)
 	}
 }
 
+void sliderFeatherUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_FEATHER);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_FEATHER )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_FEATHER);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
 void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 {
 	const int playernum = parentGUI.getPlayer();
@@ -19358,6 +19376,10 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 
 	if ( scrollAmount > 0 )
 	{
+		if ( !slider->isDisabled() && !usingGamepad )
+		{
+			sliderFeatherUpdateSelectorOnHighlight(playernum, slider);
+		}
 		if ( slider->isCurrentlyPressed() )
 		{
 			auto val = slider->getValue() / 100.0;

@@ -31523,6 +31523,24 @@ void buttonSkillsheetUpdateSelectorOnHighlight(const int player, Button* button)
 	}
 }
 
+void sliderSkillsheetUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SKILLS_LIST);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SKILLS_LIST )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SKILLS_LIST);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
 static ConsoleVariable<bool> cvar_skillsheet_optimise("/skillsheet_optimise", true);
 void Player::SkillSheet_t::processSkillSheet()
 {
@@ -32982,6 +33000,11 @@ void Player::SkillSheet_t::processSkillSheet()
 			reblitFrame = true;
 		}
 		scrollArea->setSize(scrollAreaPos);
+
+		if ( !slider->isDisabled() && inputs.getVirtualMouse(player.playernum)->draw_cursor )
+		{
+			sliderSkillsheetUpdateSelectorOnHighlight(player.playernum, slider);
+		}
 	}
 
 	if ( oldHighlightedSkill != highlightedSkill )
@@ -33212,6 +33235,24 @@ void buttonSpellUpdateSelectorOnHighlight(const int player, Button* button)
 			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 		}
 		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void sliderSpellUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_SPELLS);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_SPELLS )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
 		// make sure to adjust absolute size to camera viewport
 		pos.x -= players[player]->camera_virtualx1();
 		pos.y -= players[player]->camera_virtualy1();
@@ -33517,6 +33558,10 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( scrollAmount > 0 )
 	{
+		if ( !slider->isDisabled() && !usingGamepad )
+		{
+			sliderSpellUpdateSelectorOnHighlight(player.playernum, slider);
+		}
 		if ( slider->isCurrentlyPressed() )
 		{
 			auto val = slider->getValue() / 100.0;
