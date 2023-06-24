@@ -974,6 +974,101 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				}
 			}
 		}
+		else
+		{
+			bool forceFurnitureDamage = false;
+			if ( parent )
+			{
+				Stat* casterStats = parent->getStats();
+				if ( casterStats && casterStats->type == SHOPKEEPER )
+				{
+					forceFurnitureDamage = true;
+				}
+			}
+
+			if ( forceFurnitureDamage )
+			{
+				if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+					damage /= (1 + (int)resistance);
+
+					hit.entity->colliderHandleDamageMagic(damage, my, parent);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
+					}
+					if ( !(my.actmagicIsOrbiting == 2) )
+					{
+						my.removeLightField();
+						list_RemoveNode(my.mynode);
+					}
+					return;
+				}
+				else if ( hit.entity->behavior == &actChest )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					damage /= (1 + (int)resistance);
+					hit.entity->chestHandleDamageMagic(damage, my, parent);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
+					}
+					if ( !(my.actmagicIsOrbiting == 2) )
+					{
+						my.removeLightField();
+						list_RemoveNode(my.mynode);
+					}
+					return;
+				}
+				else if ( hit.entity->behavior == &actFurniture )
+				{
+					int damage = element.damage;
+					damage += (my.actmagicSpellbookBonus * damage);
+					damage /= (1 + (int)resistance);
+					hit.entity->furnitureHealth -= damage;
+					if ( parent )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							switch ( hit.entity->furnitureType )
+							{
+							case FURNITURE_CHAIR:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
+								updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
+								updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
+								updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
+								updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
+								updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					playSoundEntity(hit.entity, 28, 128);
+					if ( my.actmagicProjectileArc > 0 )
+					{
+						spawnMagicTower(parent, my.x, my.y, SPELL_DRAIN_SOUL, nullptr);
+					}
+				}
+			}
+		}
 		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
 	}
 	else

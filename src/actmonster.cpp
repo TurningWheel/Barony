@@ -5168,6 +5168,21 @@ timeToGoAgain:
 											}
 										}
 									}
+									else if ( hit.entity->behavior == &actFurniture && myStats->type == MINOTAUR )
+									{
+										hit.entity->furnitureHealth = 0;
+										playSoundEntity(hit.entity, 28, 64);
+									}
+									else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
+									{
+										hit.entity->skill[3] = 0; // chestHealth
+										playSoundEntity(hit.entity, 28, 64);
+									}
+									else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
+									{
+										hit.entity->colliderCurrentHP = 0;
+										playSoundEntity(hit.entity, 28, 64);
+									}
 									else if ( hit.entity->behavior == &actFurniture )
 									{
 										// break it down!
@@ -5182,20 +5197,8 @@ timeToGoAgain:
 												hit.entity->furnitureHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
 												hit.entity->furnitureHealth = std::max(hit.entity->furnitureHealth, 0);
 											}
-											if ( myStats->type == MINOTAUR )
-											{
-												hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
-											}
 											playSoundEntity(hit.entity, 28, 64);
 										}
-									}
-									else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
-									{
-										hit.entity->skill[3] = 0; // chestHealth
-									}
-									else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
-									{
-										hit.entity->colliderCurrentHP = 0;
 									}
 									else if ( hit.entity->behavior == &actBoulder && !hit.entity->flags[PASSABLE] && myStats->type == MINOTAUR )
 									{
