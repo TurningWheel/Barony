@@ -33473,13 +33473,17 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 			player.inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
 			const real_t fpsScale = getFPSScale(60.0);
 			real_t setpointDiff = 0.0;
+
+			// slightly faster on gamepad
+			static ConsoleVariable<float> cvar_spell_slider_speed("/spell_slider_speed", 1.f);
+			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.25f : 0.f)));
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
-				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / factor;
 			}
 			else
 			{
-				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / 3.0;
+				setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint - scrollAnimateX)) / factor;
 			}
 			scrollAnimateX += setpointDiff;
 			if ( setpointDiff > 0.0 )
@@ -33513,7 +33517,20 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 	if ( scrollAmount > 0 )
 	{
-		slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+		if ( slider->isCurrentlyPressed() )
+		{
+			auto val = slider->getValue() / 100.0;
+			int animX = val * scrollAmount;
+			animX /= player.inventoryUI.getSlotSize();
+			animX *= player.inventoryUI.getSlotSize();
+
+			scrollSetpoint = animX;
+			scrollSetpoint = std::min(scrollSetpoint, scrollAmount);
+		}
+		else
+		{
+			slider->setValue((scrollAnimateX / scrollAmount) * 100.0);
+		}
 	}
 	else
 	{
