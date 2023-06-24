@@ -4120,6 +4120,9 @@ void StatueManager_t::readStatueFromFile(int index, std::string filename)
 	if ( PHYSFS_getRealDir(fileName.c_str()) )
 	{
 		std::string inputPath = PHYSFS_getRealDir(fileName.c_str());
+		if (!inputPath.empty()) {
+			inputPath.append(PHYSFS_getDirSeparator());
+		}
 		inputPath.append(fileName);
 
 		File* fp = FileIO::open(inputPath.c_str(), "rb");
