@@ -166,7 +166,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				}
 				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
 				{
-					if ( tooltip->worldTooltipRequiresButtonHeld == 1 )
+					if ( tooltip->worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
 					{
 						if ( input.binaryHeldToggle("Use") )
 						{

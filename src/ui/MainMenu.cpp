@@ -62,6 +62,7 @@ namespace MainMenu {
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
+	ConsoleVariable<bool> cvar_hold_to_activate("/hold_to_activate", true);
 	ConsoleVariable<float> cvar_enemybar_scale("/enemybar_scale", 100.0);
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
@@ -537,6 +538,7 @@ namespace MainMenu {
 		bool shaking_enabled;
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
+		bool hold_to_activate_enabled;
         struct Video video;
 		bool use_frame_interpolation = true;
 		bool vertical_split_enabled;
@@ -2569,6 +2571,7 @@ namespace MainMenu {
 		shaking = shaking_enabled;
 		bobbing = bobbing_enabled;
 		flickerLights = light_flicker_enabled;
+		*cvar_hold_to_activate = hold_to_activate_enabled;
 		result |= video.save() ? VideoRefresh::Video : VideoRefresh::None;
 		*vertical_splitscreen = vertical_split_enabled;
 		*staggered_splitscreen = staggered_split_enabled;
@@ -2687,6 +2690,7 @@ namespace MainMenu {
 		settings.shaking_enabled = shaking;
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
+		settings.hold_to_activate_enabled = *cvar_hold_to_activate;
 		settings.video = Video::load();
 		settings.vertical_split_enabled = *vertical_splitscreen;
 		settings.staggered_split_enabled = *staggered_splitscreen;
@@ -2764,6 +2768,7 @@ namespace MainMenu {
 		settings.shaking_enabled = true;
 		settings.bobbing_enabled = true;
 		settings.light_flicker_enabled = true;
+		settings.hold_to_activate_enabled = true;
 		settings.video = Video::reset();
 		settings.vertical_split_enabled = false;
 		settings.clipped_split_enabled = false;
@@ -2818,7 +2823,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 16;
+	    int version = 17;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2859,6 +2864,7 @@ namespace MainMenu {
 		file->property("shaking_enabled", shaking_enabled);
 		file->property("bobbing_enabled", bobbing_enabled);
 		file->property("light_flicker_enabled", light_flicker_enabled);
+		file->propertyVersion("hold_to_activate_enabled", version >= 17, hold_to_activate_enabled);
         if (version >= 1) {
             file->property("video", video);
             file->property("vertical_split_enabled", vertical_split_enabled);
@@ -5650,6 +5656,9 @@ bind_failed:
 		y += settingsAddBooleanOption(*settings_subwindow, y, "light_flicker", "Light Flicker",
 			"Toggle the flickering appearance of torches and other light fixtures in the game world.",
 			allSettings.light_flicker_enabled, [](Button& button) {soundToggle(); allSettings.light_flicker_enabled = button.isPressed(); });
+		y += settingsAddBooleanOption(*settings_subwindow, y, "hold_to_activate", "Hold To Activate Exits",
+			"Toggle to change dungeon exits requiring long hold of the \"Use\" binding.",
+			allSettings.hold_to_activate_enabled, [](Button& button) {soundToggle(); allSettings.hold_to_activate_enabled = button.isPressed(); });
 #if 0
 		y += settingsAddBooleanOption(*settings_subwindow, y, "show_hud", "Show HUD",
 			"Toggle the display of health and other status bars in game when the inventory is closed.",
@@ -5686,6 +5695,7 @@ bind_failed:
 			{Setting::Type::Boolean, "shaking"},
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
+			{Setting::Type::Boolean, "hold_to_activate"},
 			//{Setting::Type::Boolean, "show_hud"},
         });
 #else
@@ -5714,6 +5724,7 @@ bind_failed:
 			{Setting::Type::Boolean, "shaking"},
 			{Setting::Type::Boolean, "bobbing"},
 			{Setting::Type::Boolean, "light_flicker"},
+			{Setting::Type::Boolean, "hold_to_activate"},
         });
 #endif
 

@@ -3475,7 +3475,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		parent->highlightForUI = 1.0;
 
-		if ( tooltip.worldTooltipRequiresButtonHeld == 1 )
+		if ( tooltip.worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
 		{
 			interactText = language[3998]; // "(Hold) ";
 		}
