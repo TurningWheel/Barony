@@ -2524,17 +2524,10 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 	if (display_id >= 0 && display_id < displays) {
 		auto& bound = displayBounds[display_id];
 		if (fullscreen) {
-#ifdef WINDOWS
-			x = bound.x;
-			y = bound.y;
-			w = std::min(bound.w, w);
-			h = std::min(bound.h, h);
-#else
 			x = bound.x;
 			y = bound.y;
 			w = bound.w;
 			h = bound.h;
-#endif
 		}
 		else {
             //w = std::min(bound.w, w);
@@ -2572,7 +2565,8 @@ bool initVideo()
 
 	2022-11-16
 
-	Fullscreen modes in SDL2 are absolutely broken right now on all platforms besides Windows. We are experiencing:
+	Fullscreen video modes in SDL2 are absolutely broken right now on all platforms besides (some) Windows configs.
+    We are experiencing:
 
 	- display server crashes when changing video mode (must be reset in a desktop properties window)
 	- severe visual glitches when reverting to windowed mode in fullscreen desktop
@@ -2600,12 +2594,10 @@ bool initVideo()
 #ifdef NINTENDO
     	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
 #else
-#ifdef WINDOWS
 	    if ( fullscreen )
 	    {
-		    flags |= SDL_WINDOW_FULLSCREEN;
+		    flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	    }
-#endif
 	    if ( borderless )
 	    {
 		    flags |= SDL_WINDOW_BORDERLESS;
@@ -2622,7 +2614,7 @@ bool initVideo()
 	}
 	else
 	{
-	    SDL_SetWindowFullscreen(screen, 0);
+	    SDL_SetWindowFullscreen(screen, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 
 		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
 
@@ -2630,19 +2622,21 @@ bool initVideo()
 		SDL_SetWindowBordered(screen, borderless ? SDL_bool::SDL_FALSE : SDL_bool::SDL_TRUE);
 		SDL_SetWindowPosition(screen, screen_x, screen_y);
 		SDL_SetWindowSize(screen, screen_width, screen_height);
-        SDL_GL_GetDrawableSize(screen, &xres, &yres);
-        printlog("set window size to %dx%d", xres, yres);
+        if (!fullscreen) {
+            SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        }
+        printlog("set resolution to %dx%d, window size: %dx%d", xres, yres, screen_width, screen_height);
 
-#ifdef WINDOWS
-		if (fullscreen) {
+        // old fullscreen behavior changes video mode.
+        // not anymore.
+		/*if (fullscreen) {
 			SDL_DisplayMode mode;
 			SDL_GetDesktopDisplayMode(display_id, &mode);
 			mode.w = xres;
 			mode.h = yres;
 			SDL_SetWindowDisplayMode(screen, &mode);
             SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
-		}
-#endif
+		}*/
 	}
 
 	if ( !renderer )
@@ -2669,8 +2663,10 @@ bool initVideo()
         const float factorX = (float)w1 / w2;
         const float factorY = (float)h1 / h2;
         SDL_SetWindowSize(screen, screen_width / factorX, screen_height / factorY);
-        SDL_GL_GetDrawableSize(screen, &xres, &yres);
-        printlog("set window size to %dx%d", xres, yres);
+        if (!fullscreen) {
+            SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        }
+        printlog("set resolution to %dx%d, window size: %dx%d", xres, yres, screen_width, screen_height);
         
         // setup opengl
         GL_CHECK_ERR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));

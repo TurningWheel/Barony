@@ -880,10 +880,17 @@ void glEndCamera(view_t* camera, bool useHDR)
     const int fbIndex = camera->drawnFrames % numFbs;
     
     if (hdr) {
-        // update viewport
         camera->fb[fbIndex].unbindForWriting();
         GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
-        GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
+        
+        // update viewport
+        int winw, winh;
+        SDL_GL_GetDrawableSize(screen, &winw, &winh);
+        const int x = (camera->winx * winw) / xres;
+        const int y = winh - ((camera->winh - camera->winy) * winh) / yres;
+        const int w = (camera->winw * winw) / xres;
+        const int h = (camera->winh * winh) / yres;
+        GL_CHECK_ERR(glViewport(x, y, w, h));
         
         // calculate luminance
         camera->fb[fbIndex].bindForReading();

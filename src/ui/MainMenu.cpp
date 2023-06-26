@@ -5743,7 +5743,14 @@ bind_failed:
 		std::vector<const char*> resolutions_formatted_ptrs;
 		resolutions_formatted.reserve(resolutions.size());
 		resolutions_formatted_ptrs.reserve(resolutions.size());
-
+        
+        int w1, w2, h1, h2;
+        SDL_GL_GetDrawableSize(screen, &w1, &h1);
+        SDL_GetWindowSize(screen, &w2, &h2);
+        const int current_res_x = fullscreen ? (allSettings.video.resolution_x * w1) / w2 : allSettings.video.resolution_x;
+        const int current_res_y = fullscreen ? (allSettings.video.resolution_y * h1) / h2 : allSettings.video.resolution_y;
+        const int current_hz = allSettings.video.hz;
+        
 		int index;
 		std::list<resolution>::iterator it;
 		for (index = 0, it = resolutions.begin(); it != resolutions.end(); ++it, ++index) {
@@ -5752,8 +5759,7 @@ bind_failed:
 			snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y &&
-				allSettings.video.hz == res.hz) {
+			if (current_res_x == res.x && current_res_y == res.y && current_hz == res.hz) {
 				selected_res = index;
 			}
 		}
@@ -5768,13 +5774,8 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
-#ifdef WINDOWS
         const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
-#else
-        const std::vector<const char*> modes = {"Bordered", "Borderless"};
-        const char* selected_mode = borderless ? "Borderless" : "Bordered";
-#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display Mode");
         y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",

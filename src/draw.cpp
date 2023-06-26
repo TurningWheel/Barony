@@ -828,8 +828,10 @@ void framebuffer::unbindForWriting() {
         fbStack.pop_back();
     }
     if (fbStack.empty()) {
+        int w, h;
+        SDL_GL_GetDrawableSize(screen, &w, &h);
         GL_CHECK_ERR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-        GL_CHECK_ERR(glViewport(0, 0, xres, yres));
+        GL_CHECK_ERR(glViewport(0, 0, w, h));
     } else {
         auto fb = fbStack.back();
         fbStack.pop_back();
