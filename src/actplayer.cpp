@@ -7783,6 +7783,11 @@ void playerAnimateRat(Entity* my)
 		}
 		entity->yaw = my->yaw;
 	}
+
+	if ( PLAYER_ATTACKTIME >= 10 )
+	{
+		PLAYER_ATTACK = 0;
+	}
 }
 
 void playerAnimateSpider(Entity* my)
