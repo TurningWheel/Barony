@@ -19849,7 +19849,11 @@ failed:
 		confirm_and_exit->setHideKeyboardGlyphs(false);
 	}
 
+	static void createModsWindow();
+
 	static void mainEditor(Button& button) {
+		createModsWindow();
+		return;
 #if defined(WINDOWS)
 	    char path[PATH_MAX];
 	    completePath(path, "editor.exe");
@@ -22033,5 +22037,796 @@ failed:
 		char buf[32];
 		snprintf(buf, sizeof(buf), "Room #%04d", RNG.uniform(1000, 9999));
 		setHostname(buf);
+	}
+
+	static std::string mods_active_tab = "Local Mods";
+	static Uint32 mods_loading_tick = 0;
+	static std::vector<std::pair<std::string, std::string>> mods_mountedFilepaths;
+	static std::list<std::string> mods_localModFoldernames;
+	static int mods_numCurrentModsLoaded = 0;
+#ifdef STEAMWORKS
+	std::vector<SteamUGCDetails_t*> mods_workshopSubscribedItemList;
+	std::vector<std::pair<std::string, uint64>> mods_workshopLoadedFileIDMap;
+#endif
+	static bool mods_IsPathInMountedFiles(std::string findStr)
+	{
+		std::vector<std::pair<std::string, std::string>>::iterator it;
+		std::pair<std::string, std::string> line;
+		for ( it = mods_mountedFilepaths.begin(); it != mods_mountedFilepaths.end(); ++it )
+		{
+			line = *it;
+			if ( line.first.compare(findStr) == 0 )
+			{
+				// found entry
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static bool mods_RemovePathFromMountedFiles(std::string findStr)
+	{
+		std::vector<std::pair<std::string, std::string>>::iterator it;
+		std::pair<std::string, std::string> line;
+		for ( it = mods_mountedFilepaths.begin(); it != mods_mountedFilepaths.end(); ++it )
+		{
+			line = *it;
+			if ( line.first.compare(findStr) == 0 )
+			{
+				// found entry, remove from list.
+#ifdef STEAMWORKS
+				for ( std::vector<std::pair<std::string, uint64>>::iterator itId = mods_workshopLoadedFileIDMap.begin();
+					itId != mods_workshopLoadedFileIDMap.end(); ++itId )
+				{
+					if ( itId->first.compare(line.second) == 0 )
+					{
+						mods_workshopLoadedFileIDMap.erase(itId);
+						break;
+					}
+				}
+#endif // STEAMWORKS
+				mods_mountedFilepaths.erase(it);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static void fn_mod_on_load()
+	{
+		mods_numCurrentModsLoaded = mods_mountedFilepaths.size();
+		if ( mods_numCurrentModsLoaded > 0 )
+		{
+			steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
+		}
+
+		if ( physfsIsMapLevelListModded() )
+		{
+			gamemods_disableSteamAchievements = true;
+		}
+		else
+		{
+			gamemods_disableSteamAchievements = false;
+		}
+	}
+
+	static auto make_workshop_frame = [](Frame& subwindow, int y, 
+		const char* name, const char* titleTxt, const char* descTxt, 
+		bool isMounted, bool isWorkshopMod) {
+		auto frame = subwindow.addFrame(name);
+		frame->setSize(SDL_Rect{ 16, y, 884, 0 });
+		frame->enableScroll(false);
+		frame->setAllowScrollBinds(false);
+		frame->setHollow(true);
+
+		auto title = frame->addField("title", 1024);
+		title->setText(titleTxt);
+		title->setFont(bigfont_outline);
+		const int padx = 16;
+		title->setSize(SDL_Rect{ padx, 4, frame->getSize().w - padx * 2, 24 });
+
+		if ( descTxt != nullptr )
+		{
+			auto desc = frame->addField("desc", 1024);
+			desc->setText(descTxt);
+			desc->setFont(smallfont_outline);
+			SDL_Rect descPos = title->getSize();
+			descPos.y += descPos.h + 1;
+			descPos.w -= 6;
+			desc->setSize(descPos);
+
+			descPos.h = 48;
+			if ( desc->getNumTextLines() >= 3 ) // trim to 2 lines
+			{
+				std::string str = desc->getText();
+				auto find1 = str.find('\n');
+				if ( find1 != std::string::npos )
+				{
+					auto find2 = str.find('\n', find1 + 1);
+					if ( find2 != std::string::npos )
+					{
+						str = str.substr(0, find2);
+						desc->setText(str.c_str());
+					}
+				}
+			}
+
+			desc->reflowTextToFit(0);
+
+			if ( desc->getNumTextLines() >= 3 ) // if after reflow had to wrap line
+			{
+				std::string str = desc->getText();
+				auto find1 = str.find('\n');
+				if ( find1 != std::string::npos )
+				{
+					auto find2 = str.find('\n', find1 + 1);
+					if ( find2 != std::string::npos )
+					{
+						str = str.substr(0, find2);
+						str += "...";
+						//str.replace(str.size() - 3, 3, "...");
+						desc->setText(str.c_str());
+					}
+				}
+			}
+
+			descPos.w += 6;
+			desc->setSize(descPos);
+			SDL_Rect framePos = frame->getSize();
+			framePos.h = desc->getSize().y + desc->getSize().h + 4;
+			frame->setSize(framePos);
+			frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/system/white.png", "bg");
+			frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
+			frame->addImage(SDL_Rect{ 0, desc->getSize().y, framePos.w, desc->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "desc bg");
+		}
+		else
+		{
+			SDL_Rect framePos = frame->getSize();
+			framePos.h = title->getSize().y + title->getSize().h + 4 + 24;
+			frame->setSize(framePos);
+			frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/system/white.png", "bg");
+			frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
+		}
+
+		//button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+		//button->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+		//button->setHighlightColor(0xffffffff);
+		//button->setColor(0xffffffff);
+		//button->setVJustify(Button::justify_t::CENTER);
+		//button->setHJustify(Button::justify_t::LEFT);
+		//button->setFont(bigfont_outline);
+		//button->setText(label);
+		//button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		//button->setCallback([](Button& button) {
+		//	soundActivate();
+		//if ( tutorial_map_destination != button.getName() ) {
+		//	tutorial_map_destination = button.getName();
+		//}
+		//else {
+		//	auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+		//	frame = static_cast<Frame*>(frame->getParent()); assert(frame);
+		//	auto enter = frame->findButton("enter"); assert(enter);
+		//	enter->activate();
+		//}
+		//	});
+		std::string button_name = name;
+		button_name += "_button";
+		auto button = frame->addButton(button_name.c_str());
+		button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+		button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+		button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+		button->setColor(0xffffffff);
+		button->setHighlightColor(0xffffffff);
+		button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44});
+		button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
+		button->setCallback([](Button& button) {
+			Frame* frame = static_cast<Frame*>(button.getParent());
+			auto index = reinterpret_cast<intptr_t>(frame->getUserData());
+			bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
+			if ( isWorkshopMod )
+			{
+				char fullpath[PATH_MAX];
+				auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[index];
+				bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
+				bool pathIsMounted = mods_IsPathInMountedFiles(fullpath);
+				if ( pathIsMounted )
+				{
+					if ( PHYSFS_unmount(fullpath) )
+					{
+						if ( mods_RemovePathFromMountedFiles(fullpath) )
+						{
+							button.setText("Load Mod");
+							printlog("[%s] is removed from the search path.\n", fullpath);
+						}
+					}
+				}
+				else
+				{
+					if ( PHYSFS_mount(fullpath, NULL, 0) )
+					{
+						mods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
+						fn_mod_on_load();
+						button.setText("Unload Mod");
+					}
+				}
+			}
+			else
+			{
+				std::string path = outputdir;
+				auto it = mods_localModFoldernames.begin();
+				std::advance(it, index);
+				path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(*it);
+				bool pathIsMounted = mods_IsPathInMountedFiles(path);
+				const char* fullpath = path.c_str();
+				if ( pathIsMounted )
+				{
+					if ( PHYSFS_unmount(fullpath) )
+					{
+						if ( mods_RemovePathFromMountedFiles(fullpath) )
+						{
+							button.setText("Load Mod");
+							printlog("[%s] is removed from the search path.\n", fullpath);
+						}
+					}
+				}
+				else
+				{
+					if ( PHYSFS_mount(fullpath, NULL, 0) )
+					{
+						mods_mountedFilepaths.push_back(std::make_pair(fullpath, *it));
+						fn_mod_on_load();
+						button.setText("Unload Mod");
+					}
+				}
+			}
+		});
+
+		SDL_Rect framePos = frame->getSize();
+		framePos.w = subwindow.getSize().w - framePos.x * 2;
+		frame->setSize(framePos);
+
+		return frame;
+	};
+
+	static void workshopLoadSubscribedItems(Button& button) {
+		if ( !g_SteamWorkshop ) { return; }
+		mods_loading_tick = ticks;
+		mods_active_tab = "Steam Workshop";
+		auto prompt = monoPrompt(
+			"Fetching subscriptions...",
+			"Cancel",
+			[](Button&) {
+				soundCancel();
+				assert(main_menu_frame);
+				/*auto window = main_menu_frame->findFrame("play_game_window");
+				if ( window ) {
+					auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+				else {
+					auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				}*/
+
+				closeMono();
+		});
+
+		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Subscribed, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+		prompt->setTickCallback([](Widget& widget) {
+			if ( g_SteamWorkshop->subscribedCallStatus == 2 && (ticks - mods_loading_tick) > TICKS_PER_SECOND / 2 )
+			{
+				//soundActivate();
+				closeMono();
+
+				if ( auto window = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						for ( auto f : subwindow->getFrames() )
+						{
+							f->removeSelf();
+						}
+
+						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.h = subwindow->getSize().h;
+
+						int numResults = g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned;
+						Frame* prevFrame = nullptr;
+						const int frameHeight = 82 + 8;
+						char fullpath[PATH_MAX] = "";
+						for ( int i = 0; i < numResults; ++i )
+						{
+							char name[32];
+							snprintf(name, sizeof(name), "mod%d", i);
+
+							auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[i];
+							bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
+							bool pathIsMounted = gamemodsIsPathInMountedFiles(fullpath);
+
+							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name, 
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription,
+								pathIsMounted, true);
+							prevFrame->setUserData((void*)(intptr_t)i);
+						}
+						if ( prevFrame )
+						{
+							actualPos.h = prevFrame->getSize().y + frameHeight;
+						}
+						subwindow->setActualSize(actualPos);
+
+						auto rock_background = subwindow->findImage("rock_background");
+						rock_background->pos = subwindow->getActualSize();
+					}
+				}
+			}
+		});
+	}
+
+	static void workshopLoadMyItems(Button& button) {
+		if ( !g_SteamWorkshop ) { return; }
+		mods_loading_tick = ticks;
+		mods_active_tab = "My Workshop Items";
+		auto prompt = monoPrompt(
+			"Fetching my items...",
+			"Cancel",
+			[](Button&) {
+				soundCancel();
+		assert(main_menu_frame);
+		/*auto window = main_menu_frame->findFrame("play_game_window");
+		if ( window ) {
+			auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+			dimmer->removeSelf();
+		}
+		else {
+			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+		}*/
+
+		closeMono();
+			});
+
+		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Published, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+		prompt->setTickCallback([](Widget& widget) {
+			if ( g_SteamWorkshop->subscribedCallStatus == 2 && (ticks - mods_loading_tick) > TICKS_PER_SECOND / 2 )
+			{
+				//soundActivate();
+				closeMono();
+
+				if ( auto window = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						for ( auto f : subwindow->getFrames() )
+						{
+							f->removeSelf();
+						}
+
+						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.h = subwindow->getSize().h;
+
+						int numResults = g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned;
+						Frame* prevFrame = nullptr;
+						const int frameHeight = 82 + 8;
+						for ( int i = 0; i < numResults; ++i )
+						{
+							char name[32];
+							snprintf(name, sizeof(name), "mod%d", i);
+							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription, true, true);
+						}
+						if ( prevFrame )
+						{
+							actualPos.h = prevFrame->getSize().y + frameHeight;
+						}
+						subwindow->setActualSize(actualPos);
+
+						auto rock_background = subwindow->findImage("rock_background");
+						rock_background->pos = subwindow->getActualSize();
+					}
+				}
+			}
+			});
+	}
+
+	static void workshopLoadLocalMods(Button& button) {
+		mods_loading_tick = ticks;
+		mods_active_tab = "Local Mods";
+		auto prompt = monoPrompt(
+			"Loading local mod folders...",
+			"Cancel",
+			[](Button&) {
+				soundCancel();
+				assert(main_menu_frame);
+				/*auto window = main_menu_frame->findFrame("play_game_window");
+				if ( window ) {
+					auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
+					dimmer->removeSelf();
+				}
+				else {
+					auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+				}*/
+				closeMono();
+			});
+
+		mods_localModFoldernames.clear();
+		std::string path = outputdir;
+		path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator());
+		mods_localModFoldernames = directoryContents(path.c_str(), true, false);
+
+		prompt->setTickCallback([](Widget& widget) {
+			if ( (ticks - mods_loading_tick) > TICKS_PER_SECOND / 2 )
+			{
+				closeMono();
+
+				if ( auto window = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						for ( auto f : subwindow->getFrames() )
+						{
+							f->removeSelf();
+						}
+
+						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.h = subwindow->getSize().h;
+
+						Frame* prevFrame = nullptr;
+						const int frameHeight = 60;
+						int index = -1;
+						for ( auto& folder : mods_localModFoldernames )
+						{
+							++index;
+							char name[32];
+							snprintf(name, sizeof(name), "mod%d", index);
+
+							std::string path = outputdir;
+							path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(folder);
+							bool pathIsMounted = gamemodsIsPathInMountedFiles(path);
+							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
+								folder.c_str(), nullptr, pathIsMounted, false);
+							prevFrame->setUserData((void*)(intptr_t)index);
+						}
+						if ( prevFrame )
+						{
+							actualPos.h = prevFrame->getSize().y + frameHeight;
+						}
+						subwindow->setActualSize(actualPos);
+
+						auto rock_background = subwindow->findImage("rock_background");
+						rock_background->pos = subwindow->getActualSize();
+					}
+				}
+			}
+		});
+	}
+
+	static void createModsWindow() {
+		assert(main_menu_frame);
+
+		auto window = main_menu_frame->addFrame("mods_menu");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - 1164) / 2,
+			(Frame::virtualScreenY - 716) / 2,
+			1164,
+			716 });
+		window->setActualSize(SDL_Rect{ 0, 0, 1164, 716 });
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto background = window->addImage(
+			SDL_Rect{ 16, 0, 1130, 714 },
+			0xffffffff,
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			SDL_Rect{ 0, 716 - 586, 1164, 586 },
+			0xffffffff,
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_OverlayScaffold_00.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{ 22, 142, 1118, 476 });
+		subwindow->setActualSize(SDL_Rect{ 0, 0, 1118, 476 });
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rock_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Play/HallofTrials/Settings_Window_06_BGPattern.png",
+			"rock_background"
+		);
+		rock_background->tiled = true;
+
+		auto gradient_background = subwindow->addImage(
+			SDL_Rect{ 0, 0, 1164, 476 },
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_02_BGGradient.png",
+			"gradient_background"
+		);
+
+		auto window_title = window->addField("title", 64);
+		window_title->setFont(banner_font);
+		window_title->setSize(SDL_Rect{ 412, 24, 338, 24 });
+		window_title->setJustify(Field::justify_t::CENTER);
+		window_title->setText("MODS");
+
+		auto subtitle = window->addField("subtitle", 1024);
+		subtitle->setFont(bigfont_no_outline);
+		subtitle->setColor(makeColor(170, 134, 102, 255));
+		subtitle->setSize(SDL_Rect{ 242, 74, 684, 50 });
+		subtitle->setJustify(Field::justify_t::CENTER);
+		subtitle->setText(
+			u8"Take on 10 challenges that teach and test your adventuring\n"
+			u8"skills, preparing you to take on the dungeon");
+
+		(void)createBackWidget(window, [](Button& button) {
+			soundCancel();
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+		assert(main_menu_frame);
+		auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
+		auto window = dimmer->findFrame("play_game_window"); assert(window);
+		/*auto hall_of_trials_button = window->findButton("mods_menu"); assert(hall_of_trials_button);
+		hall_of_trials_button->select();*/
+			});
+
+		/*auto banner = subwindow->addImage(
+			SDL_Rect{ 0, 88, 1118, 42 },
+			0xffffffff,
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
+			"banner"
+		);
+
+		auto banner_trial = subwindow->addField("banner_trial", 32);
+		banner_trial->setSize(SDL_Rect{ 48, 88, 66, 42 });
+		banner_trial->setJustify(Field::justify_t::CENTER);
+		banner_trial->setFont(bigfont_outline);
+		banner_trial->setText("Trial");
+
+		auto banner_time = subwindow->addField("banner_trial", 32);
+		banner_time->setSize(SDL_Rect{ 920, 88, 116, 42 });
+		banner_time->setJustify(Field::justify_t::CENTER);
+		banner_time->setFont(bigfont_outline);
+		banner_time->setText("Best Time");*/
+
+		/*SDL_Rect fleur_positions[4] = {
+			{ 22, 94, 26, 30 },
+			{ 114, 94, 26, 30 },
+			{ 894, 94, 26, 30 },
+			{ 1036, 94, 26, 30 },
+		};
+		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
+		for ( int c = 0; c < num_fleurs; ++c ) {
+			(void)subwindow->addImage(
+				fleur_positions[c],
+				0xffffffff,
+				"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
+				(std::string("fleur") + std::to_string(c)).c_str()
+			);
+		}*/
+
+		auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(48);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{ 1118 - 54, 0, 54, 476 });
+		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_01.png");
+		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		slider->setHandleImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+		slider->setCallback([](Slider& slider) {
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+			auto actualSize = frame->getActualSize();
+			actualSize.y = slider.getValue();
+			frame->setActualSize(actualSize);
+			auto railSize = slider.getRailSize();
+			railSize.y = actualSize.y;
+			slider.setRailSize(railSize);
+			slider.updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
+		});
+		slider->setTickCallback([](Widget& widget) {
+			Slider* slider = static_cast<Slider*>(&widget);
+			Frame* frame = static_cast<Frame*>(slider->getParent());
+			auto actualSize = frame->getActualSize();
+			slider->setMaxValue(actualSize.h - frame->getSize().h);
+			slider->setValue(actualSize.y);
+			auto railSize = slider->getRailSize();
+			railSize.y = actualSize.y;
+			slider->setRailSize(railSize);
+			slider->updateHandlePosition();
+			auto gradient_background = frame->findImage("gradient_background");
+			assert(gradient_background);
+			gradient_background->pos.y = actualSize.y;
+		});
+		slider->setValue(0.f);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
+		slider->setWidgetSearchParent("mods_menu");
+		slider->setWidgetLeft("tutorial_hub");
+		slider->addWidgetAction("MenuStart", "enter");
+		slider->addWidgetAction("MenuAlt1", "reset");
+		slider->addWidgetAction("MenuCancel", "back_button");
+
+		// buttons at bottom
+		auto reset = window->addButton("reset");
+		reset->setText("Reset Trial\nProgress");
+		reset->setSize(SDL_Rect{ 152, 630, 164, 62 });
+		reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		reset->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		reset->setFont(smallfont_outline);
+		reset->setHighlightColor(0xffffffff);
+		reset->setColor(0xffffffff);
+		reset->setCallback([](Button&) {
+			binaryPrompt(
+				"Are you sure you want to reset\nyour best times?", "Yes", "No",
+				[](Button& button) { // Yes button
+					soundActivate();
+		soundDeleteSave();
+
+		// delete best times
+		for ( auto& it : gameModeManager.Tutorial.levels ) {
+			it.completionTime = 0;
+		}
+		gameModeManager.Tutorial.writeToDocument();
+
+		// update window
+		assert(main_menu_frame);
+		auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
+		window->removeSelf();
+		createHallofTrialsMenu();
+
+		// remove prompt
+		closeBinary();
+				},
+				[](Button& button) { // No button
+					soundCancel();
+
+				// select another button
+				assert(main_menu_frame);
+				auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
+				auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+				/*auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+				tutorial->select();*/
+
+				// remove prompt
+				closeBinary();
+				}
+				);
+			});
+
+		auto enter = window->addButton("enter");
+		enter->setText("Enter Level");
+		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
+		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		enter->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		enter->setFont(smallfont_outline);
+		enter->setHighlightColor(0xffffffff);
+		enter->setColor(0xffffffff);
+		enter->setCallback([](Button& button) {
+			if ( !tutorial_map_destination.empty() ) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				beginFade(MainMenu::FadeDestination::HallOfTrials);
+			}
+			else {
+				errorPrompt(
+					"Select a level to start first.",
+					"Okay",
+					[](Button& button) {
+						soundCancel();
+				assert(main_menu_frame);
+				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
+				auto subwindow = mods_menu->findFrame("subwindow"); assert(subwindow);
+				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+				tutorial->select();
+				closeMono();
+					}
+				);
+			}
+			});
+
+		struct Option {
+			const char* name;
+			const char* title;
+			void (*callback)(Button&);
+		};
+		std::vector<Option> tabs = {
+			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
+			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
+#endif
+		};
+
+#ifdef STEAMWORKS
+		mods_active_tab = tabs[1].name;
+#else
+		mods_active_tab = tabs[0].name;
+#endif
+
+		const int num_tabs = (int)tabs.size();
+		for ( int c = 0; c < num_tabs; ++c ) {
+			const int x = window->getSize().w / (num_tabs + 1);
+			auto button = window->addButton(tabs[c].name);
+			button->setCallback(tabs[c].callback);
+			button->setText(tabs[c].title);
+			button->setFont(banner_font);
+			if ( tabs[c].name == mods_active_tab ) {
+				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
+				button->getCallback()(*button);
+			}
+			else {
+				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleHigh00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
+			}
+			button->setSize(SDL_Rect{ x + (x * c) - 184 / 2, 64, 184, 64 });
+			button->setColor(makeColor(255, 255, 255, 255));
+			button->setHighlightColor(makeColor(255, 255, 255, 255));
+			//button->setWidgetSearchParent("settings");
+			//button->setWidgetPageLeft("tab_left");
+			//button->setWidgetPageRight("tab_right");
+			//button->addWidgetAction("MenuAlt1", "restore_defaults");
+			//button->addWidgetAction("MenuStart", "confirm_and_exit");
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
+			/*if ( c > 0 ) {
+				button->setWidgetLeft(tabs[c - 1].name);
+			}
+			else {
+				button->setWidgetLeft("tab_left");
+			}
+			if ( c < num_tabs - 1 ) {
+				button->setWidgetRight(tabs[c + 1].name);
+			}
+			else {
+				button->setWidgetRight("tab_right");
+			}
+			button->setWidgetBack("discard_and_exit");
+			if ( c <= num_tabs / 2 ) {
+				button->setWidgetDown("restore_defaults");
+			}
+			else if ( c == num_tabs - 2 ) {
+				button->setWidgetDown("discard_and_exit");
+			}
+			else if ( c == num_tabs - 1 ) {
+				button->setWidgetDown("confirm_and_exit");
+			}*/
+		}
+
+		window->setTickCallback([](Widget& widget) {
+			auto settings = static_cast<Frame*>(&widget);
+			std::vector<const char*> tabs = {
+				"Local Mods",
+				"Steam Workshop",
+				"My Workshop Items",
+			};
+			for ( auto name : tabs ) {
+				auto button = settings->findButton(name);
+				if ( button ) {
+					if ( name == mods_active_tab ) {
+						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
+						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
+						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
+					}
+					else {
+						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
+						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleHigh00.png");
+						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
+					}
+				}
+			}
+		});
 	}
 }

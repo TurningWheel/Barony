@@ -128,11 +128,11 @@ void CSteamWorkshop::CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCM
 		m_callResultSendQueryUGCRequest.Set(hSteamAPICall, this,
 			&CSteamWorkshop::OnSendQueryUGCRequest);
 	}
-	SteamUGC()->ReleaseQueryUGCRequest(UGCQueryHandle);
 }
 
 void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure)
 {
+	subscribedCallStatus = 2;
 	if ( !bIOFailure )
 	{
 		SteamUGCQueryCompleted = *pResult;
@@ -140,10 +140,6 @@ void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bo
 		{
 			ReadSubscribedItems();
 			StoreResultMessage("Load Subscribed Items: OK", k_EResultOK);
-			if ( subscribedCallStatus == 1 )
-			{
-				subscribedCallStatus = 2;
-			}
 			return;
 		}
 	}
