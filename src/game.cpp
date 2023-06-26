@@ -4062,17 +4062,6 @@ bool handleEvents(void)
 			    }
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				Input::mouseButtons[event.button.button] = 0;
-				buttonclick = 0; // release any buttons that were being held down
-				if (initialized)
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( inputs.bPlayerUsingKeyboardControl(i) )
-						{
-							gui_clickdrag[i] = false;
-						}
-					}
-				}
 #ifdef APPLE
                 mousestatus[SDL_BUTTON_RIGHT] = 0;
                 Input::mouseButtons[SDL_BUTTON_RIGHT] = 0;
@@ -5292,8 +5281,6 @@ void ingameHud()
 				players[player]->skillSheet.closeSkillSheet();
 			}
 			players[player]->hud.closeStatusFxWindow();
-
-			gui_clickdrag[player] = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
 			if ( capture_mouse && !gamePaused )
 			{

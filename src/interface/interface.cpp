@@ -41,92 +41,90 @@
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
-SDL_Surface* backdrop_blessed_bmp = nullptr;
-SDL_Surface* backdrop_cursed_bmp = nullptr;
-SDL_Surface* status_bmp = nullptr;
-SDL_Surface* character_bmp = nullptr;
-SDL_Surface* hunger_bmp = nullptr;
-SDL_Surface* hunger_blood_bmp = nullptr;
-SDL_Surface* hunger_boiler_bmp = nullptr;
-SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
-SDL_Surface* hunger_boiler_flame_bmp = nullptr;
-SDL_Surface* minotaur_bmp = nullptr;
-int textscroll = 0;
-int inventorycategory = 7; // inventory window defaults to wildcard
-int itemscroll = 0;
 view_t camera_charsheet;
 real_t camera_charsheet_offsetyaw = (330) * PI / 180;
 
 bool keepInventoryGlobal = false;
 
-SDL_Surface* font12x12_small_bmp = NULL;
-SDL_Surface* inventoryChest_bmp = NULL;
-SDL_Surface* invclose_bmp = NULL;
-SDL_Surface* invgraball_bmp = NULL;
-SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
-bool gui_clickdrag[MAXPLAYERS] = { false };
-int dragoffset_x[MAXPLAYERS] = { 0 };
-int dragoffset_y[MAXPLAYERS] = { 0 };
 
 list_t chestInv[MAXPLAYERS];
 
-SDL_Surface* rightsidebar_titlebar_img = NULL;
-SDL_Surface* rightsidebar_slot_img = NULL;
-SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
-SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
-int rightsidebar_height = 0;
+//SDL_Surface* font12x12_small_bmp = NULL;
+//bool gui_clickdrag[MAXPLAYERS] = { false };
+//int dragoffset_x[MAXPLAYERS] = { 0 };
+//int dragoffset_y[MAXPLAYERS] = { 0 };
+//int textscroll = 0;
+//int inventorycategory = 7; // inventory window defaults to wildcard
+//int itemscroll = 0;
+//SDL_Surface* inventoryChest_bmp = NULL;
+//SDL_Surface* invclose_bmp = NULL;
+//SDL_Surface* invgraball_bmp = NULL;
+//SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
+//SDL_Surface* backdrop_blessed_bmp = nullptr;
+//SDL_Surface* backdrop_cursed_bmp = nullptr;
+//SDL_Surface* status_bmp = nullptr;
+//SDL_Surface* character_bmp = nullptr;
+//SDL_Surface* hunger_bmp = nullptr;
+//SDL_Surface* hunger_blood_bmp = nullptr;
+//SDL_Surface* hunger_boiler_bmp = nullptr;
+//SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
+//SDL_Surface* hunger_boiler_flame_bmp = nullptr;
+//SDL_Surface* minotaur_bmp = nullptr;
+//SDL_Surface* rightsidebar_titlebar_img = NULL;
+//SDL_Surface* rightsidebar_slot_img = NULL;
+//SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
+//SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
+//int rightsidebar_height = 0;
 
-SDL_Surface* bookgui_img = NULL;
-SDL_Surface* book_highlighted_left_img = NULL;
-SDL_Surface* book_highlighted_right_img = NULL;
+//SDL_Surface* bookgui_img = NULL;
+//SDL_Surface* book_highlighted_left_img = NULL;
+//SDL_Surface* book_highlighted_right_img = NULL;
 
-SDL_Surface* magicspellList_bmp = NULL;
-SDL_Surface* spell_list_titlebar_bmp = NULL;
-SDL_Surface* spell_list_gui_slot_bmp = NULL;
-SDL_Surface* spell_list_gui_slot_highlighted_bmp = NULL;
-SDL_Surface* textup_bmp = NULL;
-SDL_Surface* textdown_bmp = NULL;
-SDL_Surface* attributesleft_bmp = NULL;
-SDL_Surface* attributesright_bmp = NULL;
-SDL_Surface* attributesleftunclicked_bmp = NULL;
-SDL_Surface* attributesrightunclicked_bmp = NULL;
-SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
-SDL_Surface* itembroken_bmp = nullptr;
+//SDL_Surface* magicspellList_bmp = NULL;
+//SDL_Surface* spell_list_titlebar_bmp = NULL;
+//SDL_Surface* spell_list_gui_slot_bmp = NULL;
+//SDL_Surface* spell_list_gui_slot_highlighted_bmp = NULL;
+//SDL_Surface* textup_bmp = NULL;
+//SDL_Surface* textdown_bmp = NULL;
+//SDL_Surface* attributesleft_bmp = NULL;
+//SDL_Surface* attributesright_bmp = NULL;
+//SDL_Surface* attributesleftunclicked_bmp = NULL;
+//SDL_Surface* attributesrightunclicked_bmp = NULL;
+//SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
+//SDL_Surface* itembroken_bmp = nullptr;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
-SDL_Surface* shopkeeper_bmp = NULL;
-SDL_Surface* shopkeeper2_bmp = NULL;
-SDL_Surface* damage_bmp = NULL;
-SDL_Surface *str_bmp64u = NULL;
-SDL_Surface *dex_bmp64u = NULL;
-SDL_Surface *con_bmp64u = NULL;
-SDL_Surface *int_bmp64u = NULL;
-SDL_Surface *per_bmp64u = NULL;
-SDL_Surface *chr_bmp64u = NULL;
-SDL_Surface *str_bmp64 = NULL;
-SDL_Surface *dex_bmp64 = NULL;
-SDL_Surface *con_bmp64 = NULL;
-SDL_Surface *int_bmp64 = NULL;
-SDL_Surface *per_bmp64 = NULL;
-SDL_Surface *chr_bmp64 = NULL;
-SDL_Surface *sidebar_lock_bmp = nullptr;
-SDL_Surface *sidebar_unlock_bmp = nullptr;
-SDL_Surface *effect_drunk_bmp = nullptr;
-SDL_Surface *effect_polymorph_bmp = nullptr;
-SDL_Surface *effect_hungover_bmp = nullptr;
-int spellscroll = 0;
-int magicspell_list_offset_x = 0;
-int magicspell_list_offset_y = 0;
-bool dragging_magicspell_list_GUI = false;
-int magic_GUI_state = 0;
-SDL_Rect magic_gui_pos;
-SDL_Surface* sustained_spell_generic_icon = NULL;
+//SDL_Surface* shopkeeper_bmp = NULL;
+//SDL_Surface* shopkeeper2_bmp = NULL;
+//SDL_Surface* damage_bmp = NULL;
+//SDL_Surface *str_bmp64u = NULL;
+//SDL_Surface *dex_bmp64u = NULL;
+//SDL_Surface *con_bmp64u = NULL;
+//SDL_Surface *int_bmp64u = NULL;
+//SDL_Surface *per_bmp64u = NULL;
+//SDL_Surface *chr_bmp64u = NULL;
+//SDL_Surface *str_bmp64 = NULL;
+//SDL_Surface *dex_bmp64 = NULL;
+//SDL_Surface *con_bmp64 = NULL;
+//SDL_Surface *int_bmp64 = NULL;
+//SDL_Surface *per_bmp64 = NULL;
+//SDL_Surface *chr_bmp64 = NULL;
+//SDL_Surface *sidebar_lock_bmp = nullptr;
+//SDL_Surface *sidebar_unlock_bmp = nullptr;
+//SDL_Surface *effect_drunk_bmp = nullptr;
+//SDL_Surface *effect_polymorph_bmp = nullptr;
+//SDL_Surface *effect_hungover_bmp = nullptr;
+//int spellscroll = 0;
+//int magicspell_list_offset_x = 0;
+//int magicspell_list_offset_y = 0;
+//bool dragging_magicspell_list_GUI = false;
+//int magic_GUI_state = 0;
+//SDL_Rect magic_gui_pos;
+//SDL_Surface* sustained_spell_generic_icon = NULL;
+//SDL_Surface* hotbar_img = NULL;
+//SDL_Surface* hotbar_spell_img = NULL;
 
 int buttonclick = 0;
 
-SDL_Surface* hotbar_img = NULL;
-SDL_Surface* hotbar_spell_img = NULL;
-
-list_t damageIndicators[MAXPLAYERS];
 
 bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
@@ -169,129 +167,129 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
 	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
 
-	std::make_pair(&font12x12_small_bmp, "images/system/font12x12_small.png"),
-	std::make_pair(&backdrop_blessed_bmp, "images/system/backdrop_blessed.png"),
-	std::make_pair(&backdrop_cursed_bmp, "images/system/backdrop_cursed.png"),
-	std::make_pair(&button_bmp, "images/system/ButtonHighlighted.png"),
-	std::make_pair(&smallbutton_bmp, "images/system/SmallButtonHighlighted.png"),
-	std::make_pair(&invup_bmp, "images/system/InventoryUpHighlighted.png"),
-	std::make_pair(&invdown_bmp, "images/system/InventoryDownHighlighted.png"),
-	std::make_pair(&status_bmp, "images/system/StatusBar.png"),
-	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
-	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
-	std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
-	std::make_pair(&hunger_boiler_bmp, "images/system/Hunger_boiler.png"),
-	std::make_pair(&hunger_boiler_hotflame_bmp, "images/system/Hunger_boiler_hotfire.png"),
-	std::make_pair(&hunger_boiler_flame_bmp, "images/system/Hunger_boiler_fire.png"),
-	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
-	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
-	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
+	//std::make_pair(&font12x12_small_bmp, "images/system/font12x12_small.png"),
+	//std::make_pair(&backdrop_blessed_bmp, "images/system/backdrop_blessed.png"),
+	//std::make_pair(&backdrop_cursed_bmp, "images/system/backdrop_cursed.png"),
+	//std::make_pair(&button_bmp, "images/system/ButtonHighlighted.png"),
+	//std::make_pair(&smallbutton_bmp, "images/system/SmallButtonHighlighted.png"),
+	//std::make_pair(&invup_bmp, "images/system/InventoryUpHighlighted.png"),
+	//std::make_pair(&invdown_bmp, "images/system/InventoryDownHighlighted.png"),
+	//std::make_pair(&status_bmp, "images/system/StatusBar.png"),
+	//std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
+	//std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
+	//std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
+	//std::make_pair(&hunger_boiler_bmp, "images/system/Hunger_boiler.png"),
+	//std::make_pair(&hunger_boiler_hotflame_bmp, "images/system/Hunger_boiler_hotfire.png"),
+	//std::make_pair(&hunger_boiler_flame_bmp, "images/system/Hunger_boiler_fire.png"),
+	//std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
+	//std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
+	//std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
 
 	//General GUI images.
-	std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
-	std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
-	std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
-	std::make_pair(&shopkeeper2_bmp, "images/system/shopkeeper2.png"),
-	std::make_pair(&damage_bmp, "images/system/damage.png"),
+	//std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
+	//std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
+	//std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
+	//std::make_pair(&shopkeeper2_bmp, "images/system/shopkeeper2.png"),
+	//std::make_pair(&damage_bmp, "images/system/damage.png"),
 
 	//Magic GUI images.
-	std::make_pair(&magicspellList_bmp, "images/system/spellList.png"),
-	std::make_pair(&spell_list_titlebar_bmp, "images/system/spellListTitlebar.png"),
-	std::make_pair(&spell_list_gui_slot_bmp, "images/system/spellListSlot.png"),
-	std::make_pair(&spell_list_gui_slot_highlighted_bmp, "images/system/spellListSlotHighlighted.png"),
-	std::make_pair(&sustained_spell_generic_icon, "images/system/magic/channeled_spell.png"),
+	//std::make_pair(&magicspellList_bmp, "images/system/spellList.png"),
+	//std::make_pair(&spell_list_titlebar_bmp, "images/system/spellListTitlebar.png"),
+	//std::make_pair(&spell_list_gui_slot_bmp, "images/system/spellListSlot.png"),
+	//std::make_pair(&spell_list_gui_slot_highlighted_bmp, "images/system/spellListSlotHighlighted.png"),
+	//std::make_pair(&sustained_spell_generic_icon, "images/system/magic/channeled_spell.png"),
 
 	// inventory GUI images.
-	std::make_pair(&inventory_bmp, "images/system/Inventory.png"),
-	std::make_pair(&inventoryoption_bmp, "images/system/InventoryOption.png"),
-	std::make_pair(&inventory_mode_item_img, "images/system/inventory_mode_item.png"),
-	std::make_pair(&inventory_mode_item_highlighted_img, "images/system/inventory_mode_item_highlighted.png"),
-	std::make_pair(&inventory_mode_spell_img, "images/system/inventory_mode_spell.png"),
-	std::make_pair(&inventory_mode_spell_highlighted_img, "images/system/inventory_mode_spell_highlighted.png"),
-	std::make_pair(&equipped_bmp, "images/system/Equipped.png"),
-	std::make_pair(&itembroken_bmp, "images/system/Broken.png"),
+	//std::make_pair(&inventory_bmp, "images/system/Inventory.png"),
+	//std::make_pair(&inventoryoption_bmp, "images/system/InventoryOption.png"),
+	//std::make_pair(&inventory_mode_item_img, "images/system/inventory_mode_item.png"),
+	//std::make_pair(&inventory_mode_item_highlighted_img, "images/system/inventory_mode_item_highlighted.png"),
+	//std::make_pair(&inventory_mode_spell_img, "images/system/inventory_mode_spell.png"),
+	//std::make_pair(&inventory_mode_spell_highlighted_img, "images/system/inventory_mode_spell_highlighted.png"),
+	//std::make_pair(&equipped_bmp, "images/system/Equipped.png"),
+	//std::make_pair(&itembroken_bmp, "images/system/Broken.png"),
 
 	//Chest images..
-	std::make_pair(&inventoryChest_bmp, "images/system/InventoryChest.png"),
-	std::make_pair(&inventoryoptionChest_bmp, "images/system/InventoryOptionChest.png"),
-	std::make_pair(&invclose_bmp, "images/system/InventoryCloseHighlighted.png"),
-	std::make_pair(&invgraball_bmp, "images/system/InventoryChestGraballHighlighted.png"),
+	//std::make_pair(&inventoryChest_bmp, "images/system/InventoryChest.png"),
+	//std::make_pair(&inventoryoptionChest_bmp, "images/system/InventoryOptionChest.png"),
+	//std::make_pair(&invclose_bmp, "images/system/InventoryCloseHighlighted.png"),
+	//std::make_pair(&invgraball_bmp, "images/system/InventoryChestGraballHighlighted.png"),
 
 	//Identify GUI images...
-	std::make_pair(&identifyGUI_img, "images/system/identifyGUI.png"),
-	std::make_pair(&rightsidebar_slot_grayedout_img, "images/system/rightSidebarSlotGrayedOut.png"),
-	std::make_pair(&bookgui_img, "images/system/book.png"),
-	std::make_pair(&book_highlighted_left_img, "images/system/bookpageleft-highlighted.png"),
-	std::make_pair(&book_highlighted_right_img, "images/system/bookpageright-highlighted.png"),
+	//std::make_pair(&identifyGUI_img, "images/system/identifyGUI.png"),
+	//std::make_pair(&rightsidebar_slot_grayedout_img, "images/system/rightSidebarSlotGrayedOut.png"),
+	//std::make_pair(&bookgui_img, "images/system/book.png"),
+	//std::make_pair(&book_highlighted_left_img, "images/system/bookpageleft-highlighted.png"),
+	//std::make_pair(&book_highlighted_right_img, "images/system/bookpageright-highlighted.png"),
 
 	//Levelup images.
-	std::make_pair(&str_bmp64u, "images/system/str64u.png"),
-	std::make_pair(&dex_bmp64u, "images/system/dex64u.png"),
-	std::make_pair(&con_bmp64u, "images/system/con64u.png"),
-	std::make_pair(&int_bmp64u, "images/system/int64u.png"),
-	std::make_pair(&per_bmp64u, "images/system/per64u.png"),
-	std::make_pair(&chr_bmp64u, "images/system/chr64u.png"),
-	std::make_pair(&str_bmp64, "images/system/str64.png"),
-	std::make_pair(&dex_bmp64, "images/system/dex64.png"),
-	std::make_pair(&con_bmp64, "images/system/con64.png"),
-	std::make_pair(&int_bmp64, "images/system/int64.png"),
-	std::make_pair(&per_bmp64, "images/system/per64.png"),
-	std::make_pair(&chr_bmp64, "images/system/chr64.png"),
+	//std::make_pair(&str_bmp64u, "images/system/str64u.png"),
+	//std::make_pair(&dex_bmp64u, "images/system/dex64u.png"),
+	//std::make_pair(&con_bmp64u, "images/system/con64u.png"),
+	//std::make_pair(&int_bmp64u, "images/system/int64u.png"),
+	//std::make_pair(&per_bmp64u, "images/system/per64u.png"),
+	//std::make_pair(&chr_bmp64u, "images/system/chr64u.png"),
+	//std::make_pair(&str_bmp64, "images/system/str64.png"),
+	//std::make_pair(&dex_bmp64, "images/system/dex64.png"),
+	//std::make_pair(&con_bmp64, "images/system/con64.png"),
+	//std::make_pair(&int_bmp64, "images/system/int64.png"),
+	//std::make_pair(&per_bmp64, "images/system/per64.png"),
+	//std::make_pair(&chr_bmp64, "images/system/chr64.png"),
 
 	//Misc GUI images.
-	std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
-	std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
-	std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
-	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png"),
+	//std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
+	//std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
+	//std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
+	//std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png"),
 
 	//Misc effect images.
-	std::make_pair(&effect_drunk_bmp, "images/system/drunk.png"),
-	std::make_pair(&effect_polymorph_bmp, "images/system/polymorph.png"),
-	std::make_pair(&effect_hungover_bmp, "images/system/hungover.png")
+	//std::make_pair(&effect_drunk_bmp, "images/system/drunk.png"),
+	//std::make_pair(&effect_polymorph_bmp, "images/system/polymorph.png"),
+	//std::make_pair(&effect_hungover_bmp, "images/system/hungover.png")
 };
 
 bool loadInterfaceResources()
 {
 	//General GUI images.
-	font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
-	backdrop_blessed_bmp = loadImage("images/system/backdrop_blessed.png");
-	backdrop_cursed_bmp = loadImage("images/system/backdrop_cursed.png");
-	button_bmp = loadImage("images/system/ButtonHighlighted.png");
-	smallbutton_bmp = loadImage("images/system/SmallButtonHighlighted.png");
-	invup_bmp = loadImage("images/system/InventoryUpHighlighted.png");
-	invdown_bmp = loadImage("images/system/InventoryDownHighlighted.png");
-	status_bmp = loadImage("images/system/StatusBar.png");
-	character_bmp = loadImage("images/system/CharacterSheet.png");
-	hunger_bmp = loadImage("images/system/Hunger.png");
-	hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
-	hunger_boiler_bmp = loadImage("images/system/Hunger_boiler.png");
-	hunger_boiler_hotflame_bmp = loadImage("images/system/Hunger_boiler_hotfire.png");
-	hunger_boiler_flame_bmp = loadImage("images/system/Hunger_boiler_fire.png");
-	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
+	//font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
+	//backdrop_blessed_bmp = loadImage("images/system/backdrop_blessed.png");
+	//backdrop_cursed_bmp = loadImage("images/system/backdrop_cursed.png");
+	//button_bmp = loadImage("images/system/ButtonHighlighted.png");
+	//smallbutton_bmp = loadImage("images/system/SmallButtonHighlighted.png");
+	//invup_bmp = loadImage("images/system/InventoryUpHighlighted.png");
+	//invdown_bmp = loadImage("images/system/InventoryDownHighlighted.png");
+	//status_bmp = loadImage("images/system/StatusBar.png");
+	//character_bmp = loadImage("images/system/CharacterSheet.png");
+	//hunger_bmp = loadImage("images/system/Hunger.png");
+	//hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
+	//hunger_boiler_bmp = loadImage("images/system/Hunger_boiler.png");
+	//hunger_boiler_hotflame_bmp = loadImage("images/system/Hunger_boiler_hotfire.png");
+	//hunger_boiler_flame_bmp = loadImage("images/system/Hunger_boiler_fire.png");
+	//minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
-	attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
-	attributesright_bmp = loadImage("images/system/AttributesRightHighlighted.png");
-	attributesleftunclicked_bmp = loadImage("images/system/AttributesLeft.png");
-	attributesrightunclicked_bmp = loadImage("images/system/AttributesRight.png");
-	shopkeeper_bmp = loadImage("images/system/shopkeeper.png");
-	shopkeeper2_bmp = loadImage("images/system/shopkeeper2.png");
-	damage_bmp = loadImage("images/system/damage.png");
+	//attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
+	//attributesright_bmp = loadImage("images/system/AttributesRightHighlighted.png");
+	//attributesleftunclicked_bmp = loadImage("images/system/AttributesLeft.png");
+	//attributesrightunclicked_bmp = loadImage("images/system/AttributesRight.png");
+	//shopkeeper_bmp = loadImage("images/system/shopkeeper.png");
+	//shopkeeper2_bmp = loadImage("images/system/shopkeeper2.png");
+	//damage_bmp = loadImage("images/system/damage.png");
 
 	//Magic GUI images.
-	magicspellList_bmp = loadImage("images/system/spellList.png");
-	spell_list_titlebar_bmp = loadImage("images/system/spellListTitlebar.png");
-	spell_list_gui_slot_bmp = loadImage("images/system/spellListSlot.png");
-	spell_list_gui_slot_highlighted_bmp = loadImage("images/system/spellListSlotHighlighted.png");
-	sustained_spell_generic_icon = loadImage("images/system/magic/channeled_spell.png");
-	inventory_bmp = loadImage("images/system/Inventory.png");
-	inventoryoption_bmp = loadImage("images/system/InventoryOption.png");
-	inventory_mode_item_img = loadImage("images/system/inventory_mode_item.png");
-	inventory_mode_item_highlighted_img = loadImage("images/system/inventory_mode_item_highlighted.png");
-	inventory_mode_spell_img = loadImage("images/system/inventory_mode_spell.png");
-	inventory_mode_spell_highlighted_img = loadImage("images/system/inventory_mode_spell_highlighted.png");
-	equipped_bmp = loadImage("images/system/Equipped.png");
-	itembroken_bmp = loadImage("images/system/Broken.png");
+	//magicspellList_bmp = loadImage("images/system/spellList.png");
+	//spell_list_titlebar_bmp = loadImage("images/system/spellListTitlebar.png");
+	//spell_list_gui_slot_bmp = loadImage("images/system/spellListSlot.png");
+	//spell_list_gui_slot_highlighted_bmp = loadImage("images/system/spellListSlotHighlighted.png");
+	//sustained_spell_generic_icon = loadImage("images/system/magic/channeled_spell.png");
+	//inventory_bmp = loadImage("images/system/Inventory.png");
+	//inventoryoption_bmp = loadImage("images/system/InventoryOption.png");
+	//inventory_mode_item_img = loadImage("images/system/inventory_mode_item.png");
+	//inventory_mode_item_highlighted_img = loadImage("images/system/inventory_mode_item_highlighted.png");
+	//inventory_mode_spell_img = loadImage("images/system/inventory_mode_spell.png");
+	//inventory_mode_spell_highlighted_img = loadImage("images/system/inventory_mode_spell_highlighted.png");
+	//equipped_bmp = loadImage("images/system/Equipped.png");
+	//itembroken_bmp = loadImage("images/system/Broken.png");
 	//sky_bmp=scaleSurface(loadImage("images/system/sky.png"), 1280*(xres/320.0),468*(xres/320.0));
 	/*category_bmp[0]=loadImage("images/system/Weapon.png");
 	category_bmp[1]=loadImage("images/system/Armor.png");
@@ -307,13 +305,13 @@ bool loadInterfaceResources()
 	category_bmp[11]=loadImage("images/system/Spellbook.png");*/
 
 	//Chest images..
-	inventoryChest_bmp = loadImage("images/system/InventoryChest.png");
-	inventoryoptionChest_bmp = loadImage("images/system/InventoryOptionChest.png");
-	invclose_bmp = loadImage("images/system/InventoryCloseHighlighted.png");
-	invgraball_bmp = loadImage("images/system/InventoryChestGraballHighlighted.png");
+	//inventoryChest_bmp = loadImage("images/system/InventoryChest.png");
+	//inventoryoptionChest_bmp = loadImage("images/system/InventoryOptionChest.png");
+	//invclose_bmp = loadImage("images/system/InventoryCloseHighlighted.png");
+	//invgraball_bmp = loadImage("images/system/InventoryChestGraballHighlighted.png");
 
 	//Identify GUI images...
-	identifyGUI_img = loadImage("images/system/identifyGUI.png");
+	//identifyGUI_img = loadImage("images/system/identifyGUI.png");
 
 	/*rightsidebar_titlebar_img = loadImage("images/system/rightSidebarTitlebar.png");
 	if (!rightsidebar_titlebar_img) {
@@ -330,46 +328,40 @@ bool loadInterfaceResources()
 		printlog( "Failed to load \"images/system/rightSidebarSlotHighlighted.png\".");
 		return false;
 	}*/
-	rightsidebar_titlebar_img = spell_list_titlebar_bmp;
-	rightsidebar_slot_img = spell_list_gui_slot_bmp;
-	rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
-	rightsidebar_slot_grayedout_img = loadImage("images/system/rightSidebarSlotGrayedOut.png");
+	//rightsidebar_titlebar_img = spell_list_titlebar_bmp;
+	//rightsidebar_slot_img = spell_list_gui_slot_bmp;
+	//rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
+	//rightsidebar_slot_grayedout_img = loadImage("images/system/rightSidebarSlotGrayedOut.png");
 
-	bookgui_img = loadImage("images/system/book.png");
+	//bookgui_img = loadImage("images/system/book.png");
 	//nextpage_img = loadImage("images/system/nextpage.png");
 	//previouspage_img = loadImage("images/system/previouspage.png");
 	//bookclose_img = loadImage("images/system/bookclose.png");
 
-	book_highlighted_left_img = loadImage("images/system/bookpageleft-highlighted.png");
-	book_highlighted_right_img = loadImage("images/system/bookpageright-highlighted.png");
+	//book_highlighted_left_img = loadImage("images/system/bookpageleft-highlighted.png");
+	//book_highlighted_right_img = loadImage("images/system/bookpageright-highlighted.png");
 
-	str_bmp64u = loadImage("images/system/str64u.png");
-	dex_bmp64u = loadImage("images/system/dex64u.png");
-	con_bmp64u = loadImage("images/system/con64u.png");
-	int_bmp64u = loadImage("images/system/int64u.png");
-	per_bmp64u = loadImage("images/system/per64u.png");
-	chr_bmp64u = loadImage("images/system/chr64u.png");
-	str_bmp64 = loadImage("images/system/str64.png");
-	dex_bmp64 = loadImage("images/system/dex64.png");
-	con_bmp64 = loadImage("images/system/con64.png");
-	int_bmp64 = loadImage("images/system/int64.png");
-	per_bmp64 = loadImage("images/system/per64.png");
-	chr_bmp64 = loadImage("images/system/chr64.png");
+	//str_bmp64u = loadImage("images/system/str64u.png");
+	//dex_bmp64u = loadImage("images/system/dex64u.png");
+	//con_bmp64u = loadImage("images/system/con64u.png");
+	//int_bmp64u = loadImage("images/system/int64u.png");
+	//per_bmp64u = loadImage("images/system/per64u.png");
+	//chr_bmp64u = loadImage("images/system/chr64u.png");
+	//str_bmp64 = loadImage("images/system/str64.png");
+	//dex_bmp64 = loadImage("images/system/dex64.png");
+	//con_bmp64 = loadImage("images/system/con64.png");
+	//int_bmp64 = loadImage("images/system/int64.png");
+	//per_bmp64 = loadImage("images/system/per64.png");
+	//chr_bmp64 = loadImage("images/system/chr64.png");
 
-	sidebar_lock_bmp = loadImage("images/system/locksidebar.png");
-	sidebar_unlock_bmp = loadImage("images/system/unlocksidebar.png");
-	hotbar_img = loadImage("images/system/hotbar_slot.png");
-	hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
+	//sidebar_lock_bmp = loadImage("images/system/locksidebar.png");
+	//sidebar_unlock_bmp = loadImage("images/system/unlocksidebar.png");
+	//hotbar_img = loadImage("images/system/hotbar_slot.png");
+	//hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
 
-	effect_drunk_bmp = loadImage("images/system/drunk.png");
-	effect_polymorph_bmp = loadImage("images/system/polymorph.png");
-	effect_hungover_bmp = loadImage("images/system/hungover.png");
-
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		damageIndicators[i].first = nullptr;
-		damageIndicators[i].last = nullptr;
-	}
+	//effect_drunk_bmp = loadImage("images/system/drunk.png");
+	//effect_polymorph_bmp = loadImage("images/system/polymorph.png");
+	//effect_hungover_bmp = loadImage("images/system/hungover.png");
 
 	return true;
 }
@@ -378,194 +370,194 @@ void freeInterfaceResources()
 {
 	//int c;
 
-	if (font12x12_small_bmp)
+	/*if (font12x12_small_bmp)
 	{
 		SDL_FreeSurface(font12x12_small_bmp);
-	}
-	if ( backdrop_blessed_bmp )
-	{
-		SDL_FreeSurface(backdrop_blessed_bmp);
-	}
-	if ( backdrop_cursed_bmp )
-	{
-		SDL_FreeSurface(backdrop_cursed_bmp);
-	}
-	if (status_bmp)
-	{
-		SDL_FreeSurface(status_bmp);
-	}
-	if (character_bmp)
-	{
-		SDL_FreeSurface(character_bmp);
-	}
-	if (hunger_bmp)
-	{
-		SDL_FreeSurface(hunger_bmp);
-	}
-	if ( hunger_blood_bmp )
-	{
-		SDL_FreeSurface(hunger_blood_bmp);
-	}
-	if ( hunger_boiler_bmp )
-	{
-		SDL_FreeSurface(hunger_boiler_bmp);
-	}
-	if ( hunger_boiler_hotflame_bmp )
-	{
-		SDL_FreeSurface(hunger_boiler_hotflame_bmp);
-	}
-	if ( hunger_boiler_flame_bmp )
-	{
-		SDL_FreeSurface(hunger_boiler_flame_bmp);
-	}
-	if ( minotaur_bmp )
-	{
-		SDL_FreeSurface(minotaur_bmp);
-	}
-	//if(textup_bmp)
-	//SDL_FreeSurface(textup_bmp);
-	//if(textdown_bmp)
-	//SDL_FreeSurface(textdown_bmp);
-	if (attributesleft_bmp)
-	{
-		SDL_FreeSurface(attributesleft_bmp);
-	}
-	if (attributesright_bmp)
-	{
-		SDL_FreeSurface(attributesright_bmp);
-	}
-	if (attributesleftunclicked_bmp)
-	{
-		SDL_FreeSurface(attributesleftunclicked_bmp);
-	}
-	if (attributesrightunclicked_bmp)
-	{
-		SDL_FreeSurface(attributesrightunclicked_bmp);
-	}
-	if (magicspellList_bmp)
-	{
-		SDL_FreeSurface(magicspellList_bmp);
-	}
-	if (spell_list_titlebar_bmp)
-	{
-		SDL_FreeSurface(spell_list_titlebar_bmp);
-	}
-	if (spell_list_gui_slot_bmp)
-	{
-		SDL_FreeSurface(spell_list_gui_slot_bmp);
-	}
-	if (spell_list_gui_slot_highlighted_bmp)
-	{
-		SDL_FreeSurface(spell_list_gui_slot_highlighted_bmp);
-	}
-	if (sustained_spell_generic_icon)
-	{
-		SDL_FreeSurface(sustained_spell_generic_icon);
-	}
-	if (invup_bmp != NULL)
-	{
-		SDL_FreeSurface(invup_bmp);
-	}
-	if (invdown_bmp != NULL)
-	{
-		SDL_FreeSurface(invdown_bmp);
-	}
-	if (inventory_bmp != NULL)
-	{
-		SDL_FreeSurface(inventory_bmp);
-	}
-	if (inventoryoption_bmp != NULL)
-	{
-		SDL_FreeSurface(inventoryoption_bmp);
-	}
-	if (inventory_mode_item_img)
-	{
-		SDL_FreeSurface(inventory_mode_item_img);
-	}
-	if (inventory_mode_item_highlighted_img)
-	{
-		SDL_FreeSurface(inventory_mode_item_highlighted_img);
-	}
-	if (inventory_mode_spell_img)
-	{
-		SDL_FreeSurface(inventory_mode_spell_img);
-	}
-	if (inventory_mode_spell_highlighted_img)
-	{
-		SDL_FreeSurface(inventory_mode_spell_highlighted_img);
-	}
-	if (button_bmp != NULL)
-	{
-		SDL_FreeSurface(button_bmp);
-	}
-	if (smallbutton_bmp != NULL)
-	{
-		SDL_FreeSurface(smallbutton_bmp);
-	}
-	if (equipped_bmp != NULL)
-	{
-		SDL_FreeSurface(equipped_bmp);
-	}
-	if ( itembroken_bmp != nullptr )
-	{
-		SDL_FreeSurface(itembroken_bmp);
-	}
-	if (inventoryChest_bmp != NULL)
-	{
-		SDL_FreeSurface(inventoryChest_bmp);
-	}
-	if (invclose_bmp != NULL)
-	{
-		SDL_FreeSurface(invclose_bmp);
-	}
-	if (invgraball_bmp != NULL)
-	{
-		SDL_FreeSurface(invgraball_bmp);
-	}
-	if (inventoryoptionChest_bmp != NULL)
-	{
-		SDL_FreeSurface(inventoryoptionChest_bmp);
-	}
-	if (shopkeeper_bmp != NULL)
-	{
-		SDL_FreeSurface(shopkeeper_bmp);
-	}
-	if ( shopkeeper2_bmp != NULL )
-	{
-		SDL_FreeSurface(shopkeeper2_bmp);
-	}
-	if (damage_bmp != NULL)
-	{
-		SDL_FreeSurface(damage_bmp);
-	}
+	}*/
+	//if ( backdrop_blessed_bmp )
+	//{
+	//	SDL_FreeSurface(backdrop_blessed_bmp);
+	//}
+	//if ( backdrop_cursed_bmp )
+	//{
+	//	SDL_FreeSurface(backdrop_cursed_bmp);
+	//}
+	//if (status_bmp)
+	//{
+	//	SDL_FreeSurface(status_bmp);
+	//}
+	//if (character_bmp)
+	//{
+	//	SDL_FreeSurface(character_bmp);
+	//}
+	//if (hunger_bmp)
+	//{
+	//	SDL_FreeSurface(hunger_bmp);
+	//}
+	//if ( hunger_blood_bmp )
+	//{
+	//	SDL_FreeSurface(hunger_blood_bmp);
+	//}
+	//if ( hunger_boiler_bmp )
+	//{
+	//	SDL_FreeSurface(hunger_boiler_bmp);
+	//}
+	//if ( hunger_boiler_hotflame_bmp )
+	//{
+	//	SDL_FreeSurface(hunger_boiler_hotflame_bmp);
+	//}
+	//if ( hunger_boiler_flame_bmp )
+	//{
+	//	SDL_FreeSurface(hunger_boiler_flame_bmp);
+	//}
+	//if ( minotaur_bmp )
+	//{
+	//	SDL_FreeSurface(minotaur_bmp);
+	//}
+	////if(textup_bmp)
+	////SDL_FreeSurface(textup_bmp);
+	////if(textdown_bmp)
+	////SDL_FreeSurface(textdown_bmp);
+	//if (attributesleft_bmp)
+	//{
+	//	SDL_FreeSurface(attributesleft_bmp);
+	//}
+	//if (attributesright_bmp)
+	//{
+	//	SDL_FreeSurface(attributesright_bmp);
+	//}
+	//if (attributesleftunclicked_bmp)
+	//{
+	//	SDL_FreeSurface(attributesleftunclicked_bmp);
+	//}
+	//if (attributesrightunclicked_bmp)
+	//{
+	//	SDL_FreeSurface(attributesrightunclicked_bmp);
+	//}
+	//if (magicspellList_bmp)
+	//{
+	//	SDL_FreeSurface(magicspellList_bmp);
+	//}
+	//if (spell_list_titlebar_bmp)
+	//{
+	//	SDL_FreeSurface(spell_list_titlebar_bmp);
+	//}
+	//if (spell_list_gui_slot_bmp)
+	//{
+	//	SDL_FreeSurface(spell_list_gui_slot_bmp);
+	//}
+	//if (spell_list_gui_slot_highlighted_bmp)
+	//{
+	//	SDL_FreeSurface(spell_list_gui_slot_highlighted_bmp);
+	//}
+	//if (sustained_spell_generic_icon)
+	//{
+	//	SDL_FreeSurface(sustained_spell_generic_icon);
+	//}
+	//if (invup_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(invup_bmp);
+	//}
+	//if (invdown_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(invdown_bmp);
+	//}
+	//if (inventory_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(inventory_bmp);
+	//}
+	//if (inventoryoption_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(inventoryoption_bmp);
+	//}
+	//if (inventory_mode_item_img)
+	//{
+	//	SDL_FreeSurface(inventory_mode_item_img);
+	//}
+	//if (inventory_mode_item_highlighted_img)
+	//{
+	//	SDL_FreeSurface(inventory_mode_item_highlighted_img);
+	//}
+	//if (inventory_mode_spell_img)
+	//{
+	//	SDL_FreeSurface(inventory_mode_spell_img);
+	//}
+	//if (inventory_mode_spell_highlighted_img)
+	//{
+	//	SDL_FreeSurface(inventory_mode_spell_highlighted_img);
+	//}
+	//if (button_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(button_bmp);
+	//}
+	//if (smallbutton_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(smallbutton_bmp);
+	//}
+	//if (equipped_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(equipped_bmp);
+	//}
+	//if ( itembroken_bmp != nullptr )
+	//{
+	//	SDL_FreeSurface(itembroken_bmp);
+	//}
+	//if (inventoryChest_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(inventoryChest_bmp);
+	//}
+	//if (invclose_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(invclose_bmp);
+	//}
+	//if (invgraball_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(invgraball_bmp);
+	//}
+	//if (inventoryoptionChest_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(inventoryoptionChest_bmp);
+	//}
+	//if (shopkeeper_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(shopkeeper_bmp);
+	//}
+	//if ( shopkeeper2_bmp != NULL )
+	//{
+	//	SDL_FreeSurface(shopkeeper2_bmp);
+	//}
+	//if (damage_bmp != NULL)
+	//{
+	//	SDL_FreeSurface(damage_bmp);
+	//}
 	//for( c=0; c<NUMCATEGORIES; c++ )
 	//if(category_bmp[c]!=NULL)
 	//SDL_FreeSurface(category_bmp[c]);
-	if (identifyGUI_img != NULL)
+	/*if (identifyGUI_img != NULL)
 	{
 		SDL_FreeSurface(identifyGUI_img);
-	}
+	}*/
 	/*if (rightsidebar_titlebar_img)
 		SDL_FreeSurface(rightsidebar_titlebar_img);
 	if (rightsidebar_slot_img)
 		SDL_FreeSurface(rightsidebar_slot_img);
 	if (rightsidebar_slot_highlighted_img)
 		SDL_FreeSurface(rightsidebar_slot_highlighted_img);*/
-	if (rightsidebar_slot_grayedout_img)
+	/*if (rightsidebar_slot_grayedout_img)
 	{
 		SDL_FreeSurface(rightsidebar_slot_grayedout_img);
 	}
 	if (bookgui_img)
 	{
 		SDL_FreeSurface(bookgui_img);
-	}
+	}*/
 	//if (nextpage_img)
 	//SDL_FreeSurface(nextpage_img);
 	//if (previouspage_img)
 	//SDL_FreeSurface(previouspage_img);
 	//if (bookclose_img)
 	//SDL_FreeSurface(bookclose_img);
-	if (book_highlighted_left_img)
+	/*if (book_highlighted_left_img)
 	{
 		SDL_FreeSurface(book_highlighted_left_img);
 	}
@@ -648,11 +640,7 @@ void freeInterfaceResources()
 	if ( effect_hungover_bmp )
 	{
 		SDL_FreeSurface(effect_hungover_bmp);
-	}
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		list_FreeAll(&damageIndicators[i]);
-	}
+	}*/
 }
 
 void defaultImpulses()
@@ -2810,11 +2798,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 			txt.y = src.y - src.h * sin(angleMiddle);
 			txt.w = 0;
 			txt.h = 0;
-			SDL_Rect img;
-			img.x = txt.x - sidebar_unlock_bmp->w / 2;
-			img.y = txt.y - sidebar_unlock_bmp->h / 2;
-			img.w = sidebar_unlock_bmp->w;
-			img.h = sidebar_unlock_bmp->h;
 
 			// draw the text for the menu wheel.
 
@@ -2823,7 +2806,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				if ( *cvar_showoldwheel )
 				{
-					drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+					//SDL_Rect img;
+					//img.x = txt.x - sidebar_unlock_bmp->w / 2;
+					//img.y = txt.y - sidebar_unlock_bmp->h / 2;
+					//img.w = sidebar_unlock_bmp->w;
+					//img.h = sidebar_unlock_bmp->h;
+					//drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
 				}
 				lockedOption = true;
 			}
@@ -5196,18 +5184,6 @@ void GenericGUIMenu::updateGUI()
 			}
 		}
 
-		gui_starty = (players[gui_player]->camera_midx() + (inventoryChest_bmp->w / 2)) + offsetx;
-		gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
-
-		//Center the GUI.
-		pos.x = gui_starty;
-		pos.y = gui_startx;
-
-		windowX1 = gui_starty;
-		windowX2 = gui_starty + identifyGUI_img->w;
-
-		windowY1 = gui_startx;
-		windowY2 = gui_startx + identifyGUI_img->h;
 		if ( guiType == GUI_TYPE_TINKERING )
 		{
 			//windowX1 -= 20;
@@ -6310,113 +6286,113 @@ void GenericGUIMenu::closeGUI()
 	}
 }
 
-inline Item* GenericGUIMenu::getItemInfo(int slot)
-{
-	if ( slot >= kNumShownItems )
-	{
-		return nullptr; //Out of bounds,
-	}
+//inline Item* GenericGUIMenu::getItemInfo(int slot)
+//{
+//	if ( slot >= kNumShownItems )
+//	{
+//		return nullptr; //Out of bounds,
+//	}
+//
+//	return itemsDisplayed[slot];
+//}
 
-	return itemsDisplayed[slot];
-}
+//void GenericGUIMenu::selectSlot(int slot)
+//{
+//	if ( slot < selectedSlot )
+//	{
+//		//Moving up.
+//
+//		/*
+//		* Possible cases:
+//		* * 1) Move cursor up the GUI through different selectedSlot.
+//		* * 2) Page up through scroll--
+//		* * 3) Scrolling up past top of GUI, no scroll (move back to inventory)
+//		*/
+//
+//		if ( selectedSlot <= 0 )
+//		{
+//			//Covers cases 2 & 3.
+//
+//			/*
+//			* Possible cases:
+//			* * A) Hit very top of "inventory", can't go any further. Return to inventory.
+//			* * B) Page up, scrolling through scroll.
+//			*/
+//
+//			if ( scroll <= 0 )
+//			{
+//				//Case 3/A: Return to inventory.
+//				//selectedSlot = -1;
+//			}
+//			else
+//			{
+//				//Case 2/B: Page up through "inventory".
+//				--scroll;
+//			}
+//		}
+//		else
+//		{
+//			//Covers case 1.
+//
+//			//Move cursor up the GUI through different selectedSlot (--selectedSlot).
+//			--selectedSlot;
+//			warpMouseToSelectedSlot();
+//		}
+//	}
+//	else if ( slot > selectedSlot )
+//	{
+//		//Moving down.
+//
+//		/*
+//		* Possible cases:
+//		* * 1) Moving cursor down through GUI through different selectedSlot.
+//		* * 2) Scrolling down past bottom of GUI through scroll++
+//		* * 3) Scrolling down past bottom of GUI, max scroll (revoke move -- can't go beyond limit of GUI).
+//		*/
+//
+//		if ( selectedSlot >= kNumShownItems - 1 )
+//		{
+//			//Covers cases 2 & 3.
+//			++scroll; //scroll is automatically sanitized in updateGUI().
+//		}
+//		else
+//		{
+//			//Covers case 1.
+//			//Move cursor down through the GUI through different selectedSlot (++selectedSlot).
+//			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+//
+//			/*
+//			* Two possible cases:
+//			* * A) Items below this. Advance selectedSlot to them.
+//			* * B) On last item already. Do nothing (revoke movement).
+//			*/
+//
+//			Item* item = getItemInfo(selectedSlot + 1);
+//
+//			if ( item )
+//			{
+//				++selectedSlot;
+//				warpMouseToSelectedSlot();
+//			}
+//			else
+//			{
+//				//No more items. Stop.
+//			}
+//		}
+//	}
+//}
 
-void GenericGUIMenu::selectSlot(int slot)
-{
-	if ( slot < selectedSlot )
-	{
-		//Moving up.
-
-		/*
-		* Possible cases:
-		* * 1) Move cursor up the GUI through different selectedSlot.
-		* * 2) Page up through scroll--
-		* * 3) Scrolling up past top of GUI, no scroll (move back to inventory)
-		*/
-
-		if ( selectedSlot <= 0 )
-		{
-			//Covers cases 2 & 3.
-
-			/*
-			* Possible cases:
-			* * A) Hit very top of "inventory", can't go any further. Return to inventory.
-			* * B) Page up, scrolling through scroll.
-			*/
-
-			if ( scroll <= 0 )
-			{
-				//Case 3/A: Return to inventory.
-				//selectedSlot = -1;
-			}
-			else
-			{
-				//Case 2/B: Page up through "inventory".
-				--scroll;
-			}
-		}
-		else
-		{
-			//Covers case 1.
-
-			//Move cursor up the GUI through different selectedSlot (--selectedSlot).
-			--selectedSlot;
-			warpMouseToSelectedSlot();
-		}
-	}
-	else if ( slot > selectedSlot )
-	{
-		//Moving down.
-
-		/*
-		* Possible cases:
-		* * 1) Moving cursor down through GUI through different selectedSlot.
-		* * 2) Scrolling down past bottom of GUI through scroll++
-		* * 3) Scrolling down past bottom of GUI, max scroll (revoke move -- can't go beyond limit of GUI).
-		*/
-
-		if ( selectedSlot >= kNumShownItems - 1 )
-		{
-			//Covers cases 2 & 3.
-			++scroll; //scroll is automatically sanitized in updateGUI().
-		}
-		else
-		{
-			//Covers case 1.
-			//Move cursor down through the GUI through different selectedSlot (++selectedSlot).
-			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
-
-			/*
-			* Two possible cases:
-			* * A) Items below this. Advance selectedSlot to them.
-			* * B) On last item already. Do nothing (revoke movement).
-			*/
-
-			Item* item = getItemInfo(selectedSlot + 1);
-
-			if ( item )
-			{
-				++selectedSlot;
-				warpMouseToSelectedSlot();
-			}
-			else
-			{
-				//No more items. Stop.
-			}
-		}
-	}
-}
-
-void GenericGUIMenu::warpMouseToSelectedSlot()
-{
-	SDL_Rect slotPos;
-	slotPos.x = gui_starty;
-	slotPos.w = inventoryoptionChest_bmp->w;
-	slotPos.h = inventoryoptionChest_bmp->h;
-	slotPos.y = gui_startx + 16 + (slotPos.h * selectedSlot);
-
-	// to verify for splitscreen
-	//SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
-}
+//void GenericGUIMenu::warpMouseToSelectedSlot()
+//{
+//	SDL_Rect slotPos;
+//	slotPos.x = gui_starty;
+//	slotPos.w = inventoryoptionChest_bmp->w;
+//	slotPos.h = inventoryoptionChest_bmp->h;
+//	slotPos.y = gui_startx + 16 + (slotPos.h * selectedSlot);
+//
+//	// to verify for splitscreen
+//	//SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
+//}
 
 void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, int effectItemType, int usingSpellID)
 {
@@ -6514,8 +6490,6 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		}
 		itemfxGUI.openItemEffectMenu(itemfxGUI.currentMode);
 	}
-	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
@@ -6554,9 +6528,6 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	//players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 	alchemyGUI.openAlchemyMenu();
 
-	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = 360 + (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
-
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
 
 	if ( openedChest[gui_player] )
@@ -6590,9 +6561,6 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	guiType = static_cast<GUICurrentType>(type);
-
-	gui_starty = (players[gui_player]->camera_midx() - (inventoryChest_bmp->w / 2)) + offsetx;
-	gui_startx = (players[gui_player]->camera_midy() - (inventoryChest_bmp->h / 2)) + offsety;
 
 	// build the craftables list.
 	if ( guiType == GUI_TYPE_TINKERING )

@@ -2042,11 +2042,6 @@ static void handleMainMenu(bool mode)
 						physfsReloadSystemImages();
 						gamemods_systemImagesReloadUnmodded = false;
 						systemResourceImagesToReload.clear();
-
-						// tidy up some other resource files.
-						rightsidebar_titlebar_img = spell_list_titlebar_bmp;
-						rightsidebar_slot_img = spell_list_gui_slot_bmp;
-						rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 					}
 
 					gamemods_disableSteamAchievements = false;
@@ -9574,7 +9569,6 @@ void doNewGame(bool makeHighscore) {
 	{
 		// clear follower menu entities.
 		FollowerMenu[i].closeFollowerMenuGUI(true);
-		list_FreeAll(&damageIndicators[i]);
 	}
 	for ( int c = 0; c < NUMMONSTERS; c++ )
 	{
@@ -13712,11 +13706,6 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		GO_SwapBuffers(screen);
 		physfsReloadSystemImages();
 		gamemods_systemImagesReloadUnmodded = true;
-
-		// tidy up some other resource files.
-		rightsidebar_titlebar_img = spell_list_titlebar_bmp;
-		rightsidebar_slot_img = spell_list_gui_slot_bmp;
-		rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 	}
 
 	// look for a save game

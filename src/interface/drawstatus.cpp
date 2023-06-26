@@ -512,7 +512,7 @@ void drawStatus(int player)
 	const Sint32 mousexrel = inputs.getMouse(player, Inputs::XREL);
 	const Sint32 mouseyrel = inputs.getMouse(player, Inputs::YREL);
 
-	pos.x = players[player]->statusBarUI.getStartX();
+	//pos.x = players[player]->statusBarUI.getStartX();
 	auto& hotbar_t = players[player]->hotbar;
 	auto& hotbar = hotbar_t.slots();
 
@@ -521,7 +521,7 @@ void drawStatus(int player)
 
 	if ( !hide_statusbar )
 	{
-		pos.y = players[player]->statusBarUI.getStartY();
+		//pos.y = players[player]->statusBarUI.getStartY();
 	}
 	else
 	{
@@ -532,277 +532,277 @@ void drawStatus(int player)
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
-	pos.w = status_bmp->w * uiscale_chatlog;
-	pos.h = status_bmp->h * uiscale_chatlog;
-	if ( !hide_statusbar )
-	{
-		drawImageScaled(status_bmp, NULL, &pos);
-	}
+	//pos.w = status_bmp->w * uiscale_chatlog;
+	//pos.h = status_bmp->h * uiscale_chatlog;
+	//if ( !hide_statusbar )
+	//{
+	//	drawImageScaled(status_bmp, NULL, &pos);
+	//}
 
-	players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
-	players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
-	players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
-	players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
+	////players[player]->statusBarUI.messageStatusBarBox.x = pos.x;
+	////players[player]->statusBarUI.messageStatusBarBox.y = pos.y;
+	////players[player]->statusBarUI.messageStatusBarBox.w = pos.w;
+	////players[player]->statusBarUI.messageStatusBarBox.h = pos.h;
 
-	// enemy health
-	enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
+	//// enemy health
+	//enemyHPDamageBarHandler[player].displayCurrentHPBar(player);
 
-	// messages
-	if ( !hide_statusbar )
-	{
-		x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
-		y = players[player]->camera_y2();
-		textscroll = std::min<Uint32>(list_Size(&messages) - 3, textscroll);
-		c = 0;
-		for ( node = messages.last; node != NULL; node = node->prev )
-		{
-			c++;
-			if ( c <= textscroll )
-			{
-				continue;
-			}
-			string = (string_t*)node->element;
-			if ( uiscale_chatlog >= 1.5 )
-			{
-				y -= TTF16_HEIGHT * string->lines;
-				if ( y < y2 - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
-				{
-					break;
-				}
-			}
-			else if ( uiscale_chatlog != 1.f )
-			{
-				y -= TTF12_HEIGHT * string->lines;
-				if ( y < y2 - status_bmp->h * 1.1 + 4 )
-				{
-					break;
-				}
-			}
-			else
-			{
-				y -= TTF12_HEIGHT * string->lines;
-				if ( y < y2 - status_bmp->h + 4 )
-				{
-					break;
-				}
-			}
-			z = 0;
-			for ( i = 0; i < strlen(string->data); i++ )
-			{
-				if ( string->data[i] != 10 )   // newline
-				{
-					z++;
-				}
-				else
-				{
-					z = 0;
-				}
-				if ( z == 65 )
-				{
-					if ( string->data[i] != 10 )
-					{
-						char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
-						strcpy(tempString, string->data);
-						strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
-						tempString[i] = 10;
-						free(string->data);
-						string->data = tempString;
-						string->lines++;
-					}
-					z = 0;
-				}
-			}
-			Uint32 color = makeColor( 0, 0, 0, 255); // black color
-			if ( uiscale_chatlog >= 1.5 )
-			{
-				ttfPrintTextColor(ttf16, x, y, color, false, string->data);
-			}
-			else
-			{
-				ttfPrintTextColor(ttf12, x, y, color, false, string->data);
-			}
-		}
-		if ( inputs.bMouseLeft(player) )
-		{
-			if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 7 && omousey < y2 - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll up
-					buttonclick = 3;
-					textscroll++;
-					inputs.mouseClearLeft(player);
-				}
-			}
-			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 34 && omousey < y2 - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll down
-					buttonclick = 12;
-					textscroll--;
-					if ( textscroll < 0 )
-					{
-						textscroll = 0;
-					}
-					inputs.mouseClearLeft(player);
-				}
-			}
-			else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 62 && omousey < y2 - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
-			{
-				if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
-					&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
-				{
-					// text scroll down all the way
-					buttonclick = 4;
-					textscroll = 0;
-					inputs.mouseClearLeft(player);
-				}
-			}
-			/*else if( omousey>=y2-status_bmp->h+8 && omousey<y2-status_bmp->h+8+30 ) {
-				if( omousex>=players[player]->statusBarUI.getStartX()+618 && omousex<players[player]->statusBarUI.getStartX()+618+11 ) {
-					// text scroll up all the way
-					buttonclick=13;
-					textscroll=list_Size(&messages)-4;
-					mousestatus[SDL_BUTTON_LEFT]=0;
-				}
-			}*/
-		}
+	//// messages
+	//if ( !hide_statusbar )
+	//{
+	//	x = players[player]->statusBarUI.getStartX() + 24 * uiscale_chatlog;
+	//	y = players[player]->camera_y2();
+	//	textscroll = std::min<Uint32>(list_Size(&messages) - 3, textscroll);
+	//	c = 0;
+	//	for ( node = messages.last; node != NULL; node = node->prev )
+	//	{
+	//		c++;
+	//		if ( c <= textscroll )
+	//		{
+	//			continue;
+	//		}
+	//		string = (string_t*)node->element;
+	//		if ( uiscale_chatlog >= 1.5 )
+	//		{
+	//			y -= TTF16_HEIGHT * string->lines;
+	//			if ( y < y2 - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		else if ( uiscale_chatlog != 1.f )
+	//		{
+	//			y -= TTF12_HEIGHT * string->lines;
+	//			if ( y < y2 - status_bmp->h * 1.1 + 4 )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			y -= TTF12_HEIGHT * string->lines;
+	//			if ( y < y2 - status_bmp->h + 4 )
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		z = 0;
+	//		for ( i = 0; i < strlen(string->data); i++ )
+	//		{
+	//			if ( string->data[i] != 10 )   // newline
+	//			{
+	//				z++;
+	//			}
+	//			else
+	//			{
+	//				z = 0;
+	//			}
+	//			if ( z == 65 )
+	//			{
+	//				if ( string->data[i] != 10 )
+	//				{
+	//					char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
+	//					strcpy(tempString, string->data);
+	//					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
+	//					tempString[i] = 10;
+	//					free(string->data);
+	//					string->data = tempString;
+	//					string->lines++;
+	//				}
+	//				z = 0;
+	//			}
+	//		}
+	//		Uint32 color = makeColor( 0, 0, 0, 255); // black color
+	//		if ( uiscale_chatlog >= 1.5 )
+	//		{
+	//			ttfPrintTextColor(ttf16, x, y, color, false, string->data);
+	//		}
+	//		else
+	//		{
+	//			ttfPrintTextColor(ttf12, x, y, color, false, string->data);
+	//		}
+	//	}
+	//	if ( inputs.bMouseLeft(player) )
+	//	{
+	//		if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 7 && omousey < y2 - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll up
+	//				buttonclick = 3;
+	//				textscroll++;
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 34 && omousey < y2 - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll down
+	//				buttonclick = 12;
+	//				textscroll--;
+	//				if ( textscroll < 0 )
+	//				{
+	//					textscroll = 0;
+	//				}
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		else if ( omousey >= y2 - status_bmp->h * uiscale_chatlog + 62 && omousey < y2 - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
+	//		{
+	//			if ( omousex >= players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog
+	//				&& omousex < players[player]->statusBarUI.getStartX() + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+	//			{
+	//				// text scroll down all the way
+	//				buttonclick = 4;
+	//				textscroll = 0;
+	//				inputs.mouseClearLeft(player);
+	//			}
+	//		}
+	//		/*else if( omousey>=y2-status_bmp->h+8 && omousey<y2-status_bmp->h+8+30 ) {
+	//			if( omousex>=players[player]->statusBarUI.getStartX()+618 && omousex<players[player]->statusBarUI.getStartX()+618+11 ) {
+	//				// text scroll up all the way
+	//				buttonclick=13;
+	//				textscroll=list_Size(&messages)-4;
+	//				mousestatus[SDL_BUTTON_LEFT]=0;
+	//			}
+	//		}*/
+	//	}
 
-		// mouse wheel
-		if ( !shootmode )
-		{
-			if ( mousex >= players[player]->statusBarUI.getStartX() && mousex < players[player]->statusBarUI.getStartX() + status_bmp->w * uiscale_chatlog )
-			{
-				if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
-				{
-					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-					{
-						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-						textscroll--;
-						if ( textscroll < 0 )
-						{
-							textscroll = 0;
-						}
-					}
-					else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-					{
-						mousestatus[SDL_BUTTON_WHEELUP] = 0;
-						textscroll++;
-					}
-				}
-			}
-		}
-		if (showfirst)
-		{
-			textscroll = list_Size(&messages) - 3;
-		}
+	//	// mouse wheel
+	//	if ( !shootmode )
+	//	{
+	//		if ( mousex >= players[player]->statusBarUI.getStartX() && mousex < players[player]->statusBarUI.getStartX() + status_bmp->w * uiscale_chatlog )
+	//		{
+	//			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
+	//			{
+	//				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+	//				{
+	//					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+	//					textscroll--;
+	//					if ( textscroll < 0 )
+	//					{
+	//						textscroll = 0;
+	//					}
+	//				}
+	//				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+	//				{
+	//					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+	//					textscroll++;
+	//				}
+	//			}
+	//		}
+	//	}
+	//	if (showfirst)
+	//	{
+	//		textscroll = list_Size(&messages) - 3;
+	//	}
 
 
-		//Text scroll up button.
-		if ( buttonclick == 3 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 27 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textup_bmp, NULL, &pos);
-		}
-		//Text scroll down all the way button.
-		if ( buttonclick == 4 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 31 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textdown_bmp, NULL, &pos);
-		}
-		//Text scroll down button.
-		if ( buttonclick == 12 )
-		{
-			pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
-			pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
-			pos.w = 11 * uiscale_chatlog;
-			pos.h = 28 * uiscale_chatlog;
-			drawRect(&pos, makeColorRGB(255, 255, 255), 80);
-			//drawImage(textup_bmp, NULL, &pos);
-		}
-		//Text scroll up all the way button.
-		/*if( buttonclick==13 ) {
-			pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
-			pos.w=11; pos.h=30;
-			drawRect(&pos,0xffffffff,80);
-			//drawImage(textdown_bmp, NULL, &pos);
-		}*/
-	}
+	//	//Text scroll up button.
+	//	if ( buttonclick == 3 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 27 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textup_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll down all the way button.
+	//	if ( buttonclick == 4 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 31 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textdown_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll down button.
+	//	if ( buttonclick == 12 )
+	//	{
+	//		pos.x = players[player]->statusBarUI.getStartX() + 617 * uiscale_chatlog;
+	//		pos.y = y2 - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
+	//		pos.w = 11 * uiscale_chatlog;
+	//		pos.h = 28 * uiscale_chatlog;
+	//		drawRect(&pos, makeColorRGB(255, 255, 255), 80);
+	//		//drawImage(textup_bmp, NULL, &pos);
+	//	}
+	//	//Text scroll up all the way button.
+	//	/*if( buttonclick==13 ) {
+	//		pos.x=players[player]->statusBarUI.getStartX()+617; pos.y=y2-status_bmp->h+8;
+	//		pos.w=11; pos.h=30;
+	//		drawRect(&pos,0xffffffff,80);
+	//		//drawImage(textdown_bmp, NULL, &pos);
+	//	}*/
+	//}
 
-	int playerStatusBarWidth = 38 * uiscale_playerbars;
-	int playerStatusBarHeight = 156 * uiscale_playerbars;
+	//int playerStatusBarWidth = 38 * uiscale_playerbars;
+	//int playerStatusBarHeight = 156 * uiscale_playerbars;
 
-	if ( !players[player]->hud.hpFrame )
-	{
-		drawHPMPBars(player);
-	}
-	
-	// hunger icon
-	if ( stats[player] && stats[player]->type != AUTOMATON
-		&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160;
-		pos.w = 64;
-		pos.h = 64;
-		if ( playerRequiresBloodToSustain(player) )
-		{
-			drawImageScaled(hunger_blood_bmp, NULL, &pos);
-		}
-		else
-		{
-			drawImageScaled(hunger_bmp, NULL, &pos);
-		}
-	}
+	//if ( !players[player]->hud.hpFrame )
+	//{
+	//	drawHPMPBars(player);
+	//}
+	//
+	//// hunger icon
+	//if ( stats[player] && stats[player]->type != AUTOMATON
+	//	&& (svFlags & SV_FLAG_HUNGER) && stats[player]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	//{
+	//	pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//	pos.y = y2 - 160;
+	//	pos.w = 64;
+	//	pos.h = 64;
+	//	if ( playerRequiresBloodToSustain(player) )
+	//	{
+	//		drawImageScaled(hunger_blood_bmp, NULL, &pos);
+	//	}
+	//	else
+	//	{
+	//		drawImageScaled(hunger_bmp, NULL, &pos);
+	//	}
+	//}
 
-	if ( stats[player] && stats[player]->type == AUTOMATON )
-	{
-		if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
-		{
-			pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-			pos.y = y2 - 160;
-			pos.w = 64;
-			pos.h = 64;
-			if ( stats[player]->HUNGER > 1200 )
-			{
-				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
-			}
-			else
-			{
-				if ( stats[player]->HUNGER > 600 )
-				{
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
-				}
-				else
-				{
-					float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
-					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
-				}
-			}
-			drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
-		}
-	}
+	//if ( stats[player] && stats[player]->type == AUTOMATON )
+	//{
+	//	if ( stats[player]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
+	//	{
+	//		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//		pos.y = y2 - 160;
+	//		pos.w = 64;
+	//		pos.h = 64;
+	//		if ( stats[player]->HUNGER > 1200 )
+	//		{
+	//			drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
+	//		}
+	//		else
+	//		{
+	//			if ( stats[player]->HUNGER > 600 )
+	//			{
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
+	//			}
+	//			else
+	//			{
+	//				float percent = (stats[player]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
+	//				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
+	//			}
+	//		}
+	//		drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
+	//	}
+	//}
 
-	// minotaur icon
-	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
-		pos.y = y2 - 160 + 64 + 2;
-		pos.w = 64;
-		pos.h = 64;
-		drawImageScaled(minotaur_bmp, nullptr, &pos);
-	}
+	//// minotaur icon
+	//if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
+	//{
+	//	pos.x = /*xoffset*/ + playerStatusBarWidth + 10; // was pos.x = 128;
+	//	pos.y = y2 - 160 + 64 + 2;
+	//	pos.w = 64;
+	//	pos.h = 64;
+	//	drawImageScaled(minotaur_bmp, nullptr, &pos);
+	//}
 
 	// draw action prompts.
 	/*if ( players[player]->hud.bShowActionPrompts )
@@ -863,7 +863,7 @@ void drawStatus(int player)
 			pos.y = players[player]->hotbar.faceButtonPositions[num].y;
 		}
 
-		drawImageScaledColor(hotbar_img, NULL, &pos, color);
+		//drawImageScaledColor(hotbar_img, NULL, &pos, color);
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
@@ -1152,11 +1152,11 @@ void drawStatus(int player)
 				{
 					if ( itemIsEquipped(item, player) )
 					{
-						drawImageScaled(equipped_bmp, NULL, &src);
+						//drawImageScaled(equipped_bmp, NULL, &src);
 					}
 					else if ( item->status == BROKEN )
 					{
-						drawImageScaled(itembroken_bmp, NULL, &src);
+						//drawImageScaled(itembroken_bmp, NULL, &src);
 					}
 				}
 				else
@@ -1165,7 +1165,7 @@ void drawStatus(int player)
 					if ( players[player]->magic.selectedSpell() == spell
 						&& (players[player]->magic.selected_spell_last_appearance == item->appearance || players[player]->magic.selected_spell_last_appearance == -1 ) )
 					{
-						drawImageScaled(equipped_bmp, NULL, &src);
+						//drawImageScaled(equipped_bmp, NULL, &src);
 					}
 				}
 			}
@@ -1934,17 +1934,17 @@ void drawStatus(int player)
 
 			pos.x = initial_position.x + (hotbar_t.current_hotbar * hotbar_t.getSlotSize());
 			pos.y = initial_position.y - hotbar_t.getSlotSize();
-			if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
-				&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
-			{
-				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
-				Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
-				if ( itemToDrop )
-				{
-					dropItem(itemToDrop, player);
-				}
-			}
+			//if ( !shootmode && !players[player]->bookGUI.bBookOpen && !openedChest[player] && inputs.bControllerInputPressed(player, INJOY_MENU_DROP_ITEM)
+			//	&& mouseInBounds(player, pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
+			//{
+			//	//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
+			//	inputs.controllerClearInput(player, INJOY_MENU_DROP_ITEM);
+			//	Item* itemToDrop = uidToItem(hotbar[hotbar_t.current_hotbar].item);
+			//	if ( itemToDrop )
+			//	{
+			//		dropItem(itemToDrop, player);
+			//	}
+			//}
 		}
 
 		if ( item )
@@ -2118,30 +2118,30 @@ void drawStatus(int player)
 		{
 			stats[player]->PLAYER_LVL_STAT_TIMER[i]--;
 
-			switch ( i )
-			{
-				// prepare the stat image.
-				case STAT_STR:
-					tmp_bmp = str_bmp64u;
-					break;
-				case STAT_DEX:
-					tmp_bmp = dex_bmp64u;
-					break;
-				case STAT_CON:
-					tmp_bmp = con_bmp64u;
-					break;
-				case STAT_INT:
-					tmp_bmp = int_bmp64u;
-					break;
-				case STAT_PER:
-					tmp_bmp = per_bmp64u;
-					break;
-				case STAT_CHR:
-					tmp_bmp = chr_bmp64u;
-					break;
-				default:
-					break;
-			}
+			//switch ( i )
+			//{
+			//	// prepare the stat image.
+			//	case STAT_STR:
+			//		tmp_bmp = str_bmp64u;
+			//		break;
+			//	case STAT_DEX:
+			//		tmp_bmp = dex_bmp64u;
+			//		break;
+			//	case STAT_CON:
+			//		tmp_bmp = con_bmp64u;
+			//		break;
+			//	case STAT_INT:
+			//		tmp_bmp = int_bmp64u;
+			//		break;
+			//	case STAT_PER:
+			//		tmp_bmp = per_bmp64u;
+			//		break;
+			//	case STAT_CHR:
+			//		tmp_bmp = chr_bmp64u;
+			//		break;
+			//	default:
+			//		break;
+			//}
 			drawImageScaled(tmp_bmp, NULL, &pos);
 			if ( stats[player]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
 			{

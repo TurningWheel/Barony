@@ -19,14 +19,6 @@
 
 class Item;
 
-typedef struct damageIndicator_t
-{
-	double x, y;  // x and y of the attacker in world coordinates
-	double alpha; // alpha value of the indicator
-	node_t* node; // node in the damageIndicator list
-	Sint32 ticks; // birthtime of the damage indicator
-} damageIndicator_t;
-extern list_t damageIndicators[MAXPLAYERS];
 struct DamageIndicatorHandler_t
 {
 	struct DamageIndicator_t
@@ -183,28 +175,6 @@ static const int GUI_MODE_SHOP = 2;
 static const int GUI_MODE_FOLLOWERMENU = 3;
 static const int GUI_MODE_SIGN = 4;
 
-extern SDL_Surface* font12x12_small_bmp;
-extern SDL_Surface* backdrop_blessed_bmp;
-extern SDL_Surface* backdrop_cursed_bmp;
-extern SDL_Surface* status_bmp;
-extern SDL_Surface* character_bmp;
-extern SDL_Surface* hunger_bmp;
-extern SDL_Surface* hunger_blood_bmp;
-extern SDL_Surface* hunger_boiler_bmp;
-extern SDL_Surface* hunger_boiler_hotflame_bmp;
-extern SDL_Surface* hunger_boiler_flame_bmp;
-extern SDL_Surface* minotaur_bmp;
-extern SDL_Surface* textup_bmp;
-extern SDL_Surface* textdown_bmp;
-extern SDL_Surface* attributesleft_bmp, *attributesleftunclicked_bmp;
-extern SDL_Surface* attributesright_bmp, *attributesrightunclicked_bmp;
-extern SDL_Surface* button_bmp, *smallbutton_bmp, *invup_bmp, *invdown_bmp;
-extern SDL_Surface* inventory_bmp, *inventoryoption_bmp, *inventoryoptionChest_bmp, *equipped_bmp;
-extern SDL_Surface* itembroken_bmp;
-//extern SDL_Surface *category_bmp[NUMCATEGORIES];
-extern SDL_Surface* shopkeeper_bmp;
-extern SDL_Surface* shopkeeper2_bmp;
-extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int inventorycategory;
 extern int itemscroll;
@@ -219,16 +189,13 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
-extern SDL_Surface* inventoryChest_bmp;
-extern SDL_Surface* invclose_bmp;
-extern SDL_Surface* invgraball_bmp;
 extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it can populate the chest inventory on its end.
 
-extern bool gui_clickdrag[MAXPLAYERS]; //True as long as an interface element is being dragged.
-extern int dragoffset_x[MAXPLAYERS];
-extern int dragoffset_y[MAXPLAYERS];
-extern int buttonclick;
+//extern bool gui_clickdrag[MAXPLAYERS]; //True as long as an interface element is being dragged.
+//extern int dragoffset_x[MAXPLAYERS];
+//extern int dragoffset_y[MAXPLAYERS];
+//extern int buttonclick;
 
 // function prototypes
 void takeScreenshot(const char* output_path = nullptr);
@@ -268,26 +235,22 @@ bool playerLearnedSpellbook(const int player, Item* current_item);
 //Inventory GUI definitions.
 static const int INVENTORY_MODE_ITEM = 0;
 static const int INVENTORY_MODE_SPELL = 1;
-extern SDL_Surface* inventory_mode_item_img;
-extern SDL_Surface* inventory_mode_item_highlighted_img;
-extern SDL_Surface* inventory_mode_spell_img;
-extern SDL_Surface* inventory_mode_spell_highlighted_img;
 extern bool restrictPaperDollMovement;
 
 //Chest GUI definitions.
 int numItemsInChest(const int player);
 
 //Magic GUI definitions.
-extern SDL_Surface* magicspellList_bmp;
-extern SDL_Surface* spell_list_titlebar_bmp;
-extern SDL_Surface* spell_list_gui_slot_bmp;
-extern SDL_Surface* spell_list_gui_slot_highlighted_bmp;
-extern int spellscroll; //Same as itemscroll, but for the spell list GUI.
-extern int magicspell_list_offset_x;
-extern int magicspell_list_offset_y;
-#define MAGICSPELL_LIST_X (((xres / 2) - (magicspellList_bmp->w / 2)) + magicspell_list_offset_x)
-#define MAGICSPELL_LIST_Y (((yres / 2) - (magicspellList_bmp->h / 2)) + magicspell_list_offset_y)
-extern bool dragging_magicspell_list_GUI; //The magic spell list GUI is being dragged.
+//extern SDL_Surface* magicspellList_bmp;
+//extern SDL_Surface* spell_list_titlebar_bmp;
+//extern SDL_Surface* spell_list_gui_slot_bmp;
+//extern SDL_Surface* spell_list_gui_slot_highlighted_bmp;
+//extern int spellscroll; //Same as itemscroll, but for the spell list GUI.
+//extern int magicspell_list_offset_x;
+//extern int magicspell_list_offset_y;
+//#define MAGICSPELL_LIST_X (((xres / 2) - (magicspellList_bmp->w / 2)) + magicspell_list_offset_x)
+//#define MAGICSPELL_LIST_Y (((yres / 2) - (magicspellList_bmp->h / 2)) + magicspell_list_offset_y)
+//extern bool dragging_magicspell_list_GUI; //The magic spell list GUI is being dragged.
 /*
  * The state of the magic GUI.
  * 0 = spell list.
@@ -307,9 +270,6 @@ void updateMagicGUI();
 #define SUST_SPELLS_Y 32
 #define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
 
-//Identify GUI definitions.
-extern SDL_Surface* identifyGUI_img;
-
 void drawSustainedSpells(const int player); //Draws an icon for every sustained spell.
 
 enum GUICurrentType
@@ -325,23 +285,10 @@ enum GUICurrentType
 class GenericGUIMenu
 {
 	int gui_player = 0;
-	int offsetx = 0;
-	int offsety = 0;
-	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
-	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
-	int windowX1 = 0;
-	int windowX2 = 0;
-	int windowY1 = 0;
-	int windowY2 = 0;
-	int scroll = 0;
 	GUICurrentType guiType;
 public:
 	static const int kNumShownItems = 4;
-	bool draggingGUI; // if gui is being dragged
-	Item* itemsDisplayed[kNumShownItems];
 	bool guiActive;
-	int selectedSlot;
-
 
 	// Alchemy
 	Item* basePotion;
@@ -391,11 +338,6 @@ public:
 
 	GenericGUIMenu() :
 		guiActive(false),
-		offsetx(0),
-		offsety(0),
-		selectedSlot(-1),
-		scroll(0),
-		draggingGUI(false),
 		basePotion(nullptr),
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
@@ -421,10 +363,6 @@ public:
 		featherGUI(*this),
 		itemfxGUI(*this)
 	{
-		for ( int i = 0; i < kNumShownItems; ++i )
-		{
-			itemsDisplayed[i] = nullptr;
-		}
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
 		scribingTotalItems.first = nullptr;
@@ -433,21 +371,14 @@ public:
 
 	void setPlayer(const int p) { gui_player = p; }
 	const int getPlayer() { return gui_player;  }
-	void warpMouseToSelectedSlot();
-	void selectSlot(int slot);
 	void closeGUI();
 	void openGUI(int type, Item* effectItem, int effectBeatitude, int effectItemType, int usingSpellID);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
 	void openGUI(int type, Item* itemOpenedWith);
-	inline Item* getItemInfo(int slot);
 	void updateGUI();
 	void rebuildGUIInventory();
 	bool shouldDisplayItemInGUI(Item* item);
 	bool executeOnItemClick(Item* item);
-	void getDimensions(SDL_Rect& r) const 
-	{
-		r.x = windowX1; r.w = windowX2 - windowX1; r.y = windowY1; r.h = windowY2 - windowY1;
-	}
 
 	// repair menu funcs
 	void repairItem(Item* item);
@@ -1082,24 +1013,24 @@ void drawPartySheet(const int player);
 void drawSkillsSheet(const int player);
 
 //Right sidebar defines.
-#define RIGHTSIDEBAR_X (xres - rightsidebar_titlebar_img->w)
-#define RIGHTSIDEBAR_Y 0
+//#define RIGHTSIDEBAR_X (xres - rightsidebar_titlebar_img->w)
+//#define RIGHTSIDEBAR_Y 0
 //Note: Just using the spell versions of these for now.
-extern SDL_Surface* rightsidebar_titlebar_img;
-extern SDL_Surface* rightsidebar_slot_img;
-extern SDL_Surface* rightsidebar_slot_highlighted_img;
-extern SDL_Surface* rightsidebar_slot_grayedout_img;
-extern int rightsidebar_height;
+//extern SDL_Surface* rightsidebar_titlebar_img;
+//extern SDL_Surface* rightsidebar_slot_img;
+//extern SDL_Surface* rightsidebar_slot_highlighted_img;
+//extern SDL_Surface* rightsidebar_slot_grayedout_img;
+//extern int rightsidebar_height;
 
 void updateRightSidebar(); //Updates the sidebar on the right side of the screen, the one containing spells, skills, etc.
 
 //------book_t Defines-----
-extern SDL_Surface* bookgui_img;
+//extern SDL_Surface* bookgui_img;
 //extern SDL_Surface *nextpage_img;
 //extern SDL_Surface *previouspage_img;
 //extern SDL_Surface *bookclose_img;
-extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
-extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
+//extern SDL_Surface* book_highlighted_left_img; //Draw this when the mouse is over the left half of the book.
+//extern SDL_Surface* book_highlighted_right_img; //Draw this when the mouse is over the right half of the book.
 class BookParser_t;
 
 //------Hotbar Defines-----
@@ -1107,8 +1038,8 @@ class BookParser_t;
  * The hotbar itself is an array.
  * NOTE: If the status bar width is changed, you need to change the slot image too. Make sure the status bar width stays divisible by 10.
  */
-extern SDL_Surface* hotbar_img; //A 64x64 slot.
-extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
+//extern SDL_Surface* hotbar_img; //A 64x64 slot.
+//extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
 
 //NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
 typedef struct hotbar_slot_t
@@ -1180,26 +1111,6 @@ enum CloseGUIIgnore : int
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
 const bool hotbarGamepadControlEnabled(const int player);
-
-extern SDL_Surface *str_bmp64u;
-extern SDL_Surface *dex_bmp64u;
-extern SDL_Surface *con_bmp64u;
-extern SDL_Surface *int_bmp64u;
-extern SDL_Surface *per_bmp64u;
-extern SDL_Surface *chr_bmp64u;
-extern SDL_Surface *str_bmp64;
-extern SDL_Surface *dex_bmp64;
-extern SDL_Surface *con_bmp64;
-extern SDL_Surface *int_bmp64;
-extern SDL_Surface *per_bmp64;
-extern SDL_Surface *chr_bmp64;
-
-extern SDL_Surface *sidebar_lock_bmp;
-extern SDL_Surface *sidebar_unlock_bmp;
-
-extern SDL_Surface *effect_drunk_bmp;
-extern SDL_Surface *effect_polymorph_bmp;
-extern SDL_Surface *effect_hungover_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 struct AttackHoverText_t

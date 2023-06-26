@@ -7722,7 +7722,7 @@ void Player::Inventory_t::updateInventory()
 	bool featherInscribeOrRepairActive = featherGUI.isInscribeOrRepairActive();
 	featherGUI.highlightedSlot = -1;
 
-	if ( GenericGUI[player].selectedSlot < 0 )
+	if ( true )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open
@@ -8957,8 +8957,7 @@ void Player::Inventory_t::updateInventory()
 					if ( ((tooltipOpen && (!tooltipPromptWasDisabled))
 						|| bIsTooltipDelayed())
 						&& inventoryControlActive 
-						&& !selectedItem
-						&& GenericGUI[player].selectedSlot < 0 )
+						&& !selectedItem )
 					{
 						auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad, false);
 						bool bindingPressed = false;
@@ -9390,8 +9389,7 @@ void Player::Inventory_t::updateInventory()
 					|| itemfxOpen
 					|| alchemyOpen)
 					&& inventoryControlActive
-					&& !selectedItem
-					&& GenericGUI[player].selectedSlot < 0 )
+					&& !selectedItem )
 				{
 					auto contextTooltipOptions = getContextTooltipOptionsForItem(player, item, useItemDropdownOnGamepad, false);
 					bool bindingPressed = false;

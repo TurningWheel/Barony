@@ -2994,7 +2994,6 @@ void GameController::stopRumble()
 Player::Player(int in_playernum, bool in_local_host) : 
 	GUI(*this),
 	inventoryUI(*this),
-	statusBarUI(*this),
 	hud(*this),
 	magic(*this),
 	characterSheet(*this),
