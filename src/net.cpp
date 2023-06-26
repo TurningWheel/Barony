@@ -3109,9 +3109,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	{'DAMI', [](){
 		DamageIndicatorHandler.insert(clientnum, SDLNet_Read32(&net_packet->data[4]), 
 			SDLNet_Read32(&net_packet->data[8]), net_packet->data[12] == 1 ? true : false);
+	} },
+
+	// remote vibration
+	{ 'BRRR', []() {
+		inputs.addRumbleForHapticType(clientnum, SDLNet_Read32(&net_packet->data[4]),
+			SDLNet_Read32(&net_packet->data[8]));
 	}},
 
-	// play sound position
+		// play sound position
 	{'SNDP', [](){
 		playSoundPos(
 		    SDLNet_Read32(&net_packet->data[4]),
@@ -3120,7 +3126,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    (Uint8)net_packet->data[14]);
 	}},
 
-	// play sound global
+		// play sound global
 	{'SNDG', [](){
 		playSound(
 		    SDLNet_Read16(&net_packet->data[4]),
@@ -3459,7 +3465,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		combatmusicplaying = false;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment * 4;
-		playMusic(gameovermusic, false, true, false);
+		playMusic(gameovermusic, false, false, false);
 #endif
 		combat = false;
 		assailant[clientnum] = false;

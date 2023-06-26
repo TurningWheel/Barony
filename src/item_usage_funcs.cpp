@@ -59,7 +59,8 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -431,7 +432,8 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 
 	if ( stats->amulet != nullptr )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION 
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -574,7 +576,8 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION 
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -758,7 +761,8 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION 
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -859,7 +863,8 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -954,7 +959,8 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION 
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1082,7 +1088,8 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1162,7 +1169,8 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1252,7 +1260,8 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1331,7 +1340,8 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1429,7 +1439,8 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1524,7 +1535,8 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1617,7 +1629,8 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1765,7 +1778,8 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1847,7 +1861,8 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 
 	if ( stats->amulet != nullptr )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -1994,7 +2009,8 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 
 	if ( stats->amulet != nullptr )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -2144,7 +2160,8 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -2261,7 +2278,8 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( stats->amulet != NULL )
 	{
-		if ( stats->amulet->type == AMULET_STRANGULATION )
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
 		{
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -2307,6 +2325,38 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	return transformedEntity;
 }
 
+void onScrollUseAppraisalIncrease(Item* item, int player)
+{
+	if ( !item ) { return; }
+	if ( !item->identified && players[player] && players[player]->isLocalPlayer() )
+	{
+		if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] < SKILL_LEVEL_BASIC )
+		{
+			if ( stats[player] && players[player]->entity )
+			{
+				if ( local_rng.rand() % 4 == 0 )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request level up
+						strcpy((char*)net_packet->data, "CSKL");
+						net_packet->data[4] = player;
+						net_packet->data[5] = PRO_APPRAISAL;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						players[player]->entity->increaseSkill(PRO_APPRAISAL);
+					}
+				}
+			}
+		}
+	}
+}
+
 void item_ScrollMail(Item* item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -2330,7 +2380,7 @@ void item_ScrollMail(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+	item->identified = true;
 	switch ( item->appearance % 25 )
 	{
 		case 0:
@@ -2451,6 +2501,7 @@ void item_ScrollIdentify(Item* item, int player)
 	//	}
 	//}
 
+	onScrollUseAppraisalIncrease(item, player);
 	item->identified = true;
 	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 }
@@ -2480,7 +2531,6 @@ void item_ScrollLight(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
     
     const auto color = makeColorRGB(150, 150, 150);
@@ -2513,6 +2563,8 @@ void item_ScrollLight(Item* item, int player)
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollBlank(Item* item, int player)
@@ -2538,8 +2590,9 @@ void item_ScrollBlank(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
 	messagePlayer(player, MESSAGE_HINT, language[852]);
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollEnchantWeapon(Item* item, int player)
@@ -2563,8 +2616,6 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-
-	item->identified = 1;
 
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
@@ -2663,6 +2714,8 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 	consumeItem(item, player);
 }
 
@@ -2694,7 +2747,6 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 	conductIlliterate = false;
 
-	item->identified = 1;
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
 	// choose a random piece of worn equipment to curse!
@@ -2828,6 +2880,9 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
+
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 	consumeItem(item, player);
 }
 
@@ -2873,7 +2928,6 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	//	}
 	//}
 
-	item->identified = true;
 	if ( item->beatitude < 0 )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[848]);
@@ -2994,10 +3048,14 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT, language[862]);
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		consumeItem(item, player);
 	}
 	else
 	{
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 	}
 }
@@ -3031,9 +3089,10 @@ bool item_ScrollFire(Item* item, int player)
 		serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
 	}
 
-	item->identified = 1;
 	if (item->beatitude < 0)
 	{
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		messagePlayer(player, MESSAGE_HINT | MESSAGE_INVENTORY, language[863]);
 		return false;
 	}
@@ -3058,6 +3117,9 @@ bool item_ScrollFire(Item* item, int player)
 				entity->skill[0] = 5 + local_rng.rand() % 10;
 			}
 		}
+
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		return true;
 	}
 	return false;
@@ -3091,7 +3153,7 @@ void item_ScrollFood(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if ( item->beatitude >= 0 )
 	{
@@ -3101,6 +3163,8 @@ void item_ScrollFood(Item* item, int player)
 		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player, false);
 		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player, false);
 		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, local_rng.rand(), true, &stats[player]->inventory), player, false);
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		return;
 	}
 	else
@@ -3127,6 +3191,8 @@ void item_ScrollFood(Item* item, int player)
 	{
 		messagePlayer(player, MESSAGE_HINT, language[867]);
 	}
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollConjureArrow(Item* item, int player)
@@ -3153,7 +3219,7 @@ void item_ScrollConjureArrow(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	messagePlayer(player, MESSAGE_HINT, language[3762]);
 	ItemType type = static_cast<ItemType>(QUIVER_SILVER + local_rng.rand() % 7);
@@ -3175,6 +3241,9 @@ void item_ScrollConjureArrow(Item* item, int player)
 		amount = 40 + local_rng.rand() % 11;
 		dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
 	}
+
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollMagicMapping(Item* item, int player)
@@ -3203,7 +3272,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+	
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if ( item->beatitude >= 0 )
 	{
@@ -3221,6 +3290,8 @@ void item_ScrollMagicMapping(Item* item, int player)
 			}
 		}
 	}
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollRepair(Item* item, int player)
@@ -3273,7 +3344,6 @@ void item_ScrollRepair(Item* item, int player)
 	//	}
 	//}
 
-	item->identified = true;
 	if ( item->beatitude < 0 )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, language[848]);
@@ -3411,11 +3481,15 @@ void item_ScrollRepair(Item* item, int player)
 				}
 			}
 		}
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		consumeItem(item, player);
 	}
 	else
 	{
 		// Repair an item
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 	}
 }
@@ -3443,7 +3517,6 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	}
 
 	conductIlliterate = false;
-	item->identified = 1;
 	
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
@@ -3569,6 +3642,9 @@ void item_ScrollDestroyArmor(Item* item, int player)
 			}
 		}
 	}
+
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 	consumeItem(item, player);
 }
 
@@ -3598,15 +3674,19 @@ void item_ScrollTeleportation(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 	if (item->beatitude < 0 && local_rng.rand() % 2)
 	{
 		messagePlayer(player, MESSAGE_HINT, language[876]);
+		onScrollUseAppraisalIncrease(item, player);
+		item->identified = true;
 		return;
 	}
 
 	players[player]->entity->teleportRandom();
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ScrollSummon(Item* item, int player)
@@ -3635,7 +3715,7 @@ void item_ScrollSummon(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
-	item->identified = 1;
+
 	messagePlayer(player, MESSAGE_INVENTORY, language[848]);
 
 	playSoundEntity(players[player]->entity, 153, 64);
@@ -3816,6 +3896,9 @@ void item_ScrollSummon(Item* item, int player)
 			}
 		}
 	}
+
+	onScrollUseAppraisalIncrease(item, player);
+	item->identified = true;
 }
 
 void item_ToolTowel(Item*& item, int player)
@@ -4227,7 +4310,8 @@ void item_Food(Item*& item, int player)
 
 	if ( stats[player]->amulet != NULL )
 	{
-		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
+		if ( stats[player]->amulet->type == AMULET_STRANGULATION
+			&& stats[player]->type != SKELETON )
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
@@ -4503,7 +4587,8 @@ void item_FoodTin(Item*& item, int player)
 
 	if ( stats[player]->amulet != NULL )
 	{
-		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
+		if ( stats[player]->amulet->type == AMULET_STRANGULATION
+			&& stats[player]->type != SKELETON )
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
@@ -5112,6 +5197,11 @@ void item_Spellbook(Item*& item, int player)
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
+		}
+
+		if ( players[player] )
+		{
+			players[player]->magic.spellbookUidFromHotbarSlot = 0;
 		}
 
 		if ( learned )

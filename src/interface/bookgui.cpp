@@ -25,6 +25,7 @@
 #include "../ui/GameUI.hpp"
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
+#include "../ui/MainMenu.hpp"
 
 void Player::BookGUI_t::createBookGUI()
 {
@@ -320,7 +321,7 @@ void Player::BookGUI_t::updateBookGUI()
 			{
 				canAdvanceNextPage = false;
 				currentBookPage += 2;
-				playSound(83 + local_rng.rand() % 6, 128);
+				playSound(83 + local_rng.rand() % 6, 156);
 			}
 		}
 		else if ( prevPageBoundary->capturesMouse() )
@@ -330,13 +331,17 @@ void Player::BookGUI_t::updateBookGUI()
 			{
 				canAdvancePrevPage = false;
 				currentBookPage -= 2;
-				playSound(83 + local_rng.rand() % 6, 128);
+				playSound(83 + local_rng.rand() % 6, 156);
 			}
 		}
 		if ( !innerFrame->capturesMouse() )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuLeftClick");
 			Input::inputs[player.playernum].consumeBindingsSharedWithBinding("MenuLeftClick");
+			if ( bBookOpen )
+			{
+				Player::soundCancel();
+			}
 			closeBookGUI();
 			return;
 		}
@@ -352,7 +357,7 @@ void Player::BookGUI_t::updateBookGUI()
 			if ( canAdvanceNextPage )
 			{
 				currentBookPage += 2;
-				playSound(83 + local_rng.rand() % 6, 128);
+				playSound(83 + local_rng.rand() % 6, 156);
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuPageLeft") )
@@ -361,12 +366,16 @@ void Player::BookGUI_t::updateBookGUI()
 			if ( canAdvancePrevPage )
 			{
 				currentBookPage -= 2;
-				playSound(83 + local_rng.rand() % 6, 128);
+				playSound(83 + local_rng.rand() % 6, 156);
 			}
 		}
 		if ( Input::inputs[player.playernum].binaryToggle("MenuCancel") )
 		{
 			Input::inputs[player.playernum].consumeBinaryToggle("MenuCancel");
+			if ( bBookOpen )
+			{
+				Player::soundCancel();
+			}
 			closeBookGUI();
 			return;
 		}
@@ -525,6 +534,8 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	openBookName = getBookNameFromIndex(index);
 	openBookItem = item;
 	currentBookPage = 0;
+
+	playSound(83 + local_rng.rand() % 6, 156);
 
 	// add the book to the list of read books
 	bool hasreadbook = false;

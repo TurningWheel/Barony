@@ -1046,7 +1046,13 @@ struct MonsterData_t
 	{
 		int monsterType = NOTHING;
 		std::string defaultIconPath = "";
-		std::map<int, std::string> iconSpritesAndPaths;
+		struct IconLookup_t
+		{
+			std::string key = "";
+			std::string iconPath = "";
+		};
+		std::map<int, IconLookup_t> iconSpritesAndPaths;
+		std::map<std::string, std::vector<int>> keyToSpriteLookup;
 		std::set<int> modelIndexes;
 		std::set<int> playerModelIndexes;
 		std::string defaultShortDisplayName = "";
@@ -1069,8 +1075,11 @@ struct MonsterData_t
 		MonsterDataEntry_t() = default;
 	};
 	static std::string iconDefaultString;
+	static std::string keyDefaultString;
 	static std::map<int, MonsterDataEntry_t> monsterDataEntries;
 	static std::string& getAllyIconFromSprite(int sprite, int type = -1);
+	static std::string& getKeyFromSprite(int sprite, int type = -1);
+	static int getSpriteFromKey(int sprite, std::string key, int type = -1);
 	static int getSpecialNPCBaseModel(Stat& myStats);
 	static std::string getSpecialNPCName(Stat& myStats);
 	static bool nameMatchesSpecialNPCName(Stat& myStats, std::string npcKey);

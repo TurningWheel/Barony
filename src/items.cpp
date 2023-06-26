@@ -60,6 +60,10 @@ void autoHotbarTryAdd(const int player, Item& item)
 	{
 		return;
 	}
+	if ( item.type == SPELL_ITEM && players[player]->magic.spellbookUidFromHotbarSlot != 0 )
+	{
+		return; // we're going to replace our spellbook slot
+	}
 	Category cat = itemCategory(&item);
 	if ( !item.identified && cat != SPELL_CAT ) { return; }
 
@@ -1967,6 +1971,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 		return EQUIP_ITEM_SUCCESS_UNEQUIP;
 	}
 }
+
 /*-------------------------------------------------------------------------------
 
 	useItem
@@ -2090,6 +2095,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	bool drankPotion = false;
 	bool tryLearnPotionRecipe = false;
+	bool tryLevelAppraiseFromPotion = false;
 	const bool tryEmptyBottle = (item->status >= SERVICABLE);
 	const ItemType potionType = item->type;
 	if ( player >= 0 && players[player]->isLocalPlayer() )
@@ -2101,6 +2107,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if ( item->identified )
 			{
 				tryLearnPotionRecipe = true;
+			}
+			else
+			{
+				tryLevelAppraiseFromPotion = true;
 			}
 		}
 	}
@@ -2230,15 +2240,22 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_STRANGULATION:
+		{
+			bool oldStrangulation = stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION;
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
-			if ( stats[player]->amulet )
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+				&& !oldStrangulation )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
+				if ( players[player]->isLocalPlayer() )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, language[1095]);
+				}
 			}
 			if ( item->beatitude >= 0 )
 			{
 				item->beatitude = -1;
 			}
+		}
 			break;
 		case AMULET_POISONRESISTANCE:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
@@ -2757,6 +2774,33 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if ( tryLearnPotionRecipe )
 			{
 				GenericGUI[player].alchemyLearnRecipe(potionType, true);
+			}
+			if ( tryLevelAppraiseFromPotion )
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] < SKILL_LEVEL_BASIC )
+				{
+					if ( stats[player] && players[player]->entity )
+					{
+						if ( local_rng.rand() % 4 == 0 )
+						{
+							if ( multiplayer == CLIENT )
+							{
+								// request level up
+								strcpy((char*)net_packet->data, "CSKL");
+								net_packet->data[4] = player;
+								net_packet->data[5] = PRO_APPRAISAL;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								players[player]->entity->increaseSkill(PRO_APPRAISAL);
+							}
+						}
+					}
+				}
 			}
 			const int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 			if ( tryEmptyBottle && local_rng.rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance

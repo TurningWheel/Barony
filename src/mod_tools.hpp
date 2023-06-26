@@ -2715,6 +2715,8 @@ public:
 	std::map<std::string, ItemTooltip_t> tooltips;
 	std::map<std::string, std::map<std::string, std::string>> adjectives;
 	std::map<std::string, std::vector<std::string>> templates;
+	//std::vector<std::pair<int, Sint32>> itemValueTable;
+	//std::map<int, std::vector<std::pair<int, Sint32>>> itemValueTableByCategory;
 	struct ItemLocalization_t
 	{
 		std::string name_identified = "";
@@ -2772,6 +2774,7 @@ public:
 	real_t statueEditorHeightOffset = 0.0;
 	bool drawGreyscale = false;
 	void readStatueFromFile(int index, std::string filename);
+	void readAllStatues();
 	void refreshAllStatues();
 	void resetStatueEditor();
 	static Uint32 statueId;

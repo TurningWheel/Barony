@@ -2132,11 +2132,11 @@ void EOSFuncs::searchLobbies(LobbyParameters_t::LobbySearchOptions searchType,
 	    }
 	    else
 	    {
-		    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
+		    /*ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
 		    AttrData.Key = "PERMISSIONLEVEL";
 		    AttrData.Value.AsUtf8 = "0";
 		    AttrData.ValueType = EOS_ELobbyAttributeType::EOS_AT_STRING;
-		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);
+		    resultParameter = EOS_LobbySearch_SetParameter(LobbySearch, &ParamOptions);*/
 	    }
 
 	    ParamOptions.ComparisonOp = EOS_EComparisonOp::EOS_CO_EQUAL;
@@ -3586,7 +3586,7 @@ void EOSFuncs::CrossplayAccounts_t::denyCrossplay()
 
 void EOSFuncs::CrossplayAccounts_t::viewPrivacyPolicy()
 {
-	openURLTryWithOverlay("https://www.baronygame.com/privacypolicy.html");
+	openURLTryWithOverlay("https://www.baronygame.com/privacypolicy");
 }
 
 void EOSFuncs::CrossplayAccounts_t::createDialogue()
@@ -3607,7 +3607,7 @@ bool EOSFuncs::CrossplayAccounts_t::isLoggingIn()
 
 std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
 {
-	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const char allChars[37] = "0123456789abcdefghijklmnppqrstuvwxyz";
 	std::string code = "";
 	while ( key != 0 )
 	{
@@ -3622,7 +3622,7 @@ std::string EOSFuncs::getLobbyCodeFromGameKey(Uint32 key)
 }
 Uint32 EOSFuncs::getGameKeyFromLobbyCode(std::string& code)
 {
-	const char allChars[37] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const char allChars[37] = "0123456789abcdefghijklmnppqrstuvwxyz";
 	Uint32 result = 0;
 	Uint32 bit = 0;
 	for ( int i = 0; i < code.size(); ++i )

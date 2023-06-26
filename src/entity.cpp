@@ -1150,7 +1150,7 @@ void Entity::effectTimes()
 			{
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
-					playSoundPlayer(player, 32, 128);
+					//playSoundPlayer(player, 32, 128);
 					messagePlayer(player, MESSAGE_STATUS, language[3193]);
 				}
 			}
@@ -4476,7 +4476,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->amulet != NULL )
 	{
 		// strangulation
-		if ( myStats->amulet->type == AMULET_STRANGULATION )
+		if ( myStats->amulet->type == AMULET_STRANGULATION && myStats->type != SKELETON )
 		{
 			if ( ticks % 60 == 0 )
 			{
@@ -4864,11 +4864,8 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 	}
 
 	attack = BASE_MELEE_DAMAGE; // base attack strength
-	if ( myStats->weapon != nullptr )
-	{
-		attack += myStats->weapon->weaponGetAttack(myStats);
-	}
-	else if ( myStats->weapon == nullptr )
+	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
+	if ( myStats->weapon == nullptr || shapeshifted )
 	{
 		// bare handed.
 		if ( isPlayer )
@@ -4876,7 +4873,7 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
 			attack += (myStats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
 		}
-		if ( myStats->gloves )
+		if ( myStats->gloves && !shapeshifted )
 		{
 			int beatitude = myStats->gloves->beatitude;
 			if ( myStats->gloves->type == BRASS_KNUCKLES )
@@ -4898,7 +4895,12 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer)
 			attack += 1 + (shouldInvertEquipmentBeatitude(myStats) ? abs(beatitude) : beatitude);
 		}
 	}
-	if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+	else if ( myStats->weapon != nullptr )
+	{
+		attack += myStats->weapon->weaponGetAttack(myStats);
+	}
+
+	if ( !shapeshifted && myStats->weapon && myStats->weapon->type == TOOL_WHIP )
 	{
 		int atk = statGetSTR(myStats, my) + statGetDEX(myStats, my);
 		atk = std::min(atk / 2, atk);
@@ -5908,6 +5910,11 @@ that would make it invisible
 
 bool Entity::isInvisible() const
 {
+	if ( intro ) 
+	{
+		// show up in hi-scores
+		return false;
+	}
 	Stat* entitystats;
 	if ( (entitystats = getStats()) == NULL )
 	{

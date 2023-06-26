@@ -4402,6 +4402,7 @@ void actPlayer(Entity* my)
 							followerMenu.initfollowerMenuGUICursor(true);
 							followerMenu.updateScrollPartySheet();
 							selectedEntity[PLAYER_NUM] = NULL;
+							Player::soundActivate();
 						}
 					}
 				}

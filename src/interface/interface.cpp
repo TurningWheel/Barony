@@ -165,12 +165,6 @@ std::vector<std::pair<real_t, int>> EnemyHPDamageBarHandler::widthHealthBreakpoi
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
-	std::make_pair(&title_bmp, "images/system/title.png"),
-	std::make_pair(&logo_bmp, "images/system/logo.png"),
-	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
-	std::make_pair(&cross_bmp, "images/system/cross.png"),
-	std::make_pair(&selected_cursor_bmp, "images/system/selectedcursor.png"),
-
 	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
 	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
 	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
@@ -2130,6 +2124,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			input.consumeBinaryToggle("MenuCancel");
 			closeFollowerMenuGUI();
+			Player::soundCancel();
 		}
 		if ( !followerToCommand )
 		{
@@ -2180,6 +2175,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		input.consumeBinaryToggle("MenuCancel");
 		closeFollowerMenuGUI();
 		players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+		Player::soundCancel();
 		return;
 	}
 
@@ -2309,6 +2305,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			)
 		{
 			bool usingLastCmd = false;
+			//bool usingShowCmdRelease = (!input.binaryToggle("Show NPC Commands") && holdWheel && !menuToggleClick);
 			if ( input.binaryToggle("Command NPC") )
 			{
 				usingLastCmd = true;
@@ -2357,10 +2354,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
+			bool sfxPlayed = false;
 			if ( disableOption != 0 )
 			{
 				animInvalidAction = 1.0;
 				animInvalidActionTicks = ticks;
+				//if ( !usingShowCmdRelease )
+				//{
+				//	// play bad feedback sfx
+				//}
+				playSound(90, 64);
+				sfxPlayed = true;
 			}
 
 			if ( usingLastCmd )
@@ -2385,7 +2389,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 				holdWheel = false;
 				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
 				{
-					playSound(139, 64); // click
+					if ( !sfxPlayed && optionSelected != ALLY_CMD_CANCEL )
+					{
+						playSound(139, 64); // click
+						sfxPlayed = true;
+					}
 				}
 				else
 				{
@@ -2519,6 +2527,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							optionPrevious = optionSelected;
 						}
+					}
+					else if ( optionSelected == ALLY_CMD_CANCEL && !sfxPlayed )
+					{
+						Player::soundCancel();
 					}
 
 					if ( !keepWheelOpen )
@@ -2662,6 +2674,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 				GameController::DpadDirection dir = controller->dpadDirToggle();
 				if ( dir != GameController::DpadDirection::INVALID )
 				{
+					if ( !controller->virtualDpad.consumed )
+					{
+						Player::soundMovement();
+					}
 					controller->consumeDpadDirToggle();
 					switch ( dir )
 					{
@@ -2778,6 +2794,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 							drawArcInvertedY(centerx, centery, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
 							drawArcInvertedY(centerx, centery, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
 						}
+					}
+				}
+				if ( !inputs.hasController(gui_player) )
+				{
+					if ( highlight != -1 && optionSelected != highlight && optionSelected != -1 )
+					{
+						Player::soundMovement();
 					}
 				}
 			}
@@ -3562,33 +3585,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( disableOption != 0 )
 		{
 			disableActionGlyph = true;
-			SDL_Rect tooltip;
-			tooltip.x = omousex + 16;
-			tooltip.y = omousey + 16;
-			char* lowSkillLVLTooltip = language[3062];
-			if ( tinkeringFollower )
-			{
-				lowSkillLVLTooltip = language[3672];
-			}
-			tooltip.w = longestline(lowSkillLVLTooltip) * TTF12_WIDTH + 8;
-			tooltip.h = TTF12_HEIGHT * 2 + 8;
 
 			if ( disableOption == -2 ) // disabled due to cooldown
 			{
-				tooltip.h = TTF12_HEIGHT + 8;
-				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
-				//drawTooltip(&tooltip);
-				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange, language[3092]);
 				setFollowerBannerText(gui_player, bannerTxt, "invalid_action", "rest_cooldown", hudColors.characterSheetRed);
 			}
 			else if ( disableOption == -1 ) // disabled due to creature type
 			{
-				tooltip.h = TTF12_HEIGHT + 8;
-				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
-				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				//drawTooltip(&tooltip);
-				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					//uint32ColorOrange, language[3103], getMonsterLocalizedName(followerStats->type).c_str());
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
@@ -3596,13 +3599,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
-				tooltip.h = TTF12_HEIGHT + 8;
-				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
-				//drawTooltip(&tooltip);
-				tooltip.w += strlen(getMonsterLocalizedName(followerStats->type).c_str()) * TTF12_WIDTH;
-				//drawTooltip(&tooltip);
-				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
-					//uint32ColorOrange, language[3673], getMonsterLocalizedName(followerStats->type).c_str());
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
@@ -3610,7 +3606,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 			else
 			{
-				//drawTooltip(&tooltip);
 				std::string requirement = "";
 				std::string current = "";
 				int requirementVal = 0;
@@ -3683,8 +3678,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 					currentVal = skillLVL;
 				}
-				//ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					//uint32ColorOrange, lowSkillLVLTooltip, requirement.c_str(), current.c_str());
+
 				if ( tinkeringFollower )
 				{
 					auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["skill_missing_tinker"];
@@ -6284,7 +6278,6 @@ void GenericGUIMenu::closeGUI()
 	tinkeringFreeLists();
 	scribingFreeLists();
 	guiActive = false;
-	selectedSlot = -1;
 	guiType = GUI_TYPE_NONE;
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
@@ -6353,7 +6346,7 @@ void GenericGUIMenu::selectSlot(int slot)
 			if ( scroll <= 0 )
 			{
 				//Case 3/A: Return to inventory.
-				selectedSlot = -1;
+				//selectedSlot = -1;
 			}
 			else
 			{
@@ -6756,6 +6749,10 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			if ( item->identified && item->type == SCROLL_BLANK )
 			{
 				scribingBlankScrollTarget = item;
+				if ( !featherGUI.bDrawerOpen )
+				{
+					Player::soundModuleNavigation();
+				}
 				featherGUI.bDrawerOpen = true;
 				featherGUI.scrollListRequiresSorting = true;
 				onFeatherChangeTabAction(gui_player, false);
@@ -10592,6 +10589,8 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			}
 
 			free(crafted);
+
+			playSound(546, 92);
 			return true;
 		}
 	}
@@ -10695,6 +10694,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			net_packet->len = 7;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+		playSound(546, 92);
 		return true;
 	}
 	return false;
@@ -12689,6 +12689,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			{
 				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
 				parentGUI.closeGUI();
+				Player::soundCancel();
 				return;
 			}
 			else
@@ -12726,6 +12727,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 						parentGUI.tinkeringFilter = TINKER_FILTER_CRAFTABLE;
 					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuPageRight");
+					Player::soundModuleNavigation();
 				}
 				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageLeft") )
 				{
@@ -12750,6 +12752,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 						parentGUI.tinkeringFilter = TINKER_FILTER_CRAFTABLE;
 					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+					Player::soundModuleNavigation();
 				}
 			}
 		}
@@ -13165,6 +13168,7 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
+				Player::soundCancel();
 			});
 			closeBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -13249,6 +13253,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 				{
 					GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = true;
 				}
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -13279,6 +13287,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 				GenericGUI[button.getOwner()].tinkeringFilter = GenericGUIMenu::TINKER_FILTER_CRAFTABLE;
 				onTinkerChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = true;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -13309,6 +13321,10 @@ void GenericGUIMenu::TinkerGUI_t::createTinkerMenu()
 				GenericGUI[button.getOwner()].tinkeringFilter = GenericGUIMenu::TINKER_FILTER_REPAIRABLE;
 				onTinkerChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].tinkerGUI.animPromptMoveLeft = false;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -15407,6 +15423,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				if ( potion1Uid == 0 && potion2Uid == 0 && recipes.activateRecipeIndex == -1 )
 				{
 					parentGUI.closeGUI();
+					Player::soundCancel();
 					return;
 				}
 				else if ( recipes.activateRecipeIndex >= 0 )
@@ -15452,7 +15469,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 						recipes.activateRecipeIndex = -1;
 						animRandomPotionTicks = 0;
 					}
-					playSound(139, 64); // click sound
+					Player::soundCancel();
 				}
 			}
 			else if ( Input::inputs[playernum].binaryToggle("MenuPageRightAlt") || Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
@@ -15581,7 +15598,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 					animPotion1 = 0.0;
 					animPotion1Frame->setDisabled(true);
 					recipes.activateRecipeIndex = -1; // clear active recipe
-					playSound(139, 64); // click sound
+					Player::soundCancel();
 				}
 				else if ( !tryBrew && getSelectedAlchemySlotX() == ALCH_SLOT_SECONDARY_POTION_X )
 				{
@@ -15589,7 +15606,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 					animPotion2 = 0.0;
 					animPotion2Frame->setDisabled(true);
 					recipes.activateRecipeIndex = -1; // clear active recipe
-					playSound(139, 64); // click sound
+					Player::soundCancel();
 
 				}
 				else if ( tryBrew || getSelectedAlchemySlotX() == ALCH_SLOT_RESULT_POTION_X )
@@ -15732,12 +15749,14 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							potion1Uid = 0;
 							animPotion1 = 0.0;
 							animPotion1Frame->setDisabled(true);
+							Player::soundCancel();
 						}
 						else if ( potion2Uid == item->uid )
 						{
 							potion2Uid = 0;
 							animPotion2 = 0.0;
 							animPotion2Frame->setDisabled(true);
+							Player::soundCancel();
 						}
 						else if ( potion1Uid == 0 )
 						{
@@ -15749,6 +15768,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							getInventoryItemAlchemyAnimSlotPos(slotFrame, player, item->x, item->y, animPotion1StartX, animPotion1StartY, potionAnimOffsetY);
 							potion1Uid = item->uid;
 							//alchemyResultPotion.type = POTION_EMPTY;
+							playSound(139, 64); // click sound
 						}
 						else
 						{
@@ -15760,10 +15780,10 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 							getInventoryItemAlchemyAnimSlotPos(slotFrame, player, item->x, item->y, animPotion2StartX, animPotion2StartY, potionAnimOffsetY);
 							potion2Uid = item->uid;
 							//alchemyResultPotion.type = POTION_EMPTY;
+							playSound(139, 64); // click sound
 						}
 						recipes.activateRecipeIndex = -1;
 						animRandomPotionTicks = 0;
-						playSound(139, 64); // click sound
 						break;
 					}
 				}
@@ -15910,7 +15930,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			alchemyGUI.animPotionResult = 0.0;
 			alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
 			alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
-			playSound(139, 64); // click sound
+			Player::soundCancel();
 		});
 		clearRecipeBtn->setTickCallback(genericgui_deselect_fn);
 		clearRecipeBtn->setDisabled(true);
@@ -16045,12 +16065,13 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 					if ( GenericGUI[player].alchemyGUI.recipes.bOpen )
 					{
 						GenericGUI[player].alchemyGUI.recipes.closeRecipePanel();
+						Player::soundCancel();
 					}
 					else
 					{
 						GenericGUI[player].alchemyGUI.recipes.openRecipePanel();
+						Player::soundActivate();
 					}
-					playSound(139, 64); // click sound
 				}
 			});
 			recipeBtn->setTickCallback(genericgui_deselect_fn);
@@ -16077,6 +16098,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
+				Player::soundCancel();
 			});
 			closeBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -16113,6 +16135,7 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 				alchemyGUI.animPotionResult = 0.0;
 				alchemyGUI.animRecipeAutoAddToSlot1Uid = 0;
 				alchemyGUI.animRecipeAutoAddToSlot2Uid = 0;
+				Player::soundCancel();
 			});
 			brewBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -18959,10 +18982,12 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					parentGUI.scribingBlankScrollTarget = nullptr;
 					bDrawerOpen = false;
 					onFeatherChangeTabAction(playernum, true);
+					Player::soundCancel();
 				}
 				else
 				{
 					parentGUI.closeGUI();
+					Player::soundCancel();
 					return;
 				}
 			}
@@ -18987,6 +19012,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 						animPromptMoveLeft = false;
 					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuPageRight");
+					Player::soundModuleNavigation();
 				}
 				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageLeft") )
 				{
@@ -18997,6 +19023,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 						animPromptMoveLeft = true;
 					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+					Player::soundModuleNavigation();
 				}
 				else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt2") )
 				{
@@ -19013,6 +19040,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 					{
 						changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
 					}
+					Player::soundActivate();
 				}
 			}
 		}
@@ -19488,6 +19516,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				{
 					GenericGUI[button.getOwner()].featherGUI.changeSortingType(SortTypes_t::SORT_SCROLL_DEFAULT);
 				}
+				Player::soundActivate();
 			});
 			sortBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -19510,6 +19539,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				GenericGUI[button.getOwner()].scribingBlankScrollTarget = nullptr;
 				GenericGUI[button.getOwner()].featherGUI.bDrawerOpen = false;
 				onFeatherChangeTabAction(button.getOwner(), true);
+				Player::soundCancel();
 			});
 			closeBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -19632,6 +19662,7 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
+				Player::soundCancel();
 			});
 			closeBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -19708,6 +19739,10 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				GenericGUI[button.getOwner()].scribingFilter = GenericGUIMenu::SCRIBING_FILTER_CRAFTABLE;
 				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = true;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -19737,6 +19772,10 @@ void GenericGUIMenu::FeatherGUI_t::createFeatherMenu()
 				GenericGUI[button.getOwner()].scribingFilter = GenericGUIMenu::SCRIBING_FILTER_REPAIRABLE;
 				onFeatherChangeTabAction(button.getOwner(), changeToDifferentTab);
 				GenericGUI[button.getOwner()].featherGUI.animPromptMoveLeft = false;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
 			});
 			filterBtn->setTickCallback(genericgui_deselect_fn);
 
@@ -21532,6 +21571,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			{
 				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
 				parentGUI.closeGUI();
+				Player::soundCancel();
 				return;
 			}
 			else
@@ -21718,6 +21758,7 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
 			closeBtn->setCallback([](Button& button) {
 				GenericGUI[button.getOwner()].closeGUI();
+				Player::soundCancel();
 			});
 			closeBtn->setTickCallback(genericgui_deselect_fn);
 

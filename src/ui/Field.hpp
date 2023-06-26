@@ -136,6 +136,8 @@ public:
 	const bool					isOntop() const { return ontop; }
 	const bool                  isActivated() const { return activated; }
 	const int					getPaddingPerLine() const { return paddingPerLine; }
+	const int					getIndividualLinePadding(const int line) const { return individualLinePadding.find(line) != individualLinePadding.end() ? individualLinePadding.at(line) : 0; }
+	const Uint32				getlineToColor(const int line) const { return linesToColor.find(line) != linesToColor.end() ? linesToColor.at(line) : 0; }
 
 	void	setText(const char* _text);
 	void	setPos(const int x, const int y) { size.x = x; size.y = y; }

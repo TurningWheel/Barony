@@ -146,16 +146,6 @@ void Input::defaultBindings() {
 		inputs[c].gamepad_system_bindings.insert(std::make_pair("GamepadLoginStart", (std::string("Pad") + std::to_string(c) + std::string("ButtonStart")).c_str()));
 
 		inputs[c].kb_system_bindings.insert(std::make_pair("GamepadScreenshot", "F6"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot1", "1"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot2", "2"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot3", "3"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot4", "4"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot5", "5"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot6", "6"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot7", "7"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot8", "8"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot9", "9"));
-		inputs[c].kb_system_bindings.insert(std::make_pair("HotbarSlot10", "0"));
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUp", "MouseWheelUp")); // consumed automatically by frame.cpp
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelDown", "MouseWheelDown")); // consumed automatically by frame.cpp
 		inputs[c].kb_system_bindings.insert(std::make_pair("MenuMouseWheelUpAlt", "MouseWheelUp"));
@@ -429,6 +419,8 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed, Control
             {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
             {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
             {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+			{"Mouse4", {"Mouse/Mouse_M4_Pressed_00.png", "Mouse/Mouse_M4_Unpressed_00.png"}},
+			{"Mouse5", {"Mouse/Mouse_M5_Pressed_00.png", "Mouse/Mouse_M5_Unpressed_00.png"}},
             {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
             {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
             {"ButtonA", {"G_PS_X00.png", "G_PS_X_Press00.png"}},
@@ -469,6 +461,8 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed, Control
             {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
             {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
             {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+			{"Mouse4", {"Mouse/Mouse_M4_Pressed_00.png", "Mouse/Mouse_M4_Unpressed_00.png"}},
+			{"Mouse5", {"Mouse/Mouse_M5_Pressed_00.png", "Mouse/Mouse_M5_Unpressed_00.png"}},
             {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
             {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
             {"ButtonA", {"Button_Xbox_DarkA_00.png", "Button_Xbox_DarkA_Press_00.png"}},
@@ -510,6 +504,8 @@ std::string Input::getGlyphPathForInput(const char* input, bool pressed, Control
             {"Mouse1", {"Mouse/Mouse_LClick_Pressed_00.png", "Mouse/Mouse_LClick_Unpressed_00.png"}},
             {"Mouse2", {"Mouse/Mouse_MClick_Pressed_00.png", "Mouse/Mouse_MClick_Unpressed_00.png"}},
             {"Mouse3", {"Mouse/Mouse_RClick_Pressed_00.png", "Mouse/Mouse_RClick_Unpressed_00.png"}},
+			{"Mouse4", {"Mouse/Mouse_M4_Pressed_00.png", "Mouse/Mouse_M4_Unpressed_00.png"}},
+			{"Mouse5", {"Mouse/Mouse_M5_Pressed_00.png", "Mouse/Mouse_M5_Unpressed_00.png"}},
             {"MouseWheelDown", {"Mouse/Mouse_MWheelDown_Pressed_00.png", "Mouse/Mouse_MWheelDown_Unpressed_00.png"}},
             {"MouseWheelUp", {"Mouse/Mouse_MWheelUp_Pressed_00.png", "Mouse/Mouse_MWheelUp_Unpressed_00.png"}},
             {"ButtonA", {"Button_Xbox_DarkA_00.png", "Button_Xbox_DarkA_Press_00.png"}},

@@ -50,6 +50,18 @@ extern bool gamepad_righty_invert;
 extern bool gamepad_menux_invert;
 extern bool gamepad_menuy_invert;
 
+struct PlayerSettings_t
+{
+	int player = -1;
+	int shootmodeCrosshair = 0;
+	int shootmodeCrosshairOpacity = 50;
+	void init(const int _player)
+	{
+		player = _player;
+	}
+};
+extern PlayerSettings_t playerSettings[MAXPLAYERS];
+
 //Game Controller 1 handler
 //TODO: Joystick support?
 //extern SDL_GameController* game_controller;
@@ -88,8 +100,17 @@ public:
 			RUMBLE_TMP
 		};
 		int hapticEffectId = -1;
-		SDL_HapticEffect hapticEffect;
+		struct HapticEffect
+		{
+			Uint16 type = SDL_HAPTIC_LEFTRIGHT;
+			Uint32 length = 0;
+			Uint16 large_magnitude = 0;
+			Uint16 small_magnitude = 0;
+			Sint32 leftRightBalance = 0;
+		};
+		HapticEffect hapticEffect;
 		Uint32 hapticTick;
+		Uint32 oscillatorTick;
 		Haptic_t();
 		~Haptic_t() {};
 
@@ -219,8 +240,8 @@ public:
 	SDL_Haptic* getHaptic() { return sdl_haptic; }
 	const bool isActive();
 	void addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagnitude, Uint16 largeMagnitude, Uint32 length, Uint32 srcEntityUid);
-	SDL_HapticEffect* doRumble(Haptic_t::Rumble* r);
-	SDL_HapticEffect* handleRumble();
+	GameController::Haptic_t::HapticEffect* doRumble(Haptic_t::Rumble* r);
+	GameController::Haptic_t::HapticEffect* handleRumble();
 	void stopRumble();
 	void reinitHaptic();
 
@@ -290,12 +311,6 @@ public:
 	float x_forceMaxForwardThreshold = 0.7;
 	float x_forceMaxBackwardThreshold = 0.5;
 	float y_forceMaxStrafeThreshold = 0.7;
-
-	/*
-	* Uses dpad to move the cursor through the item context menu and select entries.
-	* Returns true if moved.
-	*/
-	bool handleRepairGUIMovement(const int player);
 };
 const int MAX_GAME_CONTROLLERS = 16;
 extern std::array<GameController, MAX_GAME_CONTROLLERS> game_controllers;
@@ -604,6 +619,12 @@ public:
 	}
 	void addRumbleForPlayerHPLoss(const int player, Sint32 damageAmount);
 	SDL_Rect getGlyphRectForInput(const int player, bool pressed, const unsigned keyboardImpulse, const unsigned controllerImpulse);
+	void addRumbleForHapticType(const int player, Uint32 hapticType, Uint32 uid);
+	static const Uint32 HAPTIC_SFX_BOULDER_BOUNCE_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_LOW_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_ROLL_HIGH_VOL;
+	static const Uint32 HAPTIC_SFX_BOULDER_LAUNCH_VOL;
+	void addRumbleRemotePlayer(const int player, Uint32 hapticType, Uint32 uid);
 };
 extern Inputs inputs;
 void initGameControllers();
@@ -1664,6 +1685,7 @@ public:
 		void updateStatusEffectFocusedWindow();
 		void updateCursorAnimation(int destx, int desty, int width, int height, bool usingMouse);
 		void setCursorDisabled(bool disabled) { if ( cursorFrame ) { cursorFrame->setDisabled(disabled); } };
+		const char* getCrosshairPath();
 	} hud;
 
 	class Magic_t
@@ -1678,6 +1700,7 @@ public:
 		bool bHasUnreadNewSpell = false;
 		Uint32 noManaFeedbackTicks = 0;
 		Uint32 noManaProcessedOnTick = 0;
+		Uint32 spellbookUidFromHotbarSlot = 0;
 		void flashNoMana()
 		{
 			noManaFeedbackTicks = 0;
@@ -2153,19 +2176,7 @@ public:
 		auto& slots() { return hotbar; };
 		auto& slotsAlternate(int alternate) { return hotbar_alternate[alternate]; };
 		auto& slotsAlternate() { return hotbar_alternate; }
-		void selectHotbarSlot(int slot)
-		{
-			if ( slot < 0 )
-			{
-				slot = NUM_HOTBAR_SLOTS - 1;
-			}
-			if ( slot >= NUM_HOTBAR_SLOTS )
-			{
-				slot = 0;
-			}
-			current_hotbar = slot;
-			player.GUI.activateModule(GUI_t::MODULE_HOTBAR);
-		}
+		void selectHotbarSlot(int slot);
 		void initFaceButtonHotbar();
 		FaceMenuGroup getFaceMenuGroupForSlot(int hotbarSlot);
 		void processHotbar();
@@ -2206,6 +2217,14 @@ public:
 		static real_t compactBigScale;
 		static real_t compact2pVerticalBigScale;
 	} minimap;
+
+	static void soundMovement();
+	static void soundActivate();
+	static void soundCancel();
+	static void soundModuleNavigation();
+	static void soundStatusOpen();
+	static void soundStatusClose();
+	static void soundHotbarShootmodeMovement();
 };
 
 extern Player* players[MAXPLAYERS];

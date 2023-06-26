@@ -29,6 +29,7 @@ namespace MainMenu {
 	extern ConsoleVariable<bool> cvar_gamepad_facehotbar;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
+	extern ConsoleVariable<float> cvar_enemybar_scale;
     extern ConsoleVariable<int> cvar_desiredFps;
     extern ConsoleVariable<int> cvar_displayHz;
 	extern ConsoleVariable<bool> cvar_hdrEnabled;
@@ -129,10 +130,14 @@ namespace MainMenu {
 			std::vector<std::tuple<int, std::string, Uint32>> survivalComplexity;
 			std::vector<Uint32> statRatings;
 			std::vector<std::string> statRatingsStrings;
+			Sint32 hp = DEFAULT_HP;
+			Sint32 mp = DEFAULT_MP;
+			std::vector<int> linePaddings;
 		};
 		static std::unordered_map<int, DescData_t> data;
 		static void readFromFile();
 		static bool init;
+		static void update_stat_growths(Frame& card, int classnum, int shapeshiftedType);
 	};
 
 	struct RaceDescriptions
@@ -145,6 +150,12 @@ namespace MainMenu {
 			std::set<int> proLines;
 			std::vector<int> linePaddings;
 			std::string title;
+			std::string traitsBasedOnPlayerRace;
+			std::string traitsBasedOnMonsterType;
+			std::string resistances;
+			std::string weaknesses;
+			std::string friendlyWith;
+			std::string racialSpells;
 		};
 		static std::unordered_map<std::string, DescData_t> data;
 		static void readFromFile();
@@ -176,6 +187,9 @@ namespace MainMenu {
 			return "";
 		}
 		static DescData_t& getRaceDescriptionData(int race) { return data[getRaceKey(race)]; }
+		static DescData_t& getMonsterDescriptionData(int type);
 		static bool init;
+		static void update_details_text(Frame& card);
+		static void update_details_text(Frame& card, void* stats);
 	};
 }

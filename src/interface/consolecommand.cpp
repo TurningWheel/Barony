@@ -3828,33 +3828,7 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_importallstatues("/importallstatues", "", []CCMD{
-		std::string baseDir = "data/statues";
-		auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
-		for (auto file : files)
-		{
-			std::string checkFile = baseDir + '/' + file;
-			PHYSFS_Stat stat;
-			if (PHYSFS_stat(checkFile.c_str(), &stat) == 0) { continue; }
-
-			if (stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY)
-			{
-				auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
-				for (auto file2 : files2)
-				{
-					std::string checkFile2 = checkFile + '/' + file2;
-					if (PHYSFS_stat(checkFile2.c_str(), &stat) == 0) { continue; }
-
-					if (stat.filetype != PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY)
-					{
-						StatueManager.readStatueFromFile(0, checkFile2);
-					}
-				}
-			}
-			else
-			{
-				StatueManager.readStatueFromFile(0, checkFile);
-			}
-		}
+		StatueManager.readAllStatues();
 		});
 
 	static ConsoleCommand ccmd_refreshstatues("/refreshstatues", "", []CCMD{
@@ -4683,6 +4657,17 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_load_class_descriptions("/loadclassdescriptions", "reloads class_descriptions.json", []CCMD{
 		MainMenu::ClassDescriptions::readFromFile();
+	});
+
+	static ConsoleCommand ccmd_crosshair("/crosshair", "cycles crosshair type", []CCMD{
+		if ( argc >= 2 )
+		{
+			playerSettings[0].shootmodeCrosshair = (int)strtol(argv[1], nullptr, 10);
+		}
+		else
+		{
+			++playerSettings[0].shootmodeCrosshair;
+		}
 	});
 }
 
