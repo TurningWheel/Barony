@@ -13063,13 +13063,14 @@ failed:
 		    class_info->setSize(SDL_Rect{42, 324, 194, 36});
             class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_02.png");
             class_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoHigh_02.png");
-            class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_02.png");
+            class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPressOff_02.png");
 		}
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
         class_info->setWidgetRight("randomize_class");
 		class_info->addWidgetAction("MenuStart", "confirm");
 		class_info->addWidgetAction("MenuPageRightAlt", "chat");
 		class_info->addWidgetAction("MenuPageLeftAlt", "privacy");
+        class_info->addWidgetAction("MenuAlt1", "randomize_class");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
         class_info->setTextOffset(SDL_Rect{-8, 0, 0, 0});
@@ -13176,23 +13177,28 @@ failed:
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 			if (c > 0) {
 				button->setWidgetLeft(classes_in_order[c - 1]);
-			}
+            } else {
+                button->setWidgetLeft(classes_in_order[num_classes - 1]);
+            }
 			if (c < num_classes - 1) {
 				button->setWidgetRight(classes_in_order[c + 1]);
-			}
+			} else {
+                button->setWidgetRight(classes_in_order[0]);
+            }
 			if (c > 3) {
 				button->setWidgetUp(classes_in_order[c - 4]);
 			} else {
-				button->setWidgetUp(classes_in_order[0]);
+				button->setWidgetUp(classes_in_order[c + num_classes - 4]);
 			}
 			if (c < num_classes - 4) {
 				button->setWidgetDown(classes_in_order[c + 4]);
 			} else {
-				button->setWidgetDown(classes_in_order[num_classes - 1]);
+				button->setWidgetDown(classes_in_order[c - num_classes + 4]);
 			}
 			button->addWidgetAction("MenuStart", "confirm");
 			button->addWidgetAction("MenuPageRightAlt", "chat");
 			button->addWidgetAction("MenuPageLeftAlt", "privacy");
+            button->addWidgetAction("MenuAlt1", "randomize_class");
 			button->addWidgetAction("MenuAlt2", "class_info");
 			button->setWidgetBack("back_button");
 
@@ -13269,7 +13275,7 @@ failed:
 						if (inputs.hasController(player)) {
 							auto& input = Input::inputs[player];
 							size_t len = strlen(widget.getName());
-							if (stringCmp(widget.getName(), "random", len, 6) && input.consumeBinaryToggle("MenuAlt1")) {
+							if (stringCmp(widget.getName(), "random", len, 6) && input.consumeBinaryToggle("MenuPageLeft")) {
 								constexpr Uint32 waitingPeriod = 3;
 								static Uint32 lastClassRequest = 0;
 								char buf[1024];
@@ -13343,6 +13349,7 @@ failed:
 		confirm->setFont(bigfont_outline);
 		confirm->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
 		confirm->addWidgetAction("MenuStart", "confirm");
+        confirm->addWidgetAction("MenuAlt1", "randomize_class");
 		confirm->addWidgetAction("MenuAlt2", "class_info");
 		confirm->setWidgetBack("back_button");
 		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
@@ -13781,13 +13788,23 @@ failed:
 
 		static auto class_button_fn = [](int index){
 			soundActivate();
-#ifdef NINTENDO
-		    addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press Y to suggest a class for your party ***");
-#else
 			if (inputs.hasController(index)) {
-		    	addLobbyChatMessage(uint32ColorBaronyBlue, "*** Press X to suggest a class for your party ***");
+                const char* msg;
+                const auto type = Input::getControllerType(index);
+                switch (type) {
+                default:
+                case Input::ControllerType::Xbox:
+                    msg = "*** Press [LB] to suggest a class for your party ***";
+                    break;
+                case Input::ControllerType::NintendoSwitch:
+                    msg = "*** Press [L] to suggest a class for your party ***";
+                    break;
+                case Input::ControllerType::PlayStation:
+                    msg = "*** Press [L1] to suggest a class for your party ***";
+                    break;
+                }
+                addLobbyChatMessage(uint32ColorBaronyBlue, msg);
 			}
-#endif
 			characterCardClassMenu(index, false, 0);
 		};
 
