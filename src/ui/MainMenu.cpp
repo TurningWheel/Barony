@@ -9894,12 +9894,6 @@ failed:
 	};
 
 	static const std::unordered_map<std::string, Class> classes = {
-		{"random", {
-			"Random", DLC::Base,
-			"ClassSelect_Icon_Randomize_00.png",
-			"ClassSelect_Icon_RandomizeHigh_00.png",
-			"ClassSelect_Icon_Randomize_00.png",
-			}},
 		{"barbarian", {
 			"Barbarian", DLC::Base,
 			"ClassSelect_Icon_Barbarian_00.png",
@@ -10029,7 +10023,7 @@ failed:
 	};
 
 	static const char* classes_in_order[] = {
-		"random", "barbarian", "warrior", "healer",
+		"barbarian", "warrior", "healer",
 		"rogue", "wanderer", "cleric", "merchant",
 		"wizard", "arcanist", "joker", "sexton",
 		"ninja", "monk", "conjurer", "accursed",
@@ -10398,10 +10392,9 @@ failed:
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
 		result.reserve(num_classes);
-		result.emplace_back("random");
 		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER ) {
-				result.emplace_back(classes_in_order[c + 1]);
+				result.emplace_back(classes_in_order[c]);
 			}
 		}
 		return result;
@@ -12779,15 +12772,6 @@ failed:
 		class_name_header->setHJustify(Field::justify_t::CENTER);
 		class_name_header->setVJustify(Field::justify_t::BOTTOM);*/
 
-        if (!details) {
-		    auto textbox = card->addImage(
-			    SDL_Rect{42, 68, 192, 46},
-			    0xffffffff,
-			    "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Box_ClassName_04.png",
-			    "textbox"
-		    );
-		}
-
         if (details) {
   		    static auto class_desc_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
@@ -12997,14 +12981,14 @@ failed:
 	        (*difficulty_stars->getTickCallback())(*difficulty_stars);
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
-			    const int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			    const int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
 			    auto find = classes.find(classes_in_order[i]);
 			    if (find != classes.end()) {
 				    field.setText(find->second.name);
 			    }
-			    if (i - 1 < CLASS_CONJURER) {
+			    if (i < CLASS_CONJURER) {
 			        field.setColor(color_dlc0);
-			    } else if (i - 1 < CLASS_MACHINIST) {
+			    } else if (i < CLASS_MACHINIST) {
 			        field.setColor(color_dlc1);
 			    } else {
 			        field.setColor(color_dlc2);
@@ -13012,7 +12996,7 @@ failed:
 		    };
 
 		    auto class_name = card->addField("class_name", 64);
-		    class_name->setSize(SDL_Rect{42, 68, 192, 46});
+		    class_name->setSize(SDL_Rect{66, 64, 192, 46});
 		    class_name->setHJustify(Field::justify_t::CENTER);
 		    class_name->setVJustify(Field::justify_t::CENTER);
 		    class_name->setFont(smallfont_outline);
@@ -13025,9 +13009,9 @@ failed:
 		auto subframe = card->addFrame("subframe");
 		subframe->setScrollBarsEnabled(false);
 		if (details) {
-		    subframe->setSize(SDL_Rect{34, 382, 226, 214});
+		    subframe->setSize(SDL_Rect{34, 392, 226, 144});
 		} else {
-		    subframe->setSize(SDL_Rect{34, 124, 226, 254});
+		    subframe->setSize(SDL_Rect{34, 120, 226, 198});
 		}
 		subframe->setActualSize(SDL_Rect{0, 0, 226, height});
 		subframe->setBorder(0);
@@ -13036,10 +13020,10 @@ failed:
 		if (subframe->getActualSize().h > subframe->getSize().h) {
 			auto slider = card->addSlider("scroll_slider");
 			if (details) {
-			    slider->setRailSize(SDL_Rect{260, 382, 30, 214});
+			    slider->setRailSize(SDL_Rect{260, 394, 30, 142});
 			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_01.png");
 			} else {
-			    slider->setRailSize(SDL_Rect{260, 118, 30, 266});
+			    slider->setRailSize(SDL_Rect{260, 122, 30, 196});
 			    slider->setRailImage("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_ScrollBar_00.png");
 			}
 			slider->setHandleSize(SDL_Rect{0, 0, 34, 34});
@@ -13071,20 +13055,27 @@ failed:
 		class_info->setColor(makeColor(255, 255, 255, 255));
 		class_info->setHighlightColor(makeColor(255, 255, 255, 255));
 		if (details) {
-		    class_info->setSize(SDL_Rect{266, 38, 46, 46});
+		    class_info->setSize(SDL_Rect{42, 542, 194, 36});
+            class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoOn_02.png");
+            class_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoHighOn_02.png");
+            class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_02.png");
 		} else {
-		    class_info->setSize(SDL_Rect{238, 68, 46, 46});
+		    class_info->setSize(SDL_Rect{42, 324, 194, 36});
+            class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_02.png");
+            class_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoHigh_02.png");
+            class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_02.png");
 		}
-		class_info->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_Info_00.png");
-		class_info->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoHigh_00.png");
-		class_info->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Button_InfoPress_00.png");
 		class_info->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+        class_info->setWidgetRight("randomize_class");
 		class_info->addWidgetAction("MenuStart", "confirm");
 		class_info->addWidgetAction("MenuPageRightAlt", "chat");
 		class_info->addWidgetAction("MenuPageLeftAlt", "privacy");
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
-		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+        class_info->setTextOffset(SDL_Rect{-8, 0, 0, 0});
+        class_info->setText("Show Class Info");
+        class_info->setFont(smallfont_outline);
+		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 		if (details) {
 		    class_info->setCallback([](Button& button){
 				characterCardClassMenu(button.getOwner(), false, class_selection[button.getOwner()]);
@@ -13096,9 +13087,48 @@ failed:
 				soundActivate();
 				});
 		}
+        
+        auto randomize_class = card->addButton("randomize_class");
+        randomize_class->setColor(makeColor(255, 255, 255, 255));
+        randomize_class->setHighlightColor(makeColor(255, 255, 255, 255));
+        if (details) {
+            randomize_class->setSize(SDL_Rect{242, 540, 36, 40});
+        } else {
+            randomize_class->setSize(SDL_Rect{242, 322, 36, 40});
+        }
+        randomize_class->setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_Randomize_00.png");
+        randomize_class->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_RandomizeHigh_00.png");
+        randomize_class->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_Icon_RandomizePress_00.png");
+        randomize_class->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+        randomize_class->setWidgetLeft("class_info");
+        randomize_class->addWidgetAction("MenuStart", "confirm");
+        randomize_class->addWidgetAction("MenuPageRightAlt", "chat");
+        randomize_class->addWidgetAction("MenuPageLeftAlt", "privacy");
+        randomize_class->addWidgetAction("MenuAlt1", "randomize_class");
+        randomize_class->addWidgetAction("MenuAlt2", "class_info");
+        randomize_class->setWidgetBack("back_button");
+        randomize_class->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
+        randomize_class->setCallback([](Button& button){
+            const int index = button.getOwner();
+            soundActivate();
+
+            auto reduced_class_list = reducedClassList(index);
+            auto random_class = reduced_class_list[RNG.uniform(0, (int)reduced_class_list.size() - 1)];
+            for (int c = 0; c < num_classes; ++c) {
+               if (strcmp(random_class, classes_in_order[c]) == 0) {
+                   client_classes[index] = c;
+                   break;
+               }
+            }
+
+            stats[index]->clearStats();
+            initClass(index);
+            sendPlayerOverNet();
+            saveLastCharacter(index, multiplayer);
+        });
 
 		const int current_class = std::min(std::max(0, client_classes[index]), num_classes - 1);
-		auto current_class_name = classes_in_order[current_class + 1];
+		auto current_class_name = classes_in_order[current_class];
 
         bool selected_button = false;
 		static const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
@@ -13167,7 +13197,7 @@ failed:
 			button->setWidgetBack("back_button");
 
 			// add a lock icon
-			if (isCharacterValidFromDLC(*stats[index], c - 1) != VALID_OK_CHARACTER) {
+			if (isCharacterValidFromDLC(*stats[index], c) != VALID_OK_CHARACTER) {
 				const auto lock_name = std::string(button->getName()) + "lock";
 				auto lock = subframe->addImage(
 					button->getSize(),
@@ -13178,8 +13208,6 @@ failed:
 			}
 
 			static auto button_fn = [](Button& button, int index){
-			    auto frame = static_cast<Frame*>(button.getParent());
-
 				// figure out which class button we clicked based on name
 				int c = 0;
 				for (; c < num_classes; ++c) {
@@ -13188,47 +13216,34 @@ failed:
 					}
 				}
 
-				if (c > 0) {
-				    // when selecting anything but random class...
-					--c; // discount the "random class" option
-					auto check = isCharacterValidFromDLC(*stats[index], c);
-					if (check != VALID_OK_CHARACTER) {
-						switch (check) {
-						default:
-						case INVALID_CHARACTER:
-						case INVALID_REQUIRE_ACHIEVEMENT:
-							soundError();
-							break;
-						case INVALID_REQUIREDLC1:
-							openDLCPrompt(0);
-							break;
-						case INVALID_REQUIREDLC2:
-							openDLCPrompt(1);
-							break;
-						}
-					} else {
-						soundActivate();
-				    	button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
-						client_classes[index] = c;
-					}
-				} else {
-					soundActivate();
-
-				    // when selecting random class...
-					auto reduced_class_list = reducedClassList(index);
-					auto random_class = reduced_class_list[RNG.uniform(1, (int)reduced_class_list.size() - 1)];
-					for (int c = 1; c < num_classes; ++c) {
-						if (strcmp(random_class, classes_in_order[c]) == 0) {
-							client_classes[index] = c - 1;
-							break;
-						}
-					}
-				}
-
-				stats[index]->clearStats();
-				initClass(index);
-				sendPlayerOverNet();
-				saveLastCharacter(index, multiplayer);
+                // set class
+                if (c < num_classes) {
+                    auto check = isCharacterValidFromDLC(*stats[index], c);
+                    if (check != VALID_OK_CHARACTER) {
+                        switch (check) {
+                        default:
+                        case INVALID_CHARACTER:
+                        case INVALID_REQUIRE_ACHIEVEMENT:
+                            soundError();
+                            break;
+                        case INVALID_REQUIREDLC1:
+                            openDLCPrompt(0);
+                            break;
+                        case INVALID_REQUIREDLC2:
+                            openDLCPrompt(1);
+                            break;
+                        }
+                    } else {
+                        soundActivate();
+                        button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
+                        client_classes[index] = c;
+                    }
+                    
+                    stats[index]->clearStats();
+                    initClass(index);
+                    sendPlayerOverNet();
+                    saveLastCharacter(index, multiplayer);
+                }
 			};
 
 			button->setCallback([](Button& button){button_fn(button, button.getOwner());});
@@ -13236,13 +13251,13 @@ failed:
 			    auto button = static_cast<Button*>(&widget);
 				const int index = widget.getOwner();
 
-				int class_index_with_random_option = 0;
+				int class_index = 0;
 				for (int c = 0; c < num_classes; ++c) {
 					if (strcmp(button->getName(), classes_in_order[c]) == 0) {
 						if (button->isSelected()) {
 							class_selection[widget.getOwner()] = c;
 						}
-						class_index_with_random_option = c;
+						class_index = c;
 						break;
 					}
 				}
@@ -13279,8 +13294,8 @@ failed:
 				const auto find = classes.find(name);
 				if (find != classes.end()) {
 					const auto& full_class = find->second;
-					if (isCharacterValidFromDLC(*stats[index], class_index_with_random_option - 1) == VALID_OK_CHARACTER) {
-						if (button->isHighlighted() || client_classes[index] == class_index_with_random_option - 1) {
+					if (isCharacterValidFromDLC(*stats[index], class_index) == VALID_OK_CHARACTER) {
+						if (button->isHighlighted() || client_classes[index] == class_index) {
 							button->setIcon((prefix + full_class.image_highlighted).c_str());
 						} else {
 							button->setIcon((prefix + full_class.image).c_str());
@@ -13692,11 +13707,11 @@ failed:
 
 			// select a random class
 			const auto reduced_class_list = reducedClassList(index);
-			const auto class_choice = RNG.uniform(1, (int)reduced_class_list.size() - 1);
+			const auto class_choice = RNG.uniform(0, (int)reduced_class_list.size() - 1);
 			const auto random_class = reduced_class_list[class_choice];
-			for (int c = 1; c < num_classes; ++c) {
+			for (int c = 0; c < num_classes; ++c) {
 				if (strcmp(random_class, classes_in_order[c]) == 0) {
-					client_classes[index] = c - 1;
+					client_classes[index] = c;
 					break;
 				}
 			}
@@ -13727,7 +13742,7 @@ failed:
 		auto class_text = card->addField("class_text", 64);
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				field.setText(find->second.name);
@@ -13739,7 +13754,7 @@ failed:
 		(*class_text->getTickCallback())(*class_text);
 
 		static auto class_button_tick_fn = [](Button& button, int index) {
-			int i = std::min(std::max(0, client_classes[index] + 1), num_classes - 1);
+			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
 			auto find = classes.find(classes_in_order[i]);
 			if (find != classes.end()) {
 				auto& class_info = find->second;
@@ -18598,7 +18613,7 @@ failed:
         
         // class image
         const int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
-        const int class_index = (info.players[player].char_class + 1) % num_classes;
+        const int class_index = (info.players[player].char_class) % num_classes;
         const auto class_name = classes_in_order[class_index];
         const auto class_find = classes.find(class_name);
         if (class_find != classes.end()) {
