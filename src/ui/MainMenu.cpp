@@ -13074,15 +13074,16 @@ failed:
 		class_info->addWidgetAction("MenuAlt2", "class_info");
 		class_info->setWidgetBack("back_button");
         class_info->setTextOffset(SDL_Rect{-8, 0, 0, 0});
-        class_info->setText("Show Class Info");
         class_info->setFont(smallfont_outline);
 		class_info->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 		if (details) {
+            class_info->setText("Hide Class Info");
 		    class_info->setCallback([](Button& button){
 				characterCardClassMenu(button.getOwner(), false, class_selection[button.getOwner()]);
 				soundActivate();
 				});
 		} else {
+            class_info->setText("Show Class Info");
 		    class_info->setCallback([](Button& button){
 				characterCardClassMenu(button.getOwner(), true, class_selection[button.getOwner()]);
 				soundActivate();
@@ -13175,26 +13176,30 @@ failed:
 			    selected_button = true;
 			}
 			button->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
-			if (c > 0) {
-				button->setWidgetLeft(classes_in_order[c - 1]);
+			button->setWidgetLeft(c == 0 ? classes_in_order[num_classes - 1] : classes_in_order[c - 1]);
+            button->setWidgetRight(c == num_classes - 1 ? classes_in_order[0] : classes_in_order[c + 1]);
+			if (c == 0) {
+				button->setWidgetUp(classes_in_order[num_classes - 1]);
+			} else if (c == 1) {
+				button->setWidgetUp(classes_in_order[num_classes - 4]);
+			} else if (c == 2) {
+                button->setWidgetUp(classes_in_order[num_classes - 3]);
+            } else if (c == 3) {
+                button->setWidgetUp(classes_in_order[num_classes - 2]);
             } else {
-                button->setWidgetLeft(classes_in_order[num_classes - 1]);
+                button->setWidgetUp(classes_in_order[c - 4]);
             }
-			if (c < num_classes - 1) {
-				button->setWidgetRight(classes_in_order[c + 1]);
-			} else {
-                button->setWidgetRight(classes_in_order[0]);
+            if (c == num_classes - 1) {
+                button->setWidgetDown(classes_in_order[0]);
+            } else if (c == num_classes - 2) {
+                button->setWidgetDown(classes_in_order[3]);
+            } else if (c == num_classes - 3) {
+                button->setWidgetDown(classes_in_order[2]);
+            } else if (c == num_classes - 4) {
+                button->setWidgetDown(classes_in_order[1]);
+            } else {
+                button->setWidgetDown(classes_in_order[c + 4]);
             }
-			if (c > 3) {
-				button->setWidgetUp(classes_in_order[c - 4]);
-			} else {
-				button->setWidgetUp(classes_in_order[c + num_classes - 4]);
-			}
-			if (c < num_classes - 4) {
-				button->setWidgetDown(classes_in_order[c + 4]);
-			} else {
-				button->setWidgetDown(classes_in_order[c - num_classes + 4]);
-			}
 			button->addWidgetAction("MenuStart", "confirm");
 			button->addWidgetAction("MenuPageRightAlt", "chat");
 			button->addWidgetAction("MenuPageLeftAlt", "privacy");
