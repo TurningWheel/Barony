@@ -40,6 +40,11 @@ bool Widget::remove(const char* name) {
 
 void Widget::removeSelf() {
     toBeDeleted = true;
+    
+    // also mark children deleted so they don't get processed.
+    for (auto widget : widgets) {
+        widget->removeSelf();
+    }
 }
 
 void Widget::select() {

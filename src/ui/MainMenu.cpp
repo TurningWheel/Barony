@@ -12731,6 +12731,9 @@ failed:
 		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
+    static int old_classes[MAXPLAYERS];
+    static int class_selection[MAXPLAYERS];
+
 	static void characterCardClassMenu(int index, bool details, int selection) {
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, details? 664 : 446);
@@ -12738,14 +12741,19 @@ failed:
             return;
         }
 
-		static int class_selection[MAXPLAYERS];
-
 		static void (*back_fn)(int) = [](int index){
-			createCharacterCard(index);
-			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
-			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
-			auto button = card->findButton("class"); assert(button);
-			button->select();
+            if (inputs.hasController(index)) {
+                client_classes[index] = old_classes[index];
+                stats[index]->clearStats();
+                initClass(index);
+            }
+            createCharacterCard(index);
+            
+            assert(main_menu_frame);
+            auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+            auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+            auto button = card->findButton("class"); assert(button);
+            button->select();
 		};
 
 		(void)createBackWidget(card,[](Button& button){soundCancel(); back_fn(button.getOwner());});
@@ -12921,17 +12929,8 @@ failed:
 
 				auto hpmp_values = card->addField("hpmp_values", 128);
 				hpmp_size.x += 32;
-				if ( false )
-				{
-					hpmp_size.y -= 3;
-					hpmp_values->setFont("fonts/PixelMaz_monospace.ttf#32#2");
-					hpmp_values->setPaddingPerLine(-10);
-				}
-				else
-				{
-					hpmp_values->setFont(smallfont_outline);
-					hpmp_values->setPaddingPerLine(-4);
-				}
+                hpmp_values->setFont(smallfont_outline);
+                hpmp_values->setPaddingPerLine(-4);
 				hpmp_values->setColor(makeColorRGB(209, 166, 161));
 				hpmp_values->setText("20\n20");
 				hpmp_values->setHJustify(Field::justify_t::RIGHT);
@@ -12960,7 +12959,6 @@ failed:
 		    static constexpr int star_buf_size = 32;
 	        static auto stars_fn = [](Field& field, int index){
 		        const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
-		        const char* lines[2];
 		        for (int c = 0; c < 2; ++c) {
 					field.addColorToLine(c, std::get<2>(ClassDescriptions::data[i].survivalComplexity[c]));
 		        }
@@ -13228,6 +13226,7 @@ failed:
 				}
 
                 // set class
+                bool success = false;
                 if (c < num_classes) {
                     auto check = isCharacterValidFromDLC(*stats[index], c);
                     if (check != VALID_OK_CHARACTER) {
@@ -13245,6 +13244,7 @@ failed:
                             break;
                         }
                     } else {
+                        success = true;
                         soundActivate();
                         button.setColor(makeColor(255, 255, 255, 255)); // highlight this button
                         client_classes[index] = c;
@@ -13254,6 +13254,17 @@ failed:
                     initClass(index);
                     sendPlayerOverNet();
                     saveLastCharacter(index, multiplayer);
+                }
+                
+                // if using a gamepad, back out to the previous menu
+                if (success) {
+                    if (inputs.hasController(index)) {
+                        createCharacterCard(index);
+                        auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+                        auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+                        auto button = card->findButton("class"); assert(button);
+                        button->select();
+                    }
                 }
 			};
 
@@ -13305,8 +13316,24 @@ failed:
 				const auto find = classes.find(name);
 				if (find != classes.end()) {
 					const auto& full_class = find->second;
+                    
+                    // preview the class
+                    if (button->isSelected() || button->isHighlighted() || client_classes[index] == class_index) {
+                        if (inputs.hasController(index)) {
+                            if (client_classes[index] != class_index) {
+                                if (!button->isSelected()) {
+                                    button->select();
+                                }
+                                client_classes[index] = class_index;
+                                stats[index]->clearStats();
+                                initClass(index);
+                            }
+                        }
+                    }
+                    
+                    // set button icon
 					if (isCharacterValidFromDLC(*stats[index], class_index) == VALID_OK_CHARACTER) {
-						if (button->isHighlighted() || client_classes[index] == class_index) {
+						if (button->isSelected() || button->isHighlighted() || client_classes[index] == class_index) {
 							button->setIcon((prefix + full_class.image_highlighted).c_str());
 						} else {
 							button->setIcon((prefix + full_class.image).c_str());
@@ -13374,6 +13401,17 @@ failed:
 		if (countdown) {
 		    countdown->removeSelf();
 		}
+        
+        // make SURE this player is valid when the character card opens
+        if (isCharacterValidFromDLC(*stats[index], client_classes[index]) != VALID_OK_CHARACTER) {
+            stats[index]->playerRace = RACE_HUMAN;
+            stats[index]->sex = static_cast<sex_t>(RNG.getU8() % 2);
+            stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+            client_classes[index] = 0;
+            stats[index]->clearStats();
+            initClass(index);
+        }
+        
         sendReadyOverNet(index, false);
         sendPlayerOverNet();
 		saveLastCharacter(index, multiplayer);
@@ -13810,6 +13848,7 @@ failed:
                 }
                 addLobbyChatMessage(uint32ColorBaronyBlue, msg);
 			}
+            old_classes[index] = client_classes[index];
 			characterCardClassMenu(index, false, 0);
 		};
 
@@ -14911,7 +14950,10 @@ failed:
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
-				drawCharacterPreview(widget.getOwner(), pos, 80, angle);
+                const int player = widget.getOwner();
+                const bool dark = isCharacterValidFromDLC(*stats[player],
+                    client_classes[player]) != VALID_OK_CHARACTER;
+				drawCharacterPreview(widget.getOwner(), pos, 80, angle, dark);
 				});
 		}
 
