@@ -10398,7 +10398,7 @@ failed:
 		std::vector<const char*> result;
 		result.reserve(num_classes);
 		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
-			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER ) {
+			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				result.emplace_back(classes_in_order[c]);
 			}
 		}
@@ -13180,6 +13180,16 @@ failed:
                    break;
                }
             }
+            if (inputs.hasController(index)) {
+                auto frame = static_cast<Frame*>(button.getParent());
+                auto subframe = frame->findFrame("subframe"); assert(subframe);
+                for (auto button : subframe->getButtons()) {
+                    if (strcmp(button->getName(), classes_in_order[client_classes[index]]) == 0) {
+                        button->select();
+                        break;
+                    }
+                }
+            }
 
             stats[index]->clearStats();
             initClass(index);
@@ -15019,9 +15029,9 @@ failed:
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
 				auto angle = (330.0 + 20.0 * widget.getOwner()) * PI / 180.0;
                 const int player = widget.getOwner();
-                const bool dark = isCharacterValidFromDLC(*stats[player],
-                    client_classes[player]) != VALID_OK_CHARACTER;
-				drawCharacterPreview(widget.getOwner(), pos, 80, angle, dark);
+                //const bool dark = isCharacterValidFromDLC(*stats[player],
+                //    client_classes[player]) != VALID_OK_CHARACTER;
+				drawCharacterPreview(widget.getOwner(), pos, 80, angle, false);
 				});
 		}
 
