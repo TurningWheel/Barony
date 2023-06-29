@@ -12384,6 +12384,16 @@ failed:
 		    label->setHJustify(Field::justify_t::LEFT);
 		    label->setVJustify(Field::justify_t::CENTER);
 		}
+        
+        static const char* appearance_names[] = {
+            "Landguard", "Northborn", "Firebrand", "Hardbred",
+            "Highwatch", "Gloomforge", "Pyrebloom", "Snakestone",
+            "Windclan", "Warblood", "Millbound", "Sunstalk",
+            "Claymount", "Stormward", "Tradefell", "Nighthill",
+            "Baytower", "Whetsong"
+        };
+
+        constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
 
 		auto appearances = subframe->addFrame("appearances");
 		appearances->setSize(SDL_Rect{102, 0, 122, 36});
@@ -12471,7 +12481,10 @@ failed:
 		appearance_uparrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = std::max((int)stats[button.getOwner()]->appearance - 1, 0);
+			int selection = (int)stats[button.getOwner()]->appearance - 1;
+            if (selection < 0) {
+                selection = num_appearances - 1;
+            }
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
@@ -12510,8 +12523,10 @@ failed:
 		appearance_downarrow->setCallback([](Button& button){
 			auto card = static_cast<Frame*>(button.getParent());
 			auto appearances = card->findFrame("appearances"); assert(appearances);
-			int selection = std::min((int)stats[button.getOwner()]->appearance + 1,
-				(int)appearances->getEntries().size() - 1);
+            int selection = (int)stats[button.getOwner()]->appearance + 1;
+            if (selection >= num_appearances) {
+                selection = 0;
+            }
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
@@ -12536,16 +12551,6 @@ failed:
 	    appearance_downarrow->addWidgetAction("MenuPageRight", "female");
 	    appearance_downarrow->addWidgetAction("MenuAlt1", "disable_abilities");
 	    appearance_downarrow->addWidgetAction("MenuAlt2", "show_race_info");
-
-		static const char* appearance_names[] = {
-			"Landguard", "Northborn", "Firebrand", "Hardbred",
-			"Highwatch", "Gloomforge", "Pyrebloom", "Snakestone",
-			"Windclan", "Warblood", "Millbound", "Sunstalk",
-			"Claymount", "Stormward", "Tradefell", "Nighthill",
-			"Baytower", "Whetsong"
-		};
-
-		constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
 
 		static auto appearance_fn = [](Frame::entry_t& entry, int index){
 			if (stats[index]->playerRace != RACE_HUMAN) {
