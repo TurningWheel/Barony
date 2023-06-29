@@ -647,6 +647,11 @@ namespace MainMenu {
 
 	static BaronyRNG RNG;
 
+    static int old_classes[MAXPLAYERS];
+    static int old_races[MAXPLAYERS];
+    static Uint32 old_appearances[MAXPLAYERS];
+    static sex_t old_sexes[MAXPLAYERS];
+
 /******************************************************************************/
 
 	static ConsoleCommand ccmd_testFontDel("/testfont_del", "delete test font window",
@@ -10697,18 +10702,22 @@ failed:
 	    }
     }
 
-	static void race_button_fn(Button& button, int index) {
+	static void race_button_fn(Button& button, bool override_dlc) {
+        const int index = button.getOwner();
 		auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+        bool success = false;
 		for (int c = 0; c < num_races; ++c) {
 			auto race = races[c];
 			if (strcmp(button.getName(), race) == 0) {
-				if ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
-					(!enabledDLCPack2 && c >= 5 && c <= 8)) {
+				if (!override_dlc &&
+                    ((!enabledDLCPack1 && c >= 1 && c <= 4) ||
+					(!enabledDLCPack2 && c >= 5 && c <= 8))) {
 					// this class is not available to the player
 					button.setPressed(false);
 					openDLCPrompt(c >= 5 ? 1 : 0);
 					return;
 				} else {
+                    success = true;
 					soundToggle();
 					stats[index]->playerRace = c;
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
@@ -10740,12 +10749,18 @@ failed:
 						male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
-						stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
-						auto appearances = frame->findFrame("appearances");
-						if (appearances) {
-							appearances->setSelection(stats[index]->appearance);
-							appearances->scrollToSelection();
-						}
+                        auto appearances = frame->findFrame("appearances");
+                        if (inputs.hasController(index)) {
+                            // get the appearance that is currently selected in the UI
+                            stats[index]->appearance = std::max(0, appearances->getSelection());
+                        } else {
+                            // pick a random appearance
+                            stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
+                        }
+                        if (appearances) {
+                            appearances->setSelection(stats[index]->appearance);
+                            appearances->scrollToSelection();
+                        }
 					}
 					else {
 						stats[index]->appearance = 0;
@@ -10773,8 +10788,20 @@ failed:
 		}
 		stats[index]->clearStats();
 		initClass(index);
-		sendPlayerOverNet();
-		saveLastCharacter(index, multiplayer);
+        
+        if (!override_dlc) {
+            sendPlayerOverNet();
+            saveLastCharacter(index, multiplayer);
+            if (success) {
+                if (inputs.hasController(index)) {
+                    createCharacterCard(index);
+                    auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
+                    auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+                    auto button = card->findButton("race"); assert(button);
+                    button->select();
+                }
+            }
+        }
 
 		auto card = static_cast<Frame*>(frame->getParent());
 		if (card) {
@@ -12149,6 +12176,14 @@ failed:
 		static int race_selection[MAXPLAYERS];
 
 		static void (*back_fn)(int) = [](int index){
+            if (inputs.hasController(index)) {
+                client_classes[index] = old_classes[index];
+                stats[index]->appearance = old_appearances[index];
+                stats[index]->playerRace = old_races[index];
+                stats[index]->sex = old_sexes[index];
+                stats[index]->clearStats();
+                initClass(index);
+            }
 			createCharacterCard(index);
 			auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
 			auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -12274,13 +12309,14 @@ failed:
 		    race->setBorderColor(0);
 		    race->setHighlightColor(0xffffffff);
 		    race->setWidgetSearchParent(((std::string("card") + std::to_string(index)).c_str()));
+            if (c == 0) {
+                race->addWidgetAction("MenuRight", "appearance_downarrow");
+                race->addWidgetAction("MenuLeft", "appearance_uparrow");
+            }
 		    race->addWidgetAction("MenuStart", "confirm");
 		    race->addWidgetAction("MenuPageRightAlt", "chat");
 		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
-		    if (c == 0) {
-		        race->setWidgetRight("appearances");
-		    }
 		    if (c < num_races - 1) {
 		        race->setWidgetDown(races[c + 1]);
 		    }
@@ -12295,7 +12331,10 @@ failed:
 		    race->addWidgetAction("MenuPageRight", "female");
 		    race->addWidgetAction("MenuAlt1", "disable_abilities");
 		    race->addWidgetAction("MenuAlt2", "show_race_info");
-		    race->setCallback([](Button& button){race_button_fn(button, button.getOwner());});
+            race->setCallback([](Button& button){
+                soundActivate();
+                race_button_fn(button, false);
+                });
 		    if (stats[index]->playerRace == c) {
 			    race->setPressed(true);
 		    }
@@ -12311,17 +12350,24 @@ failed:
 		            auto hover = subframe->findImage("hover"); assert(hover);
 		            hover->pos.y = button->getSize().y;
 		            race_selection[widget.getOwner()] = (hover->pos.y - 2) / 36;
+                    
+                    const int index = widget.getOwner();
+                    if (inputs.hasController(index)) {
+                        race_button_fn(*button, true);
+                    }
 		        }
 
 				// rescue this player's focus
-				if (!main_menu_frame) {
-					return;
-				}
-				auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
-				if (!selectedWidget) {
-					// TODO - last race is always being rescued when cancelling DLC prompt
-					widget.select(); // select this widget
-				}
+                if (strcmp(widget.getName(), "Human") == 0) {
+                    if (!main_menu_frame) {
+                        return;
+                    }
+                    auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+                    if (!selectedWidget) {
+                        // TODO - last race is always being rescued when cancelling DLC prompt
+                        widget.select(); // select this widget
+                    }
+                }
 		        });
 
 		    auto label = subframe->addField((std::string(races[c]) + "_label").c_str(), 64);
@@ -12366,21 +12412,25 @@ failed:
 			auto parent = static_cast<Frame*>(frame->getParent());
 			auto backdrop = frame->findImage("background"); assert(backdrop);
 			auto box = frame->findImage("selection_box"); assert(box);
-			box->disabled = !frame->isSelected();
 			box->pos.y = frame->getActualSize().y;
 			backdrop->pos.y = frame->getActualSize().y + 4;
-			auto appearance_uparrow = parent->findButton("appearance_uparrow");
-			auto appearance_downarrow = parent->findButton("appearance_downarrow");
+            auto human = parent->findButton("Human"); assert(human);
+            auto appearance_uparrow = parent->findButton("appearance_uparrow"); assert(appearance_uparrow);
+            auto appearance_downarrow = parent->findButton("appearance_downarrow"); assert(appearance_downarrow);
 			auto controlType = Input::inputs[widget.getOwner()].getPlayerControlType();
+            const bool selected = controlType == Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD ?
+                frame->isActivated() : frame->isActivated() || human->isSelected();
 			const bool deselected = controlType == Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD ?
 				(!frame->isSelected() && !appearance_uparrow->isSelected() && !appearance_downarrow->isSelected()) :
-				!frame->isActivated();
-			if (frame->isActivated()) {
+				!frame->isActivated() || !human->isSelected();
+			if (selected) {
+                box->disabled = false;
 				appearance_uparrow->setDisabled(false);
 				appearance_uparrow->setInvisible(false);
 				appearance_downarrow->setDisabled(false);
 				appearance_downarrow->setInvisible(false);
 			} else if (deselected) {
+                box->disabled = true;
 				appearance_uparrow->setDisabled(true);
 				appearance_uparrow->setInvisible(true);
 				appearance_downarrow->setDisabled(true);
@@ -12425,7 +12475,9 @@ failed:
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
-			button.select();
+            if (!inputs.hasController(button.getOwner())) {
+                button.select();
+            }
 			});
 	    appearance_uparrow->setTickCallback([](Widget& widget){
 	        if (widget.isSelected()) {
@@ -12463,7 +12515,9 @@ failed:
 			appearances->setSelection(selection);
 			appearances->scrollToSelection();
 			appearances->activateSelection();
-			button.select();
+            if (!inputs.hasController(button.getOwner())) {
+                button.select();
+            }
 			});
 	    appearance_downarrow->setTickCallback([](Widget& widget){
 	        if (widget.isSelected()) {
@@ -12505,7 +12559,14 @@ failed:
 			auto entry = appearances->addEntry(std::to_string(c).c_str(), true);
 			entry->color = color_dlc0;
 			entry->text = name;
-			entry->click = [](Frame::entry_t& entry){soundActivate(); appearance_fn(entry, entry.parent.getOwner()); entry.parent.activate();};
+            entry->click = [](Frame::entry_t& entry){
+                soundActivate();
+                const int player = entry.parent.getOwner();
+                appearance_fn(entry, player);
+                if (!inputs.hasController(player)) {
+                    entry.parent.activate();
+                }
+            };
 			entry->selected = entry->click;
 			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
@@ -12731,10 +12792,9 @@ failed:
 		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
-    static int old_classes[MAXPLAYERS];
-    static int class_selection[MAXPLAYERS];
-
 	static void characterCardClassMenu(int index, bool details, int selection) {
+        static int class_selection[MAXPLAYERS];
+        
 		auto reduced_class_list = reducedClassList(index);
 		auto card = initCharacterCard(index, details? 664 : 446);
         if (!card) {
@@ -13688,7 +13748,15 @@ failed:
 		race_button->setWidgetLeft("female");
 		race_button->setWidgetUp("game_settings");
 		race_button->setWidgetDown("class");
-		race_button->setCallback([](Button& button){soundActivate(); characterCardRaceMenu(button.getOwner(), false, -1);});
+        race_button->setCallback([](Button& button){
+            soundActivate();
+            const int index = button.getOwner();
+            old_classes[index] = client_classes[index];
+            old_appearances[index] = stats[index]->appearance;
+            old_races[index] = stats[index]->playerRace;
+            old_sexes[index] = stats[index]->sex;
+            characterCardRaceMenu(button.getOwner(), false, -1);
+            });
 
 		static auto randomize_class_fn = [](Button& button, int index){
 			soundActivate();
