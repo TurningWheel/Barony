@@ -35277,7 +35277,14 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
 
 			char goldBuf[32];
-			snprintf(goldBuf, sizeof(goldBuf), "%d", item->sellValue(player.playernum));
+			if ( !item->identified && itemCategory(item) == GEM )
+			{
+				snprintf(goldBuf, sizeof(goldBuf), "%d", items[GEM_GLASS].value);
+			}
+			else
+			{
+				snprintf(goldBuf, sizeof(goldBuf), "%d", items[item->type].value);
+			}
 			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(goldBuf, font->getName(),
 				hudColors.characterSheetNeutral, 0)->getSurf()) )
 			{
