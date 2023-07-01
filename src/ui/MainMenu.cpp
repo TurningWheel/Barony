@@ -2537,7 +2537,7 @@ namespace MainMenu {
 
 	inline int AllSettings::save() {
         int result = VideoRefresh::None;
-        gamemods_mountedFilepaths = mods;
+		Mods::mountedFilepathsSaved = mods;
 		*cvar_fastRestart = fast_restart;
 		*cvar_worldtooltip_scale = world_tooltip_scale;
 		*cvar_worldtooltip_scale_splitscreen = world_tooltip_scale_splitscreen;
@@ -2661,7 +2661,7 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::load() {
 		AllSettings settings;
-		settings.mods = gamemods_mountedFilepaths;
+		settings.mods = Mods::mountedFilepathsSaved;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.fast_restart = *cvar_fastRestart;
 		settings.world_tooltip_scale = *cvar_worldtooltip_scale;
@@ -2746,7 +2746,7 @@ namespace MainMenu {
 
 	inline AllSettings AllSettings::reset() {
 		AllSettings settings;
-		settings.mods = gamemods_mountedFilepaths;
+		settings.mods = Mods::mountedFilepathsSaved;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
 		settings.fast_restart = false;
 		settings.world_tooltip_scale = 100.f;
@@ -11126,7 +11126,7 @@ failed:
             if (multiplayer != CLIENT) {
                 if (allSettings.cheats_enabled ||
                     allSettings.extra_life_enabled ||
-                    gamemods_disableSteamAchievements) {
+					Mods::disableSteamAchievements ) {
                     achievements->setColor(makeColor(180, 37, 37, 255));
                     achievements->setText("ACHIEVEMENTS DISABLED");
                 } else {
@@ -11136,7 +11136,7 @@ failed:
             } else {
                 if ((lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
                     (lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ||
-                    gamemods_disableSteamAchievements) {
+					Mods::disableSteamAchievements ) {
                     achievements->setColor(makeColor(180, 37, 37, 255));
                     achievements->setText("ACHIEVEMENTS DISABLED");
                 } else {
@@ -12015,7 +12015,7 @@ failed:
 			Field* achievements = static_cast<Field*>(&widget);
 			if ((svFlags & SV_FLAG_CHEATS) ||
 				(svFlags & SV_FLAG_LIFESAVING) ||
-				gamemods_disableSteamAchievements) {
+				Mods::disableSteamAchievements ) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
@@ -14679,7 +14679,7 @@ failed:
 			Field* achievements = static_cast<Field*>(&widget);
 			if ((svFlags & SV_FLAG_CHEATS) ||
 				(svFlags & SV_FLAG_LIFESAVING) ||
-				gamemods_disableSteamAchievements) {
+				Mods::disableSteamAchievements) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
 				achievements->setText("ACHIEVEMENTS DISABLED");
 			} else {
@@ -19315,10 +19315,12 @@ failed:
 		createPlayWindow();
 	}
 
+	static void createModsWindow();
+
 	static void mainPlayModdedGame(Button& button) {
 	    // WIP
 		soundActivate();
-		createPlayWindow();
+		createModsWindow();
 	}
 
 	static void mainArchives(Button& button) {
@@ -19849,11 +19851,7 @@ failed:
 		confirm_and_exit->setHideKeyboardGlyphs(false);
 	}
 
-	static void createModsWindow();
-
 	static void mainEditor(Button& button) {
-		createModsWindow();
-		return;
 #if defined(WINDOWS)
 	    char path[PATH_MAX];
 	    completePath(path, "editor.exe");
@@ -20953,12 +20951,33 @@ failed:
 		        //{"Quit to Desktop", "QUIT TO DESKTOP", mainQuitToDesktop},
 		        });
 		} else {
-			options.insert(options.begin(), {
+			if ( Mods::numCurrentModsLoaded >= 0 )
+			{
+				options.insert(options.begin(), {
+#if defined(NINTENDO)
+				{"Play Game", "PLAY", mainPlayGame},
+#else
+				{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame},
+				{"Play Game", "PLAY GAME", mainPlayGame},
+#endif
+				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
+				{"Settings", "SETTINGS", mainSettings},
+#if !defined(NINTENDO)
+#if !defined(NDEBUG)
+				{"Editor", "EDITOR", mainEditor},
+#endif
+				{"Quit", "QUIT", mainQuitToDesktop},
+#endif
+					});
+			}
+			else
+			{
+				options.insert(options.begin(), {
 #if defined(NINTENDO)
 				{"Play Game", "PLAY", mainPlayGame},
 #else
 				{"Play Game", "PLAY GAME", mainPlayGame},
-				//{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame}, // TODO
+				{"Mod Menu", "PLAY MODDED GAME", mainPlayModdedGame},
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
@@ -20969,6 +20988,7 @@ failed:
 				{"Quit", "QUIT", mainQuitToDesktop},
 #endif
 				});
+			}
 		}
 
 		const int num_options = (int)options.size();
@@ -21041,7 +21061,7 @@ failed:
 				Field* achievements = static_cast<Field*>(&widget);
 				if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING]
-					|| gamemods_disableSteamAchievements) {
+					|| Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText("ACHIEVEMENTS DISABLED");
 				}
@@ -22041,98 +22061,508 @@ failed:
 
 	static std::string mods_active_tab = "Local Mods";
 	static Uint32 mods_loading_tick = 0;
-	static std::vector<std::pair<std::string, std::string>> mods_mountedFilepaths;
-	static std::list<std::string> mods_localModFoldernames;
-	static int mods_numCurrentModsLoaded = 0;
-#ifdef STEAMWORKS
-	std::vector<SteamUGCDetails_t*> mods_workshopSubscribedItemList;
-	std::vector<std::pair<std::string, uint64>> mods_workshopLoadedFileIDMap;
-#endif
-	static bool mods_IsPathInMountedFiles(std::string findStr)
-	{
-		std::vector<std::pair<std::string, std::string>>::iterator it;
-		std::pair<std::string, std::string> line;
-		for ( it = mods_mountedFilepaths.begin(); it != mods_mountedFilepaths.end(); ++it )
-		{
-			line = *it;
-			if ( line.first.compare(findStr) == 0 )
-			{
-				// found entry
-				return true;
-			}
-		}
-		return false;
-	}
 
-	static bool mods_RemovePathFromMountedFiles(std::string findStr)
+	static void startModdedGame()
 	{
-		std::vector<std::pair<std::string, std::string>>::iterator it;
-		std::pair<std::string, std::string> line;
-		for ( it = mods_mountedFilepaths.begin(); it != mods_mountedFilepaths.end(); ++it )
+		//if ( Mods::modPreload )
+		//{
+		//	// look for a save game
+		//	if ( anySaveFileExists() )
+		//	{
+		//		openNewLoadGameWindow(nullptr);
+		//	}
+		//	else
+		//	{
+		//		buttonOpenCharacterCreationWindow(NULL);
+		//	}
+		//	return;
+		//}
+
+		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
+		if ( Mods::numCurrentModsLoaded == 0 )
 		{
-			line = *it;
-			if ( line.first.compare(findStr) == 0 )
-			{
-				// found entry, remove from list.
-#ifdef STEAMWORKS
-				for ( std::vector<std::pair<std::string, uint64>>::iterator itId = mods_workshopLoadedFileIDMap.begin();
-					itId != mods_workshopLoadedFileIDMap.end(); ++itId )
-				{
-					if ( itId->first.compare(line.second) == 0 )
+			errorPrompt("Select at least 1 mod to load", "Okay",
+				[](Button&) {
+					soundCancel();
+					closeMono();
+
+					if ( auto window = main_menu_frame->findFrame("mods_menu") )
 					{
-						mods_workshopLoadedFileIDMap.erase(itId);
-						break;
+						if ( auto subwindow = window->findFrame("subwindow") )
+						{
+							for ( auto btn : subwindow->getButtons() )
+							{
+								btn->select();
+								return;
+							}
+						}
+						if ( auto tab = window->findButton(mods_active_tab.c_str()) )
+						{
+							tab->select();
+						}
 					}
-				}
-#endif // STEAMWORKS
-				mods_mountedFilepaths.erase(it);
-				return true;
-			}
+			});
+			return;
 		}
-		return false;
-	}
 
-	static void fn_mod_on_load()
-	{
-		mods_numCurrentModsLoaded = mods_mountedFilepaths.size();
-		if ( mods_numCurrentModsLoaded > 0 )
+		if ( Mods::numCurrentModsLoaded > 0 )
 		{
 			steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 		}
 
-		if ( physfsIsMapLevelListModded() )
+		Mods::verifyAchievements(nullptr, false);
+
+		int w, h;
+
+		if ( !Mods::modelsListRequiresReload && Mods::modelsListLastStartedUnmodded )
 		{
-			gamemods_disableSteamAchievements = true;
+			if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+			{
+				Mods::modelsListRequiresReload = true;
+			}
+			Mods::modelsListLastStartedUnmodded = false;
+		}
+		if ( !Mods::soundListRequiresReload && Mods::soundsListLastStartedUnmodded )
+		{
+			if ( physfsSearchSoundsToUpdate() )
+			{
+				Mods::soundListRequiresReload = true;
+			}
+			Mods::soundsListLastStartedUnmodded = false;
+		}
+
+		// process any new model files encountered in the mod load list.
+		int modelsIndexUpdateStart = 1;
+		int modelsIndexUpdateEnd = nummodels;
+		if ( Mods::modelsListRequiresReload )
+		{
+			if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+			{
+				// print a loading message
+				//drawClearBuffers();
+				//getSizeOfText(ttf16, language[2989], &w, &h);
+				//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+				//GO_SwapBuffers(screen);
+				bool oldModelCache = useModelCache;
+				useModelCache = false;
+				physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+				reloadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+				useModelCache = oldModelCache;
+				/*generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+				generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);*/
+			}
+			Mods::modelsListRequiresReload = false;
+		}
+
+		if ( Mods::soundListRequiresReload )
+		{
+			if ( physfsSearchSoundsToUpdate() )
+			{
+				// print a loading message
+				//drawClearBuffers();
+				//getSizeOfText(ttf16, language[2987], &w, &h);
+				//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
+				//GO_SwapBuffers(screen);
+				physfsReloadSounds(true);
+			}
+			Mods::soundListRequiresReload = false;
+		}
+
+		if ( physfsSearchTilesToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3017], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
+			//GO_SwapBuffers(screen);
+			physfsReloadTiles(false);
+			Mods::tileListRequireReloadUnmodded = true;
+		}
+
+		if ( physfsSearchSpritesToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3015], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+			//GO_SwapBuffers(screen);
+			physfsReloadSprites(false);
+			Mods::spriteImagesRequireReloadUnmodded = true;
+		}
+
+		if ( physfsSearchBooksToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[2991], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
+			//GO_SwapBuffers(screen);
+			physfsReloadBooks();
+			Mods::booksRequireReloadUnmodded = true;
+		}
+
+		gamemodsUnloadCustomThemeMusic();
+
+		if ( physfsSearchMusicToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[2993], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+			//GO_SwapBuffers(screen);
+			bool reloadIntroMusic = false;
+			physfsReloadMusic(reloadIntroMusic, false);
+			if ( reloadIntroMusic )
+			{
+#ifdef SOUND
+				playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+			}
+			Mods::musicRequireReloadUnmodded = true;
+		}
+		else if ( Mods::musicRequireReloadUnmodded )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[2993], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+			//GO_SwapBuffers(screen);
+
+			// restore old music
+			bool reloadIntroMusic = true;
+			physfsReloadMusic(reloadIntroMusic, true);
+			if ( reloadIntroMusic )
+			{
+#ifdef SOUND
+				playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+			}
+			Mods::musicRequireReloadUnmodded = true;
+		}
+
+		std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+		if ( langDirectory.compare("./") != 0 )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3004], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+			//GO_SwapBuffers(screen);
+			if ( reloadLanguage() != 0 )
+			{
+				printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+			}
+			else
+			{
+				printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+			}
+			Mods::langRequireReloadUnmodded = true;
+		}
+
+		if ( physfsSearchItemsTxtToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3008], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
+			//GO_SwapBuffers(screen);
+			physfsReloadItemsTxt();
+			Mods::itemsTxtRequireReloadUnmodded = true;
+		}
+
+		if ( physfsSearchItemSpritesToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3006], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
+			//GO_SwapBuffers(screen);
+			physfsReloadItemSprites(false);
+			Mods::itemSpritesRequireReloadUnmodded = true;
+		}
+
+		/*if ( physfsSearchItemsGlobalTxtToUpdate() )
+		{
+			Mods::itemsGlobalTxtRequireReloadUnmodded = true;
+			loadItemLists();
+		}*/
+
+		if ( physfsSearchMonsterLimbFilesToUpdate() )
+		{
+			// print a loading message
+			//drawClearBuffers();
+			//getSizeOfText(ttf16, language[3013], &w, &h);
+			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
+			//GO_SwapBuffers(screen);
+			physfsReloadMonsterLimbFiles();
+			Mods::monsterLimbsRequireReloadUnmodded = true;
+		}
+
+		if ( physfsSearchSystemImagesToUpdate() )
+		{
+			// print a loading message
+			drawClearBuffers();
+			getSizeOfText(ttf16, language[3015], &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+			GO_SwapBuffers(screen);
+			physfsReloadSystemImages();
+			Mods::systemImagesReloadUnmodded = true;
+		}
+
+		// look for a save game
+		//if ( anySaveFileExists() )
+		//{
+		//	//openLoadGameWindow(NULL);
+		//	openNewLoadGameWindow(nullptr);
+		//}
+		//else
+		//{
+		//	buttonOpenCharacterCreationWindow(NULL);
+		//}
+
+
+	}
+
+	static void fn_load_mod(Button& button, const int index, const bool isWorkshopMod, const bool toggleActive, const bool viewMyItems)
+	{
+		Frame* frame = static_cast<Frame*>(button.getParent());
+		bool modLoaded = false;
+		char fullpath[PATH_MAX] = "";
+		if ( isWorkshopMod )
+		{
+			auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[index];
+			bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
+			bool pathIsMounted = Mods::isPathInMountedFiles(fullpath);
+			if ( !viewMyItems )
+			{
+				if ( pathIsMounted )
+				{
+					if ( !toggleActive )
+					{
+						button.setText("Unload Mod");
+						button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
+						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
+						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
+						modLoaded = true;
+					}
+					else if ( toggleActive )
+					{
+						PHYSFS_unmount(fullpath);
+						Mods::removePathFromMountedFiles(fullpath);
+						button.setText("Load Mod");
+						printlog("[%s] is removed from the search path.\n", fullpath);
+						button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+					}
+				}
+				else
+				{
+					if ( !toggleActive )
+					{
+						button.setText("Load Mod");
+						button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+					}
+					else if ( PHYSFS_mount(fullpath, NULL, 0) )
+					{
+						Mods::mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
+						modLoaded = true;
+						button.setText("Unload Mod");
+						button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
+						button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
+						button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
+					}
+				}
+			}
 		}
 		else
 		{
-			gamemods_disableSteamAchievements = false;
+			std::string path = outputdir;
+			auto it = Mods::localModFoldernames.begin();
+			std::advance(it, index);
+			path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(*it);
+			bool pathIsMounted = Mods::isPathInMountedFiles(path);
+			snprintf(fullpath, sizeof(fullpath), "%s", path.c_str());
+			if ( pathIsMounted )
+			{
+				if ( !toggleActive )
+				{
+					button.setText("Unload Mod");
+					button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
+					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
+					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
+					modLoaded = true;
+				}
+				else if ( toggleActive )
+				{
+					PHYSFS_unmount(fullpath);
+					Mods::removePathFromMountedFiles(fullpath);
+					button.setText("Load Mod");
+					printlog("[%s] is removed from the search path.\n", fullpath);
+					button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+				}
+			}
+			else
+			{
+				if ( !toggleActive )
+				{
+					button.setText("Load Mod");
+					button.setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+				}
+				else if ( PHYSFS_mount(fullpath, NULL, 0) )
+				{
+					Mods::mountedFilepaths.push_back(std::make_pair(fullpath, *it));
+					modLoaded = true;
+					button.setText("Unload Mod");
+					button.setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
+					button.setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
+					button.setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
+				}
+			}
+		}
+
+		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
+		if ( modLoaded )
+		{
+			Mods::verifyAchievements(fullpath, true);
+			Mods::modelsListRequiresReload = true;
+			Mods::soundListRequiresReload = true;
+		}
+		else if ( toggleActive )
+		{
+			Mods::verifyAchievements(nullptr, true);
+		}
+
+		if ( !viewMyItems )
+		{
+			std::string modOrderName = frame->getName();
+			modOrderName += "_mod_order";
+			std::string modPathName = modOrderName + "_path";
+			Field* modOrderTxt = frame->findField(modOrderName.c_str());
+			if ( Field* modPathTxt = frame->findField(modPathName.c_str()) )
+			{
+				modPathTxt->setText(fullpath);
+			}
+			if ( modOrderTxt )
+			{
+				if ( modLoaded )
+				{
+					modOrderTxt->setDisabled(false);
+					for ( size_t i = 0; i < Mods::mountedFilepaths.size(); ++i )
+					{
+						if ( Mods::mountedFilepaths[i].first == fullpath )
+						{
+							char buf[32];
+							snprintf(buf, sizeof(buf), "Load Order: %d", i + 1);
+							modOrderTxt->setText(buf);
+							break;
+						}
+					}
+				}
+				else
+				{
+					modOrderTxt->setDisabled(true);
+					modOrderTxt->setText("");
+					modOrderTxt->setUserData((void*)(intptr_t)-1);
+				}
+			}
+			auto bg = frame->findImage("bg");
+			auto title = frame->findField("title");
+			auto desc = frame->findField("desc");
+			if ( modLoaded )
+			{
+				title->setColor(makeColorRGB(255, 255, 255));
+				if ( desc )
+				{
+					desc->setColor(makeColorRGB(255, 255, 255));
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBlueOn_00.png";
+				}
+				else
+				{
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBrownOn_00.png";
+				}
+			}
+			else
+			{
+				title->setColor(makeColorRGB(128, 128, 128));
+				if ( desc )
+				{
+					desc->setColor(makeColorRGB(128, 128, 128));
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBlue_00.png";
+				}
+				else
+				{
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBrown_00.png";
+				}
+			}
+		}
+		else
+		{
+			std::string modOrderName = frame->getName();
+			modOrderName += "_mod_order";
+			std::string modPathName = modOrderName + "_path";
+			Field* modOrderTxt = frame->findField(modOrderName.c_str());
+			if ( Field* modPathTxt = frame->findField(modPathName.c_str()) )
+			{
+				modPathTxt->setText(fullpath);
+			}
+			auto bg = frame->findImage("bg");
+			auto title = frame->findField("title");
+			auto desc = frame->findField("desc");
+			if ( modLoaded )
+			{
+				title->setColor(makeColorRGB(255, 255, 255));
+				if ( desc )
+				{
+					desc->setColor(makeColorRGB(255, 255, 255));
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBlueOn_00.png";
+				}
+				else
+				{
+					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBrownOn_00.png";
+				}
+			}
 		}
 	}
 
 	static auto make_workshop_frame = [](Frame& subwindow, int y, 
 		const char* name, const char* titleTxt, const char* descTxt, 
-		bool isMounted, bool isWorkshopMod) {
+		bool isMounted, bool isWorkshopMod, int itemIndex) {
 		auto frame = subwindow.addFrame(name);
 		frame->setSize(SDL_Rect{ 16, y, 884, 0 });
 		frame->enableScroll(false);
 		frame->setAllowScrollBinds(false);
 		frame->setHollow(true);
+		bool viewMyItems = itemIndex >= 1000000;
+		if ( viewMyItems )
+		{
+			itemIndex -= 1000000;
+		}
+		frame->setUserData((void*)(intptr_t)itemIndex);
 
 		auto title = frame->addField("title", 1024);
 		title->setText(titleTxt);
 		title->setFont(bigfont_outline);
-		const int padx = 16;
-		title->setSize(SDL_Rect{ padx, 4, frame->getSize().w - padx * 2, 24 });
+		const int padx = 54;
+		title->setSize(SDL_Rect{ padx + 4 + 64, 8, 570, 24 });
+		Field* desc = nullptr;
 
 		if ( descTxt != nullptr )
 		{
-			auto desc = frame->addField("desc", 1024);
+			desc = frame->addField("desc", 1024);
 			desc->setText(descTxt);
 			desc->setFont(smallfont_outline);
 			SDL_Rect descPos = title->getSize();
+			descPos.x += 4;
 			descPos.y += descPos.h + 1;
-			descPos.w -= 6;
+			descPos.w = 726;
+			//desc->setPaddingPerLine(-2);
 			desc->setSize(descPos);
 
 			descPos.h = 48;
@@ -22173,19 +22603,21 @@ failed:
 			descPos.w += 6;
 			desc->setSize(descPos);
 			SDL_Rect framePos = frame->getSize();
-			framePos.h = desc->getSize().y + desc->getSize().h + 4;
+			framePos.h = 86;
 			frame->setSize(framePos);
-			frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/system/white.png", "bg");
-			frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
-			frame->addImage(SDL_Rect{ 0, desc->getSize().y, framePos.w, desc->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "desc bg");
+			frame->addImage(SDL_Rect{ 0, 0, 890, 82 }, makeColorRGB(255, 255, 255), "*#images/ui/Main Menus/Mods/ModMenu_ItemBlue_00.png", "bg");
+			//frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/ui/Main Menus/Mods/ModMenu_ItemBlue_00.png", "bg");
+			//frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
+			//frame->addImage(SDL_Rect{ 0, desc->getSize().y, framePos.w, desc->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "desc bg");
 		}
 		else
 		{
 			SDL_Rect framePos = frame->getSize();
-			framePos.h = title->getSize().y + title->getSize().h + 4 + 24;
+			framePos.h = 86;
 			frame->setSize(framePos);
-			frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/system/white.png", "bg");
-			frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
+			frame->addImage(SDL_Rect{ 0, 0, 890, 82 }, makeColorRGB(255, 255, 255), "*#images/ui/Main Menus/Mods/ModMenu_ItemBrown_00.png", "bg");
+			//frame->addImage(SDL_Rect{ 0, 0, framePos.w, framePos.h }, makeColorRGB(255, 255, 255), "images/system/white.png", "bg");
+			//frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
 		}
 
 		//button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
@@ -22209,82 +22641,132 @@ failed:
 		//	enter->activate();
 		//}
 		//	});
-		std::string button_name = name;
-		button_name += "_button";
-		auto button = frame->addButton(button_name.c_str());
-		button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
-		button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
-		button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
-		button->setColor(0xffffffff);
-		button->setHighlightColor(0xffffffff);
-		button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44});
-		button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
-		button->setCallback([](Button& button) {
-			Frame* frame = static_cast<Frame*>(button.getParent());
-			auto index = reinterpret_cast<intptr_t>(frame->getUserData());
-			bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
-			if ( isWorkshopMod )
+
+		if ( !viewMyItems )
+		{
+			std::string button_name = name;
+			button_name += "_button";
+			auto button = frame->addButton(button_name.c_str());
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44});
+			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
+			button->setFont(smallfont_outline);
+			if ( isMounted )
 			{
-				char fullpath[PATH_MAX];
-				auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[index];
-				bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
-				bool pathIsMounted = mods_IsPathInMountedFiles(fullpath);
-				if ( pathIsMounted )
-				{
-					if ( PHYSFS_unmount(fullpath) )
-					{
-						if ( mods_RemovePathFromMountedFiles(fullpath) )
-						{
-							button.setText("Load Mod");
-							printlog("[%s] is removed from the search path.\n", fullpath);
-						}
-					}
-				}
-				else
-				{
-					if ( PHYSFS_mount(fullpath, NULL, 0) )
-					{
-						mods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
-						fn_mod_on_load();
-						button.setText("Unload Mod");
-					}
-				}
+				button->setText("Unload Mod");
+				button->setBackground("*#images/ui/Main Menus/Mods/Unload_Button_00.png");
+				button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Unload_Button_High00.png");
+				button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Unload_Button_Press00.png");
 			}
 			else
 			{
-				std::string path = outputdir;
-				auto it = mods_localModFoldernames.begin();
-				std::advance(it, index);
-				path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(*it);
-				bool pathIsMounted = mods_IsPathInMountedFiles(path);
-				const char* fullpath = path.c_str();
-				if ( pathIsMounted )
+				button->setText("Load Mod");
+				button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+				button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+				button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+			}
+			button->setCallback([](Button& button) {
+				Frame* frame = static_cast<Frame*>(button.getParent());
+				auto index = reinterpret_cast<intptr_t>(frame->getUserData());
+				bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
+
+				fn_load_mod(button, index, isWorkshopMod, true, false);
+			});
+
+			std::string mod_order_name = name;
+			mod_order_name += "_mod_order";
+			Field* modOrder = frame->addField(mod_order_name.c_str(), 32);
+			modOrder->setFont(smallfont_outline);
+
+			SDL_Rect txtPos = frame->getSize();
+			txtPos.h = 24;
+			txtPos.y = 7;
+			txtPos.w = 200;
+			txtPos.x = frame->getSize().w - txtPos.w - 36;
+			modOrder->setSize(txtPos);
+			modOrder->setHJustify(Field::justify_t::RIGHT);
+			modOrder->setText("");
+			modOrder->setDisabled(true);
+			modOrder->setTickCallback([](Widget& widget) {
+				auto frame = static_cast<Frame*>(widget.getParent());
+				std::string modPathName = widget.getName();
+				modPathName += "_path";
+				if ( auto modPath = frame->findField(modPathName.c_str()) )
 				{
-					if ( PHYSFS_unmount(fullpath) )
+					for ( size_t i = 0; i < Mods::mountedFilepaths.size(); ++i )
 					{
-						if ( mods_RemovePathFromMountedFiles(fullpath) )
+						if ( !strcmp(Mods::mountedFilepaths[i].first.c_str(), modPath->getText()) )
 						{
-							button.setText("Load Mod");
-							printlog("[%s] is removed from the search path.\n", fullpath);
+							char buf[32];
+							snprintf(buf, sizeof(buf), "Load Order: %d", i + 1);
+							Field* field = static_cast<Field*>(&widget);
+							field->setText(buf);
+							break;
 						}
 					}
 				}
-				else
+			});
+
+			std::string mod_path_name = mod_order_name + "_path";
+			Field* modPath = frame->addField(mod_path_name.c_str(), PATH_MAX);
+			modPath->setDisabled(true);
+			modPath->setText("");
+
+			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems);
+
+			if ( modPath )
+			{
+				std::string previewPath = modPath->getText();
+				previewPath += PHYSFS_getDirSeparator();
+				previewPath += "preview.png";
+				auto panel = frame->addImage(SDL_Rect{ padx - 6, 8, 68, 68 }, makeColorRGB(255, 255, 255), "*#images/ui/Main Menus/Mods/ModMenu_PreviewFrame.png", "preview bg");
+				if ( auto imgGet = Image::get(previewPath.c_str()) )
 				{
-					if ( PHYSFS_mount(fullpath, NULL, 0) )
-					{
-						mods_mountedFilepaths.push_back(std::make_pair(fullpath, *it));
-						fn_mod_on_load();
-						button.setText("Unload Mod");
-					}
+					frame->addImage(SDL_Rect{ panel->pos.x + 2, panel->pos.y + 2, 64, 64 }, makeColorRGB(255, 255, 255), previewPath.c_str(), "preview");
 				}
 			}
-		});
+		}
+		else
+		{
+			std::string button_name = name;
+			button_name += "_button";
+			auto button = frame->addButton(button_name.c_str());
+			button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
+			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
+			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
+			button->setColor(0xffffffff);
+			button->setHighlightColor(0xffffffff);
+			button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44 });
+			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
+			button->setFont(smallfont_outline);
+			button->setText("Update Mod");
+
+			std::string mod_order_name = name;
+			mod_order_name += "_mod_order";
+			std::string mod_path_name = mod_order_name + "_path";
+			Field* modPath = frame->addField(mod_path_name.c_str(), PATH_MAX);
+			modPath->setDisabled(true);
+			modPath->setText("");
+
+			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems);
+
+			if ( modPath )
+			{
+				std::string previewPath = modPath->getText();
+				previewPath += PHYSFS_getDirSeparator();
+				previewPath += "preview.png";
+				auto panel = frame->addImage(SDL_Rect{ padx - 6, 8, 68, 68 }, makeColorRGB(255, 255, 255), "*#images/ui/Main Menus/Mods/ModMenu_PreviewFrame.png", "preview bg");
+				if ( auto imgGet = Image::get(previewPath.c_str()) )
+				{
+					frame->addImage(SDL_Rect{ panel->pos.x + 2, panel->pos.y + 2, 64, 64 }, makeColorRGB(255, 255, 255), previewPath.c_str(), "preview");
+				}
+			}
+		}
 
 		SDL_Rect framePos = frame->getSize();
 		framePos.w = subwindow.getSize().w - framePos.x * 2;
 		frame->setSize(framePos);
-
 		return frame;
 	};
 
@@ -22327,6 +22809,7 @@ failed:
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.y = 0;
 						actualPos.h = subwindow->getSize().h;
 
 						int numResults = g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned;
@@ -22340,13 +22823,12 @@ failed:
 
 							auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[i];
 							bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
-							bool pathIsMounted = gamemodsIsPathInMountedFiles(fullpath);
+							bool pathIsMounted = Mods::isPathInMountedFiles(fullpath);
 
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name, 
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription,
-								pathIsMounted, true);
-							prevFrame->setUserData((void*)(intptr_t)i);
+								pathIsMounted, true, i);
 						}
 						if ( prevFrame )
 						{
@@ -22401,6 +22883,7 @@ failed:
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.y = 0;
 						actualPos.h = subwindow->getSize().h;
 
 						int numResults = g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned;
@@ -22412,7 +22895,7 @@ failed:
 							snprintf(name, sizeof(name), "mod%d", i);
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
-								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription, true, true);
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription, true, true, i + 1000000);
 						}
 						if ( prevFrame )
 						{
@@ -22448,10 +22931,10 @@ failed:
 				closeMono();
 			});
 
-		mods_localModFoldernames.clear();
+		Mods::localModFoldernames.clear();
 		std::string path = outputdir;
 		path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator());
-		mods_localModFoldernames = directoryContents(path.c_str(), true, false);
+		Mods::localModFoldernames = directoryContents(path.c_str(), true, false);
 
 		prompt->setTickCallback([](Widget& widget) {
 			if ( (ticks - mods_loading_tick) > TICKS_PER_SECOND / 2 )
@@ -22468,12 +22951,13 @@ failed:
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.y = 0;
 						actualPos.h = subwindow->getSize().h;
 
 						Frame* prevFrame = nullptr;
-						const int frameHeight = 60;
+						const int frameHeight = 82 + 8;
 						int index = -1;
-						for ( auto& folder : mods_localModFoldernames )
+						for ( auto& folder : Mods::localModFoldernames )
 						{
 							++index;
 							char name[32];
@@ -22481,10 +22965,10 @@ failed:
 
 							std::string path = outputdir;
 							path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(folder);
-							bool pathIsMounted = gamemodsIsPathInMountedFiles(path);
+							bool pathIsMounted = Mods::isPathInMountedFiles(path);
+							std::string title = "/mods/" + folder + "/";
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
-								folder.c_str(), nullptr, pathIsMounted, false);
-							prevFrame->setUserData((void*)(intptr_t)index);
+								title.c_str(), nullptr, pathIsMounted, false, index);
 						}
 						if ( prevFrame )
 						{
@@ -22503,7 +22987,28 @@ failed:
 	static void createModsWindow() {
 		assert(main_menu_frame);
 
-		auto window = main_menu_frame->addFrame("mods_menu");
+		Mods::clearAllMountedPaths();
+		for ( auto it = Mods::mountedFilepathsSaved.begin(); it != Mods::mountedFilepathsSaved.end(); )
+		{
+			if ( !dataPathExists(it->first.c_str()) )
+			{
+				it = Mods::mountedFilepathsSaved.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+		Mods::mountedFilepaths = Mods::mountedFilepathsSaved;
+		Mods::mountAllExistingPaths();
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		auto window = dimmer->addFrame("mods_menu");
 		window->setSize(SDL_Rect{
 			(Frame::virtualScreenX - 1164) / 2,
 			(Frame::virtualScreenY - 716) / 2,
@@ -22566,15 +23071,22 @@ failed:
 
 		(void)createBackWidget(window, [](Button& button) {
 			soundCancel();
-		auto frame = static_cast<Frame*>(button.getParent());
-		frame = static_cast<Frame*>(frame->getParent());
-		frame->removeSelf();
-		assert(main_menu_frame);
-		auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
-		auto window = dimmer->findFrame("play_game_window"); assert(window);
-		/*auto hall_of_trials_button = window->findButton("mods_menu"); assert(hall_of_trials_button);
-		hall_of_trials_button->select();*/
-			});
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+			assert(main_menu_frame);
+			auto buttons = main_menu_frame->findFrame("buttons");
+			if ( !buttons ) {
+				destroyMainMenu();
+				createMainMenu(false);
+			}
+			else {
+				auto mod_menu = buttons->findButton("Mod Menu"); assert(mod_menu);
+				mod_menu->select();
+			}
+			Mods::unloadMods();
+		});
 
 		/*auto banner = subwindow->addImage(
 			SDL_Rect{ 0, 88, 1118, 42 },
@@ -22610,6 +23122,24 @@ failed:
 				(std::string("fleur") + std::to_string(c)).c_str()
 			);
 		}*/
+
+		auto achievements_status = window->addField("achievements_status", 64);
+		achievements_status->setFont(bigfont_no_outline);
+		achievements_status->setSize(SDL_Rect{ 540, 646, 340, 30 });
+		achievements_status->setText("");
+		achievements_status->setHJustify(Field::justify_t::RIGHT);
+		achievements_status->setVJustify(Field::justify_t::CENTER);
+		achievements_status->setTickCallback([](Widget& widget) {
+			Field* field = static_cast<Field*>(&widget);
+			if ( Mods::disableSteamAchievements )
+			{
+				field->setText("ACHIEVEMENTS DISABLED");
+			}
+			else
+			{
+				field->setText("ACHIEVEMENTS ENABLED");
+			}
+		});
 
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(48);
@@ -22670,36 +23200,36 @@ failed:
 				"Are you sure you want to reset\nyour best times?", "Yes", "No",
 				[](Button& button) { // Yes button
 					soundActivate();
-		soundDeleteSave();
+					soundDeleteSave();
 
-		// delete best times
-		for ( auto& it : gameModeManager.Tutorial.levels ) {
-			it.completionTime = 0;
-		}
-		gameModeManager.Tutorial.writeToDocument();
+					// delete best times
+					for ( auto& it : gameModeManager.Tutorial.levels ) {
+						it.completionTime = 0;
+					}
+					gameModeManager.Tutorial.writeToDocument();
 
-		// update window
-		assert(main_menu_frame);
-		auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
-		window->removeSelf();
-		createHallofTrialsMenu();
+					// update window
+					assert(main_menu_frame);
+					auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
+					window->removeSelf();
+					createHallofTrialsMenu();
 
-		// remove prompt
-		closeBinary();
-				},
-				[](Button& button) { // No button
-					soundCancel();
+					// remove prompt
+					closeBinary();
+							},
+							[](Button& button) { // No button
+								soundCancel();
 
-				// select another button
-				assert(main_menu_frame);
-				auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
-				auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-				/*auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-				tutorial->select();*/
+							// select another button
+							assert(main_menu_frame);
+							auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
+							auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+							/*auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+							tutorial->select();*/
 
-				// remove prompt
-				closeBinary();
-				}
+							// remove prompt
+							closeBinary();
+							}
 				);
 			});
 
@@ -22713,27 +23243,8 @@ failed:
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
 		enter->setCallback([](Button& button) {
-			if ( !tutorial_map_destination.empty() ) {
-				destroyMainMenu();
-				createDummyMainMenu();
-				beginFade(MainMenu::FadeDestination::HallOfTrials);
-			}
-			else {
-				errorPrompt(
-					"Select a level to start first.",
-					"Okay",
-					[](Button& button) {
-						soundCancel();
-				assert(main_menu_frame);
-				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
-				auto subwindow = mods_menu->findFrame("subwindow"); assert(subwindow);
-				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-				tutorial->select();
-				closeMono();
-					}
-				);
-			}
-			});
+			startModdedGame();
+		});
 
 		struct Option {
 			const char* name;

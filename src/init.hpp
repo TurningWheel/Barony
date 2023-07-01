@@ -21,3 +21,5 @@ void reloadModels(int start, int end);
 int loadLanguage(char const * const lang);
 int reloadLanguage();
 void freeLanguages();
+void generateTileTextures();
+void destroyTileTextures();

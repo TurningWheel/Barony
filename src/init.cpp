@@ -64,9 +64,6 @@ static ConsoleVariable<bool> cvar_sdl_disablejoystickrawinput("/sdl_joystick_raw
 
 -------------------------------------------------------------------------------*/
 
-void generateTileTextures();
-void destroyTileTextures();
-
 FILE* logfile = nullptr;
 bool steam_init = false;
 
@@ -2043,7 +2040,7 @@ void reloadModels(int start, int end) {
 #endif
 
     loading = true;
-    createLevelLoadScreen(5);
+	createLoadingScreen(5);
     doLoadingScreen();
 
     std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");

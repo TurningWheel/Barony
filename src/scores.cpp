@@ -3420,10 +3420,10 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_MODDED] )
 	{
-		if ( gamemods_numCurrentModsLoaded > 0 )
+		if ( Mods::numCurrentModsLoaded > 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
+			//Mods::disableSteamAchievements = true;
 		}
 	}
 
@@ -3723,7 +3723,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append(".dat");
 			}
@@ -3734,7 +3734,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		}
 		else
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_mp.dat");
 			}
@@ -3748,7 +3748,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_npcs.dat");
 			}
@@ -3759,7 +3759,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		}
 		else
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_mp_npcs.dat");
 			}
@@ -3773,7 +3773,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_screenshot.png");
 			}
@@ -3784,7 +3784,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		}
 		else
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_mp_screenshot.png");
 			}
@@ -3800,7 +3800,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append(".baronysave");
 			}
@@ -3811,7 +3811,7 @@ std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIn
 		}
 		else
 		{
-			if ( gamemods_numCurrentModsLoaded == -1 )
+			if ( Mods::numCurrentModsLoaded == -1 )
 			{
 				filename.append("_mp.baronysave");
 			}
@@ -4020,7 +4020,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	}
 
 	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| gamemods_disableSteamAchievements
+		|| Mods::disableSteamAchievements
 		|| score->conductGameChallenges[CONDUCT_LIFESAVING] )
 	{
 		return false;
@@ -5186,7 +5186,7 @@ void AchievementObserver::updateGlobalStat(int index, int value)
 		return;
 	}
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-		|| gamemods_disableSteamAchievements )
+		|| Mods::disableSteamAchievements )
 	{
 		return;
 	}

@@ -893,7 +893,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog(generationLog, levelset, seed);
 
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	std::string fullMapPath;
@@ -908,7 +908,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( !verifyMapHash(fullMapPath.c_str(), checkMapHash) )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	// store this map's seed
@@ -1094,7 +1094,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -1137,7 +1137,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
+			Mods::disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -1290,7 +1290,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 
 			// level is successfully loaded, add it to the pool
@@ -1443,7 +1443,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
-			gamemods_disableSteamAchievements = true;
+			Mods::disableSteamAchievements = true;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -1583,7 +1583,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if (!verifyMapHash(fullMapPath.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 
 				levelnum = 0;
@@ -3951,12 +3951,12 @@ void assignActions(map_t* map)
 	{
 		customMonsterCurveExists = true;
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 	if ( gameplayCustomManager.inUse() )
 	{
 		conductGameChallenges[CONDUCT_MODDED] = 1;
-		gamemods_disableSteamAchievements = true;
+		Mods::disableSteamAchievements = true;
 	}
 
 	// assign entity behaviors

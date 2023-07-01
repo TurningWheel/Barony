@@ -817,7 +817,7 @@ void steamAchievement(const char* achName)
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
-			|| gamemods_disableSteamAchievements )
+			|| Mods::disableSteamAchievements )
 		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -936,7 +936,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
-			|| gamemods_disableSteamAchievements )
+			|| Mods::disableSteamAchievements )
 		{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -1180,7 +1180,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	{
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
-			|| gamemods_disableSteamAchievements )
+			|| Mods::disableSteamAchievements )
 		{
 			// cheats/mods have been enabled on savefile, disallow statistics update.
 #ifndef DEBUG_ACHIEVEMENTS
@@ -1646,7 +1646,7 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		SteamMatchmaking()->SetLobbyData(*lobby, "loadingsavegame", loadingsavegameChar);
 
 		char svNumMods[16];
-		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
+		snprintf(svNumMods, 15, "%d", Mods::numCurrentModsLoaded);
 		SteamMatchmaking()->SetLobbyData(*lobby, "svNumMods", svNumMods);
 
 		char modifiedTime[32];
@@ -1654,13 +1654,13 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyModifiedTime", modifiedTime);
 		SteamMatchmaking()->SetLobbyData(*lobby, "lobbyCreationTime", modifiedTime);
 
-		if ( gamemods_numCurrentModsLoaded > 0 )
+		if ( Mods::numCurrentModsLoaded > 0 )
 		{
 			int count = 0;
-			for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+			for ( std::vector<std::pair<std::string, std::string>>::iterator it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
 			{
-				for ( std::vector<std::pair<std::string, uint64>>::iterator itMap = gamemods_workshopLoadedFileIDMap.begin();
-					itMap != gamemods_workshopLoadedFileIDMap.end(); ++itMap )
+				for ( std::vector<std::pair<std::string, uint64>>::iterator itMap = Mods::workshopLoadedFileIDMap.begin();
+					itMap != Mods::workshopLoadedFileIDMap.end(); ++itMap )
 				{
 					if ( (itMap->first).compare(it->second) == 0 )
 					{

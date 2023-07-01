@@ -274,7 +274,7 @@ extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char const * const filename);
 voxel_t* loadVoxel(char* filename2);
-bool verifyMapHash(const char* filename, int hash);
+bool verifyMapHash(const char* filename, int hash, bool* fileExistsInTable = nullptr);
 int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creatureList, int *checkMapHash = nullptr);
 int loadConfig(char* filename);
 int loadDefaultConfig();
@@ -303,7 +303,6 @@ void physfsReloadTiles(bool reloadAll);
 bool physfsSearchTilesToUpdate();
 void physfsReloadSprites(bool reloadAll);
 bool physfsSearchSpritesToUpdate();
-extern std::vector<int> gamemods_modelsListModifiedIndexes;
 bool physfsIsMapLevelListModded();
 bool physfsSearchItemSpritesToUpdate();
 void physfsReloadItemSprites(bool reloadAll);
@@ -315,7 +314,6 @@ void physfsReloadMonsterLimbFiles();
 void physfsReloadSystemImages();
 bool physfsSearchSystemImagesToUpdate();
 void gamemodsUnloadCustomThemeMusic();
-extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 
 enum MapParameterIndices : int
 {

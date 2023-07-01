@@ -2117,7 +2117,7 @@ void gameLogic(void)
 					    if (!verifyMapHash(map.filename, checkMapHash))
 					    {
 						    conductGameChallenges[CONDUCT_MODDED] = 1;
-						    gamemods_disableSteamAchievements = true;
+						    Mods::disableSteamAchievements = true;
 					    }
 	                    updateLoadingScreen(50);
 

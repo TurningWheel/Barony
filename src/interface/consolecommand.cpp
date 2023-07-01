@@ -2450,9 +2450,9 @@ namespace ConsoleCommands {
 				//TODO is this still necessary?
 				//modname = modname.substr(0, modname.length() - 1);
 				printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
-				gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
-				gamemods_modelsListRequiresReload = true;
-				gamemods_soundListRequiresReload = true;
+				Mods::mountedFilepaths.push_back(std::make_pair(directory, modname));
+				Mods::modelsListRequiresReload = true;
+				Mods::soundListRequiresReload = true;
 			}
 #ifdef STEAMWORKS
 			else
@@ -2460,12 +2460,12 @@ namespace ConsoleCommands {
 				std::string directory = dir;
 				modname = name;
 				printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
-				gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
-				gamemods_modelsListRequiresReload = true;
-				gamemods_soundListRequiresReload = true;
+				Mods::mountedFilepaths.push_back(std::make_pair(directory, modname));
+				Mods::modelsListRequiresReload = true;
+				Mods::soundListRequiresReload = true;
 
 				uint64 id = atoi(fileid.c_str());
-				gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
+				Mods::workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
 				printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
 			}
 #endif
@@ -4668,6 +4668,10 @@ namespace ConsoleCommands {
 		{
 			++playerSettings[0].shootmodeCrosshair;
 		}
+	});
+
+	static ConsoleCommand ccmd_reloadtiles("/reloadtiles", "reloads tile textures", []CCMD{
+		generateTileTextures();
 	});
 }
 

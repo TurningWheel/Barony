@@ -25,13 +25,12 @@
 #include "menu.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
+#include "init.hpp"
 #include "mod_tools.hpp"
 #ifdef EDITOR
 #include "editor.hpp"
 #endif
 
-std::vector<int> gamemods_modelsListModifiedIndexes;
-std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 std::unordered_map<std::string, int> mapHashes = {
     { "boss.lmp", 2376307 },
     { "bramscastle.lmp", 3370696 },
@@ -1546,10 +1545,14 @@ static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience)
 
 -------------------------------------------------------------------------------*/
 
-bool verifyMapHash(const char* filename, int hash) {
+bool verifyMapHash(const char* filename, int hash, bool *fileExistsInTable) {
 	auto r = strrchr(filename, '/');
 	auto it = mapHashes.find(r ? (r + 1) : filename);
 	const int canonical = it != mapHashes.end() ? it->second : -1;
+	if ( fileExistsInTable )
+	{
+		*fileExistsInTable = it != mapHashes.end();
+	}
 	const bool result = it != mapHashes.end() && (canonical == hash || canonical == -1 || hash == -1);
 	if (!result) {
 		printlog("map '%s' failed hash check (%d should be %d)", filename, hash, canonical);
@@ -2949,12 +2952,12 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 		fp->gets2(modelName, PATH_MAX);
 		bool modelHasBeenModified = false;
 		// has this model index been modified?
-		std::vector<int>::iterator it = gamemods_modelsListModifiedIndexes.end();
-		if ( !gamemods_modelsListModifiedIndexes.empty() )
+		std::vector<int>::iterator it = Mods::modelsListModifiedIndexes.end();
+		if ( !Mods::modelsListModifiedIndexes.empty() )
 		{
-			it = std::find(gamemods_modelsListModifiedIndexes.begin(), 
-				gamemods_modelsListModifiedIndexes.end(), c);
-			if ( it != gamemods_modelsListModifiedIndexes.end() )
+			it = std::find(Mods::modelsListModifiedIndexes.begin(),
+				Mods::modelsListModifiedIndexes.end(), c);
+			if ( it != Mods::modelsListModifiedIndexes.end() )
 			{
 				modelHasBeenModified = true; // found the model in the vector.
 			}
@@ -2971,14 +2974,14 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 			if ( !modelHasBeenModified )
 			{
 				// add this model index to say we've modified it as the base dir is not default.
-				gamemods_modelsListModifiedIndexes.push_back(c);
+				Mods::modelsListModifiedIndexes.push_back(c);
 			}
 			else
 			{
 				if ( modelPath.compare("./") == 0 )
 				{
 					// model returned to base directory, remove from the modified index list.
-					gamemods_modelsListModifiedIndexes.erase(it);
+					Mods::modelsListModifiedIndexes.erase(it);
 				}
 			}
 
@@ -3351,6 +3354,7 @@ void physfsReloadTiles(bool reloadAll)
 		}
 	}
 	FileIO::close(fp);
+	generateTileTextures();
 }
 
 bool physfsIsMapLevelListModded()
@@ -3389,20 +3393,24 @@ bool physfsIsMapLevelListModded()
 				mapName.erase(carriageReturn);
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
+			if ( levelsCounted >= officialLevelsTxtOrder.size() )
+			{
+				return true;
+			}
 			if ( mapName.compare(officialLevelsTxtOrder.at(levelsCounted)) != 0 )
 			{
 				return true;
 			}
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
-			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			/*if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
 			{
 				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
 				if ( mapsDirectory.compare("./") != 0 )
 				{
 					return true;
 				}
-			}
+			}*/
 		}
 		++levelsCounted;
 	}
@@ -3441,20 +3449,24 @@ bool physfsIsMapLevelListModded()
 				mapName.erase(carriageReturn);
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
+			if ( levelsCounted >= officialSecretlevelsTxtOrder.size() )
+			{
+				return true;
+			}
 			if ( mapName.compare(officialSecretlevelsTxtOrder.at(levelsCounted)) != 0 )
 			{
 				return true;
 			}
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
-			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			/*if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
 			{
 				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
 				if ( mapsDirectory.compare("./") != 0 )
 				{
 					return true;
 				}
-			}
+			}*/
 		}
 		++levelsCounted;
 	}
@@ -3806,7 +3818,7 @@ void physfsReloadMonsterLimbFiles()
 bool physfsSearchSystemImagesToUpdate()
 {
 	bool requireReload = false;
-	systemResourceImagesToReload.clear();
+	Mods::systemResourceImagesToReload.clear();
 
 	for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImages.begin(); it != systemResourceImages.end(); ++it )
 	{
@@ -3819,7 +3831,7 @@ bool physfsSearchSystemImagesToUpdate()
 			{
 				printlog("[PhysFS]: Found modified %s file, reloading system image...", imgFile.c_str());
 				requireReload = true;
-				systemResourceImagesToReload.push_back(line);
+				Mods::systemResourceImagesToReload.push_back(line);
 			}
 		}
 	}
@@ -3828,9 +3840,9 @@ bool physfsSearchSystemImagesToUpdate()
 
 void physfsReloadSystemImages()
 {
-	if ( !systemResourceImagesToReload.empty() )
+	if ( !Mods::systemResourceImagesToReload.empty() )
 	{
-		for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImagesToReload.begin(); it != systemResourceImagesToReload.end(); ++it )
+		for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = Mods::systemResourceImagesToReload.begin(); it != Mods::systemResourceImagesToReload.end(); ++it )
 		{
 			std::pair<SDL_Surface**, std::string> line = *it;
 			if ( *(line.first) ) // SDL_Surface* pointer exists

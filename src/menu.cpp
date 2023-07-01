@@ -129,13 +129,13 @@ int gamemods_subscribedItemsStatus = 0;
 char gamemods_newBlankDirectory[32] = "";
 char gamemods_newBlankDirectoryOldName[32] = "";
 int gamemods_newBlankDirectoryStatus = 0;
-int gamemods_numCurrentModsLoaded = -1;
+//int gamemods_numCurrentModsLoaded = -1;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
-bool gamemods_modelsListRequiresReload = false;
+//bool gamemods_modelsListRequiresReload = false;
+//bool gamemods_soundListRequiresReload = false;
 bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game that had to reset model list, use this to reinit custom models.
-bool gamemods_soundListRequiresReload = false;
 bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_spriteImagesRequireReloadUnmodded = false;
@@ -148,7 +148,6 @@ bool gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
 bool gamemods_customContentLoadedFirstTime = false;
-bool gamemods_disableSteamAchievements = false;
 bool gamemods_modPreload = false;
 
 sex_t lastSex = MALE;
@@ -1724,7 +1723,7 @@ static void handleMainMenu(bool mode)
 				}
 			}
 #if (defined STEAMWORKS || defined USE_EOS)
-			if ( gamemods_disableSteamAchievements
+			if ( Mods::disableSteamAchievements
 				|| (intro == false && 
 					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
@@ -2044,7 +2043,7 @@ static void handleMainMenu(bool mode)
 						systemResourceImagesToReload.clear();
 					}
 
-					gamemods_disableSteamAchievements = false;
+					Mods::disableSteamAchievements = false;
 
 					if ( gameModeManager.Tutorial.FirstTimePrompt.showFirstTimePrompt )
 					{
@@ -9518,7 +9517,7 @@ void doNewGame(bool makeHighscore) {
 	{
 		conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 	}
-	gamemods_disableSteamAchievements = false;
+	Mods::disableSteamAchievements = false;
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -9750,7 +9749,7 @@ void doNewGame(bool makeHighscore) {
 			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -9762,7 +9761,7 @@ void doNewGame(bool makeHighscore) {
 				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 			}
 			else
@@ -10073,7 +10072,7 @@ void doNewGame(bool makeHighscore) {
 			if (!verifyMapHash(map.filename, checkMapHash))
 			{
 				conductGameChallenges[CONDUCT_MODDED] = 1;
-				gamemods_disableSteamAchievements = true;
+				Mods::disableSteamAchievements = true;
 			}
 		}
 		else
@@ -10085,7 +10084,7 @@ void doNewGame(bool makeHighscore) {
 				if (!verifyMapHash(fullMapName.c_str(), checkMapHash))
 				{
 					conductGameChallenges[CONDUCT_MODDED] = 1;
-					gamemods_disableSteamAchievements = true;
+					Mods::disableSteamAchievements = true;
 				}
 			}
 			else
@@ -13506,218 +13505,218 @@ void buttonGamemodsGetLocalMods(button_t* my)
 
 void buttonGamemodsStartModdedGame(button_t* my)
 {
-	if ( gamemods_modPreload )
-	{
-		// look for a save game
-		if ( anySaveFileExists() )
-		{
-			openNewLoadGameWindow(nullptr);
-		}
-		else
-		{
-			buttonOpenCharacterCreationWindow(NULL);
-		}
-		return;
-	}
-
-	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
-	if ( gamemods_numCurrentModsLoaded > 0 )
-	{
-		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
-	}
-
-	if ( physfsIsMapLevelListModded() )
-	{
-		gamemods_disableSteamAchievements = true;
-	}
-	else
-	{
-		gamemods_disableSteamAchievements = false;
-	}
-
-	int w, h;
-
-	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
-	{
-		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-		{
-			gamemods_modelsListRequiresReload = true;
-		}
-		gamemods_modelsListLastStartedUnmodded = false;
-	}
-	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
-	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			gamemods_soundListRequiresReload = true;
-		}
-		gamemods_soundsListLastStartedUnmodded = false;
-	}
-
-	// process any new model files encountered in the mod load list.
-	int modelsIndexUpdateStart = 1;
-	int modelsIndexUpdateEnd = nummodels;
-	if ( gamemods_modelsListRequiresReload )
-	{
-		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-		{
-			// print a loading message
-			drawClearBuffers();
-			getSizeOfText(ttf16, language[2989], &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
-			GO_SwapBuffers(screen);
-			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
-			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-		}
-		gamemods_modelsListRequiresReload = false;
-	}
-	if ( gamemods_soundListRequiresReload )
-	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			// print a loading message
-			drawClearBuffers();
-			getSizeOfText(ttf16, language[2987], &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
-			GO_SwapBuffers(screen);
-			physfsReloadSounds(true);
-		}
-		gamemods_soundListRequiresReload = false;
-	}
-
-	if ( physfsSearchTilesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3017], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
-		GO_SwapBuffers(screen);
-		physfsReloadTiles(false);
-		gamemods_tileListRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchSpritesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3015], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-		GO_SwapBuffers(screen);
-		physfsReloadSprites(false);
-		gamemods_spriteImagesRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchBooksToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[2991], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
-		GO_SwapBuffers(screen);
-		physfsReloadBooks();
-		gamemods_booksRequireReloadUnmodded = true;
-	}
-
-	gamemodsUnloadCustomThemeMusic();
-
-	if ( physfsSearchMusicToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[2993], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
-		GO_SwapBuffers(screen);
-		bool reloadIntroMusic = false;
-		physfsReloadMusic(reloadIntroMusic, false);
-		if ( reloadIntroMusic )
-		{
-#ifdef SOUND
-			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
-#endif			
-		}
-		gamemods_musicRequireReloadUnmodded = true;
-	}
-
-	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
-	if ( langDirectory.compare("./") != 0 )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3004], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
-		GO_SwapBuffers(screen);
-		if ( reloadLanguage() != 0 )
-		{
-			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
-		}
-		else
-		{
-			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
-		}
-		gamemods_langRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemsTxtToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3008], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
-		GO_SwapBuffers(screen);
-		physfsReloadItemsTxt();
-		gamemods_itemsTxtRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemSpritesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3006], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
-		GO_SwapBuffers(screen);
-		physfsReloadItemSprites(false);
-		gamemods_itemSpritesRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchItemsGlobalTxtToUpdate() )
-	{
-		gamemods_itemsGlobalTxtRequireReloadUnmodded = true;
-		loadItemLists();
-	}
-
-	if ( physfsSearchMonsterLimbFilesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3013], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
-		GO_SwapBuffers(screen);
-		physfsReloadMonsterLimbFiles();
-		gamemods_monsterLimbsRequireReloadUnmodded = true;
-	}
-
-	if ( physfsSearchSystemImagesToUpdate() )
-	{
-		// print a loading message
-		drawClearBuffers();
-		getSizeOfText(ttf16, language[3015], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-		GO_SwapBuffers(screen);
-		physfsReloadSystemImages();
-		gamemods_systemImagesReloadUnmodded = true;
-	}
-
-	// look for a save game
-	if ( anySaveFileExists() )
-	{
-		//openLoadGameWindow(NULL);
-		openNewLoadGameWindow(nullptr);
-	}
-	else
-	{
-		buttonOpenCharacterCreationWindow(NULL);
-	}
+//	if ( gamemods_modPreload )
+//	{
+//		// look for a save game
+//		if ( anySaveFileExists() )
+//		{
+//			openNewLoadGameWindow(nullptr);
+//		}
+//		else
+//		{
+//			buttonOpenCharacterCreationWindow(NULL);
+//		}
+//		return;
+//	}
+//
+//	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+//	if ( gamemods_numCurrentModsLoaded > 0 )
+//	{
+//		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
+//	}
+//
+//	if ( physfsIsMapLevelListModded() )
+//	{
+//		Mods::disableSteamAchievements = true;
+//	}
+//	else
+//	{
+//		Mods::disableSteamAchievements = false;
+//	}
+//
+//	int w, h;
+//
+//	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
+//	{
+//		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+//		{
+//			gamemods_modelsListRequiresReload = true;
+//		}
+//		gamemods_modelsListLastStartedUnmodded = false;
+//	}
+//	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
+//	{
+//		if ( physfsSearchSoundsToUpdate() )
+//		{
+//			gamemods_soundListRequiresReload = true;
+//		}
+//		gamemods_soundsListLastStartedUnmodded = false;
+//	}
+//
+//	// process any new model files encountered in the mod load list.
+//	int modelsIndexUpdateStart = 1;
+//	int modelsIndexUpdateEnd = nummodels;
+//	if ( gamemods_modelsListRequiresReload )
+//	{
+//		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+//		{
+//			// print a loading message
+//			drawClearBuffers();
+//			getSizeOfText(ttf16, language[2989], &w, &h);
+//			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+//			GO_SwapBuffers(screen);
+//			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+//			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+//			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+//		}
+//		gamemods_modelsListRequiresReload = false;
+//	}
+//	if ( gamemods_soundListRequiresReload )
+//	{
+//		if ( physfsSearchSoundsToUpdate() )
+//		{
+//			// print a loading message
+//			drawClearBuffers();
+//			getSizeOfText(ttf16, language[2987], &w, &h);
+//			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
+//			GO_SwapBuffers(screen);
+//			physfsReloadSounds(true);
+//		}
+//		gamemods_soundListRequiresReload = false;
+//	}
+//
+//	if ( physfsSearchTilesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3017], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadTiles(false);
+//		gamemods_tileListRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchSpritesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3015], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadSprites(false);
+//		gamemods_spriteImagesRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchBooksToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[2991], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadBooks();
+//		gamemods_booksRequireReloadUnmodded = true;
+//	}
+//
+//	gamemodsUnloadCustomThemeMusic();
+//
+//	if ( physfsSearchMusicToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[2993], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+//		GO_SwapBuffers(screen);
+//		bool reloadIntroMusic = false;
+//		physfsReloadMusic(reloadIntroMusic, false);
+//		if ( reloadIntroMusic )
+//		{
+//#ifdef SOUND
+//			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
+//#endif			
+//		}
+//		gamemods_musicRequireReloadUnmodded = true;
+//	}
+//
+//	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+//	if ( langDirectory.compare("./") != 0 )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3004], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+//		GO_SwapBuffers(screen);
+//		if ( reloadLanguage() != 0 )
+//		{
+//			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+//		}
+//		else
+//		{
+//			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+//		}
+//		gamemods_langRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchItemsTxtToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3008], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadItemsTxt();
+//		gamemods_itemsTxtRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchItemSpritesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3006], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadItemSprites(false);
+//		gamemods_itemSpritesRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchItemsGlobalTxtToUpdate() )
+//	{
+//		gamemods_itemsGlobalTxtRequireReloadUnmodded = true;
+//		loadItemLists();
+//	}
+//
+//	if ( physfsSearchMonsterLimbFilesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3013], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadMonsterLimbFiles();
+//		gamemods_monsterLimbsRequireReloadUnmodded = true;
+//	}
+//
+//	if ( physfsSearchSystemImagesToUpdate() )
+//	{
+//		// print a loading message
+//		drawClearBuffers();
+//		getSizeOfText(ttf16, language[3015], &w, &h);
+//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+//		GO_SwapBuffers(screen);
+//		physfsReloadSystemImages();
+//		gamemods_systemImagesReloadUnmodded = true;
+//	}
+//
+//	// look for a save game
+//	if ( anySaveFileExists() )
+//	{
+//		//openLoadGameWindow(NULL);
+//		openNewLoadGameWindow(nullptr);
+//	}
+//	else
+//	{
+//		buttonOpenCharacterCreationWindow(NULL);
+//	}
 }
 
 void gamemodsCustomContentInit()
@@ -13786,49 +13785,51 @@ void gamemodsCustomContentInit()
 
 bool gamemodsClearAllMountedPaths()
 {
-	bool success = true;
-	char **i;
-	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
-	{
-		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
-		{
-			if ( PHYSFS_unmount(*i) == 0 )
-			{
-				success = false;
-				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
-			}
-			else
-			{
-				printlog("[%s] is removed from the search path.\n", line.c_str());
-			}
-		}
-	}
-	gamemods_numCurrentModsLoaded = -1;
-	PHYSFS_freeList(*i);
-	return success;
+	return true;
+	//bool success = true;
+	//char **i;
+	//for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+	//{
+	//	std::string line = *i;
+	//	if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+	//	{
+	//		if ( PHYSFS_unmount(*i) == 0 )
+	//		{
+	//			success = false;
+	//			printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
+	//		}
+	//		else
+	//		{
+	//			printlog("[%s] is removed from the search path.\n", line.c_str());
+	//		}
+	//	}
+	//}
+	//gamemods_numCurrentModsLoaded = -1;
+	//PHYSFS_freeList(*i);
+	//return success;
 }
 
 bool gamemodsMountAllExistingPaths()
 {
-	bool success = true;
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
-	{
-		std::pair<std::string, std::string> itpair = *it;
-		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
-		{
-			printlog("[%s] is in the search path.\n", itpair.first.c_str());
-		}
-		else
-		{
-			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
-			success = false;
-		}
-	}
-	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
-	gamemods_customContentLoadedFirstTime = true;
-	return success;
+	return true;
+//	bool success = true;
+//	std::vector<std::pair<std::string, std::string>>::iterator it;
+//	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+//	{
+//		std::pair<std::string, std::string> itpair = *it;
+//		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
+//		{
+//			printlog("[%s] is in the search path.\n", itpair.first.c_str());
+//		}
+//		else
+//		{
+//			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
+//			success = false;
+//		}
+//	}
+//	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+//	gamemods_customContentLoadedFirstTime = true;
+//	return success;
 }
 
 void gamemodsWindowClearVariables()
