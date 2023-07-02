@@ -2524,17 +2524,10 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 	if (display_id >= 0 && display_id < displays) {
 		auto& bound = displayBounds[display_id];
 		if (fullscreen) {
-#ifdef WINDOWS
 			x = bound.x;
 			y = bound.y;
 			w = std::min(bound.w, w);
 			h = std::min(bound.h, h);
-#else
-			x = bound.x;
-			y = bound.y;
-			w = bound.w;
-			h = bound.h;
-#endif
 		}
 		else {
             //w = std::min(bound.w, w);
@@ -2600,12 +2593,10 @@ bool initVideo()
 #ifdef NINTENDO
     	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
 #else
-#ifdef WINDOWS
 	    if ( fullscreen )
 	    {
 		    flags |= SDL_WINDOW_FULLSCREEN;
 	    }
-#endif
 	    if ( borderless )
 	    {
 		    flags |= SDL_WINDOW_BORDERLESS;
@@ -2633,7 +2624,6 @@ bool initVideo()
         SDL_GL_GetDrawableSize(screen, &xres, &yres);
         printlog("set window size to %dx%d", xres, yres);
 
-#ifdef WINDOWS
 		if (fullscreen) {
 			SDL_DisplayMode mode;
 			SDL_GetDesktopDisplayMode(display_id, &mode);
@@ -2642,7 +2632,6 @@ bool initVideo()
 			SDL_SetWindowDisplayMode(screen, &mode);
             SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		}
-#endif
 	}
 
 	if ( !renderer )
