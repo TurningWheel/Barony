@@ -7253,7 +7253,7 @@ int main(int argc, char** argv)
 			skipintro = true;
 		}
 		saveConfig("default.cfg");
-		MainMenu::settingsMount();
+		MainMenu::settingsMount(false);
 		(void)MainMenu::settingsSave();
 
 		// deinit

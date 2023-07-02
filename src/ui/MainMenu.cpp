@@ -37,6 +37,12 @@
 #define NETWORK_SCAN_PORT_CLIENT 0
 #endif
 
+// all platforms but windows need to restart the game
+// to apply video mode changes (resolution, window mode, etc)
+#ifndef WINDOWS
+#define VIDEO_RESTART_NEEDED
+#endif
+
 namespace MainMenu {
     int pause_menu_owner = 0;
 	bool cursor_delete_mode = false;
@@ -585,7 +591,7 @@ namespace MainMenu {
 		bool show_lobby_code = false;
 		std::vector<int> lobby_filter_settings;
 		inline int save(); // non-zero if video needs restart
-		static inline AllSettings load();
+		static inline AllSettings load(bool video);
 		static inline AllSettings reset();
 		bool serialize(FileInterface*);
 		AllSettings()
@@ -2488,13 +2494,20 @@ namespace MainMenu {
 		    new_borderless != borderless) {
 		    result = true;
 		}
-		fullscreen = new_fullscreen;
-		borderless = new_borderless;
-		::display_id = display_id;
-		xres = std::max(resolution_x, 1024);
-		yres = std::max(resolution_y, 720);
-        *cvar_displayHz = hz;
-		verticalSync = vsync_enabled;
+
+#if defined(VIDEO_RESTART_NEEDED)
+		if (!initialized)
+#endif
+		{
+			fullscreen = new_fullscreen;
+			borderless = new_borderless;
+			::display_id = display_id;
+			xres = std::max(resolution_x, 1024);
+			yres = std::max(resolution_y, 720);
+			verticalSync = vsync_enabled;
+		}
+
+		*cvar_displayHz = hz;
 		vidgamma = std::min(std::max(.5f, gamma / 100.f), 2.f);
 
 		return result;
@@ -2656,7 +2669,7 @@ namespace MainMenu {
 	    return result;
     }
 
-	inline AllSettings AllSettings::load() {
+	inline AllSettings AllSettings::load(bool video) {
 		AllSettings settings;
 		settings.mods = gamemods_mountedFilepaths;
 		settings.crossplay_enabled = LobbyHandler.crossplayEnabled;
@@ -2687,7 +2700,11 @@ namespace MainMenu {
 		settings.shaking_enabled = shaking;
 		settings.bobbing_enabled = bobbing;
 		settings.light_flicker_enabled = flickerLights;
-		settings.video = Video::load();
+		if (video) {
+			settings.video = Video::load();
+		} else {
+			settings.video = allSettings.video;
+		}
 		settings.vertical_split_enabled = *vertical_splitscreen;
 		settings.staggered_split_enabled = *staggered_splitscreen;
 		settings.clipped_split_enabled = *clipped_splitscreen;
@@ -3587,10 +3604,11 @@ namespace MainMenu {
 
 	void settingsApply() {
         auto save_result = allSettings.save();
-        
+
 		// change video mode
         if (initialized) {
             video_refresh = save_result;
+#if !defined(VIDEO_RESTART_NEEDED)
             if (video_refresh & VideoRefresh::Video) {
                 int x = std::max(allSettings.video.resolution_x, 1024);
                 int y = std::max(allSettings.video.resolution_y, 720);
@@ -3599,6 +3617,7 @@ namespace MainMenu {
                     mainloop = 0;
                 }
             }
+#endif
 		}
 
 		// apply splitscreen setting
@@ -3619,8 +3638,8 @@ namespace MainMenu {
 		}
 	}
 
-	void settingsMount() {
-		allSettings = AllSettings::load();
+	void settingsMount(bool video) {
+		allSettings = AllSettings::load(video);
 		if (!video_refresh) {
 	        old_video = allSettings.video;
 	    }
@@ -5736,7 +5755,7 @@ bind_failed:
 		int y = 0;
 
 #ifndef NINTENDO
-		int selected_res = 0;
+		int selected_res = -1;
 		std::list<resolution> resolutions;
 		getResolutionList(allSettings.video.display_id, resolutions);
 		std::vector<std::string> resolutions_formatted;
@@ -5752,10 +5771,14 @@ bind_failed:
 			snprintf(buf, sizeof(buf), "%d x %d @ %dhz", res.x, res.y, res.hz);
 			resolutions_formatted.push_back(std::string(buf));
 			resolutions_formatted_ptrs.push_back(resolutions_formatted.back().c_str());
-			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y &&
-				allSettings.video.hz == res.hz) {
-				selected_res = index;
+			if (allSettings.video.resolution_x == res.x && allSettings.video.resolution_y == res.y) {
+				if (selected_res == -1) {
+					selected_res = index;
+				}
 			}
+		}
+		if (selected_res == -1) {
+			selected_res = 0;
 		}
 
 		int num_displays = getNumDisplays();
@@ -5768,13 +5791,8 @@ bind_failed:
 			displays_formatted_ptrs.push_back(displays_formatted.back().c_str());
 		}
 
-#ifdef WINDOWS
         const std::vector<const char*> modes = {"Windowed", "Borderless", "Fullscreen"};
 		const char* selected_mode = borderless ? "Borderless" : (fullscreen ? "Fullscreen" : "Windowed");
-#else
-        const std::vector<const char*> modes = {"Bordered", "Borderless"};
-        const char* selected_mode = borderless ? "Borderless" : "Bordered";
-#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "display", "Display Mode");
         y += settingsAddDropdown(*settings_subwindow, y, "resolution", "Resolution", "Change the current window resolution.",
@@ -19816,16 +19834,40 @@ failed:
 			    soundActivate();
 			}
 			(void)settingsSave();
-			if (main_menu_frame) {
-				auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				auto settings_button = buttons->findButton("Settings"); assert(settings_button);
-				settings_button->select();
+
+			static auto return_to_main_menu = [](Button& button){
+				if (main_menu_frame) {
+					auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
+					auto settings_button = buttons->findButton("Settings"); assert(settings_button);
+					settings_button->select();
+					auto settings = main_menu_frame->findFrame("settings");
+					if (settings) {
+						auto dimmer = static_cast<Frame*>(settings->getParent());
+						dimmer->removeSelf();
+					}
+				}
+				};
+
+#if defined(VIDEO_RESTART_NEEDED)
+			if (video_refresh != VideoRefresh::None) {
+				if (video_refresh & VideoRefresh::Video) {
+					// non-windows platforms need to throw a prompt to restart to apply video settings
+					monoPrompt("You must restart Barony for\nsome settings to take effect.", "Okay",
+						[](Button& button) {
+							soundCancel();
+							closeMono();
+							return_to_main_menu(button);
+						});
+				} else {
+					return_to_main_menu(button);
+				}
+				video_refresh = VideoRefresh::None;
+			} else {
+				return_to_main_menu(button);
 			}
-			auto settings = static_cast<Frame*>(button.getParent());
-			if (settings) {
-				auto dimmer = static_cast<Frame*>(settings->getParent());
-				dimmer->removeSelf();
-			}
+#else
+			return_to_main_menu(button);
+#endif
 			});
 		confirm_and_exit->setWidgetSearchParent("settings");
 		confirm_and_exit->setWidgetBack("discard_and_exit");
@@ -20412,7 +20454,6 @@ failed:
             // reset resolution function
 		    static auto resetResolution = [](){
 		        allSettings.video = old_video;
-				allSettings.video.window_mode = 0;
 		        if (allSettings.video.save()) {
 		            int x = std::max(allSettings.video.resolution_x, 1024);
 		            int y = std::max(allSettings.video.resolution_y, 720);
@@ -20433,11 +20474,7 @@ failed:
                     assert(main_menu_frame);
 			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-#ifdef NINTENDO
-					settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "vertical_split"});
-#else
 		            settingsSelect(*settings_subwindow, {Setting::Type::Dropdown, "resolution"});
-#endif
                 },
                 [](Button&){ // no
                     soundCancel();
@@ -20447,11 +20484,7 @@ failed:
                     assert(main_menu_frame);
 			        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			        auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-#ifdef NINTENDO
-					settingsSelect(*settings_subwindow, { Setting::Type::Boolean, "vertical_split" });
-#else
 					settingsSelect(*settings_subwindow, { Setting::Type::Dropdown, "resolution" });
-#endif
                 }, false, false); // yellow buttons
 
             // prompt timeout
@@ -20699,7 +20732,7 @@ failed:
 		button->setCallback([](Button&){
 		    destroyMainMenu();
 		    createMainMenu(false);
-			settingsMount();
+			settingsMount(false);
 			(void)settingsSave();
 			if (!firstTimeTutorialPrompt()) {
 				soundActivate();
