@@ -1280,7 +1280,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1335,7 +1335,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony-Editor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1511,7 +1511,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1586,7 +1586,7 @@
 					"\"$(SRCROOT)/../../../eos/EOS-SDK-21924193-v1/SDK/Bin\"",
 					"\"$(SRCROOT)/../../../steamworks/sdk/redistributable_bin/osx\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Turning-Wheel-LLC.Barony";
 				PRODUCT_NAME = "$(TARGET_NAME)";
