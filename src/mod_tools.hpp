@@ -3220,23 +3220,23 @@ struct Mods
 {
 	static std::vector<int> modelsListModifiedIndexes;
 	static std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
-	static std::vector<std::pair<std::string, std::string>> Mods::mountedFilepaths;
-	static std::vector<std::pair<std::string, std::string>> Mods::mountedFilepathsSaved; // saved from config file
+	static std::vector<std::pair<std::string, std::string>> mountedFilepaths;
+	static std::vector<std::pair<std::string, std::string>> mountedFilepathsSaved; // saved from config file
 	static std::list<std::string> Mods::localModFoldernames;
-	static int Mods::numCurrentModsLoaded;
-	static bool Mods::modelsListRequiresReload;
-	static bool Mods::modelsListLastStartedUnmodded; // if starting regular game that had to reset model list, use this to reinit custom models.
-	static bool Mods::soundListRequiresReload;
-	static bool Mods::soundsListLastStartedUnmodded; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
-	static bool Mods::tileListRequireReloadUnmodded;
-	static bool Mods::spriteImagesRequireReloadUnmodded;
-	static bool Mods::booksRequireReloadUnmodded;
-	static bool Mods::musicRequireReloadUnmodded;
-	static bool Mods::langRequireReloadUnmodded;
-	static bool Mods::monsterLimbsRequireReloadUnmodded;
-	static bool Mods::systemImagesReloadUnmodded;
-	static bool Mods::customContentLoadedFirstTime;
-	static bool Mods::disableSteamAchievements;
+	static int numCurrentModsLoaded;
+	static bool modelsListRequiresReload;
+	static bool modelsListLastStartedUnmodded; // if starting regular game that had to reset model list, use this to reinit custom models.
+	static bool soundListRequiresReload;
+	static bool soundsListLastStartedUnmodded; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
+	static bool tileListRequireReloadUnmodded;
+	static bool spriteImagesRequireReloadUnmodded;
+	static bool booksRequireReloadUnmodded;
+	static bool musicRequireReloadUnmodded;
+	static bool langRequireReloadUnmodded;
+	static bool monsterLimbsRequireReloadUnmodded;
+	static bool systemImagesReloadUnmodded;
+	static bool customContentLoadedFirstTime;
+	static bool disableSteamAchievements;
 #ifdef STEAMWORKS
 	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
 	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;
