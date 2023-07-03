@@ -17,7 +17,7 @@ void createInventoryTooltipFrame(const int player);
 bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spells);
 void resetInventorySlotFrames(const int player);
 void createPlayerInventorySlotFrameElements(Frame* slotFrame);
-void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw);
+void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark = false);
 extern view_t playerPortraitView[MAXPLAYERS];
 void toggleShopBuybackView(const int player);
 void loadHUDSettingsJSON();

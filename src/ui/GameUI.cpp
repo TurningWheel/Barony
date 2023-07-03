@@ -20544,7 +20544,7 @@ void createInventoryTooltipFrame(const int player)
 
 view_t playerPortraitView[MAXPLAYERS];
 
-void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw)
+void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offsetyaw, bool dark)
 {
     if (player < 0 || player >= MAXPLAYERS) {
         return;
@@ -20579,7 +20579,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.winh = pos.h;
 		glBeginCamera(&view, false);
 		bool b = players[player]->entity->flags[BRIGHT];
-		players[player]->entity->flags[BRIGHT] = true;
+        if (!dark) { players[player]->entity->flags[BRIGHT] = true; }
 		if ( !players[player]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&view, players[player]->entity, REALCOLORS);
@@ -20599,7 +20599,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				if ( !entity->flags[INVISIBLE] )
 				{
 					bool b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = true;
+                    if (!dark) { entity->flags[BRIGHT] = true; }
 					glDrawVoxel(&view, entity, REALCOLORS);
 					entity->flags[BRIGHT] = b;
 				}
@@ -20611,7 +20611,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 				{
                     bool b = entity->flags[BRIGHT];
-                    entity->flags[BRIGHT] = true;
+                    if (!dark) { entity->flags[BRIGHT] = true; }
 					glDrawSprite(&view, entity, REALCOLORS);
                     entity->flags[BRIGHT] = b;
 				}
@@ -20627,14 +20627,14 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
                         bool b = entity->flags[BRIGHT];
-                        entity->flags[BRIGHT] = true;
+                        if (!dark) { entity->flags[BRIGHT] = true; }
 						glDrawSprite(&view, entity, REALCOLORS);
                         entity->flags[BRIGHT] = b;
 					}
 					else
 					{
                         bool b = entity->flags[BRIGHT];
-                        entity->flags[BRIGHT] = true;
+                        if (!dark) { entity->flags[BRIGHT] = true; }
 						glDrawVoxel(&view, entity, REALCOLORS);
                         entity->flags[BRIGHT] = b;
 					}
