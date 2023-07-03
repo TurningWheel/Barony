@@ -2521,17 +2521,10 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 	if (display_id >= 0 && display_id < displays) {
 		auto& bound = displayBounds[display_id];
 		if (fullscreen) {
-#ifdef WINDOWS
 			x = bound.x;
 			y = bound.y;
-			w = std::min(bound.w, w);
-			h = std::min(bound.h, h);
-#else
-			x = bound.x;
-			y = bound.y;
-			w = bound.w;
-			h = bound.h;
-#endif
+			//w = std::min(bound.w, w);
+			//h = std::min(bound.h, h);
 		}
 		else {
             //w = std::min(bound.w, w);
@@ -2586,36 +2579,52 @@ bool initVideo()
 
 	if ( !screen )
 	{
-	    Uint32 flags = SDL_WINDOW_RESIZABLE;
-	    flags |= SDL_WINDOW_OPENGL;
+        Uint32 flags = 0;
+        flags |= SDL_WINDOW_OPENGL;
+        
 #ifndef EDITOR
         flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
+        
+        flags |= SDL_WINDOW_RESIZABLE;
+        
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
+        
 #ifdef NINTENDO
-    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
+    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 #else
-#ifdef WINDOWS
-	    if ( fullscreen )
-	    {
-		    flags |= SDL_WINDOW_FULLSCREEN;
-	    }
-#endif
-	    if ( borderless )
-	    {
-		    flags |= SDL_WINDOW_BORDERLESS;
-	    }
+        if (fullscreen) {
+            flags |= SDL_WINDOW_FULLSCREEN;
+        }
+        if (borderless) {
+            flags |= SDL_WINDOW_BORDERLESS;
+        }
 #endif
 
 		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
-
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, flags )) == NULL)
-		{
-			printlog("failed to set video mode.\n");
-			return false;
-		}
+        
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            screen_width, screen_height, flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+        
+#ifndef NINTENDO
+        // make sure that we actually got the window size we wanted
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        SDL_DestroyWindow(screen);
+        const float factorx = (float)xres / screen_width;
+        const float factory = (float)yres / screen_height;
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            (int)(screen_width / factorx), (int)(screen_height / factory), flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+#endif
 	}
 	else
 	{
@@ -2630,7 +2639,6 @@ bool initVideo()
         SDL_GL_GetDrawableSize(screen, &xres, &yres);
         printlog("set window size to %dx%d", xres, yres);
 
-#ifdef WINDOWS
 		if (fullscreen) {
 			SDL_DisplayMode mode;
 			SDL_GetDesktopDisplayMode(display_id, &mode);
@@ -2639,7 +2647,6 @@ bool initVideo()
 			SDL_SetWindowDisplayMode(screen, &mode);
             SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		}
-#endif
 	}
 
 	if ( !renderer )
@@ -2733,8 +2740,13 @@ bool changeVideoMode(int new_xres, int new_yres)
 	int result = initVideo();
 	if ( !result )
 	{
-		xres = 1280;
+#if defined(APPLE) && !defined(EDITOR)
+        xres = 2560;
+        yres = 1440;
+#else
+        xres = 1280;
 		yres = 720;
+#endif
 		fullscreen = 0;
 		borderless = false;
 		printlog("defaulting to safe video mode...\n");

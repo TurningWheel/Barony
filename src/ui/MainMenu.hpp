@@ -99,11 +99,11 @@ namespace MainMenu {
 	bool isMenuOpen();					// checks whether the menu is open
 	void beginFade(FadeDestination);    // begins a fade transition to a specific destination
 
-	void settingsApply();	// write settings to global variables (true if video mode changed)
-	void settingsMount();	// read settings from global variables
-	bool settingsSave();	// write settings to disk (true if succeeded)
-	bool settingsLoad();	// read settings from disk (true if succeeded)
-	void settingsReset();	// default settings
+	void settingsApply();					// write settings to global variables (true if video mode changed)
+	void settingsMount(bool video = true);	// read settings from global variables
+	bool settingsSave();					// write settings to disk (true if succeeded)
+	bool settingsLoad();					// read settings from disk (true if succeeded)
+	void settingsReset();					// default settings
 
 	void doMainMenu(bool ingame);           // call in a loop to update the menu
 	void createTitleScreen();               // creates a fresh title screen
