@@ -3233,9 +3233,6 @@ struct Mods
 	static bool Mods::booksRequireReloadUnmodded;
 	static bool Mods::musicRequireReloadUnmodded;
 	static bool Mods::langRequireReloadUnmodded;
-	static bool Mods::itemSpritesRequireReloadUnmodded;
-	static bool Mods::itemsTxtRequireReloadUnmodded;
-	static bool Mods::itemsGlobalTxtRequireReloadUnmodded;
 	static bool Mods::monsterLimbsRequireReloadUnmodded;
 	static bool Mods::systemImagesReloadUnmodded;
 	static bool Mods::customContentLoadedFirstTime;
@@ -3249,6 +3246,8 @@ struct Mods
 	static bool removePathFromMountedFiles(std::string findStr);
 	static bool isPathInMountedFiles(std::string findStr);
 	static void unloadMods();
+	static void loadMods();
+	static void loadModels(int start, int end);
 	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);
 	static bool verifyMapFiles(const char* file, bool ignoreBaseFolder);
 };

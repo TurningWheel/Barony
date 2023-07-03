@@ -214,6 +214,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type);
 void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
+void initGameDatafiles(bool moddedReload);
+void initGameDatafilesAsync(bool moddedReload);
 void deinitGame();
 void handleButtons(void);
 void gameLogic(void);

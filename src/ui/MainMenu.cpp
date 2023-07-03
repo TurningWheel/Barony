@@ -19320,7 +19320,21 @@ failed:
 	static void mainPlayModdedGame(Button& button) {
 	    // WIP
 		soundActivate();
+		createPlayWindow();
+	}
+
+	static void mainModsMenu(Button& button) {
+		// WIP
+		soundActivate();
 		createModsWindow();
+	}
+
+	static void mainUnloadMods(Button& button) {
+		soundActivate();
+		gui->deselect();
+		Mods::unloadMods();
+		destroyMainMenu();
+		createMainMenu(false);
 	}
 
 	static void mainArchives(Button& button) {
@@ -20957,8 +20971,9 @@ failed:
 #if defined(NINTENDO)
 				{"Play Game", "PLAY", mainPlayGame},
 #else
-				{"Play Modded Game", "PLAY MODDED GAME", mainPlayModdedGame},
-				{"Play Game", "PLAY GAME", mainPlayGame},
+				{"Play Game", "PLAY MODDED GAME", mainPlayModdedGame},
+				{"Mod Menu", "MOD MENU", mainModsMenu},
+				{"Unload Mods", "UNLOAD MODS", mainUnloadMods},
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
@@ -20977,7 +20992,7 @@ failed:
 				{"Play Game", "PLAY", mainPlayGame},
 #else
 				{"Play Game", "PLAY GAME", mainPlayGame},
-				{"Mod Menu", "PLAY MODDED GAME", mainPlayModdedGame},
+				{"Mod Menu", "MOD MENU", mainModsMenu},
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
@@ -22078,6 +22093,7 @@ failed:
 		//	return;
 		//}
 
+		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
 		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
 		if ( Mods::numCurrentModsLoaded == 0 )
 		{
@@ -22110,217 +22126,31 @@ failed:
 			steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 		}
 
-		Mods::verifyAchievements(nullptr, false);
 
-		int w, h;
-
-		if ( !Mods::modelsListRequiresReload && Mods::modelsListLastStartedUnmodded )
-		{
-			if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+		/*auto buttons = main_menu_frame->findFrame("buttons");
+		if ( !buttons ) {
+			destroyMainMenu();
+			createMainMenu(false);
+		}
+		else {
+			auto mod_play = buttons->findButton("Play Modded Game");
+			if ( mod_play )
 			{
-				Mods::modelsListRequiresReload = true;
-			}
-			Mods::modelsListLastStartedUnmodded = false;
-		}
-		if ( !Mods::soundListRequiresReload && Mods::soundsListLastStartedUnmodded )
-		{
-			if ( physfsSearchSoundsToUpdate() )
-			{
-				Mods::soundListRequiresReload = true;
-			}
-			Mods::soundsListLastStartedUnmodded = false;
-		}
-
-		// process any new model files encountered in the mod load list.
-		int modelsIndexUpdateStart = 1;
-		int modelsIndexUpdateEnd = nummodels;
-		if ( Mods::modelsListRequiresReload )
-		{
-			if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
-			{
-				// print a loading message
-				//drawClearBuffers();
-				//getSizeOfText(ttf16, language[2989], &w, &h);
-				//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
-				//GO_SwapBuffers(screen);
-				bool oldModelCache = useModelCache;
-				useModelCache = false;
-				physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
-				reloadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-				useModelCache = oldModelCache;
-				/*generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
-				generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);*/
-			}
-			Mods::modelsListRequiresReload = false;
-		}
-
-		if ( Mods::soundListRequiresReload )
-		{
-			if ( physfsSearchSoundsToUpdate() )
-			{
-				// print a loading message
-				//drawClearBuffers();
-				//getSizeOfText(ttf16, language[2987], &w, &h);
-				//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
-				//GO_SwapBuffers(screen);
-				physfsReloadSounds(true);
-			}
-			Mods::soundListRequiresReload = false;
-		}
-
-		if ( physfsSearchTilesToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3017], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
-			//GO_SwapBuffers(screen);
-			physfsReloadTiles(false);
-			Mods::tileListRequireReloadUnmodded = true;
-		}
-
-		if ( physfsSearchSpritesToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3015], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-			//GO_SwapBuffers(screen);
-			physfsReloadSprites(false);
-			Mods::spriteImagesRequireReloadUnmodded = true;
-		}
-
-		if ( physfsSearchBooksToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[2991], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
-			//GO_SwapBuffers(screen);
-			physfsReloadBooks();
-			Mods::booksRequireReloadUnmodded = true;
-		}
-
-		gamemodsUnloadCustomThemeMusic();
-
-		if ( physfsSearchMusicToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[2993], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
-			//GO_SwapBuffers(screen);
-			bool reloadIntroMusic = false;
-			physfsReloadMusic(reloadIntroMusic, false);
-			if ( reloadIntroMusic )
-			{
-#ifdef SOUND
-				playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
-#endif			
-			}
-			Mods::musicRequireReloadUnmodded = true;
-		}
-		else if ( Mods::musicRequireReloadUnmodded )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[2993], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
-			//GO_SwapBuffers(screen);
-
-			// restore old music
-			bool reloadIntroMusic = true;
-			physfsReloadMusic(reloadIntroMusic, true);
-			if ( reloadIntroMusic )
-			{
-#ifdef SOUND
-				playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
-#endif			
-			}
-			Mods::musicRequireReloadUnmodded = true;
-		}
-
-		std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
-		if ( langDirectory.compare("./") != 0 )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3004], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
-			//GO_SwapBuffers(screen);
-			if ( reloadLanguage() != 0 )
-			{
-				printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+				mod_play->select();
 			}
 			else
 			{
-				printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+				destroyMainMenu();
+				createMainMenu(false);
 			}
-			Mods::langRequireReloadUnmodded = true;
-		}
-
-		if ( physfsSearchItemsTxtToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3008], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
-			//GO_SwapBuffers(screen);
-			physfsReloadItemsTxt();
-			Mods::itemsTxtRequireReloadUnmodded = true;
-		}
-
-		if ( physfsSearchItemSpritesToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3006], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
-			//GO_SwapBuffers(screen);
-			physfsReloadItemSprites(false);
-			Mods::itemSpritesRequireReloadUnmodded = true;
-		}
-
-		/*if ( physfsSearchItemsGlobalTxtToUpdate() )
-		{
-			Mods::itemsGlobalTxtRequireReloadUnmodded = true;
-			loadItemLists();
 		}*/
 
-		if ( physfsSearchMonsterLimbFilesToUpdate() )
-		{
-			// print a loading message
-			//drawClearBuffers();
-			//getSizeOfText(ttf16, language[3013], &w, &h);
-			//ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
-			//GO_SwapBuffers(screen);
-			physfsReloadMonsterLimbFiles();
-			Mods::monsterLimbsRequireReloadUnmodded = true;
-		}
+		gui->deselect();
 
-		if ( physfsSearchSystemImagesToUpdate() )
-		{
-			// print a loading message
-			drawClearBuffers();
-			getSizeOfText(ttf16, language[3015], &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
-			GO_SwapBuffers(screen);
-			physfsReloadSystemImages();
-			Mods::systemImagesReloadUnmodded = true;
-		}
+		Mods::loadMods();
 
-		// look for a save game
-		//if ( anySaveFileExists() )
-		//{
-		//	//openLoadGameWindow(NULL);
-		//	openNewLoadGameWindow(nullptr);
-		//}
-		//else
-		//{
-		//	buttonOpenCharacterCreationWindow(NULL);
-		//}
-
-
+		destroyMainMenu();
+		createMainMenu(false);
 	}
 
 	static void fn_load_mod(Button& button, const int index, const bool isWorkshopMod, const bool toggleActive, const bool viewMyItems)
@@ -22436,6 +22266,7 @@ failed:
 		}
 		else if ( toggleActive )
 		{
+			Mods::disableSteamAchievements = false;
 			Mods::verifyAchievements(nullptr, true);
 		}
 
@@ -23070,22 +22901,50 @@ failed:
 			u8"skills, preparing you to take on the dungeon");
 
 		(void)createBackWidget(window, [](Button& button) {
-			soundCancel();
-			auto frame = static_cast<Frame*>(button.getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame->removeSelf();
-			assert(main_menu_frame);
-			auto buttons = main_menu_frame->findFrame("buttons");
-			if ( !buttons ) {
-				destroyMainMenu();
-				createMainMenu(false);
+			if ( Mods::numCurrentModsLoaded > 0 )
+			{
+				// open prompt
+				auto prompt = binaryPrompt(
+					"Do you want to exit this menu?\nAny active mods will be unloaded.", "Yes", "No",
+					[](Button& button) { // yes
+					soundActivate();
+					//closeBinary(); -- this causes crashes?
+					button.setHideSelectors(true);
+
+					gui->deselect();
+					Mods::unloadMods();
+					destroyMainMenu();
+					createMainMenu(false);
+				},
+				[](Button&) { // no
+					soundCancel();
+					closeBinary();
+				assert(main_menu_frame);
+				}, false, false); // yellow buttons
 			}
-			else {
-				auto mod_menu = buttons->findButton("Mod Menu"); assert(mod_menu);
-				mod_menu->select();
+			else
+			{
+				soundCancel();
+				gui->deselect();
+				Mods::unloadMods();
+
+				if ( auto frame = static_cast<Frame*>(button.getParent()) )
+				{
+					frame = static_cast<Frame*>(frame->getParent());
+					frame = static_cast<Frame*>(frame->getParent());
+					frame->removeSelf();
+				}
+				assert(main_menu_frame);
+				auto buttons = main_menu_frame->findFrame("buttons");
+				if ( !buttons ) {
+					destroyMainMenu();
+					createMainMenu(false);
+				}
+				else {
+					auto mod_menu = buttons->findButton("Mod Menu"); assert(mod_menu);
+					mod_menu->select();
+				}
 			}
-			Mods::unloadMods();
 		});
 
 		/*auto banner = subwindow->addImage(
@@ -23243,6 +23102,7 @@ failed:
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
 		enter->setCallback([](Button& button) {
+			soundActivate();
 			startModdedGame();
 		});
 

@@ -3176,14 +3176,6 @@ bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 	for ( int c = 0; !fp->eof(); ++c )
 	{
 		fp->gets2(name, PATH_MAX);
-		while ( fp->getc() != '\n' )
-		{
-			if ( fp->eof() )
-			{
-				break;
-			}
-		}
-
 		if ( PHYSFS_getRealDir(name) != nullptr )
 		{
 			std::string spritesRealDir = PHYSFS_getRealDir(name);
@@ -3212,17 +3204,18 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
+	/*int numsprites = 0;
+	for ( numsprites = 0; !fp->eof(); numsprites++ )
+	{
+		while ( fp->getc() != '\n' ) if ( fp->eof() )
+		{
+			break;
+		}
+	}*/
+
 	for ( int c = 0; !fp->eof(); ++c )
 	{
 		fp->gets2(name, PATH_MAX);
-		while ( fp->getc() != '\n' )
-		{
-			if ( fp->eof() )
-			{
-				break;
-			}
-		}
-
 		if ( PHYSFS_getRealDir(name) != nullptr )
 		{
 			std::string spritesRealDir = PHYSFS_getRealDir(name);
@@ -3566,168 +3559,6 @@ void physfsReloadItemSprites(bool reloadAll)
 	}
 }
 
-bool physfsSearchItemsTxtToUpdate()
-{
-	if ( !PHYSFS_getRealDir("items/items.txt") )
-	{
-		printlog("error: could not find file: %s", "items/items.txt");
-		return false;
-	}
-	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
-	if ( itemsTxtDirectory.compare("./") != 0 )
-	{
-		printlog("[PhysFS]: Found modified items/items.txt file, reloading all item information...");
-		return true;
-	}
-	return false;
-}
-
-bool physfsSearchItemsGlobalTxtToUpdate()
-{
-	if ( !PHYSFS_getRealDir("items/items_global.txt") )
-	{
-		printlog("error: could not find file: %s", "items/items_global.txt");
-		return false;
-	}
-	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
-	if ( itemsTxtDirectory.compare("./") != 0 )
-	{
-		printlog("[PhysFS]: Found modified items/items_global.txt file, reloading item spawn levels...");
-		return true;
-	}
-	return false;
-}
-
-void physfsReloadItemsTxt()
-{
-	if ( !PHYSFS_getRealDir("items/items.txt") )
-	{
-		printlog("error: could not find file: %s", "items/items.txt");
-		return;
-	}
-	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
-	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
-	File* fp = openDataFile(itemsTxtDirectory.c_str(), "rb");
-	char buffer[PATH_MAX];
-
-	for ( int c = 0; !fp->eof() && c < NUMITEMS; ++c )
-	{
-		//if ( c > ARTIFACT_BOW )
-		//{
-		//	int newItems = c - ARTIFACT_BOW - 1;
-		//	items[c].name_identified = language[2200 + newItems * 2];
-		//	items[c].name_unidentified = language[2201 + newItems * 2];
-		//}
-		//else
-		//{
-		//	items[c].name_identified = language[1545 + c * 2];
-		//	items[c].name_unidentified = language[1546 + c * 2];
-		//}
-		items[c].index = fp->geti();
-		items[c].fpindex = fp->geti();
-		items[c].variations = fp->geti();
-		fp->gets2(buffer, PATH_MAX);
-		size_t len = strlen(buffer) - 1U;
-		if (buffer[len] == '\n' || buffer[len] == '\r')
-		{
-			buffer[len] = '\0';
-		}
-		if ( !strcmp(buffer, "WEAPON") )
-		{
-			items[c].category = WEAPON;
-		}
-		else if ( !strcmp(buffer, "ARMOR") )
-		{
-			items[c].category = ARMOR;
-		}
-		else if ( !strcmp(buffer, "AMULET") )
-		{
-			items[c].category = AMULET;
-		}
-		else if ( !strcmp(buffer, "POTION") )
-		{
-			items[c].category = POTION;
-		}
-		else if ( !strcmp(buffer, "SCROLL") )
-		{
-			items[c].category = SCROLL;
-		}
-		else if ( !strcmp(buffer, "MAGICSTAFF") )
-		{
-			items[c].category = MAGICSTAFF;
-		}
-		else if ( !strcmp(buffer, "RING") )
-		{
-			items[c].category = RING;
-		}
-		else if ( !strcmp(buffer, "SPELLBOOK") )
-		{
-			items[c].category = SPELLBOOK;
-		}
-		else if ( !strcmp(buffer, "TOOL") )
-		{
-			items[c].category = TOOL;
-		}
-		else if ( !strcmp(buffer, "FOOD") )
-		{
-			items[c].category = FOOD;
-		}
-		else if ( !strcmp(buffer, "BOOK") )
-		{
-			items[c].category = BOOK;
-		}
-		else if ( !strcmp(buffer, "THROWN") )
-		{
-			items[c].category = THROWN;
-		}
-		else if ( !strcmp(buffer, "SPELL_CAT") )
-		{
-			items[c].category = SPELL_CAT;
-		}
-		else
-		{
-			items[c].category = GEM;
-		}
-		items[c].weight = fp->geti();
-		items[c].value = fp->geti();
-
-		list_FreeAll(&items[c].images);
-
-		while ( 1 )
-		{
-			string_t* string = (string_t*)malloc(sizeof(string_t));
-			string->data = (char*)malloc(sizeof(char) * 64);
-			string->lines = 1;
-
-			node_t* node = list_AddNodeLast(&items[c].images);
-			node->element = string;
-			node->deconstructor = &stringDeconstructor;
-			node->size = sizeof(string_t);
-			string->node = node;
-
-			int x = 0;
-			bool fileend = false;
-			while ( (string->data[x] = fp->getc()) != '\n' )
-			{
-				if ( fp->eof() )
-				{
-					fileend = true;
-					break;
-				}
-				x++;
-			}
-			if ( x == 0 || fileend )
-			{
-				list_RemoveNode(node);
-				break;
-			}
-			string->data[x] = 0;
-		}
-	}
-
-	FileIO::close(fp);
-}
-
 bool physfsSearchMonsterLimbFilesToUpdate()
 {
 	bool requiresUpdate = false;
@@ -3753,12 +3584,11 @@ bool physfsSearchMonsterLimbFilesToUpdate()
 
 void physfsReloadMonsterLimbFiles()
 {
-	int x;
-	File* fp;
+	printlog("loading model offsets...\n");
 	for ( int c = 1; c < NUMMONSTERS; c++ )
 	{
 		// initialize all offsets to zero
-		for ( x = 0; x < 20; x++ )
+		for ( int x = 0; x < 20; x++ )
 		{
 			limbs[c][x][0] = 0;
 			limbs[c][x][1] = 0;
@@ -3770,27 +3600,22 @@ void physfsReloadMonsterLimbFiles()
 		strcpy(filename, "models/creatures/");
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
-		if ( PHYSFS_getRealDir(filename) == NULL ) // some monsters don't have limbs
-		{
-			continue;
-		}
-		std::string limbsDir = PHYSFS_getRealDir(filename);
-		limbsDir.append(PHYSFS_getDirSeparator()).append(filename);
-		if ( (fp = openDataFile(limbsDir.c_str(), "rb")) == NULL )
+		File* fp;
+		if ( (fp = openDataFile(filename, "rb")) == NULL )
 		{
 			continue;
 		}
 
 		// read file
 		int line;
-		for ( line = 1; fp->eof() == 0; line++ )
+		for ( line = 1; !fp->eof(); line++ )
 		{
 			char data[256];
 			int limb = 20;
 			int dummy;
 
 			// read line from file
-			fp->gets2(data, 256);
+			fp->gets(data, 256);
 
 			// skip blank and comment lines
 			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
@@ -3801,15 +3626,16 @@ void physfsReloadMonsterLimbFiles()
 			// process line
 			if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
 			{
-				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", limbsDir.c_str(), line);
+				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 				continue;
 			}
 			if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
 			{
-				printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", limbsDir.c_str(), line);
+				printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
 				continue;
 			}
 		}
+
 		// close file
 		FileIO::close(fp);
 	}

@@ -744,5 +744,3 @@ extern int decoyBoxRange;
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
 static const int ITEM_TINKERING_APPEARANCE = 987654320;
 static const int ITEM_GENERATED_QUIVER_APPEARANCE = 1122334455;
-
-bool loadItemLists();

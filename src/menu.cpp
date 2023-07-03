@@ -147,7 +147,6 @@ bool gamemods_itemsTxtRequireReloadUnmodded = false;
 bool gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
-bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_modPreload = false;
 
 sex_t lastSex = MALE;
@@ -1980,28 +1979,6 @@ static void handleMainMenu(bool mode)
 						gamemods_langRequireReloadUnmodded = false;
 					}
 
-					if ( gamemods_itemsTxtRequireReloadUnmodded )
-					{
-						drawClearBuffers();
-						int w, h;
-						getSizeOfText(ttf16, language[3009], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3009]);
-						GO_SwapBuffers(screen);
-						physfsReloadItemsTxt();
-						gamemods_itemsTxtRequireReloadUnmodded = false;
-					}
-
-					if ( gamemods_itemSpritesRequireReloadUnmodded )
-					{
-						drawClearBuffers();
-						int w, h;
-						getSizeOfText(ttf16, language[3007], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3007]);
-						GO_SwapBuffers(screen);
-						physfsReloadItemSprites(true);
-						gamemods_itemSpritesRequireReloadUnmodded = false;
-					}
-
 					if ( gamemods_spriteImagesRequireReloadUnmodded )
 					{
 						drawClearBuffers();
@@ -2011,13 +1988,6 @@ static void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsReloadSprites(true);
 						gamemods_spriteImagesRequireReloadUnmodded = false;
-					}
-
-					if ( gamemods_itemsGlobalTxtRequireReloadUnmodded )
-					{
-						gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
-						printlog("[PhysFS]: Unloaded modified items/items_global.txt file, reloading item spawn levels...");
-						loadItemLists();
 					}
 
 					if ( gamemods_monsterLimbsRequireReloadUnmodded )
@@ -13655,34 +13625,6 @@ void buttonGamemodsStartModdedGame(button_t* my)
 //			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
 //		}
 //		gamemods_langRequireReloadUnmodded = true;
-//	}
-//
-//	if ( physfsSearchItemsTxtToUpdate() )
-//	{
-//		// print a loading message
-//		drawClearBuffers();
-//		getSizeOfText(ttf16, language[3008], &w, &h);
-//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
-//		GO_SwapBuffers(screen);
-//		physfsReloadItemsTxt();
-//		gamemods_itemsTxtRequireReloadUnmodded = true;
-//	}
-//
-//	if ( physfsSearchItemSpritesToUpdate() )
-//	{
-//		// print a loading message
-//		drawClearBuffers();
-//		getSizeOfText(ttf16, language[3006], &w, &h);
-//		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
-//		GO_SwapBuffers(screen);
-//		physfsReloadItemSprites(false);
-//		gamemods_itemSpritesRequireReloadUnmodded = true;
-//	}
-//
-//	if ( physfsSearchItemsGlobalTxtToUpdate() )
-//	{
-//		gamemods_itemsGlobalTxtRequireReloadUnmodded = true;
-//		loadItemLists();
 //	}
 //
 //	if ( physfsSearchMonsterLimbFilesToUpdate() )
