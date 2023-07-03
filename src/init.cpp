@@ -2589,9 +2589,7 @@ bool initVideo()
         flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
         
-#if defined(WINDOWS) || defined(NINTENDO)
         flags |= SDL_WINDOW_RESIZABLE;
-#endif
         
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
