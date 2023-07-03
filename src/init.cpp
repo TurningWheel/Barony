@@ -2745,8 +2745,13 @@ bool changeVideoMode(int new_xres, int new_yres)
 	int result = initVideo();
 	if ( !result )
 	{
-		xres = 1280;
+#if defined(APPLE) && !defined(EDITOR)
+        xres = 2560;
+        yres = 1440;
+#else
+        xres = 1280;
 		yres = 720;
+#endif
 		fullscreen = 0;
 		borderless = false;
 		printlog("defaulting to safe video mode...\n");

@@ -198,8 +198,14 @@ static ConsoleVariable<bool> cvar_enableDebugKeys("/enabledebugkeys", false, "if
 
 // main definitions
 Sint32 display_id = 0;
+#if defined(APPLE) && !defined(EDITOR)
+// retina displays have higher DPI so we need a higher display resolution
+Sint32 xres = 2560;
+Sint32 yres = 1440;
+#else
 Sint32 xres = 1280;
 Sint32 yres = 720;
+#endif
 int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
