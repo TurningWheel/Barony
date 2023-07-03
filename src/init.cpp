@@ -2526,8 +2526,8 @@ static void positionAndLimitWindow(int& x, int& y, int& w, int& h)
 		if (fullscreen) {
 			x = bound.x;
 			y = bound.y;
-			w = std::min(bound.w, w);
-			h = std::min(bound.h, h);
+			//w = std::min(bound.w, w);
+			//h = std::min(bound.h, h);
 		}
 		else {
             //w = std::min(bound.w, w);
@@ -2582,34 +2582,54 @@ bool initVideo()
 
 	if ( !screen )
 	{
-	    Uint32 flags = SDL_WINDOW_RESIZABLE;
-	    flags |= SDL_WINDOW_OPENGL;
+        Uint32 flags = 0;
+        flags |= SDL_WINDOW_OPENGL;
+        
 #ifndef EDITOR
         flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
+        
+#if defined(WINDOWS) || defined(NINTENDO)
+        flags |= SDL_WINDOW_RESIZABLE;
+#endif
+        
 #ifdef PANDORA
 	    flags |= SDL_WINDOW_FULLSCREEN;
 #endif
+        
 #ifdef NINTENDO
-    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL;
+    	flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 #else
-	    if ( fullscreen )
-	    {
-		    flags |= SDL_WINDOW_FULLSCREEN;
-	    }
-	    if ( borderless )
-	    {
-		    flags |= SDL_WINDOW_BORDERLESS;
-	    }
+        if (fullscreen) {
+            flags |= SDL_WINDOW_FULLSCREEN;
+        }
+        if (borderless) {
+            flags |= SDL_WINDOW_BORDERLESS;
+        }
 #endif
 
 		positionAndLimitWindow(screen_x, screen_y, screen_width, screen_height);
-
-		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, flags )) == NULL)
-		{
-			printlog("failed to set video mode.\n");
-			return false;
-		}
+        
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            screen_width, screen_height, flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+        
+#ifndef NINTENDO
+        // make sure that we actually got the window size we wanted
+        SDL_GL_GetDrawableSize(screen, &xres, &yres);
+        SDL_DestroyWindow(screen);
+        const float factorx = (float)xres / screen_width;
+        const float factory = (float)yres / screen_height;
+        if ((screen = SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            (int)(screen_width / factorx), (int)(screen_height / factory), flags)) == nullptr)
+        {
+            printlog("failed to set video mode.\n");
+            return false;
+        }
+#endif
 	}
 	else
 	{
