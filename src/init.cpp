@@ -442,25 +442,6 @@ int initApp(char const * const title, int fullscreen)
 	// init new ui engine
 	Frame::guiInit();
 
-	// cache language entries
-	bool cacheText = false;
-	if (cacheText) { //This will never run. Why is this here?
-		for (int c = 0; c < NUMLANGENTRIES; ++c) {
-			bool foundSpecialChar = false;
-			for (int i = 0; language[c][i] != '\0'; ++i) {
-				if (language[c][i] == '\\' || language[c][i] == '%') {
-					foundSpecialChar = true;
-				}
-			}
-			if (foundSpecialChar) {
-				continue;
-			}
-			ttfPrintText(ttf8, 0, -200, language[c]);
-			ttfPrintText(ttf12, 0, -200, language[c]);
-			ttfPrintText(ttf16, 0, -200, language[c]);
-		}
-	}
-
 	// create player classes
 	// TODO/FIXME: why isn't this in initGame? why is it in init.cpp?
 #ifndef EDITOR
@@ -684,6 +665,19 @@ int initApp(char const * const title, int fullscreen)
 	return result;
 }
 
+std::map<int, std::string> Language::entries;
+std::map<int, std::string> Language::tmpEntries;
+std::string Language::languageCode = "";
+const char* Language::get(const int line)
+{
+	return entries[line].c_str();
+}
+void Language::reset()
+{
+	entries.clear();
+	tmpEntries.clear();
+}
+
 /*-------------------------------------------------------------------------------
 
 	loadLanguage
@@ -692,7 +686,7 @@ int initApp(char const * const title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char const * const lang)
+int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 {
 	char filename[128] = { 0 };
 	File* fp;
@@ -707,7 +701,7 @@ int loadLanguage(char const * const lang)
 	// compose filename
 	snprintf(filename, 127, "lang/%s.txt", lang);
 	std::string langFilepath;
-	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL && !forceLoadBaseDirectory )
 	{
 		std::string langRealDir = PHYSFS_getRealDir(filename);
 		langFilepath = langRealDir + PHYSFS_getDirSeparator() + filename;
@@ -726,11 +720,11 @@ int loadLanguage(char const * const lang)
 	}
 
 	// check if we've loaded this language already
-	if ( !strcmp(languageCode, lang) )
+	/*if ( !strcmp(languageCode, lang) )
 	{
 		printlog("info: language '%s' already loaded", lang);
 		return 1;
-	}
+	}*/
 
 	// init SDL_TTF
 	if ( !TTF_WasInit() )
@@ -817,19 +811,13 @@ int loadLanguage(char const * const lang)
 		return 1;
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
-
 	// store the new language code
-	strcpy(languageCode, lang);
+	languageCode = lang;
 
-	// allocate new language strings
-	language = (char**) calloc(NUMLANGENTRIES, sizeof(char*));
-
-	// Allocate an emptry string for each possible language entry
-	for (c = 0; c < NUMLANGENTRIES; c++)
+	tmpEntries.clear();
+	if ( forceLoadBaseDirectory )
 	{
-		language[c] = (char*)calloc(1, sizeof(char));
+		entries.clear();
 	}
 
 	// read file
@@ -838,7 +826,7 @@ int loadLanguage(char const * const lang)
 	{
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
-		int entry = NUMLANGENTRIES;
+		int entry = 0;
 
 		// read line from file
 		int i;
@@ -888,21 +876,19 @@ int loadLanguage(char const * const lang)
 			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", langFilepath.c_str(), line);
 			continue;
 		}
-		else if ( entry >= NUMLANGENTRIES || entry < 0 )
+		else if ( entry < 0 )
 		{
 			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		char entryText[16] = { 0 };
 		snprintf(entryText, 15, "%d", entry);
-		if ( language[entry][0] )
+		if ( entries.find(entry) != entries.end() )
 		{
-			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
-			free(language[entry]);
+			printlog("warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 		}
-		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
-		strcpy(language[entry], (char*)(data + strlen(entryText) + 1));
-		//printlog("loading entry %d...text: \"%s\"\n", entry, language[entry]);
+		entries[entry] = (char*)(data + strlen(entryText) + 1);
+		printlog("loading entry %d...text: \"%s\"\n", entry, Language::get(entry));
 	}
 
 	// close file
@@ -921,39 +907,17 @@ int loadLanguage(char const * const lang)
 
 -------------------------------------------------------------------------------*/
 
-int reloadLanguage()
+int Language::reloadLanguage()
 {
-	char lang[32];
-
-	strcpy(lang, languageCode);
-	strcpy(languageCode, "");
-	return loadLanguage(lang);
-}
-
-/*-------------------------------------------------------------------------------
- *
-       freeLanguages
-
-	free languages string resources
-
---------------------------------------------------------------------------------*/
-
-void freeLanguages()
-{
-	int c;
-
-	if ( language )
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir("lang/en.txt") != NULL )
 	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		std::string langRealDir = PHYSFS_getRealDir("lang/en.txt");
+		if ( langRealDir != "./" )
 		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
+			loadLanguage("en", true); // force load the base directory first, then modded paths later.
 		}
-		free(language);
 	}
+	return loadLanguage(languageCode.c_str(), false);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1300,8 +1264,6 @@ int deinitApp()
 		printlog("[PhysFS]: De-initializing...\n");
 	}
 
-	// free currently loaded language if any
-	freeLanguages();
 	printlog("notice: archiving log file as %s...\n", logarchiveFilePath.c_str());
 	printlog("success\n");
 	if (logfile)

@@ -583,7 +583,7 @@ public:
 	void (*behavior)(class Entity* my);
 	bool ranbehavior;
 
-	void setObituary(char* obituary);
+	void setObituary(const char* obituary);
 
 	void killedByMonsterObituary(Entity* victim);
 
@@ -1185,7 +1185,7 @@ static const int MSG_ATTACKS = 4;
 static const int MSG_STEAL_WEAPON = 5;
 static const int MSG_TOOL_BOMB = 6;
 static const int MSG_COMBAT_BASIC = 7;
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, const char* msgGeneric, const char* msgNamed, int detailType, Entity* optionalEntity = nullptr);
 char const * playerClassLangEntry(int classnum, int playernum);
 char const * playerClassDescription(int classnum, int playernum);
 

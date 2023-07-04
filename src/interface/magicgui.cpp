@@ -72,7 +72,7 @@
 //		drawImage(spell_list_titlebar_bmp, NULL, &pos);
 //		int text_x = pos.x + (spell_list_titlebar_bmp->w / 2) - ((6 * 8) / 2 /*text characers * font width / 2*/ );
 //		int text_y = pos.y + (spell_list_titlebar_bmp->h / 2) - (8 / 2 /*font height / 2*/);
-//		printText(font8x8_bmp, text_x, text_y, language[322]);
+//		printText(font8x8_bmp, text_x, text_y, Language::get(322));
 //
 //		pos.y += spell_list_titlebar_bmp->h;
 //		int i = 0;
@@ -263,7 +263,7 @@
 //						int type = tagged->getMonsterTypeFromSprite();
 //						if ( type != NOTHING )
 //						{
-//							snprintf(tempstr, 1023, language[3858], getMonsterLocalizedName((Monster)type).c_str());
+//							snprintf(tempstr, 1023, Language::get(3858), getMonsterLocalizedName((Monster)type).c_str());
 //						}
 //						else
 //						{
@@ -272,7 +272,7 @@
 //					}
 //					else if ( tagged->behavior == &actPlayer )
 //					{
-//						snprintf(tempstr, 1023, language[3858], stats[tagged->skill[2]]->name);
+//						snprintf(tempstr, 1023, Language::get(3858), stats[tagged->skill[2]]->name);
 //					}
 //					tooltipText = tempstr;
 //				}
@@ -284,31 +284,31 @@
 //			{
 //				case EFF_SLOW:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
-//					tooltipText = language[3384];
+//					tooltipText = Language::get(3384);
 //					break;
 //				case EFF_BLEEDING:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
-//					tooltipText = language[3385];
+//					tooltipText = Language::get(3385);
 //					break;
 //				case EFF_ASLEEP:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
-//					tooltipText = language[3386];
+//					tooltipText = Language::get(3386);
 //					break;
 //				case EFF_CONFUSED:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
-//					tooltipText = language[3387];
+//					tooltipText = Language::get(3387);
 //					break;
 //				case EFF_PACIFY:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
-//					tooltipText = language[3388];
+//					tooltipText = Language::get(3388);
 //					break;
 //				case EFF_FEAR:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FEAR);
-//					tooltipText = language[3861];
+//					tooltipText = Language::get(3861);
 //					break;
 //				case EFF_WEBBED:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPRAY_WEB);
-//					tooltipText = language[3859];
+//					tooltipText = Language::get(3859);
 //					break;
 //				case EFF_MAGICAMPLIFY:
 //				{
@@ -323,20 +323,20 @@
 //							break;
 //						}
 //					}
-//					tooltipText = language[3860];
+//					tooltipText = Language::get(3860);
 //					break;
 //				}
 //				case EFF_TROLLS_BLOOD:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
-//					tooltipText = language[3492];
+//					tooltipText = Language::get(3492);
 //					break;
 //				case EFF_FLUTTER:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
-//					tooltipText = language[3766];
+//					tooltipText = Language::get(3766);
 //					break;
 //				case EFF_FAST:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
-//					tooltipText = language[3493];
+//					tooltipText = Language::get(3493);
 //					break;
 //				case EFF_SHAPESHIFT:
 //					if ( players[player] && players[player]->entity )
@@ -345,19 +345,19 @@
 //						{
 //							case RAT:
 //								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
-//								tooltipText = language[3854];
+//								tooltipText = Language::get(3854);
 //								break;
 //							case TROLL:
 //								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
-//								tooltipText = language[3855];
+//								tooltipText = Language::get(3855);
 //								break;
 //							case SPIDER:
 //								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
-//								tooltipText = language[3856];
+//								tooltipText = Language::get(3856);
 //								break;
 //							case CREATURE_IMP:
 //								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
-//								tooltipText = language[3857];
+//								tooltipText = Language::get(3857);
 //								break;
 //							default:
 //								break;
@@ -367,14 +367,14 @@
 //				case EFF_VAMPIRICAURA:
 //				{
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
-//					tooltipText = language[3389];
+//					tooltipText = Language::get(3389);
 //					node_t* node = channeledSpells[player].first;
 //					for ( ; node != nullptr; node = node->next )
 //					{
 //						spell_t* spell = (spell_t*)node->element;
 //						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
 //						{
-//							tooltipText = language[3390];
+//							tooltipText = Language::get(3390);
 //							break;
 //						}
 //					}
@@ -382,32 +382,32 @@
 //				}
 //				case EFF_PARALYZED:
 //					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
-//					tooltipText = language[3391];
+//					tooltipText = Language::get(3391);
 //					break;
 //				case EFF_DRUNK:
 //					if ( effect_drunk_bmp )
 //					{
 //						sprite = &effect_drunk_bmp;
 //					}
-//					tooltipText = language[3392];
+//					tooltipText = Language::get(3392);
 //					break;
 //				case EFF_POLYMORPH:
 //					if ( effect_polymorph_bmp )
 //					{
 //						sprite = &effect_polymorph_bmp;
 //					}
-//					tooltipText = language[3399];
+//					tooltipText = Language::get(3399);
 //					break;
 //				case EFF_WITHDRAWAL:
 //					if ( effect_hungover_bmp )
 //					{
 //						sprite = &effect_hungover_bmp;
 //					}
-//					tooltipText = language[3393];
+//					tooltipText = Language::get(3393);
 //					break;
 //				case EFF_POTION_STR:
 //					sprite = &str_bmp64u;
-//					tooltipText = language[3394];
+//					tooltipText = Language::get(3394);
 //					break;
 //				case EFF_LEVITATING:
 //				{
@@ -422,7 +422,7 @@
 //							break;
 //						}
 //					}
-//					tooltipText = language[3395];
+//					tooltipText = Language::get(3395);
 //					break;
 //				}
 //				case EFF_INVISIBLE:
@@ -438,7 +438,7 @@
 //							break;
 //						}
 //					}
-//					tooltipText = language[3396];
+//					tooltipText = Language::get(3396);
 //					break;
 //				}
 //				default:
@@ -552,19 +552,19 @@
 //
 //		if ( spell->ID == SPELL_INVISIBILITY )
 //		{
-//			tooltipText = language[3396];
+//			tooltipText = Language::get(3396);
 //		}
 //		else if ( spell->ID == SPELL_LEVITATION )
 //		{
-//			tooltipText = language[3395];
+//			tooltipText = Language::get(3395);
 //		}
 //		else if ( spell->ID == SPELL_REFLECT_MAGIC )
 //		{
-//			tooltipText = language[3397];
+//			tooltipText = Language::get(3397);
 //		}
 //		else if ( spell->ID == SPELL_LIGHT )
 //		{
-//			tooltipText = language[3398];
+//			tooltipText = Language::get(3398);
 //		}
 //
 //		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);

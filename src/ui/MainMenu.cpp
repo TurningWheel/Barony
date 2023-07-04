@@ -3634,7 +3634,7 @@ namespace MainMenu {
 		// transmit server flags
 		if (initialized && !intro) {
 			sendSvFlagsOverNet();
-			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(276));
 		}
 
 		// set volume and sound driver
@@ -6701,7 +6701,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), "LVL %d %s %s",
                 score->stats->LVL,
-                language[3821 + score->stats->playerRace],
+                Language::get(3821 + score->stats->playerRace),
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
@@ -9234,13 +9234,13 @@ bind_failed:
 
                     const char* error_str;
                     switch (error) {
-                    case MAXPLAYERS + 0: error_str = language[1378]; break;
-                    case MAXPLAYERS + 1: error_str = language[1379]; break;
-                    case MAXPLAYERS + 2: error_str = language[1380]; break;
-                    case MAXPLAYERS + 3: error_str = language[1381]; break;
-                    case MAXPLAYERS + 4: error_str = language[1382]; break;
-                    case MAXPLAYERS + 5: error_str = language[1383]; break;
-                    default: error_str = language[1384]; break;
+                    case MAXPLAYERS + 0: error_str = Language::get(1378); break;
+                    case MAXPLAYERS + 1: error_str = Language::get(1379); break;
+                    case MAXPLAYERS + 2: error_str = Language::get(1380); break;
+                    case MAXPLAYERS + 3: error_str = Language::get(1381); break;
+                    case MAXPLAYERS + 4: error_str = Language::get(1382); break;
+                    case MAXPLAYERS + 5: error_str = Language::get(1383); break;
+                    default: error_str = Language::get(1384); break;
                     }
 
 					// display error message
@@ -9327,8 +9327,8 @@ bind_failed:
 						{
 							// subscribe to server loaded mods button
 							button = newButton();
-							strcpy(button->label, language[2984]);
-							button->sizex = strlen(language[2984]) * 12 + 8;
+							strcpy(button->label, Language::get(2984));
+							button->sizex = strlen(Language::get(2984)) * 12 + 8;
 							button->sizey = 20;
 							button->x = subx2 - 4 - button->sizex;
 							button->y = suby2 - 24;
@@ -9338,8 +9338,8 @@ bind_failed:
 
 							// mount server mods button
 							button = newButton();
-							strcpy(button->label, language[2985]);
-							button->sizex = strlen(language[2985]) * 12 + 8;
+							strcpy(button->label, Language::get(2985));
+							button->sizex = strlen(Language::get(2985)) * 12 + 8;
 							button->sizey = 20;
 							button->x = subx2 - 4 - button->sizex;
 							button->y = suby2 - 24;
@@ -20573,22 +20573,22 @@ failed:
 				{
 					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_ARACHNOPHOBIA].value != 0 )
 					{
-						addLobbyChatMessage(uint32ColorWhite, language[4333]);
+						addLobbyChatMessage(uint32ColorWhite, Language::get(4333));
 					}
 					else
 					{
-						addLobbyChatMessage(uint32ColorWhite, language[4334]);
+						addLobbyChatMessage(uint32ColorWhite, Language::get(4334));
 					}
 				}
 				if ( GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_COLORBLIND) != oldColorblindFilter )
 				{
 					if ( GameplayPreferences_t::gameConfig[GameplayPreferences_t::GOPT_COLORBLIND].value != 0 )
 					{
-						addLobbyChatMessage(uint32ColorWhite, language[4342]);
+						addLobbyChatMessage(uint32ColorWhite, Language::get(4342));
 					}
 					else
 					{
-						addLobbyChatMessage(uint32ColorWhite, language[4343]);
+						addLobbyChatMessage(uint32ColorWhite, Language::get(4343));
 					}
 				}
 			}
@@ -22097,7 +22097,7 @@ failed:
 		monster[0] = toupper(monster[0]);
 		char buf[32];
 		snprintf(buf, sizeof(buf), "%s %s #%04d",
-			language[4234 + RNG.uniform(0, 16)],
+			Language::get(4234 + RNG.uniform(0, 16)),
 			monster.c_str(), RNG.uniform(1000, 9999));
 		setUsername(buf);
 	}

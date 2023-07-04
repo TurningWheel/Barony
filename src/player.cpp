@@ -3476,7 +3476,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 
 		if ( tooltip.worldTooltipRequiresButtonHeld == 1 && *MainMenu::cvar_hold_to_activate )
 		{
-			interactText = language[3998]; // "(Hold) ";
+			interactText = Language::get(3998); // "(Hold) ";
 		}
 		else
 		{
@@ -3502,66 +3502,66 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			if ( foundTinkeringKit )
 			{
-				interactText = language[3999]; // "Salvage item";
+				interactText = Language::get(3999); // "Salvage item";
 			}
 			else
 			{
-				interactText = language[4000]; // "Pick up item";
+				interactText = Language::get(4000); // "Pick up item";
 			}
 		}
 		else if ( parent->behavior == &actGoldBag )
 		{
-			interactText = language[4001]; // "Take gold";
+			interactText = Language::get(4001); // "Take gold";
 		}
 		else if ( parent->behavior == &actFountain )
 		{
-			interactText = language[4002]; // "Drink from fountain" 
+			interactText = Language::get(4002); // "Drink from fountain" 
 		}
 		else if ( parent->behavior == &actSink )
 		{
-			interactText = language[4003]; // "Drink from sink" 
+			interactText = Language::get(4003); // "Drink from sink" 
 		}
 		else if ( parent->behavior == &actChestLid || parent->behavior == &actChest )
 		{
 			if ( parent->skill[1] == 1 )
 			{
-				interactText = language[4004]; // "Close chest" 
+				interactText = Language::get(4004); // "Close chest" 
 			}
 			else if ( parent->skill[1] == 0 )
 			{
-				interactText = language[4005]; // "Open chest" 
+				interactText = Language::get(4005); // "Open chest" 
 			}
 		}
 		else if ( parent->behavior == &actTorch )
 		{
 			if ( foundTinkeringKit )
 			{
-				interactText = language[4006]; // "Salvage torch" 
+				interactText = Language::get(4006); // "Salvage torch" 
 			}
 			else
 			{
-				interactText = language[4007]; // "Take torch" 
+				interactText = Language::get(4007); // "Take torch" 
 			}
 		}
 		else if ( parent->behavior == &actCrystalShard )
 		{
 			if ( foundTinkeringKit )
 			{
-				interactText = language[4008]; // "Salvage shard" 
+				interactText = Language::get(4008); // "Salvage shard" 
 			}
 			else
 			{
-				interactText = language[4009]; // "Take shard" 
+				interactText = Language::get(4009); // "Take shard" 
 			}
 		}
 		else if ( parent->behavior == &actHeadstone )
 		{
-			interactText = language[4010]; // "Inspect gravestone" 
+			interactText = Language::get(4010); // "Inspect gravestone" 
 		}
 		else if ( parent->behavior == &actMonster )
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
-			std::string name = language[4011]; // "follower" 
+			std::string name = Language::get(4011); // "follower" 
 			if ( parent->getStats() && strcmp(parent->getStats()->name, "") )
 			{
 				name = parent->getStats()->name;
@@ -3576,107 +3576,107 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( parent->monsterIsTinkeringCreation() )
 				{
-					interactText = language[4012] + name; // "Command "
+					interactText = Language::get(4012) + name; // "Command "
 				}
 				else
 				{
-					interactText = language[4012] + name; // "Command "
+					interactText = Language::get(4012) + name; // "Command "
 				}
 			}
 			else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
 			{
-				interactText = language[4013] + name; // "Trade with "
+				interactText = Language::get(4013) + name; // "Trade with "
 			}
 			else
 			{
-				interactText = language[4014] + name; // "Interact with "
+				interactText = Language::get(4014) + name; // "Interact with "
 			}
 		}
 		else if ( parent->behavior == &actDoor )
 		{
 			if ( parent->doorStatus != 0 )
 			{
-				interactText = language[4015]; // "Close door" 
+				interactText = Language::get(4015); // "Close door" 
 			}
 			else
 			{
-				interactText = language[4016]; // "Open door" 
+				interactText = Language::get(4016); // "Open door" 
 			}
 		}
 		else if ( parent->behavior == &actGate )
 		{
-			interactText = language[4017]; // "Inspect gate" 
+			interactText = Language::get(4017); // "Inspect gate" 
 		}
 		else if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
 		{
 			if ( parent->skill[0] == 1 )
 			{
-				interactText = language[4018]; // "Deactivate switch" 
+				interactText = Language::get(4018); // "Deactivate switch" 
 			}
 			else
 			{
-				interactText = language[4019]; // "Activate switch" 
+				interactText = Language::get(4019); // "Activate switch" 
 			}
 		}
 		else if ( parent->behavior == &actPowerCrystal )
 		{
-			interactText = language[4020]; // "Turn crystal" 
+			interactText = Language::get(4020); // "Turn crystal" 
 		}
 		else if ( parent->behavior == &actBoulder )
 		{
-			interactText = language[4021]; // "Push boulder" 
+			interactText = Language::get(4021); // "Push boulder" 
 		}
 		else if ( parent->behavior == &actPedestalBase )
 		{
 			if ( parent->pedestalHasOrb > 0 )
 			{
-				interactText = language[4022]; // "Take orb" 
+				interactText = Language::get(4022); // "Take orb" 
 			}
 			else
 			{
-				interactText = language[4023]; // "Inspect" 
+				interactText = Language::get(4023); // "Inspect" 
 			}
 		}
 		else if ( parent->behavior == &actCampfire )
 		{
-			interactText = language[4024]; // "Pull torch" 
+			interactText = Language::get(4024); // "Pull torch" 
 		}
 		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
 		{
-			interactText = language[4023]; // "Inspect" 
+			interactText = Language::get(4023); // "Inspect" 
 		}
 		else if ( parent->behavior == &actFloorDecoration )
 		{
 			if ( parent->sprite == 991 ) // sign
 			{
-				interactText = language[4025]; // "Read sign" 
+				interactText = Language::get(4025); // "Read sign" 
 			}
 			else
 			{
-				interactText = language[4023]; // "Inspect" 
+				interactText = Language::get(4023); // "Inspect" 
 			}
 		}
 		else if ( parent->behavior == &actBeartrap )
 		{
-			interactText = language[4026]; // "Disarm beartrap" 
+			interactText = Language::get(4026); // "Disarm beartrap" 
 		}
 		else if ( parent->behavior == &actLadderUp )
 		{
-			interactText = language[4027]; // "Inspect trapdoor" 
+			interactText = Language::get(4027); // "Inspect trapdoor" 
 		}
 		else if ( parent->behavior == &actLadder )
 		{
 			if ( secretlevel && parent->skill[3] == 1 ) // secret ladder
 			{
-				interactText += language[4028]; // "Exit secret level" 
+				interactText += Language::get(4028); // "Exit secret level" 
 			}
 			else if ( !secretlevel && parent->skill[3] == 1 ) // secret ladder
 			{
-				interactText += language[4029]; // "Enter secret level" 
+				interactText += Language::get(4029); // "Enter secret level" 
 			}
 			else
 			{
-				interactText += language[4030]; // "Exit dungeon floor" 
+				interactText += Language::get(4030); // "Exit dungeon floor" 
 			}
 		}
 		else if ( parent->behavior == &actPortal )
@@ -3685,32 +3685,32 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( secretlevel )
 				{
-					interactText += language[4028]; // "Exit secret level" 
+					interactText += Language::get(4028); // "Exit secret level" 
 				}
 				else
 				{
-					interactText += language[4029]; // "Enter secret level" 
+					interactText += Language::get(4029); // "Enter secret level" 
 				}
 			}
 			else
 			{
 				if ( !strcmp(map.name, "Hell") )
 				{
-					interactText += language[4030]; // hell uses portals instead "Exit dungeon floor"
+					interactText += Language::get(4030); // hell uses portals instead "Exit dungeon floor"
 				}
 				else if ( !strcmp(map.name, "Mages Guild") )
 				{
-					interactText += language[4031]; // mages guild exit to castle "Exit Hamlet"
+					interactText += Language::get(4031); // mages guild exit to castle "Exit Hamlet"
 				}
 				else
 				{
-					interactText += language[4030]; // "Exit dungeon floor";
+					interactText += Language::get(4030); // "Exit dungeon floor";
 				}
 			}
 		}
 		else if ( parent->behavior == &::actMidGamePortal )
 		{
-			interactText += language[4032]; // "Step through portal";
+			interactText += Language::get(4032); // "Step through portal";
 		}
 		else if ( parent->behavior == &actCustomPortal )
 		{
@@ -3718,52 +3718,52 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			{
 				if ( !strcmp(map.name, "Tutorial Hub") )
 				{
-					interactText += language[4033]; // "Enter trial";
+					interactText += Language::get(4033); // "Enter trial";
 				}
 				else
 				{
-					interactText += language[4034]; // "Exit trial";
+					interactText += Language::get(4034); // "Exit trial";
 				}
 			}
 			else
 			{
 				if ( parent->portalCustomSpriteAnimationFrames > 0 )
 				{
-					interactText += language[4035]; // "Enter portal";
+					interactText += Language::get(4035); // "Enter portal";
 				}
 				else
 				{
-					interactText += language[4036]; // "Enter trapdoor";
+					interactText += Language::get(4036); // "Enter trapdoor";
 				}
 			}
 		}
 		else if ( parent->behavior == &::actExpansionEndGamePortal
 			|| parent->behavior == &actWinningPortal )
 		{
-			interactText += language[4032]; // "Step through portal";
+			interactText += Language::get(4032); // "Step through portal";
 		}
 		else if ( parent->behavior == &actTeleporter )
 		{
 			if ( parent->teleporterType == 2 ) // portal
 			{
-				interactText += language[4035]; // "Enter portal";
+				interactText += Language::get(4035); // "Enter portal";
 			}
 			else if ( parent->teleporterType == 1 ) // down ladder
 			{
-				interactText += language[4037]; // "Descend ladder";
+				interactText += Language::get(4037); // "Descend ladder";
 			}
 			else if ( parent->teleporterType == 0 ) // up ladder
 			{
-				interactText += language[4038]; // "Climb ladder";
+				interactText += Language::get(4038); // "Climb ladder";
 			}
 		}
 		else if ( parent->behavior == &::actTeleportShrine /*|| parent->behavior == &::actSpellShrine*/ )
 		{
-			interactText += language[4299]; // "Touch shrine";
+			interactText += Language::get(4299); // "Touch shrine";
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
-			interactText = language[4039]; // "Disarm ";
+			interactText = Language::get(4039); // "Disarm ";
 			if ( parent->skill[21] >= WOODEN_SHIELD && parent->skill[21] < NUMITEMS )
 			{
 				interactText += items[parent->skill[21]].getIdentifiedName();
@@ -3771,7 +3771,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else
 		{
-			interactText = language[4040]; // "Interact";
+			interactText = Language::get(4040); // "Interact";
 		}
 	}
 	bTooltipInView = true;
@@ -4230,7 +4230,7 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			std::array<char*, 3> salvageStrings = { language[3999], language[4006], language[4008] };
+			std::array<const char*, 3> salvageStrings = { Language::get(3999), Language::get(4006), Language::get(4008) };
 			bool foundSalvageString = false;
 			for ( auto s : salvageStrings )
 			{
@@ -4252,7 +4252,7 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			std::array<char*, 2> switchStrings = { language[4018], language[4019] };
+			std::array<const char*, 2> switchStrings = { Language::get(4018), Language::get(4019) };
 			bool foundSwitchString = false;
 			for ( auto s : switchStrings )
 			{
@@ -4273,7 +4273,7 @@ void Player::WorldUI_t::handleTooltips()
 						{
 							if ( parent->skill[0] == 1 )
 							{
-								if ( players[player]->worldUI.interactText.find(language[4019]) != std::string::npos )
+								if ( players[player]->worldUI.interactText.find(Language::get(4019)) != std::string::npos )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
@@ -4282,7 +4282,7 @@ void Player::WorldUI_t::handleTooltips()
 							}
 							else
 							{
-								if ( players[player]->worldUI.interactText.find(language[4018]) != std::string::npos )
+								if ( players[player]->worldUI.interactText.find(Language::get(4018)) != std::string::npos )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
@@ -4524,7 +4524,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 {
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
 	{ 
-		promptString = language[4078];
+		promptString = Language::get(4078);
 		return PRO_SPELLCASTING;
 	}
 
@@ -4543,13 +4543,13 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 
 	if ( prompt == ACTION_PROMPT_SNEAK )
 	{
-		promptString = language[4077];
+		promptString = Language::get(4077);
 		return PRO_STEALTH;
 	}
 	else if ( prompt == ACTION_PROMPT_OFFHAND )
 	{
 		int skill = PRO_SHIELD;
-		promptString = language[4076];
+		promptString = Language::get(4076);
 		if ( stats[player.playernum] )
 		{
 			if ( stats[player.playernum]->shield )
@@ -4566,11 +4566,11 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				{
 					if ( player.bUseCompactGUIHeight() )
 					{
-						promptString = language[4318];
+						promptString = Language::get(4318);
 					}
 					else
 					{
-						promptString = language[4079];
+						promptString = Language::get(4079);
 					}
 					return PRO_MAGIC;
 				}
@@ -4582,16 +4582,16 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 
 				if ( allowDefending )
 				{ 
-					promptString = language[4076];
+					promptString = Language::get(4076);
 					return PRO_SHIELD; 
 				}
-				promptString = language[4077];
+				promptString = Language::get(4077);
 				return PRO_STEALTH;
 			}
 			else
 			{
 				skill = PRO_STEALTH;
-				promptString = language[4077];
+				promptString = Language::get(4077);
 			}
 		}
 		return skill;
@@ -4599,14 +4599,14 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 	else // prompt == ACTION_PROMPT_MAINHAND
 	{
 		int skill = PRO_UNARMED;
-		promptString = language[4075];
+		promptString = Language::get(4075);
 		if ( stats[player.playernum] )
 		{
 			if ( stats[player.playernum]->shield && stats[player.playernum]->shield->type == TOOL_TINKERING_KIT )
 			{
 				if ( !shapeshifted && stats[player.playernum]->defending )
 				{
-					promptString = language[4081];
+					promptString = Language::get(4081);
 					return PRO_LOCKPICKING;
 				}
 			}
@@ -4617,7 +4617,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
 					{
 						skill = PRO_SPELLCASTING;
-						promptString = language[4083];
+						promptString = Language::get(4083);
 					}
 				}
 				else if ( !shapeshifted )
@@ -4625,27 +4625,27 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					if ( itemCategory(stats[player.playernum]->weapon) == POTION )
 					{
 						skill = PRO_ALCHEMY;
-						promptString = language[4082];
+						promptString = Language::get(4082);
 					}
 					else if ( itemCategory(stats[player.playernum]->weapon) == THROWN
 						|| itemCategory(stats[player.playernum]->weapon) == GEM )
 					{
 						skill = PRO_RANGED;
-						promptString = language[4082];
+						promptString = Language::get(4082);
 					}
 					else if ( itemCategory(stats[player.playernum]->weapon) == TOOL )
 					{
 						skill = PRO_LOCKPICKING;
-						promptString = language[4080];
+						promptString = Language::get(4080);
 						if ( stats[player.playernum]->weapon )
 						{
 							if ( stats[player.playernum]->weapon->type == TOOL_PICKAXE )
 							{
-								promptString = language[4084];
+								promptString = Language::get(4084);
 							}
 							else if ( stats[player.playernum]->weapon->type == TOOL_BEARTRAP )
 							{
-								promptString = language[337];
+								promptString = Language::get(337);
 							}
 						}
 					}

@@ -66,7 +66,7 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
 		// no backpack space
-		messagePlayer(player, MESSAGE_INVENTORY, language[3997], item->getName());
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), item->getName());
 		playSoundPlayer(player, 90, 64);
 		return false;
 	}
@@ -117,7 +117,7 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 	//if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	//{
 	//	// no backpack space
-	//	messagePlayer(player, language[3997], item->getName());
+	//	messagePlayer(player, Language::get(3997), item->getName());
 	//	return false;
 	//}
 
@@ -162,11 +162,11 @@ const char* itemEquipString(int player, const Item& item)
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == ARMOR )
@@ -182,99 +182,99 @@ const char* itemEquipString(int player, const Item& item)
 			case MIRROR_SHIELD:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[325];
+					return Language::get(325);
 				}
 				else
 				{
-					return language[326];
+					return Language::get(326);
 				}
 			default:
 				break;
 		}
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[327];
+			return Language::get(327);
 		}
 		else
 		{
-			return language[328];
+			return Language::get(328);
 		}
 	}
 	else if ( itemCategory(&item) == AMULET )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[327];
+			return Language::get(327);
 		}
 		else
 		{
-			return language[328];
+			return Language::get(328);
 		}
 	}
 	else if ( itemCategory(&item) == POTION )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == MAGICSTAFF )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == RING )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[327];
+			return Language::get(327);
 		}
 		else
 		{
-			return language[331];
+			return Language::get(331);
 		}
 	}
 	else if ( itemCategory(&item) == SPELLBOOK )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == GEM )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == THROWN )
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == TOOL )
@@ -284,60 +284,60 @@ const char* itemEquipString(int player, const Item& item)
 			case TOOL_PICKAXE:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[323];
+					return Language::get(323);
 				}
 				else
 				{
-					return language[324];
+					return Language::get(324);
 				}
 			case TOOL_LOCKPICK:
 			case TOOL_SKELETONKEY:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[333];
+					return Language::get(333);
 				}
 				else
 				{
-					return language[334];
+					return Language::get(334);
 				}
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
 			case TOOL_CRYSTALSHARD:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[335];
+					return Language::get(335);
 				}
 				else
 				{
-					return language[336];
+					return Language::get(336);
 				}
 			case TOOL_BLINDFOLD:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[327];
+					return Language::get(327);
 				}
 				else
 				{
-					return language[328];
+					return Language::get(328);
 				}
 			case TOOL_GLASSES:
 			case MONOCLE:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[327];
+					return Language::get(327);
 				}
 				else
 				{
-					return language[331];
+					return Language::get(331);
 				}
 			default:
 				if ( itemIsEquipped(&item, player) )
 				{
-					return language[323];
+					return Language::get(323);
 				}
 				else
 				{
-					return language[324];
+					return Language::get(324);
 				}
 		}
 	}
@@ -345,16 +345,16 @@ const char* itemEquipString(int player, const Item& item)
 	{
 		if ( itemIsEquipped(&item, player) )
 		{
-			return language[323];
+			return Language::get(323);
 		}
 		else
 		{
-			return language[324];
+			return Language::get(324);
 		}
 	}
 	else if ( itemCategory(&item) == SPELL_CAT )
 	{
-		return language[339];
+		return Language::get(339);
 	}
 
 	return "Invalid";
@@ -364,40 +364,40 @@ const char* itemUseString(int player, const Item& item)
 {
 	if ( itemCategory(&item) == POTION )
 	{
-		return language[329];
+		return Language::get(329);
 	}
 	else if ( itemCategory(&item) == SCROLL )
 	{
-		return language[330];
+		return Language::get(330);
 	}
 	else if ( itemCategory(&item) == SPELLBOOK )
 	{
-		return language[330];
+		return Language::get(330);
 	}
 	else if ( itemCategory(&item) == TOOL )
 	{
 		switch ( item.type )
 		{
 			case TOOL_TINOPENER:
-				return language[1881];
+				return Language::get(1881);
 			case TOOL_MIRROR:
-				return language[332];
+				return Language::get(332);
 			case TOOL_TOWEL:
-				return language[332];
+				return Language::get(332);
 			case TOOL_BEARTRAP:
-				return language[337];
+				return Language::get(337);
 			case TOOL_ALEMBIC:
 				if ( GenericGUI[player].alchemyGUI.bOpen && GenericGUI[player].alembicItem == &item )
 				{
-					return language[3341];
+					return Language::get(3341);
 				}
 				else
 				{
-					return language[3339];
+					return Language::get(3339);
 				}
 			case TOOL_METAL_SCRAP:
 			case TOOL_MAGIC_SCRAP:
-				return language[1881];
+				return Language::get(1881);
 				break;
 			default:
 				break;
@@ -405,13 +405,13 @@ const char* itemUseString(int player, const Item& item)
 	}
 	else if ( itemCategory(&item) == FOOD )
 	{
-		return language[338];
+		return Language::get(338);
 	}
 	else if ( itemCategory(&item) == BOOK )
 	{
-		return language[330];
+		return Language::get(330);
 	}
-	return language[332];
+	return Language::get(332);
 }
 
 // deprecated
@@ -421,11 +421,11 @@ const char* itemUseString(int player, const Item& item)
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[323];
+//			return Language::get(323);
 //		}
 //		else
 //		{
-//			return language[324];
+//			return Language::get(324);
 //		}
 //	}
 //	else if ( itemCategory(item) == ARMOR )
@@ -441,89 +441,89 @@ const char* itemUseString(int player, const Item& item)
 //			case MIRROR_SHIELD:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[325];
+//					return Language::get(325);
 //				}
 //				else
 //				{
-//					return language[326];
+//					return Language::get(326);
 //				}
 //			default:
 //				break;
 //		}
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[327];
+//			return Language::get(327);
 //		}
 //		else
 //		{
-//			return language[328];
+//			return Language::get(328);
 //		}
 //	}
 //	else if ( itemCategory(item) == AMULET )
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[327];
+//			return Language::get(327);
 //		}
 //		else
 //		{
-//			return language[328];
+//			return Language::get(328);
 //		}
 //	}
 //	else if ( itemCategory(item) == POTION )
 //	{
-//		return language[329];
+//		return Language::get(329);
 //	}
 //	else if ( itemCategory(item) == SCROLL )
 //	{
-//		return language[330];
+//		return Language::get(330);
 //	}
 //	else if ( itemCategory(item) == MAGICSTAFF )
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[323];
+//			return Language::get(323);
 //		}
 //		else
 //		{
-//			return language[324];
+//			return Language::get(324);
 //		}
 //	}
 //	else if ( itemCategory(item) == RING )
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[327];
+//			return Language::get(327);
 //		}
 //		else
 //		{
-//			return language[331];
+//			return Language::get(331);
 //		}
 //	}
 //	else if ( itemCategory(item) == SPELLBOOK )
 //	{
-//		return language[330];
+//		return Language::get(330);
 //	}
 //	else if ( itemCategory(item) == GEM )
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[323];
+//			return Language::get(323);
 //		}
 //		else
 //		{
-//			return language[324];
+//			return Language::get(324);
 //		}
 //	}
 //	else if ( itemCategory(item) == THROWN )
 //	{
 //		if ( itemIsEquipped(item, player) )
 //		{
-//			return language[323];
+//			return Language::get(323);
 //		}
 //		else
 //		{
-//			return language[324];
+//			return Language::get(324);
 //		}
 //	}
 //	else if ( itemCategory(item) == TOOL )
@@ -533,64 +533,64 @@ const char* itemUseString(int player, const Item& item)
 //			case TOOL_PICKAXE:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[323];
+//					return Language::get(323);
 //				}
 //				else
 //				{
-//					return language[324];
+//					return Language::get(324);
 //				}
 //			case TOOL_TINOPENER:
-//				return language[1881];
+//				return Language::get(1881);
 //			case TOOL_MIRROR:
-//				return language[332];
+//				return Language::get(332);
 //			case TOOL_LOCKPICK:
 //			case TOOL_SKELETONKEY:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[333];
+//					return Language::get(333);
 //				}
 //				else
 //				{
-//					return language[334];
+//					return Language::get(334);
 //				}
 //			case TOOL_TORCH:
 //			case TOOL_LANTERN:
 //			case TOOL_CRYSTALSHARD:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[335];
+//					return Language::get(335);
 //				}
 //				else
 //				{
-//					return language[336];
+//					return Language::get(336);
 //				}
 //			case TOOL_BLINDFOLD:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[327];
+//					return Language::get(327);
 //				}
 //				else
 //				{
-//					return language[328];
+//					return Language::get(328);
 //				}
 //			case TOOL_TOWEL:
-//				return language[332];
+//				return Language::get(332);
 //			case TOOL_GLASSES:
 //				if ( itemIsEquipped(item, player) )
 //				{
-//					return language[327];
+//					return Language::get(327);
 //				}
 //				else
 //				{
-//					return language[331];
+//					return Language::get(331);
 //				}
 //			case TOOL_BEARTRAP:
-//				return language[337];
+//				return Language::get(337);
 //			case TOOL_ALEMBIC:
-//				return language[3339];
+//				return Language::get(3339);
 //			case TOOL_METAL_SCRAP:
 //			case TOOL_MAGIC_SCRAP:
-//				return language[1881];
+//				return Language::get(1881);
 //				break;
 //			default:
 //				break;
@@ -598,17 +598,17 @@ const char* itemUseString(int player, const Item& item)
 //	}
 //	else if ( itemCategory(item) == FOOD )
 //	{
-//		return language[338];
+//		return Language::get(338);
 //	}
 //	else if ( itemCategory(item) == BOOK )
 //	{
-//		return language[330];
+//		return Language::get(330);
 //	}
 //	else if ( itemCategory(item) == SPELL_CAT )
 //	{
-//		return language[339];
+//		return Language::get(339);
 //	}
-//	return language[332];
+//	return Language::get(332);
 //}
 
 Player::PaperDoll_t::PaperDollSlotType getPaperDollSlotFromItemType(Item& item)
@@ -692,7 +692,7 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		else if ( itemCategory(item) == SCROLL && item->identified )
 		{
 			src.h += TTF12_HEIGHT;
-			src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
+			src.w = std::max((2 + longestline(Language::get(3862)) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
 		}
 		else if ( itemCategory(item) == SPELLBOOK && learnedSpellbook )
 		{
@@ -742,8 +742,8 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 	if ( !item->identified )
 	{
 		color = makeColorRGB(255, 255, 0);
-		ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
-		tooltipString += language[309];
+		ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(309));
+		tooltipString += Language::get(309);
 		tooltipString += "\r\n";
 	}
 	else
@@ -752,16 +752,16 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		{
 			//Red if cursed
 			color = makeColorRGB(255, 0, 0);
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
-			tooltipString += language[310];
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(310));
+			tooltipString += Language::get(310);
 			tooltipString += "\r\n";
 		}
 		else if ( item->beatitude == 0 )
 		{
 			//White if normal item.
 			color = 0xFFFFFFFF;
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
-			tooltipString += language[311];
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(311));
+			tooltipString += Language::get(311);
 			tooltipString += "\r\n";
 		}
 		else
@@ -776,8 +776,8 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 				color = makeColorRGB(0, 255, 0);
 			}
 
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
-			tooltipString += language[312];
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, Language::get(312));
+			tooltipString += Language::get(312);
 			tooltipString += "\r\n";
 		}
 	}
@@ -820,13 +820,13 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		tooltipString += "\r\n";
 	}
 	int itemWeight = item->getWeight();
-	ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
-	snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[313], itemWeight);
+	ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, Language::get(313), itemWeight);
+	snprintf(tooltipBuffer, sizeof(tooltipBuffer), Language::get(313), itemWeight);
 	tooltipString += tooltipBuffer;
 	tooltipString += "\r\n";
 
-	ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(player));
-	snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[314], item->sellValue(player));
+	ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, Language::get(314), item->sellValue(player));
+	snprintf(tooltipBuffer, sizeof(tooltipBuffer), Language::get(314), item->sellValue(player));
 	tooltipString += tooltipBuffer;
 	tooltipString += "\r\n";
 
@@ -865,9 +865,9 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 				color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 			}
 
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[player]));
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, Language::get(315), item->weaponGetAttack(stats[player]));
 
-			snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[315], item->weaponGetAttack(stats[player]));
+			snprintf(tooltipBuffer, sizeof(tooltipBuffer), Language::get(315), item->weaponGetAttack(stats[player]));
 			tooltipString += tooltipBuffer;
 			tooltipString += "\r\n";
 
@@ -898,8 +898,8 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 				color = makeColorRGB(127, 127, 127); // grey out the text if monster doesn't benefit.
 			}
 
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[player]));
-			snprintf(tooltipBuffer, sizeof(tooltipBuffer), language[316], item->armorGetAC(stats[player]));
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, Language::get(316), item->armorGetAC(stats[player]));
+			snprintf(tooltipBuffer, sizeof(tooltipBuffer), Language::get(316), item->armorGetAC(stats[player]));
 			tooltipString += tooltipBuffer;
 			tooltipString += "\r\n";
 
@@ -908,8 +908,8 @@ void drawItemTooltip(const int player, Item* item, SDL_Rect& src)
 		else if ( itemCategory(item) == SCROLL )
 		{
 			color = makeColorRGB(0, 255, 255);
-			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
-			snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s%s", language[3862], item->getScrollLabel());
+			ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", Language::get(3862), item->getScrollLabel());
+			snprintf(tooltipBuffer, sizeof(tooltipBuffer), "%s%s", Language::get(3862), item->getScrollLabel());
 			tooltipString += tooltipBuffer;
 			tooltipString += "\r\n";
 		}
@@ -2300,7 +2300,7 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	Item* itemCopyToTake = openedChest[player]->getItemFromChest(item, amount); 
 	if ( bDoPickupMessage )
 	{
-		messagePlayer(player, MESSAGE_INVENTORY, language[374], itemCopyToTake->description());
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(374), itemCopyToTake->description());
 		playSound(35 + local_rng.rand() % 3, 64);
 	}
 	Item* pickedUp = itemPickup(player, itemCopyToTake, addToSpecificInventoryItem, forceNewStack);
@@ -2580,7 +2580,7 @@ void releaseChestItem(const int player)
 		//if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 		//{
 		//	// can't drag off into inventory, no slots available
-		//	messagePlayer(player, MESSAGE_INVENTORY, language[727], selectedItem->getName());
+		//	messagePlayer(player, MESSAGE_INVENTORY, Language::get(727), selectedItem->getName());
 		//	selectedItem = nullptr;
 		//	inputs.getUIInteraction(player)->selectedItemFromChest = 0;
 		//	toggleclick = false;
@@ -2981,7 +2981,7 @@ void releaseChestItem(const int player)
 
 				if ( selectedItem->status == BROKEN )
 				{
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[1092], selectedItem->getName()); // don't try equip broken stuff
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), selectedItem->getName()); // don't try equip broken stuff
 					playSoundPlayer(player, 90, 64);
 					toggleclick = false;
 				}
@@ -3039,7 +3039,7 @@ void releaseChestItem(const int player)
 				{
 					messagePlayer(player, 
 						MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, 
-						language[3432]); // unable to use in current form message.
+						Language::get(3432)); // unable to use in current form message.
 					playSoundPlayer(player, 90, 64);
 					toggleclick = false;
 				}
@@ -3115,7 +3115,7 @@ void releaseChestItem(const int player)
 						if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 						{
 							// no space
-							messagePlayer(player, MESSAGE_INVENTORY, language[727], selectedItem->getName()); // no room
+							messagePlayer(player, MESSAGE_INVENTORY, Language::get(727), selectedItem->getName()); // no room
 							playSoundPlayer(player, 90, 64);
 							break;
 						}
@@ -3327,7 +3327,7 @@ void releaseItem(const int player)
 					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 					{
 						// can't drag off into inventory, no slots available
-						messagePlayer(player, MESSAGE_INVENTORY, language[3997], selectedItem->getName());
+						messagePlayer(player, MESSAGE_INVENTORY, Language::get(3997), selectedItem->getName());
 						playSoundPlayer(player, 90, 64);
 						selectedItem = nullptr;
 						inputs.getUIInteraction(player)->selectedItemFromChest = 0;
@@ -4600,13 +4600,13 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-                             language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str());
+                             Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str());
                     manuallyInsertedNewline = true;
                 }
                 else if ( itemCategory(item) == SCROLL )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-                             items[item->type].getUnidentifiedName(), language[4215], item->getScrollLabel());
+                             items[item->type].getUnidentifiedName(), Language::get(4215), item->getScrollLabel());
                     manuallyInsertedNewline = true;
                 }
                 else
@@ -4638,7 +4638,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
-                             language[4214], getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
+                             Language::get(4214), getBookNameFromIndex(item->appearance % numbooks).c_str(), item->beatitude); // brand new copy of
                     manuallyInsertedNewline = true;
                 }
                 else
@@ -6334,33 +6334,33 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         {
             real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
             char buf[32];
-            snprintf(buf, sizeof(buf), language[4198], percent);
+            snprintf(buf, sizeof(buf), Language::get(4198), percent);
             txtPrompt->setText(buf);
         }
         else if ( doAppraisalPrompt )
         {
-            txtPrompt->setText(language[4102]);
+            txtPrompt->setText(Language::get(4102));
         }
         else if ( !tooltipDisplayedSettings.expanded )
         {
             if ( itemCategory(item) == SPELL_CAT )
             {
-                txtPrompt->setText(language[4103]); // show spell details
+                txtPrompt->setText(Language::get(4103)); // show spell details
             }
             else
             {
-                txtPrompt->setText(language[4086]); // show item details
+                txtPrompt->setText(Language::get(4086)); // show item details
             }
         }
         else
         {
             if ( itemCategory(item) == SPELL_CAT )
             {
-                txtPrompt->setText(language[4104]); // hide spell details
+                txtPrompt->setText(Language::get(4104)); // hide spell details
             }
             else
             {
-                txtPrompt->setText(language[4087]); // hide item details
+                txtPrompt->setText(Language::get(4087)); // hide item details
             }
         }
         
@@ -6412,7 +6412,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 
                 for ( auto index : languageIndexes )
                 {
-                    if ( auto textGet = Text::get(language[index], txtPrompt->getFont(),
+                    if ( auto textGet = Text::get(Language::get(index), txtPrompt->getFont(),
                                                   txtPrompt->getTextColor(), txtPrompt->getOutlineColor()) )
                     {
                         largestTextWidth = std::max(textGet->getWidth(), largestTextWidth);
@@ -8623,9 +8623,9 @@ void Player::Inventory_t::updateInventory()
 	//	src.x = mousex + 16;
 	//	src.y = mousey + 8;
 	//	src.h = TTF12_HEIGHT + 8;
-	//	src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
+	//	src.w = longestline(Language::get(2960)) * TTF12_WIDTH + 8;
 	//	drawTooltip(&src);
-	//	ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], "DEPRECATED");
+	//	ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, Language::get(2960), "DEPRECATED");
 	//	if ( inputs.bMouseLeft(player) )
 	//	{
 	//		inputs.mouseClearLeft(player);
@@ -10273,38 +10273,38 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_EAT:
 			return itemUseString(player, item);
 		case PROMPT_SPELL_QUICKCAST:
-			return language[4049];
+			return Language::get(4049);
 		case PROMPT_TINKER:
-			return language[3670];
+			return Language::get(3670);
 		case PROMPT_CLEAR_HOTBAR_SLOT:
-			return language[3723];
+			return Language::get(3723);
 		case PROMPT_APPRAISE:
-			return language[1161];
+			return Language::get(1161);
 		case PROMPT_CONSUME:
 		case PROMPT_CONSUME_ALTERNATE:
-			return language[3487];
+			return Language::get(3487);
 		case PROMPT_INSPECT:
 		case PROMPT_INSPECT_ALTERNATE:
-			return language[1881];
+			return Language::get(1881);
 		case PROMPT_SELL:
-			return language[345];
+			return Language::get(345);
 			break;
 		case PROMPT_BUY:
 			break;
 		case PROMPT_STORE_CHEST:
-			return language[344];
+			return Language::get(344);
 		case PROMPT_RETRIEVE_CHEST:
-			return language[4096];
+			return Language::get(4096);
 		case PROMPT_RETRIEVE_CHEST_ALL:
-			return language[4091];
+			return Language::get(4091);
 		case PROMPT_STORE_CHEST_ALL:
-			return language[4097];
+			return Language::get(4097);
 		case PROMPT_DROP:
-			return language[1162];
+			return Language::get(1162);
 		case PROMPT_GRAB:
-			return language[4050];
+			return Language::get(4050);
 		case PROMPT_DROPDOWN:
-			return language[4040];
+			return Language::get(4040);
 		default:
 			return "Invalid";
 	}
@@ -10689,8 +10689,8 @@ inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int 
 			}
 			else
 			{
-				getSizeOfText(ttf12, language[3487], &width, nullptr);
-				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
+				getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
 			}
 		}
 		else
@@ -10710,14 +10710,14 @@ inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int 
 	//Option 1.
 	if ( item.type == TOOL_METAL_SCRAP || item.type == TOOL_MAGIC_SCRAP )
 	{
-		getSizeOfText(ttf12, language[1881], &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1881]);
+		getSizeOfText(ttf12, Language::get(1881), &width, nullptr);
+		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(1881));
 		y += height;
 	}
 	else if ( itemCategory(&item) != FOOD )
 	{
-		getSizeOfText(ttf12, language[3487], &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
+		getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
+		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
 		y += height;
 	}
 

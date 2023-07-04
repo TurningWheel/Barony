@@ -217,11 +217,11 @@ SDL_Surface* identifyGUI_img;
 //			char* window_name;
 //			if (identifygui_appraising)
 //			{
-//				window_name = language[317];
+//				window_name = Language::get(317);
 //			}
 //			else
 //			{
-//				window_name = language[318];
+//				window_name = Language::get(318);
 //			}
 //			ttfPrintText(ttf8, (getIdentifyGUIStartX(player) + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
 //				getIdentifyGUIStartY(player) + 4, window_name);
@@ -400,14 +400,14 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	}
 	if (item->identified)
 	{
-		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[319], item->getName());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(319), item->getName());
 		old_item = 0;
 		playSoundPlayer(player.playernum, 90, 64);
 		return;
 	}
 	else if ( !appraisalPossible(item) )
 	{
-		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[3240], item->description());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(3240), item->description());
 		old_item = 0;
 		playSoundPlayer(player.playernum, 90, 64);
 		return;
@@ -416,7 +416,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	/*if (!identifygui_appraising)
 	{
 		item->identified = true;
-		messagePlayer(clientnum, language[320], item->description());
+		messagePlayer(clientnum, Language::get(320), item->description());
 		if ( players[player]->inventoryUI.appraisal.timer > 0 
 			&& players[player]->inventoryUI.appraisal.current_item
 			&& players[player]->inventoryUI.appraisal.current_item == item->uid)
@@ -434,7 +434,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	{
 		item->identified = true;
 		item->notifyIcon = true;
-		messagePlayer(player.playernum, MESSAGE_INVENTORY, language[320], item->description());
+		messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(320), item->description());
 		if ( timer > 0 && current_item != 0	&& current_item == item->uid)
 		{
 			timer = 0;
@@ -463,7 +463,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 
 		if ( doMessage )
 		{
-			messagePlayer(player.playernum, MESSAGE_INVENTORY, language[321], item->description());
+			messagePlayer(player.playernum, MESSAGE_INVENTORY, Language::get(321), item->description());
 		}
 
 		//Tick the timer in act player.

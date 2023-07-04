@@ -124,7 +124,7 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
     label->setSize(fullscreen);
     label->setJustify(Field::justify_t::CENTER);
 	label->setFont("fonts/pixel_maz.ttf#64#2");
-	label->setText(language[709]);
+	label->setText(Language::get(709));
 }
 
 void createLoadingScreen(real_t progress) {

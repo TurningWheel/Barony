@@ -348,4 +348,4 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
-char* getSkillLangEntry(int skill);
+const char* getSkillLangEntry(int skill);

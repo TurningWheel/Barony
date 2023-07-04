@@ -75,11 +75,11 @@ void updateCharacterSheet(const int player)
 	text_y = statWindowBox.y + 6;
 	ttfPrintTextFormatted(fontStat, text_x, text_y, "%s", stats[player]->name);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[359], stats[player]->LVL, playerClassLangEntry(client_classes[player], player));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(359), stats[player]->LVL, playerClassLangEntry(client_classes[player], player));
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[360], stats[player]->EXP);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(360), stats[player]->EXP);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[361], currentlevel);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(361), currentlevel);
 
 	Entity* playerEntity = nullptr;
 	if ( players[player] )
@@ -91,45 +91,45 @@ void updateCharacterSheet(const int player)
 	char statText[64] = "";
 	//Uint32 statColor = uint32ColorWhite;
 	text_y += pad_y * 2;
-	snprintf(statText, 64, language[1200], stats[player]->STR);
+	snprintf(statText, 64, Language::get(1200), stats[player]->STR);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->STR, statGetSTR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1201], stats[player]->DEX);
+	snprintf(statText, 64, Language::get(1201), stats[player]->DEX);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->DEX, statGetDEX(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1202], stats[player]->CON);
+	snprintf(statText, 64, Language::get(1202), stats[player]->CON);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->CON, statGetCON(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1203], stats[player]->INT);
+	snprintf(statText, 64, Language::get(1203), stats[player]->INT);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->INT, statGetINT(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1204], stats[player]->PER);
+	snprintf(statText, 64, Language::get(1204), stats[player]->PER);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->PER, statGetPER(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
-	snprintf(statText, 64, language[1205], stats[player]->CHR);
+	snprintf(statText, 64, Language::get(1205), stats[player]->CHR);
 	ttfPrintTextFormatted(fontStat, text_x, text_y, statText);
 	printStatBonus(fontStat, stats[player]->CHR, statGetCHR(stats[player], playerEntity), text_x + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	AttackHoverText_t attackHoverTextInfo;
 	text_y += pad_y * 2;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[2542], displayAttackPower(player, attackHoverTextInfo));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(2542), displayAttackPower(player, attackHoverTextInfo));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[371], AC(stats[player]));
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(371), AC(stats[player]));
 
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[370], stats[player]->GOLD);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(370), stats[player]->GOLD);
 	Sint32 weight = 0;
 	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
@@ -141,7 +141,7 @@ void updateCharacterSheet(const int player)
 	}
 	weight += stats[player]->GOLD / 100;
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, text_x, text_y, language[372], weight);
+	ttfPrintTextFormatted(fontStat, text_x, text_y, Language::get(372), weight);
 
 	statsHoverText(player, stats[player]);
 	//attackHoverText(player, attackInfo);
@@ -151,12 +151,12 @@ void updateCharacterSheet(const int player)
 	src.x = mousex + 16;
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 8;
-	src.w = ( longestline(language[2968]) + (int)strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
+	src.w = ( longestline(Language::get(2968)) + (int)strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
 	bool dropGold = false;
 	if ( mouseInBounds(player, statWindowBox.x + 8, statWindowBox.x + statWindowBox.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, Language::get(2968), getInputName(impulses[IN_USE]));
 		if ( Input::inputs[player].consumeBinaryToggle("Use") )
 		{
 			dropGold = true;
@@ -172,7 +172,7 @@ void updateCharacterSheet(const int player)
 		}
 		if ( amount == 0 )
 		{
-			messagePlayer(player, MESSAGE_INVENTORY, language[2593]);
+			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2593));
 			return;
 		}
 		stats[player]->GOLD -= amount;
@@ -210,7 +210,7 @@ void updateCharacterSheet(const int player)
 			}
 			playSoundEntity(players[player]->entity, 242 + local_rng.rand() % 4, 64);
 		}
-		messagePlayer(player, MESSAGE_INVENTORY, language[2594], amount);
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 	}
 }
 
@@ -371,7 +371,7 @@ void drawSkillsSheet(const int player)
 //
 //	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 //
-//	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
+//	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, Language::get(1883));
 //
 //	SDL_Rect button;
 //	button.x = x2 - attributesright_bmp->w - 8;
@@ -479,31 +479,31 @@ void drawSkillsSheet(const int player)
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] == 0 )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[363]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(363));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[364]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(364));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[365]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(365));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[366]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(366));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[367]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(367));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[player]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[368]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(368));
 //		}
 //		else if ( stats[player]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 //		{
-//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[369]);
+//			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, Language::get(369));
 //		}
 //	}
 //	pos = initialSkillPos;
@@ -513,8 +513,8 @@ void drawSkillsSheet(const int player)
 //	{
 //		if ( mouseInBounds(player, pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[player] )
 //		{
-//			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
-//			skillTooltip = language[3255 + i];
+//			skillTooltipRect.w = (longestline(Language::get(3255 + i)) * fontWidth) + 8;
+//			skillTooltip = Language::get(3255 + i);
 //
 //			size_t n = std::count(skillTooltip.begin(), skillTooltip.end(), '\n'); // count newlines
 //			skillTooltipRect.h = fontHeight * ((int)n + 2) + 8;
@@ -533,43 +533,43 @@ void drawSkillsSheet(const int player)
 //					skillTooltipRect.h += 4 * fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3270], CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT);
+//						capstoneTextColor, Language::get(3270), CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT);
 //					break;
 //				case PRO_STEALTH:
 //					skillTooltipRect.h += 4 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3271]);
+//						capstoneTextColor, Language::get(3271));
 //					break;
 //				case PRO_TRADING:
 //					skillTooltipRect.h += 2 * fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3272]);
+//						capstoneTextColor, Language::get(3272));
 //					break;
 //				case PRO_APPRAISAL:
 //					skillTooltipRect.h += 2 * fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3273]);
+//						capstoneTextColor, Language::get(3273));
 //					break;
 //				case PRO_SWIMMING:
 //					skillTooltipRect.h += fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3274]);
+//						capstoneTextColor, Language::get(3274));
 //					break;
 //				case PRO_LEADERSHIP:
 //					skillTooltipRect.h += 2 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3275]);
+//						capstoneTextColor, Language::get(3275));
 //					break;
 //				case PRO_SPELLCASTING:
 //					skillTooltipRect.h += 2 * fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3276]);
+//						capstoneTextColor, Language::get(3276));
 //					break;
 //				case PRO_MAGIC:
 //					break;
@@ -577,14 +577,14 @@ void drawSkillsSheet(const int player)
 //					skillTooltipRect.h += 2 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3284]);
+//						capstoneTextColor, Language::get(3284));
 //					break;
 //				case PRO_SWORD:
 //				{
 //					skillTooltipRect.h += 5 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3278], language[3283]);
+//						capstoneTextColor, Language::get(3278), Language::get(3283));
 //					break;
 //				}
 //				case PRO_MACE:
@@ -592,7 +592,7 @@ void drawSkillsSheet(const int player)
 //					skillTooltipRect.h += 3 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3279]);
+//						capstoneTextColor, Language::get(3279));
 //					break;
 //				}
 //				case PRO_AXE:
@@ -600,29 +600,29 @@ void drawSkillsSheet(const int player)
 //					skillTooltipRect.h += 3 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3280]);
+//						capstoneTextColor, Language::get(3280));
 //					break;
 //				}
 //				case PRO_POLEARM:
 //					skillTooltipRect.h += 3 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3281]);
+//						capstoneTextColor, Language::get(3281));
 //					break;
 //				case PRO_UNARMED:
 //					skillTooltipRect.h += 3 * fontHeight + 4;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3282]);
+//						capstoneTextColor, Language::get(3282));
 //					break;
 //				case PRO_SHIELD:
 //					skillTooltipRect.h += 2 * fontHeight;
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-//						capstoneTextColor, language[3283]);
+//						capstoneTextColor, Language::get(3283));
 //					break;
 //				case PRO_ALCHEMY:
-//					skillTooltipRect.w = (longestline(language[3348]) * fontWidth) + 8;
+//					skillTooltipRect.w = (longestline(Language::get(3348)) * fontWidth) + 8;
 //					skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
 //					break;
 //				default:
@@ -710,7 +710,7 @@ void drawSkillsSheet(const int player)
 //							break;
 //					}
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[5], canRepairItems.c_str(), skillDetails[4], getInputName(impulses[IN_FOLLOWERMENU]));
 //					break;
 //				}
@@ -728,7 +728,7 @@ void drawSkillsSheet(const int player)
 //						}
 //					}
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3]);
 //					
 //					break;
@@ -736,7 +736,7 @@ void drawSkillsSheet(const int player)
 //					skillDetails[0] = 1 / ((50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
 //					skillDetails[1] = (50 + stats[player]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						skillDetails[0], skillDetails[1]);
 //					break;
 //				case PRO_APPRAISAL:
@@ -751,27 +751,27 @@ void drawSkillsSheet(const int player)
 //						if ( (stats[player]->PROFICIENCIES[PRO_APPRAISAL] + players[player]->entity->getPER() * 5) >= 100 )
 //						{
 //							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//								uint32ColorWhite, language[3255 + i],
+//								uint32ColorWhite, Language::get(3255 + i),
 //								skillDetails[0], skillDetails[1], "yes");
 //						}
 //						else
 //						{
 //							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//								uint32ColorWhite, language[3255 + i],
+//								uint32ColorWhite, Language::get(3255 + i),
 //								skillDetails[0], skillDetails[1], "no");
 //						}
 //					}
 //					else
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], skillDetails[1], "no");
 //					}
 //					break;
 //				case PRO_SWIMMING:
 //					skillDetails[0] = (((stats[player]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						skillDetails[0]);
 //					break;
 //				case PRO_LEADERSHIP:
@@ -782,7 +782,7 @@ void drawSkillsSheet(const int player)
 //						skillDetails[2] = 80 + ((players[player]->entity->getCHR() + stats[player]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
 //					}
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						getInputName(impulses[IN_USE]),skillDetails[0], skillDetails[1], skillDetails[2], getInputName(impulses[IN_FOLLOWERMENU]));
 //					break;
 //				case PRO_SPELLCASTING:
@@ -792,20 +792,20 @@ void drawSkillsSheet(const int player)
 //						if ( isSpellcasterBeginner(player, players[player]->entity) )
 //						{
 //							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//								uint32ColorWhite, language[3255 + i],
+//								uint32ColorWhite, Language::get(3255 + i),
 //								skillDetails[0], "yes");
 //						}
 //						else
 //						{
 //							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//								uint32ColorWhite, language[3255 + i],
+//								uint32ColorWhite, Language::get(3255 + i),
 //								skillDetails[0], "no");
 //						}
 //					}
 //					else
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], "");
 //					}
 //					break;
@@ -869,13 +869,13 @@ void drawSkillsSheet(const int player)
 //					skillTooltipRect.h += (1 + lines) * (fontHeight + lines / 6);
 //					drawTooltip(&skillTooltipRect);
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
-//						capstoneTextColor, language[3277]);
+//						capstoneTextColor, Language::get(3277));
 //
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
 //						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 //
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3255 + i],
+//						uint32ColorWhite, Language::get(3255 + i),
 //						skillTooltip.c_str());
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (fontHeight) * 3, // print magic list
 //						uint32ColorBaronyBlue, "%s",
@@ -903,13 +903,13 @@ void drawSkillsSheet(const int player)
 //					if ( skillCapstoneUnlocked(player, i) )
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 0.f, skillDetails[2], skillDetails[3]);
 //					}
 //					else
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 100 / skillDetails[1], skillDetails[2], skillDetails[3]);
 //					}
 //					break;
@@ -929,7 +929,7 @@ void drawSkillsSheet(const int player)
 //					if ( skillCapstoneUnlocked(player, i) )
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 0.f, 0.f);
 //					}
 //					else
@@ -944,7 +944,7 @@ void drawSkillsSheet(const int player)
 //							skillDetails[2] *= 2;
 //						}
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
 //					}
 //					break;
@@ -955,7 +955,7 @@ void drawSkillsSheet(const int player)
 //					if ( skillCapstoneUnlocked(player, i) )
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 0.f, 0.f, skillDetails[3], skillDetails[4]);
 //					}
 //					else
@@ -970,7 +970,7 @@ void drawSkillsSheet(const int player)
 //							skillDetails[2] *= 2;
 //						}
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2], skillDetails[3], skillDetails[4]);
 //					}
 //					break;
@@ -979,7 +979,7 @@ void drawSkillsSheet(const int player)
 //					if ( skillCapstoneUnlocked(player, i) )
 //					{
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 0.f, 0.f);
 //					}
 //					else
@@ -993,7 +993,7 @@ void drawSkillsSheet(const int player)
 //							skillDetails[2] = 40 + (stats[player]->type == GOBLIN ? 10 : 0);
 //						}
 //						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//							uint32ColorWhite, language[3255 + i],
+//							uint32ColorWhite, Language::get(3255 + i),
 //							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
 //					}
 //					break;
@@ -1039,13 +1039,13 @@ void drawSkillsSheet(const int player)
 //					drawTooltip(&skillTooltipRect);
 //					// legendary text
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
-//						capstoneTextColor, language[3347]);
+//						capstoneTextColor, Language::get(3347));
 //					// header text
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
 //						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[player]->PROFICIENCIES[i]);
 //					// effect text
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-//						uint32ColorWhite, language[3348], 
+//						uint32ColorWhite, Language::get(3348), 
 //						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[4]);
 //					// base potions
 //					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
@@ -2142,31 +2142,31 @@ void attackHoverText(const int player, Sint32 input[6])
 			switch ( input[0] )
 			{
 				case 0: // fists
-					snprintf(tooltipHeader, strlen(language[2529]), language[2529]);
+					snprintf(tooltipHeader, strlen(Language::get(2529)), Language::get(2529));
 					numInfoLines = 4;
 					break;
 				case 1: // ranged
-					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					snprintf(tooltipHeader, strlen(Language::get(2530)), Language::get(2530));
 					numInfoLines = 4;
 					break;
 				case 2: // thrown
-					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
+					snprintf(tooltipHeader, strlen(Language::get(2531)), Language::get(2531));
 					numInfoLines = 3;
 					break;
 				case 3: // melee
-					snprintf(tooltipHeader, strlen(language[2532]), language[2532]);
+					snprintf(tooltipHeader, strlen(Language::get(2532)), Language::get(2532));
 					numInfoLines = 4;
 					break;
 				case 4: // tools
-					snprintf(tooltipHeader, strlen(language[2540]), language[2540]);
+					snprintf(tooltipHeader, strlen(Language::get(2540)), Language::get(2540));
 					numInfoLines = 2;
 					break;
 				case 5: // staffs
-					snprintf(tooltipHeader, strlen(language[2541]), language[2541]);
+					snprintf(tooltipHeader, strlen(Language::get(2541)), Language::get(2541));
 					numInfoLines = 0;
 					break;
 				case 6: // whip
-					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					snprintf(tooltipHeader, strlen(Language::get(2530)), Language::get(2530));
 					numInfoLines = 3;
 					break;
 				default:
@@ -2197,7 +2197,7 @@ void attackHoverText(const int player, Sint32 input[6])
 				// attack < 0
 				color = makeColorRGB(255, 0, 0);
 			}
-			snprintf(tooltipHeader, 32, language[2533], input[1]);
+			snprintf(tooltipHeader, 32, Language::get(2533), input[1]);
 			ttfPrintTextColor(ttf12, src.x + 4, src.y + 4, color, false, tooltipHeader);
 
 			for ( j = 0; j < numInfoLines && numInfoLines > 0; j++ )
@@ -2211,16 +2211,16 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[3209]), language[3209], input[2]);
+							snprintf(buf, longestline(Language::get(3209)), Language::get(3209), input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							snprintf(buf, longestline(Language::get(2534)), Language::get(2534), input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							snprintf(buf, longestline(Language::get(2539)), Language::get(2539), input[4]);
 							break;
 						case 3:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(Language::get(2536)), Language::get(2536), input[5]);
 						default:
 							break;
 					}
@@ -2230,16 +2230,16 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							snprintf(buf, longestline(Language::get(2538)), Language::get(2538), input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
+							snprintf(buf, longestline(Language::get(2535)), Language::get(2535), input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							snprintf(buf, longestline(Language::get(2539)), Language::get(2539), input[4]);
 							break;
 						case 3:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(Language::get(2536)), Language::get(2536), input[5]);
 							break;
 						default:
 							break;
@@ -2250,13 +2250,13 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							snprintf(buf, longestline(Language::get(2538)), Language::get(2538), input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
+							snprintf(buf, longestline(Language::get(2535)), Language::get(2535), input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2537]), language[2537], input[4]);
+							snprintf(buf, longestline(Language::get(2537)), Language::get(2537), input[4]);
 							break;
 						default:
 							break;
@@ -2267,16 +2267,16 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							snprintf(buf, longestline(Language::get(2538)), Language::get(2538), input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							snprintf(buf, longestline(Language::get(2534)), Language::get(2534), input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							snprintf(buf, longestline(Language::get(2539)), Language::get(2539), input[4]);
 							break;
 						case 3:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(Language::get(2536)), Language::get(2536), input[5]);
 						default:
 							break;
 					}
@@ -2286,10 +2286,10 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							snprintf(buf, longestline(Language::get(2534)), Language::get(2534), input[3]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(Language::get(2536)), Language::get(2536), input[5]);
 							break;
 						default:
 							break;
@@ -2304,13 +2304,13 @@ void attackHoverText(const int player, Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, 127, language[2538], input[2]);
+							snprintf(buf, 127, Language::get(2538), input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[3458]), language[3458], input[3]);
+							snprintf(buf, longestline(Language::get(3458)), Language::get(3458), input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							snprintf(buf, longestline(Language::get(2539)), Language::get(2539), input[4]);
 							break;
 						default:
 							break;

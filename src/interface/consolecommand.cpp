@@ -230,7 +230,7 @@ void consoleCommand(char const* const command_str)
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[305], command_str);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(305), command_str);
 		}
 	}
 	else
@@ -334,7 +334,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_ping("/ping", "ping the remote server", []CCMD{
 		if (multiplayer != CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[1117], 0);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(1117), 0);
 		}
 		else
 		{
@@ -375,7 +375,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_svflags("/svflags", "set server flags", []CCMD{
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[275]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(275));
 		}
 		else
 		{
@@ -384,7 +384,7 @@ namespace ConsoleCommands {
 				return;
 			}
 			svFlags = atoi(argv[1]);
-			messagePlayer(clientnum, MESSAGE_MISC, language[276]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(276));
 
 			if (multiplayer == SERVER)
 			{
@@ -402,7 +402,7 @@ namespace ConsoleCommands {
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
-					messagePlayer(c, MESSAGE_MISC, language[276]);
+					messagePlayer(c, MESSAGE_MISC, Language::get(276));
 				}
 			}
 		}
@@ -424,7 +424,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_spawnitem("/spawnitem", "spawn an item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc < 2)
@@ -459,14 +459,14 @@ namespace ConsoleCommands {
 		}
 		if (c == NUMITEMS)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(278), name.c_str());
 		}
 		});
 
 	static ConsoleCommand ccmd_spawncursed("/spawncursed", "spawn a cursed item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc < 2)
@@ -501,14 +501,14 @@ namespace ConsoleCommands {
 		}
 		if (c == NUMITEMS)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(278), name.c_str());
 		}
 		});
 
 	static ConsoleCommand ccmd_spawnblessed("/spawnblessed", "spawn a blessed item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc < 2)
@@ -543,7 +543,7 @@ namespace ConsoleCommands {
 		}
 		if (c == NUMITEMS)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(278), name.c_str());
 		}
 		});
 
@@ -573,30 +573,30 @@ namespace ConsoleCommands {
 					int i;
 					for (i = 0; i < MAXPLAYERS; i++)
 					{
-						messagePlayer(i, MESSAGE_MISC, language[279], c, stats[c]->name);
+						messagePlayer(i, MESSAGE_MISC, Language::get(279), c, stats[c]->name);
 					}
 					break;
 				}
 			}
 			if (c == MAXPLAYERS)
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[280]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(280));
 			}
 		}
 		else if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[281]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(281));
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[282]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(282));
 		}
 		});
 
 	static ConsoleCommand ccmd_spawnbook("/spawnbook", "spawn a readable book (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc < 2)
@@ -615,23 +615,23 @@ namespace ConsoleCommands {
 		if (argc > 1)
 		{
 			saveMap(argv[1]);
-			messagePlayer(clientnum, MESSAGE_MISC, language[283], argv[1]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(283), argv[1]);
 		}
 		});
 
 	static ConsoleCommand ccmd_nextlevel("/nextlevel", "advance to the next dungeon level (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[285]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(285));
 			loadnextlevel = true;
 		}
 		});
@@ -639,10 +639,10 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_pos("/pos", "show the camera coordinates", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		messagePlayer(clientnum, MESSAGE_MISC, language[286],
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(286),
 			(int)cameras[0].x,
 			(int)cameras[0].y,
 			(int)cameras[0].z,
@@ -653,7 +653,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_pathmap("/pathmap", "display pathmap values at player coords", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (players[clientnum] && players[clientnum]->entity)
@@ -676,23 +676,23 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_noclip("/noclip", "toggle noclip mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[287]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(287));
 		}
 		else
 		{
 			noclip = (noclip == false);
 			if (noclip)
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[288]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(288));
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[289]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(289));
 			}
 		}
 		});
@@ -700,23 +700,23 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_god("/god", "toggle god mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[290]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(290));
 		}
 		else
 		{
 			godmode = (godmode == false);
 			if (godmode)
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[291]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(291));
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[292]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(292));
 			}
 		}
 		});
@@ -736,23 +736,23 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_buddha("/buddha", "toggle buddha mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[293]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(293));
 		}
 		else
 		{
 			buddhamode = (buddhamode == false);
 			if (buddhamode)
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[294]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(294));
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[295]);
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(295));
 			}
 		}
 		});
@@ -760,29 +760,29 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_friendly("/friendly", "make all NPCs friendly (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 		everybodyfriendly = (everybodyfriendly == false);
 		if (everybodyfriendly)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[296]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(296));
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[297]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(297));
 		}
 		});
 
 	static ConsoleCommand ccmd_dowse("/dowse", "print the down stairs coords (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		for (auto node = map.entities->first; node != NULL; node = node->next)
@@ -790,7 +790,7 @@ namespace ConsoleCommands {
 			auto entity = (Entity*)node->element;
 			if (entity->behavior == &actLadder)
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(298), (int)(entity->x / 16), (int)(entity->y / 16));
 			}
 		}
 		});
@@ -801,7 +801,7 @@ namespace ConsoleCommands {
 			// this is definitely considered a cheat.
 			// otherwise it's a major gameplay exploit.
 			// do not disable this code block.
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
@@ -892,7 +892,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_mana("/mana", "give player mana (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -902,14 +902,14 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_heal("/heal", "heal the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -919,19 +919,19 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_damage("/damage", "damage the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		if (argc < 2) {
@@ -1003,7 +1003,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_levelup("/levelup", "level up the player character (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1023,14 +1023,14 @@ namespace ConsoleCommands {
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-			//messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			//messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_maxout2("/maxout2", "give player lots of stuff (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1063,14 +1063,14 @@ namespace ConsoleCommands {
 			{
 				consoleCommand("/levelup");
 			}
-			//messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			//messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_jumplevel("/jumplevel", "advance several levels", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc < 2) {
@@ -1087,7 +1087,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_maxout3("/maxout3", "give player lots of stuff (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1123,14 +1123,14 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_maxout4("/maxout4", "give player lots of stuff (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1171,14 +1171,14 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_maxout("/maxout", "give player lots of stuff (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1210,14 +1210,14 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_hunger("/hunger", "set player hunger (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1231,14 +1231,14 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_poison("/poison", "poison the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1253,7 +1253,7 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
@@ -1272,7 +1272,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_levelmagic("/levelmagic", "level up magic skills (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -1287,20 +1287,20 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 		}
 		});
 
 	static ConsoleCommand ccmd_numentities("/numentities", "display number of entities in the level", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, language[300], list_Size(map.entities));
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(300), list_Size(map.entities));
 		});
 
 	static ConsoleCommand ccmd_nummonsters2("/nummonsters2", "display number of NPCs in the level", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, language[2353], list_Size(map.creatures));
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(2353), list_Size(map.creatures));
 		});
 
 	static ConsoleCommand ccmd_nummonsters("/nummonsters", "display number of monsters in the level", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, language[2353], nummonsters);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(2353), nummonsters);
 		});
 
 	static ConsoleCommand ccmd_verifycreaturelist("/verifycreaturelist", "", []CCMD{
@@ -1340,12 +1340,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_killmonsters("/killmonsters", "kill all monsters (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		else
 		{
@@ -1361,7 +1361,7 @@ namespace ConsoleCommands {
 					c++;
 				}
 			}
-			messagePlayer(clientnum, MESSAGE_MISC, language[301], c);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(301), c);
 		}
 		});
 
@@ -1415,13 +1415,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_flames("/flames", "ignite the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -1445,13 +1445,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_cure("/cure", "cure the player of ailments (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -1478,12 +1478,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_summonall("/summonall", "summon a bunch of monsters (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
@@ -1517,7 +1517,7 @@ namespace ConsoleCommands {
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[304], name.c_str());
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(304), name.c_str());
 			}
 		}
 		});
@@ -1525,12 +1525,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_summon("/summon", "summon a monster (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
@@ -1562,7 +1562,7 @@ namespace ConsoleCommands {
 					Entity* monster = summonMonster(static_cast<Monster>(statEntry->type), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 					if (monster)
 					{
-						messagePlayer(clientnum, MESSAGE_MISC, language[302], monstertypename[static_cast<Monster>(statEntry->type)]);
+						messagePlayer(clientnum, MESSAGE_MISC, Language::get(302), monstertypename[static_cast<Monster>(statEntry->type)]);
 						if (monster->getStats())
 						{
 							statEntry->setStatsAndEquipmentToMonster(monster->getStats());
@@ -1614,16 +1614,16 @@ namespace ConsoleCommands {
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					messagePlayer(clientnum, MESSAGE_MISC, language[302], getMonsterLocalizedName((Monster)creature).c_str());
+					messagePlayer(clientnum, MESSAGE_MISC, Language::get(302), getMonsterLocalizedName((Monster)creature).c_str());
 				}
 				else
 				{
-					messagePlayer(clientnum, MESSAGE_MISC, language[303], getMonsterLocalizedName((Monster)creature).c_str());
+					messagePlayer(clientnum, MESSAGE_MISC, Language::get(303), getMonsterLocalizedName((Monster)creature).c_str());
 				}
 			}
 			else
 			{
-				messagePlayer(clientnum, MESSAGE_MISC, language[304], name.c_str());
+				messagePlayer(clientnum, MESSAGE_MISC, Language::get(304), name.c_str());
 			}
 		}
 		});
@@ -1631,12 +1631,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_summonchest("/summonchest", "spawn a chest (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 		}
 		else if (players[clientnum] && players[clientnum]->entity)
 		{
@@ -1703,7 +1703,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_lang("/lang", "load specified language file (eg: /lang en)", []CCMD{
 		if (argc > 1) {
-			loadLanguage(argv[1]);
+			Language::loadLanguage(argv[1], false);
 		}
 		});
 
@@ -1712,7 +1712,7 @@ namespace ConsoleCommands {
 		});
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
-		reloadLanguage();
+		Language::reloadLanguage();
 		});
 
 	static ConsoleCommand ccmd_disablemessages("/disablemessages", "disable all messages", []CCMD{
@@ -1741,7 +1741,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_splitscreen("/splitscreen", "enable splitscreen mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		int numPlayers = 4;
@@ -2057,12 +2057,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gold("/gold", "give the player gold (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2117,7 +2117,7 @@ namespace ConsoleCommands {
 		{
 			if (amount == 0)
 			{
-				messagePlayer(player, MESSAGE_INVENTORY, language[2593]);
+				messagePlayer(player, MESSAGE_INVENTORY, Language::get(2593));
 				return;
 			}
 			stats[player]->GOLD -= amount;
@@ -2148,23 +2148,23 @@ namespace ConsoleCommands {
 				entity->behavior = &actGoldBag;
 				entity->goldAmount = amount; // amount
 			}
-			messagePlayer(player, MESSAGE_INVENTORY, language[2594], amount);
+			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_MISC, language[4085]); // invalid location to drop gold
+			messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_MISC, Language::get(4085)); // invalid location to drop gold
 		}
 		});
 
 	static ConsoleCommand ccmd_minotaurlevel("/minotaurlevel", "create a minotaur timer (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2178,12 +2178,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_minotaurnow("/minotaurnow", "summon the minotaur (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2206,12 +2206,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_levelskill("/levelskill", "increase a skill (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2222,7 +2222,7 @@ namespace ConsoleCommands {
 		int skill = atoi(argv[1]);
 		if (skill >= NUMPROFICIENCIES)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[3239]); //Skill out of range.
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(3239)); //Skill out of range.
 		}
 		else
 		{
@@ -2236,16 +2236,16 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_maplevel("/maplevel", "magic mapping for the level (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
-		messagePlayer(clientnum, MESSAGE_MISC, language[412]);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
 
 		mapLevel(clientnum);
 		});
@@ -2253,12 +2253,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_drunky("/drunky", "make me drunk (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2277,12 +2277,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_maxskill("/maxskill", "max out player skills (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2380,12 +2380,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_animspeed("/animspeed", "change animation speed (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2401,12 +2401,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_atkspeed("/atkspeed", "change attack speed (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2545,12 +2545,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_togglesecretlevel("/togglesecretlevel", "put the player on the secret level track (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		secretlevel = (secretlevel == false);
@@ -2559,12 +2559,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_seteffect("/seteffect", "give the player the specified effect (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2586,12 +2586,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_seteffect_rand("/seteffect_rand", "give assortment of effects (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2613,7 +2613,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_levelsummon("/levelsummon", "level up monster summons (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		for (node_t* node = map.creatures->first; node != nullptr; node = node->next)
@@ -2635,15 +2635,15 @@ namespace ConsoleCommands {
 		achievementBrawlerMode = !achievementBrawlerMode;
 		if (achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER])
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[2995]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(2995));
 		}
 		else if (achievementBrawlerMode && !conductGameChallenges[CONDUCT_BRAWLER])
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[2998]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(2998));
 		}
 		else if (!achievementBrawlerMode)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[2996]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(2996));
 		}
 		});
 
@@ -2660,7 +2660,7 @@ namespace ConsoleCommands {
 
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 
@@ -2671,38 +2671,38 @@ namespace ConsoleCommands {
 			{
 				if (achievementRangedMode[player])
 				{
-					messagePlayer(clientnum, MESSAGE_MISC, language[3926], player);
+					messagePlayer(clientnum, MESSAGE_MISC, Language::get(3926), player);
 				}
 				else
 				{
-					messagePlayer(clientnum, MESSAGE_MISC, language[3925], player);
+					messagePlayer(clientnum, MESSAGE_MISC, Language::get(3925), player);
 				}
 			}
 		}
 		if (achievementRangedMode[player] && !playerFailedRangedOnlyConduct[player])
 		{
-			messagePlayer(player, MESSAGE_MISC, language[3921]);
+			messagePlayer(player, MESSAGE_MISC, Language::get(3921));
 		}
 		else if (achievementRangedMode[player] && playerFailedRangedOnlyConduct[player])
 		{
-			messagePlayer(player, MESSAGE_MISC, language[3924]);
+			messagePlayer(player, MESSAGE_MISC, Language::get(3924));
 		}
 		else if (!achievementRangedMode[player])
 		{
-			messagePlayer(player, MESSAGE_MISC, language[3922]);
+			messagePlayer(player, MESSAGE_MISC, Language::get(3922));
 		}
 		});
 
 	static ConsoleCommand ccmd_gimmevictory("/gimmevictory", "win without trying", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2716,13 +2716,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmeconducts("/gimmeconducts", "inflate your ego", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2736,13 +2736,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmekills("/gimmekills", "inflate your kill stats", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2756,13 +2756,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmepotions2("/gimmepotions2", "give the player some potions (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2807,13 +2807,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmepotions("/gimmepotions", "give the player some potions (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2864,13 +2864,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_hungoverstats("/hungoverstats", "display stats on drunkenness (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -2887,7 +2887,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_entityfreeze("/entityfreeze", "freeze all entities (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		gameloopFreezeEntities = !gameloopFreezeEntities;
@@ -2911,7 +2911,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_allspells1("/allspells1", "teach player some spells (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -2929,12 +2929,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_setmapseed("/setmapseed", "set the next map seed (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 
@@ -2951,12 +2951,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_greaseme("/greaseme", "make the player greasy (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 		if (players[clientnum] && players[clientnum]->entity)
@@ -2968,7 +2968,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmearrows("/gimmearrows", "give the player some arrows (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		for (int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i)
@@ -2980,7 +2980,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmescrap("/gimmescrap", "give the player some scrap metal (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
@@ -2991,7 +2991,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmerobots("/gimmerobots", "give the player some robots (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
@@ -3003,7 +3003,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_toggletinkeringlimits("/toggletinkeringlimits", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		overrideTinkeringLimit = !overrideTinkeringLimit;
@@ -3020,12 +3020,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_setdecoyrange("/setdecoyrange", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 		if (argc < 2)
@@ -3039,7 +3039,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmegoblinbooks("/gimmegoblinbooks", "give the player some spellbooks (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		for (int i = 0; i < NUM_SPELLS; ++i)
@@ -3052,7 +3052,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_unsetdlc2achievements("/unsetdlc2achievements", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 #ifdef STEAMWORKS
@@ -3132,7 +3132,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmebombs("/gimmebombs", "give the player some bombs (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
@@ -3144,7 +3144,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_showhunger("/showhunger", "show the player's hunger value (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		messagePlayer(clientnum, MESSAGE_MISC, "Hunger value: %d", stats[clientnum]->HUNGER);
@@ -3580,13 +3580,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_debugtooltips("/debugtooltips", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		ItemTooltips.itemDebug = !ItemTooltips.itemDebug;
@@ -3601,13 +3601,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", "give all potions (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		for (int i = 0; i < potionStandardAppearanceMap.size(); ++i)
@@ -3623,13 +3623,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmeblessedpotions("/gimmeblessedpotions", "give blessed potions (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		for (int i = 0; i < potionStandardAppearanceMap.size(); ++i)
@@ -3645,13 +3645,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmecursedpotions("/gimmecursedpotions", "give cursed potions (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		for (int i = 0; i < potionStandardAppearanceMap.size(); ++i)
@@ -3667,7 +3667,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_allspells2("/allspells2", "teach the player some spells (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -3685,7 +3685,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_allspells3("/allspells3", "teach the player some spells (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -3703,7 +3703,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_gimmexp("/gimmexp", "give the player some XP (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -3736,7 +3736,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_printleaderlist("/printleaderlist", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		Player::SkillSheet_t::generateFollowerTableForSkillsheet = true;
@@ -3746,7 +3746,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_poly("/poly", "polymorph the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (players[clientnum]->entity)
@@ -3758,7 +3758,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_sexchange("/sexchange", "fix yourself (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		stats[clientnum]->sex = stats[clientnum]->sex == sex_t::MALE ? sex_t::FEMALE : sex_t::MALE;
@@ -3767,7 +3767,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_appearances("/appearances", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		++stats[clientnum]->appearance;
@@ -3780,7 +3780,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_classdebug("/classdebug", "", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if ( argc == 2 )
@@ -3800,7 +3800,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_unpoly("/unpoly", "unpolymorph the player (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (players[clientnum]->entity)
@@ -3891,7 +3891,7 @@ namespace ConsoleCommands {
 
 	static void rocksFall(int player) {
 		if (!(svFlags & SV_FLAG_CHEATS)) {
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (multiplayer == CLIENT) {
@@ -3937,7 +3937,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_listalchemyrecipes("/listalchemyrecipes", "lists known alchemy recipes", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS)) {
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if (argc >= 2) {
@@ -3996,13 +3996,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_addfollower("/addfollower", "adds a follower to party", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -4022,13 +4022,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_addfollower2("/addfollowers", "adds many followers to party", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if (multiplayer != SINGLE)
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 
@@ -4107,7 +4107,7 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -4149,14 +4149,14 @@ namespace ConsoleCommands {
 		}
 		if ( c == NUMITEMS )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[278], name.c_str());
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(278), name.c_str());
 		}
 	});
 
 	static ConsoleCommand ccmd_imgui("/devmenu", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
@@ -4183,7 +4183,7 @@ namespace ConsoleCommands {
 #ifndef EDITOR
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		bool oldIntro = intro;
@@ -4416,12 +4416,12 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_spawndummy("/spawndummy", "", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[284]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(284));
 			return;
 		}
 		if ( players[clientnum]->entity )
@@ -4541,7 +4541,7 @@ namespace ConsoleCommands {
     static ConsoleCommand ccmd_load_map("/loadmap", "load specified map file", []CCMD{
         if ( !(svFlags & SV_FLAG_CHEATS) )
         {
-            messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+            messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
             return;
         }
         if ( multiplayer != SINGLE )
@@ -4580,7 +4580,7 @@ namespace ConsoleCommands {
                 net_packet->address.host = net_clients[c - 1].host;
                 net_packet->address.port = net_clients[c - 1].port;
                 sendPacketSafe(net_sock, -1, net_packet, c - 1);
-                messagePlayer(c, MESSAGE_MISC, language[276]);
+                messagePlayer(c, MESSAGE_MISC, Language::get(276));
             }
         }
     });
@@ -4621,13 +4621,13 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_cast_spell_debug("/cast_spell_debug", "shoot every spell", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[277]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
 
 		if ( multiplayer != SINGLE )
 		{
-			messagePlayer(clientnum, MESSAGE_MISC, language[299]);
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
 		}
 		if ( !players[clientnum]->entity ) { return; }

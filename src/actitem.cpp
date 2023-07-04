@@ -187,7 +187,7 @@ void actItem(Entity* my)
 							if ( monsterInteracting->monsterAllyGetPlayerLeader() )
 							{
 								// "can't carry anymore!"
-								messagePlayer(monsterInteracting->monsterAllyIndex, MESSAGE_HINT, language[3637]);
+								messagePlayer(monsterInteracting->monsterAllyIndex, MESSAGE_HINT, Language::get(3637));
 							}
 						}
 						else
@@ -219,7 +219,7 @@ void actItem(Entity* my)
 								if ( monsterInteracting->monsterAllyGetPlayerLeader() )
 								{
 									// "can't carry anymore!"
-									messagePlayer(monsterInteracting->monsterAllyIndex, MESSAGE_HINT, language[3637]);
+									messagePlayer(monsterInteracting->monsterAllyIndex, MESSAGE_HINT, Language::get(3637));
 								}
 							}
 							else
@@ -307,7 +307,7 @@ void actItem(Entity* my)
 							else
 							{
 								// unable to salvage.
-								messagePlayer(i, MESSAGE_INTERACTION, language[3664], item2->description());
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(3664), item2->description());
 								playSoundPlayer(i, 90, 64);
 								free(item2);
 							}
@@ -324,7 +324,7 @@ void actItem(Entity* my)
 									free(item2); 
 									int oldcount = item->count;
 									item->count = pickedUpCount;
-									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 									item->count = oldcount;
 									if ( itemCategory(item) == FOOD && my->itemShowOnMap != 0
 										&& stats[i] && stats[i]->type == RAT )
@@ -338,7 +338,7 @@ void actItem(Entity* my)
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[504], item->description());
+									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
 									if ( itemCategory(item) == FOOD	&& stats[i] && stats[i]->type == RAT )
 									{
 										auto find = achievementObserver

@@ -190,8 +190,8 @@ int loadItems()
 	//File* const fp = openDataFile("items/items.txt", "rb");
 	//for ( c = 0; !fp->eof(); c++ )
 	//{
-	//	items[c].name_identified = language[1545 + c * 2];
-	//	items[c].name_unidentified = language[1546 + c * 2];
+	//	items[c].name_identified = Language::get(1545 + c * 2);
+	//	items[c].name_unidentified = Language::get(1546 + c * 2);
 	//	items[c].index = fp->geti();
 	//	items[c].fpindex = fp->geti();
 	//	items[c].variations = fp->geti();

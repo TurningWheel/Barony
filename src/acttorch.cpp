@@ -124,7 +124,7 @@ void actTorch(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						bool salvaged = false;
 						if ( GenericGUI[0].isItemSalvageable(item, i) ) // let the server [0] salvage for client i
 						{
@@ -158,7 +158,7 @@ void actTorch(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);
@@ -276,7 +276,7 @@ void actCrystalShard(Entity* my)
 					if ( trySalvage )
 					{
 						// auto salvage this item, don't pick it up.
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						bool salvaged = false;
 						if ( GenericGUI[0].isItemSalvageable(item, i) )  // let the server [0] salvage for client i
 						{
@@ -310,7 +310,7 @@ void actCrystalShard(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[589]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						list_RemoveNode(my->light->node);
 						list_RemoveNode(my->mynode);
 						itemPickup(i, item);

@@ -615,7 +615,7 @@ Sets the obituary text on an entity.
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setObituary(char* obituary)
+void Entity::setObituary(const char* obituary)
 {
 	Stat* tempStats = this->getStats();
 	if ( !tempStats )
@@ -649,13 +649,13 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	if ( behavior == &actMagicTrap )
 	{
 	    hitstats->killer = KilledBy::TRAP_MAGIC;
-	    victim->setObituary(language[1501]);
+	    victim->setObituary(Language::get(1501));
 	    return;
 	}
 	if ( behavior == &::actMagicTrapCeiling )
 	{
 	    hitstats->killer = KilledBy::TRAP_MAGIC;
-	    victim->setObituary(language[1502]);
+	    victim->setObituary(Language::get(1502));
 	    return;
 	}
 	if ( behavior == &actBoulder )
@@ -663,11 +663,11 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	    hitstats->killer = KilledBy::BOULDER;
 		if ( sprite == 989 )
 		{
-			victim->setObituary(language[3898]);
+			victim->setObituary(Language::get(3898));
 		}
 		else if ( sprite == 990 )
 		{
-			victim->setObituary(language[3899]);
+			victim->setObituary(Language::get(3899));
 		}
 		return;
 	}
@@ -683,11 +683,11 @@ void Entity::killedByMonsterObituary(Entity* victim)
 		hitstats->killer = KilledBy::ALLY_BETRAYAL;
 		if ( hitstats->sex == MALE )
 		{
-			snprintf(tempstr, 256, language[1509], getMonsterLocalizedName(hitstats->type).c_str());
+			snprintf(tempstr, 256, Language::get(1509), getMonsterLocalizedName(hitstats->type).c_str());
 		}
 		else
 		{
-			snprintf(tempstr, 256, language[1510], getMonsterLocalizedName(hitstats->type).c_str());
+			snprintf(tempstr, 256, Language::get(1510), getMonsterLocalizedName(hitstats->type).c_str());
 		}
 		victim->setObituary(tempstr);
 	}
@@ -697,115 +697,115 @@ void Entity::killedByMonsterObituary(Entity* victim)
 		switch ( myStats->type )
 		{
 			case HUMAN:
-				victim->setObituary(language[1511]);
+				victim->setObituary(Language::get(1511));
 				break;
 			case RAT:
-				victim->setObituary(language[1512]);
+				victim->setObituary(Language::get(1512));
 				break;
 			case GOBLIN:
-				victim->setObituary(language[1513]);
+				victim->setObituary(Language::get(1513));
 				break;
 			case SLIME:
-				victim->setObituary(language[1514]);
+				victim->setObituary(Language::get(1514));
 				break;
 			case TROLL:
-				victim->setObituary(language[1515]);
+				victim->setObituary(Language::get(1515));
 				break;
 			case SPIDER:
 			    if (arachnophobia_filter) {
-				    victim->setObituary(language[4090]);
+				    victim->setObituary(Language::get(4090));
 			    } else {
-				    victim->setObituary(language[1516]);
+				    victim->setObituary(Language::get(1516));
 			    }
 				break;
 			case GHOUL:
-				victim->setObituary(language[1517]);
+				victim->setObituary(Language::get(1517));
 				break;
 			case SKELETON:
-				victim->setObituary(language[1518]);
+				victim->setObituary(Language::get(1518));
 				break;
 			case SCORPION:
-				victim->setObituary(language[1519]);
+				victim->setObituary(Language::get(1519));
 				break;
 			case CREATURE_IMP:
-				victim->setObituary(language[1520]);
+				victim->setObituary(Language::get(1520));
 				break;
 			case GNOME:
-				victim->setObituary(language[1521]);
+				victim->setObituary(Language::get(1521));
 				break;
 			case DEMON:
-				victim->setObituary(language[1522]);
+				victim->setObituary(Language::get(1522));
 				break;
 			case SUCCUBUS:
-				victim->setObituary(language[1523]);
+				victim->setObituary(Language::get(1523));
 				break;
 			case LICH:
-				victim->setObituary(language[1524]);
+				victim->setObituary(Language::get(1524));
 				break;
 			case MINOTAUR:
-				victim->setObituary(language[1525]);
+				victim->setObituary(Language::get(1525));
 				break;
 			case DEVIL:
-				victim->setObituary(language[1526]);
+				victim->setObituary(Language::get(1526));
 				break;
 			case SHOPKEEPER:
 				if ( victim->behavior == &actPlayer )
 				{
 					if ( hitstats->type != HUMAN )
 					{
-						snprintf(hitstats->obituary, 127, language[3244], getMonsterLocalizedPlural(hitstats->type).c_str(), myStats->name);
+						snprintf(hitstats->obituary, 127, Language::get(3244), getMonsterLocalizedPlural(hitstats->type).c_str(), myStats->name);
 						hitstats->killer = KilledBy::TRESPASSING;
 					}
 					else
 					{
-						victim->setObituary(language[1527]); // attempts a robbery.
+						victim->setObituary(Language::get(1527)); // attempts a robbery.
 						hitstats->killer = KilledBy::ATTEMPTED_ROBBERY;
 					}
 				}
 				else
 				{
-					victim->setObituary(language[1527]); // attempts a robbery.
+					victim->setObituary(Language::get(1527)); // attempts a robbery.
 					hitstats->killer = KilledBy::ATTEMPTED_ROBBERY;
 				}
 				break;
 			case KOBOLD:
-				victim->setObituary(language[2150]);
+				victim->setObituary(Language::get(2150));
 				break;
 			case SCARAB:
-				victim->setObituary(language[2151]);
+				victim->setObituary(Language::get(2151));
 				break;
 			case CRYSTALGOLEM:
-				victim->setObituary(language[2152]);
+				victim->setObituary(Language::get(2152));
 				break;
 			case INCUBUS:
-				victim->setObituary(language[2153]);
+				victim->setObituary(Language::get(2153));
 				break;
 			case VAMPIRE:
-				victim->setObituary(language[2154]);
+				victim->setObituary(Language::get(2154));
 				break;
 			case SHADOW:
-				victim->setObituary(language[2155]);
+				victim->setObituary(Language::get(2155));
 				break;
 			case COCKATRICE:
-				victim->setObituary(language[2156]);
+				victim->setObituary(Language::get(2156));
 				break;
 			case INSECTOID:
-				victim->setObituary(language[2157]);
+				victim->setObituary(Language::get(2157));
 				break;
 			case GOATMAN:
-				victim->setObituary(language[2158]);
+				victim->setObituary(Language::get(2158));
 				break;
 			case AUTOMATON:
-				victim->setObituary(language[2159]);
+				victim->setObituary(Language::get(2159));
 				break;
 			case LICH_ICE:
-				victim->setObituary(language[2160]);
+				victim->setObituary(Language::get(2160));
 				break;
 			case LICH_FIRE:
-				victim->setObituary(language[2161]);
+				victim->setObituary(Language::get(2161));
 				break;
 			default:
-				victim->setObituary(language[1500]);
+				victim->setObituary(Language::get(1500));
 				break;
 		}
 	}
@@ -989,7 +989,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, MESSAGE_COMBAT, language[591]);    //If cure ailments or somesuch bombs the status effects.
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(591));    //If cure ailments or somesuch bombs the status effects.
 						}
 					}
 					node_t* temp = nullptr;
@@ -1014,7 +1014,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, MESSAGE_COMBAT, language[592]);
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(592));
 						}
 					}
 					node_t* temp = nullptr;
@@ -1039,7 +1039,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, MESSAGE_COMBAT, language[2446]);
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(2446));
 						}
 					}
 					node_t* temp = nullptr;
@@ -1064,7 +1064,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, MESSAGE_COMBAT, language[3441]);
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(3441));
 						}
 					}
 					node_t* temp = nullptr;
@@ -1089,7 +1089,7 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
 						{
-							messagePlayer(c, MESSAGE_COMBAT, language[2447]);
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(2447));
 						}
 					}
 					node_t* temp = nullptr;
@@ -1151,7 +1151,7 @@ void Entity::effectTimes()
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
 					//playSoundPlayer(player, 32, 128);
-					messagePlayer(player, MESSAGE_STATUS, language[3193]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3193));
 				}
 			}
 			else if ( c == EFF_SHAPESHIFT )
@@ -1159,7 +1159,7 @@ void Entity::effectTimes()
 				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
 				{
 					playSoundPlayer(player, 32, 128);
-					messagePlayer(player, MESSAGE_STATUS, language[3475]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
 			if ( myStats->EFFECTS_TIMERS[c] == 0 )
@@ -1168,7 +1168,7 @@ void Entity::effectTimes()
 				switch ( c )
 				{
 					case EFF_ASLEEP:
-						messagePlayer(player, MESSAGE_STATUS, language[593]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(593));
 						if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
 						{
 							monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
@@ -1177,24 +1177,24 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_HP_REGEN:
-						//messagePlayer(player, MESSAGE_STATUS, language[3476]);
+						//messagePlayer(player, MESSAGE_STATUS, Language::get(3476));
 						updateClient = true;
 						break;
 					case EFF_MP_REGEN:
-						//messagePlayer(player, MESSAGE_STATUS, language[3477]);
+						//messagePlayer(player, MESSAGE_STATUS, Language::get(3477));
 						updateClient = true;
 						break;
 					case EFF_POISONED:
-						messagePlayer(player, MESSAGE_STATUS, language[594]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(594));
 						break;
 					case EFF_STUNNED:
-						//messagePlayer(player, MESSAGE_STATUS, language[595]);
+						//messagePlayer(player, MESSAGE_STATUS, Language::get(595));
 						break;
 					case EFF_CONFUSED:
-						messagePlayer(player, MESSAGE_STATUS, language[596]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(596));
 						break;
 					case EFF_DRUNK:
-						messagePlayer(player, MESSAGE_STATUS, language[597]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(597));
 						break;
 					case EFF_INVISIBLE:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -1220,7 +1220,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, MESSAGE_STATUS, language[598]);
+											messagePlayer(i, MESSAGE_STATUS, Language::get(598));
 										}
 									}
 									unsustainSpell = invisibility_hijacked;
@@ -1237,34 +1237,34 @@ void Entity::effectTimes()
 						{
 							if ( !this->isBlind() )
 							{
-								messagePlayer(player, MESSAGE_STATUS, language[599]);
+								messagePlayer(player, MESSAGE_STATUS, Language::get(599));
 							}
 						}
 						break;
 					case EFF_BLIND:
 						if ( !this->isBlind() )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[600]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(600));
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[601]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(601));
 						}
 						break;
 					case EFF_GREASY:
-						messagePlayer(player, MESSAGE_STATUS, language[602]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(602));
 						break;
 					case EFF_MESSY:
-						messagePlayer(player, MESSAGE_STATUS, language[603]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(603));
 						break;
 					case EFF_FAST:
-						messagePlayer(player, MESSAGE_STATUS, language[604]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(604));
 						break;
 					case EFF_PARALYZED:
-						messagePlayer(player, MESSAGE_STATUS, language[605]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(605));
 						break;
 					case EFF_POTION_STR:
-						messagePlayer(player, MESSAGE_STATUS, language[3355]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(3355));
 						break;
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -1290,7 +1290,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, MESSAGE_STATUS, language[606]);    //TODO: Unhardcode name?
+											messagePlayer(i, MESSAGE_STATUS, Language::get(606));    //TODO: Unhardcode name?
 										}
 									}
 									unsustainSpell = levitation_hijacked;
@@ -1306,7 +1306,7 @@ void Entity::effectTimes()
 						{
 							if ( !isLevitating(myStats) )
 							{
-								messagePlayer(player, MESSAGE_STATUS, language[607]);
+								messagePlayer(player, MESSAGE_STATUS, Language::get(607));
 							}
 						}
 						break;
@@ -1319,7 +1319,7 @@ void Entity::effectTimes()
 						else
 						{
 							setEffect(EFF_TELEPATH, false, 0, true);
-							messagePlayer(player, MESSAGE_STATUS, language[608]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(608));
 							if ( player >= 0 && players[player]->isLocalPlayer() )
 							{
 								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
@@ -1335,41 +1335,41 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_VOMITING:
-						messagePlayer(player, MESSAGE_STATUS, language[609]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(609));
 						if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED) )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[610]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(610));
 						}
 						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK)
 							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY) )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[611]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(611));
 							playSoundPlayer(player, 32, 128);
 						}
 						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) 
 							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK) )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[612]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(612));
 							playSoundPlayer(player, 32, 128);
 						}
 						else if ( myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) )
 						{
 							myStats->HUNGER = 50;
-							messagePlayer(player, MESSAGE_STATUS, language[613]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(613));
 							playSoundPlayer(player, 32, 128);
 						}
 						serverUpdateHunger(player);
 						break;
 					case EFF_BLEEDING:
-						messagePlayer(player, MESSAGE_STATUS, language[614]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(614));
 						break;
 					case EFF_MAGICRESIST:
-						messagePlayer(player, MESSAGE_STATUS, language[2470]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(2470));
 						break;
 					case EFF_FLUTTER:
 						if ( !isLevitating(myStats) )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[607]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(607));
 							if ( behavior == &actPlayer 
 								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.first > 0.01
 								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.second > 0.01 )
@@ -1407,7 +1407,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, MESSAGE_STATUS, language[2474]);
+											messagePlayer(i, MESSAGE_STATUS, Language::get(2474));
 										}
 									}
 									unsustainSpell = reflectMagic_hijacked;
@@ -1422,7 +1422,7 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[2471]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(2471));
 							updateClient = true;
 						}
 						break;
@@ -1449,7 +1449,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, MESSAGE_STATUS, language[3443]);
+											messagePlayer(i, MESSAGE_STATUS, Language::get(3443));
 										}
 									}
 									unsustainSpell = amplifyMagic_hijacked;
@@ -1463,7 +1463,7 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[3441]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(3441));
 							updateClient = true;
 						}
 						break;
@@ -1497,7 +1497,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											//messagePlayer(player, MESSAGE_STATUS, language[2449]);
+											//messagePlayer(player, MESSAGE_STATUS, Language::get(2449));
 										}
 									}
 									unsustainSpell = vampiricAura_hijacked;
@@ -1517,23 +1517,23 @@ void Entity::effectTimes()
 							//	myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
 							//	serverUpdateHunger(player);
 							//}
-							messagePlayer(player, MESSAGE_STATUS, language[2449]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(2449));
 							updateClient = true;
 						}
 						break;
 					case EFF_SLOW:
-						messagePlayer(player, MESSAGE_STATUS, language[604]); // "You return to your normal speed."
+						messagePlayer(player, MESSAGE_STATUS, Language::get(604)); // "You return to your normal speed."
 						break;
 					case EFF_POLYMORPH:
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
 						if ( !myStats->EFFECTS[EFF_SHAPESHIFT] )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[3185]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(3185));
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[4303]); // wears out, no mention of 'normal' form
+							messagePlayer(player, MESSAGE_STATUS, Language::get(4303)); // wears out, no mention of 'normal' form
 						}
 
 						playSoundEntity(this, 400, 92);
@@ -1546,11 +1546,11 @@ void Entity::effectTimes()
 						serverUpdateEntitySkill(this, 53);
 						if ( !myStats->EFFECTS[EFF_POLYMORPH] )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[3417]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(3417));
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[4302]); // return to your 'abnormal' form
+							messagePlayer(player, MESSAGE_STATUS, Language::get(4302)); // return to your 'abnormal' form
 						}
 
 						playSoundEntity(this, 400, 92);
@@ -1559,7 +1559,7 @@ void Entity::effectTimes()
 						updateClient = true;
 						break;
 					case EFF_TROLLS_BLOOD:
-						messagePlayer(player, MESSAGE_STATUS, language[3491]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(3491));
 						updateClient = true;
 						break;
 					case EFF_KNOCKBACK:
@@ -1576,15 +1576,15 @@ void Entity::effectTimes()
 							else
 							{
 								playSoundPlayer(player, 32, 128);
-								messagePlayer(player, MESSAGE_STATUS, language[3247 + local_rng.rand() % 3]);
-								messagePlayer(player, MESSAGE_STATUS, language[3222]);
+								messagePlayer(player, MESSAGE_STATUS, Language::get(3247 + local_rng.rand() % 3));
+								messagePlayer(player, MESSAGE_STATUS, Language::get(3222));
 								this->setEffect(EFF_WITHDRAWAL, true, -2, true); // set effect as "active"
 							}
 						}
 						break;
 					case EFF_FEAR:
 						this->monsterFearfulOfUid = 0;
-						messagePlayer(player, MESSAGE_STATUS, language[3439]);
+						messagePlayer(player, MESSAGE_STATUS, Language::get(3439));
 						updateClient = true;
 						break;
 					case EFF_PACIFY:
@@ -1664,7 +1664,7 @@ void Entity::increaseSkill(int skill, bool notify)
 		{
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[615], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(615), getSkillLangEntry(skill));
 				if ( players[player]->isLocalPlayer() )
 				{
 					skillUpAnimation[player].addSkillUp(skill, myStats->PROFICIENCIES[skill] - 1, 1);
@@ -1674,19 +1674,19 @@ void Entity::increaseSkill(int skill, bool notify)
 		switch ( myStats->PROFICIENCIES[skill] )
 		{
 			case 20:
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[616], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(616), getSkillLangEntry(skill));
 				break;
 			case 40:
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[617], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(617), getSkillLangEntry(skill));
 				break;
 			case 60:
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[618], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(618), getSkillLangEntry(skill));
 				break;
 			case 80:
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[619], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(619), getSkillLangEntry(skill));
 				break;
 			case 100:
-				messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[620], getSkillLangEntry(skill));
+				messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(620), getSkillLangEntry(skill));
 				break;
 			default:
 				break;
@@ -2246,7 +2246,7 @@ void Entity::setHP(int amount)
 	}
 	entitystats->HP = std::min(std::max(0, amount), entitystats->MAXHP);
 	healthDiff -= entitystats->HP;
-	strncpy(entitystats->obituary, language[1500], 127);
+	strncpy(entitystats->obituary, Language::get(1500), 127);
 
 	if ( this->behavior == &actPlayer && buddhamode && entitystats->HP < 1 )
 	{
@@ -2521,7 +2521,7 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 		if ( player >= 0 && notifyOverexpend )
 		{
 			Uint32 color = makeColorRGB(255, 255, 0);
-			messagePlayerColor(player, MESSAGE_STATUS, color, language[621]);
+			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(621));
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
 		Stat* tempStats = this->getStats();
@@ -2529,11 +2529,11 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 		{
 			if ( tempStats->sex == MALE )
 			{
-				this->setObituary(language[1528]);
+				this->setObituary(Language::get(1528));
 			}
 			else
 			{
-				this->setObituary(language[1529]);
+				this->setObituary(Language::get(1529));
 			}
 			tempStats->killer = KilledBy::FAILED_INVOCATION;
 		}
@@ -2567,7 +2567,7 @@ bool Entity::safeConsumeMP(int amount)
 			if ( (HP - stat->HP > 0) && (stat->HP % 5 == 0) )
 			{
 				Uint32 color = makeColorRGB(255, 255, 0);
-				messagePlayerColor(skill[2], MESSAGE_STATUS, color, language[621]);
+				messagePlayerColor(skill[2], MESSAGE_STATUS, color, Language::get(621));
 			}
 			return true;
 		}
@@ -2824,7 +2824,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		Uint32 color = makeColorRGB(255, 255, 0);
-		messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[622]);
+		messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(622));
 
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 
@@ -2957,7 +2957,7 @@ void Entity::handleEffects(Stat* myStats)
 						if ( rankUp )
 						{
 							color = makeColorRGB(255, 255, 0);
-							messagePlayerMonsterEvent(leader->skill[2], color, *myStats, language[3197], language[3197], MSG_GENERIC);
+							messagePlayerMonsterEvent(leader->skill[2], color, *myStats, Language::get(3197), Language::get(3197), MSG_GENERIC);
 							playSoundPlayer(leader->skill[2], 40, 64);
 						}
 					}
@@ -3009,7 +3009,7 @@ void Entity::handleEffects(Stat* myStats)
 						if ( players[i] && players[i]->entity == leader )
 						{
 							color = makeColorRGB(0, 255, 0);
-							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+							messagePlayerMonsterEvent(i, color, *myStats, Language::get(2379), Language::get(2379), MSG_GENERIC);
 							playSoundEntity(this, *cvar_lvlup_ally_sfx, 128);
 							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 						}
@@ -3031,7 +3031,7 @@ void Entity::handleEffects(Stat* myStats)
 			std::vector<LevelUpAnimation_t::LevelUp_t::StatUp_t> StatUps;
 			for ( i = 0; i < 3; i++ )
 			{
-				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, language[623 + increasestat[i]]);
+				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(623 + increasestat[i]));
 				switch ( increasestat[i] )
 				{
 					case STAT_STR: // STR
@@ -3142,7 +3142,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						continue;
 					}
-					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC, this);
+					messagePlayerMonsterEvent(i, color, *myStats, Language::get(2379), Language::get(2379), MSG_GENERIC, this);
 				}
 			}
 
@@ -3248,14 +3248,14 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				if ( myStats->HUNGER == 299 )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[3708]);
-					messagePlayer(player, MESSAGE_STATUS, language[3709]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3708));
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3709));
 					playSoundPlayer(player, 32, 128);
 				}
 				else if ( myStats->HUNGER == 0 )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[3708]);
-					messagePlayer(player, MESSAGE_STATUS, language[3710]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3708));
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3710));
 					playSoundPlayer(player, 32, 128);
 				}
 			}
@@ -3289,7 +3289,7 @@ void Entity::handleEffects(Stat* myStats)
 				this->modHP(-1);
 				if ( myStats->HP <= 0 )
 				{
-					this->setObituary(language[1530]);
+					this->setObituary(Language::get(1530));
 					myStats->killer = KilledBy::STARVATION;
 				}
 
@@ -3298,7 +3298,7 @@ void Entity::handleEffects(Stat* myStats)
 
 				if ( myStats->HP > 0 )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[3253]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3253));
 
 					// Shake the Host's screen
 					if ( myStats->HP <= 10 )
@@ -3339,7 +3339,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[629]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(629));
 				}
 				serverUpdateHunger(player);
 			}
@@ -3347,7 +3347,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[630]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(630));
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3356,7 +3356,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[631]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(631));
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3365,7 +3365,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[632]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(632));
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
@@ -3431,13 +3431,13 @@ void Entity::handleEffects(Stat* myStats)
 							if ( playerAutomaton )
 							{
 							    myStats->killer = KilledBy::NO_FUEL;
-								this->setObituary(language[3864]);
+								this->setObituary(Language::get(3864));
 								steamAchievementEntity(this, "BARONY_ACH_RUST_IN_PEACE");
 							}
 							else
 							{
 							    myStats->killer = KilledBy::STARVATION;
-							    this->setObituary(language[1530]);
+							    this->setObituary(Language::get(1530));
 							}
 						}
 					}
@@ -3449,11 +3449,11 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						if ( playerAutomaton )
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[3714]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(3714));
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_STATUS, language[633]);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(633));
 						}
 					}
 
@@ -3492,14 +3492,14 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_STATUS, language[634]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(634));
 				this->char_gonnavomit = 140 + local_rng.rand() % 60;
 			}
 		}
 		else if ( ticks % 60 == 0 && local_rng.rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
 			// drunkenness
-			messagePlayer(player, MESSAGE_STATUS, language[634]);
+			messagePlayer(player, MESSAGE_STATUS, Language::get(634));
 			this->char_gonnavomit = 140 + local_rng.rand() % 60;
 		}
 	}
@@ -3508,7 +3508,7 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_gonnavomit--;
 		if ( this->char_gonnavomit == 0 )
 		{
-			messagePlayer(player, MESSAGE_STATUS, language[635]);
+			messagePlayer(player, MESSAGE_STATUS, Language::get(635));
 			myStats->EFFECTS[EFF_VOMITING] = true;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
 			serverUpdateEffects(player);
@@ -3785,7 +3785,7 @@ void Entity::handleEffects(Stat* myStats)
 					|| shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude < 0)
 				)
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[636]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
 				if ( player >= 0 )
 				{
 					dropItem(myStats->weapon, player);
@@ -3822,13 +3822,13 @@ void Entity::handleEffects(Stat* myStats)
 					std::string itemName = myStats->shield->getName();
 					ItemType itemType = myStats->shield->type;
 					Status itemStatus = myStats->shield->status;
-					messagePlayer(player, MESSAGE_EQUIPMENT, language[638], itemName.c_str());
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(638), itemName.c_str());
 					int qty = std::max(0, myStats->shield->count - 1);
 					Item* item = myStats->shield;
 					consumeItem(item, player);
 					if ( qty > 0 && item )
 					{
-						messagePlayer(player, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
+						messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(4101), itemName.c_str()); // you reignite another torch
 						playSoundEntity(this, 134, 64); // ignite
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -3864,11 +3864,11 @@ void Entity::handleEffects(Stat* myStats)
 					myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
 					if ( myStats->shield->status > BROKEN )
 					{
-						messagePlayer(player, MESSAGE_EQUIPMENT, language[637], myStats->shield->getName());
+						messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(637), myStats->shield->getName());
 					}
 					else
 					{
-						messagePlayer(player, MESSAGE_EQUIPMENT, language[638], myStats->shield->getName());
+						messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(638), myStats->shield->getName());
 					}
 					if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 					{
@@ -3890,7 +3890,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( myStats->type == INSECTOID )
 		{
-			messagePlayer(player, MESSAGE_STATUS, language[640]);
+			messagePlayer(player, MESSAGE_STATUS, Language::get(640));
 			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 			myStats->EFFECTS[EFF_POISONED] = false;
 			serverUpdateEffects(player);
@@ -3898,8 +3898,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( myStats->amulet && myStats->amulet->type == AMULET_POISONRESISTANCE )
 		{
-			messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, language[639]);
-			messagePlayer(player, MESSAGE_STATUS, language[640]);
+			messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, Language::get(639));
+			messagePlayer(player, MESSAGE_STATUS, Language::get(640));
 			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 			myStats->EFFECTS[EFF_POISONED] = false;
 			serverUpdateEffects(player);
@@ -3957,7 +3957,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 			}
 			myStats->killer = KilledBy::POISON;
-			this->setObituary(language[1531]);
+			this->setObituary(Language::get(1531));
 			playSoundEntity(this, 28, 64);
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -3976,7 +3976,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( local_rng.rand() % 5 == 0 && getCON() >= -3 )
 			{
-				messagePlayer(player, MESSAGE_STATUS, language[641]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(641));
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 				myStats->EFFECTS[EFF_POISONED] = false;
 				serverUpdateEffects(player);
@@ -4026,7 +4026,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				bleedhurt = std::max(1, bleedhurt);
 				this->modHP(-bleedhurt);
-				this->setObituary(language[1532]);
+				this->setObituary(Language::get(1532));
 				myStats->killer = KilledBy::BLEEDING;
 				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
@@ -4045,7 +4045,7 @@ void Entity::handleEffects(Stat* myStats)
 					net_packet->len = 6;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
-				messagePlayer(player, MESSAGE_STATUS, language[642]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(642));
 				
 				{
 					Entity* entity = nullptr;
@@ -4092,7 +4092,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_STATUS, language[643]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(643));
 				myStats->EFFECTS[EFF_BLEEDING] = false;
 				myStats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 				serverUpdateEffects(player);
@@ -4136,7 +4136,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( player >= 0 && (myStats->EFFECTS[EFF_LEVITATING] || myStats->EFFECTS[EFF_FLUTTER]) && MFLAG_DISABLELEVITATION)
 	{
 		Uint32 color = makeColorRGB(255, 0, 255);
-		messagePlayerColor(player, MESSAGE_HINT, color, language[2382]); // disabled levitation.
+		messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2382)); // disabled levitation.
 		this->setEffect(EFF_LEVITATING, false, 0, true);
 		this->setEffect(EFF_FLUTTER, false, 0, true);
 	}
@@ -4214,7 +4214,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( this->char_fire <= 0 )
 		{
 			this->flags[BURNING] = false;
-			messagePlayer(player, MESSAGE_STATUS, language[647]); // "The flames go out."
+			messagePlayer(player, MESSAGE_STATUS, Language::get(647)); // "The flames go out."
 			serverUpdateEntityFlag(this, BURNING);
 		}
 		else
@@ -4246,7 +4246,7 @@ void Entity::handleEffects(Stat* myStats)
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 )
 					{
-						this->setObituary(language[1533]); // "burns to a crisp."
+						this->setObituary(Language::get(1533)); // "burns to a crisp."
 				        myStats->killer = KilledBy::BURNING_TO_CRISP;
 
 						if ( killer != nullptr )
@@ -4278,7 +4278,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 
 				// Give the Player feedback on being hurt
-				messagePlayer(player, MESSAGE_SPAM_MISC, language[644]); // "It burns! It burns!"
+				messagePlayer(player, MESSAGE_SPAM_MISC, Language::get(644)); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
@@ -4314,11 +4314,11 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
 						if ( myStats->cloak->status != BROKEN )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(645), myStats->cloak->getName()); // "Your %s smoulders!"
 						}
 						else
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(646), myStats->cloak->getName()); // "Your %s burns to ash!"
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -4337,7 +4337,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( (local_rng.rand() % this->chanceToPutOutFire) == 0 )
 				{
 					this->flags[BURNING] = false;
-					messagePlayer(player, MESSAGE_STATUS, language[647]); // "The flames go out."
+					messagePlayer(player, MESSAGE_STATUS, Language::get(647)); // "The flames go out."
 					serverUpdateEntityFlag(this, BURNING);
 				}
 			}
@@ -4405,16 +4405,16 @@ void Entity::handleEffects(Stat* myStats)
 			
 			if ( manaTotal >= 75 )
 			{
-				messagePlayer(player, MESSAGE_STATUS, language[651]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(651));
 				if ( revivedWithFriendship )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[3198]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3198));
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[3180]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(3180));
 				}
-				messagePlayer(player, MESSAGE_STATUS, language[654]);
+				messagePlayer(player, MESSAGE_STATUS, Language::get(654));
 
 				steamAchievementClient(player, "BARONY_ACH_SECOND_CHANCE");
 
@@ -4467,7 +4467,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_HINT, language[3181]);
+				messagePlayer(player, MESSAGE_HINT, Language::get(3181));
 			}
 		}
 	}
@@ -4482,7 +4482,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( local_rng.rand() % 25 )
 				{
-					messagePlayer(player, MESSAGE_STATUS, language[648]);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(648));
 					this->modHP(-(2 + local_rng.rand() % 3));
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
 					if ( player >= 0 )
@@ -4492,7 +4492,7 @@ void Entity::handleEffects(Stat* myStats)
 							if ( local_rng.rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
 							{
 								Uint32 color = makeColorRGB(0, 255, 0);
-								messagePlayerColor(player, MESSAGE_HINT, color, language[3358]);
+								messagePlayerColor(player, MESSAGE_HINT, color, Language::get(3358));
 								int amount = 2 + local_rng.rand() % 2;
 								int oldMP = myStats->MP;
 								this->modMP(amount);
@@ -4509,7 +4509,7 @@ void Entity::handleEffects(Stat* myStats)
 							}
 						}
 					}
-					this->setObituary(language[1534]); // choked to death
+					this->setObituary(Language::get(1534)); // choked to death
 			        myStats->killer = KilledBy::STRANGULATION;
 					if ( myStats->HP <= 0 )
 					{
@@ -4552,8 +4552,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, language[649]);
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, language[650]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, Language::get(649));
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_EQUIPMENT, Language::get(650));
 					if ( player <= 0 )
 					{
 						Item* item = myStats->amulet;
@@ -4585,20 +4585,20 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				if ( myStats->HUNGER > 0 )
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[651]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(651));
 				}
 				if ( !this->isBlind() )
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[652]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(652));
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[653]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(653));
 				}
 				if ( myStats->amulet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[654]);
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[655]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(654));
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(655));
 
 					playSoundEntity(this, 167, 128);
 					createParticleDropRising(this, 174, 1.0);
@@ -4668,8 +4668,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[656]);
-					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, language[657]);
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(656));
+					messagePlayer(player, MESSAGE_STATUS | MESSAGE_OBITUARY, Language::get(657));
 				}
 				myStats->amulet->status = BROKEN;
 				playSoundEntity(this, 76, 64);
@@ -4755,7 +4755,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP > myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
-		messagePlayer(player, MESSAGE_STATUS, language[658]);
+		messagePlayer(player, MESSAGE_STATUS, Language::get(658));
 		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
 		{
 			// allies resting. if poison/bleed damage here, then ignore it (startingHPInHandleEffects will equal current HP)
@@ -4784,7 +4784,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
 			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
 			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
-			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[3881], language[3881], MSG_GENERIC);
+			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, Language::get(3881), Language::get(3881), MSG_GENERIC);
 		}
 	}
 	myStats->OLDHP = myStats->HP;
@@ -6346,7 +6346,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( playerhit >= 0 )
 								{
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
+									messagePlayerColor(playerhit, MESSAGE_STATUS, color, Language::get(2523));
 								}
 							}
 							tmpEntity->modHP(-explodeDmg);
@@ -6524,7 +6524,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[659]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(659));
 						}
 						else
 						{
@@ -6532,7 +6532,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[660]);
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(660));
 							if ( player >= 0 && players[player]->isLocalPlayer() && client_classes[player] == CLASS_MESMER )
 							{
 								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
@@ -6743,12 +6743,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[661], myStats->weapon->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(661), myStats->weapon->getName());
 						}
 						else
 						{
 							playSoundEntity(this, 76, 64);
-							messagePlayer(player, MESSAGE_EQUIPMENT, language[662], myStats->weapon->getName());
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(662), myStats->weapon->getName());
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -7213,7 +7213,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// destroy the boulder
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
-						messagePlayer(player, MESSAGE_COMBAT, language[663]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(663));
 						if ( myStats->weapon && local_rng.rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
@@ -7223,12 +7223,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( myStats->weapon->status == BROKEN )
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[664]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(664));
 								playSoundEntity(this, 76, 64);
 							}
 							else
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[665]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(665));
 							}
 							if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 							{
@@ -7260,7 +7260,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								for ( c = 0; c < MAXPLAYERS; c++ )
 								{
 									Uint32 color = makeColorRGB(255, 128, 0);
-									messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
+									messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));
 								}
 							}
 							boulderSokobanOnDestroy(false);
@@ -7380,12 +7380,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					if ( myStats->weapon->status == BROKEN )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[664]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(664));
 						playSoundEntity(this, 76, 64);
 					}
 					else
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[665]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(665));
 					}
 					if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 					{
@@ -7496,35 +7496,35 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.entity->behavior == &actDoor )
 					{
-						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[666]);
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(666));
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
-						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[667]);
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(667));
 					}
 					else if ( hit.entity->isDamageableCollider() )
 					{
-						messagePlayer(player, MESSAGE_COMBAT_BASIC, language[hit.entity->getColliderOnHitLangEntry()],
-							language[hit.entity->getColliderLangName()]);
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(hit.entity->getColliderOnHitLangEntry()),
+							Language::get(hit.entity->getColliderLangName()));
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[669]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(669));
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[668]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(668));
 								break;
 							case FURNITURE_BED:
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2505]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(2509), Language::get(2505));
 								break;
 							case FURNITURE_BUNKBED:
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2506]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(2509), Language::get(2506));
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[2509], language[2507]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(2509), Language::get(2507));
 								break;
 							default:
 								break;
@@ -7536,7 +7536,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					entityHP = 0;
 					if ( hit.entity->behavior == &actDoor )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[670]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(670));
 						if ( !hit.entity->skill[0] )
 						{
 							hit.entity->skill[6] = (x > hit.entity->x);
@@ -7548,31 +7548,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[671]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(671));
 					}
 					else if ( hit.entity->isDamageableCollider() )
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[hit.entity->getColliderOnBreakLangEntry()],
-							language[hit.entity->getColliderLangName()]);
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+							Language::get(hit.entity->getColliderLangName()));
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						switch ( hit.entity->furnitureType )
 						{
 							case FURNITURE_CHAIR:
-								messagePlayer(player, MESSAGE_COMBAT, language[673]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(673));
 								break;
 							case FURNITURE_TABLE:
-								messagePlayer(player, MESSAGE_COMBAT, language[672]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(672));
 								break;
 							case FURNITURE_BED:
-								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2505]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(2510), Language::get(2505));
 								break;
 							case FURNITURE_BUNKBED:
-								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2506]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(2510), Language::get(2506));
 								break;
 							case FURNITURE_PODIUM:
-								messagePlayer(player, MESSAGE_COMBAT, language[2510], language[2507]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(2510), Language::get(2507));
 								break;
 							default:
 								break;
@@ -7581,34 +7581,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( hit.entity->behavior == &actDoor )
 				{
-					updateEnemyBar(this, hit.entity, language[674], entityHP, hit.entity->skill[9]);
+					updateEnemyBar(this, hit.entity, Language::get(674), entityHP, hit.entity->skill[9]);
 				}
 				else if ( hit.entity->behavior == &::actChest )
 				{
-					updateEnemyBar(this, hit.entity, language[675], entityHP, hit.entity->skill[8]);
+					updateEnemyBar(this, hit.entity, Language::get(675), entityHP, hit.entity->skill[8]);
 				}
 				else if ( hit.entity->isDamageableCollider() )
 				{
-					updateEnemyBar(this, hit.entity, language[hit.entity->getColliderLangName()], entityHP, hit.entity->colliderMaxHP);
+					updateEnemyBar(this, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP);
 				}
 				else if ( hit.entity->behavior == &::actFurniture )
 				{
 					switch ( hit.entity->furnitureType )
 					{
 						case FURNITURE_CHAIR:
-							updateEnemyBar(this, hit.entity, language[677], entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(677), entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_TABLE:
-							updateEnemyBar(this, hit.entity, language[676], entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(676), entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_BED:
-							updateEnemyBar(this, hit.entity, language[2505], entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2505), entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_BUNKBED:
-							updateEnemyBar(this, hit.entity, language[2506], entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2506), entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						case FURNITURE_PODIUM:
-							updateEnemyBar(this, hit.entity, language[2507], entityHP, hit.entity->furnitureMaxHealth);
+							updateEnemyBar(this, hit.entity, Language::get(2507), entityHP, hit.entity->furnitureMaxHealth);
 							break;
 						default:
 							break;
@@ -7626,7 +7626,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					playSoundEntity(hit.entity, 28, 64);
 				}
 				playSoundEntity(hit.entity, 140 + local_rng.rand() % 2, 64);
-				messagePlayer(player, MESSAGE_COMBAT, language[678]);
+				messagePlayer(player, MESSAGE_COMBAT, Language::get(678));
 				if ( hit.entity->skill[0] > 0 )
 				{
 					hit.entity->skill[0]--; //Deplete one usage.
@@ -7638,7 +7638,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Entity* monster = summonMonster(SLIME, x, y);
 						if ( monster )
 						{
-							messagePlayer(player, MESSAGE_HINT, language[582]);
+							messagePlayer(player, MESSAGE_HINT, Language::get(582));
 							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
 						}
@@ -7646,7 +7646,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( hit.entity->skill[0] == 0 )   //Depleted.
 					{
-						messagePlayer(player, MESSAGE_COMBAT, language[585]); //TODO: Alert all players that see (or otherwise in range) it?
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(585)); //TODO: Alert all players that see (or otherwise in range) it?
 						playSoundEntity(hit.entity, 132, 64);
 						serverUpdateEntitySkill(hit.entity, 0);
 					}
@@ -7676,12 +7676,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( achievementRangedMode[skill[2]] && !playerFailedRangedOnlyConduct[skill[2]] )
 						{
-							messagePlayer(skill[2], MESSAGE_HINT, language[3923]); // prevent attack.
+							messagePlayer(skill[2], MESSAGE_HINT, Language::get(3923)); // prevent attack.
 							return;
 						}
 						if ( achievementRangedMode[skill[2]] )
 						{
-							messagePlayer(skill[2], MESSAGE_HINT, language[3924]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(skill[2], MESSAGE_HINT, Language::get(3924)); // notify no longer eligible for achievement but still atk.
 						}
 						if ( !playerFailedRangedOnlyConduct[skill[2]] )
 						{
@@ -7693,12 +7693,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( achievementRangedMode[skill[2]] && conductGameChallenges[CONDUCT_RANGED_ONLY] )
 						{
-							messagePlayer(skill[2], MESSAGE_HINT, language[3923]); // prevent attack.
+							messagePlayer(skill[2], MESSAGE_HINT, Language::get(3923)); // prevent attack.
 							return;
 						}
 						if ( achievementRangedMode[skill[2]] )
 						{
-							messagePlayer(skill[2], MESSAGE_HINT, language[3924]); // notify no longer eligible for achievement but still atk.
+							messagePlayer(skill[2], MESSAGE_HINT, Language::get(3924)); // notify no longer eligible for achievement but still atk.
 						}
 						conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
 					}
@@ -8099,7 +8099,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( player >= 0 )
 						{
 							Uint32 color = makeColorRGB(255, 255, 0);
-							messagePlayerColor(player, MESSAGE_PROGRESSION, color, language[3446]);
+							messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(3446));
 						}
 					}
 
@@ -8239,12 +8239,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								(*weaponToBreak)->status = static_cast<Status>((*weaponToBreak)->status - 1);
 								if ( (*weaponToBreak)->status != BROKEN )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[679]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(679));
 								}
 								else
 								{
 									playSoundEntity(this, 76, 64);
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[680]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(680));
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -8497,7 +8497,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// If a Player was hit, and they are now on fire, tell them what set them on fire
 									if ( playerhit > 0 && hit.entity->flags[BURNING] )
 									{
-										messagePlayer(playerhit, MESSAGE_COMBAT, language[683]); // "Dyrnwyn sets you on fire!"
+										messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(683)); // "Dyrnwyn sets you on fire!"
 									}
 								}
 							}
@@ -8832,8 +8832,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SCORPION:
 							hitstats->EFFECTS[EFF_PARALYZED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-							messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
-							messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
+							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(684));
+							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(685));
 							serverUpdateEffects(playerhit);
 							break;
 						case SPIDER:
@@ -8857,12 +8857,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
 								hitstats->poisonKiller = getUID();
 								if ( arachnophobia_filter ) {
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(4089));
 								}
 								else {
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(686));
 								}
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
+								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
 								serverUpdateEffects(playerhit);
 								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
@@ -8914,7 +8914,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 								}
 								armor->count = 1;
-								messagePlayer(playerhit, MESSAGE_COMBAT, language[688], armor->getName());
+								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(688), armor->getName());
 								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
 								stolenArmor->ownerUid = hit.entity->getUID();
 								Item** slot = itemSlot(hitstats, armor);
@@ -8961,8 +8961,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								case SCORPION:
 									hitstats->EFFECTS[EFF_PARALYZED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[684]);
-									messagePlayer(playerhit, MESSAGE_COMBAT, language[685]);
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(684));
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(685));
 									serverUpdateEffects(playerhit);
 									statusInflicted = true;
 									break;
@@ -8972,11 +8972,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 										hitstats->EFFECTS[EFF_POISONED] = true;
 										hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
 										if (arachnophobia_filter) {
-										    messagePlayer(playerhit, MESSAGE_COMBAT, language[4089]);
+										    messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(4089));
 										} else {
-										    messagePlayer(playerhit, MESSAGE_COMBAT, language[686]);
+										    messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(686));
 										}
-										messagePlayer(playerhit, MESSAGE_COMBAT, language[687]);
+										messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
 										serverUpdateEffects(playerhit);
 										statusInflicted = true;
 									}
@@ -9016,48 +9016,48 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( damage > olddamage )
 								{
 									// critical hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(689), Language::get(689), MSG_COMBAT);
 								}
 								else
 								{
 									// normal hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT_BASIC);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(690), Language::get(690), MSG_COMBAT_BASIC);
 								}
 							}
 
 							if ( dyrnwynSmite )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3754], language[3755], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3754), Language::get(3755), MSG_COMBAT);
 							}
 							else if ( dyrnwynBurn )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3756], language[3757], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3756), Language::get(3757), MSG_COMBAT);
 							}
 							else if ( parashuProc )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3758], language[3759], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3758), Language::get(3759), MSG_COMBAT);
 							}
 							else if ( gugnirProc )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3760], language[3761], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3760), Language::get(3761), MSG_COMBAT);
 							}
 
 							if ( damage == 0 )
 							{
 								// blow bounces off
-								messagePlayer(player, MESSAGE_COMBAT_BASIC, language[691]);
+								messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(691));
 							}
 							else
 							{
 								if ( flanking )
 								{
 									// flank defenses
-									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2545], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2545), Language::get(2545), MSG_COMBAT);
 								}
 								else if ( backstab )
 								{
 									// backstab on unaware enemy
-									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2543), Language::get(2543), MSG_COMBAT);
 									if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
 									{
 										achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
@@ -9067,23 +9067,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( playerPoisonedTarget )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3478), Language::get(3479), MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3206), Language::get(3205), MSG_COMBAT);
 							}
 							else if ( slowStatusInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[394], language[393], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 							}
 							else if ( swordExtraDamageInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3211], language[3210], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3211), Language::get(3210), MSG_COMBAT);
 							}
 							else if ( knockbackInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3215], language[3214], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3215), Language::get(3214), MSG_COMBAT);
 							}
 						}
 						else
@@ -9092,7 +9092,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( backstab )
 							{
 								// assassinate monster
-								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2547], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2547), Language::get(2547), MSG_COMBAT);
 								if ( hitstats->type == COCKATRICE )
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
@@ -9109,7 +9109,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								// kill monster
-								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
 								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
 								{
 									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
@@ -9187,30 +9187,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( damage > olddamage )
 								{
 									// critical hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(689), Language::get(693), MSG_COMBAT);
 								}
 								else
 								{
 									// normal hit
-									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT_BASIC);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(690), Language::get(694), MSG_COMBAT_BASIC);
 								}
 							}
 
 							if ( dyrnwynSmite )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3754], language[3755], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3754), Language::get(3755), MSG_COMBAT);
 							}
 							else if ( dyrnwynBurn )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3756], language[3757], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3756), Language::get(3757), MSG_COMBAT);
 							}
 							else if ( parashuProc )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3758], language[3759], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3758), Language::get(3759), MSG_COMBAT);
 							}
 							else if ( gugnirProc )
 							{
-								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3760], language[3761], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3760), Language::get(3761), MSG_COMBAT);
 							}
 
 							if ( damage == 0 )
@@ -9218,11 +9218,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// blow bounces off
 								if ( hitstats->sex )
 								{
-									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT_BASIC);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, Language::get(691), Language::get(695), MSG_COMBAT_BASIC);
 								}
 								else
 								{
-									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT_BASIC);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, Language::get(691), Language::get(696), MSG_COMBAT_BASIC);
 								}
 							}
 							else
@@ -9230,12 +9230,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( flanking )
 								{
 									// flank defenses
-									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2546], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2545), Language::get(2546), MSG_COMBAT);
 								}
 								else if ( backstab )
 								{
 									// backstab on unaware enemy
-									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
+									messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2543), Language::get(2544), MSG_COMBAT);
 									if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
 									{
 										achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
@@ -9245,23 +9245,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( playerPoisonedTarget )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3478), Language::get(3479), MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3206), Language::get(3205), MSG_COMBAT);
 							}
 							else if ( slowStatusInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[394], language[393], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 							}
 							else if ( swordExtraDamageInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3211], language[3210], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3211), Language::get(3210), MSG_COMBAT);
 							}
 							else if ( knockbackInflicted )
 							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3215], language[3214], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3215), Language::get(3214), MSG_COMBAT);
 							}
 						}
 						else
@@ -9270,7 +9270,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( backstab )
 							{
 								// assassinate monster
-								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2548], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(2547), Language::get(2548), MSG_COMBAT);
 								if ( hitstats->type == COCKATRICE )
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
@@ -9287,7 +9287,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								// kill monster
-								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[697], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(692), Language::get(697), MSG_COMBAT);
 								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
 								{
 									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
@@ -9389,7 +9389,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(tangent);
 										dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
-										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
+										messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3454), Language::get(3455), MSG_COMBAT);
 										disarmed = true;
 										dropped->itemOriginalOwner = hit.entity->getUID();
 										if ( player >= 0 )
@@ -9416,7 +9416,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(tangent);
 										dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
-										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
+										messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3456), Language::get(3457), MSG_COMBAT);
 										disarmed = true;
 										dropped->itemOriginalOwner = hit.entity->getUID();
 									}
@@ -9519,7 +9519,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
 						Uint32 color = makeColorRGB(255, 0, 0);
-						messagePlayerMonsterEvent(playerhit, color, *myStats, language[698], language[699], MSG_ATTACKS);
+						messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(698), Language::get(699), MSG_ATTACKS);
 						if ( playerhit >= 0 )
 						{
 							if ( !achievementStatusRhythmOfTheKnight[playerhit] )
@@ -9537,19 +9537,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 							//messagePlayer(0, "took damage!");
 							if ( paralyzeStatusInflicted )
 							{
-								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3208], language[3207], MSG_COMBAT);
+								messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(3208), Language::get(3207), MSG_COMBAT);
 							}
 							else if ( slowStatusInflicted )
 							{
-								messagePlayerMonsterEvent(playerhit, color, *myStats, language[395], language[395], MSG_COMBAT);
+								messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(395), Language::get(395), MSG_COMBAT);
 							}
 							else if ( swordExtraDamageInflicted )
 							{
-								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3213], language[3212], MSG_COMBAT);
+								messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(3213), Language::get(3212), MSG_COMBAT);
 							}
 							else if ( knockbackInflicted )
 							{
-								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3216], language[3216], MSG_COMBAT);
+								messagePlayerMonsterEvent(playerhit, color, *myStats, Language::get(3216), Language::get(3216), MSG_COMBAT);
 							}
 						}
 					}
@@ -9558,7 +9558,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// display 'blow bounces off' message
 						if ( !statusInflicted )
 						{
-							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT_BASIC);
+							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, Language::get(2457), Language::get(2458), MSG_COMBAT_BASIC);
 						}
 						if ( myStats->type == COCKATRICE && hitstats->defending )
 						{
@@ -9718,14 +9718,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + (int)local_rng.rand() % 360 - hit.entity->getCON() * 100, 120); // 2.4-16.8 seconds
 									}
 									hitstats->EFFECTS[EFF_BLEEDING] = true;
-									strcpy(playerHitMessage, language[701]);
+									strcpy(playerHitMessage, Language::get(701));
 									if ( !strcmp(hitstats->name, "") )
 									{
-										strcpy(monsterHitMessage, language[702]);
+										strcpy(monsterHitMessage, Language::get(702));
 									}
 									else
 									{
-										strcpy(monsterHitMessage, language[703]);
+										strcpy(monsterHitMessage, Language::get(703));
 									}
 								}
 								else if ( heavyBleedEffect )
@@ -9734,28 +9734,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(500 + (int)local_rng.rand() % 500 - hit.entity->getCON() * 10, 250); // 5-20 seconds
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
-										strcpy(playerHitMessage, language[2451]);
+										strcpy(playerHitMessage, Language::get(2451));
 										if ( !strcmp(hitstats->name, "") )
 										{
-											strcpy(monsterHitMessage, language[2452]);
+											strcpy(monsterHitMessage, Language::get(2452));
 										}
 										else
 										{
-											strcpy(monsterHitMessage, language[2453]);
+											strcpy(monsterHitMessage, Language::get(2453));
 										}
 									}
 									else
 									{
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] += std::max((int)local_rng.rand() % 350 - hit.entity->getCON() * 5, 100); // 2-7 seconds in addition
 										hitstats->EFFECTS[EFF_BLEEDING] = true;
-										strcpy(playerHitMessage, language[2454]);
+										strcpy(playerHitMessage, Language::get(2454));
 										if ( !strcmp(hitstats->name, "") )
 										{
-											strcpy(monsterHitMessage, language[2455]);
+											strcpy(monsterHitMessage, Language::get(2455));
 										}
 										else
 										{
-											strcpy(monsterHitMessage, language[2456]);
+											strcpy(monsterHitMessage, Language::get(2456));
 										}
 									}
 								}
@@ -9800,7 +9800,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										this->setEffect(EFF_MP_REGEN, true, 250, true);
 										if ( behavior == &actPlayer )
 										{
-											messagePlayerColor(player, MESSAGE_HINT, color, language[3753]);
+											messagePlayerColor(player, MESSAGE_HINT, color, Language::get(3753));
 											steamStatisticUpdateClient(player, STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
 										}
 										playSoundEntity(this, 168, 128);
@@ -9896,7 +9896,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( playerhit >= 0 )
 										{
 											Uint32 color = makeColorRGB(255, 0, 0);
-											messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2523]);
+											messagePlayerColor(playerhit, MESSAGE_STATUS, color, Language::get(2523));
 										}
 									}
 								}
@@ -10013,18 +10013,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( playerhit >= 0 )
 							{
 								Uint32 color = makeColorRGB(255, 0, 0);
-								messagePlayerColor(playerhit, MESSAGE_STATUS, color, language[2441]);
+								messagePlayerColor(playerhit, MESSAGE_STATUS, color, Language::get(2441));
 							}
 							else
 							{
 								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( !strcmp(hitstats->name, "") )
 								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2440], getMonsterLocalizedName(hitstats->type).c_str());
+									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2440), getMonsterLocalizedName(hitstats->type).c_str());
 								}
 								else
 								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, language[2439], hitstats->name);
+									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2439), hitstats->name);
 								}
 							}
 						}
@@ -10136,7 +10136,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						messagePlayer(player, MESSAGE_HINT, language[706]);
+						messagePlayer(player, MESSAGE_HINT, Language::get(706));
 					}
 				}
 				else if ( myStats->weapon != NULL && !shapeshifted )
@@ -10151,7 +10151,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Uint32 color = makeColorRGB(255, 0, 255);
 								if ( this->behavior == &actPlayer )
 								{
-									messagePlayerColor(this->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+									messagePlayerColor(this->skill[2], MESSAGE_HINT, color, Language::get(2380)); // disabled digging.
 								}
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
@@ -10166,7 +10166,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
 							{
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
-								messagePlayer(player, MESSAGE_HINT, language[706]);
+								messagePlayer(player, MESSAGE_HINT, Language::get(706));
 							}
 							else
 							{
@@ -10232,12 +10232,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[704]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(704));
 									playSoundEntity(this, 76, 64);
 								}
 								else
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[705]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(705));
 								}
 								if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 								{
@@ -10254,7 +10254,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else
 						{
 							spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
-							messagePlayer(player, MESSAGE_HINT, language[706]);
+							messagePlayer(player, MESSAGE_HINT, Language::get(706));
 						}
 					}
 					else
@@ -10428,14 +10428,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
 	}
 
 	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[707]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(707));
 		return false;
 	}
 
@@ -10454,7 +10454,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 		y = oldy;
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			messagePlayer(player, MESSAGE_HINT, language[707]);
+			messagePlayer(player, MESSAGE_HINT, Language::get(707));
 		}
 		return false;
 	}
@@ -10540,7 +10540,7 @@ bool Entity::teleportRandom()
 			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
 
@@ -10557,7 +10557,7 @@ bool Entity::teleportRandom()
 	}
 	if ( numlocations == 0 )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[708]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(708));
 		return false;
 	}
 	pickedlocation = local_rng.rand() % numlocations;
@@ -10653,7 +10653,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 			Uint32 color = makeColorRGB(255, 0, 255);
 			// play sound effect
 			playSoundEntity(this, 77, 64);
-			messagePlayerColor(player, MESSAGE_HINT, color, language[2381]);
+			messagePlayerColor(player, MESSAGE_HINT, color, Language::get(2381));
 			return false;
 		}
 	}
@@ -10807,7 +10807,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 	//messagePlayer(0, "locations: %d", numlocations);
 	if ( numlocations == 0 )
 	{
-		messagePlayer(player, MESSAGE_HINT, language[708]);
+		messagePlayer(player, MESSAGE_HINT, Language::get(708));
 		return false;
 	}
 	if ( behavior == &actMonster || spotsBehindMonster.empty() )
@@ -10926,7 +10926,7 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 	// Can be inside entities?
 	//if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	//{
-	//	messagePlayer(player, language[707]);
+	//	messagePlayer(player, Language::get(707));
 	//	return false;
 	//}
 
@@ -10941,7 +10941,7 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 		y = oldy;
 		if ( multiplayer == SERVER && player > 0 )
 		{
-			messagePlayer(player, MESSAGE_HINT, language[707]);
+			messagePlayer(player, MESSAGE_HINT, Language::get(707));
 		}
 		return false;
 	}*/
@@ -15095,8 +15095,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 				for (int c = 0; c < MAXPLAYERS; ++c)
 				{
 					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[3243],
-						language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(3243),
+						Language::get(4217 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
 				}
 				if (target.behavior == &actPlayer && targetStats->type != HUMAN && targetStats->type != AUTOMATON )
 				{
@@ -15111,12 +15111,12 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 					{
 						if (local_rng.getU8() % 2) {
 							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[516 + local_rng.uniform(0, 1)],
-								language[4234 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(516 + local_rng.uniform(0, 1)),
+								Language::get(4234 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
 						} else {
 							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, language[518 + local_rng.uniform(0, 1)],
-								language[4217 + local_rng.uniform(0, 16)], getMonsterLocalizedName(targetStats->type).c_str());
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(518 + local_rng.uniform(0, 1)),
+								Language::get(4217 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
 						}
 					}
 				}
@@ -15486,19 +15486,19 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 							switch ( item->type )
 							{
 								case ARTIFACT_ORB_GREEN:
-									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3888], myStats->name);
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3888), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3888]);
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3888));
 									break;
 								case ARTIFACT_ORB_BLUE:
-									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3889], myStats->name);
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3889), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3889]);
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3889));
 									break;
 								case ARTIFACT_ORB_RED:
-									//messagePlayer(owner->skill[2], MESSAGE_WORLD, language[3890], myStats->name);
+									//messagePlayer(owner->skill[2], MESSAGE_WORLD, Language::get(3890), myStats->name);
 									players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, language[3890]);
+										Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_BROADCAST, Language::get(3890));
 									break;
 								default:
 									break;
@@ -15515,11 +15515,11 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					if ( item->identified )
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getIdentifiedName());
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, Language::get(3145), items[item->type].getIdentifiedName());
 					}
 					else
 					{
-						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, language[3145], items[item->type].getUnidentifiedName());
+						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, Language::get(3145), items[item->type].getUnidentifiedName());
 					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 					pickedUpItemReturnValue = true;
@@ -16271,14 +16271,14 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		Status itemStatus = armor.status;
 
 		playSoundEntity(this, 76, 64);
-		messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[682], armor.getName()); // torch is destroyed
+		messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(682), armor.getName()); // torch is destroyed
 
 		int qty = std::max(0, armor.count - 1);
 		Item* item = stats[playerhit]->shield;
 		consumeItem(item, playerhit);
 		if ( qty > 0 && item )
 		{
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[4101], itemName.c_str()); // you reignite another torch
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(4101), itemName.c_str()); // you reignite another torch
 			playSoundEntity(this, 134, 64); // ignite
 			if ( playerhit >= 0 && players[playerhit]->isLocalPlayer() )
 			{
@@ -16318,11 +16318,11 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
 		{
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[2350], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(2350), armor.getName());
 		}
 		else
 		{
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[681], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(681), armor.getName());
 		}
 	}
 	else
@@ -16330,17 +16330,17 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		if ( armor.type == TOOL_CRYSTALSHARD )
 		{
 			playSoundEntity(this, 162, 64);
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[2351], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(2351), armor.getName());
 		}
 		else if ( itemCategory(&armor) == SPELLBOOK )
 		{
 			playSoundEntity(this, 414, 64);
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[3459], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(3459), armor.getName());
 		}
 		else
 		{
 			playSoundEntity(this, 76, 64);
-			messagePlayer(playerhit, MESSAGE_EQUIPMENT, language[682], armor.getName());
+			messagePlayer(playerhit, MESSAGE_EQUIPMENT, Language::get(682), armor.getName());
 		}
 	}
 	if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
@@ -17463,7 +17463,7 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 
 			if ( this->behavior == &actPlayer )
 			{
-				messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), language[4324]);
+				messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(4324));
 			}
 
 			// Determine decrease in time on fire based on the Entity's CON
@@ -17522,7 +17522,7 @@ handles text for monster interaction/damage/obituaries
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* optionalEntity)
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, const char* msgGeneric, const char* msgNamed, int detailType, Entity* optionalEntity)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -17734,15 +17734,15 @@ char const * playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
-		return language[1900 + classnum];
+		return Language::get(1900 + classnum);
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3223 + classnum - CLASS_CONJURER];
+		return Language::get(3223 + classnum - CLASS_CONJURER);
 	}
 	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2550 + classnum - CLASS_SEXTON];
+		return Language::get(2550 + classnum - CLASS_SEXTON);
 	}
 	else
 	{
@@ -17761,15 +17761,15 @@ char const * playerClassDescription(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
-		return language[10 + classnum];
+		return Language::get(10 + classnum);
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3231 + classnum - CLASS_CONJURER];
+		return Language::get(3231 + classnum - CLASS_CONJURER);
 	}
 	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2560 + classnum - CLASS_SEXTON];
+		return Language::get(2560 + classnum - CLASS_SEXTON);
 	}
 	else
 	{

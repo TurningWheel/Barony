@@ -326,8 +326,8 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 	//Uint32 centerWindowX = subx1 + (subx2 - subx1) / 2;
 
 	//button_t* button = newButton();
-	//strcpy(button->label, language[3965]);
-	//button->sizex = strlen(language[3965]) * 10 + 8;
+	//strcpy(button->label, Language::get(3965));
+	//button->sizex = strlen(Language::get(3965)) * 10 + 8;
 	//button->sizey = 20;
 	//button->x = centerWindowX - button->sizex / 2;
 	//button->y = suby2 - 28 - 24;
@@ -336,8 +336,8 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::createPrompt()
 	//button->focused = 1;
 
 	//button = newButton();
-	//strcpy(button->label, language[3966]);
-	//button->sizex = strlen(language[3966]) * 12 + 8;
+	//strcpy(button->label, Language::get(3966));
+	//button->sizex = strlen(Language::get(3966)) * 12 + 8;
 	//button->sizey = 20;
 	//button->x = centerWindowX - button->sizex / 2;
 	//button->y = suby2 - 28;
@@ -367,9 +367,9 @@ void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::drawDialogue()
 	scaled.h = title_bmp->h * 0.75;
 	drawImageScaled(title_bmp, nullptr, &pos);
 	
-	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(language[3936]) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), language[3936]);
-	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3967]);
-	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(language[3967]) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, language[3968]);*/
+	ttfPrintTextFormattedColor(ttf12, centerWindowX - strlen(Language::get(3936)) * TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 13, makeColorRGB(255, 255, 0), Language::get(3936));
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(Language::get(3967)) * TTF12_WIDTH) / 2, suby2 + 8 - TTF12_HEIGHT * 11, Language::get(3967));
+	ttfPrintTextFormatted(ttf12, centerWindowX - (longestline(Language::get(3967)) * TTF12_WIDTH) / 2 - TTF12_WIDTH / 2, suby2 + 8 - TTF12_HEIGHT * 11, Language::get(3968));*/
 }
 
 void GameModeManager_t::Tutorial_t::FirstTimePrompt_t::buttonSkipPrompt(button_t* my)
@@ -7607,11 +7607,11 @@ void GameplayPreferences_t::serverProcessGameConfig()
 							{
 								if ( value != 0 )
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4333]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4333));
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4334]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4334));
 								}
 							}
 						}
@@ -7642,11 +7642,11 @@ void GameplayPreferences_t::serverProcessGameConfig()
 							{
 								if ( value != 0 )
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4342]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
 								}
 								else
 								{
-									messagePlayer(i, MESSAGE_HINT, language[4343]);
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
 								}
 							}
 						}
@@ -8013,7 +8013,8 @@ void Mods::unloadMods()
 
 	if ( Mods::langRequireReloadUnmodded )
 	{
-		reloadLanguage();
+		Language::reset();
+		Language::reloadLanguage();
 		Mods::langRequireReloadUnmodded = false;
 	}
 
@@ -8174,9 +8175,9 @@ void Mods::loadModels(int start, int end) {
 		return;
 	}
 
-	//messagePlayer(clientnum, language[2354]);
+	//messagePlayer(clientnum, Language::get(2354));
 #ifndef EDITOR
-	printlog(language[2355], start, end);
+	printlog(Language::get(2355), start, end);
 #endif
 
 	loading = true;
@@ -8366,7 +8367,7 @@ void Mods::loadMods()
 	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
 	if ( langDirectory.compare("./") != 0 )
 	{
-		if ( reloadLanguage() != 0 )
+		if ( Language::reloadLanguage() != 0 )
 		{
 			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
 		}

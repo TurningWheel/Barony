@@ -150,7 +150,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 
 			if ( !strcmp(myStats->name, "") )
 			{
-				strcpy(myStats->name, language[158 + local_rng.rand() % 26]);
+				strcpy(myStats->name, Language::get(158 + local_rng.rand() % 26));
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor

@@ -351,15 +351,15 @@ const char* playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
-		return language[1900 + classnum];
+		return Language::get(1900 + classnum);
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3223 + classnum - CLASS_CONJURER];
+		return Language::get(3223 + classnum - CLASS_CONJURER);
 	}
 	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2550 + classnum - CLASS_SEXTON];
+		return Language::get(2550 + classnum - CLASS_SEXTON);
 	}
 	else
 	{
@@ -1544,7 +1544,7 @@ int main(int argc, char** argv)
 #endif
 
 	// load default language file (english)
-	if ( loadLanguage("en") )
+	if ( Language::loadLanguage("en", true) )
 	{
 		exit(1);
 	}

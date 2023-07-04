@@ -659,7 +659,7 @@ void Entity::actChest()
 
 		if ( chestStatus == 1 )
 		{
-			messagePlayer(chestOpener, MESSAGE_WORLD, language[671]); // "The chest is smashed into pieces!" only notify if chest is currently open.
+			messagePlayer(chestOpener, MESSAGE_WORLD, Language::get(671)); // "The chest is smashed into pieces!" only notify if chest is currently open.
 		}
 
 		this->closeChest();
@@ -740,7 +740,7 @@ void Entity::actChest()
 		{
 			if ( !chestStatus )
 			{
-				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[459]);
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(459));
 				openedChest[chestclicked] = this;
 
 				chestOpener = chestclicked;
@@ -782,7 +782,7 @@ void Entity::actChest()
 			}
 			else
 			{
-				messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
+				messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(460)); // slam the chest shut
 				if ( !players[chestOpener]->isLocalPlayer() )
 				{
 					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -793,14 +793,14 @@ void Entity::actChest()
 				}
 				if (chestOpener != chestclicked)
 				{
-					messagePlayer(chestOpener, MESSAGE_HINT, language[461]);
+					messagePlayer(chestOpener, MESSAGE_HINT, Language::get(461));
 				}
 				closeChestServer();
 			}
 		}
 		else if ( !chestLocked && chestStatus && openedChest[chestclicked] && chestOpener == chestclicked )
 		{
-			messagePlayer(chestclicked, MESSAGE_INTERACTION, language[460]); // slam the chest shut
+			messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(460)); // slam the chest shut
 			if ( !players[chestOpener]->isLocalPlayer() )
 			{
 				strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -813,7 +813,7 @@ void Entity::actChest()
 		}
 		else if ( chestLocked )
 		{
-			messagePlayer(chestclicked, MESSAGE_INTERACTION, language[462]);
+			messagePlayer(chestclicked, MESSAGE_INTERACTION, Language::get(462));
 			playSoundEntity(this, 152, 64);
 		}
 	}
@@ -926,7 +926,7 @@ void Entity::closeChest()
 			//Message server.
 			if ( chestHealth > 0 )
 			{
-				messagePlayer(player, MESSAGE_INTERACTION, language[460]);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(460));
 			}
 			
 			strcpy( (char*)net_packet->data, "CCLS" );
@@ -947,7 +947,7 @@ void Entity::closeChest()
 
 		if ( chestHealth > 0 )
 		{
-			messagePlayer(player, MESSAGE_INTERACTION, language[460]);
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(460));
 		}
 
 		openedChest[chestOpener] = nullptr;
@@ -1093,11 +1093,11 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 		{
 			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[3218]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(3218));
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_EQUIPMENT, language[1087]);
+				messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1087));
 			}
 			playSoundPlayer(player, 90, 64);
 			item->identified = true;
@@ -1200,11 +1200,11 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 
 	if ( newitem->count > 1 )
 	{
-		messagePlayer(player, MESSAGE_INVENTORY, language[4197], newitem->count, newitem->getName());
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(4197), newitem->count, newitem->getName());
 	}
 	else
 	{
-		messagePlayer(player, MESSAGE_INVENTORY, language[463], newitem->getName());
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(463), newitem->getName());
 	}
 
 	return addItemToChest(newitem, forceNewStack, specificDestinationStack);
@@ -1494,26 +1494,26 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[3617], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(675));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, language[2520]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
 				}
 			}
 			else
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[3618], items[magicProjectile.skill[21]].getIdentifiedName(), language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(675));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, language[378], language[675]);
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(675));
 				}
 			}
 		}
-		updateEnemyBar(caster, this, language[675], chestHealth, chestMaxHealth);
+		updateEnemyBar(caster, this, Language::get(675), chestHealth, chestMaxHealth);
 	}
 	playSoundEntity(this, 28, 128);
 }

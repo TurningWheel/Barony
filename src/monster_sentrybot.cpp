@@ -394,7 +394,7 @@ void sentryBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3631), strlen(Language::get(3631))) )
 		{
 			// returning to land, don't explode into gibs.
 			gibs = false;
@@ -518,7 +518,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				Item* item = newItem(type, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
 				myStats->killer = KilledBy::NO_FUEL;
-				my->setObituary(language[3631]);
+				my->setObituary(Language::get(3631));
 				return;
 			}
 		}
@@ -1036,7 +1036,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				if ( leader >= 0 )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(leader, MESSAGE_HINT, color, language[3651]);
+					messagePlayerColor(leader, MESSAGE_HINT, color, Language::get(3651));
 				}
 			}
 		}
@@ -1262,7 +1262,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				Item* item = newItem(TOOL_GYROBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
 				myStats->killer = KilledBy::NO_FUEL;
-				my->setObituary(language[3631]);
+				my->setObituary(Language::get(3631));
 				return;
 			}
 		}
@@ -1516,7 +1516,7 @@ void gyroBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3631), strlen(Language::get(3631))) )
 		{
 			// returning to land, don't explode into gibs.
 			gibs = false;
@@ -1750,7 +1750,7 @@ void dummyBotDie(Entity* my)
 	{
 		// don't make noises etc.
 		Stat* myStats = my->getStats();
-		if ( myStats && !strncmp(myStats->obituary, language[3643], strlen(language[3643])) )
+		if ( myStats && !strncmp(myStats->obituary, Language::get(3643), strlen(Language::get(3643))) )
 		{
 			// returning to box, don't explode into gibs.
 			gibs = false;
@@ -1920,7 +1920,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 						Item* item = newItem(TOOL_DUMMYBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 						myStats->HP = 0;
 						myStats->killer = KilledBy::NO_FUEL;
-						my->setObituary(language[3643]);
+						my->setObituary(Language::get(3643));
 						return;
 					}
 				}

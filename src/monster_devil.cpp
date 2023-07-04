@@ -227,7 +227,7 @@ void devilDie(Entity* my)
 			//messagePlayer(c, "completion time: %d", completionTime);
 			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");
 		}
-		//messagePlayer(c, language[1112]);
+		//messagePlayer(c, Language::get(1112));
 		//playSoundPlayer(c, 97, 128);
 		//stats[c]->STR += 20;
 		//stats[c]->DEX += 5;

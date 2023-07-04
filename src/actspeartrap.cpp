@@ -130,7 +130,7 @@ void actSpearTrap(Entity* my)
 								if ( entity->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, language[586]);
+									messagePlayerColor(entity->skill[2], MESSAGE_STATUS, color, Language::get(586));
 									if ( players[entity->skill[2]]->isLocalPlayer() )
 									{
 										cameravars[entity->skill[2]].shakex += .1;
@@ -161,7 +161,7 @@ void actSpearTrap(Entity* my)
 									}
 								}
 								// set obituary
-								entity->setObituary(language[1507]);
+								entity->setObituary(Language::get(1507));
 						        stats->killer = KilledBy::TRAP_SPIKE;
 							}
 						}

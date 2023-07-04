@@ -202,11 +202,11 @@ void Entity::actPowerCrystal()
 					crystalTurnStartDir = static_cast<Sint32>(this->yaw / (PI / 2));
 					serverUpdateEntitySkill(this, 3);
 					serverUpdateEntitySkill(this, 4);
-					messagePlayer(i, MESSAGE_INTERACTION, language[2356]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(2356));
 				}
 				else if ( !crystalInitialised )
 				{
-					messagePlayer(i, MESSAGE_INTERACTION, language[2357]);
+					messagePlayer(i, MESSAGE_INTERACTION, Language::get(2357));
 				}
 			}	
 		}

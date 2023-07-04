@@ -1302,7 +1302,7 @@ int saveGameOld(int saveIndex)
 	// open file
 	if ( !intro )
 	{
-		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1121));
 	}
 
 	if ( multiplayer == SINGLE )
@@ -3420,7 +3420,7 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_MODDED] )
 	{
-		if ( Mods::numCurrentModsLoaded > 0 )
+		if ( Mods::numCurrentModsLoaded >= 0 )
 		{
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 			//Mods::disableSteamAchievements = true;
@@ -5276,7 +5276,7 @@ int saveGame(int saveIndex) {
 		return 1; // can't save tutorial games
 	}
 	if (!intro) {
-		messagePlayer(clientnum, MESSAGE_MISC, language[1121]);
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1121));
 	}
 	
 	SaveGameInfo info;

@@ -128,12 +128,12 @@ void actCampfire(Entity* my)
 				{
 					if ( CAMPFIRE_HEALTH > 0 )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[457]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(457));
 						CAMPFIRE_HEALTH--;
 						if ( CAMPFIRE_HEALTH <= 0 )
 						{
 							serverUpdateEntitySkill(my, 3); // extinguish for all clients
-							messagePlayer(i, MESSAGE_INTERACTION, language[458]);
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(458));
 							my->removeLightField();
 							my->light = NULL;
 						}
@@ -143,7 +143,7 @@ void actCampfire(Entity* my)
 					}
 					else
 					{
-						messagePlayer(i, MESSAGE_INTERACTION, language[458]);
+						messagePlayer(i, MESSAGE_INTERACTION, Language::get(458));
 					}
 				}
 			}

@@ -4109,9 +4109,9 @@ void reloadModels(int start, int end) {
 		return;
 	}
 
-	//messagePlayer(clientnum, language[2354]);
+	//messagePlayer(clientnum, Language::get(2354));
 #ifndef EDITOR
-	messagePlayer(clientnum, MESSAGE_MISC, language[2355], start, end);
+	messagePlayer(clientnum, MESSAGE_MISC, Language::get(2355), start, end);
 #endif
 
 	loading = true;

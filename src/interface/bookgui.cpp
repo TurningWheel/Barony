@@ -76,7 +76,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptBack->setFont(promptFont.c_str());
 	promptBack->setHJustify(Field::justify_t::RIGHT);
 	promptBack->setVJustify(Field::justify_t::CENTER);
-	promptBack->setText(language[4053]);
+	promptBack->setText(Language::get(4053));
 	promptBack->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptBackImg = bookBackground->addImage(SDL_Rect{0, 0, 0, 0}, 0xFFFFFFFF,
@@ -89,7 +89,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptNextPage->setFont(promptFont.c_str());
 	promptNextPage->setHJustify(Field::justify_t::RIGHT);
 	promptNextPage->setVJustify(Field::justify_t::CENTER);
-	promptNextPage->setText(language[4054]);
+	promptNextPage->setText(Language::get(4054));
 	promptNextPage->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptNextPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
@@ -102,7 +102,7 @@ void Player::BookGUI_t::createBookGUI()
 	promptPrevPage->setFont(promptFont.c_str());
 	promptPrevPage->setHJustify(Field::justify_t::LEFT);
 	promptPrevPage->setVJustify(Field::justify_t::CENTER);
-	promptPrevPage->setText(language[4055]);
+	promptPrevPage->setText(Language::get(4055));
 	promptPrevPage->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptPrevPageImg = bookBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
@@ -227,7 +227,7 @@ void Player::BookGUI_t::updateBookGUI()
 	if ( auto promptBack = innerFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
-		promptBack->setText(language[4053]);
+		promptBack->setText(Language::get(4053));
 		auto promptImg = innerFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;
@@ -254,7 +254,7 @@ void Player::BookGUI_t::updateBookGUI()
 	if ( auto promptNext = innerFrame->findField("prompt next txt") )
 	{
 		promptNext->setDisabled(!drawGlyphs || !canAdvanceNextPage);
-		promptNext->setText(language[4054]);
+		promptNext->setText(Language::get(4054));
 		auto promptImg = innerFrame->findImage("prompt next img");
 		promptImg->disabled = promptNext->isDisabled();
 		SDL_Rect glyphPos = promptImg->pos;
@@ -280,7 +280,7 @@ void Player::BookGUI_t::updateBookGUI()
 	if ( auto promptPrev = innerFrame->findField("prompt prev txt") )
 	{
 		promptPrev->setDisabled(!drawGlyphs || !canAdvancePrevPage);
-		promptPrev->setText(language[4055]);
+		promptPrev->setText(Language::get(4055));
 		auto promptImg = innerFrame->findImage("prompt prev img");
 		promptImg->disabled = promptPrev->isDisabled();
 		SDL_Rect glyphPos = promptImg->pos;
@@ -668,7 +668,7 @@ void Player::SignGUI_t::createSignGUI()
 	promptBack->setFont(promptFont.c_str());
 	promptBack->setHJustify(Field::justify_t::RIGHT);
 	promptBack->setVJustify(Field::justify_t::CENTER);
-	promptBack->setText(language[4053]);
+	promptBack->setText(Language::get(4053));
 	promptBack->setColor(makeColor(201, 162, 100, 255));
 
 	auto promptBackImg = signBackground->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF,
@@ -797,7 +797,7 @@ void Player::SignGUI_t::updateSignGUI()
 	if ( auto promptBack = innerFrame->findField("prompt back txt") )
 	{
 		promptBack->setDisabled(!drawGlyphs);
-		promptBack->setText(language[4053]);
+		promptBack->setText(Language::get(4053));
 		auto promptImg = innerFrame->findImage("prompt back img");
 		promptImg->disabled = !drawGlyphs;
 		SDL_Rect glyphPos = promptImg->pos;

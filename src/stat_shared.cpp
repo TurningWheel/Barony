@@ -41,7 +41,7 @@ Stat::Stat(Sint32 sprite) :
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
-	strcpy(this->obituary, language[1500]);
+	strcpy(this->obituary, Language::get(1500));
 	this->defending = false;
 	this->poisonKiller = 0;
 	this->burningInflictedBy = 0;

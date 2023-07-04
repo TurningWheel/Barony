@@ -827,7 +827,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( reflection == 0 )
 							{
-								messagePlayerColor(player, MESSAGE_COMBAT, color, language[376]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(376));
 								youAreHitByASpell = true;
 							}
 						}
@@ -845,7 +845,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( my->actmagicCastByTinkerTrap == 1 )
 								{
-									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
+									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3498), Language::get(3499), MSG_COMBAT);
 								}
 								else
 								{
@@ -854,11 +854,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										yourSpellHitsTheMonster = true;
 										if ( ItemTooltips.bSpellHasBasicHitMessage(spell->ID) )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT_BASIC);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT_BASIC);
 										}
 										else
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(378), Language::get(377), MSG_COMBAT);
 										}
 									}
 								}
@@ -881,16 +881,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( !spellIsReflectingMagic )
 								{
-									messagePlayer(player, MESSAGE_COMBAT, language[379]); // but it bounces off!
+									messagePlayer(player, MESSAGE_COMBAT, Language::get(379)); // but it bounces off!
 								}
 								else
 								{
-									messagePlayer(player, MESSAGE_COMBAT, language[2475]); // but it bounces off!
+									messagePlayer(player, MESSAGE_COMBAT, Language::get(2475)); // but it bounces off!
 								}
 							}
 							else
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[4325]); // you reflected a spell!
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(4325)); // you reflected a spell!
 							}
 						}
 					}
@@ -900,12 +900,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( yourSpellHitsTheMonster )
 							{
-								messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[379]); // but it bounces off!
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(379)); // but it bounces off!
 							}
 							else
 							{
 								messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255), 
-									*hitstats, language[4322], language[4323], MSG_COMBAT); // your spell bounces off the monster!
+									*hitstats, Language::get(4322), Language::get(4323), MSG_COMBAT); // your spell bounces off the monster!
 							}
 						}
 					}
@@ -997,11 +997,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
 								if ( hitstats->cloak->status != BROKEN )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[380]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(380));
 								}
 								else
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[381]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(381));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -1011,11 +1011,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
 								if ( hitstats->amulet->status != BROKEN )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[382]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(382));
 								}
 								else
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[383]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(383));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -1025,11 +1025,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
 								if ( hitstats->shield->status != BROKEN )
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[384]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(384));
 								}
 								else
 								{
-									messagePlayer(player, MESSAGE_EQUIPMENT, language[385]);
+									messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(385));
 									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
@@ -1076,7 +1076,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats )
 							{
 								hit.entity->setEffect(EFF_MAGICREFLECT, false, 0, true);
-								messagePlayer(player, MESSAGE_STATUS, language[2476]);
+								messagePlayer(player, MESSAGE_STATUS, Language::get(2476));
 							}
 						}
 					}
@@ -1341,24 +1341,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									switch ( hit.entity->furnitureType )
 									{
 										case FURNITURE_CHAIR:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_TABLE:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BUNKBED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_PODIUM:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										default:
 											break;
@@ -1505,24 +1505,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									switch ( hit.entity->furnitureType )
 									{
 										case FURNITURE_CHAIR:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_TABLE:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BUNKBED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_PODIUM:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										default:
 											break;
@@ -1625,16 +1625,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									&& parent->behavior == &actParticleDot
 									&& parent->skill[1] > 0 )
 								{
-									if ( hitstats && !strcmp(hitstats->obituary, language[3898]) )
+									if ( hitstats && !strcmp(hitstats->obituary, Language::get(3898)) )
 									{
 										// was caused by a flaming boulder.
-										hit.entity->setObituary(language[3898]);
+										hit.entity->setObituary(Language::get(3898));
 										hitstats->killer = KilledBy::BOULDER;
 									}
 									else
 									{
 										// blew the brew (alchemy)
-										hit.entity->setObituary(language[3350]);
+										hit.entity->setObituary(Language::get(3350));
 										hitstats->killer = KilledBy::FAILED_ALCHEMY;
 									}
 								}
@@ -1769,24 +1769,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									switch ( hit.entity->furnitureType )
 									{
 										case FURNITURE_CHAIR:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_TABLE:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BUNKBED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_PODIUM:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										default:
 											break;
@@ -1833,13 +1833,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									Uint32 color = makeColorRGB(0, 255, 0);
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(391), Language::get(390), MSG_COMBAT);
 									}
 								}
 								Uint32 color = makeColorRGB(255, 0, 0);
 								if ( player >= 0 )
 								{
-									messagePlayerColor(player, MESSAGE_COMBAT, color, language[392]);
+									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(392));
 								}
 							}
 							else
@@ -1849,7 +1849,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									Uint32 color = makeColorRGB(255, 0, 0);
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 									}
 								}
 							}
@@ -1939,13 +1939,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 								}
 							}
 							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, MESSAGE_COMBAT, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(395));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							if ( oldHP > 0 && hitstats->HP <= 0 )
@@ -2004,13 +2004,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(394), Language::get(393), MSG_COMBAT);
 								}
 							}
 							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, MESSAGE_COMBAT, color, language[395]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(395));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
@@ -2063,14 +2063,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										serverUpdateEffects(hit.entity->skill[2]);
 										Uint32 color = makeColorRGB(255, 0, 0);
-										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, language[396]);
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(396));
 									}
 									if ( parent )
 									{
 										Uint32 color = makeColorRGB(0, 255, 0);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(398), Language::get(397), MSG_COMBAT);
 										}
 									}
 								}
@@ -2081,7 +2081,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Uint32 color = makeColorRGB(255, 0, 0);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 										}
 									}
 								}
@@ -2244,24 +2244,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									switch ( hit.entity->furnitureType )
 									{
 										case FURNITURE_CHAIR:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-											updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_TABLE:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-											updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-											updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_BUNKBED:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-											updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										case FURNITURE_PODIUM:
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-											updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 											break;
 										default:
 											break;
@@ -2286,8 +2286,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 							{
 								Uint32 color = makeColorRGB(255, 0, 255);
-								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3097]);
-								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3101]); // disabled locking spell.
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled locking spell.
 							}
 							else
 							{
@@ -2297,7 +2297,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[399]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
 									}
 								}
 							}
@@ -2311,8 +2311,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 								{
 									Uint32 color = makeColorRGB(255, 0, 255);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3099]);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3100]); // disabled locking spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled locking spell.
 								}
 								else
 								{
@@ -2321,7 +2321,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[400]);
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
 										}
 									}
 								}
@@ -2333,12 +2333,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401));
 								}
 							}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401));
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
@@ -2355,8 +2355,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 255);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3097]);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3101]); // disabled opening spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled opening spell.
 								}
 							}
 							else
@@ -2380,7 +2380,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[402]);
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(402));
 									}
 								}
 							}
@@ -2392,8 +2392,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 255);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3098]);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3102]); // disabled opening spell.
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3098));
+									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3102)); // disabled opening spell.
 								}
 							}
 							else
@@ -2414,7 +2414,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[403]); // "The spell opens the gate!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(403)); // "The spell opens the gate!"
 										}
 									}
 								}
@@ -2430,8 +2430,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( parent && parent->behavior == &actPlayer )
 									{
 										Uint32 color = makeColorRGB(255, 0, 255);
-										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, language[3096], language[3099]);
-										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[3100]); // disabled opening spell.
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3099));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3100)); // disabled opening spell.
 									}
 								}
 								else
@@ -2442,7 +2442,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										if ( parent->behavior == &actPlayer)
 										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[404]); // "The spell unlocks the chest!"
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(404)); // "The spell unlocks the chest!"
 										}
 									}
 								}
@@ -2467,7 +2467,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											if ( parent->behavior == &actPlayer )
 											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2358]);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2358));
 											}
 										}
 									}
@@ -2480,13 +2480,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]); // "No telling what it did..."
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401)); // "No telling what it did..."
 								}
 							}
 
 							if ( player >= 0 )
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[401]); // "No telling what it did..."
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401)); // "No telling what it did..."
 							}
 						}
 
@@ -2525,12 +2525,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[401]);
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401));
 								}
 							}
 							if ( player >= 0 )
 							{
-								messagePlayer(player, MESSAGE_COMBAT, language[401]);
+								messagePlayer(player, MESSAGE_COMBAT, Language::get(401));
 							}
 						}
 					}
@@ -2560,14 +2560,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										Uint32 color = makeColorRGB(0, 255, 0);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2421), Language::get(2420), MSG_COMBAT);
 										}
 									}
 
 									Uint32 color = makeColorRGB(255, 0, 0);
 									if ( player >= 0 )
 									{
-										messagePlayerColor(player, MESSAGE_COMBAT, color, language[2422]);
+										messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2422));
 									}
 								}
 							}
@@ -2578,7 +2578,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									Uint32 color = makeColorRGB(255, 0, 0);
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
 									}
 								}
 							}
@@ -2638,7 +2638,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										parent->setEffect(EFF_MP_REGEN, true, 250, true);
 										if ( parent->behavior == &actPlayer )
 										{
-											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[3753]);
+											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3753));
 											steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
 										}
 										playSoundEntity(parent, 168, 128);
@@ -2659,7 +2659,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = makeColorRGB(0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2424], language[2423], MSG_COMBAT);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2424), Language::get(2423), MSG_COMBAT);
 								}
 							}
 
@@ -2707,7 +2707,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = makeColorRGB(255, 0, 0);
 							if ( player >= 0 )
 							{
-								messagePlayerColor(player, MESSAGE_COMBAT, color, language[2425]);
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(2425));
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							for ( int gibs = 0; gibs < 10; ++gibs )
@@ -2778,24 +2778,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											switch ( hit.entity->furnitureType )
 											{
 											case FURNITURE_CHAIR:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[388]);
-												updateEnemyBar(parent, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
+												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_TABLE:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[389]);
-												updateEnemyBar(parent, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
+												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2505]);
-												updateEnemyBar(parent, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_BUNKBED:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2506]);
-												updateEnemyBar(parent, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											case FURNITURE_PODIUM:
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[2508], language[2507]);
-												updateEnemyBar(parent, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
 												break;
 											default:
 												break;
@@ -4148,13 +4148,13 @@ void actParticleTimer(Entity* my)
 							Uint32 color = makeColorRGB(0, 255, 0);
 							if ( target->getStats() )
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), language[3450], language[3451], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), Language::get(3450), Language::get(3451), MSG_COMBAT);
 							}
 						}
 						if ( target->behavior == &actPlayer )
 						{
 							Uint32 color = makeColorRGB(255, 255, 255);
-							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3461]);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, Language::get(3461));
 						}
 						real_t distance =  sqrt((target->x - oldx) * (target->x - oldx) + (target->y - oldy) * (target->y - oldy)) / 16.f;
 						//real_t distance = (entityDist(parent, target)) / 16;
@@ -4190,7 +4190,7 @@ void actParticleTimer(Entity* my)
 									target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 							}
 							Uint32 color = makeColorRGB(255, 255, 255);
-							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, language[3462]);
+							messagePlayerColor(target->skill[2], MESSAGE_COMBAT, color, Language::get(3462));
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -4740,7 +4740,7 @@ void actParticleSapCenter(Entity* my)
 				if ( parent->behavior == &actPlayer )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, language[2445]);
+					messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(2445));
 				}
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
@@ -4757,7 +4757,7 @@ void actParticleSapCenter(Entity* my)
 				/*if ( parent->behavior == &actPlayer )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, language[774]);
+					messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, Language::get(774));
 				}*/
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
@@ -4780,7 +4780,7 @@ void actParticleSapCenter(Entity* my)
 					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, language[3746], items[item->type].getUnidentifiedName());
+					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, Language::get(3746), items[item->type].getUnidentifiedName());
 					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{
@@ -5652,7 +5652,7 @@ void actParticleShadowTag(Entity* my)
 				Uint32 color = makeColorRGB(255, 255, 255);
 				if ( parent->getStats() )
 				{
-					messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), language[3466], language[3467], MSG_COMBAT);
+					messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), Language::get(3466), Language::get(3467), MSG_COMBAT);
 					parent->setEffect(EFF_SHADOW_TAGGED, false, 0, true);
 				}
 			}
@@ -6002,7 +6002,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				if ( parent && parent->behavior == &actPlayer )
 				{
 					Uint32 color = makeColorRGB(255, 0, 255);
-					messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, language[2380]); // disabled digging.
+					messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(2380)); // disabled digging.
 				}
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
@@ -6015,7 +6015,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			{
 				if ( parent && parent->behavior == &actPlayer )
 				{
-					messagePlayer(parent->skill[2], MESSAGE_HINT, language[706]);
+					messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(706));
 				}
 				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
@@ -6107,8 +6107,8 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		{
 			if ( parent->behavior == &actPlayer && hit.entity->isDamageableCollider() )
 			{
-				messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[4337],
-					language[hit.entity->getColliderLangName()]); // you destroy the %s!
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(4337),
+					Language::get(hit.entity->getColliderLangName())); // you destroy the %s!
 			}
 		}
 
@@ -6160,7 +6160,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		{
 			if ( parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], MESSAGE_COMBAT, language[405]);
+				messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(405));
 			}
 		}
 
@@ -6182,7 +6182,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 				for ( c = 0; c < MAXPLAYERS; c++ )
 				{
 					Uint32 color = makeColorRGB(255, 128, 0);
-					messagePlayerColor(c, MESSAGE_HINT, color, language[406]);
+					messagePlayerColor(c, MESSAGE_HINT, color, Language::get(406));
 				}
 			}
 			boulderSokobanOnDestroy(false);

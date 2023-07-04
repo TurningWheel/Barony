@@ -101,11 +101,11 @@ void actGoldBag(Entity* my)
 					// message for item pickup
 					if ( my->goldAmount == 1 )
 					{
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[483]);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(483));
 					}
 					else
 					{
-						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, language[484], my->goldAmount);
+						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(484), my->goldAmount);
 					}
 
 					// remove gold entity

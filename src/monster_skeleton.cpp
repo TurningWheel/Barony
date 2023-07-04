@@ -688,7 +688,7 @@ void skeletonDie(Entity* my)
 						spellEntity->skill[7] = manaToRefund;
 						if ( leader->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, language[3194], language[3195], MSG_COMBAT);
+							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, Language::get(3194), Language::get(3195), MSG_COMBAT);
 						}
 					}
 				}
