@@ -8,6 +8,7 @@
 #include "../game.hpp"
 #include "../draw.hpp"
 #include "../prng.hpp"
+#include "../mod_tools.hpp"
 
 #include <mutex>
 #include <thread>
@@ -155,6 +156,11 @@ void doLoadingScreen() {
 	const Uint32 oldTicks = loadingticks;
 	(void)handleEvents();
 	if (oldTicks != loadingticks) {
+
+		if ( Mods::isLoading )
+		{
+			++Mods::loadingTicks;
+		}
 
 		// spinning widget
 		auto spinning_widget = loading_frame->findImage("spinning_widget");

@@ -7812,6 +7812,7 @@ bool Mods::systemImagesReloadUnmodded = false;
 bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
 bool Mods::isLoading = false;
+Uint32 Mods::loadingTicks = 0;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
@@ -8082,6 +8083,7 @@ void Mods::loadModels(int start, int end) {
 void Mods::unloadMods()
 {
 	isLoading = true;
+	loadingTicks = 0;
 
 	loading = true;
 	createLoadingScreen(5);
@@ -8218,6 +8220,13 @@ void Mods::unloadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
+
+	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
 	destroyLoadingScreen();
 	loading = false;
 	isLoading = false;
@@ -8228,6 +8237,7 @@ void Mods::loadMods()
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
+	loadingTicks = 0;
 	isLoading = true;
 	loading = true;
 	createLoadingScreen(5);
@@ -8408,6 +8418,13 @@ void Mods::loadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
+
+	while ( loadingTicks < TICKS_PER_SECOND / 2 ) // artificial delay to look nicer if loading time is short
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
 	destroyLoadingScreen();
 
 	loading = false;
