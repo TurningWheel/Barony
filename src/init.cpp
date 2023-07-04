@@ -670,6 +670,9 @@ std::map<int, std::string> Language::tmpEntries;
 std::string Language::languageCode = "";
 const char* Language::get(const int line)
 {
+	if ( line < 0 ) {
+		return "";
+	}
 	return entries[line].c_str();
 }
 void Language::reset()

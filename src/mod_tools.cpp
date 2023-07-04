@@ -7794,15 +7794,14 @@ void EditorEntityData_t::readFromFile()
 }
 
 std::vector<int> Mods::modelsListModifiedIndexes;
+std::vector<int> Mods::soundsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> Mods::systemResourceImagesToReload;
 std::vector<std::pair<std::string, std::string>> Mods::mountedFilepaths;
 std::vector<std::pair<std::string, std::string>> Mods::mountedFilepathsSaved;
 std::list<std::string> Mods::localModFoldernames;
 int Mods::numCurrentModsLoaded = -1;
-bool Mods::modelsListRequiresReload = false;
-bool Mods::modelsListLastStartedUnmodded = false; // if starting regular game that had to reset model list, use this to reinit custom models.
-bool Mods::soundListRequiresReload = false;
-bool Mods::soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
+bool Mods::modelsListRequiresReloadUnmodded = false;
+bool Mods::soundListRequiresReloadUnmodded = false;
 bool Mods::tileListRequireReloadUnmodded = false;
 bool Mods::spriteImagesRequireReloadUnmodded = false;
 bool Mods::booksRequireReloadUnmodded = false;
@@ -7909,29 +7908,184 @@ void Mods::verifyAchievements(const char* fullpath, bool ignoreBaseFolder)
 	}
 }
 
+bool Mods::isPathInMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Mods::removePathFromMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry, remove from list.
+#ifdef STEAMWORKS
+			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = Mods::workshopLoadedFileIDMap.begin();
+				itId != Mods::workshopLoadedFileIDMap.end(); ++itId )
+			{
+				if ( itId->first.compare(line.second) == 0 )
+				{
+					Mods::workshopLoadedFileIDMap.erase(itId);
+					break;
+				}
+			}
+#endif // STEAMWORKS
+			Mods::mountedFilepaths.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Mods::clearAllMountedPaths()
+{
+	bool success = true;
+	char** i;
+	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+	{
+		std::string line = *i;
+		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
+		{
+			if ( PHYSFS_unmount(*i) == 0 )
+			{
+				success = false;
+				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
+			}
+			else
+			{
+				printlog("[%s] is removed from the search path.\n", line.c_str());
+			}
+		}
+	}
+	Mods::numCurrentModsLoaded = -1;
+	PHYSFS_freeList(*i);
+	return success;
+}
+
+bool Mods::mountAllExistingPaths()
+{
+	bool success = true;
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
+	{
+		std::pair<std::string, std::string> itpair = *it;
+		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
+		{
+			printlog("[%s] is in the search path.\n", itpair.first.c_str());
+		}
+		else
+		{
+			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
+			success = false;
+		}
+	}
+	Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
+	return success;
+}
+
+void Mods::loadModels(int start, int end) {
+#ifdef WINDOWS
+	start = std::min((int)nummodels - 1, std::max(start, 0));
+	end = std::min((int)nummodels, std::max(end, 0));
+#else
+	start = std::clamp(start, 0, (int)nummodels - 1);
+	end = std::clamp(end, 0, (int)nummodels);
+#endif
+
+	if ( start >= end ) {
+		return;
+	}
+
+	//messagePlayer(clientnum, Language::get(2354));
+#ifndef EDITOR
+	printlog(Language::get(2355), start, end);
+#endif
+
+	loading = true;
+	//createLoadingScreen(5);
+	doLoadingScreen();
+
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		char name[128];
+		fp->gets2(name, sizeof(name));
+		if ( c >= start && c < end ) {
+			if ( polymodels[c].vao ) {
+				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
+			}
+			if ( polymodels[c].vbo ) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
+			}
+			if ( polymodels[c].colors ) {
+				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
+			}
+		}
+	}
+
+	std::atomic_bool loading_done{ false };
+	auto loading_task = std::async(std::launch::async, [&loading_done, start, end]() {
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
+	for ( int c = 0; !fp->eof(); c++ )
+	{
+		char name[128];
+		fp->gets2(name, sizeof(name));
+		if ( c >= start && c < end )
+		{
+			if ( models[c] != NULL )
+			{
+				if ( models[c]->data )
+				{
+					free(models[c]->data);
+				}
+				free(models[c]);
+				if ( polymodels[c].faces )
+				{
+					free(polymodels[c].faces);
+				}
+				models[c] = loadVoxel(name);
+			}
+		}
+	}
+	FileIO::close(fp);
+	generatePolyModels(start, end, true);
+	loading_done = true;
+	return 0;
+		});
+	while ( !loading_done )
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	generateVBOs(start, end);
+}
+
 void Mods::unloadMods()
 {
 	isLoading = true;
-	bool reloadModel = false;
-	int modelsIndexUpdateStart = 1;
-	int modelsIndexUpdateEnd = nummodels;
-	bool reloadSounds = false;
 
 	loading = true;
 	createLoadingScreen(5);
 	doLoadingScreen();
-
-	if ( Mods::customContentLoadedFirstTime )
-	{
-		if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
-		{
-			reloadModel = true; // we had some models already loaded which should be reset
-		}
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			reloadSounds = true; // we had some sounds already loaded which should be reset
-		}
-	}
 
 	mountedFilepathsSaved = mountedFilepaths;
 	clearAllMountedPaths();
@@ -7941,8 +8095,10 @@ void Mods::unloadMods()
 	updateLoadingScreen(10);
 	doLoadingScreen();
 
-	if ( reloadModel )
+	if ( Mods::modelsListRequiresReloadUnmodded || !Mods::modelsListModifiedIndexes.empty() )
 	{
+		int modelsIndexUpdateStart = 1;
+		int modelsIndexUpdateEnd = nummodels;
 		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
@@ -7950,7 +8106,7 @@ void Mods::unloadMods()
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;
-		Mods::modelsListLastStartedUnmodded = true;
+		Mods::modelsListRequiresReloadUnmodded = false;
 	}
 
 	Mods::modelsListModifiedIndexes.clear();
@@ -7958,11 +8114,13 @@ void Mods::unloadMods()
 	updateLoadingScreen(20);
 	doLoadingScreen();
 
-	if ( reloadSounds )
+	if ( Mods::soundListRequiresReloadUnmodded || !Mods::soundsListModifiedIndexes.empty() )
 	{
 		physfsReloadSounds(true);
-		Mods::soundsListLastStartedUnmodded = true;
+		Mods::soundListRequiresReloadUnmodded = false;
 	}
+
+	Mods::soundsListModifiedIndexes.clear();
 
 	updateLoadingScreen(30);
 	doLoadingScreen();
@@ -8048,9 +8206,9 @@ void Mods::unloadMods()
 	std::atomic_bool loading_done{ false };
 	auto loading_task = std::async(std::launch::async, [&loading_done]() {
 		initGameDatafilesAsync(true);
-		loading_done = true;
-		return 0;
-	});
+	loading_done = true;
+	return 0;
+		});
 	while ( !loading_done )
 	{
 		doLoadingScreen();
@@ -8065,184 +8223,6 @@ void Mods::unloadMods()
 	isLoading = false;
 }
 
-bool Mods::isPathInMountedFiles(std::string findStr)
-{
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	std::pair<std::string, std::string> line;
-	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
-	{
-		line = *it;
-		if ( line.first.compare(findStr) == 0 )
-		{
-			// found entry
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Mods::removePathFromMountedFiles(std::string findStr)
-{
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	std::pair<std::string, std::string> line;
-	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
-	{
-		line = *it;
-		if ( line.first.compare(findStr) == 0 )
-		{
-			// found entry, remove from list.
-#ifdef STEAMWORKS
-			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = Mods::workshopLoadedFileIDMap.begin();
-				itId != Mods::workshopLoadedFileIDMap.end(); ++itId )
-			{
-				if ( itId->first.compare(line.second) == 0 )
-				{
-					Mods::workshopLoadedFileIDMap.erase(itId);
-					break;
-				}
-			}
-#endif // STEAMWORKS
-			Mods::mountedFilepaths.erase(it);
-			Mods::modelsListRequiresReload = true;
-			Mods::soundListRequiresReload = true;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Mods::clearAllMountedPaths()
-{
-	bool success = true;
-	char** i;
-	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
-	{
-		std::string line = *i;
-		if ( line.compare(outputdir) != 0 && line.compare(datadir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
-		{
-			if ( PHYSFS_unmount(*i) == 0 )
-			{
-				success = false;
-				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
-				Mods::modelsListRequiresReload = true;
-				Mods::soundListRequiresReload = true;
-			}
-			else
-			{
-				printlog("[%s] is removed from the search path.\n", line.c_str());
-			}
-		}
-	}
-	Mods::numCurrentModsLoaded = -1;
-	PHYSFS_freeList(*i);
-	return success;
-}
-
-bool Mods::mountAllExistingPaths()
-{
-	bool success = true;
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	for ( it = Mods::mountedFilepaths.begin(); it != Mods::mountedFilepaths.end(); ++it )
-	{
-		std::pair<std::string, std::string> itpair = *it;
-		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 0) )
-		{
-			printlog("[%s] is in the search path.\n", itpair.first.c_str());
-			Mods::modelsListRequiresReload = true;
-			Mods::soundListRequiresReload = true;
-		}
-		else
-		{
-			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
-			success = false;
-		}
-	}
-	Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
-	Mods::customContentLoadedFirstTime = true;
-	return success;
-}
-
-void Mods::loadModels(int start, int end) {
-#ifdef WINDOWS
-	start = std::min((int)nummodels - 1, std::max(start, 0));
-	end = std::min((int)nummodels, std::max(end, 0));
-#else
-	start = std::clamp(start, 0, (int)nummodels - 1);
-	end = std::clamp(end, 0, (int)nummodels);
-#endif
-
-	if ( start >= end ) {
-		return;
-	}
-
-	//messagePlayer(clientnum, Language::get(2354));
-#ifndef EDITOR
-	printlog(Language::get(2355), start, end);
-#endif
-
-	loading = true;
-	//createLoadingScreen(5);
-	doLoadingScreen();
-
-	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
-	for ( int c = 0; !fp->eof(); c++ )
-	{
-		char name[128];
-		fp->gets2(name, sizeof(name));
-		if ( c >= start && c < end ) {
-			if ( polymodels[c].vao ) {
-				GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodels[c].vao));
-			}
-			if ( polymodels[c].vbo ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].vbo));
-			}
-			if ( polymodels[c].colors ) {
-				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].colors));
-			}
-		}
-	}
-
-	std::atomic_bool loading_done{ false };
-	auto loading_task = std::async(std::launch::async, [&loading_done, start, end]() {
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
-	for ( int c = 0; !fp->eof(); c++ )
-	{
-		char name[128];
-		fp->gets2(name, sizeof(name));
-		if ( c >= start && c < end )
-		{
-			if ( models[c] != NULL )
-			{
-				if ( models[c]->data )
-				{
-					free(models[c]->data);
-				}
-				free(models[c]);
-				if ( polymodels[c].faces )
-				{
-					free(polymodels[c].faces);
-				}
-				models[c] = loadVoxel(name);
-			}
-		}
-	}
-	FileIO::close(fp);
-	generatePolyModels(start, end, true);
-	loading_done = true;
-	return 0;
-		});
-	while ( !loading_done )
-	{
-		doLoadingScreen();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-	generateVBOs(start, end);
-}
-
 void Mods::loadMods()
 {
 	Mods::disableSteamAchievements = false;
@@ -8253,54 +8233,33 @@ void Mods::loadMods()
 	createLoadingScreen(5);
 	doLoadingScreen();
 
-	if ( !Mods::modelsListRequiresReload && Mods::modelsListLastStartedUnmodded )
-	{
-		if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
-		{
-			Mods::modelsListRequiresReload = true;
-		}
-		Mods::modelsListLastStartedUnmodded = false;
-	}
-	if ( !Mods::soundListRequiresReload && Mods::soundsListLastStartedUnmodded )
-	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			Mods::soundListRequiresReload = true;
-		}
-		Mods::soundsListLastStartedUnmodded = false;
-	}
+	Mods::customContentLoadedFirstTime = true;
 
 	updateLoadingScreen(10);
 	doLoadingScreen();
 
 	// process any new model files encountered in the mod load list.
-	int modelsIndexUpdateStart = 1;
-	int modelsIndexUpdateEnd = nummodels;
-	if ( Mods::modelsListRequiresReload )
+	if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
 	{
-		if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
-		{
-			bool oldModelCache = useModelCache;
-			useModelCache = false;
-			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-			//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-			useModelCache = oldModelCache;
-		}
-		Mods::modelsListRequiresReload = false;
+		int modelsIndexUpdateStart = 1;
+		int modelsIndexUpdateEnd = nummodels;
+		bool oldModelCache = useModelCache;
+		useModelCache = false;
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		useModelCache = oldModelCache;
+		Mods::modelsListRequiresReloadUnmodded = true;
 	}
 
 	updateLoadingScreen(20);
 	doLoadingScreen();
 
-	if ( Mods::soundListRequiresReload )
+	if ( physfsSearchSoundsToUpdate() || !Mods::soundsListModifiedIndexes.empty() )
 	{
-		if ( physfsSearchSoundsToUpdate() )
-		{
-			physfsReloadSounds(true);
-		}
-		Mods::soundListRequiresReload = false;
+		physfsReloadSounds(false);
+		Mods::soundListRequiresReloadUnmodded = true;
 	}
 
 	updateLoadingScreen(30);
@@ -8311,6 +8270,11 @@ void Mods::loadMods()
 		physfsReloadTiles(false);
 		Mods::tileListRequireReloadUnmodded = true;
 	}
+	else if ( Mods::tileListRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadTiles(true);
+		Mods::tileListRequireReloadUnmodded = false;
+	}
 
 	updateLoadingScreen(40);
 	doLoadingScreen();
@@ -8320,6 +8284,11 @@ void Mods::loadMods()
 		physfsReloadSprites(false);
 		Mods::spriteImagesRequireReloadUnmodded = true;
 	}
+	else if ( Mods::spriteImagesRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadSprites(true);
+		Mods::spriteImagesRequireReloadUnmodded = false;
+	}
 
 	updateLoadingScreen(50);
 	doLoadingScreen();
@@ -8328,6 +8297,11 @@ void Mods::loadMods()
 	{
 		physfsReloadBooks();
 		Mods::booksRequireReloadUnmodded = true;
+	}
+	else if ( Mods::booksRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadBooks();
+		Mods::booksRequireReloadUnmodded = false;
 	}
 
 	updateLoadingScreen(60);
@@ -8347,7 +8321,7 @@ void Mods::loadMods()
 		}
 		Mods::musicRequireReloadUnmodded = true;
 	}
-	else if ( Mods::musicRequireReloadUnmodded )
+	else if ( Mods::musicRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
 	{
 		// restore old music
 		bool reloadIntroMusic = true;
@@ -8358,7 +8332,7 @@ void Mods::loadMods()
 			playMusic(intromusic[local_rng.rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
-		Mods::musicRequireReloadUnmodded = true;
+		Mods::musicRequireReloadUnmodded = false;
 	}
 
 	updateLoadingScreen(70);
@@ -8377,6 +8351,11 @@ void Mods::loadMods()
 		}
 		Mods::langRequireReloadUnmodded = true;
 	}
+	else if ( Mods::langRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		Language::reloadLanguage();
+		Mods::langRequireReloadUnmodded = false;
+	}
 
 	updateLoadingScreen(80);
 	doLoadingScreen();
@@ -8386,6 +8365,11 @@ void Mods::loadMods()
 		physfsReloadMonsterLimbFiles();
 		Mods::monsterLimbsRequireReloadUnmodded = true;
 	}
+	else if ( Mods::monsterLimbsRequireReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadMonsterLimbFiles();
+		Mods::monsterLimbsRequireReloadUnmodded = false;
+	}
 
 	updateLoadingScreen(85);
 	doLoadingScreen();
@@ -8394,6 +8378,11 @@ void Mods::loadMods()
 	{
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = true;
+	}
+	else if ( Mods::systemImagesReloadUnmodded ) // clean revert if we had loaded mods but can't find any modded ones
+	{
+		physfsReloadSystemImages();
+		Mods::systemImagesReloadUnmodded = false;
 	}
 
 	updateLoadingScreen(90);

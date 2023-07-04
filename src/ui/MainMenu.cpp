@@ -22297,8 +22297,6 @@ failed:
 		if ( modLoaded )
 		{
 			Mods::verifyAchievements(fullpath, true);
-			Mods::modelsListRequiresReload = true;
-			Mods::soundListRequiresReload = true;
 		}
 		else if ( toggleActive )
 		{

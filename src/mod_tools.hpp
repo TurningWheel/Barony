@@ -3219,15 +3219,14 @@ extern EditorEntityData_t editorEntityData;
 struct Mods
 {
 	static std::vector<int> modelsListModifiedIndexes;
+	static std::vector<int> soundsListModifiedIndexes;
 	static std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 	static std::vector<std::pair<std::string, std::string>> mountedFilepaths;
 	static std::vector<std::pair<std::string, std::string>> mountedFilepathsSaved; // saved from config file
 	static std::list<std::string> Mods::localModFoldernames;
 	static int numCurrentModsLoaded;
-	static bool modelsListRequiresReload;
-	static bool modelsListLastStartedUnmodded; // if starting regular game that had to reset model list, use this to reinit custom models.
-	static bool soundListRequiresReload;
-	static bool soundsListLastStartedUnmodded; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
+	static bool modelsListRequiresReloadUnmodded;
+	static bool soundListRequiresReloadUnmodded;
 	static bool tileListRequireReloadUnmodded;
 	static bool spriteImagesRequireReloadUnmodded;
 	static bool booksRequireReloadUnmodded;

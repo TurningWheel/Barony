@@ -2451,8 +2451,6 @@ namespace ConsoleCommands {
 				//modname = modname.substr(0, modname.length() - 1);
 				printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
 				Mods::mountedFilepaths.push_back(std::make_pair(directory, modname));
-				Mods::modelsListRequiresReload = true;
-				Mods::soundListRequiresReload = true;
 			}
 #ifdef STEAMWORKS
 			else
@@ -2461,8 +2459,6 @@ namespace ConsoleCommands {
 				modname = name;
 				printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
 				Mods::mountedFilepaths.push_back(std::make_pair(directory, modname));
-				Mods::modelsListRequiresReload = true;
-				Mods::soundListRequiresReload = true;
 
 				uint64 id = atoi(fileid.c_str());
 				Mods::workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));

@@ -4331,13 +4331,41 @@ void physfsReloadSounds(bool reloadAll)
 	for ( int c = 0; !fp->eof(); c++ )
 	{
 		fp->gets2(name, PATH_MAX);
+		bool soundHasBeenModified = false;
+		// has this sound index been modified?
+		std::vector<int>::iterator it = Mods::soundsListModifiedIndexes.end();
+		if ( !Mods::soundsListModifiedIndexes.empty() )
+		{
+			it = std::find(Mods::soundsListModifiedIndexes.begin(),
+				Mods::soundsListModifiedIndexes.end(), c);
+			if ( it != Mods::soundsListModifiedIndexes.end() )
+			{
+				soundHasBeenModified = true; // found the sound in the vector.
+			}
+		}
+
 		if ( PHYSFS_getRealDir(name) != NULL )
 		{
 			std::string soundRealDir = PHYSFS_getRealDir(name);
-			if ( reloadAll || soundRealDir.compare("./") != 0 )
+			if ( soundHasBeenModified || reloadAll || soundRealDir.compare("./") != 0 )
 			{
 				std::string soundFile = soundRealDir;
 				soundFile.append(PHYSFS_getDirSeparator()).append(name);
+
+				if ( !soundHasBeenModified )
+				{
+					// add this sound index to say we've modified it as the base dir is not default.
+					Mods::soundsListModifiedIndexes.push_back(c);
+				}
+				else
+				{
+					if ( soundRealDir.compare("./") == 0 )
+					{
+						// model returned to base directory, remove from the modified index list.
+						Mods::soundsListModifiedIndexes.erase(it);
+					}
+				}
+
 #ifdef USE_FMOD
 				if ( !reloadAll )
 				{
