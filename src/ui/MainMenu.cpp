@@ -11142,21 +11142,25 @@ failed:
 		achievements->setTickCallback([](Widget& widget){
 			Field* achievements = static_cast<Field*>(&widget);
             if (multiplayer != CLIENT) {
-                if (allSettings.cheats_enabled ||
-                    allSettings.extra_life_enabled ||
-					Mods::disableSteamAchievements ) {
-                    achievements->setColor(makeColor(180, 37, 37, 255));
-                    achievements->setText("ACHIEVEMENTS DISABLED");
+				if ( Mods::disableSteamAchievements ) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED)");
+				} else if ( allSettings.cheats_enabled ||
+					allSettings.extra_life_enabled ) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED");
                 } else {
                     achievements->setColor(makeColor(37, 90, 255, 255));
                     achievements->setText("ACHIEVEMENTS ENABLED");
                 }
             } else {
-                if ((lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
-                    (lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ||
-					Mods::disableSteamAchievements ) {
-                    achievements->setColor(makeColor(180, 37, 37, 255));
-                    achievements->setText("ACHIEVEMENTS DISABLED");
+				if ( Mods::disableSteamAchievements ) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED\n(MODDED)");
+				} else if ( (lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
+					(lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ) {
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED");
                 } else {
                     achievements->setColor(makeColor(37, 90, 255, 255));
                     achievements->setText("ACHIEVEMENTS ENABLED");
@@ -21105,13 +21109,18 @@ failed:
 			achievements->setVJustify(Field::justify_t::TOP);
 			achievements->setTickCallback([](Widget& widget) {
 				Field* achievements = static_cast<Field*>(&widget);
-				if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-					|| conductGameChallenges[CONDUCT_LIFESAVING]
-					|| Mods::disableSteamAchievements ) {
+				if ( Mods::disableSteamAchievements )
+				{
+					achievements->setColor(makeColor(180, 37, 37, 255));
+					achievements->setText("ACHIEVEMENTS DISABLED (MODDED)");
+				}
+				else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+					|| conductGameChallenges[CONDUCT_LIFESAVING] ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText("ACHIEVEMENTS DISABLED");
 				}
-				else {
+				else 
+				{
 					achievements->setColor(makeColor(37, 90, 255, 255));
 					achievements->setText(""); // "ACHIEVEMENTS ENABLED"
 				}
