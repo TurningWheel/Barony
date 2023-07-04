@@ -1763,9 +1763,10 @@ namespace MainMenu {
 				soundActivate();
 				openURLTryWithOverlay("https://store.steampowered.com/dlc/371970/Barony/");
 #elif defined(NINTENDO)
-				if (nxShowDLCPage(dlcPromptIndex) == false) {
-					soundError();
-				}
+                nxShowAllDLC();
+                /*if (nxShowDLCPage(dlcPromptIndex) == false) {
+                    soundError();
+                }*/
 #elif defined(USE_EOS)
 				soundActivate();
 				openURLTryWithOverlay("https://store.epicgames.com/en-US/all-dlc/barony");
