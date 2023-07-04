@@ -17755,6 +17755,8 @@ failed:
             });
     }
 
+	static void createModsWindow();
+
 	static void createPlayWindow() {
 		multiplayer = SINGLE;
 
@@ -17817,13 +17819,21 @@ failed:
 			frame = static_cast<Frame*>(frame->getParent());
 			frame->removeSelf();
 			assert(main_menu_frame);
-			auto buttons = main_menu_frame->findFrame("buttons");
-			if (!buttons) {
-				destroyMainMenu();
-				createMainMenu(false);
-			} else {
-				auto play_button = buttons->findButton("Play Game"); assert(play_button);
-				play_button->select();
+
+			if ( Mods::numCurrentModsLoaded >= 0 )
+			{
+				createModsWindow();
+			}
+			else
+			{
+				auto buttons = main_menu_frame->findFrame("buttons");
+				if (!buttons) {
+					destroyMainMenu();
+					createMainMenu(false);
+				} else {
+					auto play_button = buttons->findButton("Play Game"); assert(play_button);
+					play_button->select();
+				}
 			}
 			});
 
@@ -21006,8 +21016,7 @@ failed:
 #if defined(NINTENDO)
 				{"Play Game", "PLAY", mainPlayGame},
 #else
-				{"Play Game", "PLAY MODDED GAME", mainPlayModdedGame},
-				{"Mod Menu", "MOD MENU", mainModsMenu},
+				{"Play Game", "PLAY MODDED GAME", mainModsMenu},
 				{"Unload Mods", "UNLOAD MODS", mainUnloadMods},
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
@@ -21027,7 +21036,7 @@ failed:
 				{"Play Game", "PLAY", mainPlayGame},
 #else
 				{"Play Game", "PLAY GAME", mainPlayGame},
-				{"Mod Menu", "MOD MENU", mainModsMenu},
+				{"Mod Menu", "PLAY MODDED GAME", mainModsMenu},
 #endif
 				{"Adventure Archives", "ADVENTURE ARCHIVES", mainArchives},
 				{"Settings", "SETTINGS", mainSettings},
@@ -22122,20 +22131,6 @@ failed:
 
 	static void startModdedGame()
 	{
-		//if ( Mods::modPreload )
-		//{
-		//	// look for a save game
-		//	if ( anySaveFileExists() )
-		//	{
-		//		openNewLoadGameWindow(nullptr);
-		//	}
-		//	else
-		//	{
-		//		buttonOpenCharacterCreationWindow(NULL);
-		//	}
-		//	return;
-		//}
-
 		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
 		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
 		if ( Mods::numCurrentModsLoaded == 0 )
@@ -22168,25 +22163,6 @@ failed:
 		{
 			steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 		}
-
-
-		/*auto buttons = main_menu_frame->findFrame("buttons");
-		if ( !buttons ) {
-			destroyMainMenu();
-			createMainMenu(false);
-		}
-		else {
-			auto mod_play = buttons->findButton("Play Modded Game");
-			if ( mod_play )
-			{
-				mod_play->select();
-			}
-			else
-			{
-				destroyMainMenu();
-				createMainMenu(false);
-			}
-		}*/
 
 		gui->deselect();
 
@@ -22957,7 +22933,7 @@ failed:
 			u8"skills, preparing you to take on the dungeon");
 
 		(void)createBackWidget(window, [](Button& button) {
-			if ( Mods::numCurrentModsLoaded > 0 )
+			if ( Mods::numCurrentModsLoaded >= 0 )
 			{
 				// open prompt
 				auto prompt = binaryPrompt(
@@ -22973,68 +22949,18 @@ failed:
 				[](Button&) { // no
 					soundCancel();
 					closeBinary();
-				assert(main_menu_frame);
 				}, false, false); // yellow buttons
 			}
 			else
 			{
 				soundCancel();
+				button.setHideSelectors(true);
 				gui->deselect();
 				Mods::unloadMods();
-
-				if ( auto frame = static_cast<Frame*>(button.getParent()) )
-				{
-					frame = static_cast<Frame*>(frame->getParent());
-					frame = static_cast<Frame*>(frame->getParent());
-					frame->removeSelf();
-				}
-				assert(main_menu_frame);
-				auto buttons = main_menu_frame->findFrame("buttons");
-				if ( !buttons ) {
-					destroyMainMenu();
-					createMainMenu(false);
-				}
-				else {
-					auto mod_menu = buttons->findButton("Mod Menu"); assert(mod_menu);
-					mod_menu->select();
-				}
+				destroyMainMenu();
+				createMainMenu(false);
 			}
 		});
-
-		/*auto banner = subwindow->addImage(
-			SDL_Rect{ 0, 88, 1118, 42 },
-			0xffffffff,
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
-			"banner"
-		);
-
-		auto banner_trial = subwindow->addField("banner_trial", 32);
-		banner_trial->setSize(SDL_Rect{ 48, 88, 66, 42 });
-		banner_trial->setJustify(Field::justify_t::CENTER);
-		banner_trial->setFont(bigfont_outline);
-		banner_trial->setText("Trial");
-
-		auto banner_time = subwindow->addField("banner_trial", 32);
-		banner_time->setSize(SDL_Rect{ 920, 88, 116, 42 });
-		banner_time->setJustify(Field::justify_t::CENTER);
-		banner_time->setFont(bigfont_outline);
-		banner_time->setText("Best Time");*/
-
-		/*SDL_Rect fleur_positions[4] = {
-			{ 22, 94, 26, 30 },
-			{ 114, 94, 26, 30 },
-			{ 894, 94, 26, 30 },
-			{ 1036, 94, 26, 30 },
-		};
-		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
-		for ( int c = 0; c < num_fleurs; ++c ) {
-			(void)subwindow->addImage(
-				fleur_positions[c],
-				0xffffffff,
-				"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
-				(std::string("fleur") + std::to_string(c)).c_str()
-			);
-		}*/
 
 		auto achievements_status = window->addField("achievements_status", 64);
 		achievements_status->setFont(bigfont_no_outline);
@@ -23093,10 +23019,10 @@ failed:
 		slider->setMinValue(0.f);
 		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
 		slider->setWidgetSearchParent("mods_menu");
-		slider->setWidgetLeft("tutorial_hub");
-		slider->addWidgetAction("MenuStart", "enter");
-		slider->addWidgetAction("MenuAlt1", "reset");
-		slider->addWidgetAction("MenuCancel", "back_button");
+		//slider->setWidgetLeft("tutorial_hub");
+		//slider->addWidgetAction("MenuStart", "enter");
+		//slider->addWidgetAction("MenuAlt1", "reset");
+		//slider->addWidgetAction("MenuCancel", "back_button");
 
 		// buttons at bottom
 		auto reset = window->addButton("reset");
@@ -23147,7 +23073,7 @@ failed:
 			});
 
 		auto enter = window->addButton("enter");
-		enter->setText("Enter Level");
+		enter->setText("Start\nModded Game");
 		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
 		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
 		enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
@@ -23157,7 +23083,14 @@ failed:
 		enter->setColor(0xffffffff);
 		enter->setCallback([](Button& button) {
 			soundActivate();
+
 			startModdedGame();
+
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+
+			createPlayWindow();
 		});
 
 		struct Option {
