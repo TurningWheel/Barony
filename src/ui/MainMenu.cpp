@@ -22692,7 +22692,7 @@ failed:
 						}
 						if ( prevFrame )
 						{
-							actualPos.h = prevFrame->getSize().y + frameHeight;
+							actualPos.h = std::max(actualPos.h, prevFrame->getSize().y + frameHeight);
 						}
 						subwindow->setActualSize(actualPos);
 
@@ -22761,7 +22761,7 @@ failed:
 						}
 						if ( prevFrame )
 						{
-							actualPos.h = prevFrame->getSize().y + frameHeight;
+							actualPos.h = std::max(actualPos.h, prevFrame->getSize().y + frameHeight);
 						}
 						subwindow->setActualSize(actualPos);
 
@@ -22835,7 +22835,7 @@ failed:
 						}
 						if ( prevFrame )
 						{
-							actualPos.h = prevFrame->getSize().y + frameHeight;
+							actualPos.h = std::max(actualPos.h, prevFrame->getSize().y + frameHeight);
 						}
 						subwindow->setActualSize(actualPos);
 
