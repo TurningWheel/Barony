@@ -7812,6 +7812,7 @@ bool Mods::monsterLimbsRequireReloadUnmodded = false;
 bool Mods::systemImagesReloadUnmodded = false;
 bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
+bool Mods::isLoading = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
@@ -7910,6 +7911,7 @@ void Mods::verifyAchievements(const char* fullpath, bool ignoreBaseFolder)
 
 void Mods::unloadMods()
 {
+	isLoading = true;
 	bool reloadModel = false;
 	int modelsIndexUpdateStart = 1;
 	int modelsIndexUpdateEnd = nummodels;
@@ -7941,10 +7943,12 @@ void Mods::unloadMods()
 
 	if ( reloadModel )
 	{
-		//physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
-		loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 		useModelCache = oldModelCache;
 		Mods::modelsListLastStartedUnmodded = true;
 	}
@@ -8057,6 +8061,7 @@ void Mods::unloadMods()
 	consoleCommand("/dumpcache");
 	destroyLoadingScreen();
 	loading = false;
+	isLoading = false;
 }
 
 bool Mods::isPathInMountedFiles(std::string findStr)
@@ -8242,6 +8247,7 @@ void Mods::loadMods()
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
+	isLoading = true;
 	loading = true;
 	createLoadingScreen(5);
 	doLoadingScreen();
@@ -8275,9 +8281,10 @@ void Mods::loadMods()
 		{
 			bool oldModelCache = useModelCache;
 			useModelCache = false;
-			//physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-			loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
-
+			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+			//loadModels(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+			generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
 			useModelCache = oldModelCache;
 		}
 		Mods::modelsListRequiresReload = false;
@@ -8414,4 +8421,5 @@ void Mods::loadMods()
 	destroyLoadingScreen();
 
 	loading = false;
+	isLoading = false;
 }

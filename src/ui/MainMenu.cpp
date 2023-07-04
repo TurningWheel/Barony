@@ -19342,8 +19342,6 @@ failed:
 	}
 
 	static void mainModsMenu(Button& button) {
-		// WIP
-		soundActivate();
 		createModsWindow();
 	}
 
@@ -21129,9 +21127,12 @@ failed:
 				main_menu_cursor_y = button->getSize().y - 9 + buttons->getSize().y;
 			}
 			button->setTickCallback([](Widget& widget){
-				if (!gui->findSelectedWidget(widget.getOwner())) {
-					if (!main_menu_frame || !main_menu_frame->findWidget("dimmer", false)) {
-						widget.select();
+				if ( !loading )
+				{
+					if (!gui->findSelectedWidget(widget.getOwner())) {
+						if (!main_menu_frame || !main_menu_frame->findWidget("dimmer", false)) {
+							widget.select();
+						}
 					}
 				}
 				});
@@ -22107,7 +22108,7 @@ failed:
 		setHostname(buf);
 	}
 
-	static std::string mods_active_tab = "Local Mods";
+	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
 
 	static void startModdedGame()
@@ -22193,6 +22194,7 @@ failed:
 		char fullpath[PATH_MAX] = "";
 		if ( isWorkshopMod )
 		{
+#ifdef STEAMWORKS
 			auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[index];
 			bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
 			bool pathIsMounted = Mods::isPathInMountedFiles(fullpath);
@@ -22239,6 +22241,7 @@ failed:
 					}
 				}
 			}
+#endif
 		}
 		else
 		{
@@ -22535,6 +22538,15 @@ failed:
 				auto index = reinterpret_cast<intptr_t>(frame->getUserData());
 				bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
 
+				std::string buttonbg = button.getBackground();
+				if ( buttonbg == "*#images/ui/Main Menus/Mods/Load_Button_00.png" )
+				{
+					soundActivate();
+				}
+				else
+				{
+					soundCancel();
+				}
 				fn_load_mod(button, index, isWorkshopMod, true, false);
 			});
 
@@ -22635,6 +22647,7 @@ failed:
 	};
 
 	static void workshopLoadSubscribedItems(Button& button) {
+#ifdef STEAMWORKS
 		if ( !g_SteamWorkshop ) { return; }
 		mods_loading_tick = ticks;
 		mods_active_tab = "Steam Workshop";
@@ -22706,9 +22719,11 @@ failed:
 				}
 			}
 		});
+#endif
 	}
 
 	static void workshopLoadMyItems(Button& button) {
+#ifdef STEAMWORKS
 		if ( !g_SteamWorkshop ) { return; }
 		mods_loading_tick = ticks;
 		mods_active_tab = "My Workshop Items";
@@ -22773,6 +22788,7 @@ failed:
 				}
 			}
 			});
+#endif
 	}
 
 	static void workshopLoadLocalMods(Button& button) {
@@ -22941,9 +22957,7 @@ failed:
 					"Do you want to exit this menu?\nAny active mods will be unloaded.", "Yes", "No",
 					[](Button& button) { // yes
 					soundActivate();
-					//closeBinary(); -- this causes crashes?
 					button.setHideSelectors(true);
-
 					gui->deselect();
 					Mods::unloadMods();
 					destroyMainMenu();
@@ -23153,9 +23167,15 @@ failed:
 		};
 
 #ifdef STEAMWORKS
-		mods_active_tab = tabs[1].name;
+		if ( mods_active_tab == "" )
+		{
+			mods_active_tab = tabs[1].name;
+		}
 #else
-		mods_active_tab = tabs[0].name;
+		if ( mods_active_tab == "" )
+		{
+			mods_active_tab = tabs[0].name;
+		}
 #endif
 
 		const int num_tabs = (int)tabs.size();
