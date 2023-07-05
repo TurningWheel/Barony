@@ -12427,7 +12427,7 @@ failed:
             "Baytower", "Whetsong"
         };
 
-        constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
+        static constexpr int num_appearances = sizeof(appearance_names) / sizeof(appearance_names[0]);
 
 		auto appearances = subframe->addFrame("appearances");
 		appearances->setSize(SDL_Rect{102, 0, 122, 36});
