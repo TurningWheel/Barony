@@ -22292,13 +22292,13 @@ failed:
 	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
 
-	static void startModdedGame()
+	static bool startModdedGame()
 	{
 		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
 		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
 		if ( Mods::numCurrentModsLoaded == 0 )
 		{
-			errorPrompt("Select at least 1 mod to load", "Okay",
+			errorPrompt("Select at least 1 mod to load.", "Okay",
 				[](Button&) {
 					soundCancel();
 					closeMono();
@@ -22319,8 +22319,10 @@ failed:
 						}
 					}
 			});
-			return;
+			return false;
 		}
+
+		soundActivate();
 
 		if ( Mods::numCurrentModsLoaded > 0 )
 		{
@@ -22333,6 +22335,8 @@ failed:
 
 		destroyMainMenu();
 		createMainMenu(false);
+
+		return true;
 	}
 
 	static void fn_load_mod(Button& button, const int index, const bool isWorkshopMod, const bool toggleActive, const bool viewMyItems)
@@ -23245,15 +23249,14 @@ failed:
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
 		enter->setCallback([](Button& button) {
-			soundActivate();
+			if ( startModdedGame() )
+			{
+				auto frame = static_cast<Frame*>(button.getParent());
+				frame = static_cast<Frame*>(frame->getParent());
+				frame->removeSelf();
 
-			startModdedGame();
-
-			auto frame = static_cast<Frame*>(button.getParent());
-			frame = static_cast<Frame*>(frame->getParent());
-			frame->removeSelf();
-
-			createPlayWindow();
+				createPlayWindow();
+			}
 		});
 
 		struct Option {
