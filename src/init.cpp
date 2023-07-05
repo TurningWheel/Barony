@@ -891,7 +891,7 @@ int Language::loadLanguage(char const * const lang, bool forceLoadBaseDirectory)
 			printlog("warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 		}
 		entries[entry] = (char*)(data + strlen(entryText) + 1);
-		printlog("loading entry %d...text: \"%s\"\n", entry, Language::get(entry));
+		//printlog("loading entry %d...text: \"%s\"\n", entry, Language::get(entry));
 	}
 
 	// close file
