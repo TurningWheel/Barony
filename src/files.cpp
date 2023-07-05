@@ -4115,7 +4115,12 @@ void reloadModels(int start, int end) {
 #endif
 
 	loading = true;
-	createLoadingScreen(5);
+	if ( intro ) {
+		createLoadingScreen(5);
+	}
+	else {
+		createLevelLoadScreen(5);
+	}
 	doLoadingScreen();
 
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
