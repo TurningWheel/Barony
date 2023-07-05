@@ -22291,7 +22291,7 @@ failed:
 
 	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
-
+	static void createWorkshopCreateMenu();
 	static bool startModdedGame()
 	{
 		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
@@ -22767,6 +22767,9 @@ failed:
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
 			button->setText("Update Mod");
+			button->setCallback([](Button& button) {
+				createWorkshopCreateMenu();
+			});
 
 			std::string mod_order_name = name;
 			mod_order_name += "_mod_order";
@@ -23051,14 +23054,14 @@ failed:
 		auto background = window->addImage(
 			SDL_Rect{ 16, 0, 1130, 714 },
 			0xffffffff,
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_00.png",
+			"*images/ui/Main Menus/Mods/Mod_Window_00.png",
 			"background"
 		);
 
 		auto timber = window->addImage(
 			SDL_Rect{ 0, 716 - 586, 1164, 586 },
 			0xffffffff,
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_OverlayScaffold_00.png",
+			"*images/ui/Main Menus/Mods/Mod_Window_OverlayScaffold_00.png",
 			"timber"
 		);
 		timber->ontop = true;
@@ -23072,7 +23075,7 @@ failed:
 		auto rock_background = subwindow->addImage(
 			subwindow->getActualSize(),
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Play/HallofTrials/Settings_Window_06_BGPattern.png",
+			"*images/ui/Main Menus/Mods/Settings_Window_06_BGPattern.png",
 			"rock_background"
 		);
 		rock_background->tiled = true;
@@ -23080,7 +23083,7 @@ failed:
 		auto gradient_background = subwindow->addImage(
 			SDL_Rect{ 0, 0, 1164, 476 },
 			makeColor(255, 255, 255, 255),
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_02_BGGradient.png",
+			"*images/ui/Main Menus/Mods/Mod_Window_02_BGGradient.png",
 			"gradient_background"
 		);
 
@@ -23151,9 +23154,9 @@ failed:
 		slider->setBorder(48);
 		slider->setOrientation(Slider::SLIDER_VERTICAL);
 		slider->setRailSize(SDL_Rect{ 1118 - 54, 0, 54, 476 });
-		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_01.png");
+		slider->setRailImage("*images/ui/Main Menus/Mods/Mod_Scroll_Bar_01.png");
 		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
-		slider->setHandleImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
+		slider->setHandleImage("*images/ui/Main Menus/Mods/Mod_Scroll_Boulder_00.png");
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		slider->setCallback([](Slider& slider) {
 			Frame* frame = static_cast<Frame*>(slider.getParent());
@@ -23195,9 +23198,9 @@ failed:
 		auto reset = window->addButton("reset");
 		reset->setText("Reset Trial\nProgress");
 		reset->setSize(SDL_Rect{ 152, 630, 164, 62 });
-		reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
-		reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
-		reset->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		reset->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
+		reset->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
+		reset->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
 		reset->setFont(smallfont_outline);
 		reset->setHighlightColor(0xffffffff);
 		reset->setColor(0xffffffff);
@@ -23242,9 +23245,9 @@ failed:
 		auto enter = window->addButton("enter");
 		enter->setText("Start\nModded Game");
 		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
-		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
-		enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
-		enter->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		enter->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
+		enter->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
+		enter->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
 		enter->setFont(smallfont_outline);
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
@@ -23358,5 +23361,676 @@ failed:
 				}
 			}
 		});
+	}
+
+	static Frame* workshopEditPrompt(
+		const char* window_text,
+		const char* tip_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
+	) {
+		soundActivate();
+
+		Frame* frame = createPrompt("binary_prompt", false);
+		if ( !frame ) {
+			return nullptr;
+		}
+
+		auto text = frame->addField("text", 1024);
+		text->setSize(SDL_Rect{ 30, 28, frame->getSize().w - 30 * 2, 24 * 4 + 4});
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setJustify(Field::justify_t::CENTER);
+
+		auto textbox = frame->addImage(
+			SDL_Rect{ frame->getSize().w / 2 - 300 / 2, frame->getSize().h - 98 - 36 - 16, 300, 36},
+			0xffffffff,
+			"*images/ui/Main Menus/Mods/Upload/Finalize__NameField_00.png",
+			"name_box"
+		);
+
+		SDL_Rect texteditPos = textbox->pos;
+		texteditPos.x += 2;
+		texteditPos.w -= 4;
+		texteditPos.y += 4;
+		texteditPos.h = 28;
+		auto tip = frame->addField("tip", 128);
+		tip->setSize(texteditPos);
+		tip->setFont(smallfont_no_outline);
+		tip->setText(tip_text);
+		tip->setUserData(const_cast<void*>((const void*)tip_text));
+		tip->setFont(smallfont_outline);
+		tip->setHJustify(Field::justify_t::LEFT);
+		tip->setVJustify(Field::justify_t::CENTER);
+		tip->setColor(makeColor(166, 123, 81, 127));
+		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
+		tip->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		tip->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+		tip->setTickCallback([](Widget& widget) {
+			auto tip = static_cast<Field*>(&widget);
+			auto parent = static_cast<Frame*>(widget.getParent());
+			auto field = parent->findField("field");
+			if ( field && field->getText()[0] != '\0' ) {
+				tip->setText("");
+			}
+			else {
+				tip->setText((const char*)tip->getUserData());
+			}
+		});
+
+		auto field = frame->addField("field", 128);
+		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{ -7, -7, 7, 7 });
+		field->setButtonsOffset(SDL_Rect{ 11, 0, 0, 0 });
+		field->setEditable(true);
+		field->setScroll(true);
+		field->setSize(texteditPos);
+		field->setFont(smallfont_outline);
+		field->setText("");
+		field->setHJustify(Field::justify_t::LEFT);
+		field->setVJustify(Field::justify_t::CENTER);
+		field->setColor(makeColor(166, 123, 81, 255));
+		field->setWidgetSearchParent(field->getParent()->getName());
+		field->setWidgetBack("cancel");
+		field->setWidgetDown("okay");
+		field->select();
+		field->activate();
+		field->setTickCallback([](Widget& widget) {
+			if ( !main_menu_frame ) {
+				return;
+			}
+			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+			if ( !selectedWidget ) {
+				auto field = static_cast<Field*>(&widget);
+				field->select();
+			}
+		});
+
+		auto okay = frame->addButton("okay");
+		SDL_Rect leftPos { (leftRed ? -16 : 0), frame->getSize().h - 98, leftRed ? 130 : 108, 52};
+		leftPos.x += frame->getSize().w / 2;
+		leftPos.x -= leftPos.w;
+		okay->setSize(leftPos);
+		okay->setBackground(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetSearchParent(okay->getParent()->getName());
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->setCallback(okay_callback);
+		okay->setTickCallback([](Widget& widget) {
+			if ( !main_menu_frame ) {
+				return;
+			}
+		auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+		if ( !selectedWidget ) {
+			auto button = static_cast<Button*>(&widget);
+			button->select();
+		}
+			});
+
+		auto cancel = frame->addButton("cancel");
+		SDL_Rect rightPos{leftRed ? 8 : 0, frame->getSize().h - 98, rightRed ? 130 : 108, 52 };
+		rightPos.x += frame->getSize().w / 2;
+		rightPos.x += 8;
+		cancel->setSize(rightPos);
+		cancel->setBackground(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setBackgroundHighlighted(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		cancel->setBackgroundActivated(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetSearchParent(okay->getParent()->getName());
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+
+		return frame;
+	}
+
+	static void createWorkshopCreateMenu() {
+		assert(main_menu_frame);
+
+		auto dimmer = main_menu_frame->addFrame("dimmer");
+		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		dimmer->setActualSize(dimmer->getSize());
+		dimmer->setColor(makeColor(0, 0, 0, 63));
+		dimmer->setBorder(0);
+
+		const int windowWidth = 970;
+		auto window = dimmer->addFrame("workshop_create");
+		window->setSize(SDL_Rect{
+			(Frame::virtualScreenX - windowWidth) / 2,
+			(Frame::virtualScreenY - 716) / 2,
+			windowWidth,
+			716 });
+		window->setActualSize(SDL_Rect{ 0, 0, windowWidth, 716 });
+		window->setBorder(0);
+		window->setColor(0);
+
+		auto background = window->addImage(
+			SDL_Rect{ 16, 0, 936, 714 },
+			0xffffffff,
+			"*images/ui/Main Menus/Mods/Upload/Upload_Window_00.png",
+			"background"
+		);
+
+		auto timber = window->addImage(
+			SDL_Rect{ 0, 716 - 586, windowWidth, 586 },
+			0xffffffff,
+			"*images/ui/Main Menus/Mods/Upload/Upload_Window_OverlayScaffold_00.png",
+			"timber"
+		);
+		timber->ontop = true;
+
+		auto subwindow = window->addFrame("subwindow");
+		subwindow->setSize(SDL_Rect{ 22, 142, background->pos.w - 12, 476 });
+		subwindow->setActualSize(SDL_Rect{ 0, 0, background->pos.w - 12, 774 });
+		subwindow->setBorder(0);
+		subwindow->setColor(0);
+
+		auto rock_background = subwindow->addImage(
+			subwindow->getActualSize(),
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Play/HallofTrials/Settings_Window_06_BGPattern.png",
+			"rock_background"
+		);
+		rock_background->tiled = true;
+
+		auto gradient_background = subwindow->addImage(
+			SDL_Rect{ 0, 0, windowWidth, 476 },
+			makeColor(255, 255, 255, 255),
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Window_02_BGGradient.png",
+			"gradient_background"
+		);
+
+		auto window_title = window->addField("title", 64);
+		window_title->setFont(banner_font);
+		window_title->setSize(SDL_Rect{ 412, 24, 338, 24 });
+		window_title->setJustify(Field::justify_t::CENTER);
+		window_title->setText("TUTORIALS");
+
+		auto subtitle = window->addField("subtitle", 1024);
+		subtitle->setFont(bigfont_no_outline);
+		subtitle->setColor(makeColor(170, 134, 102, 255));
+		subtitle->setSize(SDL_Rect{ 242, 74, 684, 50 });
+		subtitle->setJustify(Field::justify_t::CENTER);
+		subtitle->setText(
+			u8"Take on 10 challenges that teach and test your adventuring\n"
+			u8"skills, preparing you to take on the dungeon");
+
+		(void)createBackWidget(window, [](Button& button) {
+			soundCancel();
+		auto frame = static_cast<Frame*>(button.getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame = static_cast<Frame*>(frame->getParent());
+		frame->removeSelf();
+
+		//assert(main_menu_frame);
+		//auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
+		//auto window = dimmer->findFrame("play_game_window"); assert(window);
+		//auto hall_of_trials_button = window->findButton("hall_of_trials"); assert(hall_of_trials_button);
+		//hall_of_trials_button->select();
+			});
+
+		int padX = 48;
+		int currentY = 24;
+
+		{
+			auto titleBacking = subwindow->addImage(SDL_Rect{ 0, currentY, 280, 52 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Left_Backing00.png", "folder title img");
+
+			auto title = subwindow->addField("folder upload title", 64);
+			title->setHJustify(Field::justify_t::LEFT);
+			title->setVJustify(Field::justify_t::CENTER);
+			title->setFont(bigfont_outline);
+			title->setText("Folder To Upload:");
+			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
+
+			SDL_Rect valuePos = titleBacking->pos;
+			valuePos.x = titleBacking->pos.x + titleBacking->pos.w + 20;
+			valuePos.w = 380;
+			auto valueBacking = subwindow->addImage(valuePos, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Folder_Backing00.png", "folder value img");
+			auto value = subwindow->addField("folder upload value", 64);
+			value->setHJustify(Field::justify_t::CENTER);
+			value->setVJustify(Field::justify_t::CENTER);
+			value->setFont(bigfont_outline);
+			value->setText("/mods/my folder/");
+			value->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+
+			auto button = subwindow->addButton("folder button");
+			button->setText("Choose...");
+			button->setFont(smallfont_outline);
+			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
+			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
+			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Upload/Button_High00.png");
+			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
+			button->setHighlightColor(0xFFFFFFFF);
+			button->setColor(0xFFFFFFFF);
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->setCallback([](Button& button) {
+				soundActivate();
+			});
+			currentY += titleBacking->pos.h + 10;
+		}
+
+		{
+			auto titleBacking = subwindow->addImage(SDL_Rect{ 0, currentY, 280, 52 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Left_Backing00.png", "title img");
+
+			auto title = subwindow->addField("title", 64);
+			title->setHJustify(Field::justify_t::LEFT);
+			title->setVJustify(Field::justify_t::CENTER);
+			title->setFont(bigfont_outline);
+			title->setText("Title:");
+			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
+
+			SDL_Rect valuePos = titleBacking->pos;
+			valuePos.x = titleBacking->pos.x + titleBacking->pos.w + 20;
+			valuePos.w = 380;
+			auto value = subwindow->addImage(valuePos, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Folder_Backing00.png", "title value img");
+			auto titleValue = subwindow->addField("title value", 64);
+			titleValue->setHJustify(Field::justify_t::CENTER);
+			titleValue->setVJustify(Field::justify_t::CENTER);
+			titleValue->setFont(bigfont_outline);
+			titleValue->setText("Title");
+			titleValue->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+
+			auto button = subwindow->addButton("title button");
+			button->setText("Edit...");
+			button->setFont(smallfont_outline);
+			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
+			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
+			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Upload/Button_High00.png");
+			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
+			button->setHighlightColor(0xFFFFFFFF);
+			button->setColor(0xFFFFFFFF);
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->setCallback([](Button& button) {
+				workshopEditPrompt("Enter a title for this item.\n\nThis can be edited later within the Steam Workshop\npage after creation.", "Enter a title", "Confirm", "Cancel",
+					[](Button& button) {
+						soundActivate();
+						closeBinary();
+						//std::string text = closeTextField();
+					},
+					[](Button& button) {
+						soundCancel();
+						closeBinary();
+						//(void)closeTextField();
+					}, false, true);
+			});
+			currentY += titleBacking->pos.h + 10;
+		}
+
+		{
+			auto titleBacking = subwindow->addImage(SDL_Rect{ 0, currentY, 280, 52 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Left_Backing00.png", "desc img");
+
+			auto title = subwindow->addField("desc", 64);
+			title->setHJustify(Field::justify_t::LEFT);
+			title->setVJustify(Field::justify_t::CENTER);
+			title->setFont(bigfont_outline);
+			title->setText("Description:");
+			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
+
+			SDL_Rect valuePos = titleBacking->pos;
+			valuePos.x = titleBacking->pos.x + titleBacking->pos.w + 20;
+			valuePos.w = 380;
+			auto value = subwindow->addImage(valuePos, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Folder_Backing00.png", "desc value img");
+			auto titleValue = subwindow->addField("desc value", 64);
+			titleValue->setHJustify(Field::justify_t::CENTER);
+			titleValue->setVJustify(Field::justify_t::CENTER);
+			titleValue->setFont(bigfont_outline);
+			titleValue->setText("Description");
+			titleValue->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+
+			auto button = subwindow->addButton("desc button");
+			button->setText("Edit...");
+			button->setFont(smallfont_outline);
+			button->setSize(SDL_Rect{ valuePos.x + valuePos.w + 20, titleBacking->pos.y + titleBacking->pos.h / 2 - 44 / 2, 158, 44 });
+			button->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_00.png");
+			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Upload/Button_High00.png");
+			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
+			button->setHighlightColor(0xFFFFFFFF);
+			button->setColor(0xFFFFFFFF);
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->setCallback([](Button& button) {
+				soundActivate();
+
+				});
+			currentY += titleBacking->pos.h + 10;
+		}
+
+		{
+			auto titleBacking = subwindow->addImage(SDL_Rect{ 0, currentY, 280, 52 }, 0xFFFFFFFF,
+				"*#images/ui/Main Menus/Mods/Upload/Upload_Left_Backing00.png", "tags img");
+
+			auto title = subwindow->addField("tags", 64);
+			title->setHJustify(Field::justify_t::LEFT);
+			title->setVJustify(Field::justify_t::CENTER);
+			title->setFont(bigfont_outline);
+			title->setText("Tags:");
+			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
+
+			struct Tags_t
+			{
+				std::string tag;
+				std::string text;
+				Tags_t(const char* _tag, const char* _text)
+				{
+					tag = _tag;
+					text = _text;
+				}
+			};
+			std::vector<Tags_t> tag_settings = {
+				Tags_t("dungeons", "Dungeons"),
+				Tags_t("textures", "Textures"),
+				Tags_t("models", "Models"),
+				Tags_t("gameplay", "Gameplay"),
+				Tags_t("audio", "Audio"),
+				Tags_t("misc", "Misc"),
+				Tags_t("translations", "Translations")
+			};
+			int currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
+			for ( int i = 0; i < tag_settings.size(); ++i )
+			{
+				SDL_Rect settingPos{ currentX, currentY + 52 / 2 - 44 / 2, 44, 44 };
+				auto setting = subwindow->addButton((std::string("setting") + std::to_string(i)).c_str());
+				setting->setIcon("*#images/ui/Main Menus/Mods/Upload/Fill_Checked_00.png");
+				setting->setStyle(Button::style_t::STYLE_CHECKBOX);
+				setting->setSize(settingPos);
+				setting->setHighlightColor(0);
+				setting->setBorderColor(0);
+				setting->setBorder(0);
+				setting->setColor(0);
+
+				auto settingBg = subwindow->addImage(setting->getSize(), 0xFFFFFFFF,
+					"*#images/ui/Main Menus/Mods/Upload/BG_Checked_00.png", (std::string("setting_bg") + std::to_string(i)).c_str());
+
+				auto label = subwindow->addField((std::string("label") + std::to_string(i)).c_str(), 128);
+				label->setFont(smallfont_outline);
+				label->setText(tag_settings[i].text.c_str());
+				//label->setColor(makeColor(166, 123, 81, 255));
+				label->setColor(0xFFFFFFFF);
+				label->setHJustify(Field::justify_t::LEFT);
+				label->setVJustify(Field::justify_t::CENTER);
+				SDL_Rect labelPos { settingPos.x + settingPos.w + 8, currentY, 82, 52 };
+				if ( auto textGet = label->getTextObject() )
+				{
+					labelPos.w = std::max(labelPos.w, (int)textGet->getWidth());
+				}
+				label->setSize(labelPos);
+
+				if ( i > 0 && i % 3 == 0 )
+				{
+					currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
+					currentY += 52;
+				}
+				else
+				{
+					currentX = labelPos.x + labelPos.w + 16;
+				}
+			}
+
+			currentY += titleBacking->pos.h + 10;
+		}
+
+		auto banner = subwindow->addImage(
+			SDL_Rect{ 0, currentY, subwindow->getSize().w, 42},
+			0xffffffff,
+			"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
+			"banner"
+		);
+
+		/*auto banner_trial = subwindow->addField("banner_trial", 32);
+		banner_trial->setSize(SDL_Rect{ 48, 88, 66, 42 });
+		banner_trial->setJustify(Field::justify_t::CENTER);
+		banner_trial->setFont(bigfont_outline);
+		banner_trial->setText("Trial");
+
+		auto banner_time = subwindow->addField("banner_trial", 32);
+		banner_time->setSize(SDL_Rect{ 920, 88, 116, 42 });
+		banner_time->setJustify(Field::justify_t::CENTER);
+		banner_time->setFont(bigfont_outline);
+		banner_time->setText("Best Time");*/
+
+		/*SDL_Rect fleur_positions[4] = {
+			{ 22, 94, 26, 30 },
+			{ 114, 94, 26, 30 },
+			{ 894, 94, 26, 30 },
+			{ 1036, 94, 26, 30 },
+		};
+		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
+		for ( int c = 0; c < num_fleurs; ++c ) {
+			(void)subwindow->addImage(
+				fleur_positions[c],
+				0xffffffff,
+				"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
+				(std::string("fleur") + std::to_string(c)).c_str()
+			);
+		}*/
+
+		/*auto slider = subwindow->addSlider("scroll_slider");
+		slider->setBorder(48);
+		slider->setOrientation(Slider::SLIDER_VERTICAL);
+		slider->setRailSize(SDL_Rect{ subwindow->getSize().w - 54, 0, 54, 476 });
+		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_01.png");
+		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
+		slider->setHandleImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
+		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
+		slider->setCallback([](Slider& slider) {
+			Frame* frame = static_cast<Frame*>(slider.getParent());
+		auto actualSize = frame->getActualSize();
+		actualSize.y = slider.getValue();
+		frame->setActualSize(actualSize);
+		auto railSize = slider.getRailSize();
+		railSize.y = actualSize.y;
+		slider.setRailSize(railSize);
+		slider.updateHandlePosition();
+		auto gradient_background = frame->findImage("gradient_background");
+		assert(gradient_background);
+		gradient_background->pos.y = actualSize.y;
+			});
+		slider->setTickCallback([](Widget& widget) {
+			Slider* slider = static_cast<Slider*>(&widget);
+		Frame* frame = static_cast<Frame*>(slider->getParent());
+		auto actualSize = frame->getActualSize();
+		slider->setValue(actualSize.y);
+		auto railSize = slider->getRailSize();
+		railSize.y = actualSize.y;
+		slider->setRailSize(railSize);
+		slider->updateHandlePosition();
+		auto gradient_background = frame->findImage("gradient_background");
+		assert(gradient_background);
+		gradient_background->pos.y = actualSize.y;
+			});
+		slider->setValue(0.f);
+		slider->setMinValue(0.f);
+		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
+		slider->setWidgetSearchParent("hall_of_trials_menu");
+		slider->setWidgetLeft("tutorial_hub");
+		slider->addWidgetAction("MenuStart", "enter");
+		slider->addWidgetAction("MenuAlt1", "reset");
+		slider->addWidgetAction("MenuCancel", "back_button");*/
+
+		static auto make_button = [](Frame& subwindow, int y, const char* name, const char* label, const char* sublabel) {
+			auto button = subwindow.addButton(name);
+			button->setSize(SDL_Rect{ 8, y, 884, 52 });
+			button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+			button->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+			button->setHighlightColor(0xffffffff);
+			button->setColor(0xffffffff);
+			button->setVJustify(Button::justify_t::CENTER);
+			button->setHJustify(Button::justify_t::LEFT);
+			button->setFont(bigfont_no_outline);
+			button->setText(label);
+			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->setCallback([](Button& button) {
+				soundActivate();
+			if ( tutorial_map_destination != button.getName() ) {
+				tutorial_map_destination = button.getName();
+			}
+			else {
+				auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
+				frame = static_cast<Frame*>(frame->getParent()); assert(frame);
+				auto enter = frame->findButton("enter"); assert(enter);
+				enter->activate();
+			}
+				});
+			button->setTickCallback([](Widget& widget) {
+				std::string sublabel_name = widget.getName();
+			sublabel_name.append("_sublabel_background");
+			auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
+			auto button = static_cast<Button*>(&widget); assert(button);
+			auto sublabel_background = frame->findImage(sublabel_name.c_str());
+			if ( sublabel_background ) {
+				if ( button->isSelected() || tutorial_map_destination == widget.getName() ) {
+					sublabel_background->path = "*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeSelected_00.png";
+					button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
+				}
+				else {
+					sublabel_background->path = "*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png";
+					button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
+				}
+			}
+				});
+			button->setWidgetSearchParent(subwindow.getParent()->getName());
+			button->addWidgetAction("MenuStart", "enter");
+			button->addWidgetAction("MenuAlt1", "reset");
+			button->addWidgetAction("MenuCancel", "back_button");
+
+			std::string sublabel_name = name;
+			auto sublabel_background = subwindow.addImage(
+				SDL_Rect{ 938, y + 4, 98, 44 },
+				0xffffffff,
+				"*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png",
+				(sublabel_name + "_sublabel_background").c_str()
+			);
+
+			auto sublabel_text = subwindow.addField((sublabel_name + "_sublabel").c_str(), 16);
+			sublabel_text->setJustify(Field::justify_t::CENTER);
+			sublabel_text->setFont(bigfont_no_outline);
+			sublabel_text->setSize(sublabel_background->pos);
+			sublabel_text->setText(sublabel);
+
+			return button;
+		};
+
+		// total clear time
+		auto total_time_label = window->addField("total_time_label", 128);
+		total_time_label->setFont(bigfont_no_outline);
+		total_time_label->setSize(SDL_Rect{ 540, 646, 340, 30 });
+		total_time_label->setText(" Total Clear Time");
+		total_time_label->setHJustify(Field::justify_t::LEFT);
+		total_time_label->setVJustify(Field::justify_t::CENTER);
+
+		auto total_time_field = window->addField("total_time", 16);
+		total_time_field->setFont(bigfont_no_outline);
+		total_time_field->setSize(SDL_Rect{ 540, 646, 340, 30 });
+		total_time_field->setText("total_time_str.c_str()");
+		total_time_field->setHJustify(Field::justify_t::RIGHT);
+		total_time_field->setVJustify(Field::justify_t::CENTER);
+
+		// buttons at bottom
+		auto reset = window->addButton("reset");
+		reset->setText("Reset Trial\nProgress");
+		reset->setSize(SDL_Rect{ 152, 630, 164, 62 });
+		reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		reset->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		reset->setFont(smallfont_outline);
+		reset->setHighlightColor(0xffffffff);
+		reset->setColor(0xffffffff);
+		reset->setCallback([](Button&) {
+			binaryPrompt(
+				"Are you sure you want to reset\nyour best times?", "Yes", "No",
+				[](Button& button) { // Yes button
+					soundActivate();
+		soundDeleteSave();
+
+		// update window
+		assert(main_menu_frame);
+		auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+		window->removeSelf();
+		createHallofTrialsMenu();
+
+		// remove prompt
+		closeBinary();
+				},
+				[](Button& button) { // No button
+					soundCancel();
+
+				// select another button
+				assert(main_menu_frame);
+				auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
+				auto subwindow = window->findFrame("subwindow"); assert(subwindow);
+				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+				tutorial->select();
+
+				// remove prompt
+				closeBinary();
+				}
+				);
+			});
+
+		auto enter = window->addButton("enter");
+		enter->setText("Enter Level");
+		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
+		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+		enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+		enter->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+		enter->setFont(smallfont_outline);
+		enter->setHighlightColor(0xffffffff);
+		enter->setColor(0xffffffff);
+		enter->setCallback([](Button& button) {
+			if ( !tutorial_map_destination.empty() ) {
+				destroyMainMenu();
+				createDummyMainMenu();
+				beginFade(MainMenu::FadeDestination::HallOfTrials);
+			}
+			else {
+				errorPrompt(
+					"Select a level to start first.",
+					"Okay",
+					[](Button& button) {
+						soundCancel();
+				assert(main_menu_frame);
+				auto hall_of_trials = main_menu_frame->findFrame("hall_of_trials_menu"); assert(hall_of_trials);
+				auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
+				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
+				tutorial->select();
+				closeMono();
+					}
+				);
+			}
+			});
 	}
 }
