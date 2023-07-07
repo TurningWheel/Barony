@@ -2302,11 +2302,17 @@ namespace MainMenu {
 				input.consumeBinaryToggle(b.first.c_str());
 			}
 		}
-		old_bindings = *this;
 	}
 
 	inline Bindings Bindings::load() {
-		return old_bindings;
+        Bindings bindings;
+        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+            Input& input = Input::inputs[c];
+            bindings.kb_mouse_bindings[c] = input.getKeyboardBindings();
+            bindings.gamepad_bindings[c] = input.getGamepadBindings();
+            bindings.joystick_bindings[c] = input.getJoystickBindings();
+        }
+        return bindings;
 	}
 
 	inline Bindings Bindings::reset(const char* profile) {
@@ -3656,16 +3662,11 @@ namespace MainMenu {
 	}
 
 	bool settingsLoad() {
-		bool result = FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
-		if (result) {
-		    old_bindings = allSettings.bindings;
-		}
-		return result;
+		return FileHelper::readObject((std::string(outputdir) + "/config/config.json").c_str(), allSettings);
 	}
 
 	void settingsReset() {
 		allSettings = AllSettings::reset();
-		old_bindings = allSettings.bindings;
 	}
 
 	static void settingsCustomizeInventorySorting(Button&);
@@ -4746,14 +4747,11 @@ namespace MainMenu {
 		return result;
 	}
 
-	static Frame* settingsSubwindowSetup(Button& button) {
-		/*if (settings_tab_name == button.getName()) {
-			return nullptr;
-		}*/
+	static Frame* settingsSubwindowSetup(const char* tab) {
 		if (!video_refresh) {
 		    soundActivate();
 		}
-		settings_tab_name = button.getName();
+		settings_tab_name = tab;
 
 		assert(main_menu_frame);
 		auto settings = main_menu_frame->findFrame("settings"); assert(settings);
@@ -5235,23 +5233,20 @@ namespace MainMenu {
 		}
 	}
 
-	static void settingsBindings(int player_index, int device_index, const char* profile, Setting setting_to_select) {
-		soundActivate();
+    static Button* bound_button;
+    static std::string bound_binding;
+    static std::string bound_input;
+    static int bound_player;
+    static int bound_device;
+    static const char* bound_profile;
 
-		static Button* bound_button;
-		static std::string bound_binding;
-		static std::string bound_input;
-		static int bound_player;
-		static int bound_device;
-        static const char* bound_profile;
+	static void settingsBindings(int player_index, int device_index, const char* profile) {
+		soundActivate();
 
 		bind_mode = false;
 		bound_button = nullptr;
 		bound_binding = "";
 		bound_input = "";
-		bound_player = player_index;
-		bound_device = device_index;
-        bound_profile = profile;
 
 		auto window = settingsGenericWindow("bindings", "BINDINGS",
 			[](Button& button){ // restore defaults
@@ -5260,15 +5255,14 @@ namespace MainMenu {
 				parent_background->removeSelf();
 				allSettings.bindings = Bindings::reset(defaultControlLayout);
 				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-				settingsBindings(player, inputs.hasController(player) ? 1 : 0, defaultControlLayout,
-				    {Setting::Type::Dropdown, "player_dropdown_button"});
+				settingsBindings(player, inputs.hasController(player) ? 1 : 0, defaultControlLayout);
 			},
 			[](Button& button){ // discard & exit
 				soundCancel();
 				auto parent = static_cast<Frame*>(button.getParent()); assert(parent);
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
-				allSettings.bindings.load();
+                allSettings.bindings = old_bindings;
 			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
@@ -5287,103 +5281,18 @@ namespace MainMenu {
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-
-		std::vector<Setting> bindings;
-		bindings.reserve(getBindings(profile).size());
-		for (auto& binding : getBindings(profile)) {
-            const std::string& str = *(&binding.keyboard + device_index);
-            if (str != hiddenBinding) {
-		        bindings.push_back({Setting::Type::Binding, binding.action.c_str()});
-		    }
-		}
-
 		int y = 0;
-		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Profiles", true);
-        
-        static std::vector<std::string> players;
-        static std::vector<const char*> player_ptrs;
-        if (players.empty()) {
-            players.reserve(MAX_SPLITSCREEN);
-            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
-                std::string str = "Player ";
-                str += std::to_string(c + 1);
-                players.emplace_back(str);
-                player_ptrs.emplace_back(players.back().c_str());
-            }
-        }
-
-		std::string player_str = "Player " + std::to_string(player_index + 1);
-		y += settingsAddDropdown(*subwindow, y, "player_dropdown_button", "Player",
-			"Select the player whose controls you wish to customize.", false,
-            player_ptrs, player_str.c_str(),
-			[](Button& button){
-				soundActivate();
-				settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
-					[](Frame::entry_t& entry){
-						soundActivate();
-						auto parent = main_menu_frame->findFrame("bindings");
-						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
-						parent_background->removeSelf();
-						int player_index = (int)(entry.name.back() - '1');
-						settingsBindings(player_index, bound_device, getMatchingProfileName(player_index, bound_device == 1),
-						    {Setting::Type::Dropdown, "player_dropdown_button"});
-					});
-			});
-
-		const std::vector<const char*> devices = {
-		    "KB & Mouse",
-		    "Gamepad",
-		    //"Joystick", // Maybe for the future.
-		};
-
-#ifndef NINTENDO
-		y += settingsAddDropdown(*subwindow, y, "device_dropdown_button", "Device",
-			"Select a controller for the given player.", false, devices, devices[device_index],
-			[](Button& button){
-				soundActivate();
-				settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
-					[](Frame::entry_t& entry){
-						soundActivate();
-						auto parent = main_menu_frame->findFrame("bindings");
-						auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
-						parent_background->removeSelf();
-						int device_index = getDeviceIndexForName(entry.text.c_str());
-						settingsBindings(bound_player, device_index, getMatchingProfileName(bound_player, device_index == 1),
-						    {Setting::Type::Dropdown, "device_dropdown_button"});
-					});
-			});
-#endif
-        
-        std::vector<const char*> layouts;
-        for (auto& layout : defaultBindings) {
-            layouts.emplace_back(layout.name.c_str());
-        }
-        
-        y += settingsAddDropdown(*subwindow, y, "profile_dropdown_button", "Profile",
-            "Select a predefined binding layout for the given player.", false, layouts, profile,
-            [](Button& button){
-                soundActivate();
-                settingsOpenDropdown(button, "profile_dropdown", DropdownType::Short,
-                    [](Frame::entry_t& entry){
-                        soundActivate();
-                        auto parent = main_menu_frame->findFrame("bindings");
-                        auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
-                        parent_background->removeSelf();
-                        const char* profile = entry.text.c_str();
-                        allSettings.bindings.kb_mouse_bindings[bound_player].clear();
-                        allSettings.bindings.gamepad_bindings[bound_player].clear();
-                        allSettings.bindings.joystick_bindings[bound_player].clear();
-                        for (auto& binding : getBindings(profile)) {
-                            allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
-                            allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
-                            allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
-                        }
-                        settingsBindings(bound_player, bound_device, profile,
-                            {Setting::Type::Dropdown, "profile_dropdown_button"});
-                    });
-            });
 
 		y += settingsAddSubHeader(*subwindow, y, "bindings_header", "Bindings", true);
+        
+        std::vector<Setting> bindings;
+        bindings.reserve(getBindings(profile).size());
+        for (auto& binding : getBindings(profile)) {
+            const std::string& str = *(&binding.keyboard + device_index);
+            if (str != hiddenBinding) {
+                bindings.push_back({Setting::Type::Binding, binding.action.c_str()});
+            }
+        }
 
 		for (auto& binding : bindings) {
 			char tip[256];
@@ -5523,18 +5432,10 @@ bind_failed:
 				}
 			}
 			});
-
-		hookSettings(*subwindow,
-			{{Setting::Type::Dropdown, "player_dropdown_button"},
-#ifndef NINTENDO
-			{Setting::Type::Dropdown, "device_dropdown_button"},
-#endif
-            {Setting::Type::Dropdown, "profile_dropdown_button"},
-			bindings[0],
-			});
+        
 		hookSettings(*subwindow, bindings);
-		settingsSubwindowFinalize(*subwindow, y, setting_to_select);
-		settingsSelect(*subwindow, setting_to_select);
+		settingsSubwindowFinalize(*subwindow, y, bindings[0]);
+		settingsSelect(*subwindow, bindings[0]);
 	}
 
 	static const std::vector<const char*> crosshairs =
@@ -5577,7 +5478,7 @@ bind_failed:
 
 	static void settingsGeneral(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "fast_restart"});
@@ -5748,7 +5649,7 @@ bind_failed:
 
 	static void settingsVideo(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 #ifdef NINTENDO
@@ -5886,7 +5787,7 @@ bind_failed:
 
 	static void settingsAudio(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 #if defined(NINTENDO) || !defined(USE_FMOD)
@@ -6013,117 +5914,216 @@ bind_failed:
 #endif
 	}
 
-	static void settingsControls(Button& button) {
-		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
-			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
-			return;
-		}
-		int y = 0;
+    static void settingsControlsPopulate(int player, int device, const char* profile, Setting setting_to_select) {
+        bound_player = player;
+        bound_device = device;
+        bound_profile = profile;
+        
+        Frame* settings_subwindow;
+        if ((settings_subwindow = settingsSubwindowSetup("Controls")) == nullptr) {
+            auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+            auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+            settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
+            return;
+        }
+        int y = 0;
+        
+        y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", "Layout");
+        
+        {
+            const char* path = "*#images/ui/Main Menus/Settings/Controls/Layout_PS5-lines.png";
+            const Image* image = Image::get(path); assert(image);
+            const SDL_Rect pos{
+                (int)(settings_subwindow->getSize().w - image->getWidth()) / 2,
+                y,
+                (int)image->getWidth(),
+                (int)image->getHeight()
+            };
+            auto layout = settings_subwindow->addImage(pos, 0xffffffff, path, "layout");
+            y += pos.h;
+        }
+        
+        y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", "Bindings", true);
+        
+        static std::vector<std::string> players;
+        static std::vector<const char*> player_ptrs;
+        if (players.empty()) {
+            players.reserve(MAX_SPLITSCREEN);
+            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+                std::string str = "Player ";
+                str += std::to_string(c + 1);
+                players.emplace_back(str);
+                player_ptrs.emplace_back(players.back().c_str());
+            }
+        }
 
+        std::string player_str = "Player " + std::to_string(player + 1);
+        y += settingsAddDropdown(*settings_subwindow, y, "player_dropdown_button", "Player",
+            "Select the player whose controls you wish to customize.", false,
+            player_ptrs, player_str.c_str(),
+            [](Button& button){
+                soundActivate();
+                settingsOpenDropdown(button, "player_dropdown", DropdownType::Short,
+                    [](Frame::entry_t& entry){
+                        soundActivate();
+                        const int player = (int)(entry.name.back() - '1');
+                        settingsControlsPopulate(player, bound_device,
+                            getMatchingProfileName(player, bound_device == 1),
+                            {Setting::Type::Dropdown, "player_dropdown_button"});
+                    });
+            });
+        
 #ifndef NINTENDO
-		y += settingsAddSubHeader(*settings_subwindow, y, "general", "General Settings");
-		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Modify controls for mouse, keyboard, gamepads, and other peripherals.",
-			[](Button&){
-			    allSettings.bindings = Bindings::load();
-				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-			    settingsBindings(player, inputs.hasController(player) ? 1 : 0, getMatchingProfileName(player, inputs.hasController(player)),
-			        {Setting::Type::Dropdown, "player_dropdown_button"});
-			    });
-
-		y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
-		std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
-		y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
-			"Control the speed by which mouse movement affects camera movement.",
-			allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
-		/*y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
-			"Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
-			mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);*/
-		y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
-			"Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
-			allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
-			"Reverse mouse up and down movement for controlling the orientation of the player.",
-			allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
-			"Smooth the movement of the mouse over a few frames of input.",
-			allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
-		/*y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
-			"Limit how fast the player can rotate by moving the mouse.",
-			allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});*/
-		y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
-			"Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
-			allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
+        const std::vector<const char*> devices = {
+            "KB & Mouse",
+            "Gamepad",
+            //"Joystick", // Maybe for the future.
+        };
+        
+        y += settingsAddDropdown(*settings_subwindow, y, "device_dropdown_button", "Device",
+            "Select a controller for the given player.", false, devices, devices[device],
+            [](Button& button){
+                soundActivate();
+                settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
+                    [](Frame::entry_t& entry){
+                        soundActivate();
+                        const int device = getDeviceIndexForName(entry.text.c_str());
+                        settingsControlsPopulate(bound_player, device,
+                            getMatchingProfileName(bound_player, device == 1),
+                            {Setting::Type::Dropdown, "device_dropdown_button"});
+                    });
+            });
 #endif
+        
+        std::vector<const char*> layouts;
+        for (auto& layout : defaultBindings) {
+            layouts.emplace_back(layout.name.c_str());
+        }
+        
+        y += settingsAddDropdown(*settings_subwindow, y, "profile_dropdown_button", "Profile",
+            "Select a predefined binding layout for the given player.", false, layouts, profile,
+            [](Button& button){
+                soundActivate();
+                settingsOpenDropdown(button, "profile_dropdown", DropdownType::Short,
+                    [](Frame::entry_t& entry){
+                        soundActivate();
+                        const char* profile = entry.text.c_str();
+                        allSettings.bindings.kb_mouse_bindings[bound_player].clear();
+                        allSettings.bindings.gamepad_bindings[bound_player].clear();
+                        allSettings.bindings.joystick_bindings[bound_player].clear();
+                        for (auto& binding : getBindings(profile)) {
+                            allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
+                            allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
+                            allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
+                        }
+                        settingsControlsPopulate(bound_player, bound_device, profile,
+                            {Setting::Type::Dropdown, "profile_dropdown_button"});
+                    });
+            });
 
+        y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
+            "Change controller bindings.",
+            [](Button&){
+                const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
+                old_bindings = allSettings.bindings;
+                settingsBindings(player, bound_device, bound_profile);
+                });
+
+        // Mouse & Keyboard settings
+#ifndef NINTENDO
+        y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
+        std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
+        y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
+            "Control the speed by which mouse movement affects camera movement.",
+            allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
+        /*y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
+            "Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
+            mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);*/
+        y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
+            "Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
+            allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
+        y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
+            "Reverse mouse up and down movement for controlling the orientation of the player.",
+            allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
+        y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
+            "Smooth the movement of the mouse over a few frames of input.",
+            allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
+        /*y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
+            "Limit how fast the player can rotate by moving the mouse.",
+            allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});*/
+        y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
+            "Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
+            allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
+#endif
+        
+        // Gamepad settings
 #ifdef NINTENDO
-		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-		y += settingsAddCustomize(*settings_subwindow, y, "bindings", "Bindings",
-			"Change controller bindings.",
-			[](Button&){
-			    allSettings.bindings = Bindings::load();
-				const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
-			    settingsBindings(player, inputs.hasController(player) ? 1 : 0, getMatchingProfileName(player, inputs.hasController(player)),
-			        {Setting::Type::Dropdown, "player_dropdown_button"});
-			    });
+        y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
 #else
-		y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
+        y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
 #endif
-		std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
-		y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
-			"Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
-			gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
-		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
-			"Affect the horizontal sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
-		y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
-			"Affect the vertical sensitivity of the control stick used for turning.",
-			allSettings.turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+        std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
+        y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
+            "Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
+            gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
+        y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
+            "Affect the horizontal sensitivity of the control stick used for turning.",
+            allSettings.turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
+        y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
+            "Affect the vertical sensitivity of the control stick used for turning.",
+            allSettings.turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
 
-		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
-			"Enable to invert left/right look controls of the player camera.",
-			allSettings.gamepad_camera_invert_x, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_x = button.isPressed(); });
-		y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
-			"Enable to invert up/down look controls of the player camera.",
-			allSettings.gamepad_camera_invert_y, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_y = button.isPressed(); });
+        y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
+            "Enable to invert left/right look controls of the player camera.",
+            allSettings.gamepad_camera_invert_x, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_x = button.isPressed(); });
+        y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
+            "Enable to invert up/down look controls of the player camera.",
+            allSettings.gamepad_camera_invert_y, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_y = button.isPressed(); });
 
 #ifndef NINTENDO
-		hookSettings(*settings_subwindow,
-			{{Setting::Type::Customize, "bindings"},
-			{Setting::Type::Slider, "mouse_sensitivity"},
-			//{Setting::Type::Dropdown, "mkb_facehotbar"},
-			{Setting::Type::Boolean, "numkeys_in_inventory"},
-			{Setting::Type::Boolean, "reverse_mouse"},
-			{Setting::Type::Boolean, "smooth_mouse"},
-			//{Setting::Type::Boolean, "rotation_speed_limit"},
-			{Setting::Type::Boolean, "mkb_world_tooltips"},
-			{Setting::Type::Dropdown, "gamepad_facehotbar"},
-			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
-		});
+        hookSettings(*settings_subwindow,
+            {{Setting::Type::Dropdown, "player_dropdown_button"},
+            {Setting::Type::Dropdown, "device_dropdown_button"},
+            {Setting::Type::Dropdown, "profile_dropdown_button"},
+            {Setting::Type::Customize, "bindings"},
+            {Setting::Type::Slider, "mouse_sensitivity"},
+            {Setting::Type::Boolean, "numkeys_in_inventory"},
+            {Setting::Type::Boolean, "reverse_mouse"},
+            {Setting::Type::Boolean, "smooth_mouse"},
+            {Setting::Type::Boolean, "mkb_world_tooltips"},
+            {Setting::Type::Dropdown, "gamepad_facehotbar"},
+            {Setting::Type::Slider, "turn_sensitivity_x"},
+            {Setting::Type::Slider, "turn_sensitivity_y"},
+            {Setting::Type::Boolean, "gamepad_camera_invert_x"},
+            {Setting::Type::Boolean, "gamepad_camera_invert_y"},
+        });
 #else
-		hookSettings(*settings_subwindow,
-			{{Setting::Type::Customize, "bindings"},
-			{Setting::Type::Dropdown, "gamepad_facehotbar"},
-			{Setting::Type::Slider, "turn_sensitivity_x"},
-			{Setting::Type::Slider, "turn_sensitivity_y"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_x"},
-			{Setting::Type::Boolean, "gamepad_camera_invert_y"},
-		});
+        hookSettings(*settings_subwindow,
+            {{Setting::Type::Dropdown, "player_dropdown_button"},
+            {Setting::Type::Dropdown, "profile_dropdown_button"},
+            {Setting::Type::Customize, "bindings"},
+            {Setting::Type::Dropdown, "gamepad_facehotbar"},
+            {Setting::Type::Slider, "turn_sensitivity_x"},
+            {Setting::Type::Slider, "turn_sensitivity_y"},
+            {Setting::Type::Boolean, "gamepad_camera_invert_x"},
+            {Setting::Type::Boolean, "gamepad_camera_invert_y"},
+        });
 #endif
+        
+        settingsSubwindowFinalize(*settings_subwindow, y, setting_to_select);
+        settingsSelect(*settings_subwindow, setting_to_select);
+    }
 
-		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Customize, "bindings"});
-		settingsSelect(*settings_subwindow, {Setting::Type::Customize, "bindings"});
+	static void settingsControls(Button& button) {
+        const int player = multiplayer == CLIENT ? 0 : getMenuOwner();
+        const int device = inputs.hasController(player) ? 1 : 0;
+        const char* profile = getMatchingProfileName(player, inputs.hasController(player));
+        settingsControlsPopulate(player, device, profile, {Setting::Type::Dropdown, "player_dropdown_button"});
 	}
 
 	static void settingsOnline(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 		    settingsSelect(*settings_subwindow, {Setting::Type::Field, "port_number"});
@@ -6167,7 +6167,7 @@ bind_failed:
 
 	static void settingsGame(Button& button) {
 		Frame* settings_subwindow;
-		if ((settings_subwindow = settingsSubwindowSetup(button)) == nullptr) {
+		if ((settings_subwindow = settingsSubwindowSetup(button.getName())) == nullptr) {
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			settingsSelect(*settings_subwindow, {Setting::Type::Boolean, "hunger"});
