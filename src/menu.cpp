@@ -9603,14 +9603,14 @@ void doNewGame(bool makeHighscore) {
 #ifndef NINTENDO
 			if ( inputs.hasController(c) )
 			{
-				players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+				players[c]->hotbar.useHotbarFaceMenu = playerSettings[c].gamepad_facehotbar;
 			}
 			else if ( inputs.bPlayerUsingKeyboardControl(c) )
 			{
 				players[c]->hotbar.useHotbarFaceMenu = false;
 			}
 #else
-			players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+			players[c]->hotbar.useHotbarFaceMenu = playerSettings[c].gamepad_facehotbar;
 #endif // NINTENDO
 		}
 	}

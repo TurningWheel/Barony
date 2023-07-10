@@ -55,6 +55,16 @@ struct PlayerSettings_t
 	int player = -1;
 	int shootmodeCrosshair = 0;
 	int shootmodeCrosshairOpacity = 50;
+    real_t mousespeed = 32.0;
+    bool mkb_world_tooltips_enabled = true;
+    bool gamepad_facehotbar = true;
+    bool hotbar_numkey_quick_add = true;
+    bool reversemouse = 0;
+    bool smoothmouse = false;
+    real_t gamepad_rightx_sensitivity = 1.0;
+    real_t gamepad_righty_sensitivity = 1.0;
+    bool gamepad_rightx_invert = false;
+    bool gamepad_righty_invert = false;
 	void init(const int _player)
 	{
 		player = _player;

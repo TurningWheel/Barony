@@ -63,8 +63,6 @@ namespace MainMenu {
     ConsoleVariable<bool> clipped_splitscreen("/split_clipped", true);
     static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
     ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false, "if true, game restarts 1 second after last player death");
-	ConsoleVariable<bool> cvar_mkb_world_tooltips("/mkb_world_tooltips", true);
-	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
 	ConsoleVariable<float> cvar_enemybar_scale("/enemybar_scale", 100.0);
@@ -2571,30 +2569,34 @@ namespace MainMenu {
     static const char* bound_profile;
 
     inline void Controls::save(int index) {
-        *cvar_mkb_world_tooltips = mkb_world_tooltips_enabled;
-        *cvar_gamepad_facehotbar = gamepad_facehotbar;
-        hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
-        mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
-        reversemouse = reverse_mouse_enabled;
-        smoothmouse = smooth_mouse_enabled;
-        gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
-        gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
-        gamepad_rightx_invert = gamepad_camera_invert_x;
-        gamepad_righty_invert = gamepad_camera_invert_y;
+        assert(index >= 0 && index < MAXPLAYERS);
+        auto& settings = playerSettings[index];
+        settings.mkb_world_tooltips_enabled = mkb_world_tooltips_enabled;
+        settings.gamepad_facehotbar = gamepad_facehotbar;
+        settings.hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
+        settings.mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
+        settings.reversemouse = reverse_mouse_enabled;
+        settings.smoothmouse = smooth_mouse_enabled;
+        settings.gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
+        settings.gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
+        settings.gamepad_rightx_invert = gamepad_camera_invert_x;
+        settings.gamepad_righty_invert = gamepad_camera_invert_y;
     }
 
     inline Controls Controls::load(int index) {
+        assert(index >= 0 && index < MAXPLAYERS);
+        auto& settings = playerSettings[index];
         Controls controls;
-        controls.mkb_world_tooltips_enabled = *cvar_mkb_world_tooltips;
-        controls.gamepad_facehotbar = *cvar_gamepad_facehotbar;
-        controls.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
-        controls.mouse_sensitivity = mousespeed;
-        controls.reverse_mouse_enabled = reversemouse;
-        controls.smooth_mouse_enabled = smoothmouse;
-        controls.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
-        controls.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
-        controls.gamepad_camera_invert_x = gamepad_rightx_invert;
-        controls.gamepad_camera_invert_y = gamepad_righty_invert;
+        controls.mkb_world_tooltips_enabled = settings.mkb_world_tooltips_enabled;
+        controls.gamepad_facehotbar = settings.gamepad_facehotbar;
+        controls.numkeys_in_inventory_enabled = settings.hotbar_numkey_quick_add;
+        controls.mouse_sensitivity = settings.mousespeed;
+        controls.reverse_mouse_enabled = settings.reversemouse;
+        controls.smooth_mouse_enabled = settings.smoothmouse;
+        controls.turn_sensitivity_x = settings.gamepad_rightx_sensitivity * 32768.0;
+        controls.turn_sensitivity_y = settings.gamepad_righty_sensitivity * 32768.0;
+        controls.gamepad_camera_invert_x = settings.gamepad_rightx_invert;
+        controls.gamepad_camera_invert_y = settings.gamepad_righty_invert;
         return controls;
     }
 

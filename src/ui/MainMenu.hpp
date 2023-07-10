@@ -23,8 +23,6 @@ namespace MainMenu {
 	extern ConsoleVariable<bool> staggered_splitscreen; // if true, viewport sizes are reduced to preserve aspect ratio
 	extern ConsoleVariable<bool> clipped_splitscreen; // if true, viewports rest in a corner rather than centered
     extern ConsoleVariable<bool> cvar_fastRestart;
-	extern ConsoleVariable<bool> cvar_mkb_world_tooltips;
-	extern ConsoleVariable<bool> cvar_gamepad_facehotbar;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale;
 	extern ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen;
 	extern ConsoleVariable<float> cvar_enemybar_scale;

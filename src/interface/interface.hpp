@@ -1145,8 +1145,6 @@ extern bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES]; // true = enable auto
 
 extern int autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES]; // 0 = disable priority sort, fill rightmost first. greater than 0, fill leftmost using value as priority (0 = lowest priority)
 
-extern bool hotbar_numkey_quick_add; // use number keys to add items to hotbar if mouse in inventory panel.
-
 extern bool disable_messages;
 
 extern bool right_click_protect;

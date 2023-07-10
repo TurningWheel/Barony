@@ -9590,7 +9590,7 @@ void Player::HUD_t::processHUD()
 #ifndef NINTENDO
 		if ( inputs.hasController(player.playernum) )
 		{
-			if ( !*MainMenu::cvar_gamepad_facehotbar || *cvar_hotbar_compact_disable )
+			if ( !playerSettings[player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
 			{
 				offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 			}
@@ -9600,7 +9600,7 @@ void Player::HUD_t::processHUD()
             offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 		}
 #else
-		if ( !*MainMenu::cvar_gamepad_facehotbar || *cvar_hotbar_compact_disable )
+		if ( !playerSettings[player.playernum].gamepad_facehotbar || *cvar_hotbar_compact_disable )
 		{
 			offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 		}
@@ -18911,14 +18911,14 @@ void Player::Hotbar_t::processHotbar()
 #ifndef NINTENDO
 	if ( inputs.hasController(player.playernum) )
 	{
-		useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+		useHotbarFaceMenu = playerSettings[player.playernum].gamepad_facehotbar;
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 	{
 		useHotbarFaceMenu = false;
 	}
 #else
-	useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
+	useHotbarFaceMenu = playerSettings[player.playernum].gamepad_facehotbar;
 #endif // NINTENDO
 
 	if ( !hotbarFrame )
