@@ -5951,19 +5951,102 @@ bind_failed:
         }
         int y = 0;
         
-        y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", "Layout");
-        
-        {
-            const char* path = "*#images/ui/Main Menus/Settings/Controls/Layout_PS5-lines.png";
+        // controller graph
+        if (device == 1) {
+            const auto controllerType = Input::inputs[player].getControllerType();
+            
+            y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", "Layout");
+            y += 8;
+            const char* path;
+            switch (controllerType) {
+            case Input::ControllerType::PlayStation:
+                path = "*#images/ui/Main Menus/Settings/Controls/Layout_PS5-lines.png";
+                break;
+            case Input::ControllerType::NintendoSwitch:
+                path = "*#images/ui/Main Menus/Settings/Controls/Layout_Switch-lines.png";
+                break;
+            case Input::ControllerType::Xbox:
+                path = "*#images/ui/Main Menus/Settings/Controls/Layout_Xbox-lines.png";
+                break;
+            }
             const Image* image = Image::get(path); assert(image);
-            const SDL_Rect pos{
-                (int)(settings_subwindow->getSize().w - image->getWidth()) / 2,
-                y,
-                (int)image->getWidth(),
-                (int)image->getHeight()
+            const int x = (int)(settings_subwindow->getSize().w - image->getWidth()) / 2;
+            const SDL_Rect img_pos{x, y, (int)image->getWidth(), (int)image->getHeight()};
+            auto layout = settings_subwindow->addImage(img_pos, 0xffffffff, path, "layout");
+            
+            struct ButtonBinding {
+                const char* name;
+                int x;
+                int y;
+                bool pressed;
             };
-            auto layout = settings_subwindow->addImage(pos, 0xffffffff, path, "layout");
-            y += pos.h + 6;
+            
+            std::vector<ButtonBinding> list;
+            if (controllerType == Input::ControllerType::PlayStation) {
+                const int r = x + (int)image->getWidth() + 4;
+                list.insert(list.end(),{
+                    {"ButtonLeftBumper", 0, 2, false},
+                    {"LeftTrigger", 0, 44, false},
+                    {"ButtonBack", 0, 78, false},
+                    {"DpadX+", 0, 112, false},
+                    {"DpadY+", 0, 148, false},
+                    {"DpadX-", 0, 184, false},
+                    {"DpadY-", 0, 220, false},
+                    {"ButtonLeftStick", 0, 266, false},
+                    {"ButtonLeftStick", 0, 306, true},
+                    {"ButtonRightBumper", r, 2, false},
+                    {"RightTrigger", r, 44, false},
+                    {"ButtonStart", r, 78, false},
+                    {"ButtonA", r, 112, false},
+                    {"ButtonB", r, 144, false},
+                    {"ButtonX", r, 176, false},
+                    {"ButtonY", r, 208, false},
+                    {"ButtonRightStick", r, 250, false},
+                    {"ButtonRightStick", r, 298, true},
+                });
+            }
+            for (auto& b : list) {
+                const auto path = Input::inputs[player].getGlyphPathForInput(
+                    b.name, b.pressed, controllerType);
+                const auto img = Image::get(path.c_str()); assert(img);
+                
+                const int w = img->getWidth();
+                const int h = img->getHeight();
+                
+                constexpr int fieldHeight = 48;
+                
+                auto field = settings_subwindow->addField("", 1024);
+                field->setText(b.name);
+                field->setFont(smallfont_outline);
+                if (b.x) {
+                    // right side
+                    field->setHJustify(Field::justify_t::LEFT);
+                    field->setVJustify(Field::justify_t::CENTER);
+                    field->setSize(SDL_Rect{b.x + w + 4, y + b.y - fieldHeight / 2, x - w - 8, fieldHeight});
+                    const auto pos = SDL_Rect{
+                        b.x,
+                        y + b.y - h / 2,
+                        w,
+                        h
+                    };
+                    settings_subwindow->addImage(pos, 0xffffffff, path.c_str(), "button");
+                } else {
+                    // left side
+                    field->setHJustify(Field::justify_t::RIGHT);
+                    field->setVJustify(Field::justify_t::CENTER);
+                    field->setSize(SDL_Rect{b.x, y + b.y - fieldHeight / 2, x - w - 8, fieldHeight});
+                    const auto pos = SDL_Rect{
+                        x - w - 4,
+                        y + b.y - h / 2,
+                        w,
+                        h
+                    };
+                    settings_subwindow->addImage(pos, 0xffffffff, path.c_str(), "button");
+                }
+            }
+            
+            y += img_pos.h + 6;
+            y += 12;
         }
         
         y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", "Bindings", true);
@@ -6084,11 +6167,10 @@ bind_failed:
                 old_bindings = allSettings.bindings;
                 settingsBindings(player, bound_device, bound_profile);
                 });
-        
-        y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Controller Settings");
 
         // Mouse & Keyboard settings
         if (device == 0) {
+            y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Mouse & Keyboard");
             y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
                 "Control the speed by which mouse movement affects camera movement.",
                 allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
@@ -6122,6 +6204,7 @@ bind_failed:
         
         // Gamepad settings
         if (device == 1) {
+            y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Controller Settings");
             std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
             y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
                 "Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
