@@ -9597,10 +9597,7 @@ void Player::HUD_t::processHUD()
 		}
 		else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 		{
-			if ( !*MainMenu::cvar_mkb_facehotbar || *cvar_hotbar_compact_disable )
-			{
-				offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
-			}
+            offsetHUDAboveHotbarHeight = *cvar_ui_above_hotbar_y;
 		}
 #else
 		if ( !*MainMenu::cvar_gamepad_facehotbar || *cvar_hotbar_compact_disable )
@@ -18918,7 +18915,7 @@ void Player::Hotbar_t::processHotbar()
 	}
 	else if ( inputs.bPlayerUsingKeyboardControl(player.playernum) )
 	{
-		useHotbarFaceMenu = *MainMenu::cvar_mkb_facehotbar;
+		useHotbarFaceMenu = false;
 	}
 #else
 	useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;

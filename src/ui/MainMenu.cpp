@@ -64,7 +64,6 @@ namespace MainMenu {
     static ConsoleVariable<int> clipped_size("/split_clipped_percent", 20);
     ConsoleVariable<bool> cvar_fastRestart("/fastrestart", false, "if true, game restarts 1 second after last player death");
 	ConsoleVariable<bool> cvar_mkb_world_tooltips("/mkb_world_tooltips", true);
-	ConsoleVariable<bool> cvar_mkb_facehotbar("/mkb_facehotbar", false);
 	ConsoleVariable<bool> cvar_gamepad_facehotbar("/gamepad_facehotbar", true);
 	ConsoleVariable<float> cvar_worldtooltip_scale("/worldtooltip_scale", 100.0);
 	ConsoleVariable<float> cvar_worldtooltip_scale_splitscreen("/worldtooltip_scale_splitscreen", 150.0);
@@ -517,20 +516,38 @@ namespace MainMenu {
 	};
 	static struct Video old_video;
 
+    // Controls options
+    struct Controls {
+        bool numkeys_in_inventory_enabled = true;
+        bool mkb_world_tooltips_enabled = true;
+        bool gamepad_facehotbar = true;
+        float mouse_sensitivity = 32.f;
+        bool reverse_mouse_enabled = false;
+        bool smooth_mouse_enabled = false;
+        float turn_sensitivity_x = 75.f;
+        float turn_sensitivity_y = 50.f;
+        bool gamepad_camera_invert_x = false;
+        bool gamepad_camera_invert_y = false;
+        inline void save(int index);
+        static inline Controls load(int index);
+        static inline Controls reset();
+        bool serialize(FileInterface*);
+    };
+
     // All menu options combined
 	struct AllSettings {
 	    std::vector<std::pair<std::string, std::string>> mods;
 	    bool crossplay_enabled;
-	    bool fast_restart = false;
-		float world_tooltip_scale = 100.f;
-		float world_tooltip_scale_splitscreen = 150.f;
-		float enemybar_scale = 100.f;
+	    bool fast_restart;
+		float world_tooltip_scale;
+		float world_tooltip_scale_splitscreen;
+		float enemybar_scale;
 		bool add_items_to_hotbar_enabled;
 		InventorySorting inventory_sorting;
 		LastCreatedCharacter lastCharacter;
 		bool use_on_release_enabled;
-        bool ui_filter_enabled = false;
-        float ui_scale = 100.f;
+        bool ui_filter_enabled;
+        float ui_scale;
 		Minimap minimap;
 		bool show_messages_enabled;
 		Messages show_messages;
@@ -544,14 +561,14 @@ namespace MainMenu {
 		bool bobbing_enabled;
 		bool light_flicker_enabled;
         struct Video video;
-		bool use_frame_interpolation = true;
+		bool use_frame_interpolation;
 		bool vertical_split_enabled;
 		bool staggered_split_enabled;
 		bool clipped_split_enabled;
-		float item_tooltip_height = 100.f;
-		int shootmode_crosshair = 0;
-		int shootmode_crosshair_opacity = 50;
-		bool hdr_enabled = true;
+		float item_tooltip_height;
+		int shootmode_crosshair;
+		int shootmode_crosshair_opacity;
+		bool hdr_enabled;
 		float fov;
 		float fps;
 		std::string audio_device;
@@ -564,19 +581,8 @@ namespace MainMenu {
 		bool minimap_pings_enabled;
 		bool player_monster_sounds_enabled;
 		bool out_of_focus_audio_enabled;
-		Bindings bindings;
-		bool numkeys_in_inventory_enabled;
-		bool mkb_world_tooltips_enabled = true;
-		bool mkb_facehotbar = false;
-		bool gamepad_facehotbar = true;
-		float mouse_sensitivity;
-		bool reverse_mouse_enabled;
-		bool smooth_mouse_enabled;
-		bool rotation_speed_limit_enabled;
-		float turn_sensitivity_x;
-		float turn_sensitivity_y;
-		bool gamepad_camera_invert_x;
-		bool gamepad_camera_invert_y;
+        Bindings bindings;
+        Controls controls[MAX_SPLITSCREEN];
 		bool classic_mode_enabled;
 		bool hardcore_mode_enabled;
 		bool friendly_fire_enabled;
@@ -588,7 +594,7 @@ namespace MainMenu {
 		bool cheats_enabled;
 		bool skipintro;
 		int port_number;
-		bool show_lobby_code = false;
+		bool show_lobby_code;
 		std::vector<int> lobby_filter_settings;
 		inline int save(); // non-zero if video needs restart
 		static inline AllSettings load(bool video);
@@ -2554,6 +2560,64 @@ namespace MainMenu {
 		return true;
 	}
 
+    /******************************************************************************/
+
+    // rebinding state
+    static Button* bound_button;
+    static std::string bound_binding;
+    static std::string bound_input;
+    static int bound_player;
+    static int bound_device;
+    static const char* bound_profile;
+
+    inline void Controls::save(int index) {
+        *cvar_mkb_world_tooltips = mkb_world_tooltips_enabled;
+        *cvar_gamepad_facehotbar = gamepad_facehotbar;
+        hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
+        mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
+        reversemouse = reverse_mouse_enabled;
+        smoothmouse = smooth_mouse_enabled;
+        gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
+        gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
+        gamepad_rightx_invert = gamepad_camera_invert_x;
+        gamepad_righty_invert = gamepad_camera_invert_y;
+    }
+
+    inline Controls Controls::load(int index) {
+        Controls controls;
+        controls.mkb_world_tooltips_enabled = *cvar_mkb_world_tooltips;
+        controls.gamepad_facehotbar = *cvar_gamepad_facehotbar;
+        controls.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
+        controls.mouse_sensitivity = mousespeed;
+        controls.reverse_mouse_enabled = reversemouse;
+        controls.smooth_mouse_enabled = smoothmouse;
+        controls.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
+        controls.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
+        controls.gamepad_camera_invert_x = gamepad_rightx_invert;
+        controls.gamepad_camera_invert_y = gamepad_righty_invert;
+        return controls;
+    }
+
+    inline Controls Controls::reset() {
+        return Controls();
+    }
+
+    bool Controls::serialize(FileInterface* file) {
+        int version = 1;
+        file->property("version", version);
+        file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
+        file->property("gamepad_facehotbar", gamepad_facehotbar);
+        file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
+        file->property("mouse_sensitivity", mouse_sensitivity);
+        file->property("reverse_mouse_enabled", reverse_mouse_enabled);
+        file->property("smooth_mouse_enabled", smooth_mouse_enabled);
+        file->property("turn_sensitivity_x", turn_sensitivity_x);
+        file->property("turn_sensitivity_y", turn_sensitivity_y);
+        file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
+        file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+        return true;
+    }
+
 	/******************************************************************************/
 
 	static AllSettings allSettings;
@@ -2631,18 +2695,10 @@ namespace MainMenu {
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
 		bindings.save();
-		*cvar_mkb_world_tooltips = mkb_world_tooltips_enabled;
-		*cvar_mkb_facehotbar = false; //mkb_facehotbar;
-		*cvar_gamepad_facehotbar = gamepad_facehotbar;
-		hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
-		mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
-		reversemouse = reverse_mouse_enabled;
-		smoothmouse = smooth_mouse_enabled;
-		disablemouserotationlimit = true; //!rotation_speed_limit_enabled;
-		gamepad_rightx_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_x / 32768.f), 200.f / 32768.f);
-		gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
-		gamepad_rightx_invert = gamepad_camera_invert_x;
-		gamepad_righty_invert = gamepad_camera_invert_y;
+        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+            controls[c].save(c);
+        }
+        disablemouserotationlimit = true;
 		if (multiplayer != CLIENT) {
 		    svFlags = classic_mode_enabled ? svFlags | SV_FLAG_CLASSIC : svFlags & ~(SV_FLAG_CLASSIC);
 		    svFlags = hardcore_mode_enabled ? svFlags | SV_FLAG_HARDCORE : svFlags & ~(SV_FLAG_HARDCORE);
@@ -2734,18 +2790,9 @@ namespace MainMenu {
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
 		settings.bindings = Bindings::load();
-		settings.mkb_world_tooltips_enabled = *cvar_mkb_world_tooltips;
-		settings.mkb_facehotbar = *cvar_mkb_facehotbar;
-		settings.gamepad_facehotbar = *cvar_gamepad_facehotbar;
-		settings.numkeys_in_inventory_enabled = hotbar_numkey_quick_add;
-		settings.mouse_sensitivity = mousespeed;
-		settings.reverse_mouse_enabled = reversemouse;
-		settings.smooth_mouse_enabled = smoothmouse;
-		settings.rotation_speed_limit_enabled = !disablemouserotationlimit;
-		settings.turn_sensitivity_x = gamepad_rightx_sensitivity * 32768.0;
-		settings.turn_sensitivity_y = gamepad_righty_sensitivity * 32768.0;
-		settings.gamepad_camera_invert_x = gamepad_rightx_invert;
-		settings.gamepad_camera_invert_y = gamepad_righty_invert;
+        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+            settings.controls[c] = Controls::load(c);
+        }
 		settings.classic_mode_enabled = svFlags & SV_FLAG_CLASSIC;
 		settings.hardcore_mode_enabled = svFlags & SV_FLAG_HARDCORE;
 		settings.friendly_fire_enabled = svFlags & SV_FLAG_FRIENDLYFIRE;
@@ -2815,18 +2862,9 @@ namespace MainMenu {
 		settings.player_monster_sounds_enabled = true;
 		settings.out_of_focus_audio_enabled = true;
 		settings.bindings = Bindings::reset(defaultControlLayout);
-		settings.mkb_facehotbar = false;
-		settings.gamepad_facehotbar = true;
-		settings.mkb_world_tooltips_enabled = true;
-		settings.numkeys_in_inventory_enabled = true;
-		settings.mouse_sensitivity = 32.f;
-		settings.reverse_mouse_enabled = false;
-		settings.smooth_mouse_enabled = false;
-		settings.rotation_speed_limit_enabled = false;
-		settings.turn_sensitivity_x = 75.f;
-		settings.turn_sensitivity_y = 50.f;
-		settings.gamepad_camera_invert_x = false;
-		settings.gamepad_camera_invert_y = false;
+        for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+            settings.controls[c] = Controls::reset();
+        }
 		settings.classic_mode_enabled = false;
 		settings.hardcore_mode_enabled = false;
 		settings.friendly_fire_enabled = true;
@@ -2847,7 +2885,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 16;
+	    int version = 17;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -2931,26 +2969,33 @@ namespace MainMenu {
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
 		file->property("bindings", bindings);
-        if ( version >= 5 )
-        {
-            file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
-            file->property("mkb_facehotbar", mkb_facehotbar);
-            file->property("gamepad_facehotbar", gamepad_facehotbar);
+        if (version < 17) {
+            Controls controls;
+            if (version >= 5) {
+                file->property("mkb_world_tooltips_enabled", controls.mkb_world_tooltips_enabled);
+                file->property("gamepad_facehotbar", controls.gamepad_facehotbar);
+                file->property("world_tooltip_scale", world_tooltip_scale);
+                file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
+            }
+            file->propertyVersion("enemybar_scale", version >= 16, enemybar_scale);
+            file->property("numkeys_in_inventory_enabled", controls.numkeys_in_inventory_enabled);
+            file->property("mouse_sensitivity", controls.mouse_sensitivity);
+            file->property("reverse_mouse_enabled", controls.reverse_mouse_enabled);
+            file->property("smooth_mouse_enabled", controls.smooth_mouse_enabled);
+            file->property("turn_sensitivity_x", controls.turn_sensitivity_x);
+            file->property("turn_sensitivity_y", controls.turn_sensitivity_y);
+            if (version >= 6) {
+                file->property("gamepad_camera_invert_x", controls.gamepad_camera_invert_x);
+                file->property("gamepad_camera_invert_y", controls.gamepad_camera_invert_y);
+            }
+            for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
+                this->controls[c] = controls;
+            }
+        } else {
+            file->property("controls", controls);
+            file->propertyVersion("enemybar_scale", version >= 16, enemybar_scale);
             file->property("world_tooltip_scale", world_tooltip_scale);
             file->property("world_tooltip_scale_splitscreen", world_tooltip_scale_splitscreen);
-        }
-		file->propertyVersion("enemybar_scale", version >= 16, enemybar_scale);
-		file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
-		file->property("mouse_sensitivity", mouse_sensitivity);
-		file->property("reverse_mouse_enabled", reverse_mouse_enabled);
-		file->property("smooth_mouse_enabled", smooth_mouse_enabled);
-		//file->property("rotation_speed_limit_enabled", rotation_speed_limit_enabled);
-		file->property("turn_sensitivity_x", turn_sensitivity_x);
-		file->property("turn_sensitivity_y", turn_sensitivity_y);
-        if ( version >= 6 )
-        {
-            file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
-            file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
         }
 		file->property("classic_mode_enabled", classic_mode_enabled);
 		file->property("hardcore_mode_enabled", hardcore_mode_enabled);
@@ -4229,24 +4274,7 @@ namespace MainMenu {
 #endif
 
 	static void settingsMkbHotbarLayout(Button& button) {
-		settingsOpenDropdown(button, "mkb_facehotbar", DropdownType::Short_2Slot, [](Frame::entry_t& entry) {
-			soundActivate();
-			if ( entry.name == "Classic" )
-			{
-				allSettings.mkb_facehotbar = false;
-			}
-			else
-			{
-				allSettings.mkb_facehotbar = true;
-			}
-			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			auto button = settings_subwindow->findButton("setting_mkb_facehotbar_dropdown_button"); assert(button);
-			auto dropdown = settings_subwindow->findFrame("setting_mkb_facehotbar_dropdown"); assert(dropdown);
-			button->setText(entry.name.c_str());
-			dropdown->removeSelf();
-			button->select();
-		});
+		// deprecated
 	}
 
 	static void settingsGamepadHotbarLayout(Button& button) {
@@ -4254,11 +4282,11 @@ namespace MainMenu {
 			soundActivate();
 			if ( entry.name == "Classic" )
 			{
-				allSettings.gamepad_facehotbar = false;
+				allSettings.controls[bound_player].gamepad_facehotbar = false;
 			}
 			else
 			{
-				allSettings.gamepad_facehotbar = true;
+				allSettings.controls[bound_player].gamepad_facehotbar = true;
 			}
 			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
@@ -5233,13 +5261,6 @@ namespace MainMenu {
 		}
 	}
 
-    static Button* bound_button;
-    static std::string bound_binding;
-    static std::string bound_input;
-    static int bound_player;
-    static int bound_device;
-    static const char* bound_profile;
-
 	static void settingsBindings(int player_index, int device_index, const char* profile) {
 		soundActivate();
 
@@ -5303,7 +5324,7 @@ namespace MainMenu {
 				snprintf(tip, sizeof(tip), "Bind a button to %s,\nor press Y to delete the current binding", binding.name);
 #endif
 			} else {
-				snprintf(tip, sizeof(tip), "Bind an input device to %s", binding.name);
+				snprintf(tip, sizeof(tip), "Bind an input to %s", binding.name);
 			}
 			y += settingsAddBinding(*subwindow, y, player_index, device_index, binding.name, tip,
 				[](Button& button){
@@ -5940,7 +5961,7 @@ bind_failed:
                 (int)image->getHeight()
             };
             auto layout = settings_subwindow->addImage(pos, 0xffffffff, path, "layout");
-            y += pos.h;
+            y += pos.h + 6;
         }
         
         y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", "Bindings", true);
@@ -5967,9 +5988,20 @@ bind_failed:
                     [](Frame::entry_t& entry){
                         soundActivate();
                         const int player = (int)(entry.name.back() - '1');
+                    
+                        assert(main_menu_frame);
+                        auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                        auto subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                        auto scroll = subwindow->getActualSize().y;
                         settingsControlsPopulate(player, bound_device,
                             getMatchingProfileName(player, bound_device == 1),
                             {Setting::Type::Dropdown, "player_dropdown_button"});
+                        subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                        auto size = subwindow->getActualSize();
+                        size.y = scroll;
+                        subwindow->setActualSize(size);
+                        auto gradient = subwindow->findImage("gradient_background"); assert(gradient);
+                        gradient->pos.y = size.y;
                     });
             });
         
@@ -5986,11 +6018,22 @@ bind_failed:
                 soundActivate();
                 settingsOpenDropdown(button, "device_dropdown", DropdownType::Short,
                     [](Frame::entry_t& entry){
-                        soundActivate();
-                        const int device = getDeviceIndexForName(entry.text.c_str());
-                        settingsControlsPopulate(bound_player, device,
-                            getMatchingProfileName(bound_player, device == 1),
-                            {Setting::Type::Dropdown, "device_dropdown_button"});
+                    soundActivate();
+                    const int device = getDeviceIndexForName(entry.text.c_str());
+                    
+                    assert(main_menu_frame);
+                    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                    auto subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                    auto scroll = subwindow->getActualSize().y;
+                    settingsControlsPopulate(bound_player, device,
+                        getMatchingProfileName(bound_player, device == 1),
+                        {Setting::Type::Dropdown, "device_dropdown_button"});
+                    subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                    auto size = subwindow->getActualSize();
+                    size.y = scroll;
+                    subwindow->setActualSize(size);
+                    auto gradient = subwindow->findImage("gradient_background"); assert(gradient);
+                    gradient->pos.y = size.y;
                     });
             });
 #endif
@@ -6006,18 +6049,29 @@ bind_failed:
                 soundActivate();
                 settingsOpenDropdown(button, "profile_dropdown", DropdownType::Short,
                     [](Frame::entry_t& entry){
-                        soundActivate();
-                        const char* profile = entry.text.c_str();
-                        allSettings.bindings.kb_mouse_bindings[bound_player].clear();
-                        allSettings.bindings.gamepad_bindings[bound_player].clear();
-                        allSettings.bindings.joystick_bindings[bound_player].clear();
-                        for (auto& binding : getBindings(profile)) {
-                            allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
-                            allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
-                            allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
-                        }
-                        settingsControlsPopulate(bound_player, bound_device, profile,
-                            {Setting::Type::Dropdown, "profile_dropdown_button"});
+                    soundActivate();
+                    const char* profile = entry.text.c_str();
+                    allSettings.bindings.kb_mouse_bindings[bound_player].clear();
+                    allSettings.bindings.gamepad_bindings[bound_player].clear();
+                    allSettings.bindings.joystick_bindings[bound_player].clear();
+                    for (auto& binding : getBindings(profile)) {
+                        allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
+                        allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
+                        allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
+                    }
+                    
+                    assert(main_menu_frame);
+                    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                    auto subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                    auto scroll = subwindow->getActualSize().y;
+                    settingsControlsPopulate(bound_player, bound_device, profile,
+                        {Setting::Type::Dropdown, "profile_dropdown_button"});
+                    subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                    auto size = subwindow->getActualSize();
+                    size.y = scroll;
+                    subwindow->setActualSize(size);
+                    auto gradient = subwindow->findImage("gradient_background"); assert(gradient);
+                    gradient->pos.y = size.y;
                     });
             });
 
@@ -6028,87 +6082,84 @@ bind_failed:
                 old_bindings = allSettings.bindings;
                 settingsBindings(player, bound_device, bound_profile);
                 });
+        
+        y += settingsAddSubHeader(*settings_subwindow, y, "settings", "Controller Settings");
 
         // Mouse & Keyboard settings
-#ifndef NINTENDO
-        y += settingsAddSubHeader(*settings_subwindow, y, "mouse_and_keyboard", "Mouse & Keyboard");
-        std::vector<const char*> mkb_facehotbar_strings = { "Classic", "Modern" };
-        y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
-            "Control the speed by which mouse movement affects camera movement.",
-            allSettings.mouse_sensitivity, 0, 100, nullptr, [](Slider& slider){soundSlider(true); allSettings.mouse_sensitivity = slider.getValue();});
-        /*y += settingsAddDropdown(*settings_subwindow, y, "mkb_facehotbar", "Hotbar Layout",
-            "Classic: Flat 10 slot layout. Modern: Grouped 3x3 slot layout.", false,
-            mkb_facehotbar_strings, mkb_facehotbar_strings[allSettings.mkb_facehotbar ? 1 : 0], settingsMkbHotbarLayout);*/
-        y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
-            "Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
-            allSettings.numkeys_in_inventory_enabled, [](Button& button){soundToggle(); allSettings.numkeys_in_inventory_enabled = button.isPressed();});
-        y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
-            "Reverse mouse up and down movement for controlling the orientation of the player.",
-            allSettings.reverse_mouse_enabled, [](Button& button){soundToggle(); allSettings.reverse_mouse_enabled = button.isPressed();});
-        y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
-            "Smooth the movement of the mouse over a few frames of input.",
-            allSettings.smooth_mouse_enabled, [](Button& button){soundToggle(); allSettings.smooth_mouse_enabled = button.isPressed();});
-        /*y += settingsAddBooleanOption(*settings_subwindow, y, "rotation_speed_limit", "Rotation Speed Limit",
-            "Limit how fast the player can rotate by moving the mouse.",
-            allSettings.rotation_speed_limit_enabled, [](Button& button){soundToggle(); allSettings.rotation_speed_limit_enabled = button.isPressed();});*/
-        y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
-            "Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
-            allSettings.mkb_world_tooltips_enabled, [](Button& button) {soundToggle(); allSettings.mkb_world_tooltips_enabled = button.isPressed(); });
-#endif
+        if (device == 0) {
+            y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", "Mouse Sensitivity",
+                "Control the speed by which mouse movement affects camera movement.",
+                allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
+                {soundSlider(true); allSettings.controls[bound_player].mouse_sensitivity = slider.getValue();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", "Number Keys in Inventory",
+                "Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.",
+                allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", "Reverse Mouse",
+                "Reverse mouse up and down movement for controlling the orientation of the player.",
+                allSettings.controls[bound_player].reverse_mouse_enabled, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].reverse_mouse_enabled = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "smooth_mouse", "Smooth Mouse",
+                "Smooth the movement of the mouse over a few frames of input.",
+                allSettings.controls[bound_player].smooth_mouse_enabled, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].smooth_mouse_enabled = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", "Interact Aim Assist",
+                "Disable to always use precise cursor targeting on interactable objects and remove interact popups.",
+                allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
+            
+            hookSettings(*settings_subwindow,
+                {{Setting::Type::Customize, "bindings"},
+                {Setting::Type::Slider, "mouse_sensitivity"},
+                {Setting::Type::Boolean, "numkeys_in_inventory"},
+                {Setting::Type::Boolean, "reverse_mouse"},
+                {Setting::Type::Boolean, "smooth_mouse"},
+                {Setting::Type::Boolean, "mkb_world_tooltips"},
+            });
+        }
         
         // Gamepad settings
-#ifdef NINTENDO
-        y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Controller Settings");
-#else
-        y += settingsAddSubHeader(*settings_subwindow, y, "gamepad", "Gamepad Settings");
-#endif
-        std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
-        y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
-            "Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
-            gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
-        y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
-            "Affect the horizontal sensitivity of the control stick used for turning.",
-            allSettings.turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_x = slider.getValue();});
-        y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
-            "Affect the vertical sensitivity of the control stick used for turning.",
-            allSettings.turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider){soundSlider(true); allSettings.turn_sensitivity_y = slider.getValue();});
+        if (device == 1) {
+            std::vector<const char*> gamepad_facehotbar_strings = { "Modern", "Classic" };
+            y += settingsAddDropdown(*settings_subwindow, y, "gamepad_facehotbar", "Hotbar Layout",
+                "Modern: Grouped 3x3 slot layout using held buttons. Classic: Flat 10 slot layout with simpler controls.", false,
+                gamepad_facehotbar_strings, gamepad_facehotbar_strings[allSettings.controls[bound_player].gamepad_facehotbar ? 0 : 1], settingsGamepadHotbarLayout);
+            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_x", "Turn Sensitivity X",
+                "Affect the horizontal sensitivity of the control stick used for turning.",
+                allSettings.controls[bound_player].turn_sensitivity_x, 25.f, 200.f, sliderPercent, [](Slider& slider)
+                {soundSlider(true); allSettings.controls[bound_player].turn_sensitivity_x = slider.getValue();});
+            y += settingsAddSlider(*settings_subwindow, y, "turn_sensitivity_y", "Turn Sensitivity Y",
+                "Affect the vertical sensitivity of the control stick used for turning.",
+                allSettings.controls[bound_player].turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider)
+                {soundSlider(true); allSettings.controls[bound_player].turn_sensitivity_y = slider.getValue();});
 
-        y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
-            "Enable to invert left/right look controls of the player camera.",
-            allSettings.gamepad_camera_invert_x, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_x = button.isPressed(); });
-        y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
-            "Enable to invert up/down look controls of the player camera.",
-            allSettings.gamepad_camera_invert_y, [](Button& button) {soundToggle(); allSettings.gamepad_camera_invert_y = button.isPressed(); });
-
+            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", "Invert Camera Look X",
+                "Enable to invert left/right look controls of the player camera.",
+                allSettings.controls[bound_player].gamepad_camera_invert_x, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].gamepad_camera_invert_x = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_y", "Invert Camera Look Y",
+                "Enable to invert up/down look controls of the player camera.",
+                allSettings.controls[bound_player].gamepad_camera_invert_y, [](Button& button)
+                {soundToggle(); allSettings.controls[bound_player].gamepad_camera_invert_y = button.isPressed();});
+            
+            hookSettings(*settings_subwindow,
+                {{Setting::Type::Customize, "bindings"},
+                {Setting::Type::Dropdown, "gamepad_facehotbar"},
+                {Setting::Type::Slider, "turn_sensitivity_x"},
+                {Setting::Type::Slider, "turn_sensitivity_y"},
+                {Setting::Type::Boolean, "gamepad_camera_invert_x"},
+                {Setting::Type::Boolean, "gamepad_camera_invert_y"},
+            });
+        }
+            
+        hookSettings(*settings_subwindow,
+            {{Setting::Type::Dropdown, "player_dropdown_button"},
 #ifndef NINTENDO
-        hookSettings(*settings_subwindow,
-            {{Setting::Type::Dropdown, "player_dropdown_button"},
             {Setting::Type::Dropdown, "device_dropdown_button"},
-            {Setting::Type::Dropdown, "profile_dropdown_button"},
-            {Setting::Type::Customize, "bindings"},
-            {Setting::Type::Slider, "mouse_sensitivity"},
-            {Setting::Type::Boolean, "numkeys_in_inventory"},
-            {Setting::Type::Boolean, "reverse_mouse"},
-            {Setting::Type::Boolean, "smooth_mouse"},
-            {Setting::Type::Boolean, "mkb_world_tooltips"},
-            {Setting::Type::Dropdown, "gamepad_facehotbar"},
-            {Setting::Type::Slider, "turn_sensitivity_x"},
-            {Setting::Type::Slider, "turn_sensitivity_y"},
-            {Setting::Type::Boolean, "gamepad_camera_invert_x"},
-            {Setting::Type::Boolean, "gamepad_camera_invert_y"},
-        });
-#else
-        hookSettings(*settings_subwindow,
-            {{Setting::Type::Dropdown, "player_dropdown_button"},
-            {Setting::Type::Dropdown, "profile_dropdown_button"},
-            {Setting::Type::Customize, "bindings"},
-            {Setting::Type::Dropdown, "gamepad_facehotbar"},
-            {Setting::Type::Slider, "turn_sensitivity_x"},
-            {Setting::Type::Slider, "turn_sensitivity_y"},
-            {Setting::Type::Boolean, "gamepad_camera_invert_x"},
-            {Setting::Type::Boolean, "gamepad_camera_invert_y"},
-        });
 #endif
+            {Setting::Type::Dropdown, "profile_dropdown_button"},
+            {Setting::Type::Customize, "bindings"},
+        });
         
         settingsSubwindowFinalize(*settings_subwindow, y, setting_to_select);
         settingsSelect(*settings_subwindow, setting_to_select);

@@ -9607,7 +9607,7 @@ void doNewGame(bool makeHighscore) {
 			}
 			else if ( inputs.bPlayerUsingKeyboardControl(c) )
 			{
-				players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_mkb_facehotbar;
+				players[c]->hotbar.useHotbarFaceMenu = false;
 			}
 #else
 			players[c]->hotbar.useHotbarFaceMenu = *MainMenu::cvar_gamepad_facehotbar;
