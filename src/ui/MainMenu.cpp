@@ -10971,8 +10971,12 @@ failed:
 					return;
 				} else {
                     success = true;
-					soundToggle();
-					stats[index]->playerRace = c;
+                    if (stats[index]->playerRace != c) {
+                        stats[index]->playerRace = c;
+                        if (!inputs.hasController(index)) {
+                            soundToggle();
+                        }
+                    }
 					if (stats[index]->playerRace == RACE_SUCCUBUS) {
 						stats[index]->appearance = 0;
 						stats[index]->sex = FEMALE;
@@ -11002,14 +11006,8 @@ failed:
 						male->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 					}
 					else if (stats[index]->playerRace == RACE_HUMAN) {
-                        auto appearances = frame->findFrame("appearances");
-                        if (inputs.hasController(index)) {
-                            // get the appearance that is currently selected in the UI
-                            stats[index]->appearance = std::max(0, appearances->getSelection());
-                        } else {
-                            // pick a random appearance
-                            stats[index]->appearance = RNG.uniform(0, NUMAPPEARANCES - 1);
-                        }
+                        auto appearances = frame->findFrame("appearances"); assert(appearances);
+                        stats[index]->appearance = std::max(0, appearances->getSelection());
                         if (appearances) {
                             appearances->setSelection(stats[index]->appearance);
                             appearances->scrollToSelection();
@@ -11047,6 +11045,7 @@ failed:
             saveLastCharacter(index, multiplayer);
             if (success) {
                 if (inputs.hasController(index)) {
+                    soundActivate();
                     createCharacterCard(index);
                     auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
                     auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
@@ -12585,7 +12584,6 @@ failed:
 		    race->addWidgetAction("MenuAlt1", "disable_abilities");
 		    race->addWidgetAction("MenuAlt2", "show_race_info");
             race->setCallback([](Button& button){
-                soundActivate();
                 race_button_fn(button, false);
                 });
 		    if (stats[index]->playerRace == c) {
@@ -12687,6 +12685,11 @@ failed:
 				(!frame->isSelected() && !appearance_uparrow->isSelected() && !appearance_downarrow->isSelected()) :
 				!frame->isActivated() || !human->isSelected();
 			if (selected) {
+                if (controlType == Input::playerControlType_t::PLAYER_CONTROLLED_BY_KEYBOARD) {
+                    if (!human->isPressed()) {
+                        human->activate();
+                    }
+                }
                 box->disabled = false;
 				appearance_uparrow->setDisabled(false);
 				appearance_uparrow->setInvisible(false);
@@ -12825,7 +12828,7 @@ failed:
                     entry.parent.activate();
                 }
             };
-			entry->selected = entry->click;
+			//entry->selected = entry->click;
 			if (stats[index]->appearance == c && stats[index]->playerRace == RACE_HUMAN) {
 				appearances->setSelection(c);
 				appearances->scrollToSelection();
