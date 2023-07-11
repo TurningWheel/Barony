@@ -283,9 +283,9 @@ namespace MainMenu {
                 {"Spell List", "B", hiddenBinding, emptyBinding},
                 {"Skill Sheet", "K", hiddenBinding, emptyBinding},
                 {"Autosort Inventory", "R", hiddenBinding, emptyBinding},
-                {"Command NPC", "Q", "DpadX-", emptyBinding},
-                {"Show NPC Commands", "C", "DpadX+", emptyBinding},
-                {"Cycle NPCs", "E", "DpadY-", emptyBinding},
+                {"Command NPC", "Q", emptyBinding, emptyBinding},
+                {"Show NPC Commands", "C", emptyBinding, emptyBinding},
+                {"Cycle NPCs", "E", emptyBinding, emptyBinding},
                 {"Open Map", "M", hiddenBinding, emptyBinding},
                 {"Open Log", "L", hiddenBinding, emptyBinding},
                 {"Toggle Minimap", "`", emptyBinding, emptyBinding},
@@ -5262,6 +5262,8 @@ namespace MainMenu {
 			}
 		}
 	}
+    
+    static void settingsControlsPopulate(int player, int device, const char* profile, Setting setting_to_select);
 
 	static void settingsBindings(int player_index, int device_index, const char* profile) {
 		soundActivate();
@@ -5286,10 +5288,20 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
                 allSettings.bindings = old_bindings;
-			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
-			    previous->select();
+                
+                assert(main_menu_frame);
+                auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                auto subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                auto scroll = subwindow->getActualSize().y;
+                settingsControlsPopulate(bound_player, bound_device,
+                    getMatchingProfileName(bound_player, bound_device == 1),
+                    {Setting::Type::Customize, "bindings"});
+                subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                auto size = subwindow->getActualSize();
+                size.y = scroll;
+                subwindow->setActualSize(size);
+                auto gradient = subwindow->findImage("gradient_background"); assert(gradient);
+                gradient->pos.y = size.y;
 			},
 			[](Button& button){ // confirm & exit
 				soundActivate();
@@ -5297,10 +5309,20 @@ namespace MainMenu {
 				auto parent_background = static_cast<Frame*>(parent->getParent()); assert(parent_background);
 				parent_background->removeSelf();
 				allSettings.bindings.save();
-			    auto settings = main_menu_frame->findFrame("settings"); assert(settings);
-			    auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
-			    auto previous = settings_subwindow->findButton("setting_bindings_customize_button"); assert(previous);
-			    previous->select();
+                
+                assert(main_menu_frame);
+                auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+                auto subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                auto scroll = subwindow->getActualSize().y;
+                settingsControlsPopulate(bound_player, bound_device,
+                    getMatchingProfileName(bound_player, bound_device == 1),
+                    {Setting::Type::Customize, "bindings"});
+                subwindow = settings->findFrame("settings_subwindow"); assert(subwindow);
+                auto size = subwindow->getActualSize();
+                size.y = scroll;
+                subwindow->setActualSize(size);
+                auto gradient = subwindow->findImage("gradient_background"); assert(gradient);
+                gradient->pos.y = size.y;
 			});
 		assert(window);
 		auto subwindow = window->findFrame("subwindow"); assert(subwindow);
@@ -5953,7 +5975,8 @@ bind_failed:
         
         // controller graph
         if (device == 1) {
-            const auto controllerType = Input::inputs[player].getControllerType();
+            const auto& input = Input::inputs[player];
+            const auto controllerType = input.getControllerType();
             
             y += settingsAddSubHeader(*settings_subwindow, y, "layout_header", "Layout");
             y += 8;
@@ -5979,34 +6002,81 @@ bind_failed:
                 int x;
                 int y;
                 bool pressed;
+                const char* text;
             };
             
             std::vector<ButtonBinding> list;
             if (controllerType == Input::ControllerType::PlayStation) {
                 const int r = x + (int)image->getWidth() + 4;
                 list.insert(list.end(),{
-                    {"ButtonLeftBumper", 0, 2, false},
-                    {"LeftTrigger", 0, 44, false},
-                    {"ButtonBack", 0, 78, false},
-                    {"DpadX+", 0, 112, false},
-                    {"DpadY+", 0, 148, false},
-                    {"DpadX-", 0, 184, false},
-                    {"DpadY-", 0, 220, false},
-                    {"ButtonLeftStick", 0, 266, false},
-                    {"ButtonLeftStick", 0, 306, true},
-                    {"ButtonRightBumper", r, 2, false},
-                    {"RightTrigger", r, 44, false},
-                    {"ButtonStart", r, 78, false},
-                    {"ButtonA", r, 112, false},
-                    {"ButtonB", r, 144, false},
-                    {"ButtonX", r, 176, false},
-                    {"ButtonY", r, 208, false},
-                    {"ButtonRightStick", r, 250, false},
-                    {"ButtonRightStick", r, 298, true},
+                    {"ButtonLeftBumper", 0, 2, false, nullptr},
+                    {"LeftTrigger", 0, 44, false, nullptr},
+                    {"ButtonBack", 0, 78, false, nullptr},
+                    {"DpadX+", 0, 112, false, nullptr},
+                    {"DpadY+", 0, 148, false, nullptr},
+                    {"DpadX-", 0, 184, false, nullptr},
+                    {"DpadY-", 0, 220, false, nullptr},
+                    {"ButtonLeftStick", 0, 266, false, "Move"},
+                    {"ButtonLeftStick", 0, 306, true, nullptr},
+                    {"ButtonRightBumper", r, 2, false, nullptr},
+                    {"RightTrigger", r, 44, false, nullptr},
+                    {"ButtonStart", r, 78, false, nullptr},
+                    {"ButtonA", r, 112, false, nullptr},
+                    {"ButtonB", r, 148, false, nullptr},
+                    {"ButtonX", r, 184, false, nullptr},
+                    {"ButtonY", r, 220, false, nullptr},
+                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
+                    {"ButtonRightStick", r, 306, true, nullptr},
+                });
+            }
+            else if (controllerType == Input::ControllerType::NintendoSwitch) {
+                const int r = x + (int)image->getWidth() + 4;
+                list.insert(list.end(),{
+                    {"ButtonLeftBumper", 0, 2, false, nullptr},
+                    {"LeftTrigger", 0, 44, false, nullptr},
+                    {"ButtonBack", 0, 82, false, nullptr},
+                    {"ButtonLeftStick", 0, 108, false, "Move"},
+                    {"ButtonLeftStick", 0, 148, true, nullptr},
+                    {"DpadX+", 0, 186, false, nullptr},
+                    {"DpadY+", 0, 222, false, nullptr},
+                    {"DpadX-", 0, 258, false, nullptr},
+                    {"DpadY-", 0, 294, false, nullptr},
+                    {"ButtonRightBumper", r, 2, false, nullptr},
+                    {"RightTrigger", r, 44, false, nullptr},
+                    {"ButtonStart", r, 76, false, nullptr},
+                    {"ButtonA", r, 112, false, nullptr},
+                    {"ButtonB", r, 148, false, nullptr},
+                    {"ButtonX", r, 184, false, nullptr},
+                    {"ButtonY", r, 220, false, nullptr},
+                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
+                    {"ButtonRightStick", r, 306, true, nullptr},
+                });
+            }
+            else if (controllerType == Input::ControllerType::Xbox) {
+                const int r = x + (int)image->getWidth() + 4;
+                list.insert(list.end(),{
+                    {"ButtonLeftBumper", 0, 2, false, nullptr},
+                    {"LeftTrigger", 0, 44, false, nullptr},
+                    {"ButtonLeftStick", 0, 78, false, "Move"},
+                    {"ButtonLeftStick", 0, 118, true, nullptr},
+                    {"ButtonBack", 0, 156, false, nullptr},
+                    {"DpadX+", 0, 194, false, nullptr},
+                    {"DpadY+", 0, 230, false, nullptr},
+                    {"DpadX-", 0, 266, false, nullptr},
+                    {"DpadY-", 0, 302, false, nullptr},
+                    {"ButtonRightBumper", r, 2, false, nullptr},
+                    {"RightTrigger", r, 44, false, nullptr},
+                    {"ButtonA", r, 74, false, nullptr},
+                    {"ButtonB", r, 110, false, nullptr},
+                    {"ButtonX", r, 146, false, nullptr},
+                    {"ButtonY", r, 182, false, nullptr},
+                    {"ButtonStart", r, 214, false, nullptr},
+                    {"ButtonRightStick", r, 266, false, "Look / Turn"},
+                    {"ButtonRightStick", r, 306, true, nullptr},
                 });
             }
             for (auto& b : list) {
-                const auto path = Input::inputs[player].getGlyphPathForInput(
+                const auto path = input.getGlyphPathForInput(
                     b.name, b.pressed, controllerType);
                 const auto img = Image::get(path.c_str()); assert(img);
                 
@@ -6014,10 +6084,32 @@ bind_failed:
                 const int h = img->getHeight();
                 
                 constexpr int fieldHeight = 48;
-                
                 auto field = settings_subwindow->addField("", 1024);
-                field->setText(b.name);
                 field->setFont(smallfont_outline);
+                
+                if (b.text) {
+                    field->setText(b.text);
+                } else {
+                    std::vector<std::string> bindings;
+                    for (auto& bind : allSettings.bindings.gamepad_bindings[player]) {
+                        if (bind.second == b.name) {
+                            bindings.emplace_back(bind.first);
+                        }
+                    }
+                    if (bindings.empty()) {
+                        field->setColor(makeColorRGB(127, 127, 127));
+                        field->setText("- UNBOUND -");
+                    } else {
+                        if (bindings.size() == 1) {
+                            field->setText(bindings[0].c_str());
+                        }
+                        if (bindings.size() >= 2) {
+                            const std::string cat = bindings[0] + "\n" + bindings[1];
+                            field->setText(cat.c_str());
+                        }
+                    }
+                }
+                
                 if (b.x) {
                     // right side
                     field->setHJustify(Field::justify_t::LEFT);
@@ -6046,7 +6138,7 @@ bind_failed:
             }
             
             y += img_pos.h + 6;
-            y += 12;
+            y += 20;
         }
         
         y += settingsAddSubHeader(*settings_subwindow, y, "bindings_header", "Bindings", true);
@@ -6143,6 +6235,12 @@ bind_failed:
                         allSettings.bindings.kb_mouse_bindings[bound_player].emplace(binding.action, binding.keyboard);
                         allSettings.bindings.gamepad_bindings[bound_player].emplace(binding.action, binding.gamepad);
                         allSettings.bindings.joystick_bindings[bound_player].emplace(binding.action, binding.joystick);
+                    }
+                    
+                    // using the "Minimal" layout causes facehotbar / "Modern" hotbar from working at all.
+                    // so make sure to disable that when Minimal is selected.
+                    if (entry.text == "Minimal") {
+                        allSettings.controls[bound_player].gamepad_facehotbar = false;
                     }
                     
                     assert(main_menu_frame);
