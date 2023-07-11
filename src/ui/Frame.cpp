@@ -1981,6 +1981,10 @@ Frame* Frame::findFrame(const char* name, const FrameSearchType frameSearchType)
 
 Button* Frame::findButton(const char* name) {
 	for (auto button : buttons) {
+		if ( button->isToBeDeleted() )
+		{
+			continue;
+		}
 		if (strcmp(button->getName(), name) == 0) {
 			return button;
 		}
