@@ -152,8 +152,17 @@ void CSteamWorkshop::ReadSubscribedItems()
 	{
 		for ( int i = 0; i < SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
 		{
-				SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
-					i, &m_subscribedItemListDetails[i]);
+			SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
+				i, &m_subscribedItemListDetails[i]);
+			char url[1024];
+			if ( SteamUGC()->GetQueryUGCPreviewURL(SteamUGCQueryCompleted.m_handle, i, url, 256) )
+			{
+				m_subscribedItemPreviewURL[i] = url;
+			}
+			else
+			{
+				m_subscribedItemPreviewURL[i] = "";
+			}
 		}
 		
 		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);

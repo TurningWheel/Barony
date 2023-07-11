@@ -12446,127 +12446,64 @@ void buttonGamemodsPrevDirectory(button_t* my)
 }
 
 
-void writeLevelsTxt(std::string modFolder)
-{
-	std::string path = BASE_DATA_DIR;
-	path.append("mods/").append(modFolder);
-	if ( access(path.c_str(), F_OK) == 0 )
-	{
-		std::string writeFile = modFolder + "/maps/levels.txt";
-		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
-		if ( physfp != NULL )
-		{
-			PHYSFS_writeBytes(physfp, "map: start\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
-			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
-			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
-			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
-			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
-			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
-			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
-			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
-			PHYSFS_close(physfp);
-		}
-		else
-		{
-			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
-		}
-	}
-	else
-	{
-		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
-	}
-}
-
-void buttonGamemodsCreateModDirectory(button_t* my)
-{
-	std::string baseDir = outputdir;
-	baseDir.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(gamemods_newBlankDirectory);
-
-	if ( access(baseDir.c_str(), F_OK) == 0 )
-	{
-		// folder already exists!
-		gamemods_newBlankDirectoryStatus = -1;
-	}
-	else
-	{
-		if ( PHYSFS_mkdir(gamemods_newBlankDirectory) )
-		{
-			gamemods_newBlankDirectoryStatus = 1;
-			std::string dir = gamemods_newBlankDirectory;
-			std::string folder = "/books";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/editor";
-			PHYSFS_mkdir((dir + folder).c_str());
-
-			folder = "/images";
-			PHYSFS_mkdir((dir + folder).c_str());
-			std::string subfolder = "/sprites";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/system";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/tiles";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/items";
-			PHYSFS_mkdir((dir + folder).c_str());
-			subfolder = "/images";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/lang";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/maps";
-			PHYSFS_mkdir((dir + folder).c_str());
-			writeLevelsTxt(gamemods_newBlankDirectory);
-
-			folder = "/models";
-			PHYSFS_mkdir((dir + folder).c_str());
-			subfolder = "/creatures";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/decorations";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/doors";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/items";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-			subfolder = "/particles";
-			PHYSFS_mkdir((dir + folder + subfolder).c_str());
-
-			folder = "/music";
-			PHYSFS_mkdir((dir + folder).c_str());
-			folder = "/sound";
-			PHYSFS_mkdir((dir + folder).c_str());
-		}
-	}
-	strcpy(gamemods_newBlankDirectoryOldName, gamemods_newBlankDirectory);
-}
+//void writeLevelsTxt(std::string modFolder)
+//{
+//	std::string path = BASE_DATA_DIR;
+//	path.append("mods/").append(modFolder);
+//	if ( access(path.c_str(), F_OK) == 0 )
+//	{
+//		std::string writeFile = modFolder + "/maps/levels.txt";
+//		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
+//		if ( physfp != NULL )
+//		{
+//			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+//			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+//			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+//			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
+//			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+//			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+//			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+//			PHYSFS_close(physfp);
+//		}
+//		else
+//		{
+//			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+//		}
+//	}
+//	else
+//	{
+//		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
+//	}
+//}
 
 void buttonGamemodsCreateNewModTemplate(button_t* my)
 {
@@ -12604,7 +12541,7 @@ void buttonGamemodsCreateNewModTemplate(button_t* my)
 	button->y = suby2 - TTF12_HEIGHT - 8;
 	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
 	button->sizey = 20;
-	button->action = &buttonGamemodsCreateModDirectory;
+	//button->action = &buttonGamemodsCreateModDirectory;
 	button->visible = 1;
 	button->focused = 1;
 }

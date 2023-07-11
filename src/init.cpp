@@ -141,6 +141,9 @@ int initApp(char const * const title, int fullscreen)
 			PHYSFS_mkdir("data/statues");
 			PHYSFS_mkdir("data/scripts");
 			PHYSFS_mkdir("config");
+#ifdef STEAMWORKS
+			PHYSFS_mkdir("workshop_cache");
+#endif
 #ifdef NINTENDO
 			PHYSFS_mkdir("mods");
 			std::string path = outputdir;

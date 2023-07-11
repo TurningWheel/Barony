@@ -26,6 +26,7 @@ See LICENSE for details.
 #include "ui/LoadingScreen.hpp"
 #include <thread>
 #include <future>
+#include <fstream>
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -7798,6 +7799,8 @@ std::vector<int> Mods::soundsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> Mods::systemResourceImagesToReload;
 std::vector<std::pair<std::string, std::string>> Mods::mountedFilepaths;
 std::vector<std::pair<std::string, std::string>> Mods::mountedFilepathsSaved;
+std::set<std::string> Mods::mods_loaded_local;
+std::set<std::string> Mods::mods_loaded_workshop;
 std::list<std::string> Mods::localModFoldernames;
 int Mods::numCurrentModsLoaded = -1;
 bool Mods::modelsListRequiresReloadUnmodded = false;
@@ -7816,6 +7819,167 @@ Uint32 Mods::loadingTicks = 0;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
+std::vector<Mods::WorkshopTags_t> Mods::tag_settings = {
+	Mods::WorkshopTags_t("dungeons", "Dungeons"),
+	Mods::WorkshopTags_t("textures", "Textures"),
+	Mods::WorkshopTags_t("models", "Models"),
+	Mods::WorkshopTags_t("gameplay", "Gameplay"),
+	Mods::WorkshopTags_t("audio", "Audio"),
+	Mods::WorkshopTags_t("misc", "Misc"),
+	Mods::WorkshopTags_t("translations", "Translations")
+};
+int Mods::uploadStatus = 0;
+int Mods::uploadErrorStatus = 0;
+Uint32 Mods::uploadTicks = 0;
+Uint32 Mods::processedOnTick = 0;
+PublishedFileId_t Mods::uploadingExistingItem = 0;
+int Mods::uploadNumRetries = 3;
+
+void Mods::updateModCounts()
+{
+	mods_loaded_local.clear();
+	mods_loaded_workshop.clear();
+	for ( auto& mod : mountedFilepaths )
+	{
+		bool found = false;
+		if ( mod.first.find("371970") != std::string::npos )
+		{
+			if ( mod.first.find("workshop") != std::string::npos )
+			{
+				if ( mod.first.find("content") != std::string::npos )
+				{
+					found = true;
+					Mods::mods_loaded_workshop.insert(mod.first);
+				}
+			}
+		}
+		if ( !found )
+		{
+			Mods::mods_loaded_local.insert(mod.first);
+		}
+	}
+}
+
+std::string Mods::getFolderFullPath(std::string input)
+{
+	if ( input == "" ) { return ""; }
+#ifdef WINDOWS
+#ifdef _UNICODE
+	wchar_t pathbuffer[PATH_MAX];
+	const int len1 = MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size() + 1, 0, 0);
+	auto buf1 = new wchar_t[len1];
+	MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size() + 1, buf1, len1);
+	const int pathlen = GetFullPathNameW(buf1, PATH_MAX, pathbuffer, NULL);
+	delete[] buf1;
+	const int len2 = WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, 0, 0, 0, 0);
+	auto buf2 = new char[len2];
+	WideCharToMultiByte(CP_ACP, 0, pathbuffer, pathlen, buf2, len2, 0, 0);
+	std::string fullpath = buf2;
+#else
+	char pathbuffer[PATH_MAX];
+	GetFullPathNameA(input.c_str(), PATH_MAX, pathbuffer, NULL);
+	std::string fullpath = pathbuffer;
+#endif
+#else
+	char pathbuffer[PATH_MAX];
+	realpath(input.c_str(), pathbuffer);
+	std::string fullpath = pathbuffer;
+#endif
+	return fullpath;
+}
+#endif
+
+#ifdef USE_LIBCURL
+LibCURL_t LibCURL;
+
+size_t LibCURL_t::write_data_fp(void* ptr, size_t size, size_t nmemb, File* stream) {
+	size_t written = stream->write(ptr, size, nmemb);
+	return written;
+}
+
+size_t LibCURL_t::write_data_string(void* ptr, size_t size, size_t nmemb, std::string* s) {
+	size_t newLength = size * nmemb;
+	try
+	{
+		s->append((char*)ptr, newLength);
+	}
+	catch ( std::bad_alloc& e )
+	{
+		return 0;
+	}
+	return newLength;
+}
+
+void LibCURL_t::download(std::string filename, std::string url)
+{
+	if ( !bInit )
+	{
+		init();
+	}
+
+	std::string content;
+	curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+	//curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);  // redirects
+	//curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
+	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_data_string);
+	curl_easy_setopt(handle, CURLOPT_WRITEDATA, &content);
+
+	std::string inputPath = PHYSFS_getRealDir("workshop_cache");
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append("workshop_cache");
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	// Grab image 
+	auto result = curl_easy_perform(handle);
+	if ( result != CURLE_OK )
+	{
+		printlog("[CURL]: Error: Could not get file %s", url.c_str());
+	}
+	else
+	{
+		char* type = nullptr;
+		result = curl_easy_getinfo(handle, CURLINFO::CURLINFO_CONTENT_TYPE, &type);
+		if ( result == CURLE_OK && type )
+		{
+			std::string contentType = type;
+			if ( contentType.find("png") != std::string::npos )
+			{
+				inputPath.append(".png");
+			}
+			else if ( contentType.find("jpg") != std::string::npos )
+			{
+				//inputPath.append(".jpg");
+				inputPath.append(".png"); // try always png?
+			}
+			else if ( contentType.find("jpeg") != std::string::npos )
+			{
+				//inputPath.append(".jpg");
+				inputPath.append(".png"); // try always png?
+			}
+			else
+			{
+				printlog("[CURL]: Error: Content type was not jpg or png as expected: %s", contentType.c_str());
+				return;
+			}
+		}
+		else
+		{
+			printlog("[CURL]: Error: curl_easy_getinfo failed.");
+			return;
+		}
+	}
+
+	File* fp = FileIO::open(inputPath.c_str(), "wb");
+	fp->write(content.c_str(), sizeof(char), content.size());
+	if ( !fp )
+	{
+		printlog("[CURL]: Error: Could not open file %s", inputPath.c_str());
+		return;
+	}
+
+	FileIO::close(fp);
+}
 #endif
 
 bool Mods::verifyMapFiles(const char* folder, bool ignoreBaseFolder)
@@ -8429,4 +8593,167 @@ void Mods::loadMods()
 
 	loading = false;
 	isLoading = false;
+}
+
+void Mods::writeLevelsTxtAndPreview(std::string modFolder)
+{
+	std::string path = outputdir;
+	path.append(PHYSFS_getDirSeparator()).append("mods/").append(modFolder);
+	if ( access(path.c_str(), F_OK) == 0 )
+	{
+		std::string writeFile = modFolder + "/maps/levels.txt";
+		PHYSFS_File* physfp = PHYSFS_openWrite(writeFile.c_str());
+		if ( physfp != nullptr )
+		{
+			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
+			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_close(physfp);
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+		}
+
+		std::string srcImage = datadir;
+		srcImage.append("images/system/preview.png");
+		std::string dstImage = path + "/preview.png";
+		if ( access(srcImage.c_str(), F_OK) == 0 )
+		{
+			if ( File* fp_read = FileIO::open(srcImage.c_str(), "rb") )
+			{
+				if ( File* fp_write = FileIO::open(dstImage.c_str(), "wb") )
+				{
+					char chunk[1024];
+					auto len = fp_read->read(chunk, sizeof(chunk[0]), sizeof(chunk));
+					while ( len == sizeof(chunk) )
+					{
+						fp_write->write(chunk, sizeof(chunk[0]), len);
+						len = fp_read->read(chunk, sizeof(chunk[0]), sizeof(chunk));
+					}
+					fp_write->write(chunk, sizeof(chunk[0]), len);
+					FileIO::close(fp_write);
+				}
+				else
+				{
+					printlog("[PhysFS]: Failed to write preview.png in %s", dstImage.c_str());
+				}
+				FileIO::close(fp_read);
+			}
+			else
+			{
+				printlog("[PhysFS]: Failed to open %s", srcImage.c_str());
+			}
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to access %s", srcImage.c_str());
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
+	}
+}
+
+int Mods::createBlankModDirectory(std::string foldername)
+{
+	std::string baseDir = outputdir;
+	baseDir.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(foldername);
+
+	if ( access(baseDir.c_str(), F_OK) == 0 )
+	{
+		// folder already exists!
+		return 1;
+	}
+	else
+	{
+		if ( PHYSFS_mkdir(foldername.c_str()) )
+		{
+			std::string dir = foldername;
+			std::string folder = "/books";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/editor";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/images";
+			PHYSFS_mkdir((dir + folder).c_str());
+			std::string subfolder = "/sprites";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/system";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/tiles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/ui";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/items";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/images";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/lang";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/maps";
+			PHYSFS_mkdir((dir + folder).c_str());
+			writeLevelsTxtAndPreview(foldername.c_str());
+
+			folder = "/models";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/creatures";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/decorations";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/doors";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/items";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/particles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/music";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/sound";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/data";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			return 0;
+		}
+	}
+	return 2;
 }

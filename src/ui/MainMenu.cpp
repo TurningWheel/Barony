@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <functional>
+#include <nfd.h>
 
 // quick restart:
 
@@ -1624,23 +1625,24 @@ namespace MainMenu {
 	static Frame* monoPromptGeneric(
 	    const char* window_text,
 	    const char* okay_text,
-	    void (*okay_callback)(Button&)
+	    void (*okay_callback)(Button&),
+		bool issmall = true
 	) {
 		soundActivate();
 
-	    Frame* frame = createPrompt("mono_prompt");
+	    Frame* frame = createPrompt("mono_prompt", issmall);
 	    if (!frame) {
 	        return nullptr;
 	    }
 
-		auto text = frame->addField("text", 128);
-		text->setSize(SDL_Rect{30, 28, 304, 46});
+		auto text = frame->addField("text", issmall ? 128 : 1024);
+		text->setSize(SDL_Rect{30, 28, frame->getSize().w - 60, issmall ? 46 : 134});
 		text->setFont(smallfont_no_outline);
 		text->setText(window_text);
 		text->setJustify(Field::justify_t::CENTER);
 
 		auto okay = frame->addButton("okay");
-		okay->setSize(SDL_Rect{(frame->getActualSize().w - 108) / 2, 78, 108, 52});
+		okay->setSize(SDL_Rect{(frame->getActualSize().w - 108) / 2, frame->getSize().h - 98, 108, 52});
 		okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
 		okay->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
 		okay->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
@@ -1682,6 +1684,15 @@ namespace MainMenu {
 	) {
 		soundActivate();
 		return monoPromptGeneric(window_text, okay_text, okay_callback);
+	}
+
+	static Frame* monoPromptXL(
+		const char* window_text,
+		const char* okay_text,
+		void (*okay_callback)(Button&)
+	) {
+		soundActivate();
+		return monoPromptGeneric(window_text, okay_text, okay_callback, false);
 	}
 
 	static void closeMono() {
@@ -22291,7 +22302,7 @@ failed:
 
 	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
-	static void createWorkshopCreateMenu();
+	static void createWorkshopCreateMenu(SteamUGCDetails_t* details);
 	static bool startModdedGame()
 	{
 		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
@@ -22339,18 +22350,82 @@ failed:
 		return true;
 	}
 
-	static void fn_load_mod(Button& button, const int index, const bool isWorkshopMod, const bool toggleActive, const bool viewMyItems)
+	static void fn_load_mod(Button& button, const int index, const bool isWorkshopMod, const bool toggleActive, const bool viewMyItems, bool& isDownloaded)
 	{
-		Frame* frame = static_cast<Frame*>(button.getParent());
+		std::string name = button.getName();
+		name = name.substr(0, name.size() - strlen("_button"));
+		Frame* frame = static_cast<Frame*>(button.getParent())->findFrame(name.c_str());
 		bool modLoaded = false;
 		char fullpath[PATH_MAX] = "";
+		isDownloaded = true;
 		if ( isWorkshopMod )
 		{
 #ifdef STEAMWORKS
 			auto itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[index];
 			bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
+			isDownloaded = itemDownloaded;
 			bool pathIsMounted = Mods::isPathInMountedFiles(fullpath);
-			if ( !viewMyItems )
+			if ( viewMyItems )
+			{
+				if ( !itemDownloaded )
+				{
+					std::string fileID_jpg = "/workshop_cache/";
+					fileID_jpg += std::to_string(itemDetails.m_nPublishedFileId) + ".jpg";
+
+					std::string fileID_png = "/workshop_cache/";
+					fileID_png += std::to_string(itemDetails.m_nPublishedFileId) + ".png";
+
+					std::string filePath = "";
+					if ( PHYSFS_getRealDir(fileID_jpg.c_str()) )
+					{
+						filePath = PHYSFS_getRealDir(fileID_jpg.c_str());
+						filePath += PHYSFS_getDirSeparator();
+						filePath += fileID_jpg;
+					}
+					else
+					{
+						if ( PHYSFS_getRealDir(fileID_png.c_str()) )
+						{
+							filePath = PHYSFS_getRealDir(fileID_png.c_str());
+							filePath += PHYSFS_getDirSeparator();
+							filePath += fileID_png;
+						}
+						else if ( g_SteamWorkshop->m_subscribedItemPreviewURL[index] != "" )
+						{
+#ifdef USE_LIBCURL
+							// cache image
+							LibCURL.download(std::to_string(itemDetails.m_nPublishedFileId),
+								g_SteamWorkshop->m_subscribedItemPreviewURL[index]);
+							if ( PHYSFS_getRealDir(fileID_jpg.c_str()) )
+							{
+								filePath = PHYSFS_getRealDir(fileID_jpg.c_str());
+								filePath += PHYSFS_getDirSeparator();
+								filePath += fileID_jpg;
+							}
+							else if ( PHYSFS_getRealDir(fileID_png.c_str()) )
+							{
+								filePath = PHYSFS_getRealDir(fileID_png.c_str());
+								filePath += PHYSFS_getDirSeparator();
+								filePath += fileID_png;
+							}
+#endif
+						}
+					}
+
+					if ( filePath != "" )
+					{
+						std::string modOrderName = frame->getName();
+						modOrderName += "_mod_order";
+						std::string modPathName = modOrderName + "_path";
+						Field* modOrderTxt = frame->findField(modOrderName.c_str());
+						if ( Field* modPathTxt = frame->findField(modPathName.c_str()) )
+						{
+							modPathTxt->setText(filePath.c_str());
+						}
+					}
+				}
+			}
+			else if ( !viewMyItems )
 			{
 				if ( pathIsMounted )
 				{
@@ -22446,6 +22521,7 @@ failed:
 		}
 
 		Mods::numCurrentModsLoaded = Mods::mountedFilepaths.size();
+		Mods::updateModCounts();
 		if ( modLoaded )
 		{
 			Mods::verifyAchievements(fullpath, true);
@@ -22492,6 +22568,7 @@ failed:
 			auto bg = frame->findImage("bg");
 			auto title = frame->findField("title");
 			auto desc = frame->findField("desc");
+			auto version = frame->findField("version");
 			if ( modLoaded )
 			{
 				title->setColor(makeColorRGB(255, 255, 255));
@@ -22503,6 +22580,10 @@ failed:
 				else
 				{
 					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBrownOn_00.png";
+				}
+				if ( version )
+				{
+					version->setColor(makeColorRGB(255, 255, 255));
 				}
 			}
 			else
@@ -22517,6 +22598,10 @@ failed:
 				{
 					bg->path = "*#images/ui/Main Menus/Mods/ModMenu_ItemBrown_00.png";
 				}
+				if ( version )
+				{
+					version->setColor(makeColorRGB(128, 128, 128));
+				}
 			}
 		}
 		else
@@ -22527,7 +22612,10 @@ failed:
 			Field* modOrderTxt = frame->findField(modOrderName.c_str());
 			if ( Field* modPathTxt = frame->findField(modPathName.c_str()) )
 			{
-				modPathTxt->setText(fullpath);
+				if ( strcmp(fullpath, "") )
+				{
+					modPathTxt->setText(fullpath);
+				}
 			}
 			auto bg = frame->findImage("bg");
 			auto title = frame->findField("title");
@@ -22550,7 +22638,7 @@ failed:
 
 	static auto make_workshop_frame = [](Frame& subwindow, int y, 
 		const char* name, const char* titleTxt, const char* descTxt, 
-		bool isMounted, bool isWorkshopMod, int itemIndex) {
+		bool isMounted, bool isWorkshopMod, int itemIndex, const char* tags) {
 		auto frame = subwindow.addFrame(name);
 		frame->setSize(SDL_Rect{ 16, y, 884, 0 });
 		frame->enableScroll(false);
@@ -22563,11 +22651,101 @@ failed:
 		}
 		frame->setUserData((void*)(intptr_t)itemIndex);
 
-		auto title = frame->addField("title", 1024);
-		title->setText(titleTxt);
+		int latestVersionNum = 0;
+		int currentVersionNum = 0;
+		{
+			const char* c = VERSION;
+			char v[4];
+			v[0] = c[1];
+			v[1] = c[3];
+			v[2] = c[5];
+			v[3] = '\0';
+			currentVersionNum = std::stoi(v);
+		}
+
+		std::string latestVersionStr = "";
+		if ( tags )
+		{
+			std::string allTags = tags;
+			auto found = allTags.find(',');
+			std::vector<std::string> foundTags;
+			while ( found != std::string::npos )
+			{
+				foundTags.push_back(allTags.substr(0, found));
+				allTags = allTags.substr(found + 1); // skip the "," character.
+				found = allTags.find(',');
+			}
+			foundTags.push_back(allTags);
+
+
+			for ( auto& t : foundTags )
+			{
+				if ( t.size() == strlen(VERSION) )
+				{
+					if ( t[0] == 'v' && (t[1] >= '0' && t[1] <= '9') )
+					{
+						// found version tag
+						char v[4];
+						v[0] = t[1];
+						v[1] = t[3];
+						v[2] = t[5];
+						v[3] = '\0';
+						int version = std::stoi(v);
+						if ( version >= latestVersionNum )
+						{
+							latestVersionNum = version;
+							latestVersionStr = t;
+						}
+					}
+				}
+			}
+		}
+
+		auto title = frame->addField("title", 44);
+		std::string titleStr = titleTxt;
+		if ( titleStr.size() >= 40 )
+		{
+			titleStr = titleStr.substr(0, 40);
+			titleStr += "...";
+		}
+		title->setText(titleStr.c_str());
 		title->setFont(bigfont_outline);
 		const int padx = 54;
-		title->setSize(SDL_Rect{ padx + 4 + 64, 8, 570, 24 });
+
+		const int padleft = padx + 4 + 64;
+		SDL_Rect titlePos = SDL_Rect{ padx + 4 + 64, 8, 524, 24 };
+
+		if ( latestVersionStr != "" )
+		{
+			auto version = frame->addField("version", 16);
+			std::string s = "[";
+			s += latestVersionStr;
+			s += ']';
+			version->setText(s.c_str());
+			version->setFont(bigfont_outline);
+			SDL_Rect versionPos = titlePos;
+			versionPos.w = 76;
+
+			if ( !viewMyItems )
+			{
+				if ( currentVersionNum > latestVersionNum )
+				{
+					auto imgPos = versionPos;
+					imgPos.y += 2;
+					imgPos.w = 18;
+					imgPos.h = 18;
+					auto warning = frame->addImage(imgPos, 0xFFFFFFFF,
+						"#*images/ui/Main Menus/Mods/warning_glyph.png", "warning");
+					warning->ontop = true;
+					versionPos.x += 20;
+					titlePos.x += 20;
+				}
+			}
+
+			version->setSize(versionPos);
+			titlePos.x += versionPos.w + 8;
+		}
+		title->setSize(titlePos);
 		Field* desc = nullptr;
 
 		if ( descTxt != nullptr )
@@ -22576,6 +22754,7 @@ failed:
 			desc->setText(descTxt);
 			desc->setFont(smallfont_outline);
 			SDL_Rect descPos = title->getSize();
+			descPos.x = padleft;
 			descPos.x += 4;
 			descPos.y += descPos.h + 1;
 			descPos.w = 726;
@@ -22637,38 +22816,17 @@ failed:
 			//frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
 		}
 
-		//button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
-		//button->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
-		//button->setHighlightColor(0xffffffff);
-		//button->setColor(0xffffffff);
-		//button->setVJustify(Button::justify_t::CENTER);
-		//button->setHJustify(Button::justify_t::LEFT);
-		//button->setFont(bigfont_outline);
-		//button->setText(label);
-		//button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		//button->setCallback([](Button& button) {
-		//	soundActivate();
-		//if ( tutorial_map_destination != button.getName() ) {
-		//	tutorial_map_destination = button.getName();
-		//}
-		//else {
-		//	auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-		//	frame = static_cast<Frame*>(frame->getParent()); assert(frame);
-		//	auto enter = frame->findButton("enter"); assert(enter);
-		//	enter->activate();
-		//}
-		//	});
-
 		if ( !viewMyItems )
 		{
 			std::string button_name = name;
 			button_name += "_button";
-			auto button = frame->addButton(button_name.c_str());
+			auto button = subwindow.addButton(button_name.c_str());
 			button->setColor(0xffffffff);
 			button->setHighlightColor(0xffffffff);
-			button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44});
+			button->setSize(SDL_Rect{ frame->getSize().x + frame->getSize().w, frame->getSize().y + 8, 158, 44});
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
+			//button->setScrollParentContainerFrame(true);
 			if ( isMounted )
 			{
 				button->setText("Unload Mod");
@@ -22683,8 +22841,24 @@ failed:
 				button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
 				button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
 			}
+			button->setWidgetSearchParent("mods_menu");
+			button->setWidgetPageLeft("tab_left");
+			button->setWidgetPageRight("tab_right");
+			button->setWidgetBack("back_button");
+			if ( isWorkshopMod )
+			{
+				button->addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				button->addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			button->addWidgetAction("MenuAlt2", "load_status_help");
+			button->addWidgetAction("MenuStart", "start_modded_game");
 			button->setCallback([](Button& button) {
-				Frame* frame = static_cast<Frame*>(button.getParent());
+				std::string name = button.getName();
+				name = name.substr(0, name.size() - strlen("_button"));
+				Frame* frame = static_cast<Frame*>(button.getParent())->findFrame(name.c_str());
 				auto index = reinterpret_cast<intptr_t>(frame->getUserData());
 				bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
 
@@ -22697,7 +22871,8 @@ failed:
 				{
 					soundCancel();
 				}
-				fn_load_mod(button, index, isWorkshopMod, true, false);
+				bool isDownloaded = true;
+				fn_load_mod(button, index, isWorkshopMod, true, false, isDownloaded);
 			});
 
 			std::string mod_order_name = name;
@@ -22739,7 +22914,8 @@ failed:
 			modPath->setDisabled(true);
 			modPath->setText("");
 
-			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems);
+			bool isDownloaded = true;
+			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems, isDownloaded);
 
 			if ( modPath )
 			{
@@ -22757,18 +22933,35 @@ failed:
 		{
 			std::string button_name = name;
 			button_name += "_button";
-			auto button = frame->addButton(button_name.c_str());
+			auto button = subwindow.addButton(button_name.c_str());
 			button->setBackground("*#images/ui/Main Menus/Mods/Load_Button_00.png");
 			button->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Load_Button_High00.png");
 			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Load_Button_Press00.png");
 			button->setColor(0xffffffff);
 			button->setHighlightColor(0xffffffff);
-			button->setSize(SDL_Rect{ frame->getSize().w, 8, 158, 44 });
+			button->setSize(SDL_Rect{ frame->getSize().x + frame->getSize().w, frame->getSize().y + 8, 158, 44 });
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
+			//button->setScrollParentContainerFrame(true);
 			button->setText("Update Mod");
+			button->setWidgetSearchParent("mods_menu");
+			button->setWidgetPageLeft("tab_left");
+			button->setWidgetPageRight("tab_right");
+			button->setWidgetBack("back_button");
+			button->addWidgetAction("MenuAlt1", "blank_mod_folder");
+			button->addWidgetAction("MenuStart", "new_workshop_mod");
 			button->setCallback([](Button& button) {
-				createWorkshopCreateMenu();
+				soundActivate();
+
+				std::string name = button.getName();
+				name = name.substr(0, name.size() - strlen("_button"));
+				Frame* frame = static_cast<Frame*>(button.getParent())->findFrame(name.c_str());
+				auto index = reinterpret_cast<intptr_t>(frame->getUserData());
+				bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
+				if ( isWorkshopMod )
+				{
+					createWorkshopCreateMenu(&g_SteamWorkshop->m_subscribedItemListDetails[index]);
+				}
 			});
 
 			std::string mod_order_name = name;
@@ -22778,13 +22971,17 @@ failed:
 			modPath->setDisabled(true);
 			modPath->setText("");
 
-			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems);
+			bool isDownloaded = true;
+			fn_load_mod(*button, reinterpret_cast<intptr_t>(frame->getUserData()), isWorkshopMod, false, viewMyItems, isDownloaded);
 
 			if ( modPath )
 			{
 				std::string previewPath = modPath->getText();
-				previewPath += PHYSFS_getDirSeparator();
-				previewPath += "preview.png";
+				if ( !(viewMyItems && !isDownloaded) )
+				{
+					previewPath += PHYSFS_getDirSeparator();
+					previewPath += "preview.png";
+				}
 				auto panel = frame->addImage(SDL_Rect{ padx - 6, 8, 68, 68 }, makeColorRGB(255, 255, 255), "*#images/ui/Main Menus/Mods/ModMenu_PreviewFrame.png", "preview bg");
 				if ( auto imgGet = Image::get(previewPath.c_str()) )
 				{
@@ -22810,17 +23007,82 @@ failed:
 			[](Button&) {
 				soundCancel();
 				assert(main_menu_frame);
-				/*auto window = main_menu_frame->findFrame("play_game_window");
-				if ( window ) {
-					auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
-				else {
-					auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				}*/
-
 				closeMono();
+				if ( auto window = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						for ( auto f : subwindow->getFrames() )
+						{
+							f->removeSelf();
+						}
+						for ( auto b : subwindow->getButtons() )
+						{
+							b->removeSelf();
+						}
+
+						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.y = 0;
+						actualPos.h = subwindow->getSize().h;
+						subwindow->setActualSize(actualPos);
+
+						auto rock_background = subwindow->findImage("rock_background");
+						rock_background->pos = subwindow->getActualSize();
+					}
+				}
+				if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto tab = mods_menu->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
+				}
 		});
+
+		{
+			if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+			{
+				auto enter = mods_menu->findButton("start_modded_game");
+				if ( enter )
+				{
+					enter->setDisabled(false);
+					enter->setInvisible(false);
+				}
+				auto new_workshop_mod = mods_menu->findButton("new_workshop_mod");
+				if ( new_workshop_mod )
+				{
+					new_workshop_mod->setDisabled(true);
+					new_workshop_mod->setInvisible(true);
+					if ( new_workshop_mod->isSelected() && enter )
+					{
+						enter->select();
+					}
+				}
+
+				auto browse_workshop = mods_menu->findButton("browse_workshop");
+				if ( browse_workshop )
+				{
+					browse_workshop->setDisabled(false);
+					browse_workshop->setInvisible(false);
+				}
+
+				auto blank_mod_folder = mods_menu->findButton("blank_mod_folder");
+				if ( blank_mod_folder )
+				{
+					blank_mod_folder->setDisabled(true);
+					blank_mod_folder->setInvisible(true);
+					if ( blank_mod_folder->isSelected() && browse_workshop )
+					{
+						browse_workshop->select();
+					}
+				}
+			}
+		}
+
+		if ( !prompt )
+		{
+			return;
+		}
 
 		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Subscribed, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
 		prompt->setTickCallback([](Widget& widget) {
@@ -22831,11 +23093,19 @@ failed:
 
 				if ( auto window = main_menu_frame->findFrame("mods_menu") )
 				{
+					if ( auto tab = window->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
 					if ( auto subwindow = window->findFrame("subwindow") )
 					{
 						for ( auto f : subwindow->getFrames() )
 						{
 							f->removeSelf();
+						}
+						for ( auto b : subwindow->getButtons() )
+						{
+							b->removeSelf();
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
@@ -22855,10 +23125,39 @@ failed:
 							bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
 							bool pathIsMounted = Mods::isPathInMountedFiles(fullpath);
 
+							std::string prevButtonName = "";
+							std::string currentButtonName = name;
+							currentButtonName += "_button";
+							if ( prevFrame )
+							{
+								prevButtonName = prevFrame->getName();
+								prevButtonName += "_button";
+								if ( Button* prevButton = subwindow->findButton(prevButtonName.c_str()) )
+								{
+									prevButton->setWidgetDown(currentButtonName.c_str());
+								}
+							}
+
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name, 
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription,
-								pathIsMounted, true, i);
+								pathIsMounted, true, i,
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTags);
+
+							if ( prevFrame )
+							{
+								if ( auto currentButton = subwindow->findButton(currentButtonName.c_str()) )
+								{
+									if ( prevButtonName != "" )
+									{
+										currentButton->setWidgetUp(prevButtonName.c_str());
+									}
+									if ( i == 0 )
+									{
+										currentButton->select();
+									}
+								}
+							}
 						}
 						if ( prevFrame )
 						{
@@ -22885,18 +23184,83 @@ failed:
 			"Cancel",
 			[](Button&) {
 				soundCancel();
-		assert(main_menu_frame);
-		/*auto window = main_menu_frame->findFrame("play_game_window");
-		if ( window ) {
-			auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
-			dimmer->removeSelf();
-		}
-		else {
-			auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-		}*/
+				assert(main_menu_frame);
+				closeMono();
+				if ( auto window = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						for ( auto f : subwindow->getFrames() )
+						{
+							f->removeSelf();
+						}
+						for ( auto b : subwindow->getButtons() )
+						{
+							b->removeSelf();
+						}
 
-		closeMono();
-			});
+						SDL_Rect actualPos = subwindow->getActualSize();
+						actualPos.y = 0;
+						actualPos.h = subwindow->getSize().h;
+						subwindow->setActualSize(actualPos);
+
+						auto rock_background = subwindow->findImage("rock_background");
+						rock_background->pos = subwindow->getActualSize();
+					}
+				}
+				if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto tab = mods_menu->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
+				}
+		});
+
+		{
+			if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+			{
+				auto new_workshop_mod = mods_menu->findButton("new_workshop_mod");
+				if ( new_workshop_mod )
+				{
+					new_workshop_mod->setDisabled(false);
+					new_workshop_mod->setInvisible(false);
+				}
+				auto enter = mods_menu->findButton("start_modded_game");
+				if ( enter )
+				{
+					enter->setDisabled(true);
+					enter->setInvisible(true);
+					if ( enter->isSelected() && new_workshop_mod )
+					{
+						new_workshop_mod->select();
+					}
+				}
+
+				auto blank_mod_folder = mods_menu->findButton("blank_mod_folder");
+				if ( blank_mod_folder )
+				{
+					blank_mod_folder->setDisabled(false);
+					blank_mod_folder->setInvisible(false);
+				}
+
+				auto browse_workshop = mods_menu->findButton("browse_workshop");
+				if ( browse_workshop )
+				{
+					browse_workshop->setDisabled(true);
+					browse_workshop->setInvisible(true);
+					if ( browse_workshop->isSelected() && blank_mod_folder )
+					{
+						blank_mod_folder->select();
+					}
+				}
+			}
+		}
+
+		if ( !prompt )
+		{
+			return;
+		}
 
 		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Published, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
 		prompt->setTickCallback([](Widget& widget) {
@@ -22907,11 +23271,19 @@ failed:
 
 				if ( auto window = main_menu_frame->findFrame("mods_menu") )
 				{
+					if ( auto tab = window->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
 					if ( auto subwindow = window->findFrame("subwindow") )
 					{
 						for ( auto f : subwindow->getFrames() )
 						{
 							f->removeSelf();
+						}
+						for ( auto b : subwindow->getButtons() )
+						{
+							b->removeSelf();
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
@@ -22925,9 +23297,39 @@ failed:
 						{
 							char name[32];
 							snprintf(name, sizeof(name), "mod%d", i);
+
+							std::string prevButtonName = "";
+							std::string currentButtonName = name;
+							currentButtonName += "_button";
+							if ( prevFrame )
+							{
+								prevButtonName = prevFrame->getName();
+								prevButtonName += "_button";
+								if ( Button* prevButton = subwindow->findButton(prevButtonName.c_str()) )
+								{
+									prevButton->setWidgetDown(currentButtonName.c_str());
+								}
+							}
+
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
 								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle,
-								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription, true, true, i + 1000000);
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchDescription, true, true, i + 1000000,
+								g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTags);
+
+							if ( prevFrame )
+							{
+								if ( auto currentButton = subwindow->findButton(currentButtonName.c_str()) )
+								{
+									if ( prevButtonName != "" )
+									{
+										currentButton->setWidgetUp(prevButtonName.c_str());
+									}
+									if ( i == 0 )
+									{
+										currentButton->select();
+									}
+								}
+							}
 						}
 						if ( prevFrame )
 						{
@@ -22952,22 +23354,67 @@ failed:
 			"Cancel",
 			[](Button&) {
 				soundCancel();
-				assert(main_menu_frame);
-				/*auto window = main_menu_frame->findFrame("play_game_window");
-				if ( window ) {
-					auto dimmer = static_cast<Frame*>(window->getParent()); assert(dimmer);
-					dimmer->removeSelf();
-				}
-				else {
-					auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-				}*/
 				closeMono();
+
+				assert(main_menu_frame);
+				if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+				{
+					if ( auto tab = mods_menu->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
+				}
 			});
+
+		{
+			if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+			{
+				auto enter = mods_menu->findButton("start_modded_game");
+				if ( enter )
+				{
+					enter->setDisabled(false);
+					enter->setInvisible(false);
+				}
+				auto new_workshop_mod = mods_menu->findButton("new_workshop_mod");
+				if ( new_workshop_mod )
+				{
+					new_workshop_mod->setDisabled(true);
+					new_workshop_mod->setInvisible(true);
+					if ( new_workshop_mod->isSelected() && enter )
+					{
+						enter->select();
+					}
+				}
+
+				auto blank_mod_folder = mods_menu->findButton("blank_mod_folder");
+				if ( blank_mod_folder )
+				{
+					blank_mod_folder->setDisabled(false);
+					blank_mod_folder->setInvisible(false);
+				}
+
+				auto browse_workshop = mods_menu->findButton("browse_workshop");
+				if ( browse_workshop )
+				{
+					browse_workshop->setDisabled(true);
+					browse_workshop->setInvisible(true);
+					if ( browse_workshop->isSelected() && blank_mod_folder )
+					{
+						blank_mod_folder->select();
+					}
+				}
+			}
+		}
 
 		Mods::localModFoldernames.clear();
 		std::string path = outputdir;
 		path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator());
 		Mods::localModFoldernames = directoryContents(path.c_str(), true, false);
+
+		if ( !prompt )
+		{
+			return;
+		}
 
 		prompt->setTickCallback([](Widget& widget) {
 			if ( (ticks - mods_loading_tick) > TICKS_PER_SECOND / 2 )
@@ -22976,11 +23423,19 @@ failed:
 
 				if ( auto window = main_menu_frame->findFrame("mods_menu") )
 				{
+					if ( auto tab = window->findButton(mods_active_tab.c_str()) )
+					{
+						tab->select();
+					}
 					if ( auto subwindow = window->findFrame("subwindow") )
 					{
 						for ( auto f : subwindow->getFrames() )
 						{
 							f->removeSelf();
+						}
+						for ( auto b : subwindow->getButtons() )
+						{
+							b->removeSelf();
 						}
 
 						SDL_Rect actualPos = subwindow->getActualSize();
@@ -23000,8 +23455,37 @@ failed:
 							path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(folder);
 							bool pathIsMounted = Mods::isPathInMountedFiles(path);
 							std::string title = "/mods/" + folder + "/";
+
+							std::string prevButtonName = "";
+							std::string currentButtonName = name;
+							currentButtonName += "_button";
+							if ( prevFrame )
+							{
+								prevButtonName = prevFrame->getName();
+								prevButtonName += "_button";
+								if ( Button* prevButton = subwindow->findButton(prevButtonName.c_str()) )
+								{
+									prevButton->setWidgetDown(currentButtonName.c_str());
+								}
+							}
+
 							prevFrame = make_workshop_frame(*subwindow, prevFrame ? prevFrame->getSize().y + frameHeight : 24, name,
-								title.c_str(), nullptr, pathIsMounted, false, index);
+								title.c_str(), nullptr, pathIsMounted, false, index, nullptr);
+
+							if ( prevFrame )
+							{
+								if ( auto currentButton = subwindow->findButton(currentButtonName.c_str()) )
+								{
+									if ( prevButtonName != "" )
+									{
+										currentButton->setWidgetUp(prevButtonName.c_str());
+									}
+									if ( index == 0 )
+									{
+										currentButton->select();
+									}
+								}
+							}
 						}
 						if ( prevFrame )
 						{
@@ -23017,9 +23501,161 @@ failed:
 		});
 	}
 
+	static void createWorkshopUploadWindow();
+
+	static Frame* workshopEditPrompt(
+		const char* window_text,
+		const char* tip_text,
+		const char* okay_text,
+		const char* cancel_text,
+		void (*okay_callback)(Button&),
+		void (*cancel_callback)(Button&),
+		bool leftRed = true,
+		bool rightRed = false
+	) {
+		soundActivate();
+
+		Frame* frame = createPrompt("binary_prompt", false);
+		if ( !frame ) {
+			return nullptr;
+		}
+
+		auto textbox = frame->addImage(
+			SDL_Rect{ frame->getSize().w / 2 - 300 / 2 + 4, 48, 300, 36 },
+			0xffffffff,
+			"*images/ui/Main Menus/Mods/Upload/Finalize__NameField_00.png",
+			"name_box"
+		);
+
+		SDL_Rect texteditPos = textbox->pos;
+		texteditPos.x += 2;
+		texteditPos.w -= 4;
+		texteditPos.y += 4;
+		texteditPos.h = 28;
+		auto tip = frame->addField("tip", 36);
+		tip->setSize(texteditPos);
+		tip->setFont(smallfont_no_outline);
+		tip->setText(tip_text);
+		tip->setUserData(const_cast<void*>((const void*)tip_text));
+		tip->setFont(smallfont_outline);
+		tip->setHJustify(Field::justify_t::LEFT);
+		tip->setVJustify(Field::justify_t::CENTER);
+		tip->setColor(makeColor(166, 123, 81, 127));
+		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
+		tip->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
+		tip->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
+		tip->setTickCallback([](Widget& widget) {
+			auto tip = static_cast<Field*>(&widget);
+		auto parent = static_cast<Frame*>(widget.getParent());
+		auto field = parent->findField("field");
+		if ( field && field->getText()[0] != '\0' ) {
+			tip->setText("");
+		}
+		else {
+			tip->setText((const char*)tip->getUserData());
+		}
+			});
+
+		auto field = frame->addField("field", 36);
+		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+		field->setSelectorOffset(SDL_Rect{ -7, -7, 7, 7 });
+		field->setButtonsOffset(SDL_Rect{ 11, 0, 0, 0 });
+		field->setEditable(true);
+		field->setScroll(true);
+		field->setSize(texteditPos);
+		field->setFont(smallfont_outline);
+		field->setText("");
+		field->setHJustify(Field::justify_t::LEFT);
+		field->setVJustify(Field::justify_t::CENTER);
+		field->setColor(makeColor(166, 123, 81, 255));
+		field->setWidgetSearchParent(field->getParent()->getName());
+		field->setWidgetBack("cancel");
+		field->setWidgetDown("okay");
+		field->select();
+		field->activate();
+		field->setTickCallback([](Widget& widget) {
+			if ( !main_menu_frame ) {
+				return;
+			}
+		auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+		if ( !selectedWidget ) {
+			auto field = static_cast<Field*>(&widget);
+			field->select();
+		}
+			});
+
+		auto text = frame->addField("text", 1024);
+		text->setSize(SDL_Rect{ 30, texteditPos.y + texteditPos.h + 24, frame->getSize().w - 30 * 2, 24 * 4 + 4 });
+		text->setFont(smallfont_no_outline);
+		text->setText(window_text);
+		text->setHJustify(Field::justify_t::CENTER);
+		text->setVJustify(Field::justify_t::TOP);
+
+		auto okay = frame->addButton("okay");
+		SDL_Rect leftPos{ (leftRed ? -16 : 0), frame->getSize().h - 98, leftRed ? 130 : 108, 52 };
+		leftPos.x += frame->getSize().w / 2;
+		leftPos.x -= leftPos.w;
+		okay->setSize(leftPos);
+		okay->setBackground(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		okay->setBackgroundHighlighted(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		okay->setBackgroundActivated(leftRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+		okay->setColor(makeColor(255, 255, 255, 255));
+		okay->setHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setTextColor(makeColor(255, 255, 255, 255));
+		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		okay->setFont(smallfont_outline);
+		okay->setText(okay_text);
+		okay->setWidgetSearchParent(okay->getParent()->getName());
+		okay->setWidgetRight("cancel");
+		okay->setWidgetBack("cancel");
+		okay->setCallback(okay_callback);
+		okay->setTickCallback([](Widget& widget) {
+			if ( !main_menu_frame ) {
+				return;
+			}
+		auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
+		if ( !selectedWidget ) {
+			auto button = static_cast<Button*>(&widget);
+			button->select();
+		}
+			});
+
+		auto cancel = frame->addButton("cancel");
+		SDL_Rect rightPos{ leftRed ? 8 : 0, frame->getSize().h - 98, rightRed ? 130 : 108, 52 };
+		rightPos.x += frame->getSize().w / 2;
+		rightPos.x += 8;
+		cancel->setSize(rightPos);
+		cancel->setBackground(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+		cancel->setBackgroundHighlighted(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+		cancel->setBackgroundActivated(rightRed ?
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
+			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+		cancel->setColor(makeColor(255, 255, 255, 255));
+		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setTextColor(makeColor(255, 255, 255, 255));
+		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		cancel->setFont(smallfont_outline);
+		cancel->setText(cancel_text);
+		cancel->setWidgetSearchParent(okay->getParent()->getName());
+		cancel->setWidgetLeft("okay");
+		cancel->setWidgetBack("cancel");
+		cancel->setCallback(cancel_callback);
+
+		return frame;
+	}
+
 	static void createModsWindow() {
 		assert(main_menu_frame);
-
 		Mods::clearAllMountedPaths();
 		for ( auto it = Mods::mountedFilepathsSaved.begin(); it != Mods::mountedFilepathsSaved.end(); )
 		{
@@ -23034,6 +23670,7 @@ failed:
 		}
 		Mods::mountedFilepaths = Mods::mountedFilepathsSaved;
 		Mods::mountAllExistingPaths();
+		Mods::updateModCounts();
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
 		dimmer->setSize(SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
@@ -23071,6 +23708,7 @@ failed:
 		subwindow->setActualSize(SDL_Rect{ 0, 0, 1118, 476 });
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
+		subwindow->setScrollWithLeftControls(false);
 
 		auto rock_background = subwindow->addImage(
 			subwindow->getActualSize(),
@@ -23093,15 +23731,6 @@ failed:
 		window_title->setJustify(Field::justify_t::CENTER);
 		window_title->setText("MODS");
 
-		auto subtitle = window->addField("subtitle", 1024);
-		subtitle->setFont(bigfont_no_outline);
-		subtitle->setColor(makeColor(170, 134, 102, 255));
-		subtitle->setSize(SDL_Rect{ 242, 74, 684, 50 });
-		subtitle->setJustify(Field::justify_t::CENTER);
-		subtitle->setText(
-			u8"Take on 10 challenges that teach and test your adventuring\n"
-			u8"skills, preparing you to take on the dungeon");
-
 		(void)createBackWidget(window, [](Button& button) {
 			if ( Mods::numCurrentModsLoaded >= 0 )
 			{
@@ -23110,7 +23739,6 @@ failed:
 					"Do you want to exit this menu?\nAny active mods will be unloaded.", "Yes", "No",
 					[](Button& button) { // yes
 					soundActivate();
-					button.setHideSelectors(true);
 					gui->deselect();
 					Mods::unloadMods();
 					destroyMainMenu();
@@ -23124,7 +23752,6 @@ failed:
 			else
 			{
 				soundCancel();
-				button.setHideSelectors(true);
 				gui->deselect();
 				Mods::unloadMods();
 				destroyMainMenu();
@@ -23132,23 +23759,135 @@ failed:
 			}
 		});
 
-		auto achievements_status = window->addField("achievements_status", 64);
-		achievements_status->setFont(bigfont_no_outline);
-		achievements_status->setSize(SDL_Rect{ 540, 646, 340, 30 });
+		struct Option {
+			const char* name;
+			const char* title;
+			void (*callback)(Button&);
+		};
+		static std::vector<Option> tabs = {
+			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
+			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
+#endif
+		};
+
+#ifdef STEAMWORKS
+		if ( mods_active_tab == "" )
+		{
+			mods_active_tab = tabs[1].name;
+		}
+#else
+		if ( mods_active_tab == "" )
+		{
+			mods_active_tab = tabs[0].name;
+		}
+#endif
+
+		auto load_status_frame = window->addFrame("load_status");
+		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });
+		load_status_frame->setTickCallback([](Widget& widget) {
+			if ( mods_active_tab == tabs[2].name )
+			{
+				widget.setInvisible(true);
+			}
+			else
+			{
+				widget.setInvisible(false);
+			}
+		});
+		auto load_status_titles = load_status_frame->addField("load_status_titles", 128);
+		load_status_titles->setFont(smallfont_outline);
+		load_status_titles->setSize(SDL_Rect{ 8, 8, load_status_frame->getSize().w - 64, load_status_frame->getSize().h - 16});
+		load_status_titles->setText("Local Mods:\nWorkshop:\nTotal Loaded:");
+		load_status_titles->setHJustify(Field::justify_t::RIGHT);
+		load_status_titles->setVJustify(Field::justify_t::CENTER);
+		auto load_status_totals = load_status_frame->addField("load_status_totals", 128);
+		load_status_totals->setFont(smallfont_outline);
+		load_status_totals->setSize(SDL_Rect{ 
+			load_status_titles->getSize().w + 16, 
+			load_status_titles->getSize().y,
+			48,
+			load_status_titles->getSize().h});
+		load_status_totals->setText("");
+		load_status_totals->setHJustify(Field::justify_t::LEFT);
+		load_status_totals->setVJustify(Field::justify_t::CENTER);
+		load_status_totals->setTickCallback([](Widget& widget) {
+			if ( Mods::numCurrentModsLoaded >= 0 )
+			{
+				Field* field = static_cast<Field*>(&widget);
+				char buf[128] = "";
+				snprintf(buf, sizeof(buf), "%d\n%d\n%d",
+					Mods::mods_loaded_local.size(),
+					Mods::mods_loaded_workshop.size(),
+					Mods::numCurrentModsLoaded);
+				field->setText(buf);
+				assert((Mods::mods_loaded_local.size() + Mods::mods_loaded_workshop.size())
+					== Mods::numCurrentModsLoaded);
+			}
+		});
+
+		SDL_Rect load_status_frame_pos = load_status_frame->getSize();
+		load_status_frame_pos.w += 160 + 16;
+		load_status_frame->setSize(load_status_frame_pos);
+		auto achievements_status = load_status_frame->addField("achievements_status", 64);
+		achievements_status->setFont(bigfont_outline);
+		achievements_status->setSize(SDL_Rect{ 196 + 8, 15, 160, 46});
 		achievements_status->setText("");
-		achievements_status->setHJustify(Field::justify_t::RIGHT);
+		achievements_status->setHJustify(Field::justify_t::CENTER);
 		achievements_status->setVJustify(Field::justify_t::CENTER);
+		achievements_status->setIndividualLinePadding(1, 8);
 		achievements_status->setTickCallback([](Widget& widget) {
 			Field* field = static_cast<Field*>(&widget);
 			if ( Mods::disableSteamAchievements )
 			{
-				field->setText("ACHIEVEMENTS DISABLED");
+				field->setText("ACHIEVEMENTS\nDISABLED");
+				field->setTextColor(hudColors.characterSheetRed);
 			}
 			else
 			{
-				field->setText("ACHIEVEMENTS ENABLED");
+				field->setText("ACHIEVEMENTS\nENABLED");
+				field->setTextColor(makeColorRGB(255, 255, 255));
 			}
 		});
+
+		SDL_Rect load_status_bg_pos = achievements_status->getSize();
+		load_status_bg_pos.x -= 8;
+		load_status_bg_pos.w += 16;
+		load_status_bg_pos.y = 8;
+		load_status_bg_pos.h += 16;
+		auto load_status_bg = load_status_frame->addImage(load_status_bg_pos, 0xFFFFFFFF,
+			"#*images/ui/Main Menus/Mods/ModMenu_AchievementStatus_00.png", "load_status_bg");
+
+		load_status_frame_pos.w += 66;
+		load_status_frame->setSize(load_status_frame_pos);
+		auto load_status_help = load_status_frame->addButton("load_status_help");
+		load_status_help->setBackground("*images/ui/Main Menus/Mods/Button_X_00.png");
+		load_status_help->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Button_XHigh_00.png");
+		load_status_help->setBackgroundActivated("*images/ui/Main Menus/Mods/Button_XPress_00.png");
+		load_status_help->setColor(makeColor(255, 255, 255, 255));
+		load_status_help->setHighlightColor(makeColor(255, 255, 255, 255));
+		load_status_help->setTextColor(makeColor(255, 255, 255, 255));
+		load_status_help->setTextHighlightColor(makeColor(255, 255, 255, 255));
+		load_status_help->setFont(smallfont_outline);
+		load_status_help->setText("?");
+		load_status_help->setSize(SDL_Rect{ load_status_bg_pos.x + load_status_bg_pos.w + 8,
+			load_status_frame_pos.h / 2 - 14, 26, 26});
+		load_status_help->setCallback([](Button& button) {
+			monoPrompt("Note: Not all modded files can be\nverified prior to game start to\nensure Achievements are enabled.", "Dismiss", [](Button& button) {
+				soundActivate();
+				closeMono();
+			});
+		});
+		load_status_help->setTickCallback([](Widget& widget) {
+			auto button = static_cast<Button*>(&widget);
+			if ( button->isSelected() && button->getParent() && button->getParent()->isInvisible() )
+			{
+				button->deselect();
+			}
+		});
+		load_status_help->setButtonsOffset(SDL_Rect{ 0, 8, 0, 0 });
+
 
 		auto slider = subwindow->addSlider("scroll_slider");
 		slider->setBorder(48);
@@ -23194,55 +23933,7 @@ failed:
 		//slider->addWidgetAction("MenuAlt1", "reset");
 		//slider->addWidgetAction("MenuCancel", "back_button");
 
-		// buttons at bottom
-		auto reset = window->addButton("reset");
-		reset->setText("Reset Trial\nProgress");
-		reset->setSize(SDL_Rect{ 152, 630, 164, 62 });
-		reset->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
-		reset->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
-		reset->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
-		reset->setFont(smallfont_outline);
-		reset->setHighlightColor(0xffffffff);
-		reset->setColor(0xffffffff);
-		reset->setCallback([](Button&) {
-			binaryPrompt(
-				"Are you sure you want to reset\nyour best times?", "Yes", "No",
-				[](Button& button) { // Yes button
-					soundActivate();
-					soundDeleteSave();
-
-					// delete best times
-					for ( auto& it : gameModeManager.Tutorial.levels ) {
-						it.completionTime = 0;
-					}
-					gameModeManager.Tutorial.writeToDocument();
-
-					// update window
-					assert(main_menu_frame);
-					auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
-					window->removeSelf();
-					createHallofTrialsMenu();
-
-					// remove prompt
-					closeBinary();
-							},
-							[](Button& button) { // No button
-								soundCancel();
-
-							// select another button
-							assert(main_menu_frame);
-							auto window = main_menu_frame->findFrame("mods_menu"); assert(window);
-							auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-							/*auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-							tutorial->select();*/
-
-							// remove prompt
-							closeBinary();
-							}
-				);
-			});
-
-		auto enter = window->addButton("enter");
+		auto enter = window->addButton("start_modded_game");
 		enter->setText("Start\nModded Game");
 		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
 		enter->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
@@ -23261,33 +23952,159 @@ failed:
 				createPlayWindow();
 			}
 		});
+		auto new_workshop_mod = window->addButton("new_workshop_mod");
+		new_workshop_mod->setText("New Workshop\nMod");
+		new_workshop_mod->setSize(SDL_Rect{ 902, 630, 164, 62 });
+		new_workshop_mod->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
+		new_workshop_mod->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
+		new_workshop_mod->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
+		new_workshop_mod->setFont(smallfont_outline);
+		new_workshop_mod->setHighlightColor(0xffffffff);
+		new_workshop_mod->setColor(0xffffffff);
+		new_workshop_mod->setDisabled(true);
+		new_workshop_mod->setInvisible(true);
+		new_workshop_mod->setCallback([](Button& button) {
+			soundActivate();
+			createWorkshopCreateMenu(nullptr);
+		});
 
-		struct Option {
-			const char* name;
-			const char* title;
-			void (*callback)(Button&);
-		};
-		std::vector<Option> tabs = {
-			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
-#ifdef STEAMWORKS
-			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
-			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
-#endif
-		};
+		auto browse_workshop = window->addButton("browse_workshop");
+		browse_workshop->setText("Browse\nWorkshop");
+		browse_workshop->setSize(SDL_Rect{ 152, 630, 164, 62 });
+		browse_workshop->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
+		browse_workshop->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
+		browse_workshop->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
+		browse_workshop->setFont(smallfont_outline);
+		browse_workshop->setHighlightColor(0xffffffff);
+		browse_workshop->setColor(0xffffffff);
+		browse_workshop->setDisabled(true);
+		browse_workshop->setInvisible(true);
+		browse_workshop->setCallback([](Button&) {
+			std::string info = "Browse community created mods and 'subscribe' to\ndownload mods for use.";
+				info += "\n\nSubscribing while Barony is running may require";
+				info += "\nclosing the game in order for Steam to begin downloading.";
+				info += "\n\nCurrent game version: ";
+				info += VERSION;
+			auto frame = monoPromptXL(info.c_str(),
+			"Open\nWorkshop", [](Button& button) {
+				openURLTryWithOverlay("https://steamcommunity.com/app/371970/workshop/");
+				soundActivate();
 
-#ifdef STEAMWORKS
-		if ( mods_active_tab == "" )
-		{
-			mods_active_tab = tabs[1].name;
-		}
-#else
-		if ( mods_active_tab == "" )
-		{
-			mods_active_tab = tabs[0].name;
-		}
-#endif
+				// fixes a bug where you could get spammed with 100s of browser tabs...
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				Input::mouseButtons[SDL_BUTTON_LEFT] = 0;
+
+				closeMono();
+
+				monoPrompt("Your workshop items\nwill now reload.", "Okay", [](Button& button) {
+					closeMono();
+					if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+					{
+						auto dimmer = mods_menu->getParent();
+						dimmer->removeSelf();
+					}
+					consoleCommand("/dumpcache");
+					createModsWindow();
+				});
+			});
+
+			auto button = frame->findButton("okay");
+			SDL_Rect pos = button->getSize();
+			pos.x = frame->getSize().w / 2 - pos.w - 8;
+			button->setSize(pos);
+
+			auto buttonCancel = frame->addButton("cancel");
+			buttonCancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+			buttonCancel->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
+			buttonCancel->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
+			buttonCancel->setColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setHighlightColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+			buttonCancel->setFont(smallfont_outline);
+			buttonCancel->setText("Cancel");
+			pos.x = frame->getSize().w / 2 + 8;
+			buttonCancel->setSize(pos);
+			buttonCancel->setCallback([](Button& button) {
+				soundCancel();
+				closeMono();
+			});
+
+			button->setWidgetRight("cancel");
+			button->setWidgetBack("cancel");
+			buttonCancel->setWidgetLeft("okay");
+			buttonCancel->setWidgetBack("cancel");
+		});
+
+		auto blank_mod_folder = window->addButton("blank_mod_folder");
+		blank_mod_folder->setText("Create Blank\nMod Folder");
+		blank_mod_folder->setSize(SDL_Rect{ 152, 630, 164, 62 });
+		blank_mod_folder->setBackground("*images/ui/Main Menus/Mods/Mod_Button_00.png");
+		blank_mod_folder->setBackgroundHighlighted("*images/ui/Main Menus/Mods/Mod_ButtonHigh_00.png");
+		blank_mod_folder->setBackgroundActivated("*images/ui/Main Menus/Mods/Mod_ButtonPress_00.png");
+		blank_mod_folder->setFont(smallfont_outline);
+		blank_mod_folder->setHighlightColor(0xffffffff);
+		blank_mod_folder->setColor(0xffffffff);
+		blank_mod_folder->setCallback([](Button&) {
+			workshopEditPrompt("This will create a new mod folder inside the Barony\n/mods/ directory with a blank file structure\nand default preview.png file.",
+			"Enter a name for the new folder", "Confirm", "Cancel",
+			[](Button& button) {
+				auto prompt = main_menu_frame->findFrame("binary_prompt"); assert(prompt);
+				auto field = prompt->findField("field"); assert(field);
+				closeBinary();
+
+				int res = false;
+				std::string folderName = field->getText();
+				if ( folderName != "" )
+				{
+					res = Mods::createBlankModDirectory(folderName);
+				}
+
+				if ( res == 0 )
+				{
+					char buf[128];
+					snprintf(buf, sizeof(buf), "New folder: '%s'\ncreated successfully!", folderName.c_str());
+					monoPrompt(buf, "Okay", [](Button& button) {
+						soundActivate();
+					closeMono();
+
+					if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+					{
+						auto dimmer = mods_menu->getParent();
+						dimmer->removeSelf();
+					}
+
+					createModsWindow();
+					});
+				}
+				else if ( res == 1 )
+				{
+					char buf[128];
+					snprintf(buf, sizeof(buf), "Error: A folder already exists\nnamed '%s'", folderName.c_str());
+					errorPrompt(buf, "Okay", [](Button& button) {
+						soundActivate();
+					closeMono();
+					});
+				}
+				else
+				{
+					char buf[128];
+					snprintf(buf, sizeof(buf), "Error: Unable to write folder\n'%s'", folderName.c_str());
+					errorPrompt(buf, "Okay", [](Button& button) {
+						soundActivate();
+					closeMono();
+					});
+				}
+			},
+			[](Button& button) {
+				soundCancel();
+			closeBinary();
+			}, false, true);
+		});
 
 		const int num_tabs = (int)tabs.size();
+		int buttonsLeftX = Frame::virtualScreenX;
+		int buttonsRightX = 0;
 		for ( int c = 0; c < num_tabs; ++c ) {
 			const int x = window->getSize().w / (num_tabs + 1);
 			auto button = window->addButton(tabs[c].name);
@@ -23306,36 +24123,150 @@ failed:
 				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
 			}
 			button->setSize(SDL_Rect{ x + (x * c) - 184 / 2, 64, 184, 64 });
+			buttonsLeftX = std::min(buttonsLeftX, button->getSize().x);
+			buttonsRightX = std::max(buttonsRightX, button->getSize().x + button->getSize().w);
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
-			//button->setWidgetSearchParent("settings");
-			//button->setWidgetPageLeft("tab_left");
-			//button->setWidgetPageRight("tab_right");
+			button->setWidgetSearchParent("mods_menu");
 			//button->addWidgetAction("MenuAlt1", "restore_defaults");
 			//button->addWidgetAction("MenuStart", "confirm_and_exit");
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
-			/*if ( c > 0 ) {
+			if ( c > 0 )
+			{
+				button->setWidgetPageLeft("tab_left");
 				button->setWidgetLeft(tabs[c - 1].name);
 			}
-			else {
-				button->setWidgetLeft("tab_left");
+			else
+			{
+				button->setWidgetPageLeft("tab_left");
+				button->setWidgetLeft(tabs[c].name);
 			}
-			if ( c < num_tabs - 1 ) {
+			if ( c < num_tabs - 1 ) 
+			{
+				button->setWidgetPageRight("tab_right");
 				button->setWidgetRight(tabs[c + 1].name);
 			}
-			else {
-				button->setWidgetRight("tab_right");
+			else 
+			{
+				button->setWidgetPageRight("tab_right");
+				button->setWidgetRight(tabs[c].name);
 			}
-			button->setWidgetBack("discard_and_exit");
-			if ( c <= num_tabs / 2 ) {
-				button->setWidgetDown("restore_defaults");
-			}
-			else if ( c == num_tabs - 2 ) {
-				button->setWidgetDown("discard_and_exit");
-			}
-			else if ( c == num_tabs - 1 ) {
-				button->setWidgetDown("confirm_and_exit");
-			}*/
+			button->setWidgetBack("back_button");
+
+			button->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				button->setWidgetDown("");
+				if ( Frame* window = static_cast<Frame*>(button->getParent()) )
+				{
+					if ( auto subwindow = window->findFrame("subwindow") )
+					{
+						if ( subwindow->getButtons().size() > 0 )
+						{
+							button->setWidgetDown(subwindow->getButtons()[0]->getName());
+						}
+					}
+				}
+
+				if ( mods_active_tab == "Steam Workshop" )
+				{
+					button->addWidgetAction("MenuAlt1", "browse_workshop");
+				}
+				else
+				{
+					button->addWidgetAction("MenuAlt1", "blank_mod_folder");
+				}
+				if ( mods_active_tab == "My Workshop Items" )
+				{
+					button->addWidgetAction("MenuStart", "new_workshop_mod");
+				}
+				else
+				{
+					button->addWidgetAction("MenuAlt2", "load_status_help");
+					button->addWidgetAction("MenuStart", "start_modded_game");
+				}
+			});
+		}
+
+		if ( num_tabs > 1 )
+		{
+			auto tab_left = window->addButton("tab_left");
+			tab_left->setBackground("*images/ui/Main Menus/Settings/Settings_Button_L00.png");
+			tab_left->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_LHigh00.png");
+			tab_left->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_LPress00.png");
+			tab_left->setSize(SDL_Rect{ 58, 68, 38, 58 });
+			tab_left->setColor(makeColor(255, 255, 255, 255));
+			tab_left->setHighlightColor(makeColor(255, 255, 255, 255));
+			tab_left->setWidgetSearchParent("mods_menu");
+			tab_left->setWidgetBack("back_button");
+			tab_left->setWidgetPageLeft("tab_left");
+			tab_left->setWidgetPageRight("tab_right");
+			tab_left->setWidgetUp(tabs[0].name);
+			tab_left->setWidgetDown(tabs[0].name);
+			tab_left->setWidgetLeft(tabs[0].name);
+			tab_left->setWidgetRight(tabs[0].name);
+			//tab_left->setWidgetRight("General");
+			//tab_left->setWidgetDown("restore_defaults");
+			//tab_left->addWidgetAction("MenuAlt1", "restore_defaults");
+			//tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
+			tab_left->setCallback([](Button&) {
+				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
+				const char* prevtab = nullptr;
+				for ( auto& tab : tabs ) {
+					auto button = mods_menu->findButton(tab.name);
+					if ( button ) {
+						const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+						if ( strcmp(button->getBackground(), name) == 0 ) {
+							if ( prevtab ) {
+								auto prevbutton = mods_menu->findButton(prevtab); assert(prevbutton);
+								prevbutton->select();
+								prevbutton->activate();
+							}
+							return;
+						}
+						prevtab = tab.name;
+					}
+				}
+			});
+			tab_left->setGlyphPosition(Button::glyph_position_t::CENTERED);
+
+			auto tab_right = window->addButton("tab_right");
+			tab_right->setBackground("*images/ui/Main Menus/Settings/Settings_Button_R00.png");
+			tab_right->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_RHigh00.png");
+			tab_right->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_RPress00.png");
+			tab_right->setSize(SDL_Rect{ 1066, 68, 38, 58 });
+			tab_right->setColor(makeColor(255, 255, 255, 255));
+			tab_right->setHighlightColor(makeColor(255, 255, 255, 255));
+			tab_right->setWidgetSearchParent("mods_menu");
+			tab_right->setWidgetBack("back_button");
+			tab_right->setWidgetPageLeft("tab_left");
+			tab_right->setWidgetPageRight("tab_right");
+			tab_right->setWidgetUp(tabs[tabs.size() - 1].name);
+			tab_right->setWidgetDown(tabs[tabs.size() - 1].name);
+			tab_right->setWidgetLeft(tabs[tabs.size() - 1].name);
+			tab_right->setWidgetRight(tabs[tabs.size() - 1].name);
+			//tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
+			//tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
+			tab_right->setCallback([](Button&) {
+				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
+				const char* nexttab = nullptr;
+				for ( auto it = tabs.rbegin(); it != tabs.rend(); ++it ) {
+					auto tab = (*it);
+					auto button = mods_menu->findButton(tab.name);
+					if ( button ) {
+						const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
+						if ( strcmp(button->getBackground(), name) == 0 ) {
+							if ( nexttab ) {
+								auto nextbutton = mods_menu->findButton(nexttab); assert(nextbutton);
+								nextbutton->select();
+								nextbutton->activate();
+							}
+							return;
+						}
+						nexttab = tab.name;
+					}
+				}
+			});
+			tab_right->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		}
 
 		window->setTickCallback([](Widget& widget) {
@@ -23349,6 +24280,11 @@ failed:
 				auto button = settings->findButton(name);
 				if ( button ) {
 					if ( name == mods_active_tab ) {
+						assert(main_menu_frame);
+						if ( !main_menu_frame->findSelectedWidget(widget.getOwner()) ) {
+							button->select();
+						}
+
 						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
 						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
@@ -23363,157 +24299,52 @@ failed:
 		});
 	}
 
-	static Frame* workshopEditPrompt(
-		const char* window_text,
-		const char* tip_text,
-		const char* okay_text,
-		const char* cancel_text,
-		void (*okay_callback)(Button&),
-		void (*cancel_callback)(Button&),
-		bool leftRed = true,
-		bool rightRed = false
-	) {
-		soundActivate();
+	static std::string modFolderPathToUpload = "";
+	static std::string modTitleToUpload = "";
+	static std::string modDescToUpload = "";
+	static std::set<int> modTags;
 
-		Frame* frame = createPrompt("binary_prompt", false);
-		if ( !frame ) {
-			return nullptr;
+	static void createWorkshopCreateMenu(SteamUGCDetails_t* details) {
+		if ( !details )
+		{
+			Mods::uploadingExistingItem = 0;
+		}
+		else
+		{
+			Mods::uploadingExistingItem = details->m_nPublishedFileId;
 		}
 
-		auto text = frame->addField("text", 1024);
-		text->setSize(SDL_Rect{ 30, 28, frame->getSize().w - 30 * 2, 24 * 4 + 4});
-		text->setFont(smallfont_no_outline);
-		text->setText(window_text);
-		text->setJustify(Field::justify_t::CENTER);
+		modFolderPathToUpload = "";
+		modTitleToUpload = details ? details->m_rgchTitle : "Title";
+		modDescToUpload = details ? details->m_rgchDescription : "Description";
+		modTags.clear();
+		if ( details )
+		{
+			std::string allTags = details->m_rgchTags;
+			auto found = allTags.find(',');
+			std::vector<std::string> foundTags;
+			while ( found != std::string::npos )
+			{
+				foundTags.push_back(allTags.substr(0, found));
+				allTags = allTags.substr(found + 1); // skip the "," character.
+				found = allTags.find(',');
+			}
+			foundTags.push_back(allTags);
 
-		auto textbox = frame->addImage(
-			SDL_Rect{ frame->getSize().w / 2 - 300 / 2, frame->getSize().h - 98 - 36 - 16, 300, 36},
-			0xffffffff,
-			"*images/ui/Main Menus/Mods/Upload/Finalize__NameField_00.png",
-			"name_box"
-		);
 
-		SDL_Rect texteditPos = textbox->pos;
-		texteditPos.x += 2;
-		texteditPos.w -= 4;
-		texteditPos.y += 4;
-		texteditPos.h = 28;
-		auto tip = frame->addField("tip", 128);
-		tip->setSize(texteditPos);
-		tip->setFont(smallfont_no_outline);
-		tip->setText(tip_text);
-		tip->setUserData(const_cast<void*>((const void*)tip_text));
-		tip->setFont(smallfont_outline);
-		tip->setHJustify(Field::justify_t::LEFT);
-		tip->setVJustify(Field::justify_t::CENTER);
-		tip->setColor(makeColor(166, 123, 81, 127));
-		tip->setBackgroundColor(makeColor(52, 30, 22, 255));
-		tip->setBackgroundSelectAllColor(makeColor(52, 30, 22, 255));
-		tip->setBackgroundActivatedColor(makeColor(52, 30, 22, 255));
-		tip->setTickCallback([](Widget& widget) {
-			auto tip = static_cast<Field*>(&widget);
-			auto parent = static_cast<Frame*>(widget.getParent());
-			auto field = parent->findField("field");
-			if ( field && field->getText()[0] != '\0' ) {
-				tip->setText("");
+			for ( auto& t : foundTags )
+			{
+				int index = 0;
+				for ( auto& s : Mods::tag_settings )
+				{
+					if ( t == s.tag )
+					{
+						modTags.insert(index);
+					}
+					++index;
+				}
 			}
-			else {
-				tip->setText((const char*)tip->getUserData());
-			}
-		});
-
-		auto field = frame->addField("field", 128);
-		field->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-		field->setSelectorOffset(SDL_Rect{ -7, -7, 7, 7 });
-		field->setButtonsOffset(SDL_Rect{ 11, 0, 0, 0 });
-		field->setEditable(true);
-		field->setScroll(true);
-		field->setSize(texteditPos);
-		field->setFont(smallfont_outline);
-		field->setText("");
-		field->setHJustify(Field::justify_t::LEFT);
-		field->setVJustify(Field::justify_t::CENTER);
-		field->setColor(makeColor(166, 123, 81, 255));
-		field->setWidgetSearchParent(field->getParent()->getName());
-		field->setWidgetBack("cancel");
-		field->setWidgetDown("okay");
-		field->select();
-		field->activate();
-		field->setTickCallback([](Widget& widget) {
-			if ( !main_menu_frame ) {
-				return;
-			}
-			auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
-			if ( !selectedWidget ) {
-				auto field = static_cast<Field*>(&widget);
-				field->select();
-			}
-		});
-
-		auto okay = frame->addButton("okay");
-		SDL_Rect leftPos { (leftRed ? -16 : 0), frame->getSize().h - 98, leftRed ? 130 : 108, 52};
-		leftPos.x += frame->getSize().w / 2;
-		leftPos.x -= leftPos.w;
-		okay->setSize(leftPos);
-		okay->setBackground(leftRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		okay->setBackgroundHighlighted(leftRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
-		okay->setBackgroundActivated(leftRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
-		okay->setColor(makeColor(255, 255, 255, 255));
-		okay->setHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setTextColor(makeColor(255, 255, 255, 255));
-		okay->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		okay->setFont(smallfont_outline);
-		okay->setText(okay_text);
-		okay->setWidgetSearchParent(okay->getParent()->getName());
-		okay->setWidgetRight("cancel");
-		okay->setWidgetBack("cancel");
-		okay->setCallback(okay_callback);
-		okay->setTickCallback([](Widget& widget) {
-			if ( !main_menu_frame ) {
-				return;
-			}
-		auto selectedWidget = main_menu_frame->findSelectedWidget(widget.getOwner());
-		if ( !selectedWidget ) {
-			auto button = static_cast<Button*>(&widget);
-			button->select();
 		}
-			});
-
-		auto cancel = frame->addButton("cancel");
-		SDL_Rect rightPos{leftRed ? 8 : 0, frame->getSize().h - 98, rightRed ? 130 : 108, 52 };
-		rightPos.x += frame->getSize().w / 2;
-		rightPos.x += 8;
-		cancel->setSize(rightPos);
-		cancel->setBackground(rightRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
-		cancel->setBackgroundHighlighted(rightRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
-		cancel->setBackgroundActivated(rightRed ?
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png" :
-			"*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
-		cancel->setColor(makeColor(255, 255, 255, 255));
-		cancel->setHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setTextColor(makeColor(255, 255, 255, 255));
-		cancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
-		cancel->setFont(smallfont_outline);
-		cancel->setText(cancel_text);
-		cancel->setWidgetSearchParent(okay->getParent()->getName());
-		cancel->setWidgetLeft("okay");
-		cancel->setWidgetBack("cancel");
-		cancel->setCallback(cancel_callback);
-
-		return frame;
-	}
-
-	static void createWorkshopCreateMenu() {
 		assert(main_menu_frame);
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
@@ -23525,7 +24356,7 @@ failed:
 		const int windowWidth = 970;
 		auto window = dimmer->addFrame("workshop_create");
 		window->setSize(SDL_Rect{
-			(Frame::virtualScreenX - windowWidth) / 2,
+			((Frame::virtualScreenX - windowWidth) / 2) + 3,
 			(Frame::virtualScreenY - 716) / 2,
 			windowWidth,
 			716 });
@@ -23550,7 +24381,7 @@ failed:
 
 		auto subwindow = window->addFrame("subwindow");
 		subwindow->setSize(SDL_Rect{ 22, 142, background->pos.w - 12, 476 });
-		subwindow->setActualSize(SDL_Rect{ 0, 0, background->pos.w - 12, 774 });
+		subwindow->setActualSize(SDL_Rect{ 0, 0, subwindow->getSize().w, subwindow->getSize().h});
 		subwindow->setBorder(0);
 		subwindow->setColor(0);
 
@@ -23571,18 +24402,37 @@ failed:
 
 		auto window_title = window->addField("title", 64);
 		window_title->setFont(banner_font);
-		window_title->setSize(SDL_Rect{ 412, 24, 338, 24 });
+		window_title->setSize(SDL_Rect{ 312, 24, 338, 24 });
 		window_title->setJustify(Field::justify_t::CENTER);
-		window_title->setText("TUTORIALS");
+		if ( details )
+		{
+			window_title->setText("UPDATE WORKSHOP MOD");
+		}
+		else
+		{
+			window_title->setText("NEW WORKSHOP MOD");
+		}
 
 		auto subtitle = window->addField("subtitle", 1024);
 		subtitle->setFont(bigfont_no_outline);
 		subtitle->setColor(makeColor(170, 134, 102, 255));
-		subtitle->setSize(SDL_Rect{ 242, 74, 684, 50 });
+		subtitle->setSize(SDL_Rect{ 146, 71, 676, 50 });
 		subtitle->setJustify(Field::justify_t::CENTER);
-		subtitle->setText(
-			u8"Take on 10 challenges that teach and test your adventuring\n"
-			u8"skills, preparing you to take on the dungeon");
+		if ( !details )
+		{
+			subtitle->setText(
+				u8"Upload a folder within the /mods/ directory for your mod.\n"
+				u8"Files/tags may be changed within this menu after creation."
+			);
+		}
+		else
+		{
+			subtitle->setText(
+				u8"Submitting an update changes the tagged game version.\n"
+				u8"Choosing a new folder or changing tags is optional."
+			);
+		}
+		subtitle->setIndividualLinePadding(0, 4);
 
 		(void)createBackWidget(window, [](Button& button) {
 			soundCancel();
@@ -23621,8 +24471,27 @@ failed:
 			value->setHJustify(Field::justify_t::CENTER);
 			value->setVJustify(Field::justify_t::CENTER);
 			value->setFont(bigfont_outline);
-			value->setText("/mods/my folder/");
+			value->setText("No folder selected");
+			value->setColor(makeColorRGB(128, 128, 128));
 			value->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+			value->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( modFolderPathToUpload == "" )
+				{
+					field->setText("No folder selected");
+					field->setColor(makeColorRGB(128, 128, 128));
+				}
+				else
+				{
+					std::size_t found = modFolderPathToUpload.find_last_of("/\\");
+					if ( found != std::string::npos )
+					{
+						std::string folderName = "/mods/" + modFolderPathToUpload.substr(found + 1) + "/";
+						field->setText(folderName.c_str());
+						field->setColor(makeColorRGB(255, 255, 255));
+					}
+				}
+			});
 
 			auto button = subwindow->addButton("folder button");
 			button->setText("Choose...");
@@ -23634,8 +24503,164 @@ failed:
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			button->select();
+
+			auto buttonCancel = subwindow->addButton("folder cancel button");
+			SDL_Rect cancelPos = button->getSize();
+			cancelPos.x += cancelPos.w + 8;
+			cancelPos.y = titleBacking->pos.y + titleBacking->pos.h / 2 - 12;
+			cancelPos.w = 26;
+			cancelPos.h = 26;
+			buttonCancel->setSize(cancelPos);
+			buttonCancel->setFont(smallfont_outline);
+			buttonCancel->setText("X");
+			buttonCancel->setBackground("*#images/ui/Main Menus/Mods/Upload/Button_Red_X_00.png");
+			buttonCancel->setBackgroundHighlighted("*#images/ui/Main Menus/Mods/Upload/Button_Red_XHigh_00.png");
+			buttonCancel->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Red_XPress_00.png");
+			buttonCancel->setHighlightColor(0xFFFFFFFF);
+			buttonCancel->setColor(0xFFFFFFFF);
+			buttonCancel->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			buttonCancel->setCallback([](Button& button) {
+				modFolderPathToUpload = "";
+				button.setInvisible(true);
+				button.setDisabled(button.isInvisible());
+				auto frame = static_cast<Frame*>(button.getParent());
+				if ( auto button2 = frame->findButton("folder button") )
+				{
+					button2->select();
+				}
+				soundCancel();
+			});
+
+
+			button->setTickCallback([](Widget& widget) {
+				auto button = static_cast<Button*>(&widget);
+				if ( auto frame = static_cast<Frame*>(button->getParent()) )
+				{
+					if ( auto buttonCancel = frame->findButton("folder cancel button") )
+					{
+						if ( modFolderPathToUpload != "" )
+						{
+							buttonCancel->setInvisible(false);
+						}
+						else
+						{
+							buttonCancel->setInvisible(true);
+						}
+						buttonCancel->setDisabled(buttonCancel->isInvisible());
+						if ( buttonCancel->isInvisible() && buttonCancel->isSelected() )
+						{
+							button->select();
+						}
+					}
+				}
+			});
 			button->setCallback([](Button& button) {
 				soundActivate();
+				
+				nfdchar_t* outPath = NULL;
+				
+				char path[PATH_MAX];
+				nfdresult_t result = NFD_OKAY;
+
+				std::string modsPath = "";
+				if ( PHYSFS_getRealDir("mods") )
+				{
+					modsPath = PHYSFS_getRealDir("mods");
+					modsPath += "mods";
+					modsPath = Mods::getFolderFullPath(modsPath);
+				}
+				if ( modsPath != "" )
+				{
+					result = NFD_PickFolder(modsPath.c_str(), &outPath);
+				}
+				else
+				{
+					result = NFD_PickFolder(outputdir, &outPath); // hopefully this is absolute path?
+				}
+				if ( result == NFD_ERROR )
+				{
+					result = NFD_PickFolder(PHYSFS_getBaseDir(), &outPath); // fallback path
+				}
+
+				if ( result == NFD_OKAY )
+				{
+					modFolderPathToUpload = outPath;
+					bool fail = true;
+					std::size_t found = modFolderPathToUpload.find_last_of("/\\");
+					if ( found != std::string::npos )
+					{
+						std::string folder = modFolderPathToUpload.substr(found + 1);
+						std::string parent = modFolderPathToUpload.substr(0, found);
+						std::size_t found2 = parent.find_last_of("/\\");
+						if ( found2 != std::string::npos )
+						{
+							std::string parentFolder = parent.substr(found2 + 1);
+							if ( parentFolder == "mods" )
+							{
+								fail = false;
+							}
+						}
+					}
+
+					if ( fail )
+					{
+						modFolderPathToUpload = "";
+						errorPrompt("Error: Parent folder\nmust be \"mods\".", "Okay",
+							[](Button&) {
+								soundCancel();
+								closeMono();
+								if ( auto window = main_menu_frame->findFrame("workshop_create") )
+								{
+									if ( auto subwindow = window->findFrame("subwindow") )
+									{
+										if ( auto button = subwindow->findButton("folder button") )
+										{
+											button->select();
+										}
+									}
+								}
+						});
+						return;
+					}
+
+					soundActivate();
+					if ( auto window = main_menu_frame->findFrame("workshop_create") )
+					{
+						if ( auto subwindow = window->findFrame("subwindow") )
+						{
+							if ( auto button = subwindow->findButton("folder button") )
+							{
+								button->select();
+							}
+						}
+					}
+					return;
+				}
+				else if ( result == NFD_ERROR )
+				{
+					char err[128];
+					snprintf(err, sizeof(err), "Error: Could not open folder:\n%s", NFD_GetError());
+					errorPrompt(err, "Okay",
+						[](Button&) {
+							soundCancel();
+							closeMono();
+							if ( auto window = main_menu_frame->findFrame("workshop_create") )
+							{
+								if ( auto subwindow = window->findFrame("subwindow") )
+								{
+									if ( auto button = subwindow->findButton("folder button") )
+									{
+										button->select();
+									}
+								}
+							}
+					});
+				}
+				else
+				{
+					soundCancel();
+				}
 			});
 			currentY += titleBacking->pos.h + 10;
 		}
@@ -23660,8 +24685,21 @@ failed:
 			titleValue->setHJustify(Field::justify_t::CENTER);
 			titleValue->setVJustify(Field::justify_t::CENTER);
 			titleValue->setFont(bigfont_outline);
-			titleValue->setText("Title");
+			titleValue->setText(modTitleToUpload.c_str());
 			titleValue->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+			titleValue->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( modTitleToUpload.size() >= 26 )
+				{
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%s...", modTitleToUpload.substr(0, 26).c_str());
+					field->setText(buf);
+				}
+				else
+				{
+					field->setText(modTitleToUpload.c_str());
+				}
+			});
 
 			auto button = subwindow->addButton("title button");
 			button->setText("Edit...");
@@ -23673,19 +24711,40 @@ failed:
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-			button->setCallback([](Button& button) {
-				workshopEditPrompt("Enter a title for this item.\n\nThis can be edited later within the Steam Workshop\npage after creation.", "Enter a title", "Confirm", "Cancel",
-					[](Button& button) {
+			if ( !details )
+			{
+				button->setCallback([](Button& button) {
+					workshopEditPrompt("This can be edited later with a larger length\nwithin the Steam Workshop page after creation.", 
+					"Enter a title for this item", "Confirm", "Cancel",
+						[](Button& button) {
+							soundActivate();
+						
+							auto prompt = main_menu_frame->findFrame("binary_prompt"); assert(prompt);
+							auto field = prompt->findField("field"); assert(field);
+
+							if ( strcmp(field->getText(), "") )
+							{
+								modTitleToUpload = field->getText();
+							}
+							closeBinary();
+						},
+						[](Button& button) {
+							soundCancel();
+							closeBinary();
+						}, false, true);
+				});
+			}
+			else
+			{
+				button->setTextColor(makeColorRGB(128, 128, 128));
+				button->setTextHighlightColor(makeColorRGB(128, 128, 128));
+				button->setCallback([](Button& button) {
+					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
 						soundActivate();
-						closeBinary();
-						//std::string text = closeTextField();
-					},
-					[](Button& button) {
-						soundCancel();
-						closeBinary();
-						//(void)closeTextField();
-					}, false, true);
-			});
+						closeMono();
+					});
+				});
+			}
 			currentY += titleBacking->pos.h + 10;
 		}
 
@@ -23709,8 +24768,21 @@ failed:
 			titleValue->setHJustify(Field::justify_t::CENTER);
 			titleValue->setVJustify(Field::justify_t::CENTER);
 			titleValue->setFont(bigfont_outline);
-			titleValue->setText("Description");
+			titleValue->setText(modDescToUpload.c_str());
 			titleValue->setSize(SDL_Rect{ valuePos.x + 24, valuePos.y, valuePos.w - 24 * 2, valuePos.h });
+			titleValue->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget);
+				if ( modDescToUpload.size() >= 26 )
+				{
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%s...", modDescToUpload.substr(0, 26).c_str());
+					field->setText(buf);
+				}
+				else
+				{
+					field->setText(modDescToUpload.c_str());
+				}
+			});
 
 			auto button = subwindow->addButton("desc button");
 			button->setText("Edit...");
@@ -23722,10 +24794,40 @@ failed:
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-			button->setCallback([](Button& button) {
-				soundActivate();
+			if ( !details )
+			{
+				button->setCallback([](Button& button) {
+					workshopEditPrompt("This can be edited later with a larger length\nwithin the Steam Workshop page after creation.",
+					"Enter a description for this item", "Confirm", "Cancel",
+					[](Button& button) {
+						soundActivate();
 
+						auto prompt = main_menu_frame->findFrame("binary_prompt"); assert(prompt);
+						auto field = prompt->findField("field"); assert(field);
+
+						if ( strcmp(field->getText(), "") )
+						{
+							modDescToUpload = field->getText();
+						}
+						closeBinary();
+					},
+					[](Button& button) {
+						soundCancel();
+						closeBinary();
+					}, false, true);
+					});
+			}
+			else
+			{
+				button->setTextColor(makeColorRGB(128, 128, 128));
+				button->setTextHighlightColor(makeColorRGB(128, 128, 128));
+				button->setCallback([](Button& button) {
+					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
+						soundActivate();
+					closeMono();
+					});
 				});
+			}
 			currentY += titleBacking->pos.h + 10;
 		}
 
@@ -23740,27 +24842,8 @@ failed:
 			title->setText("Tags:");
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
-			struct Tags_t
-			{
-				std::string tag;
-				std::string text;
-				Tags_t(const char* _tag, const char* _text)
-				{
-					tag = _tag;
-					text = _text;
-				}
-			};
-			std::vector<Tags_t> tag_settings = {
-				Tags_t("dungeons", "Dungeons"),
-				Tags_t("textures", "Textures"),
-				Tags_t("models", "Models"),
-				Tags_t("gameplay", "Gameplay"),
-				Tags_t("audio", "Audio"),
-				Tags_t("misc", "Misc"),
-				Tags_t("translations", "Translations")
-			};
 			int currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
-			for ( int i = 0; i < tag_settings.size(); ++i )
+			for ( int i = 0; i < Mods::tag_settings.size(); ++i )
 			{
 				SDL_Rect settingPos{ currentX, currentY + 52 / 2 - 44 / 2, 44, 44 };
 				auto setting = subwindow->addButton((std::string("setting") + std::to_string(i)).c_str());
@@ -23771,13 +24854,33 @@ failed:
 				setting->setBorderColor(0);
 				setting->setBorder(0);
 				setting->setColor(0);
+				setting->setUserData((void*)(intptr_t)(i));
+				setting->setPressed(modTags.find(i) != modTags.end());
+				setting->setCallback([](Button& button) {
+					soundCheckmark();
+					int tagIndex = reinterpret_cast<intptr_t>(button.getUserData());
+					if ( button.isPressed() )
+					{
+						if ( modTags.find(tagIndex) == modTags.end() )
+						{
+							modTags.insert(tagIndex);
+						}
+					}
+					else
+					{
+						if ( modTags.find(tagIndex) != modTags.end() )
+						{
+							modTags.erase(tagIndex);
+						}
+					}
+				});
 
 				auto settingBg = subwindow->addImage(setting->getSize(), 0xFFFFFFFF,
 					"*#images/ui/Main Menus/Mods/Upload/BG_Checked_00.png", (std::string("setting_bg") + std::to_string(i)).c_str());
 
 				auto label = subwindow->addField((std::string("label") + std::to_string(i)).c_str(), 128);
 				label->setFont(smallfont_outline);
-				label->setText(tag_settings[i].text.c_str());
+				label->setText(Mods::tag_settings[i].text.c_str());
 				//label->setColor(makeColor(166, 123, 81, 255));
 				label->setColor(0xFFFFFFFF);
 				label->setHJustify(Field::justify_t::LEFT);
@@ -23803,207 +24906,91 @@ failed:
 			currentY += titleBacking->pos.h + 10;
 		}
 
-		auto banner = subwindow->addImage(
-			SDL_Rect{ 0, currentY, subwindow->getSize().w, 42},
-			0xffffffff,
-			"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_BGRed_00.png",
-			"banner"
-		);
-
-		/*auto banner_trial = subwindow->addField("banner_trial", 32);
-		banner_trial->setSize(SDL_Rect{ 48, 88, 66, 42 });
-		banner_trial->setJustify(Field::justify_t::CENTER);
-		banner_trial->setFont(bigfont_outline);
-		banner_trial->setText("Trial");
-
-		auto banner_time = subwindow->addField("banner_trial", 32);
-		banner_time->setSize(SDL_Rect{ 920, 88, 116, 42 });
-		banner_time->setJustify(Field::justify_t::CENTER);
-		banner_time->setFont(bigfont_outline);
-		banner_time->setText("Best Time");*/
-
-		/*SDL_Rect fleur_positions[4] = {
-			{ 22, 94, 26, 30 },
-			{ 114, 94, 26, 30 },
-			{ 894, 94, 26, 30 },
-			{ 1036, 94, 26, 30 },
-		};
-		constexpr int num_fleurs = sizeof(fleur_positions) / sizeof(fleur_positions[0]);
-		for ( int c = 0; c < num_fleurs; ++c ) {
-			(void)subwindow->addImage(
-				fleur_positions[c],
-				0xffffffff,
-				"*images/ui/Main Menus/Play/HallofTrials/HoT_Subtitle_Flower_00.png",
-				(std::string("fleur") + std::to_string(c)).c_str()
-			);
-		}*/
-
-		/*auto slider = subwindow->addSlider("scroll_slider");
-		slider->setBorder(48);
-		slider->setOrientation(Slider::SLIDER_VERTICAL);
-		slider->setRailSize(SDL_Rect{ subwindow->getSize().w - 54, 0, 54, 476 });
-		slider->setRailImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Bar_01.png");
-		slider->setHandleSize(SDL_Rect{ 0, 0, 34, 34 });
-		slider->setHandleImage("*images/ui/Main Menus/Play/HallofTrials/HoT_Scroll_Boulder_00.png");
-		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
-		slider->setCallback([](Slider& slider) {
-			Frame* frame = static_cast<Frame*>(slider.getParent());
-		auto actualSize = frame->getActualSize();
-		actualSize.y = slider.getValue();
-		frame->setActualSize(actualSize);
-		auto railSize = slider.getRailSize();
-		railSize.y = actualSize.y;
-		slider.setRailSize(railSize);
-		slider.updateHandlePosition();
-		auto gradient_background = frame->findImage("gradient_background");
-		assert(gradient_background);
-		gradient_background->pos.y = actualSize.y;
-			});
-		slider->setTickCallback([](Widget& widget) {
-			Slider* slider = static_cast<Slider*>(&widget);
-		Frame* frame = static_cast<Frame*>(slider->getParent());
-		auto actualSize = frame->getActualSize();
-		slider->setValue(actualSize.y);
-		auto railSize = slider->getRailSize();
-		railSize.y = actualSize.y;
-		slider->setRailSize(railSize);
-		slider->updateHandlePosition();
-		auto gradient_background = frame->findImage("gradient_background");
-		assert(gradient_background);
-		gradient_background->pos.y = actualSize.y;
-			});
-		slider->setValue(0.f);
-		slider->setMinValue(0.f);
-		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
-		slider->setWidgetSearchParent("hall_of_trials_menu");
-		slider->setWidgetLeft("tutorial_hub");
-		slider->addWidgetAction("MenuStart", "enter");
-		slider->addWidgetAction("MenuAlt1", "reset");
-		slider->addWidgetAction("MenuCancel", "back_button");*/
-
-		static auto make_button = [](Frame& subwindow, int y, const char* name, const char* label, const char* sublabel) {
-			auto button = subwindow.addButton(name);
-			button->setSize(SDL_Rect{ 8, y, 884, 52 });
-			button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
-			button->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
-			button->setHighlightColor(0xffffffff);
-			button->setColor(0xffffffff);
-			button->setVJustify(Button::justify_t::CENTER);
-			button->setHJustify(Button::justify_t::LEFT);
-			button->setFont(bigfont_no_outline);
-			button->setText(label);
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
-			button->setCallback([](Button& button) {
-				soundActivate();
-			if ( tutorial_map_destination != button.getName() ) {
-				tutorial_map_destination = button.getName();
-			}
-			else {
-				auto frame = static_cast<Frame*>(button.getParent()); assert(frame);
-				frame = static_cast<Frame*>(frame->getParent()); assert(frame);
-				auto enter = frame->findButton("enter"); assert(enter);
-				enter->activate();
-			}
-				});
-			button->setTickCallback([](Widget& widget) {
-				std::string sublabel_name = widget.getName();
-			sublabel_name.append("_sublabel_background");
-			auto frame = static_cast<Frame*>(widget.getParent()); assert(frame);
-			auto button = static_cast<Button*>(&widget); assert(button);
-			auto sublabel_background = frame->findImage(sublabel_name.c_str());
-			if ( sublabel_background ) {
-				if ( button->isSelected() || tutorial_map_destination == widget.getName() ) {
-					sublabel_background->path = "*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeSelected_00.png";
-					button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameSelected_00.png");
-				}
-				else {
-					sublabel_background->path = "*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png";
-					button->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_NameUnselected_00.png");
-				}
-			}
-				});
-			button->setWidgetSearchParent(subwindow.getParent()->getName());
-			button->addWidgetAction("MenuStart", "enter");
-			button->addWidgetAction("MenuAlt1", "reset");
-			button->addWidgetAction("MenuCancel", "back_button");
-
-			std::string sublabel_name = name;
-			auto sublabel_background = subwindow.addImage(
-				SDL_Rect{ 938, y + 4, 98, 44 },
-				0xffffffff,
-				"*images/ui/Main Menus/Play/HallofTrials/HoT_Hub_TimeUnselected_00.png",
-				(sublabel_name + "_sublabel_background").c_str()
-			);
-
-			auto sublabel_text = subwindow.addField((sublabel_name + "_sublabel").c_str(), 16);
-			sublabel_text->setJustify(Field::justify_t::CENTER);
-			sublabel_text->setFont(bigfont_no_outline);
-			sublabel_text->setSize(sublabel_background->pos);
-			sublabel_text->setText(sublabel);
-
-			return button;
-		};
-
-		// total clear time
-		auto total_time_label = window->addField("total_time_label", 128);
-		total_time_label->setFont(bigfont_no_outline);
-		total_time_label->setSize(SDL_Rect{ 540, 646, 340, 30 });
-		total_time_label->setText(" Total Clear Time");
-		total_time_label->setHJustify(Field::justify_t::LEFT);
-		total_time_label->setVJustify(Field::justify_t::CENTER);
-
-		auto total_time_field = window->addField("total_time", 16);
-		total_time_field->setFont(bigfont_no_outline);
-		total_time_field->setSize(SDL_Rect{ 540, 646, 340, 30 });
-		total_time_field->setText("total_time_str.c_str()");
-		total_time_field->setHJustify(Field::justify_t::RIGHT);
-		total_time_field->setVJustify(Field::justify_t::CENTER);
-
 		// buttons at bottom
-		auto reset = window->addButton("reset");
-		reset->setText("Reset Trial\nProgress");
-		reset->setSize(SDL_Rect{ 152, 630, 164, 62 });
-		reset->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
-		reset->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
-		reset->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
-		reset->setFont(smallfont_outline);
-		reset->setHighlightColor(0xffffffff);
-		reset->setColor(0xffffffff);
-		reset->setCallback([](Button&) {
-			binaryPrompt(
-				"Are you sure you want to reset\nyour best times?", "Yes", "No",
-				[](Button& button) { // Yes button
+		if ( Mods::uploadingExistingItem != 0 )
+		{
+			auto manage = window->addButton("manage");
+			manage->setText("Manage In\nWorkshop");
+			manage->setSize(SDL_Rect{ 152, 630, 164, 62 });
+			manage->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
+			manage->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
+			manage->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
+			manage->setFont(smallfont_outline);
+			manage->setHighlightColor(0xffffffff);
+			manage->setColor(0xffffffff);
+			manage->setCallback([](Button&) {
+				auto frame = monoPromptXL("You can view and edit most attributes of your mod\ndirectly on the Workshop page, such as longer\ndescriptions with HTML support, setting visibility to public\nor adding screenshots to the carousel.\n\nIf you need to edit the preview image or modded files,\nuse the upload window here in-game instead.",
+				"Open\nWorkshop", [](Button& button) {
+					std::string url = "steam://url/CommunityFilePage/";
+					url += std::to_string(Mods::uploadingExistingItem);
+					openURLTryWithOverlay(url);
+
 					soundActivate();
-		soundDeleteSave();
 
-		// update window
-		assert(main_menu_frame);
-		auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
-		window->removeSelf();
-		createHallofTrialsMenu();
+					// fixes a bug where you could get spammed with 100s of browser tabs...
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					Input::mouseButtons[SDL_BUTTON_LEFT] = 0;
 
-		// remove prompt
-		closeBinary();
-				},
-				[](Button& button) { // No button
+					closeMono();
+
+					monoPrompt("Your workshop items\nwill now reload.", "Okay", [](Button& button) {
+						closeMono();
+						if ( auto workshop_create = main_menu_frame->findFrame("workshop_create") )
+						{
+							auto dimmer = workshop_create->getParent();
+							dimmer->removeSelf();
+						}
+
+						if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+						{
+							auto dimmer = mods_menu->getParent();
+							dimmer->removeSelf();
+						}
+
+						consoleCommand("/dumpcache");
+
+						createModsWindow();
+					});
+				});
+				auto button = frame->findButton("okay");
+				SDL_Rect pos = button->getSize();
+				pos.x = frame->getSize().w / 2 - pos.w - 8;
+				button->setSize(pos);
+
+				auto buttonCancel = frame->addButton("cancel");
+				buttonCancel->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+				buttonCancel->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
+				buttonCancel->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
+				buttonCancel->setColor(makeColor(255, 255, 255, 255));
+				buttonCancel->setHighlightColor(makeColor(255, 255, 255, 255));
+				buttonCancel->setTextColor(makeColor(255, 255, 255, 255));
+				buttonCancel->setTextHighlightColor(makeColor(255, 255, 255, 255));
+				buttonCancel->setFont(smallfont_outline);
+				buttonCancel->setText("Cancel");
+				pos.x = frame->getSize().w / 2 + 8;
+				buttonCancel->setSize(pos);
+				buttonCancel->setCallback([](Button& button) {
 					soundCancel();
+					closeMono();
+				});
 
-				// select another button
-				assert(main_menu_frame);
-				auto window = main_menu_frame->findFrame("hall_of_trials_menu"); assert(window);
-				auto subwindow = window->findFrame("subwindow"); assert(subwindow);
-				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-				tutorial->select();
-
-				// remove prompt
-				closeBinary();
-				}
-				);
+				button->setWidgetRight("cancel");
+				button->setWidgetBack("cancel");
+				buttonCancel->setWidgetLeft("okay");
+				buttonCancel->setWidgetBack("cancel");
 			});
+		}
 
 		auto enter = window->addButton("enter");
-		enter->setText("Enter Level");
-		enter->setSize(SDL_Rect{ 902, 630, 164, 62 });
+		if ( details )
+		{
+			enter->setText("Submit\nUpdate");
+		}
+		else
+		{
+			enter->setText("Submit New\nWorkshop Mod");
+		}
+		enter->setSize(SDL_Rect{ window->getSize().w - 164 - 152, 630, 164, 62});
 		enter->setBackground("*images/ui/Main Menus/Play/HallofTrials/HoT_Button_00.png");
 		enter->setBackgroundHighlighted("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonHigh_00.png");
 		enter->setBackgroundActivated("*images/ui/Main Menus/Play/HallofTrials/HoT_ButtonPress_00.png");
@@ -24011,26 +24998,644 @@ failed:
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
 		enter->setCallback([](Button& button) {
-			if ( !tutorial_map_destination.empty() ) {
-				destroyMainMenu();
-				createDummyMainMenu();
-				beginFade(MainMenu::FadeDestination::HallOfTrials);
-			}
-			else {
-				errorPrompt(
-					"Select a level to start first.",
-					"Okay",
+			std::string message = "";
+			if ( Mods::uploadingExistingItem != 0 )
+			{
+				if ( modFolderPathToUpload == "" )
+				{
+					message = "No new files selected:\nOnly tags/version will be modified.";
+				}
+				else
+				{
+					message = "New files will be uploaded and\ntags/version will be modified.";
+				}
+				binaryPrompt(message.c_str(), "Proceed", "Cancel",
 					[](Button& button) {
+						closeBinary();
+						soundActivate();
+						createWorkshopUploadWindow();
+					},
+					[](Button& button) {
+						closeBinary();
 						soundCancel();
-				assert(main_menu_frame);
-				auto hall_of_trials = main_menu_frame->findFrame("hall_of_trials_menu"); assert(hall_of_trials);
-				auto subwindow = hall_of_trials->findFrame("subwindow"); assert(subwindow);
-				auto tutorial = subwindow->findButton("tutorial_hub"); assert(tutorial);
-				tutorial->select();
-				closeMono();
-					}
-				);
+					}, false, true);
 			}
+			else
+			{
+				createWorkshopUploadWindow();
+			}
+		});
+	}
+
+	enum UploadStatus {
+		STATUS_INIT,
+		STATUS_CREATE_ITEM,
+		STATUS_ITEM_CREATED,
+		STATUS_EXISTING_ITEM,
+		STATUS_NEEDS_ACCEPT_AGREEMENT,
+		STATUS_SET_TITLE,
+		STATUS_SET_DESC,
+		STATUS_SET_TAGS,
+		STATUS_UPLOAD_CONTENT_INIT,
+		STATUS_UPLOAD_PREVIEW_MISSING,
+		STATUS_UPLOAD_CONTENT_START,
+		STATUS_ITEM_UPDATING,
+		STATUS_COMPLETED,
+		STATUS_RETRY,
+		STATUS_ERROR
+	};
+	static const char* workshopUploadStateManager()
+	{
+		if ( Mods::processedOnTick != ticks )
+		{
+			++Mods::uploadTicks;
+		}
+		Mods::processedOnTick = ticks;
+
+		const int kStateDelay = TICKS_PER_SECOND / 2;
+
+		switch ( Mods::uploadStatus )
+		{
+			case UploadStatus::STATUS_INIT:
+				Mods::uploadNumRetries = 3;
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					Mods::uploadTicks = 0;
+					Mods::uploadStatus = UploadStatus::STATUS_CREATE_ITEM;
+					if ( !Mods::uploadingExistingItem )
+					{
+						g_SteamWorkshop->CreateItem();
+					}
+					else
+					{
+						Mods::uploadStatus = UploadStatus::STATUS_EXISTING_ITEM;
+					}
+				}
+				return "Starting upload";
+			case UploadStatus::STATUS_EXISTING_ITEM:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					Mods::uploadTicks = 0;
+					Mods::uploadStatus = STATUS_ITEM_CREATED;
+					g_SteamWorkshop->StartItemExistingUpdate(Mods::uploadingExistingItem);
+				}
+				return "Modifying existing item";
+			case UploadStatus::STATUS_CREATE_ITEM:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->createItemResult.m_eResult != k_EResultNone )
+					{
+						/*if ( g_SteamWorkshop->createItemResult.m_bUserNeedsToAcceptWorkshopLegalAgreement )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadStatus = UploadStatus::STATUS_NEEDS_ACCEPT_AGREEMENT;
+						}
+						else */
+						if ( g_SteamWorkshop->createItemResult.m_eResult == k_EResultOK
+							&& g_SteamWorkshop->createItemResult.m_nPublishedFileId != 0 )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadStatus = UploadStatus::STATUS_ITEM_CREATED;
+							g_SteamWorkshop->StartItemUpdate();
+						}
+						else
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadErrorStatus = Mods::uploadStatus;
+							Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+						}
+					}
+				}
+				return "Creating item";
+			case UploadStatus::STATUS_ITEM_CREATED:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+
+						if ( Mods::uploadingExistingItem != 0 )
+						{
+							// skip title/description
+							Mods::uploadStatus = UploadStatus::STATUS_SET_TAGS;
+						}
+						else
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_SET_TITLE;
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Waiting on update handle";
+			case UploadStatus::STATUS_SET_TITLE:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadStatus = UploadStatus::STATUS_SET_DESC;
+						bool res = SteamUGC()->SetItemTitle(g_SteamWorkshop->UGCUpdateHandle, modTitleToUpload.c_str());
+						if ( !res )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadErrorStatus = Mods::uploadStatus;
+							Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Setting title";
+			case UploadStatus::STATUS_SET_DESC:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadStatus = UploadStatus::STATUS_SET_TAGS;
+						bool res = SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, modDescToUpload.c_str());
+						if ( !res )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadErrorStatus = Mods::uploadStatus;
+							Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Setting description";
+			case UploadStatus::STATUS_SET_TAGS:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+
+						if ( Mods::uploadingExistingItem != 0 && modFolderPathToUpload == "" )
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_UPLOAD_CONTENT_START;
+						}
+						else
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_UPLOAD_CONTENT_INIT;
+						}
+
+						size_t index = 0;
+						std::vector<std::string> uploadTags;
+						for ( auto& t : Mods::tag_settings )
+						{
+							if ( modTags.find(index) != modTags.end() )
+							{
+								uploadTags.push_back(t.tag);
+							}
+							++index;
+						}
+
+						// some mumbo jumbo to work with the steam API needing const char[][]
+						SteamParamStringArray_t SteamParamStringArray;
+						SteamParamStringArray.m_nNumStrings = uploadTags.size() + 1;
+
+						// construct new char[][]
+						const int maxTags = 10;
+						char** tagArray = new char* [maxTags];
+						int i = 0;
+						for ( i = 0; i < maxTags; ++i )
+						{
+							tagArray[i] = new char[32];
+						}
+
+						// copy all the items into this new char[][].
+						i = 0;
+						for ( auto& s : uploadTags )
+						{
+							strcpy(tagArray[i], s.c_str());
+							++i;
+						}
+						strcpy(tagArray[i], VERSION); // copy the version number as a tag.
+
+						// set the tags in the API call.
+						SteamParamStringArray.m_ppStrings = const_cast<const char**>(tagArray);
+						bool res = SteamUGC()->SetItemTags(g_SteamWorkshop->UGCUpdateHandle, &SteamParamStringArray);
+
+						// delete the allocated char[][]
+						for ( i = 0; i < maxTags; ++i )
+						{
+							delete[] tagArray[i];
+						}
+						delete[] tagArray;
+
+						if ( !res )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadErrorStatus = Mods::uploadStatus;
+							Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Setting tags";
+			case UploadStatus::STATUS_UPLOAD_CONTENT_INIT:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadStatus = UploadStatus::STATUS_UPLOAD_CONTENT_START;
+						bool res = false;
+						
+						std::string fullpath = Mods::getFolderFullPath(modFolderPathToUpload);
+
+						if ( access(fullpath.c_str(), F_OK) == 0 )
+						{
+							res = SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, fullpath.c_str());
+
+							if ( res )
+							{
+								// set preview image.
+								bool imagePreviewFound = false;
+								std::string imgPath = fullpath;
+								/*imgPath.append("/preview.jpg");
+								if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+								{
+									imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+								}
+								imgPath = fullpath;*/
+								imgPath.append("/preview.png");
+								if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+								{
+									imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+								}
+								if ( !imagePreviewFound )
+								{
+									printlog("Failed to upload image for workshop item!");
+								}
+
+								if ( !imagePreviewFound )
+								{
+									Mods::uploadTicks = 0;
+									Mods::uploadStatus = STATUS_UPLOAD_PREVIEW_MISSING;
+								}
+							}
+						}
+						else
+						{
+							res = false;
+						}
+
+						if ( !res )
+						{
+							Mods::uploadTicks = 0;
+							Mods::uploadErrorStatus = Mods::uploadStatus;
+							Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Preparing content";
+			case UploadStatus::STATUS_UPLOAD_PREVIEW_MISSING:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadStatus = UploadStatus::STATUS_UPLOAD_CONTENT_START;
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Note: No preview.png image found";
+			case UploadStatus::STATUS_UPLOAD_CONTENT_START:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadStatus = UploadStatus::STATUS_ITEM_UPDATING;
+						g_SteamWorkshop->SubmitItemUpdateResult.m_eResult = k_EResultNone;
+						if ( Mods::uploadingExistingItem == 0 )
+						{
+							g_SteamWorkshop->SubmitItemUpdate("First upload.");
+						}
+						else
+						{
+							g_SteamWorkshop->SubmitItemUpdate("Item updated.");
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Uploading content, this may take\nsome time.";
+			case UploadStatus::STATUS_ITEM_UPDATING:
+				if ( Mods::uploadTicks >= kStateDelay )
+				{
+					if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+					{
+						uint64 bytesProc;
+						uint64 bytesTotal;
+						int status = SteamUGC()->GetItemUpdateProgress(g_SteamWorkshop->UGCUpdateHandle, &bytesProc, &bytesTotal);
+						if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult != k_EResultNone )
+						{
+							if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == k_EResultTimeout )
+							{
+								Mods::uploadTicks = 0;
+								g_SteamWorkshop->SubmitItemUpdateResult.m_eResult = k_EResultNone;
+								Mods::uploadStatus = UploadStatus::STATUS_RETRY;
+							}
+							else if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == k_EResultOK )
+							{
+								Mods::uploadTicks = 0;
+								Mods::uploadStatus = UploadStatus::STATUS_COMPLETED;
+							}
+							else
+							{
+								Mods::uploadTicks = 0;
+								Mods::uploadErrorStatus = Mods::uploadStatus;
+								Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+							}
+						}
+					}
+					else
+					{
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+				}
+				return "Uploading content, this may take\nsome time.";
+			case UploadStatus::STATUS_RETRY:
+				if ( Mods::uploadTicks >= TICKS_PER_SECOND * 2 )
+				{
+					if ( Mods::uploadNumRetries <= 1 )
+					{
+						Mods::uploadNumRetries = 0;
+						Mods::uploadTicks = 0;
+						Mods::uploadErrorStatus = Mods::uploadStatus;
+						Mods::uploadStatus = UploadStatus::STATUS_ERROR;
+					}
+					else
+					{
+						--Mods::uploadNumRetries;
+						Mods::uploadTicks = 0;
+						if ( Mods::uploadingExistingItem != 0 )
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_EXISTING_ITEM;
+						}
+						else
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_CREATE_ITEM;
+						}
+					}
+				}
+				if ( Mods::uploadNumRetries == 3 )
+				{
+					return "Timed out while uploading,\nretrying 1/3...";
+				}
+				else if ( Mods::uploadNumRetries == 2 )
+				{
+					return "Timed out while uploading,\nretrying 2/3...";
+				}
+				else if ( Mods::uploadNumRetries == 1 )
+				{
+					return "Timed out while uploading,\nretrying 3/3...";
+				}
+				else
+				{
+					return "Timed out while uploading,\ntry again later.";
+				}
+			case UploadStatus::STATUS_COMPLETED:
+				return "Successfully uploaded content!";
+			case UploadStatus::STATUS_ERROR:
+				return "Unknown error";
+			default:
+				return "Waiting";
+				break;
+		}
+	}
+
+	static void createWorkshopUploadWindow()
+	{
+		if ( !SteamUser()->BLoggedOn() || !g_SteamWorkshop )
+		{
+			auto frame = errorPrompt("Error: Not logged in.", "Okay", [](Button& button) {
+				closeMono();
+				soundActivate();
 			});
+			return;
+		}
+
+		auto fullpath = Mods::getFolderFullPath(modFolderPathToUpload);
+		if ( fullpath == "" && Mods::uploadingExistingItem == 0 )
+		{
+			auto frame = errorPrompt("Error: No content folder\nselected to upload.", "Okay", [](Button& button) {
+				closeMono();
+				soundActivate();
+				});
+			return;
+		}
+		if ( fullpath != "" && access(fullpath.c_str(), F_OK) != 0 )
+		{
+			auto frame = errorPrompt("Error: Could not read\ncontent folder.", "Okay", [](Button& button) {
+				closeMono();
+				soundActivate();
+				});
+			return;
+		}
+
+		auto frame = monoPrompt("Starting upload", "Please\nwait", [](Button& button) {
+			closeMono();
+
+			if ( auto workshop_create = main_menu_frame->findFrame("workshop_create") )
+			{
+				auto dimmer = workshop_create->getParent();
+				dimmer->removeSelf();
+			}
+
+			if ( auto mods_menu = main_menu_frame->findFrame("mods_menu") )
+			{
+				auto dimmer = mods_menu->getParent();
+				dimmer->removeSelf();
+			}
+
+			createModsWindow();
+		});
+
+		g_SteamWorkshop->createItemResult = {};
+		g_SteamWorkshop->createItemResult.m_nPublishedFileId = 0;
+		g_SteamWorkshop->createItemResult.m_eResult = k_EResultNone;
+		g_SteamWorkshop->SubmitItemUpdateResult.m_eResult = k_EResultNone;
+		g_SteamWorkshop->UGCUpdateHandle = 0;
+		Mods::uploadStatus = UploadStatus::STATUS_INIT;
+		Mods::uploadErrorStatus = UploadStatus::STATUS_INIT;
+		Mods::uploadTicks = 0;
+		Mods::processedOnTick = ticks;
+
+		auto button = frame->findButton("okay");
+		button->setDisabled(true);
+		button->setTextColor(makeColorRGB(128, 128, 128));
+
+		frame->setTickCallback([](Widget& widget) {
+			std::string status = workshopUploadStateManager();
+			status += '\n';
+
+			auto frame = static_cast<Frame*>(&widget);
+			auto field = frame->findField("text");
+
+			auto button = frame->findButton("okay");
+			if ( Mods::uploadStatus == UploadStatus::STATUS_COMPLETED )
+			{
+				if ( !frame->findButton("view workshop") )
+				{
+					playSound(553, 64);
+
+					button->setDisabled(false);
+					button->select();
+					button->setText("Dismiss");
+
+					auto view = frame->addButton("view workshop");
+					SDL_Rect posLeft = button->getSize();
+					SDL_Rect posRight = posLeft;
+					posLeft.x -= posLeft.w / 2 + 8;
+					view->setSize(posLeft);
+
+					view->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+					view->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+					view->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+					view->setColor(makeColor(255, 255, 255, 255));
+					view->setHighlightColor(makeColor(255, 255, 255, 255));
+					view->setTextColor(makeColor(255, 255, 255, 255));
+					view->setTextHighlightColor(makeColor(255, 255, 255, 255));
+					view->setFont(smallfont_outline);
+					view->setText("View Item");
+					view->setCallback([](Button& button) {
+						std::string url = "steam://url/CommunityFilePage/";
+						url += std::to_string(g_SteamWorkshop->SubmitItemUpdateResult.m_nPublishedFileId);
+						openURLTryWithOverlay(url);
+
+						soundActivate();
+
+						// fixes a bug where you could get spammed with 100s of browser tabs...
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						Input::mouseButtons[SDL_BUTTON_LEFT] = 0;
+					});
+
+					posRight.x += posRight.w / 2 + 8;
+					button->setSize(posRight);
+				}
+			}
+			else if ( Mods::uploadStatus == UploadStatus::STATUS_ERROR )
+			{
+				if ( !frame->findButton("retry upload") )
+				{
+					button->setDisabled(false);
+					button->select();
+					button->setText("Cancel");
+					button->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_Abandon00.png");
+					button->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonHigh00.png");
+					button->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_AbandonPress00.png");
+
+					SDL_Rect posLeft = button->getSize();
+					posLeft.x = (frame->getSize().w / 2) - (posLeft.w) - 8;
+					SDL_Rect posRight = posLeft;
+					posRight.x = (frame->getSize().w / 2) + 8;
+					button->setSize(posRight);
+
+					auto retry = frame->addButton("retry upload");
+					retry->setSize(posLeft);
+					retry->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+					retry->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+					retry->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+					retry->setColor(makeColor(255, 255, 255, 255));
+					retry->setHighlightColor(makeColor(255, 255, 255, 255));
+					retry->setTextColor(makeColor(255, 255, 255, 255));
+					retry->setTextHighlightColor(makeColor(255, 255, 255, 255));
+					retry->setFont(smallfont_outline);
+					retry->setText("Retry\nUpload");
+					retry->select();
+					retry->setCallback([](Button& button) {
+						soundActivate();
+						auto frame = static_cast<Frame*>(button.getParent());
+						button.removeSelf();
+
+						auto okay = frame->findButton("okay");
+						SDL_Rect pos = okay->getSize();
+						pos.x = frame->getSize().w / 2 - pos.w / 2;
+						okay->setSize(pos);
+						okay->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
+						okay->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
+						okay->setBackgroundActivated("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackPress00.png");
+						okay->select();
+
+						okay->setDisabled(true);
+						okay->setTextColor(makeColorRGB(128, 128, 128));
+
+						Mods::uploadTicks = 0;
+						if ( Mods::uploadingExistingItem != 0 )
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_EXISTING_ITEM;
+						}
+						else
+						{
+							Mods::uploadStatus = UploadStatus::STATUS_CREATE_ITEM;
+						}
+					});
+				}
+
+				status += "Error code: ";
+				status += std::to_string(Mods::uploadErrorStatus);
+				status += '\n';
+			}
+			else
+			{
+				Uint32 interval = ticks % int(1.5 * TICKS_PER_SECOND);
+				int numDots = (interval / (TICKS_PER_SECOND / 2));
+				while ( numDots >= 0 )
+				{
+					--numDots;
+					status += '.';
+				}
+			}
+			field->setText(status.c_str());
+
+			if ( !button->isDisabled() )
+			{
+				button->setTextColor(makeColorRGB(255, 255, 255));
+			}
+			else
+			{
+				button->setTextColor(makeColorRGB(128, 128, 128));
+			}
+		});
 	}
 }

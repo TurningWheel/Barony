@@ -270,6 +270,7 @@ class CSteamWorkshop
 private:
 public:
 	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
+	std::array<std::string, 50> m_subscribedItemPreviewURL;
 	SteamUGCDetails_t m_myWorkshopItemToModify;
 	int numSubcribedItemResults = 50;
 	int subscribedCallStatus;

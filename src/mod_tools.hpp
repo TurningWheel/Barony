@@ -25,6 +25,8 @@ See LICENSE for details.
 #include "entity.hpp"
 #include "ui/Widget.hpp"
 
+#include <curl/curl.h>
+
 class CustomHelpers
 {
 public:
@@ -3223,6 +3225,8 @@ struct Mods
 	static std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 	static std::vector<std::pair<std::string, std::string>> mountedFilepaths;
 	static std::vector<std::pair<std::string, std::string>> mountedFilepathsSaved; // saved from config file
+	static std::set<std::string> Mods::mods_loaded_local;
+	static std::set<std::string> Mods::mods_loaded_workshop;
 	static std::list<std::string> Mods::localModFoldernames;
 	static int numCurrentModsLoaded;
 	static bool modelsListRequiresReloadUnmodded;
@@ -3241,7 +3245,26 @@ struct Mods
 #ifdef STEAMWORKS
 	static std::vector<SteamUGCDetails_t*> workshopSubscribedItemList;
 	static std::vector<std::pair<std::string, uint64>> workshopLoadedFileIDMap;
+	struct WorkshopTags_t
+	{
+		std::string tag;
+		std::string text;
+		WorkshopTags_t(const char* _tag, const char* _text)
+		{
+			tag = _tag;
+			text = _text;
+		}
+	};
+	static std::vector<WorkshopTags_t> tag_settings;
+	static int uploadStatus;
+	static int uploadErrorStatus;
+	static PublishedFileId_t uploadingExistingItem;
+	static Uint32 uploadTicks;
+	static Uint32 processedOnTick;
+	static int uploadNumRetries;
+	static std::string getFolderFullPath(std::string input);
 #endif
+	static void updateModCounts();
 	static bool mountAllExistingPaths();
 	static bool clearAllMountedPaths();
 	static bool removePathFromMountedFiles(std::string findStr);
@@ -3251,4 +3274,33 @@ struct Mods
 	static void loadModels(int start, int end);
 	static void verifyAchievements(const char* fullpath, bool ignoreBaseFolder);
 	static bool verifyMapFiles(const char* file, bool ignoreBaseFolder);
+	static int createBlankModDirectory(std::string foldername);
+	static void writeLevelsTxtAndPreview(std::string modFolder);
 };
+
+#ifdef USE_LIBCURL
+struct LibCURL_t
+{
+	bool bInit = false;
+	CURL* handle = nullptr;
+	void init()
+	{
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+		if ( handle = curl_easy_init() )
+		{
+			bInit = true;
+		}
+	}
+	void download(std::string filename, std::string url);
+
+	~LibCURL_t()
+	{
+		curl_easy_cleanup(handle);
+		handle = nullptr;
+	}
+
+	static size_t write_data_fp(void* ptr, size_t size, size_t nmemb, File* stream);
+	static size_t write_data_string(void* ptr, size_t size, size_t nmemb, std::string* s);
+};
+extern LibCURL_t LibCURL;
+#endif
