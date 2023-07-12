@@ -439,17 +439,23 @@ void Button::scrollParent() {
 	Frame* fparent = static_cast<Frame*>(parent);
 	auto fActualSize = fparent->getActualSize();
 	auto fSize = fparent->getSize();
-	if (size.y < fActualSize.y) {
-		fActualSize.y = size.y;
+
+	const auto y = size.y + scrollParentOffset.y;
+	const auto h = size.h + scrollParentOffset.h;
+	const auto x = size.x + scrollParentOffset.x;
+	const auto w = size.w + scrollParentOffset.w;
+
+	if ( y < fActualSize.y) {
+		fActualSize.y = y;
 	}
-	else if (size.y + size.h >= fActualSize.y + fSize.h) {
-		fActualSize.y = (size.y + size.h) - fSize.h;
+	else if ( size.y + h >= fActualSize.y + fSize.h) {
+		fActualSize.y = (size.y + h) - fSize.h;
 	}
-	if (size.x < fActualSize.x) {
-		fActualSize.x = size.x;
+	if (x < fActualSize.x) {
+		fActualSize.x = x;
 	}
-	else if (size.x + size.w >= fActualSize.x + fSize.w) {
-		fActualSize.x = (size.x + size.w) - fSize.w;
+	else if (size.x + w >= fActualSize.x + fSize.w) {
+		fActualSize.x = (size.x + w) - fSize.w;
 	}
 	fparent->setActualSize(fActualSize);
 }
