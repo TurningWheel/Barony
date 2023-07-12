@@ -26,7 +26,9 @@
 
 #include <cassert>
 #include <functional>
+#ifdef STEAMWORKS
 #include <nfd.h>
+#endif
 
 // quick restart:
 
