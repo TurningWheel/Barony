@@ -11390,6 +11390,8 @@ failed:
 #ifdef USE_EOS
                         EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_JOINVIAPRESENCE;
                         EOS.bFriendsOnly = false;
+						EOS.bFriendsOnlyUserConfigured = EOS.bFriendsOnly;
+						EOS.currentPermissionLevelUserConfigured = EOS.currentPermissionLevel;
 #endif // USE_EOS
                     }
                     else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -11399,6 +11401,9 @@ failed:
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
 						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "true");
+						steamLobbyFriendsOnlyUserConfigured = false;
+						steamLobbyInviteOnlyUserConfigured = true;
+						steamLobbyTypeUserConfigured = ::currentLobbyType;
 #endif // STEAMWORKS
                     }
 			        });
@@ -11476,6 +11481,8 @@ failed:
 #ifdef USE_EOS
                         EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
                         EOS.bFriendsOnly = true;
+						EOS.bFriendsOnlyUserConfigured = EOS.bFriendsOnly;
+						EOS.currentPermissionLevelUserConfigured = EOS.currentPermissionLevel;
 #endif // USE_EOS
                     }
                     else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -11485,6 +11492,9 @@ failed:
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "true");
 						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "false");
+						steamLobbyFriendsOnlyUserConfigured = true;
+						steamLobbyInviteOnlyUserConfigured = false;
+						steamLobbyTypeUserConfigured = ::currentLobbyType;
 #endif // STEAMWORKS
                     }
 			        });
@@ -11576,6 +11586,8 @@ failed:
 #ifdef USE_EOS
                         EOS.currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
                         EOS.bFriendsOnly = false;
+						EOS.bFriendsOnlyUserConfigured = EOS.bFriendsOnly;
+						EOS.currentPermissionLevelUserConfigured = EOS.currentPermissionLevel;
 #endif // USE_EOS
                     }
                     else if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -11585,6 +11597,9 @@ failed:
                         SteamMatchmaking()->SetLobbyType(*lobby, ::currentLobbyType);
                         SteamMatchmaking()->SetLobbyData(*lobby, "friends_only", "false");
 						SteamMatchmaking()->SetLobbyData(*lobby, "invite_only", "false");
+						steamLobbyFriendsOnlyUserConfigured = false;
+						steamLobbyInviteOnlyUserConfigured = false;
+						steamLobbyTypeUserConfigured = ::currentLobbyType;
 #endif // STEAMWORKS
                     }
 			        });
@@ -15751,6 +15766,7 @@ failed:
 	    bool locked;
 	    Uint32 flags;
 	    std::string address;
+		int numMods;
 	    intptr_t index = -1;
 	    LobbyInfo(
 	        const char* _name = "Barony",
@@ -15759,14 +15775,16 @@ failed:
 	        int _ping = 0,
 	        bool _locked = false,
 	        Uint32 _flags = 0,
-	        const char* _address = ""):
+	        const char* _address = "",
+			int _numMods = 0):
 	        name(_name),
             version(_version),
 	        players(_players),
 	        ping(_ping),
 	        locked(_locked),
 	        flags(_flags),
-	        address(_address)
+	        address(_address),
+			numMods(_numMods)
 	    {}
 	};
 
@@ -15797,6 +15815,7 @@ failed:
 #ifdef USE_EOS
             auto lobby = getLobbyEpic(info.address.c_str());
             if (lobby) {
+				bool privateLobby = false;
 				if ( lobby->LobbyAttributes.PermissionLevel != 0 )
 				{
 					// this is a invite-only lobby.
@@ -15804,6 +15823,7 @@ failed:
 					info.name = "Private lobby";
 					lobbies.back().name = info.name;
 					lobbies.back().locked = info.locked;
+					privateLobby = true;
 					//return;
 				}
                 for (auto& player : lobby->playersInLobby) {
@@ -15824,9 +15844,18 @@ failed:
 						info.name = "Private lobby";
 						lobbies.back().name = info.name;
 						lobbies.back().locked = info.locked;
+						privateLobby = true;
                         //return;
                     }
                 }
+				if ( !privateLobby )
+				{
+					if ( info.numMods > 0 )
+					{
+						info.name = "[MODDED] " + info.name;
+						lobbies.back().name = info.name;
+					}
+				}
             }
 #endif
         }
@@ -15836,6 +15865,7 @@ failed:
 #ifdef STEAMWORKS
             auto lobby = getLobbySteamID(info.address.c_str());
             if (lobby) {
+				bool privateLobby = false;
 				auto invite_only = SteamMatchmaking()->GetLobbyData(*lobby, "invite_only");
 				if (invite_only && stringCmp(invite_only, "true", 4, 4) == 0) {
 					// this is a invite-only lobby.
@@ -15843,6 +15873,7 @@ failed:
 					info.name = "Private lobby";
 					lobbies.back().name = info.name;
 					lobbies.back().locked = info.locked;
+					privateLobby = true;
 					//return;
 				}
                 const int num_friends = SteamFriends()->GetFriendCount( k_EFriendFlagImmediate );
@@ -15863,9 +15894,18 @@ failed:
 						info.name = "Private lobby";
 						lobbies.back().name = info.name;
 						lobbies.back().locked = info.locked;
+						privateLobby = true;
                         //return;
                     }
                 }
+				if ( !privateLobby )
+				{
+					if ( info.numMods > 0 )
+					{
+						info.name = "[MODDED] " + info.name;
+						lobbies.back().name = info.name;
+					}
+				}
             }
 #endif
         }
@@ -16155,6 +16195,7 @@ failed:
 	                info.name = lobbyText[c];
                     info.version = lobbyVersion[c];
 	                info.players = lobbyPlayers[c];
+					info.numMods = lobbyNumMods[c];
 	                info.ping = 50; // TODO
 	                info.locked = false; // this will always be false because steam only reported joinable lobbies
 	                info.flags = (Uint32)flags;
@@ -16170,6 +16211,7 @@ failed:
 						info.name = lobby->LobbyAttributes.lobbyName;
 						info.version = lobby->LobbyAttributes.gameVersion;
 						info.players = MAXPLAYERS - lobby->FreeSlots;
+						info.numMods = lobby->LobbyAttributes.numServerMods;
 						info.ping = 50; // TODO
 						info.locked = lobby->LobbyAttributes.gameCurrentLevel != -1;
 						info.flags = lobby->LobbyAttributes.serverFlags;
@@ -18121,7 +18163,15 @@ failed:
 					steamIDRemote[c] = NULL;
 				}
 			}
-			::currentLobbyType = k_ELobbyTypePublic;
+
+			if ( loadingsavegame )
+			{
+				::currentLobbyType = k_ELobbyTypePublic;
+			}
+			else
+			{
+				::currentLobbyType = ::steamLobbyTypeUserConfigured;
+			}
 			cpp_SteamMatchmaking_CreateLobby(::currentLobbyType, MAXPLAYERS);
 			textPrompt("host_lobby_prompt", "Creating Steam lobby...",
 				[](Widget&){
@@ -22302,7 +22352,9 @@ failed:
 
 	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
+#ifdef STEAMWORKS
 	static void createWorkshopCreateMenu(SteamUGCDetails_t* details);
+#endif
 	static bool startModdedGame()
 	{
 		Mods::mountedFilepathsSaved = Mods::mountedFilepaths;
@@ -22966,7 +23018,9 @@ failed:
 				bool isWorkshopMod = reinterpret_cast<intptr_t>(button.getUserData()) == 1 ? true : false;
 				if ( isWorkshopMod )
 				{
+#ifdef STEAMWORKS
 					createWorkshopCreateMenu(&g_SteamWorkshop->m_subscribedItemListDetails[index]);
+#endif
 				}
 			});
 
@@ -23672,6 +23726,20 @@ failed:
 			}
 			else
 			{
+#ifndef STEAMWORKS
+				if ( it->first.find("371970") != std::string::npos )
+				{
+					if ( it->first.find("workshop") != std::string::npos )
+					{
+						if ( it->first.find("content") != std::string::npos )
+						{
+							// steamworks mod, ignore this
+							it = Mods::mountedFilepathsSaved.erase(it);
+							continue;
+						}
+					}
+				}
+#endif // !STEAMWORKS
 				++it;
 			}
 		}
@@ -23801,11 +23869,13 @@ failed:
 		auto load_status_frame = window->addFrame("load_status");
 		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });
 		load_status_frame->setTickCallback([](Widget& widget) {
+#ifdef STEAMWORKS
 			if ( mods_active_tab == mod_tabs[2].name )
 			{
 				widget.setInvisible(true);
 			}
 			else
+#endif
 			{
 				widget.setInvisible(false);
 			}
@@ -23813,7 +23883,12 @@ failed:
 		auto load_status_titles = load_status_frame->addField("load_status_titles", 128);
 		load_status_titles->setFont(smallfont_outline);
 		load_status_titles->setSize(SDL_Rect{ 8, 8, load_status_frame->getSize().w - 64, load_status_frame->getSize().h - 16 });
+#ifndef STEAMWORKS
+		load_status_titles->setText("\nMods Loaded:\n");
+#else
 		load_status_titles->setText("Local Mods:\nWorkshop:\nTotal Loaded:");
+#endif // !STEAMWORKS
+
 		load_status_titles->setHJustify(Field::justify_t::RIGHT);
 		load_status_titles->setVJustify(Field::justify_t::CENTER);
 		auto load_status_totals = load_status_frame->addField("load_status_totals", 128);
@@ -23831,10 +23906,15 @@ failed:
 			{
 				Field* field = static_cast<Field*>(&widget);
 				char buf[128] = "";
+#ifndef STEAMWORKS
+				snprintf(buf, sizeof(buf), "\n%d\n",
+					Mods::numCurrentModsLoaded);
+#else
 				snprintf(buf, sizeof(buf), "%d\n%d\n%d",
 					Mods::mods_loaded_local.size(),
 					Mods::mods_loaded_workshop.size(),
 					Mods::numCurrentModsLoaded);
+#endif
 				field->setText(buf);
 				assert((Mods::mods_loaded_local.size() + Mods::mods_loaded_workshop.size())
 					== Mods::numCurrentModsLoaded);
@@ -24038,6 +24118,7 @@ failed:
 		enter->setWidgetBack("back_button");
 		enter->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
 
+#ifdef STEAMWORKS
 		auto new_workshop_mod = window->addButton("new_workshop_mod");
 		new_workshop_mod->setText("New Workshop\nMod");
 		new_workshop_mod->setSize(SDL_Rect{ 902, 630, 164, 62 });
@@ -24173,7 +24254,7 @@ failed:
 		browse_workshop->setWidgetPageRight("tab_right");
 		browse_workshop->setWidgetBack("back_button");
 		browse_workshop->setWidgetUp(mod_tabs[0].name);
-
+#endif
 		auto blank_mod_folder = window->addButton("blank_mod_folder");
 		blank_mod_folder->setText("Create Blank\nMod Folder");
 		blank_mod_folder->setSize(SDL_Rect{ 152, 630, 164, 62 });
@@ -24301,25 +24382,28 @@ failed:
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent("mods_menu");
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
-			if ( c > 0 )
+			if ( num_tabs > 1 )
 			{
-				button->setWidgetPageLeft("tab_left");
-				button->setWidgetLeft(mod_tabs[c - 1].name);
-			}
-			else
-			{
-				button->setWidgetPageLeft("tab_left");
-				button->setWidgetLeft(mod_tabs[c].name);
-			}
-			if ( c < num_tabs - 1 ) 
-			{
-				button->setWidgetPageRight("tab_right");
-				button->setWidgetRight(mod_tabs[c + 1].name);
-			}
-			else 
-			{
-				button->setWidgetPageRight("tab_right");
-				button->setWidgetRight(mod_tabs[c].name);
+				if ( c > 0 )
+				{
+					button->setWidgetPageLeft("tab_left");
+					button->setWidgetLeft(mod_tabs[c - 1].name);
+				}
+				else
+				{
+					button->setWidgetPageLeft("tab_left");
+					button->setWidgetLeft(mod_tabs[c].name);
+				}
+				if ( c < num_tabs - 1 ) 
+				{
+					button->setWidgetPageRight("tab_right");
+					button->setWidgetRight(mod_tabs[c + 1].name);
+				}
+				else 
+				{
+					button->setWidgetPageRight("tab_right");
+					button->setWidgetRight(mod_tabs[c].name);
+				}
 			}
 			button->setWidgetBack("back_button");
 
@@ -24499,6 +24583,7 @@ failed:
 	static std::string modDescToUpload = "";
 	static std::set<int> modTags;
 
+#ifdef STEAMWORKS
 	static void createWorkshopCreateMenu(SteamUGCDetails_t* details) {
 		if ( !details )
 		{
@@ -26027,4 +26112,5 @@ failed:
 			}
 		});
 	}
+#endif
 }

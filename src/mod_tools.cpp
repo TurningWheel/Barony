@@ -7816,25 +7816,6 @@ bool Mods::customContentLoadedFirstTime = false;
 bool Mods::disableSteamAchievements = false;
 bool Mods::isLoading = false;
 Uint32 Mods::loadingTicks = 0;
-#ifdef STEAMWORKS
-std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
-std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
-std::vector<Mods::WorkshopTags_t> Mods::tag_settings = {
-	Mods::WorkshopTags_t("dungeons", "Dungeons"),
-	Mods::WorkshopTags_t("textures", "Textures"),
-	Mods::WorkshopTags_t("models", "Models"),
-	Mods::WorkshopTags_t("gameplay", "Gameplay"),
-	Mods::WorkshopTags_t("audio", "Audio"),
-	Mods::WorkshopTags_t("misc", "Misc"),
-	Mods::WorkshopTags_t("translations", "Translations")
-};
-int Mods::uploadStatus = 0;
-int Mods::uploadErrorStatus = 0;
-Uint32 Mods::uploadTicks = 0;
-Uint32 Mods::processedOnTick = 0;
-PublishedFileId_t Mods::uploadingExistingItem = 0;
-int Mods::uploadNumRetries = 3;
-
 void Mods::updateModCounts()
 {
 	mods_loaded_local.clear();
@@ -7859,6 +7840,24 @@ void Mods::updateModCounts()
 		}
 	}
 }
+#ifdef STEAMWORKS
+std::vector<SteamUGCDetails_t*> Mods::workshopSubscribedItemList;
+std::vector<std::pair<std::string, uint64>> Mods::workshopLoadedFileIDMap;
+std::vector<Mods::WorkshopTags_t> Mods::tag_settings = {
+	Mods::WorkshopTags_t("dungeons", "Dungeons"),
+	Mods::WorkshopTags_t("textures", "Textures"),
+	Mods::WorkshopTags_t("models", "Models"),
+	Mods::WorkshopTags_t("gameplay", "Gameplay"),
+	Mods::WorkshopTags_t("audio", "Audio"),
+	Mods::WorkshopTags_t("misc", "Misc"),
+	Mods::WorkshopTags_t("translations", "Translations")
+};
+int Mods::uploadStatus = 0;
+int Mods::uploadErrorStatus = 0;
+Uint32 Mods::uploadTicks = 0;
+Uint32 Mods::processedOnTick = 0;
+PublishedFileId_t Mods::uploadingExistingItem = 0;
+int Mods::uploadNumRetries = 3;
 
 std::string Mods::getFolderFullPath(std::string input)
 {

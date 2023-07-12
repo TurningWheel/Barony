@@ -36,6 +36,7 @@ extern char lobbyText[MAX_STEAM_LOBBIES][64];
 extern char lobbyVersion[MAX_STEAM_LOBBIES][64];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
+extern int lobbyNumMods[MAX_STEAM_LOBBIES];
 
 extern void* steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
 
@@ -48,6 +49,9 @@ extern std::string cmd_line; // for game join requests
 #ifdef STEAMWORKS
 extern char currentLobbyName[32];
 extern ELobbyType currentLobbyType;
+extern ELobbyType steamLobbyTypeUserConfigured;
+extern bool steamLobbyFriendsOnlyUserConfigured;
+extern bool steamLobbyInviteOnlyUserConfigured;
 extern bool connectingToLobby, connectingToLobbyWindow;
 extern bool joinLobbyWaitingForHostResponse;
 extern bool denyLobbyJoinEvent;

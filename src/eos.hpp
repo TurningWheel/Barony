@@ -124,7 +124,10 @@ public:
 	//bool bStillConnectingToLobby = false; // TODO: client got a lobby invite and booted up the game with this?
 	char currentLobbyName[32] = "";
 	EOS_ELobbyPermissionLevel currentPermissionLevel = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
+	EOS_ELobbyPermissionLevel currentPermissionLevelUserConfigured = EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED;
 	bool bFriendsOnly = false; // if true the current lobby can only be found by friends
+	bool bFriendsOnlyUserConfigured = true;
+
 	char lobbySearchByCode[32] = "";
 
 	std::unordered_set<EOS_ProductUserId> ProductIdsAwaitingAccountMappingCallback;
@@ -330,7 +333,7 @@ public:
 				std::string gameJoinKey = "";
 				Uint32 isLobbyLoadingSavedGame = 0;
 				Uint32 serverFlags = 0;
-				Uint32 numServerMods = 0;
+				int numServerMods = 0;
 				long long lobbyCreationTime = 0;
 				int gameCurrentLevel = -1;
 				Uint32 maxplayersCompatible = MAXPLAYERS;
