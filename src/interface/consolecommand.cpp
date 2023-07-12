@@ -876,19 +876,6 @@ namespace ConsoleCommands {
 		printlog("Note: /bind is now deprecated.\n");
 		});
 
-	static ConsoleCommand ccmd_mousespeed("/mousespeed", "change mouse speed", []CCMD{
-		if (argc > 1)
-			mousespeed = atoi(argv[1]);
-		});
-
-	static ConsoleCommand ccmd_reversemouse("/reversemouse", "toggle reverse mouse mode", []CCMD{
-		reversemouse = (reversemouse == 0);
-		});
-
-	static ConsoleCommand ccmd_smoothmouse("/smoothmouse", "toggle mouse smoothing", []CCMD{
-		smoothmouse = (smoothmouse == false);
-		});
-
 	static ConsoleCommand ccmd_mana("/mana", "give player mana (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -1680,10 +1667,6 @@ namespace ConsoleCommands {
 		int value = atoi(argv[2]);
 		autosort_inventory_categories[catIndex] = value;
 		printlog("Autosort inventory category %d, priority %d.", catIndex, value);
-		});
-
-	static ConsoleCommand ccmd_quickaddtohotbar("/quickaddtohotbar", "", []CCMD{
-		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
 		});
 
 	static ConsoleCommand ccmd_locksidebar("/locksidebar", "", []CCMD{

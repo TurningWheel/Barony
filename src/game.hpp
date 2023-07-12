@@ -40,8 +40,6 @@ class Entity;
 // impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.
 extern Uint32 impulses[NUMIMPULSES];
 extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
-extern int reversemouse;
-extern real_t mousespeed;
 
 bool handleEvents(void);
 void startMessages();

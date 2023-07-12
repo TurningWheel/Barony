@@ -200,6 +200,10 @@ public:
 
 	//! consume bindings that all use the same input as given binding
 	void consumeBindingsSharedWithBinding(const char* binding);
+ 
+    //! get list of bindings for given input
+    std::vector<std::string> getBindingsForInput(const char* input) const;
+    
 private:
 	std::unordered_map<std::string, binding_t> bindings;
 

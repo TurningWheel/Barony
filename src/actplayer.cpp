@@ -31,7 +31,6 @@
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
 
-bool smoothmouse = false;
 bool settings_smoothmouse = false;
 bool usecamerasmoothing = false;
 bool disablemouserotationlimit = true;
@@ -83,7 +82,9 @@ void actDeathCam(Entity* my)
 	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
 	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
 
-	real_t mouse_speed = mousespeed;
+    const bool smoothmouse = playerSettings[DEATHCAM_PLAYERNUM].smoothmouse;
+    const bool reversemouse = playerSettings[DEATHCAM_PLAYERNUM].reversemouse;
+	real_t mouse_speed = playerSettings[DEATHCAM_PLAYERNUM].mousespeed;
 	if ( inputs.getVirtualMouse(DEATHCAM_PLAYERNUM)->lastMovementFromController )
 	{
 		mouse_speed = 32.0;
@@ -519,7 +520,9 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	mousex_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_XREL);
 	mousey_relative = inputs.getMouseFloat(playernum, Inputs::ANALOGUE_YREL);
 
-	real_t mouse_speed = mousespeed;
+    const bool smoothmouse = playerSettings[PLAYER_NUM].smoothmouse;
+    const bool reversemouse = playerSettings[PLAYER_NUM].reversemouse;
+	real_t mouse_speed = playerSettings[PLAYER_NUM].mousespeed;
 	if ( inputs.getVirtualMouse(PLAYER_NUM)->lastMovementFromController )
 	{
 		mouse_speed = 32.0;

@@ -270,22 +270,24 @@ real_t getGamepadMenuYSensitivity(int player)
 
 real_t getGamepadRightXSensitivity(int player)
 {
+    const auto value = gamepad_rightx_sensitivity * playerSettings[player].gamepad_rightx_sensitivity;
 	if ( !TimerExperiments::bUseTimerInterpolation )
 	{
-		return gamepad_rightx_sensitivity;
+		return value;
 	}
 	const real_t fpsScale = getFPSScale(60.0);
-	return gamepad_rightx_sensitivity * fpsScale;
+	return value * fpsScale;
 }
 
 real_t getGamepadRightYSensitivity(int player)
 {
+    const auto value = gamepad_righty_sensitivity * playerSettings[player].gamepad_righty_sensitivity;
 	if ( !TimerExperiments::bUseTimerInterpolation )
 	{
-		return gamepad_righty_sensitivity;
+		return value;
 	}
 	const real_t fpsScale = getFPSScale(60.0);
-	return gamepad_righty_sensitivity * fpsScale;
+	return value * fpsScale;
 }
 
 void GameController::handleAnalog(int player)
@@ -306,15 +308,17 @@ void GameController::handleAnalog(int player)
 
 	if (!players[player]->shootmode || gamePaused)
 	{
-		int rightx = getRawRightXMove() * getGamepadMenuXSensitivity(player);
-		int righty = getRawRightYMove() * getGamepadMenuYSensitivity(player);
+        const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
+        const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+		int rightx = rawx * getGamepadMenuXSensitivity(player);
+		int righty = rawy * getGamepadMenuYSensitivity(player);
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
-		if (gamepad_rightx_invert)
+		if (gamepad_rightx_invert ^ playerSettings[player].gamepad_rightx_invert)
 		{
 			rightx = -rightx;
 		}
-		if (gamepad_righty_invert)
+		if (gamepad_righty_invert ^ playerSettings[player].gamepad_righty_invert)
 		{
 			righty = -righty;
 		}
@@ -330,8 +334,10 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-			const real_t floatx = getRawRightXMove();
-			const real_t floaty = getRawRightYMove();
+            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+			const real_t floatx = rawx;
+			const real_t floaty = rawy;
 
 			const real_t maxInputVector = 32767;
 			const real_t magnitude = sqrt(pow(floatx, 2) + pow(floaty, 2));
@@ -380,8 +386,10 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
-			rightx = getRawRightXMove();
-			righty = getRawRightYMove();
+            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+			rightx = rawx;
+			righty = rawy;
 
 			const real_t maxInputVector = 32767 * sqrt(2);
 			const real_t magnitude = sqrt(pow(rightx, 2) + pow(righty, 2));
@@ -450,8 +458,10 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
-			floatx = getRawRightXMove();
-			floaty = getRawRightYMove();
+            const auto rawx = getRawRightXMove() * (playerSettings[player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove() * (playerSettings[player].gamepad_righty_invert * -2 + 1);
+			floatx = rawx;
+			floaty = rawy;
 
 			const real_t maxInputVector = 32767 * sqrt(2);
 			const real_t magnitude = std::min(32767.0, sqrt(pow(floatx, 2) + pow(floaty, 2)));
@@ -488,8 +498,8 @@ void GameController::handleAnalog(int player)
 
 			oldFloatRightX = floatx;
 			oldFloatRightY = floaty;
-			oldAxisRightX = getRawRightXMove();
-			oldAxisRightY = getRawRightYMove();
+			oldAxisRightX = rawx;
+			oldAxisRightY = rawy;
 		}
 
 		//real_t x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
@@ -551,6 +561,7 @@ int GameController::getRightXMove(int player) // with sensitivity
 		return 0;
 	}
 	int x = getRawRightXMove();
+    x *= playerSettings[player].gamepad_rightx_invert * -2 + 1;
 	x *= getGamepadRightXSensitivity(player);
 	return x;
 }
@@ -562,6 +573,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 		return 0;
 	}
 	int y = getRawRightYMove();
+    y *= playerSettings[player].gamepad_righty_invert * -2 + 1;
 	y *= getGamepadRightYSensitivity(player);
 	return y;
 }
@@ -3957,7 +3969,7 @@ void Player::WorldUI_t::handleTooltips()
 		}
 		else if ( inputs.bPlayerUsingKeyboardControl(player) )
 		{
-			if ( *MainMenu::cvar_mkb_world_tooltips )
+			if ( playerSettings[player].mkb_world_tooltips_enabled )
 			{
 				if ( !players[player]->worldUI.bEnabled )
 				{

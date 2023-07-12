@@ -1088,6 +1088,25 @@ Input::playerControlType_t Input::getPlayerControlType()
 	return Input::PLAYER_CONTROLLED_BY_INVALID;
 }
 
+std::vector<std::string> Input::getBindingsForInput(const char* input) const {
+    std::vector<std::string> result;
+    for (auto& b : bindings) {
+        const bool isController =
+            b.second.type == binding_t::bindtype_t::CONTROLLER_AXIS ||
+            b.second.type == binding_t::bindtype_t::CONTROLLER_BUTTON;
+        if (isController) {
+            if (b.second.input.substr(4) == input) {
+                result.emplace_back(b.first);
+            }
+        } else {
+            if (b.second.input == input) {
+                result.emplace_back(b.first);
+            }
+        }
+    }
+    return result;
+}
+
 void Input::consumeBindingsSharedWithBinding(const char* binding)
 {
 	if (multiplayer != SINGLE && player != 0) {
