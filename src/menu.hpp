@@ -226,7 +226,6 @@ extern int settings_minimap_scale;
 extern int settings_minimap_object_zoom;
 extern char portnumber_char[6];
 extern char connectaddress[64];
-extern bool smoothmouse;
 extern bool usecamerasmoothing;
 extern bool disablemouserotationlimit;
 extern bool broadcast;

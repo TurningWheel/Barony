@@ -216,8 +216,6 @@ SDL_bool EnableMouseCapture = SDL_TRUE; // disable if mouse capture causes probl
 bool& enableDebugKeys = cvar_enableDebugKeys.data;
 
 // input stuff
-int reversemouse = 0;
-real_t mousespeed = 32;
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
