@@ -19076,12 +19076,9 @@ failed:
                 auto str = std::string(singleplayer ? "savegame" : "savegame_multiplayer") + std::to_string(savegame.first);
                 auto savegame_book = subwindow.addButton(str.c_str());
                 savegame_book->setSize(SDL_Rect{posX, 0, 220, 280});
-                savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
 		        savegame_book->setColor(makeColor(255, 255, 255, 255));
 		        savegame_book->setHighlightColor(makeColor(255, 255, 255, 255));
 		        savegame_book->setFont(smallfont_outline);
-		        savegame_book->setTextColor(makeColor(255, 182, 73, 255));
-		        savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
 		        savegame_book->setTickCallback([](Widget& widget){
 	                auto button = static_cast<Button*>(&widget);
 	                auto frame = static_cast<Frame*>(widget.getParent());
@@ -19173,6 +19170,7 @@ failed:
 		        auto& saveGameInfo = savegame.second;
 
                 // extract savegame info
+                const bool modded = saveGameInfo.players[saveGameInfo.player_num].additionalConducts[CONDUCT_MODDED];
                 const std::string& game_name = saveGameInfo.gamename;
                 const auto timestamp = saveGameInfo.timestamp;
 				int numplayers = 0;
@@ -19316,12 +19314,24 @@ failed:
 				Image* image = Image::get(screenshot_path.c_str()); assert(image);
 				screenshot->section.x = (image->getWidth() - image->getHeight()) / 2;
 				screenshot->section.w = image->getHeight();
+    
+                if (modded) {
+                    savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_01.png");
+                    savegame_book->setTextColor(makeColor(73, 255, 182, 255));
+                    savegame_book->setTextHighlightColor(makeColor(73, 255, 182, 255));
+                } else {
+                    savegame_book->setBackground("*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_00.png");
+                    savegame_book->setTextColor(makeColor(255, 182, 73, 255));
+                    savegame_book->setTextHighlightColor(makeColor(255, 182, 73, 255));
+                }
 
 		        // add book overlay
 		        auto overlay = cover->addImage(
 		            SDL_Rect{32, 16, 160, 162},
 		            0xffffffff,
-		            "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
+                    modded ?
+                        "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_01.png":
+                        "*images/ui/Main Menus/ContinueGame/UI_Cont_SaveFile_Book_Corners_00.png",
 		            (str + "_overlay").c_str()
 		        );
                     
