@@ -15854,6 +15854,10 @@ failed:
 					{
 						info.name = "[MODDED] " + info.name;
 						lobbies.back().name = info.name;
+#ifdef NINTENDO
+						info.locked = true;
+						lobbies.back().locked = info.locked;
+#endif
 					}
 				}
             }
@@ -15904,6 +15908,10 @@ failed:
 					{
 						info.name = "[MODDED] " + info.name;
 						lobbies.back().name = info.name;
+#ifdef NINTENDO
+						info.locked = true;
+						lobbies.back().locked = info.locked;
+#endif
 					}
 				}
             }
@@ -16018,8 +16026,18 @@ failed:
                             }
                         }
                         else {
-                            errorPrompt("Unable to join lobby.\nLobby is locked.",
-                                "Okay", [](Button&) {soundCancel(); closeMono(); });
+#ifdef NINTENDO
+							if ( lobby.numMods > 0 )
+							{
+								errorPrompt("Unable to join lobby.\nLobby is modded.",
+									"Okay", [](Button&) {soundCancel(); closeMono(); });
+							}
+							else
+#endif
+							{
+								errorPrompt("Unable to join lobby.\nLobby is locked.",
+									"Okay", [](Button&) {soundCancel(); closeMono(); });
+							}
                         }
                     }
 				}
