@@ -9684,7 +9684,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				bool numkey_quick_add = hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player);
+				bool numkey_quick_add = playerSettings[player].hotbar_numkey_quick_add && inputs.bPlayerUsingKeyboardControl(player);
 				if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
 					players[player] && players[player]->entity && players[player]->entity->effectShapeshift )
 				{
