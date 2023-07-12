@@ -22320,8 +22320,12 @@ failed:
 						{
 							for ( auto btn : subwindow->getButtons() )
 							{
-								btn->select();
-								return;
+								if ( !btn->isToBeDeleted() )
+								{
+									btn->select();
+									btn->scrollParent();
+									return;
+								}
 							}
 						}
 						if ( auto tab = window->findButton(mods_active_tab.c_str()) )
@@ -22816,6 +22820,8 @@ failed:
 			//frame->addImage(SDL_Rect{ 0, title->getSize().y, framePos.w, title->getSize().h }, makeColorRGB(128, 128, 128), "images/system/white.png", "title bg");
 		}
 
+		const SDL_Rect btnScrollParentOffset{ 0, -24, 0, 48 };
+
 		if ( !viewMyItems )
 		{
 			std::string button_name = name;
@@ -22826,7 +22832,7 @@ failed:
 			button->setSize(SDL_Rect{ frame->getSize().x + frame->getSize().w, frame->getSize().y + 8, 158, 44});
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
-			//button->setScrollParentContainerFrame(true);
+			button->setScrollParentOffset(btnScrollParentOffset);
 			if ( isMounted )
 			{
 				button->setText("Unload Mod");
@@ -22942,7 +22948,7 @@ failed:
 			button->setSize(SDL_Rect{ frame->getSize().x + frame->getSize().w, frame->getSize().y + 8, 158, 44 });
 			button->setUserData((void*)(intptr_t)(isWorkshopMod ? 1 : 0));
 			button->setFont(smallfont_outline);
-			//button->setScrollParentContainerFrame(true);
+			button->setScrollParentOffset(btnScrollParentOffset);
 			button->setText("Update Mod");
 			button->setWidgetSearchParent("mods_menu");
 			button->setWidgetPageLeft("tab_left");
@@ -23572,7 +23578,6 @@ failed:
 		field->setWidgetBack("cancel");
 		field->setWidgetDown("okay");
 		field->select();
-		field->activate();
 		field->setTickCallback([](Widget& widget) {
 			if ( !main_menu_frame ) {
 				return;
@@ -23614,6 +23619,7 @@ failed:
 		okay->setWidgetSearchParent(okay->getParent()->getName());
 		okay->setWidgetRight("cancel");
 		okay->setWidgetBack("cancel");
+		okay->setWidgetUp("field");
 		okay->setCallback(okay_callback);
 		okay->setTickCallback([](Widget& widget) {
 			if ( !main_menu_frame ) {
@@ -23649,6 +23655,7 @@ failed:
 		cancel->setWidgetSearchParent(okay->getParent()->getName());
 		cancel->setWidgetLeft("okay");
 		cancel->setWidgetBack("cancel");
+		cancel->setWidgetUp("field");
 		cancel->setCallback(cancel_callback);
 
 		return frame;
@@ -23731,23 +23738,36 @@ failed:
 		window_title->setJustify(Field::justify_t::CENTER);
 		window_title->setText("MODS");
 
-		(void)createBackWidget(window, [](Button& button) {
+		struct Option {
+			const char* name;
+			const char* title;
+			void (*callback)(Button&);
+		};
+		static std::vector<Option> mod_tabs = {
+			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
+#ifdef STEAMWORKS
+			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
+			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
+#endif
+		};
+
+		auto back_button = createBackWidget(window, [](Button& button) {
 			if ( Mods::numCurrentModsLoaded >= 0 )
 			{
 				// open prompt
 				auto prompt = binaryPrompt(
 					"Do you want to exit this menu?\nAny active mods will be unloaded.", "Yes", "No",
 					[](Button& button) { // yes
-					soundActivate();
-					gui->deselect();
-					Mods::unloadMods();
-					destroyMainMenu();
-					createMainMenu(false);
-				},
-				[](Button&) { // no
-					soundCancel();
+						soundActivate();
+				gui->deselect();
+				Mods::unloadMods();
+				destroyMainMenu();
+				createMainMenu(false);
+					},
+					[](Button&) { // no
+						soundCancel();
 					closeBinary();
-				}, false, false); // yellow buttons
+					}, false, false); // yellow buttons
 			}
 			else
 			{
@@ -23757,37 +23777,31 @@ failed:
 				destroyMainMenu();
 				createMainMenu(false);
 			}
-		});
-
-		struct Option {
-			const char* name;
-			const char* title;
-			void (*callback)(Button&);
-		};
-		static std::vector<Option> tabs = {
-			{"Local Mods", "Local\nMods", workshopLoadLocalMods},
-#ifdef STEAMWORKS
-			{"Steam Workshop", "Steam\nWorkshop", workshopLoadSubscribedItems},
-			{"My Workshop Items", "My Workshop\nItems", workshopLoadMyItems},
-#endif
-		};
+			});
+		back_button->setWidgetLeft(mod_tabs[0].name);
+		back_button->setWidgetRight(mod_tabs[0].name);
+		back_button->setWidgetUp(mod_tabs[0].name);
+		back_button->setWidgetDown(mod_tabs[0].name);
+		back_button->setWidgetSearchParent("mods_menu");
+		back_button->setWidgetPageLeft("tab_left");
+		back_button->setWidgetPageRight("tab_right");
 
 #ifdef STEAMWORKS
 		if ( mods_active_tab == "" )
 		{
-			mods_active_tab = tabs[1].name;
+			mods_active_tab = mod_tabs[1].name;
 		}
 #else
 		if ( mods_active_tab == "" )
 		{
-			mods_active_tab = tabs[0].name;
+			mods_active_tab = mod_tabs[0].name;
 		}
 #endif
 
 		auto load_status_frame = window->addFrame("load_status");
 		load_status_frame->setSize(SDL_Rect{ 448, 622, 196, 78 });
 		load_status_frame->setTickCallback([](Widget& widget) {
-			if ( mods_active_tab == tabs[2].name )
+			if ( mods_active_tab == mod_tabs[2].name )
 			{
 				widget.setInvisible(true);
 			}
@@ -23798,17 +23812,17 @@ failed:
 		});
 		auto load_status_titles = load_status_frame->addField("load_status_titles", 128);
 		load_status_titles->setFont(smallfont_outline);
-		load_status_titles->setSize(SDL_Rect{ 8, 8, load_status_frame->getSize().w - 64, load_status_frame->getSize().h - 16});
+		load_status_titles->setSize(SDL_Rect{ 8, 8, load_status_frame->getSize().w - 64, load_status_frame->getSize().h - 16 });
 		load_status_titles->setText("Local Mods:\nWorkshop:\nTotal Loaded:");
 		load_status_titles->setHJustify(Field::justify_t::RIGHT);
 		load_status_titles->setVJustify(Field::justify_t::CENTER);
 		auto load_status_totals = load_status_frame->addField("load_status_totals", 128);
 		load_status_totals->setFont(smallfont_outline);
-		load_status_totals->setSize(SDL_Rect{ 
-			load_status_titles->getSize().w + 16, 
+		load_status_totals->setSize(SDL_Rect{
+			load_status_titles->getSize().w + 16,
 			load_status_titles->getSize().y,
 			48,
-			load_status_titles->getSize().h});
+			load_status_titles->getSize().h });
 		load_status_totals->setText("");
 		load_status_totals->setHJustify(Field::justify_t::LEFT);
 		load_status_totals->setVJustify(Field::justify_t::CENTER);
@@ -23825,31 +23839,31 @@ failed:
 				assert((Mods::mods_loaded_local.size() + Mods::mods_loaded_workshop.size())
 					== Mods::numCurrentModsLoaded);
 			}
-		});
+			});
 
 		SDL_Rect load_status_frame_pos = load_status_frame->getSize();
 		load_status_frame_pos.w += 160 + 16;
 		load_status_frame->setSize(load_status_frame_pos);
 		auto achievements_status = load_status_frame->addField("achievements_status", 64);
 		achievements_status->setFont(bigfont_outline);
-		achievements_status->setSize(SDL_Rect{ 196 + 8, 15, 160, 46});
+		achievements_status->setSize(SDL_Rect{ 196 + 8, 15, 160, 46 });
 		achievements_status->setText("");
 		achievements_status->setHJustify(Field::justify_t::CENTER);
 		achievements_status->setVJustify(Field::justify_t::CENTER);
 		achievements_status->setIndividualLinePadding(1, 8);
 		achievements_status->setTickCallback([](Widget& widget) {
 			Field* field = static_cast<Field*>(&widget);
-			if ( Mods::disableSteamAchievements )
-			{
-				field->setText("ACHIEVEMENTS\nDISABLED");
-				field->setTextColor(hudColors.characterSheetRed);
-			}
-			else
-			{
-				field->setText("ACHIEVEMENTS\nENABLED");
-				field->setTextColor(makeColorRGB(255, 255, 255));
-			}
-		});
+		if ( Mods::disableSteamAchievements )
+		{
+			field->setText("ACHIEVEMENTS\nDISABLED");
+			field->setTextColor(hudColors.characterSheetRed);
+		}
+		else
+		{
+			field->setText("ACHIEVEMENTS\nENABLED");
+			field->setTextColor(makeColorRGB(255, 255, 255));
+		}
+			});
 
 		SDL_Rect load_status_bg_pos = achievements_status->getSize();
 		load_status_bg_pos.x -= 8;
@@ -23872,21 +23886,48 @@ failed:
 		load_status_help->setFont(smallfont_outline);
 		load_status_help->setText("?");
 		load_status_help->setSize(SDL_Rect{ load_status_bg_pos.x + load_status_bg_pos.w + 8,
-			load_status_frame_pos.h / 2 - 14, 26, 26});
+			load_status_frame_pos.h / 2 - 14, 26, 26 });
 		load_status_help->setCallback([](Button& button) {
 			monoPrompt("Note: Not all modded files can be\nverified prior to game start to\nensure Achievements are enabled.", "Dismiss", [](Button& button) {
 				soundActivate();
-				closeMono();
+		closeMono();
+				});
 			});
-		});
 		load_status_help->setTickCallback([](Widget& widget) {
 			auto button = static_cast<Button*>(&widget);
 			if ( button->isSelected() && button->getParent() && button->getParent()->isInvisible() )
 			{
 				button->deselect();
 			}
+
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				button->setWidgetLeft("browse_workshop");
+				button->addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				button->setWidgetLeft("blank_mod_folder");
+				button->addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				button->setWidgetRight("new_workshop_mod");
+				button->addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				button->addWidgetAction("MenuAlt2", "load_status_help");
+				button->setWidgetRight("start_modded_game");
+				button->addWidgetAction("MenuStart", "start_modded_game");
+			}
 		});
 		load_status_help->setButtonsOffset(SDL_Rect{ 0, 8, 0, 0 });
+		load_status_help->setWidgetSearchParent("mods_menu");
+		load_status_help->setWidgetPageLeft("tab_left");
+		load_status_help->setWidgetPageRight("tab_right");
+		load_status_help->setWidgetBack("back_button");
+		load_status_help->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
 
 
 		auto slider = subwindow->addSlider("scroll_slider");
@@ -23899,17 +23940,17 @@ failed:
 		slider->setGlyphPosition(Button::glyph_position_t::CENTERED);
 		slider->setCallback([](Slider& slider) {
 			Frame* frame = static_cast<Frame*>(slider.getParent());
-			auto actualSize = frame->getActualSize();
-			actualSize.y = slider.getValue();
-			frame->setActualSize(actualSize);
-			auto railSize = slider.getRailSize();
-			railSize.y = actualSize.y;
-			slider.setRailSize(railSize);
-			slider.updateHandlePosition();
-			auto gradient_background = frame->findImage("gradient_background");
-			assert(gradient_background);
-			gradient_background->pos.y = actualSize.y;
-		});
+		auto actualSize = frame->getActualSize();
+		actualSize.y = slider.getValue();
+		frame->setActualSize(actualSize);
+		auto railSize = slider.getRailSize();
+		railSize.y = actualSize.y;
+		slider.setRailSize(railSize);
+		slider.updateHandlePosition();
+		auto gradient_background = frame->findImage("gradient_background");
+		assert(gradient_background);
+		gradient_background->pos.y = actualSize.y;
+			});
 		slider->setTickCallback([](Widget& widget) {
 			Slider* slider = static_cast<Slider*>(&widget);
 			Frame* frame = static_cast<Frame*>(slider->getParent());
@@ -23923,15 +23964,33 @@ failed:
 			auto gradient_background = frame->findImage("gradient_background");
 			assert(gradient_background);
 			gradient_background->pos.y = actualSize.y;
+
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				slider->addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				slider->addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				slider->addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				slider->addWidgetAction("MenuAlt2", "load_status_help");
+				slider->addWidgetAction("MenuStart", "start_modded_game");
+			}
 		});
 		slider->setValue(0.f);
 		slider->setMinValue(0.f);
 		slider->setMaxValue(subwindow->getActualSize().h - subwindow->getSize().h);
 		slider->setWidgetSearchParent("mods_menu");
-		//slider->setWidgetLeft("tutorial_hub");
-		//slider->addWidgetAction("MenuStart", "enter");
-		//slider->addWidgetAction("MenuAlt1", "reset");
-		//slider->addWidgetAction("MenuCancel", "back_button");
+		slider->addWidgetAction("MenuCancel", "back_button");
+		slider->setWidgetLeft(mod_tabs[mod_tabs.size() - 1].name);
+		slider->setWidgetPageLeft("tab_left");
+		slider->setWidgetPageRight("tab_right");
 
 		auto enter = window->addButton("start_modded_game");
 		enter->setText("Start\nModded Game");
@@ -23951,7 +24010,34 @@ failed:
 
 				createPlayWindow();
 			}
+			});
+		enter->setTickCallback([](Widget& widget) {
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				widget.addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				widget.setWidgetLeft("blank_mod_folder");
+				widget.addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt2", "load_status_help");
+				widget.setWidgetLeft("load_status_help");
+				widget.addWidgetAction("MenuStart", "start_modded_game");
+			}
 		});
+		enter->setWidgetSearchParent("mods_menu");
+		enter->setWidgetPageLeft("tab_left");
+		enter->setWidgetPageRight("tab_right");
+		enter->setWidgetBack("back_button");
+		enter->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
+
 		auto new_workshop_mod = window->addButton("new_workshop_mod");
 		new_workshop_mod->setText("New Workshop\nMod");
 		new_workshop_mod->setSize(SDL_Rect{ 902, 630, 164, 62 });
@@ -23967,6 +24053,32 @@ failed:
 			soundActivate();
 			createWorkshopCreateMenu(nullptr);
 		});
+		new_workshop_mod->setTickCallback([](Widget& widget) {
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				widget.addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				widget.setWidgetLeft("blank_mod_folder");
+				widget.addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt2", "load_status_help");
+				widget.setWidgetLeft("load_status_help");
+				widget.addWidgetAction("MenuStart", "start_modded_game");
+			}
+		});
+		new_workshop_mod->setWidgetSearchParent("mods_menu");
+		new_workshop_mod->setWidgetPageLeft("tab_left");
+		new_workshop_mod->setWidgetPageRight("tab_right");
+		new_workshop_mod->setWidgetBack("back_button");
+		new_workshop_mod->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
 
 		auto browse_workshop = window->addButton("browse_workshop");
 		browse_workshop->setText("Browse\nWorkshop");
@@ -24035,6 +24147,32 @@ failed:
 			buttonCancel->setWidgetLeft("okay");
 			buttonCancel->setWidgetBack("cancel");
 		});
+		browse_workshop->setTickCallback([](Widget& widget) {
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				widget.addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				widget.setWidgetRight("new_workshop_mod");
+				widget.addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt2", "load_status_help");
+				widget.setWidgetRight("load_status_help");
+				widget.addWidgetAction("MenuStart", "start_modded_game");
+			}
+		});
+		browse_workshop->setWidgetSearchParent("mods_menu");
+		browse_workshop->setWidgetPageLeft("tab_left");
+		browse_workshop->setWidgetPageRight("tab_right");
+		browse_workshop->setWidgetBack("back_button");
+		browse_workshop->setWidgetUp(mod_tabs[0].name);
 
 		auto blank_mod_folder = window->addButton("blank_mod_folder");
 		blank_mod_folder->setText("Create Blank\nMod Folder");
@@ -24053,11 +24191,19 @@ failed:
 				auto field = prompt->findField("field"); assert(field);
 				closeBinary();
 
-				int res = false;
+				int res = 0;
 				std::string folderName = field->getText();
 				if ( folderName != "" )
 				{
 					res = Mods::createBlankModDirectory(folderName);
+				}
+				else
+				{
+					errorPrompt("Error: Folder name cannot\n be blank.", "Okay", [](Button& button) {
+						soundActivate();
+						closeMono();
+					});
+					return;
 				}
 
 				if ( res == 0 )
@@ -24101,17 +24247,43 @@ failed:
 			closeBinary();
 			}, false, true);
 		});
+		blank_mod_folder->setTickCallback([](Widget& widget) {
+			if ( mods_active_tab == "Steam Workshop" )
+			{
+				widget.addWidgetAction("MenuAlt1", "browse_workshop");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt1", "blank_mod_folder");
+			}
+			if ( mods_active_tab == "My Workshop Items" )
+			{
+				widget.setWidgetRight("new_workshop_mod");
+				widget.addWidgetAction("MenuStart", "new_workshop_mod");
+			}
+			else
+			{
+				widget.addWidgetAction("MenuAlt2", "load_status_help");
+				widget.setWidgetRight("load_status_help");
+				widget.addWidgetAction("MenuStart", "start_modded_game");
+			}
+		});
+		blank_mod_folder->setWidgetSearchParent("mods_menu");
+		blank_mod_folder->setWidgetPageLeft("tab_left");
+		blank_mod_folder->setWidgetPageRight("tab_right");
+		blank_mod_folder->setWidgetBack("back_button");
+		blank_mod_folder->setWidgetUp(mod_tabs[0].name);
 
-		const int num_tabs = (int)tabs.size();
+		const int num_tabs = (int)mod_tabs.size();
 		int buttonsLeftX = Frame::virtualScreenX;
 		int buttonsRightX = 0;
 		for ( int c = 0; c < num_tabs; ++c ) {
 			const int x = window->getSize().w / (num_tabs + 1);
-			auto button = window->addButton(tabs[c].name);
-			button->setCallback(tabs[c].callback);
-			button->setText(tabs[c].title);
+			auto button = window->addButton(mod_tabs[c].name);
+			button->setCallback(mod_tabs[c].callback);
+			button->setText(mod_tabs[c].title);
 			button->setFont(banner_font);
-			if ( tabs[c].name == mods_active_tab ) {
+			if ( mod_tabs[c].name == mods_active_tab ) {
 				button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
@@ -24128,28 +24300,26 @@ failed:
 			button->setColor(makeColor(255, 255, 255, 255));
 			button->setHighlightColor(makeColor(255, 255, 255, 255));
 			button->setWidgetSearchParent("mods_menu");
-			//button->addWidgetAction("MenuAlt1", "restore_defaults");
-			//button->addWidgetAction("MenuStart", "confirm_and_exit");
 			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_BOTTOM);
 			if ( c > 0 )
 			{
 				button->setWidgetPageLeft("tab_left");
-				button->setWidgetLeft(tabs[c - 1].name);
+				button->setWidgetLeft(mod_tabs[c - 1].name);
 			}
 			else
 			{
 				button->setWidgetPageLeft("tab_left");
-				button->setWidgetLeft(tabs[c].name);
+				button->setWidgetLeft(mod_tabs[c].name);
 			}
 			if ( c < num_tabs - 1 ) 
 			{
 				button->setWidgetPageRight("tab_right");
-				button->setWidgetRight(tabs[c + 1].name);
+				button->setWidgetRight(mod_tabs[c + 1].name);
 			}
 			else 
 			{
 				button->setWidgetPageRight("tab_right");
-				button->setWidgetRight(tabs[c].name);
+				button->setWidgetRight(mod_tabs[c].name);
 			}
 			button->setWidgetBack("back_button");
 
@@ -24200,18 +24370,14 @@ failed:
 			tab_left->setWidgetBack("back_button");
 			tab_left->setWidgetPageLeft("tab_left");
 			tab_left->setWidgetPageRight("tab_right");
-			tab_left->setWidgetUp(tabs[0].name);
-			tab_left->setWidgetDown(tabs[0].name);
-			tab_left->setWidgetLeft(tabs[0].name);
-			tab_left->setWidgetRight(tabs[0].name);
-			//tab_left->setWidgetRight("General");
-			//tab_left->setWidgetDown("restore_defaults");
-			//tab_left->addWidgetAction("MenuAlt1", "restore_defaults");
-			//tab_left->addWidgetAction("MenuStart", "confirm_and_exit");
+			tab_left->setWidgetUp(mod_tabs[0].name);
+			tab_left->setWidgetDown(mod_tabs[0].name);
+			tab_left->setWidgetLeft(mod_tabs[0].name);
+			tab_left->setWidgetRight(mod_tabs[0].name);
 			tab_left->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* prevtab = nullptr;
-				for ( auto& tab : tabs ) {
+				for ( auto& tab : mod_tabs ) {
 					auto button = mods_menu->findButton(tab.name);
 					if ( button ) {
 						const char* name = "*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png";
@@ -24240,16 +24406,14 @@ failed:
 			tab_right->setWidgetBack("back_button");
 			tab_right->setWidgetPageLeft("tab_left");
 			tab_right->setWidgetPageRight("tab_right");
-			tab_right->setWidgetUp(tabs[tabs.size() - 1].name);
-			tab_right->setWidgetDown(tabs[tabs.size() - 1].name);
-			tab_right->setWidgetLeft(tabs[tabs.size() - 1].name);
-			tab_right->setWidgetRight(tabs[tabs.size() - 1].name);
-			//tab_right->addWidgetAction("MenuAlt1", "restore_defaults");
-			//tab_right->addWidgetAction("MenuStart", "confirm_and_exit");
+			tab_right->setWidgetUp(mod_tabs[mod_tabs.size() - 1].name);
+			tab_right->setWidgetDown(mod_tabs[mod_tabs.size() - 1].name);
+			tab_right->setWidgetLeft(mod_tabs[mod_tabs.size() - 1].name);
+			tab_right->setWidgetRight(mod_tabs[mod_tabs.size() - 1].name);
 			tab_right->setCallback([](Button&) {
 				auto mods_menu = main_menu_frame->findFrame("mods_menu"); assert(mods_menu);
 				const char* nexttab = nullptr;
-				for ( auto it = tabs.rbegin(); it != tabs.rend(); ++it ) {
+				for ( auto it = mod_tabs.rbegin(); it != mod_tabs.rend(); ++it ) {
 					auto tab = (*it);
 					auto button = mods_menu->findButton(tab.name);
 					if ( button ) {
@@ -24270,21 +24434,36 @@ failed:
 		}
 
 		window->setTickCallback([](Widget& widget) {
-			auto settings = static_cast<Frame*>(&widget);
-			std::vector<const char*> tabs = {
-				"Local Mods",
-				"Steam Workshop",
-				"My Workshop Items",
-			};
-			for ( auto name : tabs ) {
-				auto button = settings->findButton(name);
-				if ( button ) {
-					if ( name == mods_active_tab ) {
-						assert(main_menu_frame);
-						if ( !main_menu_frame->findSelectedWidget(widget.getOwner()) ) {
+			auto window = static_cast<Frame*>(&widget);
+
+			bool rescueFocus = false;
+			assert(main_menu_frame);
+			bool createMenuOpen = false;
+			auto subwindow = window->findFrame("subwindow");
+			if ( main_menu_frame->findFrame("workshop_create") )
+			{
+				createMenuOpen = true;
+			}
+			subwindow->setAllowScrollBinds(!createMenuOpen);
+			if ( !main_menu_frame->findSelectedWidget(widget.getOwner()) )
+			{
+				if ( !createMenuOpen )
+				{
+					rescueFocus = true;
+				}
+			}
+
+			for ( auto& tab : mod_tabs ) 
+			{
+				auto button = window->findButton(tab.name);
+				if ( button ) 
+				{
+					if ( tab.name == mods_active_tab ) 
+					{
+						if ( rescueFocus )
+						{
 							button->select();
 						}
-
 						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelect00.png");
 						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectHigh00.png");
 						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitleSelectPress00.png");
@@ -24293,6 +24472,22 @@ failed:
 						button->setBackground("*images/ui/Main Menus/Settings/Settings_Button_SubTitle00.png");
 						button->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Button_SubTitleHigh00.png");
 						button->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Button_SubTitlePress00.png");
+					}
+				}
+			}
+
+			if ( rescueFocus )
+			{
+				if ( subwindow )
+				{
+					for ( auto btn : subwindow->getButtons() )
+					{
+						if ( !btn->isToBeDeleted() )
+						{
+							btn->select(); // select a mod as priority over above tabs
+							btn->scrollParent();
+							return;
+						}
 					}
 				}
 			}
@@ -24363,6 +24558,30 @@ failed:
 		window->setActualSize(SDL_Rect{ 0, 0, windowWidth, 716 });
 		window->setBorder(0);
 		window->setColor(0);
+		window->setTickCallback([](Widget& widget) {
+			auto window = static_cast<Frame*>(&widget);
+			bool rescueFocus = false;
+			assert(main_menu_frame);
+			if ( !main_menu_frame->findSelectedWidget(widget.getOwner()) )
+			{
+				rescueFocus = true;
+			}
+
+			if ( rescueFocus )
+			{
+				if ( auto subwindow = window->findFrame("subwindow") )
+				{
+					for ( auto btn : subwindow->getButtons() )
+					{
+						if ( !btn->isToBeDeleted() )
+						{
+							btn->select();
+							return;
+						}
+					}
+				}
+			}
+		});
 
 		auto background = window->addImage(
 			SDL_Rect{ 16, 0, 936, 714 },
@@ -24434,19 +24653,18 @@ failed:
 		}
 		subtitle->setIndividualLinePadding(0, 4);
 
-		(void)createBackWidget(window, [](Button& button) {
+		auto back_button = createBackWidget(window, [](Button& button) {
 			soundCancel();
-		auto frame = static_cast<Frame*>(button.getParent());
-		frame = static_cast<Frame*>(frame->getParent());
-		frame = static_cast<Frame*>(frame->getParent());
-		frame->removeSelf();
-
-		//assert(main_menu_frame);
-		//auto dimmer = main_menu_frame->findFrame("dimmer"); assert(dimmer);
-		//auto window = dimmer->findFrame("play_game_window"); assert(window);
-		//auto hall_of_trials_button = window->findButton("hall_of_trials"); assert(hall_of_trials_button);
-		//hall_of_trials_button->select();
-			});
+			auto frame = static_cast<Frame*>(button.getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame = static_cast<Frame*>(frame->getParent());
+			frame->removeSelf();
+		});
+		back_button->setWidgetLeft("folder button");
+		back_button->setWidgetRight("folder button");
+		back_button->setWidgetUp("folder button");
+		back_button->setWidgetDown("folder button");
+		back_button->setWidgetSearchParent("workshop_create");
 
 		int padX = 48;
 		int currentY = 24;
@@ -24502,8 +24720,16 @@ failed:
 			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
 			button->select();
+
+			button->setWidgetSearchParent("workshop_create");
+			button->setWidgetDown("title button");
+			button->addWidgetAction("MenuStart", "enter");
+			if ( Mods::uploadingExistingItem != 0 )
+			{
+				button->addWidgetAction("MenuAlt1", "manage");
+			}
+			button->addWidgetAction("MenuCancel", "back_button");
 
 			auto buttonCancel = subwindow->addButton("folder cancel button");
 			SDL_Rect cancelPos = button->getSize();
@@ -24519,7 +24745,17 @@ failed:
 			buttonCancel->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Red_XPress_00.png");
 			buttonCancel->setHighlightColor(0xFFFFFFFF);
 			buttonCancel->setColor(0xFFFFFFFF);
-			buttonCancel->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+
+			buttonCancel->setWidgetSearchParent("workshop_create");
+			buttonCancel->setWidgetLeft("folder button");
+			buttonCancel->setWidgetDown("desc button");
+			buttonCancel->addWidgetAction("MenuStart", "enter");
+			if ( Mods::uploadingExistingItem != 0 )
+			{
+				buttonCancel->addWidgetAction("MenuAlt1", "manage");
+			}
+			buttonCancel->addWidgetAction("MenuCancel", "back_button");
+
 			buttonCancel->setCallback([](Button& button) {
 				modFolderPathToUpload = "";
 				button.setInvisible(true);
@@ -24533,15 +24769,18 @@ failed:
 			});
 
 
+
 			button->setTickCallback([](Widget& widget) {
 				auto button = static_cast<Button*>(&widget);
 				if ( auto frame = static_cast<Frame*>(button->getParent()) )
 				{
+					button->setWidgetRight("");
 					if ( auto buttonCancel = frame->findButton("folder cancel button") )
 					{
 						if ( modFolderPathToUpload != "" )
 						{
 							buttonCancel->setInvisible(false);
+							button->setWidgetRight("folder cancel button");
 						}
 						else
 						{
@@ -24710,7 +24949,17 @@ failed:
 			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			
+			button->setWidgetSearchParent("workshop_create");
+			button->setWidgetUp("folder button");
+			button->setWidgetDown("desc button");
+			button->addWidgetAction("MenuStart", "enter");
+			if ( Mods::uploadingExistingItem != 0 )
+			{
+				button->addWidgetAction("MenuAlt1", "manage");
+			}
+			button->addWidgetAction("MenuCancel", "back_button");
+
 			if ( !details )
 			{
 				button->setCallback([](Button& button) {
@@ -24718,7 +24967,7 @@ failed:
 					"Enter a title for this item", "Confirm", "Cancel",
 						[](Button& button) {
 							soundActivate();
-						
+							assert(main_menu_frame);
 							auto prompt = main_menu_frame->findFrame("binary_prompt"); assert(prompt);
 							auto field = prompt->findField("field"); assert(field);
 
@@ -24727,10 +24976,34 @@ failed:
 								modTitleToUpload = field->getText();
 							}
 							closeBinary();
+
+							assert(main_menu_frame);
+							if ( auto window = main_menu_frame->findFrame("workshop_create") )
+							{
+								if ( auto subwindow = window->findFrame("subwindow") )
+								{
+									if ( auto button = subwindow->findButton("title button") )
+									{
+										button->select();
+									}
+								}
+							}
 						},
 						[](Button& button) {
 							soundCancel();
 							closeBinary();
+
+							assert(main_menu_frame);
+							if ( auto window = main_menu_frame->findFrame("workshop_create") )
+							{
+								if ( auto subwindow = window->findFrame("subwindow") )
+								{
+									if ( auto button = subwindow->findButton("title button") )
+									{
+										button->select();
+									}
+								}
+							}
 						}, false, true);
 				});
 			}
@@ -24742,6 +25015,18 @@ failed:
 					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
 						soundActivate();
 						closeMono();
+
+						assert(main_menu_frame);
+						if ( auto window = main_menu_frame->findFrame("workshop_create") )
+						{
+							if ( auto subwindow = window->findFrame("subwindow") )
+							{
+								if ( auto button = subwindow->findButton("title button") )
+								{
+									button->select();
+								}
+							}
+						}
 					});
 				});
 			}
@@ -24793,7 +25078,20 @@ failed:
 			button->setBackgroundActivated("*#images/ui/Main Menus/Mods/Upload/Button_Press00.png");
 			button->setHighlightColor(0xFFFFFFFF);
 			button->setColor(0xFFFFFFFF);
-			button->setGlyphPosition(Widget::glyph_position_t::CENTERED_RIGHT);
+			
+			button->setWidgetSearchParent("workshop_create");
+			button->setWidgetUp("title button");
+			if ( Mods::tag_settings.size() > 0 )
+			{
+				button->setWidgetDown("setting0");
+			}
+			button->addWidgetAction("MenuStart", "enter");
+			if ( Mods::uploadingExistingItem != 0 )
+			{
+				button->addWidgetAction("MenuAlt1", "manage");
+			}
+			button->addWidgetAction("MenuCancel", "back_button");
+
 			if ( !details )
 			{
 				button->setCallback([](Button& button) {
@@ -24810,10 +25108,34 @@ failed:
 							modDescToUpload = field->getText();
 						}
 						closeBinary();
+
+						assert(main_menu_frame);
+						if ( auto window = main_menu_frame->findFrame("workshop_create") )
+						{
+							if ( auto subwindow = window->findFrame("subwindow") )
+							{
+								if ( auto button = subwindow->findButton("desc button") )
+								{
+									button->select();
+								}
+							}
+						}
 					},
 					[](Button& button) {
 						soundCancel();
 						closeBinary();
+
+						assert(main_menu_frame);
+						if ( auto window = main_menu_frame->findFrame("workshop_create") )
+						{
+							if ( auto subwindow = window->findFrame("subwindow") )
+							{
+								if ( auto button = subwindow->findButton("desc button") )
+								{
+									button->select();
+								}
+							}
+						}
 					}, false, true);
 					});
 			}
@@ -24824,7 +25146,19 @@ failed:
 				button->setCallback([](Button& button) {
 					errorPrompt("For existing items, visit the\nWorkshop page to make edits.", "Okay", [](Button& button) {
 						soundActivate();
-					closeMono();
+						closeMono();
+
+						assert(main_menu_frame);
+						if ( auto window = main_menu_frame->findFrame("workshop_create") )
+						{
+							if ( auto subwindow = window->findFrame("subwindow") )
+							{
+								if ( auto button = subwindow->findButton("desc button") )
+								{
+									button->select();
+								}
+							}
+						}
 					});
 				});
 			}
@@ -24843,6 +25177,8 @@ failed:
 			title->setSize(SDL_Rect{ titleBacking->pos.x + 24, titleBacking->pos.y, titleBacking->pos.w - 24, titleBacking->pos.h });
 
 			int currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
+			int row = 0;
+			const int tagsPerRow = 4;
 			for ( int i = 0; i < Mods::tag_settings.size(); ++i )
 			{
 				SDL_Rect settingPos{ currentX, currentY + 52 / 2 - 44 / 2, 44, 44 };
@@ -24856,6 +25192,8 @@ failed:
 				setting->setColor(0);
 				setting->setUserData((void*)(intptr_t)(i));
 				setting->setPressed(modTags.find(i) != modTags.end());
+				setting->setButtonsOffset(SDL_Rect{ -2, 0, 0, 0 });
+				setting->setSelectorOffset(SDL_Rect{ 1, 5, -5, -1 });
 				setting->setCallback([](Button& button) {
 					soundCheckmark();
 					int tagIndex = reinterpret_cast<intptr_t>(button.getUserData());
@@ -24875,6 +25213,35 @@ failed:
 					}
 				});
 
+				setting->setWidgetSearchParent("workshop_create");
+				setting->addWidgetAction("MenuCancel", "back_button");
+				setting->addWidgetAction("MenuStart", "enter");
+				if ( Mods::uploadingExistingItem != 0 )
+				{
+					setting->addWidgetAction("MenuAlt1", "manage");
+				}
+
+				if ( i % (tagsPerRow) != (tagsPerRow - 1) )
+				{
+					setting->setWidgetRight((std::string("setting") + std::to_string(i + 1)).c_str());
+				}
+				if ( i % (tagsPerRow) > 0 )
+				{
+					setting->setWidgetLeft((std::string("setting") + std::to_string(i - 1)).c_str());
+				}
+				if ( row > 0 )
+				{
+					setting->setWidgetUp((std::string("setting") + std::to_string(i - tagsPerRow)).c_str());
+				}
+				else
+				{
+					setting->setWidgetUp("desc button");
+				}
+				if ( i + tagsPerRow < Mods::tag_settings.size() )
+				{
+					setting->setWidgetDown((std::string("setting") + std::to_string(i + tagsPerRow)).c_str());
+				}
+
 				auto settingBg = subwindow->addImage(setting->getSize(), 0xFFFFFFFF,
 					"*#images/ui/Main Menus/Mods/Upload/BG_Checked_00.png", (std::string("setting_bg") + std::to_string(i)).c_str());
 
@@ -24892,10 +25259,11 @@ failed:
 				}
 				label->setSize(labelPos);
 
-				if ( i > 0 && i % 3 == 0 )
+				if ( i > 0 && i % (tagsPerRow - 1) == 0 )
 				{
 					currentX = titleBacking->pos.x + titleBacking->pos.w + 20;
 					currentY += 52;
+					++row;
 				}
 				else
 				{
@@ -24979,6 +25347,14 @@ failed:
 				buttonCancel->setWidgetLeft("okay");
 				buttonCancel->setWidgetBack("cancel");
 			});
+
+			manage->setWidgetSearchParent("workshop_create");
+			{
+				int leftBottomTag = 4 * (Mods::tag_settings.size() / 4);
+				manage->setWidgetUp((std::string("setting") + std::to_string(leftBottomTag)).c_str());
+			}
+			manage->setWidgetRight("enter");
+			manage->addWidgetAction("MenuCancel", "back_button");
 		}
 
 		auto enter = window->addButton("enter");
@@ -24997,6 +25373,15 @@ failed:
 		enter->setFont(smallfont_outline);
 		enter->setHighlightColor(0xffffffff);
 		enter->setColor(0xffffffff);
+
+		enter->setWidgetSearchParent("workshop_create");
+		enter->setWidgetUp((std::string("setting") + std::to_string(Mods::tag_settings.size() - 1)).c_str());
+		if ( Mods::uploadingExistingItem != 0 )
+		{
+			enter->setWidgetLeft("manage");
+		}
+		enter->addWidgetAction("MenuCancel", "back_button");
+
 		enter->setCallback([](Button& button) {
 			std::string message = "";
 			if ( Mods::uploadingExistingItem != 0 )
@@ -25520,14 +25905,18 @@ failed:
 					playSound(553, 64);
 
 					button->setDisabled(false);
-					button->select();
 					button->setText("Dismiss");
+					button->setWidgetLeft("view workshop");
+					button->setWidgetBack("okay");
 
 					auto view = frame->addButton("view workshop");
 					SDL_Rect posLeft = button->getSize();
 					SDL_Rect posRight = posLeft;
 					posLeft.x -= posLeft.w / 2 + 8;
 					view->setSize(posLeft);
+					view->setWidgetRight("okay");
+					view->setWidgetBack("okay");
+					view->select();
 
 					view->setBackground("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBack00.png");
 					view->setBackgroundHighlighted("*images/ui/Main Menus/Disconnect/UI_Disconnect_Button_GoBackHigh00.png");
